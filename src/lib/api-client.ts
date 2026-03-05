@@ -1,53 +1,53 @@
+import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import { ApiError, ApiResponse } from "@/types/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-interface RequestConfig extends RequestInit {
-    params?: Record<string, string>;
-}
+const axiosInstance: AxiosInstance = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        "Content-Type": "application/json",
+    },
+});
+
+axiosInstance.interceptors.request.use((config) => {
+    // Add auth token if available
+    const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+axiosInstance.interceptors.response.use(
+    (response) => response,
+    (error) => Promise.reject(error)
+);
 
 class ApiClient {
-    private baseUrl: string;
+    private instance: AxiosInstance;
 
-    constructor(baseUrl: string) {
-        this.baseUrl = baseUrl;
+    constructor(instance: AxiosInstance) {
+        this.instance = instance;
     }
 
     private async request<T>(
-        endpoint: string,
-        config: RequestConfig = {}
+        config: AxiosRequestConfig
     ): Promise<ApiResponse<T>> {
-        const { params, ...init } = config;
-
-        let url = `${this.baseUrl}${endpoint}`;
-        if (params) {
-            const searchParams = new URLSearchParams(params);
-            url += `?${searchParams.toString()}`;
-        }
-
-        const headers: HeadersInit = {
-            "Content-Type": "application/json",
-            ...init.headers,
-        };
-
         try {
-            const response = await fetch(url, {
-                ...init,
-                headers,
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                const error: ApiError = {
-                    message: data.message || "Có lỗi xảy ra",
-                    statusCode: response.status,
-                };
-                return { data: null as T, error };
-            }
-
-            return { data, error: null };
+            const response = await this.instance.request<T>(config);
+            return { data: response.data, error: null };
         } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const apiError: ApiError = {
+                    message:
+                        error.response?.data?.message || error.message || "Có lỗi xảy ra",
+                    statusCode: error.response?.status || 0,
+                    errors: error.response?.data?.errors,
+                };
+                return { data: null as T, error: apiError };
+            }
             return {
                 data: null as T,
                 error: {
@@ -58,37 +58,50 @@ class ApiClient {
         }
     }
 
-    async get<T>(endpoint: string, config?: RequestConfig) {
-        return this.request<T>(endpoint, { ...config, method: "GET" });
+    async get<T>(
+        endpoint: string,
+        config?: { params?: Record<string, string> }
+    ) {
+        return this.request<T>({ url: endpoint, method: "GET", ...config });
     }
 
-    async post<T>(endpoint: string, body?: unknown, config?: RequestConfig) {
-        return this.request<T>(endpoint, {
-            ...config,
-            method: "POST",
-            body: body ? JSON.stringify(body) : undefined,
-        });
+    async post<T>(
+        endpoint: string,
+        data?: unknown,
+        config?: AxiosRequestConfig
+    ) {
+        return this.request<T>({ url: endpoint, method: "POST", data, ...config });
     }
 
-    async put<T>(endpoint: string, body?: unknown, config?: RequestConfig) {
-        return this.request<T>(endpoint, {
-            ...config,
-            method: "PUT",
-            body: body ? JSON.stringify(body) : undefined,
-        });
+    async put<T>(
+        endpoint: string,
+        data?: unknown,
+        config?: AxiosRequestConfig
+    ) {
+        return this.request<T>({ url: endpoint, method: "PUT", data, ...config });
     }
 
-    async patch<T>(endpoint: string, body?: unknown, config?: RequestConfig) {
-        return this.request<T>(endpoint, {
-            ...config,
+    async patch<T>(
+        endpoint: string,
+        data?: unknown,
+        config?: AxiosRequestConfig
+    ) {
+        return this.request<T>({
+            url: endpoint,
             method: "PATCH",
-            body: body ? JSON.stringify(body) : undefined,
+            data,
+            ...config,
         });
     }
 
-    async delete<T>(endpoint: string, config?: RequestConfig) {
-        return this.request<T>(endpoint, { ...config, method: "DELETE" });
+    async delete<T>(endpoint: string, config?: AxiosRequestConfig) {
+        return this.request<T>({
+            url: endpoint,
+            method: "DELETE",
+            ...config,
+        });
     }
 }
 
-export const apiClient = new ApiClient(API_BASE_URL);
+export { axiosInstance };
+export const apiClient = new ApiClient(axiosInstance);
