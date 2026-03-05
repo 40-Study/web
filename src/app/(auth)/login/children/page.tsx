@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/auth-card";
 import { SelectionCard } from "@/components/auth/selection-card";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/routes";
 import { MOCK_CHILDREN } from "@/lib/mock-data";
+import { useAuthStore } from "@/stores";
 
 export default function LoginChildrenPage() {
   const router = useRouter();
-  const [selectedChild, setSelectedChild] = useState<string | null>(null);
+  const { selectedChild, setSelectedChild } = useAuthStore();
 
   const handleContinue = () => {
     if (!selectedChild) return;

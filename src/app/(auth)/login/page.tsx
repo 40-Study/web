@@ -9,15 +9,19 @@ import { AuthFooterLink } from "@/components/auth/auth-footer-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AUTH_ROUTES } from "@/lib/routes";
+import { useAuthStore } from "@/stores";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // TODO: Replace with actual API call
+    login({ email, name: email }, "mock-token");
     router.push(AUTH_ROUTES.LOGIN_ROLE);
   };
 

@@ -1,19 +1,19 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/auth-card";
 import { SelectionCard } from "@/components/auth/selection-card";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/routes";
 import { MOCK_ORGANIZATIONS } from "@/lib/mock-data";
+import { useAuthStore } from "@/stores";
 
 export default function LoginOrganizationPage() {
   const router = useRouter();
-  const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
+  const { selectedOrganization, setSelectedOrganization } = useAuthStore();
 
   const handleContinue = () => {
-    if (!selectedOrg) return;
+    if (!selectedOrganization) return;
     router.push(ROUTES.HOME);
   };
 
@@ -30,8 +30,8 @@ export default function LoginOrganizationPage() {
         {MOCK_ORGANIZATIONS.map((org) => (
           <SelectionCard
             key={org.id}
-            selected={selectedOrg === org.id}
-            onClick={() => setSelectedOrg(org.id)}
+            selected={selectedOrganization === org.id}
+            onClick={() => setSelectedOrganization(org.id)}
             avatar={org.code.slice(0, 2)}
             title={org.name}
             subtitle={org.code}
@@ -39,7 +39,7 @@ export default function LoginOrganizationPage() {
         ))}
       </div>
 
-      <Button onClick={handleContinue} disabled={!selectedOrg} className="mt-6 h-12 w-full">
+      <Button onClick={handleContinue} disabled={!selectedOrganization} className="mt-6 h-12 w-full">
         Tiếp tục
       </Button>
     </AuthCard>

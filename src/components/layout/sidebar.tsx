@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useSidebarStore } from "@/stores";
 
 interface SidebarProps {
     className?: string;
@@ -17,7 +18,7 @@ interface SidebarItemProps {
 }
 
 export function Sidebar({ className, children }: SidebarProps) {
-    const [isCollapsed, setIsCollapsed] = React.useState(false);
+    const { isCollapsed, toggle } = useSidebarStore();
 
     return (
         <aside
@@ -32,7 +33,7 @@ export function Sidebar({ className, children }: SidebarProps) {
                     <span className="text-lg font-semibold">Menu</span>
                 )}
                 <button
-                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    onClick={toggle}
                     className="rounded-md p-2 hover:bg-muted"
                     aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >

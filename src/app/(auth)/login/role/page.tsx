@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/auth-card";
 import { RoleCard } from "@/components/auth/role-card";
 import type { RoleType } from "@/components/auth/role-card";
 import { Button } from "@/components/ui/button";
 import { AUTH_ROUTES } from "@/lib/routes";
+import { useAuthStore } from "@/stores";
 
 const roleRoutes: Record<RoleType, string> = {
   student: AUTH_ROUTES.LOGIN_ORGANIZATION,
@@ -17,7 +17,7 @@ const roleRoutes: Record<RoleType, string> = {
 
 export default function LoginRolePage() {
   const router = useRouter();
-  const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
+  const { selectedRole, setSelectedRole } = useAuthStore();
 
   const handleContinue = () => {
     if (!selectedRole) return;
