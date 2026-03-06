@@ -8,6 +8,10 @@ const config: Config = {
     ],
     theme: {
         extend: {
+            fontFamily: {
+                code: ["Consolas", "'Cascadia Code'", "Menlo", "Monaco", "'Courier New'", "monospace"],
+                ui:   ["-apple-system", "BlinkMacSystemFont", "'SF Pro Text'", "system-ui", "sans-serif"],
+            },
             colors: {
                 primary: {
                     50: "#f0f9ff",
