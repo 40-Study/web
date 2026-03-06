@@ -64,6 +64,37 @@ body {
   }
 }
 
+/* ─── Code Sandbox ─────────────────────────────────────────────────────────── */
+.cs-editor {
+  --font-mono: 'Consolas', 'Cascadia Code', 'Menlo', 'Monaco', 'Courier New', monospace;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+}
+.cs-editor *, .cs-editor *::before, .cs-editor *::after {
+  box-sizing: border-box;
+}
+.cs-editor ::-webkit-scrollbar { width: 8px; height: 8px; }
+.cs-editor ::-webkit-scrollbar-track { background: transparent; }
+.cs-editor ::-webkit-scrollbar-thumb {
+  background: var(--t-scroll-thumb);
+  border-radius: 0;
+}
+.cs-editor ::-webkit-scrollbar-thumb:hover { background: var(--t-scroll-hover); }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.cs-editor .frow   { border-radius: 6px; }
+.cs-editor .frow:hover { background: var(--t-row-hover) !important; }
+.cs-editor .frow.sel   { background: var(--t-ac28) !important; }
+.cs-editor .ibtn:hover { background: var(--t-ibtn-hover) !important; }
+.cs-editor select option { background: var(--t-select-bg); color: var(--t-text); }
+.cs-editor textarea:focus,
+.cs-editor input:focus,
+.cs-editor select:focus { outline: none; }
+
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
