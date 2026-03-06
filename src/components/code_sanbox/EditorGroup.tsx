@@ -1,6 +1,7 @@
 ﻿"use client";
 import { memo, useCallback, useState } from "react";
-import EditorPane from "./EditorPane";
+import dynamic from "next/dynamic";
+const EditorPane = dynamic(() => import("./EditorPane"), { ssr: false });
 import { fileIconData } from "./lib/fileIcons";
 import { BOILERPLATES, LANGUAGES } from "./config/languages";
 import type { Theme, EditorState, TabItem } from "./types";
