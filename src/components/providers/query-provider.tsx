@@ -1,18 +1,20 @@
 "use client";
 
+/**
+ * React Query provider wrapper
+ */
+
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "sonner";
 import { queryClient } from "@/lib/query-client";
 
-interface ProvidersProps {
+interface QueryProviderProps {
   children: React.ReactNode;
 }
 
-export function Providers({ children }: ProvidersProps) {
+export function QueryProvider({ children }: QueryProviderProps) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <Toaster position="top-right" richColors closeButton />
     </QueryClientProvider>
   );
 }

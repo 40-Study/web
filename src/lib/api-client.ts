@@ -1,107 +1,160 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
-import { ApiError, ApiResponse } from "@/types/api";
+/**
+ * Axios API client with token refresh and error normalization
+ */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import {
+  ApiError,
+  AuthError,
+  ForbiddenError,
+  ValidationError,
+  NetworkError,
+  RateLimitError,
+  NotFoundError,
+} from "./errors";
 
-const axiosInstance: AxiosInstance = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-        "Content-Type": "application/json",
-    },
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+// Create axios instance
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true, // Cookie-based refresh token
+  timeout: 15_000,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-axiosInstance.interceptors.request.use((config) => {
-    // Add auth token if available
-    const token =
-        typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+// Token refresh state
+let refreshPromise: Promise<string> | null = null;
+
+/**
+ * Get token from auth store (lazy import to avoid circular deps)
+ */
+function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem("auth-storage");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return parsed.state?.token || null;
     }
-    return config;
-});
-
-axiosInstance.interceptors.response.use(
-    (response) => response,
-    (error) => Promise.reject(error)
-);
-
-class ApiClient {
-    private instance: AxiosInstance;
-
-    constructor(instance: AxiosInstance) {
-        this.instance = instance;
-    }
-
-    private async request<T>(
-        config: AxiosRequestConfig
-    ): Promise<ApiResponse<T>> {
-        try {
-            const response = await this.instance.request<T>(config);
-            return { data: response.data, error: null };
-        } catch (error) {
-            if (axios.isAxiosError(error)) {
-                const apiError: ApiError = {
-                    message:
-                        error.response?.data?.message || error.message || "Có lỗi xảy ra",
-                    statusCode: error.response?.status || 0,
-                    errors: error.response?.data?.errors,
-                };
-                return { data: null as T, error: apiError };
-            }
-            return {
-                data: null as T,
-                error: {
-                    message: error instanceof Error ? error.message : "Network error",
-                    statusCode: 0,
-                },
-            };
-        }
-    }
-
-    async get<T>(
-        endpoint: string,
-        config?: { params?: Record<string, string> }
-    ) {
-        return this.request<T>({ url: endpoint, method: "GET", ...config });
-    }
-
-    async post<T>(
-        endpoint: string,
-        data?: unknown,
-        config?: AxiosRequestConfig
-    ) {
-        return this.request<T>({ url: endpoint, method: "POST", data, ...config });
-    }
-
-    async put<T>(
-        endpoint: string,
-        data?: unknown,
-        config?: AxiosRequestConfig
-    ) {
-        return this.request<T>({ url: endpoint, method: "PUT", data, ...config });
-    }
-
-    async patch<T>(
-        endpoint: string,
-        data?: unknown,
-        config?: AxiosRequestConfig
-    ) {
-        return this.request<T>({
-            url: endpoint,
-            method: "PATCH",
-            data,
-            ...config,
-        });
-    }
-
-    async delete<T>(endpoint: string, config?: AxiosRequestConfig) {
-        return this.request<T>({
-            url: endpoint,
-            method: "DELETE",
-            ...config,
-        });
-    }
+  } catch {
+    return null;
+  }
+  return null;
 }
 
-export { axiosInstance };
-export const apiClient = new ApiClient(axiosInstance);
+/**
+ * Set token in auth store
+ */
+function setToken(token: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const stored = localStorage.getItem("auth-storage");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      parsed.state.token = token;
+      localStorage.setItem("auth-storage", JSON.stringify(parsed));
+    }
+  } catch {
+    // Ignore
+  }
+}
+
+/**
+ * Clear auth state
+ */
+function clearAuth(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("auth-storage");
+  window.location.href = "/login";
+}
+
+/**
+ * Refresh the access token
+ */
+async function refreshToken(): Promise<string> {
+  const response = await axios.post(
+    `${API_BASE_URL}/auth/refresh`,
+    {},
+    { withCredentials: true }
+  );
+  const newToken = response.data.access_token;
+  setToken(newToken);
+  return newToken;
+}
+
+// Request interceptor: attach access token
+api.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Response interceptor: error normalization + token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError<{ code?: string; message?: string; details?: Record<string, string[]> }>) => {
+    // Network error
+    if (!error.response) {
+      throw new NetworkError();
+    }
+
+    const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const { status, data } = error.response;
+
+    // Handle 401: try refresh token
+    if (status === 401 && !original._retry) {
+      original._retry = true;
+
+      try {
+        // Deduplicate: all concurrent 401s share one refresh call
+        if (!refreshPromise) {
+          refreshPromise = refreshToken().finally(() => {
+            refreshPromise = null;
+          });
+        }
+
+        const newToken = await refreshPromise;
+        original.headers.Authorization = `Bearer ${newToken}`;
+        return api(original);
+      } catch {
+        // Refresh failed, clear auth and redirect
+        clearAuth();
+        throw new AuthError(data?.message);
+      }
+    }
+
+    // Normalize other errors
+    switch (status) {
+      case 401:
+        throw new AuthError(data?.message);
+      case 403:
+        throw new ForbiddenError(data?.message);
+      case 404:
+        throw new NotFoundError(data?.message);
+      case 422:
+        throw new ValidationError(data?.details ?? {});
+      case 429:
+        throw new RateLimitError();
+      default:
+        throw new ApiError(
+          status,
+          data?.code ?? "UNKNOWN",
+          data?.message ?? "Something went wrong"
+        );
+    }
+  }
+);
+
+// Legacy support: ApiClient class (deprecated, use api directly)
+export const apiClient = {
+  get: <T>(url: string, config?: object) => api.get<T>(url, config).then((r) => r.data),
+  post: <T>(url: string, data?: unknown, config?: object) => api.post<T>(url, data, config).then((r) => r.data),
+  put: <T>(url: string, data?: unknown, config?: object) => api.put<T>(url, data, config).then((r) => r.data),
+  patch: <T>(url: string, data?: unknown, config?: object) => api.patch<T>(url, data, config).then((r) => r.data),
+  delete: <T>(url: string, config?: object) => api.delete<T>(url, config).then((r) => r.data),
+};
