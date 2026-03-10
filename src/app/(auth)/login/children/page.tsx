@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/auth-card";
 import { SelectionCard } from "@/components/auth/selection-card";
@@ -11,9 +12,16 @@ import { useAuthStore } from "@/stores";
 export default function LoginChildrenPage() {
   const router = useRouter();
   const { selectedChild, setSelectedChild } = useAuthStore();
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(
+    selectedChild?.id ?? null
+  );
 
   const handleContinue = () => {
-    if (!selectedChild) return;
+    if (!selectedChildId) return;
+    const child = MOCK_CHILDREN.find((c) => c.id === selectedChildId);
+    if (child) {
+      setSelectedChild({ id: child.id, name: child.name, avatar: child.avatar });
+    }
     router.push(ROUTES.HOME);
   };
 
@@ -28,8 +36,8 @@ export default function LoginChildrenPage() {
         {MOCK_CHILDREN.map((child) => (
           <SelectionCard
             key={child.id}
-            selected={selectedChild === child.id}
-            onClick={() => setSelectedChild(child.id)}
+            selected={selectedChildId === child.id}
+            onClick={() => setSelectedChildId(child.id)}
             avatar={child.avatar}
             title={child.name}
             subtitle={child.grade}
@@ -38,7 +46,7 @@ export default function LoginChildrenPage() {
         ))}
       </div>
 
-      <Button onClick={handleContinue} disabled={!selectedChild} className="mt-6 h-12 w-full">
+      <Button onClick={handleContinue} disabled={!selectedChildId} className="mt-6 h-12 w-full">
         Tiếp tục
       </Button>
     </AuthCard>

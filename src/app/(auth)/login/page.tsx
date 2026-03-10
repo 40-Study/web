@@ -2,27 +2,27 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/auth-card";
 import { SocialLoginButton } from "@/components/auth/social-login-button";
 import { AuthFooterLink } from "@/components/auth/auth-footer-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AUTH_ROUTES } from "@/lib/routes";
-import { useAuthStore } from "@/stores";
+import { useLogin } from "@/hooks/queries/use-auth";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { login } = useAuthStore();
+  const loginMutation = useLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Replace with actual API call
-    login({ email, name: email }, "mock-token");
-    router.push(AUTH_ROUTES.LOGIN_ROLE);
+    loginMutation.mutate({
+      email,
+      password,
+      device_name: navigator.userAgent.slice(0, 50),
+    });
   };
 
   return (
@@ -68,8 +68,12 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <Button type="submit" className="h-12 w-full">
-          Đăng nhập
+        <Button
+          type="submit"
+          className="h-12 w-full"
+          disabled={loginMutation.isPending}
+        >
+          {loginMutation.isPending ? "Đang đăng nhập..." : "Đăng nhập"}
         </Button>
       </form>
 

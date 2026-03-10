@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/auth-card";
 import { RoleCard } from "@/components/auth/role-card";
@@ -17,10 +18,14 @@ const roleRoutes: Record<RoleType, string> = {
 
 export default function LoginRolePage() {
   const router = useRouter();
-  const { selectedRole, setSelectedRole } = useAuthStore();
+  const { activeRole, setActiveRole } = useAuthStore();
+  const [selectedRole, setSelectedRole] = useState<RoleType | null>(
+    activeRole as RoleType | null
+  );
 
   const handleContinue = () => {
     if (!selectedRole) return;
+    setActiveRole(selectedRole);
     router.push(roleRoutes[selectedRole]);
   };
 
