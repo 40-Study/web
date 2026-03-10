@@ -15,12 +15,12 @@ export const navItems = [
         href: "/",
     },
     {
-        title: "Giới thiệu",
-        href: "/about",
+        title: "Khóa học",
+        href: "/courses",
     },
     {
-        title: "Dịch vụ",
-        href: "/services",
+        title: "Giới thiệu",
+        href: "/about",
     },
     {
         title: "Liên hệ",
