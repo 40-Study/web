@@ -14,19 +14,19 @@ const config: Config = {
         ui: ["-apple-system", "BlinkMacSystemFont", "'SF Pro Text'", "system-ui", "sans-serif"],
       },
       colors: {
-        // Primary colors from PDF requirements (blue-500 based)
+        // Primary colors - Sky/Cyan (energetic, modern, student-friendly)
         primary: {
-          50: "#eff6ff",
-          100: "#dbeafe",
-          200: "#bfdbfe",
-          300: "#93c5fd",
-          400: "#60a5fa",
-          500: "#3B82F6", // PDF: primary
-          600: "#2563eb",
-          700: "#1d4ed8",
-          800: "#1e40af",
-          900: "#1e3a8a",
-          950: "#172554",
+          50: "#f0f9ff",
+          100: "#e0f2fe",
+          200: "#bae6fd",
+          300: "#7dd3fc",
+          400: "#38bdf8",
+          500: "#0EA5E9", // Sky-500: main primary
+          600: "#0284c7",
+          700: "#0369a1",
+          800: "#075985",
+          900: "#0c4a6e",
+          950: "#082f49",
         },
         secondary: {
           50: "#faf5ff",
@@ -68,7 +68,7 @@ const config: Config = {
         success: "#10B981", // PDF: emerald-500
         warning: "#F59E0B", // PDF: amber-500
         destructive: "#EF4444", // PDF: red-500
-        info: "#3B82F6", // PDF: blue-500
+        info: "#0EA5E9", // Sky-500
         // Surface colors from PDF
         surface: "#F8FAFC", // PDF: slate-50
         foreground: "#0F172A", // PDF: slate-900

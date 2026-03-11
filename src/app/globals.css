@@ -5,15 +5,15 @@
 :root {
   --radius: 0.5rem;
 
-  /* PDF Design System Colors */
+  /* Design System Colors - Sky/Cyan (energetic, student-friendly) */
   --background: 210 40% 98%; /* #F8FAFC slate-50 */
   --foreground: 222 47% 11%; /* #0F172A slate-900 */
   --card: 0 0% 100%;
   --card-foreground: 222 47% 11%; /* #0F172A slate-900 */
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%; /* #0F172A slate-900 */
-  --primary: 217 91% 60%; /* #3B82F6 blue-500 */
-  --primary-foreground: 210 40% 98%;
+  --primary: 199 89% 48%; /* #0EA5E9 sky-500 */
+  --primary-foreground: 0 0% 100%;
   --secondary: 271 91% 65%;
   --secondary-foreground: 222 47% 11%;
   --muted: 210 40% 96%;
@@ -24,7 +24,7 @@
   --destructive-foreground: 210 40% 98%;
   --border: 214 32% 91%; /* #E2E8F0 slate-200 */
   --input: 214 32% 91%; /* #E2E8F0 slate-200 */
-  --ring: 217 91% 60%; /* #3B82F6 blue-500 */
+  --ring: 199 89% 48%; /* #0EA5E9 sky-500 */
 
   /* Gamification Colors */
   --xp-green: 142 71% 45%; /* #22c55e */
@@ -67,8 +67,8 @@
   --card-foreground: 210 40% 98%;
   --popover: 217 33% 17%;
   --popover-foreground: 210 40% 98%;
-  --primary: 217 91% 60%; /* #3B82F6 blue-500 */
-  --primary-foreground: 222 47% 11%;
+  --primary: 199 89% 48%; /* #0EA5E9 sky-500 */
+  --primary-foreground: 0 0% 100%;
   --secondary: 271 91% 65%;
   --secondary-foreground: 210 40% 98%;
   --muted: 217 33% 17%;
@@ -79,7 +79,7 @@
   --destructive-foreground: 210 40% 98%;
   --border: 217 33% 17%;
   --input: 217 33% 17%;
-  --ring: 217 91% 60%;
+  --ring: 199 89% 48%;
 
   /* Gamification Colors (brighter for dark mode) */
   --xp-green: 142 71% 55%;
@@ -205,7 +205,7 @@ html {
   /* Global focus-visible styles for keyboard navigation */
   *:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(217 91% 60%);
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(199 89% 48%);
   }
 
   /* High contrast focus for interactive elements */
@@ -216,12 +216,12 @@ html {
   select:focus-visible,
   textarea:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(217 91% 60%);
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(199 89% 48%);
   }
 
   /* Focus within for container elements */
   .focus-within-ring:focus-within {
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(217 91% 60%);
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(199 89% 48%);
   }
 }
 
