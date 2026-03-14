@@ -55,60 +55,75 @@ export interface MarkAttendanceDTO {
   note?: string;
 }
 
+export interface BulkAttendanceDTO {
+  date: string;
+  records: MarkAttendanceDTO[];
+}
+
 export const classService = {
   // Classes
   list: (orgId?: string) =>
-    api.get<{ classes: Class[] }>("/classes", { params: orgId ? { org_id: orgId } : {} }).then((r) => r.data),
+    api.get<{ message: string; data: { classes: Class[] } }>("/classes", { params: orgId ? { organization_id: orgId } : {} })
+      .then((r) => r.data.data.classes),
 
   getById: (id: string) =>
-    api.get<Class>(`/classes/${id}`).then((r) => r.data),
+    api.get<{ message: string; data: Class }>(`/classes/${id}`).then((r) => r.data.data),
 
   create: (data: CreateClassDTO) =>
-    api.post<Class>("/classes", data).then((r) => r.data),
+    api.post<{ message: string; data: Class }>("/classes", data).then((r) => r.data.data),
 
   update: (id: string, data: Partial<CreateClassDTO>) =>
-    api.put<Class>(`/classes/${id}`, data).then((r) => r.data),
+    api.put<{ message: string; data: Class }>(`/classes/${id}`, data).then((r) => r.data.data),
 
   delete: (id: string) =>
-    api.delete<void>(`/classes/${id}`).then((r) => r.data),
+    api.delete<{ message: string }>(`/classes/${id}`).then((r) => r.data),
 
   // Teachers
   assignTeacher: (classId: string, teacherId: string) =>
-    api.post<void>(`/classes/${classId}/teachers`, { teacher_id: teacherId }).then((r) => r.data),
+    api.post<{ message: string }>(`/classes/${classId}/teachers`, { teacher_id: teacherId }).then((r) => r.data),
 
   removeTeacher: (classId: string, teacherId: string) =>
-    api.delete<void>(`/classes/${classId}/teachers/${teacherId}`).then((r) => r.data),
+    api.delete<{ message: string }>(`/classes/${classId}/teachers/${teacherId}`).then((r) => r.data),
 
   // Students
   enrollStudent: (classId: string, studentId: string) =>
-    api.post<void>(`/classes/${classId}/students`, { student_id: studentId }).then((r) => r.data),
+    api.post<{ message: string }>(`/classes/${classId}/students`, { student_id: studentId }).then((r) => r.data),
 
   removeStudent: (classId: string, studentId: string) =>
-    api.delete<void>(`/classes/${classId}/students/${studentId}`).then((r) => r.data),
+    api.delete<{ message: string }>(`/classes/${classId}/students/${studentId}`).then((r) => r.data),
 
   getStudents: (classId: string) =>
-    api.get<{ students: { id: string; name: string; email: string }[] }>(`/classes/${classId}/students`).then((r) => r.data),
+    api.get<{ message: string; data: { students: { id: string; name: string; email: string }[] } }>(
+      `/classes/${classId}/students`
+    ).then((r) => r.data.data.students),
 
   // Schedules
   getSchedules: (classId: string) =>
-    api.get<{ schedules: Schedule[] }>(`/classes/${classId}/schedules`).then((r) => r.data),
+    api.get<{ message: string; data: { schedules: Schedule[] } }>(`/classes/${classId}/schedules`)
+      .then((r) => r.data.data.schedules),
 
   createSchedule: (classId: string, data: CreateScheduleDTO) =>
-    api.post<Schedule>(`/classes/${classId}/schedules`, data).then((r) => r.data),
+    api.post<{ message: string; data: Schedule }>(`/classes/${classId}/schedules`, data)
+      .then((r) => r.data.data),
 
   updateSchedule: (classId: string, scheduleId: string, data: Partial<CreateScheduleDTO>) =>
-    api.put<Schedule>(`/classes/${classId}/schedules/${scheduleId}`, data).then((r) => r.data),
+    api.put<{ message: string; data: Schedule }>(`/classes/${classId}/schedules/${scheduleId}`, data)
+      .then((r) => r.data.data),
 
   deleteSchedule: (classId: string, scheduleId: string) =>
-    api.delete<void>(`/classes/${classId}/schedules/${scheduleId}`).then((r) => r.data),
+    api.delete<{ message: string }>(`/classes/${classId}/schedules/${scheduleId}`).then((r) => r.data),
 
-  // Attendance
+  // Attendance - Backend expects bulk DTO
   getAttendance: (classId: string, date: string) =>
-    api.get<{ attendance: Attendance[] }>(`/classes/${classId}/attendances`, { params: { date } }).then((r) => r.data),
+    api.get<{ message: string; data: { attendance: Attendance[] } }>(
+      `/classes/${classId}/attendances`, { params: { date } }
+    ).then((r) => r.data.data.attendance),
 
-  markAttendance: (classId: string, data: MarkAttendanceDTO) =>
-    api.post<Attendance>(`/classes/${classId}/attendances`, data).then((r) => r.data),
+  markAttendance: (classId: string, data: BulkAttendanceDTO) =>
+    api.post<{ message: string; data: { attendance: Attendance[] } }>(`/classes/${classId}/attendances`, data)
+      .then((r) => r.data.data.attendance),
 
   updateAttendance: (classId: string, attendanceId: string, data: Partial<MarkAttendanceDTO>) =>
-    api.put<Attendance>(`/classes/${classId}/attendances/${attendanceId}`, data).then((r) => r.data),
+    api.put<{ message: string; data: Attendance }>(`/classes/${classId}/attendances/${attendanceId}`, data)
+      .then((r) => r.data.data),
 };

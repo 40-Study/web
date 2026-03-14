@@ -14,6 +14,7 @@ interface User {
 interface Organization {
   id: string;
   name: string;
+  code?: string;
   logo?: string;
 }
 

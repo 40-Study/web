@@ -8,6 +8,7 @@ import type { RoleType } from "@/components/auth/role-card";
 import { Button } from "@/components/ui/button";
 import { AUTH_ROUTES } from "@/lib/routes";
 import { useAuthStore } from "@/stores";
+import { useSelectProfile } from "@/hooks/queries/use-auth";
 
 const roleRoutes: Record<RoleType, string> = {
   student: AUTH_ROUTES.LOGIN_ORGANIZATION,
@@ -18,15 +19,24 @@ const roleRoutes: Record<RoleType, string> = {
 
 export default function LoginRolePage() {
   const router = useRouter();
-  const { activeRole, setActiveRole } = useAuthStore();
-  const [selectedRole, setSelectedRole] = useState<RoleType | null>(
-    activeRole as RoleType | null
+  const { systemRoles, activeRole, setActiveRole } = useAuthStore();
+  const selectProfile = useSelectProfile();
+  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(
+    systemRoles[0] || activeRole
   );
 
-  const handleContinue = () => {
-    if (!selectedRole) return;
-    setActiveRole(selectedRole);
-    router.push(roleRoutes[selectedRole]);
+  const handleContinue = async () => {
+    if (!selectedRoleId) return;
+    
+    try {
+      await selectProfile.mutateAsync(selectedRoleId);
+      setActiveRole(selectedRoleId);
+      
+      const route = roleRoutes[selectedRoleId as RoleType] || AUTH_ROUTES.LOGIN_ORGANIZATION;
+      router.push(route);
+    } catch (error) {
+      console.error("Failed to select profile:", error);
+    }
   };
 
   return (
@@ -37,18 +47,28 @@ export default function LoginRolePage() {
       <p className="mb-6 text-center text-sm text-gray-500">Chọn vai trò của bạn để tiếp tục</p>
 
       <div className="space-y-3" role="radiogroup" aria-label="Chọn vai trò">
-        {(["student", "parent", "teacher", "admin"] as RoleType[]).map((role) => (
-          <RoleCard
-            key={role}
-            role={role}
-            selected={selectedRole === role}
-            onClick={() => setSelectedRole(role)}
-          />
-        ))}
+        {systemRoles.length > 0 ? (
+          systemRoles.map((roleId) => (
+            <RoleCard
+              key={roleId}
+              role={roleId as RoleType}
+              selected={selectedRoleId === roleId}
+              onClick={() => setSelectedRoleId(roleId)}
+            />
+          ))
+        ) : (
+          <p className="text-center text-sm text-gray-500">
+            Không tìm thấy vai trò nào. Vui lòng đăng nhập lại.
+          </p>
+        )}
       </div>
 
-      <Button onClick={handleContinue} disabled={!selectedRole} className="mt-6 h-12 w-full">
-        Tiếp tục
+      <Button 
+        onClick={handleContinue} 
+        disabled={!selectedRoleId || selectProfile.isPending} 
+        className="mt-6 h-12 w-full"
+      >
+        {selectProfile.isPending ? "Đang xử lý..." : "Tiếp tục"}
       </Button>
     </AuthCard>
   );

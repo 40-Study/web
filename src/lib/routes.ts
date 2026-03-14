@@ -16,5 +16,6 @@ export const AUTH_ROUTES = {
 
 export const ROUTES = {
   HOME: "/",
+  DASHBOARD: "/dashboard",
   ...AUTH_ROUTES,
 } as const;

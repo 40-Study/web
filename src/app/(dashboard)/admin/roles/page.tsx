@@ -24,12 +24,12 @@ export default function RolesPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {rolesData?.roles.map((role) => (
+              {rolesData?.map((role) => (
                 <div key={role.id} className="rounded-lg bg-white p-4 shadow-sm">
                   <div className="flex items-center justify-between">
                     <h3 className="font-medium text-gray-900">{role.name}</h3>
                     <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
-                      {role.user_count} users
+                      {role.user_count || 0} users
                     </span>
                   </div>
                   {role.description && (
@@ -62,7 +62,7 @@ export default function RolesPage() {
             <h2 className="mb-4 text-lg font-semibold text-gray-800">Quyền hệ thống</h2>
             <div className="rounded-lg bg-white p-4 shadow-sm">
               <div className="max-h-96 space-y-2 overflow-auto">
-                {permsData?.permissions.map((perm) => (
+                {permsData?.map((perm) => (
                   <div
                     key={perm.id}
                     className="flex items-center justify-between border-b border-gray-100 py-2 last:border-0"

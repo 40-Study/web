@@ -103,7 +103,7 @@ export default function ClassroomPage({ params }: Props) {
           {activePanel === "chat" && (
             <div className="flex h-full flex-col">
               <div className="flex-1 space-y-3 overflow-auto">
-                {messagesData?.messages.map((msg) => (
+                {messagesData?.map((msg) => (
                   <div key={msg.id} className="rounded-lg bg-gray-700 p-3">
                     <div className="text-sm font-medium text-white">
                       {msg.sender_name}
@@ -113,7 +113,7 @@ export default function ClassroomPage({ params }: Props) {
                     </div>
                   </div>
                 ))}
-                {(!messagesData?.messages || messagesData.messages.length === 0) && (
+                {(!messagesData || messagesData.length === 0) && (
                   <p className="text-center text-sm text-gray-500">
                     Chưa có tin nhắn
                   </p>
@@ -136,7 +136,7 @@ export default function ClassroomPage({ params }: Props) {
 
           {activePanel === "assignments" && (
             <div className="space-y-3">
-              {assignmentsData?.assignments.map((assignment) => (
+              {assignmentsData?.map((assignment) => (
                 <div key={assignment.id} className="rounded-lg bg-gray-700 p-4">
                   <h3 className="font-medium text-white">{assignment.title}</h3>
                   <p className="mt-1 text-sm text-gray-400">
@@ -149,7 +149,7 @@ export default function ClassroomPage({ params }: Props) {
                   )}
                 </div>
               ))}
-              {(!assignmentsData?.assignments || assignmentsData.assignments.length === 0) && (
+              {(!assignmentsData || assignmentsData.length === 0) && (
                 <p className="text-center text-sm text-gray-500">
                   Chưa có bài tập
                 </p>

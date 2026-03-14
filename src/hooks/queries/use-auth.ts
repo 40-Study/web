@@ -81,14 +81,17 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: authService.login,
-    onSuccess: (data) => {
-      login(data.user, data.session_token, data.system_roles);
-      setSystemRoles(data.system_roles);
+    onSuccess: (response) => {
+      const { session_token, system_roles, user } = response.data;
+      const roleNames = system_roles.map(r => r.name);
+      
+      login(user, session_token, roleNames);
+      setSystemRoles(roleNames);
 
       // Navigate based on roles
-      if (data.system_roles.length > 1) {
+      if (system_roles.length > 1) {
         router.push("/login/role");
-      } else if (data.system_roles.length === 1) {
+      } else if (system_roles.length === 1) {
         // Auto-select single role
         router.push("/login/organization");
       }
@@ -127,12 +130,18 @@ export function useRegister() {
 
 /** Select profile/role */
 export function useSelectProfile() {
-  const { setOrganizations } = useAuthStore();
+  const { setOrganizations, token, systemRoles } = useAuthStore();
 
   return useMutation({
-    mutationFn: authService.selectProfile,
-    onSuccess: (data) => {
-      setOrganizations(data.organizations);
+    mutationFn: async (roleId: string) => {
+      if (!token) throw new Error("No session token");
+      return authService.selectProfile({
+        session_token: token,
+        system_role_id: roleId,
+      });
+    },
+    onSuccess: (response) => {
+      setOrganizations(response.data.organizations);
     },
   });
 }
@@ -145,8 +154,9 @@ export function useSelectOrg() {
 
   return useMutation({
     mutationFn: authService.selectOrg,
-    onSuccess: async (data) => {
-      setToken(data.access_token);
+    onSuccess: async (response) => {
+      const accessToken = response.data.access_token;
+      setToken(accessToken);
       // Fetch permissions after getting token
       const me = await authService.getMe();
       setPermissions(me.permissions as Permission[]);
@@ -178,15 +188,12 @@ export function useLogout() {
   });
 }
 
-/** Logout specific device */
+/** Logout specific device - Note: Backend does not support this, use logoutAll instead */
 export function useLogoutDevice() {
-  const qc = useQueryClient();
-
   return useMutation({
-    mutationFn: authService.logoutDevice,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: authKeys.devices() });
-      toast.success("Thiết bị đã được đăng xuất");
+    mutationFn: async (_deviceId: string) => {
+      toast.info("Tính năng đăng xuất từng thiết bị chưa được hỗ trợ");
+      throw new Error("Not supported");
     },
   });
 }

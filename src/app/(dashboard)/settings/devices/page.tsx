@@ -1,11 +1,10 @@
 "use client";
 
-import { useDevices, useLogoutDevice, useLogoutAll } from "@/hooks/queries/use-auth";
+import { useDevices, useLogoutAll } from "@/hooks/queries/use-auth";
 import { Button } from "@/components/ui/button";
 
 export default function DevicesPage() {
   const { data, isLoading } = useDevices();
-  const logoutDevice = useLogoutDevice();
   const logoutAll = useLogoutAll();
 
   if (isLoading) {
@@ -41,12 +40,12 @@ export default function DevicesPage() {
       <div className="space-y-4">
         {devices.map((device) => (
           <div
-            key={device.id}
+            key={device.device_id}
             className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm"
           >
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-900">{device.name}</span>
+                <span className="font-medium text-gray-900">{device.device_name}</span>
                 {device.is_current && (
                   <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
                     Thiết bị này
@@ -54,20 +53,9 @@ export default function DevicesPage() {
                 )}
               </div>
               <p className="mt-1 text-sm text-gray-500">
-                {device.ip_address} • Hoạt động {device.last_active}
+                {device.ip_address || "Không rõ"} • Hoạt động {device.logged_in_at}
               </p>
             </div>
-
-            {!device.is_current && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => logoutDevice.mutate(device.id)}
-                disabled={logoutDevice.isPending}
-              >
-                Đăng xuất
-              </Button>
-            )}
           </div>
         ))}
 

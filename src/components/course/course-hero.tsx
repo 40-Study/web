@@ -157,6 +157,7 @@ export function CourseHero({
                   size="lg"
                   variant="outline"
                   className="text-white border-white hover:bg-white/10"
+                  aria-label="Lưu vào danh sách yêu thích"
                 >
                   <Heart className="h-5 w-5" />
                 </Button>

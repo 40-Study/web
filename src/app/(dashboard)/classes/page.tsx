@@ -76,7 +76,7 @@ export default function ClassesPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {data?.classes.map((cls) => (
+          {data?.map((cls) => (
             <Link
               key={cls.id}
               href={`/classes/${cls.id}`}
@@ -90,7 +90,7 @@ export default function ClassesPage() {
               </div>
             </Link>
           ))}
-          {data?.classes.length === 0 && (
+          {data?.length === 0 && (
             <div className="col-span-2 rounded-xl bg-white p-8 text-center shadow-sm">
               <p className="text-gray-500">Chưa có lớp học nào</p>
             </div>

@@ -21,7 +21,9 @@ export default function LoginPage() {
     loginMutation.mutate({
       email,
       password,
-      device_name: navigator.userAgent.slice(0, 50),
+      device_info: {
+        name: navigator.userAgent.slice(0, 50) || "Unknown Device",
+      },
     });
   };
 
