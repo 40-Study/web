@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { AuthCard } from "@/components/auth/auth-card";
 import { SocialLoginButton } from "@/components/auth/social-login-button";
 import { AuthFooterLink } from "@/components/auth/auth-footer-link";
@@ -25,6 +26,10 @@ export default function LoginPage() {
         name: navigator.userAgent.slice(0, 50) || "Unknown Device",
       },
     });
+  };
+
+  const showComingSoonToast = () => {
+    toast.info("Tính năng đang phát triển");
   };
 
   return (
@@ -86,10 +91,10 @@ export default function LoginPage() {
       </div>
 
       <div className="grid grid-cols-4 gap-3">
-        <SocialLoginButton provider="google" />
-        <SocialLoginButton provider="facebook" />
-        <SocialLoginButton provider="apple" />
-        <SocialLoginButton provider="github" />
+        <SocialLoginButton provider="google" onClick={showComingSoonToast} />
+        <SocialLoginButton provider="facebook" onClick={showComingSoonToast} />
+        <SocialLoginButton provider="apple" onClick={showComingSoonToast} />
+        <SocialLoginButton provider="github" onClick={showComingSoonToast} />
       </div>
 
       <AuthFooterLink

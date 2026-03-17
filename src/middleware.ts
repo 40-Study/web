@@ -22,10 +22,6 @@ const TEACHER_ROUTES = ["/classes", "/classroom"];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Get token from cookie (preferred) or check localStorage marker
-  const token = request.cookies.get("access_token")?.value;
-  const hasSession = request.cookies.get("has_session")?.value === "true";
-
   // Allow public routes
   const isPublicRoute = PUBLIC_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
@@ -44,13 +40,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // No authentication → redirect to login
-  if (!token && !hasSession) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
+  // Note: Auth protection is handled client-side by RoleGuard in (dashboard)/layout.tsx
+  // Middleware cannot access localStorage, so we don't check auth state here
   return NextResponse.next();
 }
 

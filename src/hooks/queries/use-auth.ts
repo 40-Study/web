@@ -76,24 +76,33 @@ export function useChildren() {
 
 /** Login mutation */
 export function useLogin() {
-  const { login, setSystemRoles } = useAuthStore();
+  const { login, setSystemRoles, setToken, setSessionToken, setOrganizations } = useAuthStore();
   const router = useRouter();
 
   return useMutation({
     mutationFn: authService.login,
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       const { session_token, system_roles, user } = response.data;
-      const roleNames = system_roles.map(r => r.name);
-      
-      login(user, session_token, roleNames);
-      setSystemRoles(roleNames);
+
+      login(user, system_roles);         // store full role objects, no token
+      setSessionToken(session_token);    // store interim session_token separately (not the Bearer token field)
+      setSystemRoles(system_roles);      // store full objects
 
       // Navigate based on roles
       if (system_roles.length > 1) {
         router.push("/login/role");
       } else if (system_roles.length === 1) {
-        // Auto-select single role
-        router.push("/login/organization");
+        // Auto-select single role: call selectProfile FIRST, then navigate
+        try {
+          const selectResponse = await authService.selectProfile({
+            session_token: session_token,
+            system_role_id: system_roles[0].id,
+          });
+          setOrganizations(selectResponse.data.organizations);
+          router.push("/login/organization");
+        } catch {
+          toast.error("Đăng nhập thất bại");
+        }
       }
     },
     onError: () => {
@@ -130,13 +139,13 @@ export function useRegister() {
 
 /** Select profile/role */
 export function useSelectProfile() {
-  const { setOrganizations, token, systemRoles } = useAuthStore();
+  const { setOrganizations, sessionToken, systemRoles } = useAuthStore();
 
   return useMutation({
     mutationFn: async (roleId: string) => {
-      if (!token) throw new Error("No session token");
+      if (!sessionToken) throw new Error("No session token");
       return authService.selectProfile({
-        session_token: token,
+        session_token: sessionToken,
         system_role_id: roleId,
       });
     },
@@ -148,7 +157,7 @@ export function useSelectProfile() {
 
 /** Select organization */
 export function useSelectOrg() {
-  const { setToken, setPermissions } = useAuthStore();
+  const { setToken, setPermissions, setSessionToken } = useAuthStore();
   const qc = useQueryClient();
   const router = useRouter();
 
@@ -157,6 +166,7 @@ export function useSelectOrg() {
     onSuccess: async (response) => {
       const accessToken = response.data.access_token;
       setToken(accessToken);
+      setSessionToken(null);             // clear interim session token now that we have the real access token
       // Fetch permissions after getting token
       const me = await authService.getMe();
       setPermissions(me.permissions as Permission[]);

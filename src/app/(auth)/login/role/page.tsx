@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { AUTH_ROUTES } from "@/lib/routes";
 import { useAuthStore } from "@/stores";
 import { useSelectProfile } from "@/hooks/queries/use-auth";
+import type { SystemRole } from "@/services/auth.service";
 
 const roleRoutes: Record<RoleType, string> = {
   student: AUTH_ROUTES.LOGIN_ORGANIZATION,
@@ -19,20 +20,21 @@ const roleRoutes: Record<RoleType, string> = {
 
 export default function LoginRolePage() {
   const router = useRouter();
-  const { systemRoles, activeRole, setActiveRole } = useAuthStore();
+  const { systemRoles, setActiveRole } = useAuthStore();
   const selectProfile = useSelectProfile();
-  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(
-    systemRoles[0] || activeRole
+  const [selectedRole, setSelectedRole] = useState<SystemRole | null>(
+    systemRoles[0] || null
   );
 
   const handleContinue = async () => {
-    if (!selectedRoleId) return;
+    if (!selectedRole) return;
     
     try {
-      await selectProfile.mutateAsync(selectedRoleId);
-      setActiveRole(selectedRoleId);
+      await selectProfile.mutateAsync(selectedRole.id);
+      setActiveRole(selectedRole.id);
       
-      const route = roleRoutes[selectedRoleId as RoleType] || AUTH_ROUTES.LOGIN_ORGANIZATION;
+      const roleType = selectedRole.name.toLowerCase() as RoleType;
+      const route = roleRoutes[roleType] || AUTH_ROUTES.LOGIN_ORGANIZATION;
       router.push(route);
     } catch (error) {
       console.error("Failed to select profile:", error);
@@ -48,12 +50,12 @@ export default function LoginRolePage() {
 
       <div className="space-y-3" role="radiogroup" aria-label="Chọn vai trò">
         {systemRoles.length > 0 ? (
-          systemRoles.map((roleId) => (
+          systemRoles.map((role) => (
             <RoleCard
-              key={roleId}
-              role={roleId as RoleType}
-              selected={selectedRoleId === roleId}
-              onClick={() => setSelectedRoleId(roleId)}
+              key={role.id}
+              role={role.name.toLowerCase() as RoleType}
+              selected={selectedRole?.id === role.id}
+              onClick={() => setSelectedRole(role)}
             />
           ))
         ) : (
@@ -65,7 +67,7 @@ export default function LoginRolePage() {
 
       <Button 
         onClick={handleContinue} 
-        disabled={!selectedRoleId || selectProfile.isPending} 
+        disabled={!selectedRole || selectProfile.isPending} 
         className="mt-6 h-12 w-full"
       >
         {selectProfile.isPending ? "Đang xử lý..." : "Tiếp tục"}
