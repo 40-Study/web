@@ -43,10 +43,10 @@ const mockRecentActivity = [
 ];
 
 const quickActions = [
-  { icon: <Plus className="w-5 h-5" />, label: "Create Course", href: "/courses/new" },
-  { icon: <BarChart3 className="w-5 h-5" />, label: "View Analytics", href: "/analytics" },
-  { icon: <GraduationCap className="w-5 h-5" />, label: "Manage Classes", href: "/classes" },
-  { icon: <ClipboardList className="w-5 h-5" />, label: "Grade Assignments", href: "/assignments" },
+  { icon: <Plus className="w-5 h-5" />, label: "Create Course", href: "/teacher/courses" },
+  { icon: <BarChart3 className="w-5 h-5" />, label: "View Analytics", href: "/teacher/analytics" },
+  { icon: <GraduationCap className="w-5 h-5" />, label: "Manage Classes", href: "/teacher/classes" },
+  { icon: <ClipboardList className="w-5 h-5" />, label: "Grade Assignments", href: "/teacher/assignments" },
 ];
 
 export default function TeacherDashboardPage() {
@@ -108,7 +108,7 @@ export default function TeacherDashboardPage() {
               My Courses
             </CardTitle>
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/courses/manage" className="flex items-center gap-1">
+              <Link href="/teacher/courses" className="flex items-center gap-1">
                 View All
                 <ChevronRight className="w-4 h-4" />
               </Link>
@@ -119,7 +119,7 @@ export default function TeacherDashboardPage() {
               {mockCourses.map((course) => (
                 <Link
                   key={course.id}
-                  href={`/courses/${course.id}/manage`}
+                  href={`/teacher/courses`}
                   className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   <div className="flex items-center gap-3">
@@ -138,7 +138,7 @@ export default function TeacherDashboardPage() {
                 </Link>
               ))}
               <Button variant="outline" className="w-full mt-2" asChild>
-                <Link href="/courses/new" className="flex items-center gap-2">
+                <Link href="/teacher/courses" className="flex items-center gap-2">
                   <Plus className="w-4 h-4" />
                   Add New Course
                 </Link>

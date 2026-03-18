@@ -30,10 +30,10 @@ const navConfigs: Record<UserRole, NavItem[]> = {
   ],
   teacher: [
     { icon: <Home className="w-5 h-5" />, label: "Home", href: "/dashboard/teacher" },
-    { icon: <BookOpen className="w-5 h-5" />, label: "Courses", href: "/courses/manage" },
-    { icon: <PlusCircle className="w-5 h-5" />, label: "Create", href: "/courses/new" },
-    { icon: <BarChart3 className="w-5 h-5" />, label: "Analytics", href: "/analytics" },
-    { icon: <User className="w-5 h-5" />, label: "Profile", href: "/profile" },
+    { icon: <BookOpen className="w-5 h-5" />, label: "Courses", href: "/teacher/courses" },
+    { icon: <Users className="w-5 h-5" />, label: "Classes", href: "/teacher/classes" },
+    { icon: <BarChart3 className="w-5 h-5" />, label: "Analytics", href: "/teacher/analytics" },
+    { icon: <User className="w-5 h-5" />, label: "Settings", href: "/teacher/settings" },
   ],
   parent: [
     { icon: <Home className="w-5 h-5" />, label: "Home", href: "/dashboard/parent" },
@@ -55,7 +55,7 @@ export function BottomNav({ role = "student", className }: BottomNavProps) {
   return (
     <nav
       className={cn(
-        "fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 md:hidden z-50",
+        "fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 lg:hidden z-50",
         className
       )}
     >
