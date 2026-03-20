@@ -140,4 +140,39 @@ export const courseService = {
         params: { page_size: 6 },
       })
       .then((r) => r.data.data),
+
+  /**
+   * GET /courses/slug/:slug — get course by slug
+   */
+  getCourseBySlug: (slug: string) =>
+    api
+      .get<{ message: string; data: ApiCourse }>(`/courses/slug/${slug}`)
+      .then((r) => r.data.data),
+
+  /**
+   * POST /courses/:id/enroll — enroll in a course
+   */
+  enroll: (courseId: string) =>
+    api
+      .post<{ message: string }>(`/courses/${courseId}/enroll`, {})
+      .then((r) => r.data),
+
+  /**
+   * POST /lessons/:id/progress — save lesson progress
+   */
+  saveProgress: (data: { lessonId: string; progress: number; timestamp?: number }) =>
+    api
+      .post<{ message: string }>(`/lessons/${data.lessonId}/progress`, {
+        progress: data.progress,
+        timestamp: data.timestamp,
+      })
+      .then((r) => r.data),
+
+  /**
+   * POST /lessons/:id/complete — mark lesson as complete
+   */
+  completeLesson: (lessonId: string) =>
+    api
+      .post<{ message: string; data: { xp_awarded?: number } }>(`/lessons/${lessonId}/complete`, {})
+      .then((r) => r.data),
 };
