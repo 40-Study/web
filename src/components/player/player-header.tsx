@@ -15,7 +15,7 @@ export function PlayerHeader({ courseTitle }: PlayerHeaderProps) {
       {/* Left: Back + course title */}
       <div className="flex items-center gap-3">
         <Link
-          href="/home"
+          href="/student/home"
           className="flex items-center gap-1.5 text-gray-300 hover:text-white transition-colors text-sm"
         >
           <ChevronLeft className="w-5 h-5" />

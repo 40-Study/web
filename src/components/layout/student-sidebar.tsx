@@ -6,8 +6,8 @@ import { Home, BookOpen, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const studentNavItems = [
-  { label: "TRANG CHỦ", href: "/home", icon: Home },
-  { label: "KHÓA HỌC", href: "/my-courses", icon: BookOpen },
+  { label: "TRANG CHỦ", href: "/student/home", icon: Home },
+  { label: "KHÓA HỌC", href: "/student/courses", icon: BookOpen },
   { label: "THẢO LUẬN", href: "/discussions", icon: MessageSquare },
 ];
 

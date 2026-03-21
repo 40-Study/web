@@ -25,7 +25,7 @@ interface TeacherSidebarProps {
 }
 
 const menuItems = [
-    { label: "Tổng quan", href: "/dashboard/teacher", icon: LayoutDashboard },
+    { label: "Tổng quan", href: "/teacher/dashboard", icon: LayoutDashboard },
     { label: "Khoá học", href: "/teacher/courses", icon: BookOpen },
     { label: "Lớp học", href: "/teacher/classes", icon: Users2 },
     { label: "Bài tập", href: "/teacher/assignments", icon: ClipboardList },
@@ -90,7 +90,7 @@ export function TeacherSidebar({ className }: TeacherSidebarProps) {
                 {menuItems.map((item) => {
                     const isActive =
                         pathname === item.href ||
-                        (item.href !== "/dashboard/teacher" && pathname.startsWith(item.href));
+                        (item.href !== "/teacher/dashboard" && pathname.startsWith(item.href));
 
                     return (
                         <Link

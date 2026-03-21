@@ -20,7 +20,7 @@ import { Avatar } from "@/components/ui/avatar";
 const userMenuItems = [
   { label: "Tiến độ khóa học", href: "/progress", icon: BarChart2 },
   { label: "Thời khóa biểu", href: "/schedule", icon: Calendar },
-  { label: "Khóa học của tôi", href: "/my-courses", icon: BookOpen },
+  { label: "Khóa học của tôi", href: "/student/courses", icon: BookOpen },
   { label: "Bài tập", href: "/assignments", icon: FileText, badge: true },
   { label: "Cài đặt tài khoản", href: "/settings", icon: Settings },
 ];
@@ -43,7 +43,7 @@ export function StudentHeader() {
   return (
     <header className="h-16 bg-white border-b flex items-center justify-between px-6">
       {/* Logo */}
-      <Link href="/home" className="flex items-center gap-2">
+      <Link href="/student/home" className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
           <span className="text-white font-bold text-sm">40</span>
         </div>

@@ -29,7 +29,7 @@ const navConfigs: Record<UserRole, NavItem[]> = {
     { icon: <User className="w-5 h-5" />, label: "Profile", href: "/profile" },
   ],
   teacher: [
-    { icon: <Home className="w-5 h-5" />, label: "Home", href: "/dashboard/teacher" },
+    { icon: <Home className="w-5 h-5" />, label: "Home", href: "/teacher/dashboard" },
     { icon: <BookOpen className="w-5 h-5" />, label: "Courses", href: "/teacher/courses" },
     { icon: <Users className="w-5 h-5" />, label: "Classes", href: "/teacher/classes" },
     { icon: <BarChart3 className="w-5 h-5" />, label: "Analytics", href: "/teacher/analytics" },
@@ -64,7 +64,7 @@ export function BottomNav({ role = "student", className }: BottomNavProps) {
           const isActive =
             pathname === tab.href ||
             (tab.href !== "/dashboard" &&
-              tab.href !== "/dashboard/teacher" &&
+              tab.href !== "/teacher/dashboard" &&
               tab.href !== "/dashboard/parent" &&
               pathname.startsWith(tab.href));
 

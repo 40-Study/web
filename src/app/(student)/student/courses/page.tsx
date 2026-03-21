@@ -44,7 +44,7 @@ export default function MyCoursesPage() {
                 Khóa học của tôi
               </h2>
               <Link
-                href="/my-courses"
+                href="/student/courses"
                 className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors"
               >
                 XEM TẤT CẢ
