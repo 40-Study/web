@@ -30,9 +30,9 @@ export default function RoomsPage() {
     );
   };
 
-  const liveSessions = data?.sessions.filter((s) => s.status === "live") || [];
-  const scheduledSessions = data?.sessions.filter((s) => s.status === "scheduled") || [];
-  const endedSessions = data?.sessions.filter((s) => s.status === "ended") || [];
+  const liveSessions = data?.filter((s) => s.status === "live") || [];
+  const scheduledSessions = data?.filter((s) => s.status === "scheduled") || [];
+  const endedSessions = data?.filter((s) => s.status === "ended") || [];
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -143,7 +143,7 @@ export default function RoomsPage() {
             </section>
           )}
 
-          {data?.sessions.length === 0 && (
+          {data?.length === 0 && (
             <div className="rounded-xl bg-white p-8 text-center shadow-sm">
               <p className="text-gray-500">Chưa có phiên học nào</p>
             </div>

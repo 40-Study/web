@@ -76,24 +76,43 @@ export function useChildren() {
 
 /** Login mutation */
 export function useLogin() {
-  const { login, setSystemRoles } = useAuthStore();
+  const { login, logout, setSystemRoles, setSessionToken, setOrganizations } = useAuthStore();
   const router = useRouter();
 
   return useMutation({
     mutationFn: authService.login,
-    onSuccess: (data) => {
-      login(data.user, data.session_token, data.system_roles);
-      setSystemRoles(data.system_roles);
+    onSuccess: async (response) => {
+      const { session_token, system_roles, user } = response.data;
+
+      login(user, system_roles);
+      setSessionToken(session_token);
+      setSystemRoles(system_roles);
 
       // Navigate based on roles
-      if (data.system_roles.length > 1) {
+      if (system_roles.length > 1) {
         router.push("/login/role");
-      } else if (data.system_roles.length === 1) {
-        // Auto-select single role
-        router.push("/login/organization");
+        return;
+      }
+
+      if (system_roles.length === 1) {
+        try {
+          const selectResponse = await authService.selectProfile({
+            session_token: session_token,
+            system_role_id: system_roles[0].id,
+          });
+          setOrganizations(selectResponse.data.organizations);
+          router.push("/login/organization");
+        } catch (error: unknown) {
+          console.error("Select profile failed:", error);
+          toast.error("Đăng nhập thất bại", {
+            description: "Không thể chọn vai trò. Vui lòng thử lại.",
+          });
+          logout();
+        }
       }
     },
-    onError: () => {
+    onError: (error: unknown) => {
+      console.error("Login error:", error);
       toast.error("Đăng nhập thất bại", { description: "Email hoặc mật khẩu không đúng" });
     },
   });
@@ -127,31 +146,56 @@ export function useRegister() {
 
 /** Select profile/role */
 export function useSelectProfile() {
-  const { setOrganizations } = useAuthStore();
+  const { setOrganizations, sessionToken } = useAuthStore();
 
   return useMutation({
-    mutationFn: authService.selectProfile,
-    onSuccess: (data) => {
-      setOrganizations(data.organizations);
+    mutationFn: async (roleId: string) => {
+      if (!sessionToken) throw new Error("No session token");
+      return authService.selectProfile({
+        session_token: sessionToken,
+        system_role_id: roleId,
+      });
+    },
+    onSuccess: (response) => {
+      setOrganizations(response.data.organizations);
+    },
+    onError: (error: unknown) => {
+      console.error("Select profile error:", error);
+      toast.error("Chọn vai trò thất bại", {
+        description: "Vui lòng thử lại hoặc đăng nhập lại",
+      });
     },
   });
 }
 
 /** Select organization */
 export function useSelectOrg() {
-  const { setToken, setPermissions } = useAuthStore();
+  const { setToken, setPermissions, setSessionToken } = useAuthStore();
   const qc = useQueryClient();
   const router = useRouter();
 
   return useMutation({
     mutationFn: authService.selectOrg,
-    onSuccess: async (data) => {
-      setToken(data.access_token);
-      // Fetch permissions after getting token
-      const me = await authService.getMe();
-      setPermissions(me.permissions as Permission[]);
-      qc.invalidateQueries({ queryKey: authKeys.all });
-      router.push("/dashboard");
+    onSuccess: async (response) => {
+      try {
+        const accessToken = response.data.access_token;
+        setToken(accessToken);
+        setSessionToken(null);
+        // Fetch permissions after getting token
+        const me = await authService.getMe();
+        setPermissions(me.permissions as Permission[]);
+        qc.invalidateQueries({ queryKey: authKeys.all });
+        router.push("/dashboard");
+      } catch (error: unknown) {
+        console.error("Failed to get user info:", error);
+        toast.error("Lỗi lấy thông tin người dùng");
+      }
+    },
+    onError: (error: unknown) => {
+      console.error("Select org error:", error);
+      toast.error("Chọn tổ chức thất bại", {
+        description: "Vui lòng thử lại",
+      });
     },
   });
 }
@@ -178,15 +222,17 @@ export function useLogout() {
   });
 }
 
-/** Logout specific device */
+/**
+ * Logout specific device
+ * @deprecated Backend does not support per-device logout yet
+ */
 export function useLogoutDevice() {
-  const qc = useQueryClient();
-
   return useMutation({
-    mutationFn: authService.logoutDevice,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: authKeys.devices() });
-      toast.success("Thiết bị đã được đăng xuất");
+    mutationFn: async (_deviceId: string) => {
+      throw new Error("Per-device logout not supported by backend");
+    },
+    onError: () => {
+      toast.info("Tính năng đăng xuất từng thiết bị chưa được hỗ trợ");
     },
   });
 }

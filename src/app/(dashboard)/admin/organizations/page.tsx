@@ -68,7 +68,7 @@ export default function OrganizationsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {data?.organizations.map((org) => (
+          {data?.map((org) => (
             <div
               key={org.id}
               className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm"
@@ -89,7 +89,7 @@ export default function OrganizationsPage() {
               </Can>
             </div>
           ))}
-          {data?.organizations.length === 0 && (
+          {data?.length === 0 && (
             <div className="rounded-xl bg-white p-8 text-center shadow-sm">
               <p className="text-gray-500">Chưa có tổ chức nào</p>
             </div>

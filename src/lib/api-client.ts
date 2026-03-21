@@ -13,7 +13,7 @@ import {
   NotFoundError,
 } from "./errors";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
 // Create axios instance
 export const api = axios.create({
@@ -76,11 +76,11 @@ function clearAuth(): void {
  */
 async function refreshToken(): Promise<string> {
   const response = await axios.post(
-    `${API_BASE_URL}/auth/refresh`,
+    `${API_BASE_URL}/auth/refresh-token`,
     {},
     { withCredentials: true }
   );
-  const newToken = response.data.access_token;
+  const newToken = response.data.data.access_token;
   setToken(newToken);
   return newToken;
 }

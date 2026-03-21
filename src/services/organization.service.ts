@@ -30,20 +30,25 @@ export interface OrgMember {
 
 export const organizationService = {
   list: () =>
-    api.get<{ organizations: Organization[] }>("/organizations").then((r) => r.data),
+    api.get<{ message: string; data: { organizations: Organization[] } }>("/organizations")
+      .then((r) => r.data.data.organizations),
 
   getById: (id: string) =>
-    api.get<Organization>(`/organizations/${id}`).then((r) => r.data),
+    api.get<{ message: string; data: Organization }>(`/organizations/${id}`)
+      .then((r) => r.data.data),
 
   create: (data: CreateOrgDTO) =>
-    api.post<Organization>("/organizations", data).then((r) => r.data),
+    api.post<{ message: string; data: Organization }>("/organizations", data)
+      .then((r) => r.data.data),
 
   update: (id: string, data: Partial<CreateOrgDTO>) =>
-    api.put<Organization>(`/organizations/${id}`, data).then((r) => r.data),
+    api.put<{ message: string; data: Organization }>(`/organizations/${id}`, data)
+      .then((r) => r.data.data),
 
   delete: (id: string) =>
-    api.delete<void>(`/organizations/${id}`).then((r) => r.data),
+    api.delete<{ message: string }>(`/organizations/${id}`).then((r) => r.data),
 
   getMembers: (orgId: string) =>
-    api.get<{ members: OrgMember[] }>(`/organizations/${orgId}/members`).then((r) => r.data),
+    api.get<{ message: string; data: { members: OrgMember[] } }>(`/organizations/${orgId}/members`)
+      .then((r) => r.data.data.members),
 };

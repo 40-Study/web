@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Permission } from "@/lib/permissions";
+import type { SystemRole } from "@/services/auth.service";
 
 export type RoleType = "student" | "teacher" | "parent" | "admin";
+export type { SystemRole };
 
 interface User {
   id: string;
@@ -14,6 +16,7 @@ interface User {
 interface Organization {
   id: string;
   name: string;
+  code?: string;
   logo?: string;
 }
 
@@ -27,9 +30,10 @@ interface AuthState {
   // User data
   user: User | null;
   token: string | null;
+  sessionToken: string | null;
 
   // Multi-role system
-  systemRoles: string[];
+  systemRoles: SystemRole[];
   activeRole: string | null;
   permissions: Permission[];
 
@@ -45,18 +49,23 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
 
+  // Registration ephemeral state
+  registerRole: string | null;
+
   // Actions
   setUser: (user: User | null) => void;
   setToken: (token: string | null) => void;
-  setSystemRoles: (roles: string[]) => void;
+  setSessionToken: (token: string | null) => void;
+  setSystemRoles: (roles: SystemRole[]) => void;
   setActiveRole: (role: string | null) => void;
   setPermissions: (permissions: Permission[]) => void;
   setOrganizations: (orgs: Organization[]) => void;
   setActiveOrg: (org: Organization | null) => void;
   setChildren: (children: Child[]) => void;
   setSelectedChild: (child: Child | null) => void;
+  setRegisterRole: (role: string | null) => void;
 
-  login: (user: User, token: string, roles?: string[]) => void;
+  login: (user: User, roles?: SystemRole[]) => void;
   logout: () => void;
   reset: () => void;
 }
@@ -64,6 +73,7 @@ interface AuthState {
 const initialState = {
   user: null,
   token: null,
+  sessionToken: null,
   systemRoles: [],
   activeRole: null,
   permissions: [],
@@ -73,6 +83,7 @@ const initialState = {
   selectedChild: null,
   isAuthenticated: false,
   isLoading: false,
+  registerRole: null,
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -82,6 +93,7 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user) => set({ user }),
       setToken: (token) => set({ token }),
+      setSessionToken: (sessionToken) => set({ sessionToken }),
       setSystemRoles: (systemRoles) => set({ systemRoles }),
       setActiveRole: (activeRole) => set({ activeRole }),
       setPermissions: (permissions) => set({ permissions }),
@@ -89,11 +101,11 @@ export const useAuthStore = create<AuthState>()(
       setActiveOrg: (activeOrg) => set({ activeOrg }),
       setChildren: (children) => set({ children }),
       setSelectedChild: (selectedChild) => set({ selectedChild }),
+      setRegisterRole: (registerRole) => set({ registerRole }),
 
-      login: (user, token, roles = []) =>
+      login: (user, roles = []) =>
         set({
           user,
-          token,
           systemRoles: roles,
           isAuthenticated: true,
         }),

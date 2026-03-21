@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { SkipLink } from "@/components/ui";
 
 const inter = Inter({
     subsets: ["latin", "vietnamese"],
@@ -25,6 +26,9 @@ export default function RootLayout({
     return (
         <html lang="vi" suppressHydrationWarning>
             <body className={`${inter.variable} font-sans antialiased`}>
+                <SkipLink targetId="main-content">
+                    Bỏ qua điều hướng
+                </SkipLink>
                 <Providers>{children}</Providers>
             </body>
         </html>

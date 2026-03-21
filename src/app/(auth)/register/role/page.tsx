@@ -7,14 +7,17 @@ import { RoleCard } from "@/components/auth/role-card";
 import type { RoleType } from "@/components/auth/role-card";
 import { Button } from "@/components/ui/button";
 import { AUTH_ROUTES } from "@/lib/routes";
+import { useAuthStore } from "@/stores";
 
 export default function RegisterRolePage() {
   const router = useRouter();
+  const setRegisterRole = useAuthStore((s) => s.setRegisterRole);
   const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
 
   const handleContinue = () => {
     if (!selectedRole) return;
-    router.push(AUTH_ROUTES.OTP);
+    setRegisterRole(selectedRole);
+    router.push(AUTH_ROUTES.REGISTER_FORM);
   };
 
   return (

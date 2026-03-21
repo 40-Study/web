@@ -9,9 +9,18 @@ export interface InputProps
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-    ({ className, type, label, error, helperText, id, ...props }, ref) => {
+    ({ className, type, label, error, helperText, id, "aria-describedby": ariaDescribedBy, ...props }, ref) => {
         const generatedId = React.useId();
         const inputId = id || generatedId;
+        const errorId = `${inputId}-error`;
+        const helperId = `${inputId}-helper`;
+
+        // Build aria-describedby from error, helper, and any passed value
+        const describedByIds = [
+            error ? errorId : null,
+            helperText && !error ? helperId : null,
+            ariaDescribedBy,
+        ].filter(Boolean).join(" ") || undefined;
 
         return (
             <div className="w-full">
@@ -32,13 +41,27 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                         className
                     )}
                     ref={ref}
+                    aria-invalid={error ? "true" : undefined}
+                    aria-describedby={describedByIds}
                     {...props}
                 />
                 {error && (
-                    <p className="mt-1 text-sm text-destructive">{error}</p>
+                    <p
+                        id={errorId}
+                        className="mt-1 text-sm text-destructive"
+                        role="alert"
+                        aria-live="polite"
+                    >
+                        {error}
+                    </p>
                 )}
                 {helperText && !error && (
-                    <p className="mt-1 text-sm text-muted-foreground">{helperText}</p>
+                    <p
+                        id={helperId}
+                        className="mt-1 text-sm text-muted-foreground"
+                    >
+                        {helperText}
+                    </p>
                 )}
             </div>
         );

@@ -10,35 +10,51 @@ import { api } from "@/lib/api-client";
 
 export interface RegisterRequestDTO {
   email: string;
-  phone?: string;
+  password: string;
+  confirm_password: string;
+  user_name: string;
+  full_name?: string;
+  role_ids?: string[];
 }
 
 export interface RegisterDTO {
   email: string;
-  password: string;
-  name: string;
   otp: string;
 }
 
 export interface LoginDTO {
   email: string;
   password: string;
-  device_name?: string;
+  device_info?: {
+    name: string;
+    os?: string;
+    browser?: string;
+  };
+}
+
+export interface SystemRole {
+  id: string;
+  name: string;
+  description?: string;
 }
 
 export interface LoginResponse {
-  session_token: string;
-  system_roles: string[];
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    avatar?: string;
+  message: string;
+  data: {
+    session_token: string;
+    system_roles: SystemRole[];
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      avatar?: string;
+    };
   };
 }
 
 export interface SelectProfileDTO {
-  role: string;
+  session_token: string;
+  system_role_id: string;
 }
 
 export interface SelectOrgDTO {
@@ -46,17 +62,27 @@ export interface SelectOrgDTO {
 }
 
 export interface TokenResponse {
-  access_token: string;
-  refresh_token?: string;
-  expires_in: number;
+  message: string;
+  data: {
+    access_token: string;
+    refresh_token?: string;
+    expires_in: number;
+  };
 }
 
 export interface Device {
-  id: string;
-  name: string;
-  last_active: string;
-  ip_address: string;
-  is_current: boolean;
+  device_id: string;
+  device_name: string;
+  logged_in_at: string;
+  ip_address?: string;
+  is_current?: boolean;
+}
+
+export interface DevicesResponse {
+  message: string;
+  data: {
+    devices: Device[];
+  };
 }
 
 export interface ResetPasswordRequestDTO {
@@ -64,8 +90,9 @@ export interface ResetPasswordRequestDTO {
 }
 
 export interface ResetPasswordDTO {
-  token: string;
-  password: string;
+  email: string;
+  otp: string;
+  new_password: string;
 }
 
 export interface ChangePasswordDTO {
@@ -76,12 +103,14 @@ export interface ChangePasswordDTO {
 export interface Organization {
   id: string;
   name: string;
+  code: string;
   logo?: string;
 }
 
 export interface OrgRole {
   id: string;
   name: string;
+  description?: string;
   permissions: string[];
 }
 
@@ -104,7 +133,7 @@ export const authService = {
 
   /** Complete registration with OTP */
   register: (data: RegisterDTO) =>
-    api.post<{ user_id: string }>("/auth/register", data).then((r) => r.data),
+    api.post<{ message: string; data: { user: { id: string; email: string; name: string } } }>("/auth/register", data).then((r) => r.data),
 
   // ─── Login Flow ─────────────────────────────────────────────────────────
 
@@ -114,7 +143,7 @@ export const authService = {
 
   /** Select profile/role after login */
   selectProfile: (data: SelectProfileDTO) =>
-    api.post<{ organizations: Organization[] }>("/auth/select-profile", data).then((r) => r.data),
+    api.post<{ message: string; data: { organizations: Organization[] } }>("/auth/select-profile", data).then((r) => r.data),
 
   /** Select organization */
   selectOrg: (data: SelectOrgDTO) =>
@@ -132,29 +161,27 @@ export const authService = {
 
   /** Refresh access token */
   refreshToken: () =>
-    api.post<TokenResponse>("/auth/refresh", {}).then((r) => r.data),
+    api.post<TokenResponse>("/auth/refresh-token", {}).then((r) => r.data),
 
   // ─── Session Management ─────────────────────────────────────────────────
 
   /** Get current user info */
   getMe: () =>
-    api.get<{ user: LoginResponse["user"]; permissions: string[] }>("/auth/me").then((r) => r.data),
+    api.get<{ message: string; data: { user: LoginResponse["data"]["user"]; permissions: string[] } }>("/auth/me").then((r) => r.data.data),
 
   /** Logout current device */
   logout: () =>
-    api.post<void>("/auth/logout", {}).then((r) => r.data),
+    api.post<{ message: string }>("/auth/logout", {}).then((r) => r.data),
 
   /** Logout all devices */
   logoutAll: () =>
-    api.post<void>("/auth/logout-all", {}).then((r) => r.data),
+    api.post<{ message: string }>("/auth/logout-all", {}).then((r) => r.data),
 
   /** Get all logged-in devices */
   getDevices: () =>
-    api.get<{ devices: Device[] }>("/auth/devices").then((r) => r.data),
+    api.get<DevicesResponse>("/auth/devices").then((r) => r.data.data),
 
-  /** Logout specific device */
-  logoutDevice: (deviceId: string) =>
-    api.post<void>(`/auth/devices/${deviceId}/logout`, {}).then((r) => r.data),
+  // Note: Backend does not support per-device logout, only logout current
 
   // ─── Password Reset ─────────────────────────────────────────────────────
 
@@ -168,19 +195,23 @@ export const authService = {
 
   /** Change password (authenticated) */
   changePassword: (data: ChangePasswordDTO) =>
-    api.post<{ message: string }>("/auth/change-password", data).then((r) => r.data),
+    api.put<{ message: string }>("/auth/change-password", data).then((r) => r.data),
 
   // ─── Profile Data ───────────────────────────────────────────────────────
 
   /** Get user's organizations */
   getMyOrganizations: () =>
-    api.get<{ organizations: Organization[] }>("/me/organizations").then((r) => r.data),
+    api.get<{ message: string; data: { organizations: Organization[] } }>("/me/organizations").then((r) => r.data.data),
 
   /** Get user's org roles */
   getMyOrgRoles: () =>
-    api.get<{ roles: OrgRole[] }>("/me/org-roles").then((r) => r.data),
+    api.get<{ message: string; data: { roles: OrgRole[] } }>("/me/org-roles").then((r) => r.data.data),
 
   /** Get children (for parent role) */
   getChildren: () =>
-    api.get<{ children: Child[] }>("/me/children").then((r) => r.data),
+    api.get<{ message: string; data: { children: Child[] } }>("/me/children").then((r) => r.data.data),
+
+  /** Get my system roles */
+  getMySystemRoles: () =>
+    api.get<{ message: string; data: { system_roles: SystemRole[] } }>("/me/system-roles").then((r) => r.data.data),
 };

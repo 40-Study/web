@@ -10,15 +10,24 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@monaco-editor/react": "^4.7.0",
+    "@tanstack/react-query": "^5.90.21",
+    "@tanstack/react-table": "^8.21.3",
     "axios": "^1.13.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "hls.js": "^1.6.15",
+    "lucide-react": "^0.577.0",
     "monaco-editor": "^0.55.1",
     "next": "14.2.20",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-hook-form": "^7.71.2",
+    "recharts": "^3.8.0",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^2.6.0",
+    "zod": "^4.3.6",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

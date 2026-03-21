@@ -88,74 +88,94 @@ export interface CreateAssignmentDTO {
 export const livestreamService = {
   // Sessions
   listSessions: (classId?: string) =>
-    api.get<{ sessions: LivestreamSession[] }>("/livestream/sessions", { params: classId ? { class_id: classId } : {} }).then((r) => r.data),
+    api.get<{ message: string; data: { sessions: LivestreamSession[] } }>("/livestream", { params: classId ? { class_id: classId } : {} })
+      .then((r) => r.data.data.sessions),
 
   getSession: (id: string) =>
-    api.get<LivestreamSession>(`/livestream/sessions/${id}`).then((r) => r.data),
+    api.get<{ message: string; data: LivestreamSession }>(`/livestream/${id}`)
+      .then((r) => r.data.data),
 
   createSession: (data: CreateSessionDTO) =>
-    api.post<LivestreamSession>("/livestream/sessions", data).then((r) => r.data),
+    api.post<{ message: string; data: LivestreamSession }>("/livestream", data)
+      .then((r) => r.data.data),
 
   startSession: (id: string) =>
-    api.post<LivestreamSession>(`/livestream/sessions/${id}/start`, {}).then((r) => r.data),
+    api.post<{ message: string; data: LivestreamSession }>(`/livestream/${id}/start`, {})
+      .then((r) => r.data.data),
 
   endSession: (id: string) =>
-    api.post<LivestreamSession>(`/livestream/sessions/${id}/end`, {}).then((r) => r.data),
+    api.post<{ message: string; data: LivestreamSession }>(`/livestream/${id}/end`, {})
+      .then((r) => r.data.data),
 
   // Room token
   getRoomToken: (roomName: string) =>
-    api.post<{ token: string }>(`/live/rooms/${roomName}/token`, {}).then((r) => r.data),
+    api.post<{ message: string; data: { token: string } }>(`/live/rooms/${roomName}/token`, {})
+      .then((r) => r.data.data),
 
   // Participants
   getParticipants: (sessionId: string) =>
-    api.get<{ participants: Participant[] }>(`/livestream/sessions/${sessionId}/participants`).then((r) => r.data),
+    api.get<{ message: string; data: { participants: Participant[] } }>(`/livestream/${sessionId}/participants`)
+      .then((r) => r.data.data.participants),
 
   muteParticipant: (sessionId: string, participantId: string) =>
-    api.post<void>(`/livestream/sessions/${sessionId}/participants/${participantId}/mute`, {}).then((r) => r.data),
+    api.post<{ message: string }>(`/livestream/${sessionId}/mute`, { participant_id: participantId })
+      .then((r) => r.data),
 
   kickParticipant: (sessionId: string, participantId: string) =>
-    api.post<void>(`/livestream/sessions/${sessionId}/participants/${participantId}/kick`, {}).then((r) => r.data),
+    api.post<{ message: string }>(`/livestream/${sessionId}/kick`, { participant_id: participantId })
+      .then((r) => r.data),
 
   // Chat
   getMessages: (sessionId: string, limit?: number) =>
-    api.get<{ messages: ChatMessage[] }>(`/chat/sessions/${sessionId}/messages`, { params: limit ? { limit } : {} }).then((r) => r.data),
+    api.get<{ message: string; data: { messages: ChatMessage[] } }>(
+      `/chat/${sessionId}/messages`, { params: limit ? { limit } : {} }
+    ).then((r) => r.data.data.messages),
 
   sendMessage: (sessionId: string, content: string) =>
-    api.post<ChatMessage>(`/chat/sessions/${sessionId}/messages`, { content }).then((r) => r.data),
+    api.post<{ message: string; data: ChatMessage }>(`/chat/${sessionId}/send`, { content })
+      .then((r) => r.data.data),
 
   pinMessage: (sessionId: string, messageId: string) =>
-    api.post<void>(`/chat/sessions/${sessionId}/messages/${messageId}/pin`, {}).then((r) => r.data),
+    api.post<{ message: string }>(`/chat/${sessionId}/messages/${messageId}/pin`, {}).then((r) => r.data),
 
   deleteMessage: (sessionId: string, messageId: string) =>
-    api.delete<void>(`/chat/sessions/${sessionId}/messages/${messageId}`).then((r) => r.data),
+    api.delete<{ message: string }>(`/chat/${sessionId}/messages/${messageId}`).then((r) => r.data),
 
-  // Assignments
+  // Assignments - Note: Backend doesn't have /sessions/:sessionId route, using handler's GetBySession
   getAssignments: (sessionId: string) =>
-    api.get<{ assignments: Assignment[] }>(`/assignments/sessions/${sessionId}`).then((r) => r.data),
+    api.get<{ message: string; data: { assignments: Assignment[] } }>("/assignments", { params: { session_id: sessionId } })
+      .then((r) => r.data.data.assignments),
 
   createAssignment: (sessionId: string, data: CreateAssignmentDTO) =>
-    api.post<Assignment>(`/assignments/sessions/${sessionId}`, data).then((r) => r.data),
+    api.post<{ message: string; data: Assignment }>("/assignments", { ...data, session_id: sessionId })
+      .then((r) => r.data.data),
 
   publishAssignment: (assignmentId: string) =>
-    api.post<void>(`/assignments/${assignmentId}/publish`, {}).then((r) => r.data),
+    api.post<{ message: string }>(`/assignments/${assignmentId}/publish`, {}).then((r) => r.data),
 
   // Submissions
   submitCode: (assignmentId: string, code: string, language: string) =>
-    api.post<Submission>("/submissions", { assignment_id: assignmentId, code, language }).then((r) => r.data),
+    api.post<{ message: string; data: Submission }>("/submissions", { assignment_id: assignmentId, code, language })
+      .then((r) => r.data.data),
 
   runCode: (code: string, language: string, input?: string) =>
-    api.post<{ output: string; error?: string; execution_time: number }>("/submissions/run", { code, language, input }).then((r) => r.data),
+    api.post<{ message: string; data: { output: string; error?: string; execution_time: number } }>(
+      "/submissions/run", { code, language, input }
+    ).then((r) => r.data.data),
 
   getSubmission: (id: string) =>
-    api.get<Submission>(`/submissions/${id}`).then((r) => r.data),
+    api.get<{ message: string; data: Submission }>(`/submissions/${id}`).then((r) => r.data.data),
 
   getSubmissions: (assignmentId: string) =>
-    api.get<{ submissions: Submission[] }>(`/submissions/assignment/${assignmentId}`).then((r) => r.data),
+    api.get<{ message: string; data: { submissions: Submission[] } }>(
+      "/submissions", { params: { assignment_id: assignmentId } }
+    ).then((r) => r.data.data.submissions),
 
   // Whiteboard
   getWhiteboard: (sessionId: string) =>
-    api.get<{ elements: unknown[]; version: number }>(`/whiteboard/sessions/${sessionId}`).then((r) => r.data),
+    api.get<{ message: string; data: { elements: unknown[]; version: number } }>(`/whiteboard/${sessionId}/snapshot`)
+      .then((r) => r.data.data),
 
   saveWhiteboard: (sessionId: string, elements: unknown[]) =>
-    api.post<void>(`/whiteboard/sessions/${sessionId}`, { elements }).then((r) => r.data),
+    api.post<{ message: string }>(`/whiteboard/${sessionId}/snapshot`, { elements }).then((r) => r.data),
 };
