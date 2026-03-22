@@ -51,12 +51,16 @@ export default function RegisterFormPage() {
     }
 
     try {
-      let roleIds: string[] | undefined;
-      if (registerRole) {
-        const backendRoleName = ROLE_NAME_MAP[registerRole] || registerRole.toUpperCase();
-        const systemRoles = await roleService.listSystemRoles();
-        const matched = systemRoles.find((r) => r.name === backendRoleName);
-        if (matched) roleIds = [matched.id];
+      // Get the role ID for the selected role
+      const backendRoleName = registerRole
+        ? (ROLE_NAME_MAP[registerRole] || registerRole.toUpperCase())
+        : "STUDENT"; // Default to STUDENT if no role selected
+      const systemRoles = await roleService.listSystemRoles();
+      const matchedRole = systemRoles.find((r) => r.name === backendRoleName);
+
+      if (!matchedRole) {
+        setError("Không tìm thấy vai trò. Vui lòng thử lại.");
+        return;
       }
 
       await registerRequest.mutateAsync({
@@ -64,8 +68,8 @@ export default function RegisterFormPage() {
         password: formData.password,
         confirm_password: formData.confirmPassword,
         user_name: formData.username,
-        full_name: `${formData.lastName} ${formData.firstName}`.trim(),
-        role_ids: roleIds,
+        full_name: `${formData.lastName} ${formData.firstName}`.trim() || undefined,
+        role_id: matchedRole.id,
       });
       sessionStorage.setItem("register_email", formData.email);
       router.push(AUTH_ROUTES.OTP);

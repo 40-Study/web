@@ -14,7 +14,7 @@ export interface RegisterRequestDTO {
   confirm_password: string;
   user_name: string;
   full_name?: string;
-  role_ids?: string[];
+  role_id: string; // Single UUID, required by backend
 }
 
 export interface RegisterDTO {

@@ -706,13 +706,13 @@ function RegisterFormView({
 
         try {
             // Resolve role ID from selected role
-            let roleIds: string[] | undefined;
+            let roleId = "";
             if (registerRole) {
                 const backendRoleName = ROLE_NAME_MAP[registerRole] || registerRole.toUpperCase();
                 const systemRoles = await roleService.listSystemRoles();
                 const matched = systemRoles.find((r) => r.name === backendRoleName);
                 if (matched) {
-                    roleIds = [matched.id];
+                    roleId = matched.id;
                 }
             }
 
@@ -722,7 +722,7 @@ function RegisterFormView({
                 confirm_password: formData.confirmPassword,
                 user_name: formData.username,
                 full_name: `${formData.lastName} ${formData.firstName}`.trim(),
-                role_ids: roleIds,
+                role_id: roleId,
             });
             sessionStorage.setItem("register_email", formData.email);
             onNext(formData.email);
