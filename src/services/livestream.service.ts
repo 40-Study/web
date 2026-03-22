@@ -136,10 +136,10 @@ export const livestreamService = {
       .then((r) => r.data.data),
 
   pinMessage: (sessionId: string, messageId: string) =>
-    api.post<{ message: string }>(`/chat/${messageId}/pin`, {}).then((r) => r.data),
+    api.post<{ message: string }>(`/chat/${sessionId}/messages/${messageId}/pin`, {}).then((r) => r.data),
 
   deleteMessage: (sessionId: string, messageId: string) =>
-    api.delete<{ message: string }>(`/chat/${messageId}`).then((r) => r.data),
+    api.delete<{ message: string }>(`/chat/${sessionId}/messages/${messageId}`).then((r) => r.data),
 
   // Assignments - Note: Backend doesn't have /sessions/:sessionId route, using handler's GetBySession
   getAssignments: (sessionId: string) =>

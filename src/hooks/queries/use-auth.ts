@@ -76,7 +76,7 @@ export function useChildren() {
 
 /** Login mutation */
 export function useLogin() {
-  const { login, setSystemRoles, setToken, setSessionToken, setOrganizations } = useAuthStore();
+  const { login, logout, setSystemRoles, setSessionToken, setOrganizations } = useAuthStore();
   const router = useRouter();
 
   return useMutation({
@@ -84,15 +84,17 @@ export function useLogin() {
     onSuccess: async (response) => {
       const { session_token, system_roles, user } = response.data;
 
-      login(user, system_roles);         // store full role objects, no token
-      setSessionToken(session_token);    // store interim session_token separately (not the Bearer token field)
-      setSystemRoles(system_roles);      // store full objects
+      login(user, system_roles);
+      setSessionToken(session_token);
+      setSystemRoles(system_roles);
 
       // Navigate based on roles
       if (system_roles.length > 1) {
         router.push("/login/role");
-      } else if (system_roles.length === 1) {
-        // Auto-select single role: call selectProfile FIRST, then navigate
+        return;
+      }
+
+      if (system_roles.length === 1) {
         try {
           const selectResponse = await authService.selectProfile({
             session_token: session_token,
@@ -100,12 +102,17 @@ export function useLogin() {
           });
           setOrganizations(selectResponse.data.organizations);
           router.push("/login/organization");
-        } catch {
-          toast.error("Đăng nhập thất bại");
+        } catch (error: unknown) {
+          console.error("Select profile failed:", error);
+          toast.error("Đăng nhập thất bại", {
+            description: "Không thể chọn vai trò. Vui lòng thử lại.",
+          });
+          logout();
         }
       }
     },
-    onError: () => {
+    onError: (error: unknown) => {
+      console.error("Login error:", error);
       toast.error("Đăng nhập thất bại", { description: "Email hoặc mật khẩu không đúng" });
     },
   });
@@ -139,7 +146,7 @@ export function useRegister() {
 
 /** Select profile/role */
 export function useSelectProfile() {
-  const { setOrganizations, sessionToken, systemRoles } = useAuthStore();
+  const { setOrganizations, sessionToken } = useAuthStore();
 
   return useMutation({
     mutationFn: async (roleId: string) => {
@@ -151,6 +158,12 @@ export function useSelectProfile() {
     },
     onSuccess: (response) => {
       setOrganizations(response.data.organizations);
+    },
+    onError: (error: unknown) => {
+      console.error("Select profile error:", error);
+      toast.error("Chọn vai trò thất bại", {
+        description: "Vui lòng thử lại hoặc đăng nhập lại",
+      });
     },
   });
 }
@@ -164,14 +177,25 @@ export function useSelectOrg() {
   return useMutation({
     mutationFn: authService.selectOrg,
     onSuccess: async (response) => {
-      const accessToken = response.data.access_token;
-      setToken(accessToken);
-      setSessionToken(null);             // clear interim session token now that we have the real access token
-      // Fetch permissions after getting token
-      const me = await authService.getMe();
-      setPermissions(me.permissions as Permission[]);
-      qc.invalidateQueries({ queryKey: authKeys.all });
-      router.push("/dashboard");
+      try {
+        const accessToken = response.data.access_token;
+        setToken(accessToken);
+        setSessionToken(null);
+        // Fetch permissions after getting token
+        const me = await authService.getMe();
+        setPermissions(me.permissions as Permission[]);
+        qc.invalidateQueries({ queryKey: authKeys.all });
+        router.push("/dashboard");
+      } catch (error: unknown) {
+        console.error("Failed to get user info:", error);
+        toast.error("Lỗi lấy thông tin người dùng");
+      }
+    },
+    onError: (error: unknown) => {
+      console.error("Select org error:", error);
+      toast.error("Chọn tổ chức thất bại", {
+        description: "Vui lòng thử lại",
+      });
     },
   });
 }
@@ -198,12 +222,17 @@ export function useLogout() {
   });
 }
 
-/** Logout specific device - Note: Backend does not support this, use logoutAll instead */
+/**
+ * Logout specific device
+ * @deprecated Backend does not support per-device logout yet
+ */
 export function useLogoutDevice() {
   return useMutation({
     mutationFn: async (_deviceId: string) => {
+      throw new Error("Per-device logout not supported by backend");
+    },
+    onError: () => {
       toast.info("Tính năng đăng xuất từng thiết bị chưa được hỗ trợ");
-      throw new Error("Not supported");
     },
   });
 }

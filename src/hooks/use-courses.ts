@@ -1,6 +1,7 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   courseService,
   ApiCourse,
@@ -173,19 +174,23 @@ export function useCourses(filters: CourseFilters = {}) {
   });
 }
 
-/** Fetch single course detail by slug or ID */
-export function useCourseDetail(slug: string) {
+/**
+ * Fetch single course detail by ID
+ * @deprecated Use useCourseBySlug for slug-based lookup
+ */
+export function useCourseDetail(id: string) {
   return useQuery({
-    queryKey: courseKeys.detail(slug),
+    queryKey: [...courseKeys.all, "detail-by-id", id] as const,
     queryFn: async (): Promise<CourseDetail | null> => {
       try {
-        const raw = await courseService.getCourseById(slug);
+        const raw = await courseService.getCourseById(id);
         return mapApiCourseDetail(raw);
-      } catch {
+      } catch (error: unknown) {
+        console.error("Failed to fetch course by ID:", error);
         return null;
       }
     },
-    enabled: !!slug,
+    enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -245,5 +250,76 @@ export function useFeaturedCourses() {
       return raw.map(mapApiCourse).filter((c) => c.isFeatured);
     },
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Fetch course by slug */
+export function useCourseBySlug(slug: string) {
+  return useQuery({
+    queryKey: courseKeys.detail(slug),
+    queryFn: async (): Promise<CourseDetail | null> => {
+      try {
+        const raw = await courseService.getCourseBySlug(slug);
+        return mapApiCourseDetail(raw);
+      } catch (error: unknown) {
+        console.error("Failed to fetch course:", error);
+        return null;
+      }
+    },
+    enabled: !!slug,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Enroll in a course */
+export function useEnrollCourse() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (courseId: string) => courseService.enroll(courseId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: courseKeys.enrolled() });
+      toast.success("Đăng ký khóa học thành công!");
+    },
+    onError: (error: unknown) => {
+      console.error("Enrollment failed:", error);
+      toast.error("Đăng ký thất bại", {
+        description: "Vui lòng thử lại sau",
+      });
+    },
+  });
+}
+
+/** Save lesson progress */
+export function useSaveProgress() {
+  return useMutation({
+    mutationFn: (data: { lessonId: string; progress: number; timestamp?: number }) =>
+      courseService.saveProgress(data),
+    onError: (error: unknown) => {
+      console.error("Failed to save progress:", error);
+    },
+  });
+}
+
+/** Mark lesson as complete */
+export function useCompleteLesson() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (lessonId: string) => courseService.completeLesson(lessonId),
+    onSuccess: (response) => {
+      const xp = response.data?.xp_awarded;
+      if (xp) {
+        toast.success(`+${xp} XP!`, {
+          description: "Bạn đã hoàn thành bài học",
+        });
+      }
+      qc.invalidateQueries({ queryKey: courseKeys.enrolled() });
+      qc.invalidateQueries({ queryKey: courseKeys.all });
+    },
+    onError: (error: unknown) => {
+      console.error("Failed to complete lesson:", error);
+      toast.error("Không thể đánh dấu hoàn thành");
+    },
   });
 }

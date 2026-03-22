@@ -23,7 +23,7 @@ export default function LoginRolePage() {
   const { systemRoles, setActiveRole } = useAuthStore();
   const selectProfile = useSelectProfile();
   const [selectedRole, setSelectedRole] = useState<SystemRole | null>(
-    systemRoles[0] || null
+    systemRoles.length > 0 ? systemRoles[0] : null
   );
 
   const handleContinue = async () => {
