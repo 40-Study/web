@@ -3,9 +3,9 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Khám phá khóa học",
   description:
-    "Khám phá hàng trăm khóa học chất lượng cao từ các giảng viên hàng đầu. Học mọi lúc, mọi nơi với 40Study.",
+    "Khám phá hàng trăm khóa học chất lượng cao từ các giảng viên hàng đầu. Học mọi lúc, mọi nơi với ForteX.",
   openGraph: {
-    title: "Khám phá khóa học | 40Study",
+    title: "Khám phá khóa học | ForteX",
     description:
       "Khám phá hàng trăm khóa học chất lượng cao từ các giảng viên hàng đầu.",
   },

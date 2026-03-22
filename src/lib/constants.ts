@@ -1,6 +1,7 @@
 export const siteConfig = {
-    name: "40Study",
-    description: "Nền tảng học tập và quản lý 40Study",
+    name: "ForteX",
+    tagline: "Learn Leap Lead",
+    description: "ForteX - Learn Leap Lead | Nền tảng học tập và quản lý hiện đại",
     url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     ogImage: "/og.png",
     links: {

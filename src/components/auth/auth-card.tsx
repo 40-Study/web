@@ -16,7 +16,8 @@ export function AuthCard({ children, className, showLogo = true }: AuthCardProps
     >
       {showLogo && (
         <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-primary-600">40Study</h1>
+          <h1 className="text-3xl font-bold text-primary-600">ForteX</h1>
+          <p className="text-xs tracking-[0.2em] text-muted-foreground mt-1 uppercase">Learn · Leap · Lead</p>
         </div>
       )}
       {children}

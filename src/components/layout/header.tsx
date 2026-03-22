@@ -5,10 +5,29 @@ import { useState, useId } from "react";
 import { cn } from "@/lib/utils";
 import { navItems, siteConfig } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import { AuthModal } from "@/components/auth/auth-modal";
 
 export function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [authModal, setAuthModal] = useState<{ isOpen: boolean; mode: "login" | "register" }>({
+        isOpen: false,
+        mode: "login",
+    });
     const mobileMenuId = useId();
+
+    const openLogin = () => {
+        setIsMenuOpen(false);
+        setAuthModal({ isOpen: true, mode: "login" });
+    };
+
+    const openRegister = () => {
+        setIsMenuOpen(false);
+        setAuthModal({ isOpen: true, mode: "register" });
+    };
+
+    const closeAuthModal = () => {
+        setAuthModal({ isOpen: false, mode: "login" });
+    };
 
     return (
         <header
@@ -26,7 +45,7 @@ export function Header() {
                         className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-secondary-600"
                         aria-hidden="true"
                     >
-                        <span className="text-lg font-bold text-white">40</span>
+                        <span className="text-sm font-bold text-white">FX</span>
                     </div>
                     <span className="text-xl font-bold">{siteConfig.name}</span>
                 </Link>
@@ -51,10 +70,12 @@ export function Header() {
                 {/* Actions */}
                 <div className="flex items-center space-x-4">
                     <div className="hidden md:flex md:items-center md:space-x-2">
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={openLogin}>
                             Đăng nhập
                         </Button>
-                        <Button size="sm">Đăng ký</Button>
+                        <Button size="sm" onClick={openRegister}>
+                            Đăng ký
+                        </Button>
                     </div>
 
                     {/* Mobile Menu Button */}
@@ -118,15 +139,22 @@ export function Header() {
                         </Link>
                     ))}
                     <div className="mt-4 flex flex-col space-y-2">
-                        <Button variant="ghost" size="sm" className="min-h-[44px]">
+                        <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={openLogin}>
                             Đăng nhập
                         </Button>
-                        <Button size="sm" className="min-h-[44px]">
+                        <Button size="sm" className="min-h-[44px]" onClick={openRegister}>
                             Đăng ký
                         </Button>
                     </div>
                 </nav>
             </div>
+
+            {/* Auth Modal */}
+            <AuthModal
+                isOpen={authModal.isOpen}
+                onClose={closeAuthModal}
+                initialMode={authModal.mode}
+            />
         </header>
     );
 }

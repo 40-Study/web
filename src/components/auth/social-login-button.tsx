@@ -15,6 +15,7 @@ interface SocialLoginButtonProps {
   provider: SocialProvider;
   onClick?: () => void;
   className?: string;
+  iconOnly?: boolean;
 }
 
 const providerConfig: Record<SocialProvider, { label: string; icon: React.ReactNode }> = {
@@ -25,8 +26,24 @@ const providerConfig: Record<SocialProvider, { label: string; icon: React.ReactN
   email: { label: "Email", icon: <MailIcon /> },
 };
 
-export function SocialLoginButton({ provider, onClick, className }: SocialLoginButtonProps) {
+export function SocialLoginButton({ provider, onClick, className, iconOnly }: SocialLoginButtonProps) {
   const config = providerConfig[provider];
+
+  if (iconOnly) {
+    return (
+      <button
+        type="button"
+        aria-label={`Đăng nhập với ${config.label}`}
+        onClick={onClick}
+        className={cn(
+          "flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 bg-white transition-colors hover:bg-gray-50",
+          className
+        )}
+      >
+        <span className="flex h-6 w-6 items-center justify-center">{config.icon}</span>
+      </button>
+    );
+  }
 
   return (
     <button

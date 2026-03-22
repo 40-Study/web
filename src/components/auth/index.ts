@@ -1,5 +1,6 @@
 export { AuthCard } from "./auth-card";
 export { AuthIconHeader } from "./auth-icon-header";
+export { AuthModal } from "./auth-modal";
 export { AuthFooterLink } from "./auth-footer-link";
 export { OtpInput } from "./otp-input";
 export { PasswordChecklist } from "./password-checklist";

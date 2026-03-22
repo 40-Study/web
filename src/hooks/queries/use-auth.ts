@@ -37,6 +37,35 @@ export function useMe() {
   });
 }
 
+/** Get full profile (user + roles + orgs + active context) */
+export function useMyProfile() {
+  const { isAuthenticated } = useAuthStore();
+
+  return useQuery({
+    queryKey: [...authKeys.all, "profile"] as const,
+    queryFn: authService.getMyProfile,
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Update profile */
+export function useUpdateProfile() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: authService.updateProfile,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: authKeys.me() });
+      qc.invalidateQueries({ queryKey: [...authKeys.all, "profile"] });
+      toast.success("Cập nhật thành công");
+    },
+    onError: () => {
+      toast.error("Cập nhật thất bại");
+    },
+  });
+}
+
 /** Get user's devices */
 export function useDevices() {
   const { isAuthenticated } = useAuthStore();
@@ -74,42 +103,37 @@ export function useChildren() {
 // Mutations
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Login mutation */
+/** Login mutation - stores auth state, does NOT navigate (callers handle navigation via modal) */
 export function useLogin() {
-  const { login, logout, setSystemRoles, setSessionToken, setOrganizations } = useAuthStore();
-  const router = useRouter();
+  const { login, setSystemRoles, setSessionToken, setOrganizations, setToken, setActiveRole } = useAuthStore();
 
   return useMutation({
     mutationFn: authService.login,
     onSuccess: async (response) => {
-      const { session_token, system_roles, user } = response.data;
+      const data = response.data;
+      const { session_token, system_roles } = data;
 
-      login(user, system_roles);
-      setSessionToken(session_token);
+      login(data.user, system_roles);
       setSystemRoles(system_roles);
 
-      // Navigate based on roles
-      if (system_roles.length > 1) {
-        router.push("/login/role");
+      // Backend returned completed=true (1 role + 0 orgs)
+      // Store token but let modal handle showing role selection first
+      if (data.completed && data.access_token) {
+        setToken(data.access_token);
+        setSessionToken(null);
+        if (data.active_role) setActiveRole(data.active_role.id);
         return;
       }
 
-      if (system_roles.length === 1) {
-        try {
-          const selectResponse = await authService.selectProfile({
-            session_token: session_token,
-            system_role_id: system_roles[0].id,
-          });
-          setOrganizations(selectResponse.data.organizations);
-          router.push("/login/organization");
-        } catch (error: unknown) {
-          console.error("Select profile failed:", error);
-          toast.error("Đăng nhập thất bại", {
-            description: "Không thể chọn vai trò. Vui lòng thử lại.",
-          });
-          logout();
-        }
+      // Backend returned requires_org_selection=true (1 role, has orgs)
+      if (data.requires_org_selection) {
+        setSessionToken(session_token);
+        setOrganizations(data.organizations || []);
+        return;
       }
+
+      // Multiple roles → need profile selection
+      setSessionToken(session_token);
     },
     onError: (error: unknown) => {
       console.error("Login error:", error);
@@ -118,28 +142,22 @@ export function useLogin() {
   });
 }
 
-/** Register request (OTP) */
+/** Register request (OTP) - does NOT navigate */
 export function useRegisterRequest() {
-  const router = useRouter();
-
   return useMutation({
     mutationFn: authService.registerRequest,
     onSuccess: () => {
       toast.success("Mã OTP đã được gửi");
-      router.push("/otp");
     },
   });
 }
 
-/** Complete registration */
+/** Complete registration - does NOT navigate */
 export function useRegister() {
-  const router = useRouter();
-
   return useMutation({
     mutationFn: authService.register,
     onSuccess: () => {
       toast.success("Đăng ký thành công!");
-      router.push("/register/success");
     },
   });
 }

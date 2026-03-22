@@ -8,10 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AUTH_ROUTES } from "@/lib/routes";
 import { useRegisterRequest } from "@/hooks/queries/use-auth";
+import { useAuthStore } from "@/stores/auth.store";
+import { roleService } from "@/services/role.service";
+
+const ROLE_NAME_MAP: Record<string, string> = {
+  student: "STUDENT",
+  teacher: "TEACHER",
+  parent: "PARENT",
+  admin: "SYSTEM_ADMIN",
+};
 
 export default function RegisterFormPage() {
   const router = useRouter();
   const registerRequest = useRegisterRequest();
+  const registerRole = useAuthStore((s) => s.registerRole);
   const [formData, setFormData] = useState({
     username: "",
     firstName: "",
@@ -41,14 +51,22 @@ export default function RegisterFormPage() {
     }
 
     try {
+      let roleIds: string[] | undefined;
+      if (registerRole) {
+        const backendRoleName = ROLE_NAME_MAP[registerRole] || registerRole.toUpperCase();
+        const systemRoles = await roleService.listSystemRoles();
+        const matched = systemRoles.find((r) => r.name === backendRoleName);
+        if (matched) roleIds = [matched.id];
+      }
+
       await registerRequest.mutateAsync({
         email: formData.email,
         password: formData.password,
         confirm_password: formData.confirmPassword,
         user_name: formData.username,
         full_name: `${formData.lastName} ${formData.firstName}`.trim(),
+        role_ids: roleIds,
       });
-      // Store email in sessionStorage for the OTP page
       sessionStorage.setItem("register_email", formData.email);
       router.push(AUTH_ROUTES.OTP);
     } catch (err) {

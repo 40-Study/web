@@ -1,6 +1,6 @@
-# 40Study Web
+# ForteX Web
 
-Next.js frontend cho nền tảng 40Study.
+Next.js frontend cho nền tảng ForteX.
 
 ## Tech Stack
 

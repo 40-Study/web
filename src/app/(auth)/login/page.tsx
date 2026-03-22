@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AuthCard } from "@/components/auth/auth-card";
 import { SocialLoginButton } from "@/components/auth/social-login-button";
@@ -10,22 +11,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AUTH_ROUTES } from "@/lib/routes";
 import { useLogin } from "@/hooks/queries/use-auth";
+import { getDeviceInfo } from "@/services/auth.service";
 
 export default function LoginPage() {
   const loginMutation = useLogin();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loginMutation.mutate({
-      email,
-      password,
-      device_info: {
-        name: navigator.userAgent.slice(0, 50) || "Unknown Device",
-      },
-    });
+    loginMutation.mutate(
+      { email, password, device_info: getDeviceInfo() },
+      {
+        onSuccess: (response) => {
+          const { system_roles } = response.data;
+          if (system_roles.length > 1) {
+            router.push("/login/role");
+          } else {
+            router.push("/login/organization");
+          }
+        },
+      }
+    );
   };
 
   const showComingSoonToast = () => {

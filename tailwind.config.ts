@@ -96,8 +96,13 @@ const config: Config = {
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
         "bounce-in": "bounce-in 0.5s ease-out",
         shake: "shake 0.5s ease-in-out",
+        float: "float 6s ease-in-out infinite",
       },
       keyframes: {
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-20px)" },
+        },
         "float-up": {
           "0%": { opacity: "1", transform: "translateY(0) scale(1)" },
           "100%": { opacity: "0", transform: "translateY(-60px) scale(1.2)" },

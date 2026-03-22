@@ -28,6 +28,7 @@ export default function ForgotPasswordOtpPage() {
         email,
         otp: otpCode,
         new_password: "",
+        confirm_password: "",
       });
       sessionStorage.removeItem("reset_password_email");
       router.push(AUTH_ROUTES.RESET_PASSWORD_SUCCESS);

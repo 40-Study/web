@@ -58,7 +58,7 @@ export default function TeacherDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <Card className="bg-gradient-to-r from-primary-500 to-secondary-600 text-white border-0">
+      <Card className="bg-black text-white border-0">
         <CardContent className="py-6">
           <h1 className="text-2xl font-bold">Welcome back, {userName}!</h1>
           <p className="opacity-90 mt-1">
@@ -123,7 +123,7 @@ export default function TeacherDashboardPage() {
                   className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary-400 to-secondary-500" />
+                    <div className="w-12 h-12 rounded-lg bg-black" />
                     <div>
                       <h4 className="font-medium">{course.title}</h4>
                       <p className="text-sm text-muted-foreground">

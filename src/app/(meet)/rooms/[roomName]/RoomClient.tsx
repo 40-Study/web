@@ -1471,7 +1471,7 @@ export default function RoomClient({
           isHost={isHost}
           onClose={(wasSubmitted?: boolean) => {
             if (wasSubmitted) {
-              setSubmittedAssignments(prev => new Set([...prev, activeAssignment.assignment_id]));
+              setSubmittedAssignments(prev => new Set([...Array.from(prev), activeAssignment.assignment_id]));
             }
             setActiveAssignment(null);
           }}

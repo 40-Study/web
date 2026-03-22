@@ -11,11 +11,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
     title: {
-        default: "40Study",
-        template: "%s | 40Study",
+        default: "ForteX",
+        template: "%s | ForteX",
     },
-    description: "Nền tảng học tập và quản lý 40Study",
-    keywords: ["40Study", "learning", "education"],
+    description: "ForteX - Learn Leap Lead | Nền tảng học tập và quản lý hiện đại",
+    keywords: ["ForteX", "learning", "education"],
 };
 
 export default function RootLayout({

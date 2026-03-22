@@ -22,13 +22,75 @@ export interface RegisterDTO {
   otp: string;
 }
 
+export interface DeviceInfo {
+  device_id: string;
+  device_name: string;
+  os: string;
+  app_version?: string;
+  user_agent?: string;
+}
+
 export interface LoginDTO {
   email: string;
   password: string;
-  device_info?: {
-    name: string;
-    os?: string;
-    browser?: string;
+  device_info: DeviceInfo;
+}
+
+// Helper to get or create device ID
+export function getDeviceId(): string {
+  if (typeof window === "undefined") return crypto.randomUUID();
+
+  let deviceId = localStorage.getItem("device_id");
+  if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    localStorage.setItem("device_id", deviceId);
+  }
+  return deviceId;
+}
+
+// Helper to detect OS
+function getOS(): string {
+  if (typeof window === "undefined") return "Unknown";
+
+  const ua = navigator.userAgent;
+  // Check for Windows version
+  if (ua.includes("Windows NT 10.0")) {
+    // Windows 10 or 11 (both report NT 10.0)
+    // Try to detect Windows 11 via user agent hints or default to Windows 10
+    return "Windows 11";
+  }
+  if (ua.includes("Windows NT 6.3")) return "Windows 8.1";
+  if (ua.includes("Windows NT 6.2")) return "Windows 8";
+  if (ua.includes("Windows NT 6.1")) return "Windows 7";
+  if (ua.includes("Win")) return "Windows";
+  if (ua.includes("Mac")) return "macOS";
+  if (ua.includes("Linux")) return "Linux";
+  if (ua.includes("Android")) return "Android";
+  if (ua.includes("iPhone") || ua.includes("iPad")) return "iOS";
+  return "Unknown";
+}
+
+// Helper to get device name
+function getDeviceName(): string {
+  if (typeof window === "undefined") return "Unknown Device";
+
+  const ua = navigator.userAgent;
+  // Try to extract browser name
+  if (ua.includes("Chrome")) return "Chrome Browser";
+  if (ua.includes("Firefox")) return "Firefox Browser";
+  if (ua.includes("Safari")) return "Safari Browser";
+  if (ua.includes("Edge")) return "Edge Browser";
+  return "Web Browser";
+}
+
+// Get complete device info for login
+export function getDeviceInfo(): DeviceInfo {
+  return {
+    device_id: getDeviceId(),
+    device_name: getDeviceName(),
+    os: getOS(),
+    app_version: "1.0.0",
+    user_agent: typeof window !== "undefined" ? navigator.userAgent : undefined,
   };
 }
 
@@ -41,6 +103,7 @@ export interface SystemRole {
 export interface LoginResponse {
   message: string;
   data: {
+    completed: boolean;
     session_token: string;
     system_roles: SystemRole[];
     user: {
@@ -49,6 +112,14 @@ export interface LoginResponse {
       name: string;
       avatar?: string;
     };
+    // When completed=true (auto-login, 1 role + 0 orgs)
+    access_token?: string;
+    refresh_token?: string;
+    active_role?: SystemRole;
+    active_org?: { id: string; name: string } | null;
+    // When requires_org_selection=true (1 role, has orgs)
+    requires_org_selection?: boolean;
+    organizations?: Array<{ id: string; name: string; code?: string }>;
   };
 }
 
@@ -59,6 +130,39 @@ export interface SelectProfileDTO {
 
 export interface SelectOrgDTO {
   organization_id: string;
+}
+
+export interface MyProfileResponse {
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    full_name?: string;
+    phone?: string;
+    avatar_url?: string;
+    date_of_birth?: string;
+    bio?: string;
+    is_active: boolean;
+    created_at: string;
+  };
+  system_roles: SystemRole[];
+  organizations: Array<{
+    id: string;
+    name: string;
+    member_role?: string;
+    status?: string;
+  }>;
+  active_role?: SystemRole;
+  active_org?: { id: string; name: string };
+}
+
+export interface UpdateProfileDTO {
+  username?: string;
+  full_name?: string;
+  phone?: string;
+  date_of_birth?: string;
+  bio?: string;
+  avatar_url?: string;
 }
 
 export interface TokenResponse {
@@ -93,11 +197,15 @@ export interface ResetPasswordDTO {
   email: string;
   otp: string;
   new_password: string;
+  confirm_password: string;
 }
 
 export interface ChangePasswordDTO {
-  current_password: string;
+  old_password: string;
   new_password: string;
+  confirm_password: string;
+  device_info: DeviceInfo;
+  revoke_others?: boolean;
 }
 
 export interface Organization {
@@ -168,6 +276,14 @@ export const authService = {
   /** Get current user info */
   getMe: () =>
     api.get<{ message: string; data: { user: LoginResponse["data"]["user"]; permissions: string[] } }>("/auth/me").then((r) => r.data.data),
+
+  /** Get full profile (user + roles + orgs + active context) */
+  getMyProfile: () =>
+    api.get<{ message: string; data: MyProfileResponse }>("/auth/me/profile").then((r) => r.data.data),
+
+  /** Update profile */
+  updateProfile: (data: UpdateProfileDTO) =>
+    api.put<{ message: string; data: MyProfileResponse["user"] }>("/auth/me", data).then((r) => r.data.data),
 
   /** Logout current device */
   logout: () =>

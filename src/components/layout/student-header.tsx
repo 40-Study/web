@@ -45,9 +45,9 @@ export function StudentHeader() {
       {/* Logo */}
       <Link href="/student/home" className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
-          <span className="text-white font-bold text-sm">40</span>
+          <span className="text-white font-bold text-sm">FX</span>
         </div>
-        <span className="text-xl font-bold text-gray-900">40Study</span>
+        <span className="text-xl font-bold text-gray-900">ForteX</span>
       </Link>
 
       {/* Search Bar */}

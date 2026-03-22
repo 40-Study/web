@@ -18,9 +18,9 @@ export function DashboardHeader() {
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center space-x-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-secondary-600">
-            <span className="text-sm font-bold text-white">40</span>
+            <span className="text-sm font-bold text-white">FX</span>
           </div>
-          <span className="text-lg font-bold hidden sm:inline">40Study</span>
+          <span className="text-lg font-bold hidden sm:inline">ForteX</span>
         </Link>
 
         {/* Desktop Search */}

@@ -100,11 +100,11 @@ export default function TeacherCoursesPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filteredCourses.length > 0 ? (
           filteredCourses.map((course) => (
-            <Card key={course.id} className="hover:border-primary-300 transition-colors flex flex-col">
+            <Card key={course.id} className="hover:border-neutral-400 transition-colors flex flex-col">
               <CardContent className="p-5 flex-1 flex flex-col justify-between">
                 <div>
                   <div className="flex justify-between items-start mb-3">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary-400 to-secondary-500 shrink-0" />
+                    <div className="w-12 h-12 rounded-lg bg-black shrink-0" />
                     <Badge variant={getStatusBadgeVariant(course.status)}>
                       {course.status}
                     </Badge>

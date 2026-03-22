@@ -27,7 +27,7 @@ export default function OtpPage() {
     try {
       await register.mutateAsync({ email, otp: otpCode });
       sessionStorage.removeItem("register_email");
-      router.push(AUTH_ROUTES.REGISTER_SUCCESS);
+      router.push(AUTH_ROUTES.REGISTER_SUCCESS); // Navigate manually since hook no longer does it
     } catch (error) {
       console.error("Registration failed:", error);
     }

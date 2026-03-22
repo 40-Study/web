@@ -69,7 +69,7 @@ export function AppearanceSettings({
         <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
           Appearance
         </h2>
-        <p className="text-muted-foreground">Customize how 40Study looks</p>
+        <p className="text-muted-foreground">Customize how ForteX looks</p>
       </div>
 
       {/* Theme */}

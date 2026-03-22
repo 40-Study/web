@@ -72,7 +72,7 @@ const TitleBar = memo(({
         <rect x="13" y="13" width="8" height="8" rx="2" fill={T.accent} opacity=".3"/>
       </svg>
       <span style={{ color: T.text, fontWeight: 600, fontSize: 12.5, letterSpacing: -0.2 }}>
-        40Study
+        ForteX
       </span>
     </div>
 
