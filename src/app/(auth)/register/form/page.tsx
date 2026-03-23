@@ -7,16 +7,10 @@ import { AuthFooterLink } from "@/components/auth/auth-footer-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AUTH_ROUTES } from "@/lib/routes";
+import { AUTH_CONFIG, ROLE_NAME_MAP, STORAGE_KEYS } from "@/lib/constants";
 import { useRegisterRequest } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth.store";
 import { roleService } from "@/services/role.service";
-
-const ROLE_NAME_MAP: Record<string, string> = {
-  student: "STUDENT",
-  teacher: "TEACHER",
-  parent: "PARENT",
-  admin: "SYSTEM_ADMIN",
-};
 
 export default function RegisterFormPage() {
   const router = useRouter();
@@ -45,8 +39,8 @@ export default function RegisterFormPage() {
       return;
     }
 
-    if (formData.password.length < 8) {
-      setError("Mật khẩu phải có ít nhất 8 ký tự");
+    if (formData.password.length < AUTH_CONFIG.PASSWORD_MIN_LENGTH) {
+      setError(`Mật khẩu phải có ít nhất ${AUTH_CONFIG.PASSWORD_MIN_LENGTH} ký tự`);
       return;
     }
 
@@ -71,7 +65,7 @@ export default function RegisterFormPage() {
         full_name: `${formData.lastName} ${formData.firstName}`.trim() || undefined,
         role_id: matchedRole.id,
       });
-      sessionStorage.setItem("register_email", formData.email);
+      sessionStorage.setItem(STORAGE_KEYS.REGISTER_EMAIL, formData.email);
       router.push(AUTH_ROUTES.OTP);
     } catch (err) {
       console.error("Failed to request OTP:", err);

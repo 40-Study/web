@@ -1,3 +1,32 @@
+// ─── Auth Config ─────────────────────────────────────────────────────────────
+
+export const AUTH_CONFIG = {
+  PASSWORD_MIN_LENGTH: 8,
+  OTP_LENGTH: 6,
+  OTP_COUNTDOWN_SECONDS: 90,
+} as const;
+
+export const ROLE_NAME_MAP: Record<string, string> = {
+  student: "STUDENT",
+  teacher: "TEACHER",
+  parent: "PARENT",
+  admin: "SYSTEM_ADMIN",
+} as const;
+
+// ─── Storage Keys ────────────────────────────────────────────────────────────
+
+export const STORAGE_KEYS = {
+  DEVICE_ID: "device_id",
+  REGISTER_EMAIL: "register_email",
+  RESET_PASSWORD_EMAIL: "reset_password_email",
+} as const;
+
+// ─── App Config ──────────────────────────────────────────────────────────────
+
+export const APP_VERSION = "1.0.0";
+
+// ─── Site Config ─────────────────────────────────────────────────────────────
+
 export const siteConfig = {
     name: "ForteX",
     tagline: "Learn Leap Lead",

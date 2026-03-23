@@ -3,6 +3,7 @@
  */
 
 import { api } from "@/lib/api-client";
+import { STORAGE_KEYS, APP_VERSION } from "@/lib/constants";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
@@ -40,10 +41,10 @@ export interface LoginDTO {
 export function getDeviceId(): string {
   if (typeof window === "undefined") return crypto.randomUUID();
 
-  let deviceId = localStorage.getItem("device_id");
+  let deviceId = localStorage.getItem(STORAGE_KEYS.DEVICE_ID);
   if (!deviceId) {
     deviceId = crypto.randomUUID();
-    localStorage.setItem("device_id", deviceId);
+    localStorage.setItem(STORAGE_KEYS.DEVICE_ID, deviceId);
   }
   return deviceId;
 }
@@ -89,7 +90,7 @@ export function getDeviceInfo(): DeviceInfo {
     device_id: getDeviceId(),
     device_name: getDeviceName(),
     os: getOS(),
-    app_version: "1.0.0",
+    app_version: APP_VERSION,
     user_agent: typeof window !== "undefined" ? navigator.userAgent : undefined,
   };
 }

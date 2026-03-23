@@ -5,8 +5,9 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { X, ArrowLeft, Plus, Mail, UserCheck, FileText, ShieldCheck } from "lucide-react";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { AUTH_CONFIG, ROLE_NAME_MAP, STORAGE_KEYS } from "@/lib/constants";
+import { showComingSoon } from "@/lib/toast-helpers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SocialLoginButton } from "@/components/auth/social-login-button";
@@ -362,10 +363,6 @@ function LoginView({
         );
     };
 
-    const showComingSoonToast = () => {
-        toast.info("Tính năng đang phát triển");
-    };
-
     return (
         <>
             <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">Đăng nhập</h2>
@@ -422,7 +419,7 @@ function LoginView({
             {/* Social icons only - no text */}
             <div className="flex justify-center gap-4">
                 {(["google", "facebook", "apple", "github"] as const).map((provider) => (
-                    <SocialLoginButton key={provider} provider={provider} onClick={showComingSoonToast} iconOnly />
+                    <SocialLoginButton key={provider} provider={provider} onClick={showComingSoon} iconOnly />
                 ))}
             </div>
 
@@ -583,7 +580,7 @@ function LoginOrgView({ onClose }: { onClose: () => void }) {
                 {/* Add new profile / org button */}
                 <button
                     type="button"
-                    onClick={() => toast.info("Tính năng đang phát triển")}
+                    onClick={() => showComingSoon()}
                     className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-300 px-5 py-4 text-sm font-medium text-gray-500 transition-all hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50"
                 >
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-gray-300">
@@ -613,10 +610,6 @@ function RegisterMethodView({
     onSwitchToLogin: () => void;
     onEmailSelected: () => void;
 }) {
-    const showComingSoonToast = () => {
-        toast.info("Tính năng đang phát triển");
-    };
-
     return (
         <>
             <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">
@@ -625,10 +618,10 @@ function RegisterMethodView({
             <p className="mb-6 text-center text-sm text-gray-500">Chọn phương thức đăng ký</p>
 
             <div className="space-y-3">
-                <SocialLoginButton provider="google" onClick={showComingSoonToast} />
-                <SocialLoginButton provider="facebook" onClick={showComingSoonToast} />
-                <SocialLoginButton provider="apple" onClick={showComingSoonToast} />
-                <SocialLoginButton provider="github" onClick={showComingSoonToast} />
+                <SocialLoginButton provider="google" onClick={showComingSoon} />
+                <SocialLoginButton provider="facebook" onClick={showComingSoon} />
+                <SocialLoginButton provider="apple" onClick={showComingSoon} />
+                <SocialLoginButton provider="github" onClick={showComingSoon} />
                 <SocialLoginButton provider="email" onClick={onEmailSelected} />
             </div>
 
@@ -681,14 +674,6 @@ function RegisterRoleView({ onNext }: { onNext: () => void }) {
 
 // ─── REGISTER FORM VIEW ─────────────────────────────────────────────────────
 
-// Map frontend role name → backend role name
-const ROLE_NAME_MAP: Record<string, string> = {
-    student: "STUDENT",
-    teacher: "TEACHER",
-    parent: "PARENT",
-    admin: "SYSTEM_ADMIN",
-};
-
 function RegisterFormView({
     onSwitchToLogin,
     onNext,
@@ -721,8 +706,8 @@ function RegisterFormView({
             return;
         }
 
-        if (formData.password.length < 8) {
-            setError("Mật khẩu phải có ít nhất 8 ký tự");
+        if (formData.password.length < AUTH_CONFIG.PASSWORD_MIN_LENGTH) {
+            setError(`Mật khẩu phải có ít nhất ${AUTH_CONFIG.PASSWORD_MIN_LENGTH} ký tự`);
             return;
         }
 
@@ -746,7 +731,7 @@ function RegisterFormView({
                 full_name: `${formData.lastName} ${formData.firstName}`.trim(),
                 role_id: roleId,
             });
-            sessionStorage.setItem("register_email", formData.email);
+            sessionStorage.setItem(STORAGE_KEYS.REGISTER_EMAIL, formData.email);
             onNext(formData.email);
         } catch (err) {
             console.error("Failed to request OTP:", err);
@@ -839,12 +824,12 @@ function RegisterOtpView({ email, onSuccess }: { email: string; onSuccess: () =>
     const register = useRegister();
 
     const handleComplete = async (otpCode: string) => {
-        const storedEmail = email || sessionStorage.getItem("register_email");
+        const storedEmail = email || sessionStorage.getItem(STORAGE_KEYS.REGISTER_EMAIL);
         if (!storedEmail) return;
 
         try {
             await register.mutateAsync({ email: storedEmail, otp: otpCode });
-            sessionStorage.removeItem("register_email");
+            sessionStorage.removeItem(STORAGE_KEYS.REGISTER_EMAIL);
             onSuccess();
         } catch (error) {
             console.error("Registration failed:", error);

@@ -3,13 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { AuthCard } from "@/components/auth/auth-card";
 import { SocialLoginButton } from "@/components/auth/social-login-button";
 import { AuthFooterLink } from "@/components/auth/auth-footer-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AUTH_ROUTES } from "@/lib/routes";
+import { showComingSoon } from "@/lib/toast-helpers";
 import { useLogin } from "@/hooks/queries/use-auth";
 import { getDeviceInfo } from "@/services/auth.service";
 
@@ -46,9 +46,6 @@ export default function LoginPage() {
     );
   };
 
-  const showComingSoonToast = () => {
-    toast.info("Tính năng đang phát triển");
-  };
 
   return (
     <AuthCard>
@@ -109,10 +106,10 @@ export default function LoginPage() {
       </div>
 
       <div className="grid grid-cols-4 gap-3">
-        <SocialLoginButton provider="google" onClick={showComingSoonToast} />
-        <SocialLoginButton provider="facebook" onClick={showComingSoonToast} />
-        <SocialLoginButton provider="apple" onClick={showComingSoonToast} />
-        <SocialLoginButton provider="github" onClick={showComingSoonToast} />
+        <SocialLoginButton provider="google" onClick={showComingSoon} />
+        <SocialLoginButton provider="facebook" onClick={showComingSoon} />
+        <SocialLoginButton provider="apple" onClick={showComingSoon} />
+        <SocialLoginButton provider="github" onClick={showComingSoon} />
       </div>
 
       <AuthFooterLink
