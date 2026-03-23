@@ -24,7 +24,8 @@ import type { SystemRole } from "@/services/auth.service";
 import type { Permission } from "@/lib/permissions";
 import { useAuthStore } from "@/stores/auth.store";
 import { roleService } from "@/services/role.service";
-import { AUTH_ROUTES, ROUTES } from "@/lib/routes";
+import { AUTH_ROUTES, getRoleHomeRoute } from "@/lib/routes";
+import { getRoleFromToken } from "@/lib/jwt";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -111,6 +112,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
     const [view, setView] = useState<ModalView>(initialMode);
     const [mounted, setMounted] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+    const activeRole = useAuthStore((s) => s.activeRole);
 
     // Register state
     const [registerEmail, setRegisterEmail] = useState("");
@@ -254,9 +256,9 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                                 // Defer to next tick to allow Zustand store updates to complete
                                 setTimeout(() => {
                                     if (nextStep === "direct") {
-                                        // Direct login complete - go to dashboard
+                                        // Direct login complete - redirect based on role
                                         handleActualClose();
-                                        window.location.href = "/dashboard";
+                                        window.location.href = getRoleHomeRoute(activeRole);
                                     } else if (nextStep === "select-org") {
                                         setView("login-org");
                                     } else {
@@ -474,7 +476,7 @@ function LoginRoleView({ onNext, onComplete }: { onNext: () => void; onComplete:
                 .finally(() => {
                     qc.invalidateQueries({ queryKey: authKeys.all });
                     onComplete();
-                    router.push("/dashboard");
+                    router.push(getRoleHomeRoute(selectedRole?.name));
                 });
         }
     }, [isAlreadyCompleted, selectedRole, isAutoNavigating, setActiveRole, setPermissions, qc, onComplete, router]);
@@ -531,7 +533,7 @@ function LoginRoleView({ onNext, onComplete }: { onNext: () => void; onComplete:
 
 function LoginOrgView({ onClose }: { onClose: () => void }) {
     const router = useRouter();
-    const { organizations, setActiveOrg } = useAuthStore();
+    const { organizations, activeRole, setActiveOrg } = useAuthStore();
     const selectOrg = useSelectOrg();
     const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
 
@@ -544,7 +546,7 @@ function LoginOrgView({ onClose }: { onClose: () => void }) {
                 setActiveOrg({ id: org.id, name: org.name });
             }
             onClose();
-            router.push(ROUTES.DASHBOARD);
+            router.push(getRoleHomeRoute(activeRole));
         } catch (error) {
             console.error("Failed to select organization:", error);
         }

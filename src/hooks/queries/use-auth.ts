@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
+import { getRoleFromToken } from "@/lib/jwt";
+import { getRoleHomeRoute } from "@/lib/routes";
 import type { Permission } from "@/lib/permissions";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -125,7 +127,9 @@ export function useLogin() {
       if (data.access_token && !data.session_token) {
         setToken(data.access_token);
         setSessionToken(null);
-        if (data.active_role) setActiveRole(data.active_role.id);
+        // Extract role from JWT if not in response
+        const role = data.active_role?.name || getRoleFromToken(data.access_token);
+        if (role) setActiveRole(role);
         return;
       }
 
@@ -199,7 +203,7 @@ export function useSelectProfile() {
 
 /** Select organization */
 export function useSelectOrg() {
-  const { setToken, setPermissions, setSessionToken } = useAuthStore();
+  const { setToken, setPermissions, setSessionToken, activeRole } = useAuthStore();
   const qc = useQueryClient();
   const router = useRouter();
 
@@ -214,7 +218,7 @@ export function useSelectOrg() {
         const me = await authService.getMe();
         setPermissions(me.permissions as Permission[]);
         qc.invalidateQueries({ queryKey: authKeys.all });
-        router.push("/dashboard");
+        router.push(getRoleHomeRoute(activeRole));
       } catch (error: unknown) {
         console.error("Failed to get user info:", error);
         toast.error("Lỗi lấy thông tin người dùng");

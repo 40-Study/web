@@ -14,8 +14,23 @@ export const AUTH_ROUTES = {
   RESET_PASSWORD_SUCCESS: "/reset-password/success",
 } as const;
 
+// Role-based home routes
+export const ROLE_HOME_ROUTES: Record<string, string> = {
+  STUDENT: "/student/home",
+  TEACHER: "/teacher/dashboard",
+  PARENT: "/parent/home",
+  SYSTEM_ADMIN: "/admin/dashboard",
+  ORG_OWNER: "/admin/dashboard",
+} as const;
+
+// Get home route based on role (fallback to student home)
+export function getRoleHomeRoute(role?: string | null): string {
+  if (!role) return ROLE_HOME_ROUTES.STUDENT;
+  const upperRole = role.toUpperCase();
+  return ROLE_HOME_ROUTES[upperRole] || ROLE_HOME_ROUTES.STUDENT;
+}
+
 export const ROUTES = {
   HOME: "/",
-  DASHBOARD: "/dashboard",
   ...AUTH_ROUTES,
 } as const;

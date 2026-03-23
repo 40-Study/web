@@ -8,7 +8,8 @@ import { SocialLoginButton } from "@/components/auth/social-login-button";
 import { AuthFooterLink } from "@/components/auth/auth-footer-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AUTH_ROUTES } from "@/lib/routes";
+import { AUTH_ROUTES, getRoleHomeRoute } from "@/lib/routes";
+import { getRoleFromToken } from "@/lib/jwt";
 import { showComingSoon } from "@/lib/toast-helpers";
 import { useLogin } from "@/hooks/queries/use-auth";
 import { getDeviceInfo } from "@/services/auth.service";
@@ -30,16 +31,17 @@ export default function LoginPage() {
 
           // Direct login - access_token returned without session_token
           if (data.access_token && !data.session_token) {
-            router.push("/dashboard");
+            const role = getRoleFromToken(data.access_token);
+            router.push(getRoleHomeRoute(role));
             return;
           }
 
           // Multiple roles → role selection
           const systemRoles = data.system_roles || [];
           if (systemRoles.length > 1) {
-            router.push("/login/role");
+            router.push(AUTH_ROUTES.LOGIN_ROLE);
           } else {
-            router.push("/login/organization");
+            router.push(AUTH_ROUTES.LOGIN_ORGANIZATION);
           }
         },
       }
