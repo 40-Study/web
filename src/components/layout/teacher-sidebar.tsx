@@ -8,14 +8,12 @@ import { useSidebarStore, useAuthStore } from "@/stores";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
-    LayoutDashboard,
+    Calendar,
     BookOpen,
-    Users2,
+    Users,
     ClipboardList,
-    FileCheck,
-    GraduationCap,
     BarChart3,
-    Settings,
+    Wallet,
     ChevronRight,
     ChevronLeft
 } from "lucide-react";
@@ -25,14 +23,12 @@ interface TeacherSidebarProps {
 }
 
 const menuItems = [
-    { label: "Tổng quan", href: "/teacher/dashboard", icon: LayoutDashboard },
-    { label: "Khoá học", href: "/teacher/courses", icon: BookOpen },
-    { label: "Lớp học", href: "/teacher/classes", icon: Users2 },
-    { label: "Bài tập", href: "/teacher/assignments", icon: ClipboardList },
-    { label: "Bài kiểm tra", href: "/teacher/exams", icon: FileCheck },
-    { label: "Học sinh", href: "/teacher/students", icon: GraduationCap },
+    { label: "Lịch giảng dạy", href: "/teacher/schedule", icon: Calendar },
+    { label: "Quản lý khóa học", href: "/teacher/courses", icon: BookOpen },
+    { label: "Quản lý học sinh", href: "/teacher/students", icon: Users },
+    { label: "Quản lý bài tập", href: "/teacher/assignments", icon: ClipboardList },
     { label: "Thống kê", href: "/teacher/analytics", icon: BarChart3 },
-    { label: "Cài đặt", href: "/teacher/settings", icon: Settings },
+    { label: "Ví", href: "/teacher/wallet", icon: Wallet },
 ];
 
 export function TeacherSidebar({ className }: TeacherSidebarProps) {
@@ -50,36 +46,23 @@ export function TeacherSidebar({ className }: TeacherSidebarProps) {
                 className
             )}
         >
+            {/* Logo/Brand Header */}
             <div className="flex h-16 items-center justify-between border-b px-4 shrink-0">
                 {!isCollapsed && (
-                    <div className="flex items-center gap-3 overflow-hidden">
-                        <Avatar
-                            src={user?.avatar}
-                            fallback={user?.name || "GV"}
-                            size="sm"
-                        />
-                        <div className="flex flex-col truncate">
-                            <span className="text-sm font-semibold truncate">
-                                {user?.name || "Giáo viên"}
-                            </span>
-                            <span className="text-xs text-muted-foreground truncate">
-                                Bảng điều khiển
-                            </span>
+                    <Link href="/teacher/schedule" className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-white font-bold text-sm">
+                            40
                         </div>
-                    </div>
+                        <span className="text-lg font-bold">40Study</span>
+                    </Link>
                 )}
-                <button
-                    onClick={toggle}
-                    className="rounded-md p-2 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 shrink-0 ml-auto"
-                    aria-expanded={!isCollapsed}
-                    aria-label={isCollapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
-                >
-                    {isCollapsed ? (
-                        <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                    ) : (
-                        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                    )}
-                </button>
+                {isCollapsed && (
+                    <Link href="/teacher/schedule" className="flex items-center justify-center w-full">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-white font-bold text-sm">
+                            4
+                        </div>
+                    </Link>
+                )}
             </div>
 
             <nav
@@ -90,7 +73,7 @@ export function TeacherSidebar({ className }: TeacherSidebarProps) {
                 {menuItems.map((item) => {
                     const isActive =
                         pathname === item.href ||
-                        (item.href !== "/teacher/dashboard" && pathname.startsWith(item.href));
+                        (item.href !== "/teacher/schedule" && pathname.startsWith(item.href));
 
                     return (
                         <Link
@@ -112,6 +95,30 @@ export function TeacherSidebar({ className }: TeacherSidebarProps) {
                     );
                 })}
             </nav>
+
+            {/* User Profile at Bottom */}
+            <div className="mt-auto border-t p-3 shrink-0">
+                <div className={cn(
+                    "flex items-center gap-3 rounded-lg p-2 hover:bg-muted transition-colors",
+                    isCollapsed && "justify-center"
+                )}>
+                    <Avatar
+                        src={user?.avatar}
+                        fallback={user?.name || "GV"}
+                        size="sm"
+                    />
+                    {!isCollapsed && (
+                        <div className="flex flex-col overflow-hidden">
+                            <span className="text-sm font-medium truncate">
+                                {user?.name || "Giáo viên"}
+                            </span>
+                            <span className="text-xs text-muted-foreground truncate">
+                                Giảng viên
+                            </span>
+                        </div>
+                    )}
+                </div>
+            </div>
         </aside>
     );
 }

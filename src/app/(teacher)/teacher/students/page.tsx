@@ -1,137 +1,206 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
+import { Search, Download, Bell } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
-import { ProgressBar } from "@/components/ui/progress-bar";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Search, GraduationCap, Calendar, Trophy, Mail } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface Student {
-  id: string; name: string; email: string; avatarUrl?: string;
-  className: string; xp: number; level: number; joinDate: string;
+  id: string;
+  name: string;
+  studentId: string;
+  birthYear: number;
+  avatar?: string;
+  parentName: string;
+  parentPhone?: string;
+  courseName: string;
+  status: "active" | "completed" | "paused";
 }
 
 const MOCK_STUDENTS: Student[] = [
-  { id: "std_1", name: "Nguyễn Văn An", email: "an.nguyen@example.com", className: "Lớp Lập trình Python Cơ bản", xp: 2450, level: 3, joinDate: "2023-09-15" },
-  { id: "std_2", name: "Trần Thị Bình", email: "binh.tran@example.com", className: "Lớp Lập trình Web Frontend", xp: 4120, level: 5, joinDate: "2023-08-01", avatarUrl: "https://i.pravatar.cc/150?u=std_2" },
-  { id: "std_3", name: "Lê Hoàng Công", email: "cong.le@example.com", className: "Lớp Thuật toán Nâng cao", xp: 850, level: 1, joinDate: "2023-11-20" },
-  { id: "std_4", name: "Phạm Dung", email: "dung.pham@example.com", className: "Lớp Lập trình Python Cơ bản", xp: 3200, level: 4, joinDate: "2023-09-16" },
-  { id: "std_5", name: "Đặng Tiến Đạt", email: "dat.dang@example.com", className: "Lớp Data Science", xp: 5600, level: 6, joinDate: "2023-07-10", avatarUrl: "https://i.pravatar.cc/150?u=std_5" },
-  { id: "std_6", name: "Hồ Lan Anh", email: "lananh.ho@example.com", className: "Lớp Lập trình Web Frontend", xp: 1800, level: 2, joinDate: "2023-10-05" },
+  { id: "1", name: "Trần Hoàng Khôi", studentId: "HCM-NTT-007762", birthYear: 2020, parentName: "Trần Văn Trung", courseName: "Lập trình Scratch Cơ bản", status: "active" },
+  { id: "2", name: "Nguyễn Tuấn Anh", studentId: "HN-CGL-001234", birthYear: 2018, parentName: "Nguyễn Thị Lan", courseName: "Python Nhập môn", status: "active" },
+  { id: "3", name: "Lê Minh Tuấn", studentId: "DN-MT-009912", birthYear: 2019, parentName: "Lê Văn Hùng", courseName: "Lập trình Scratch Cơ bản", status: "active" },
+  { id: "4", name: "Hoàng Bảo Ngọc", studentId: "HN-HK-002231", birthYear: 2020, parentName: "Nguyễn Thu Hà", courseName: "Tiếng Anh Mầm non", status: "active" },
+  { id: "5", name: "Vũ Đức Duy", studentId: "HCM-TB-003314", birthYear: 2017, parentName: "Vũ Đức Thịnh", courseName: "Toán Tư duy K2", status: "active" },
+  { id: "6", name: "Phan Mỹ Linh", studentId: "HN-TX-004456", birthYear: 2021, parentName: "Phan Văn An", courseName: "Mỹ thuật Cơ bản", status: "active" },
+  { id: "7", name: "Đỗ Gia Bảo", studentId: "HCM-Q1-008821", birthYear: 2018, parentName: "Đỗ Thành Danh", courseName: "Kỹ năng Sống S1", status: "active" },
+  { id: "8", name: "Lý Thanh Hằng", studentId: "DN-HC-001156", birthYear: 2019, parentName: "Lý Hoàng Nam", courseName: "Robotics M1", status: "active" },
+  { id: "9", name: "Bùi Minh Quân", studentId: "HN-LB-006823", birthYear: 2018, parentName: "Bùi Văn Thắng", courseName: "Cờ vua Nhập môn", status: "active" },
+  { id: "10", name: "Ngô Phương Anh", studentId: "HCM-PN-005511", birthYear: 2020, parentName: "Ngô Văn Hiếu", courseName: "Lập trình Python", status: "active" },
 ];
 
-type SortOption = "name_asc" | "name_desc" | "xp_desc" | "join_date_desc";
-
 export default function TeacherStudentsPage() {
-  const [search, setSearch] = useState("");
-  const [classFilter, setClassFilter] = useState("all");
-  const [sortOption, setSortOption] = useState<SortOption>("xp_desc");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [courseFilter, setCourseFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("active");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
-  const classes = useMemo(() => Array.from(new Set(MOCK_STUDENTS.map((s) => s.className))), []);
-
-  const filteredAndSortedStudents = useMemo(() => {
-    let result = [...MOCK_STUDENTS];
-    if (search.trim()) {
-      const lowerSearch = search.toLowerCase();
-      result = result.filter(s => s.name.toLowerCase().includes(lowerSearch) || s.email.toLowerCase().includes(lowerSearch));
-    }
-    if (classFilter !== "all") result = result.filter(s => s.className === classFilter);
-
-    result.sort((a, b) => {
-      switch (sortOption) {
-        case "name_asc": return a.name.localeCompare(b.name);
-        case "name_desc": return b.name.localeCompare(a.name);
-        case "xp_desc": return b.xp - a.xp;
-        case "join_date_desc": return new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime();
-        default: return 0;
-      }
+  const filteredStudents = useMemo(() => {
+    return MOCK_STUDENTS.filter((student) => {
+      const matchesSearch =
+        student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.parentName.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCourse = courseFilter === "all" || student.courseName.includes(courseFilter);
+      const matchesStatus = statusFilter === "all" || student.status === statusFilter;
+      return matchesSearch && matchesCourse && matchesStatus;
     });
-    return result;
-  }, [search, classFilter, sortOption]);
+  }, [searchQuery, courseFilter, statusFilter]);
 
-  const formatDate = (date: string) => new Date(date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const totalStudents = 1240;
+  const totalPages = Math.ceil(totalStudents / pageSize);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredStudents.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredStudents.map((s) => s.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
+  };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Danh sách Học sinh</h1>
-      </div>
-
-      <div className="flex flex-col gap-4 rounded-xl border bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <Input type="search" placeholder="Tìm theo tên, email..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
-        </div>
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Select value={classFilter} onValueChange={setClassFilter}>
-            <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Chọn lớp học" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả lớp học</SelectItem>
-              {classes.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
-          <Select value={sortOption} onValueChange={(val) => setSortOption(val as SortOption)}>
-            <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Sắp xếp" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="xp_desc">XP cao nhất</SelectItem>
-              <SelectItem value="name_asc">Tên (A-Z)</SelectItem>
-              <SelectItem value="name_desc">Tên (Z-A)</SelectItem>
-              <SelectItem value="join_date_desc">Mới tham gia</SelectItem>
-            </SelectContent>
-          </Select>
+        <h1 className="text-2xl font-bold">Quản lý học viên</h1>
+        <div className="flex gap-2">
+          <Button variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Xuất Excel
+          </Button>
+          <Button disabled={selectedIds.length === 0}>
+            <Bell className="w-4 h-4 mr-2" />
+            Gửi thông báo {selectedIds.length > 0 && `(${selectedIds.length})`}
+          </Button>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredAndSortedStudents.map((student) => (
-          <div key={student.id} className="flex flex-col rounded-xl border bg-white p-5 shadow-sm transition-all hover:shadow-md">
-            <div className="flex items-start gap-4">
-              <Avatar src={student.avatarUrl} fallback={student.name} size="lg" />
-              <div className="flex-1 overflow-hidden">
-                <h3 className="truncate font-semibold text-gray-900" title={student.name}>{student.name}</h3>
-                <div className="mt-1 flex items-center gap-1.5 text-sm text-gray-500">
-                  <Mail className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate" title={student.email}>{student.email}</span>
-                </div>
-              </div>
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                placeholder="Tìm theo Mã HS, Tên, Phụ huynh..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-
-            <div className="mt-5 space-y-3">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <GraduationCap className="h-4 w-4 shrink-0 text-primary-500" />
-                <span className="truncate font-medium">{student.className}</span>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-1.5 font-medium text-gray-700">
-                  <Trophy className="h-4 w-4 text-orange-500" />
-                  <span>Cấp {student.level}</span>
-                </div>
-                <span className="font-bold text-primary-600">{student.xp.toLocaleString("vi-VN")} XP</span>
-              </div>
-              
-              <div className="space-y-1">
-                <ProgressBar value={(student.xp % 1000) / 10} variant="xp" size="sm" />
-                <p className="text-right text-xs text-gray-500">{student.xp % 1000} / 1000 XP</p>
-              </div>
-            </div>
-
-            <div className="mt-auto pt-4 flex items-center gap-2 border-t text-xs text-gray-500">
-              <Calendar className="h-3.5 w-3.5" />
-              <span>Tham gia: {formatDate(student.joinDate)}</span>
-            </div>
+            <Select value={courseFilter} onValueChange={setCourseFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Tất cả Khóa học" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả Khóa học</SelectItem>
+                <SelectItem value="Python">Python</SelectItem>
+                <SelectItem value="Scratch">Scratch</SelectItem>
+                <SelectItem value="Robotics">Robotics</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="active">Đang học</SelectItem>
+                <SelectItem value="completed">Hoàn thành</SelectItem>
+                <SelectItem value="paused">Tạm dừng</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        ))}
-      </div>
+        </CardContent>
+      </Card>
 
-      {filteredAndSortedStudents.length === 0 && (
-        <div className="rounded-xl border border-dashed py-12 text-center">
-          <p className="text-gray-500">Không tìm thấy học sinh nào phù hợp.</p>
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={selectedIds.length === filteredStudents.length && filteredStudents.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                />
+              </TableHead>
+              <TableHead>HỌC VIÊN</TableHead>
+              <TableHead>PHỤ HUYNH LIÊN HỆ</TableHead>
+              <TableHead>KHÓA HỌC / LỚP</TableHead>
+              <TableHead>TRẠNG THÁI</TableHead>
+              <TableHead>THAO TÁC</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredStudents.map((student) => (
+              <TableRow key={student.id}>
+                <TableCell>
+                  <Checkbox checked={selectedIds.includes(student.id)} onCheckedChange={() => toggleSelect(student.id)} />
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar fallback={student.name.charAt(0)} size="sm" className="bg-primary-100 text-primary-700" />
+                    <div>
+                      <p className="font-medium">{student.name}</p>
+                      <p className="text-xs text-muted-foreground">Mã HS: {student.studentId} • Sinh: {student.birthYear}</p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Link href="#" className="text-primary-600 hover:underline text-sm">{student.parentName}</Link>
+                </TableCell>
+                <TableCell><span className="text-sm">{student.courseName}</span></TableCell>
+                <TableCell>
+                  <Badge variant={student.status === "active" ? "success" : "secondary"} className="text-xs">
+                    {student.status === "active" ? "ĐANG HỌC" : "HOÀN THÀNH"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Link href={`/teacher/students/${student.id}`} className="text-primary-600 hover:underline text-sm">Hồ sơ</Link>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">Hiển thị 1 - 10 trong tổng số {totalStudents.toLocaleString()} học sinh</p>
+        <div className="flex items-center gap-1">
+          <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>‹</Button>
+          {[1, 2, 3].map((page) => (
+            <Button key={page} variant={currentPage === page ? "default" : "outline"} size="sm" onClick={() => setCurrentPage(page)}>{page}</Button>
+          ))}
+          <span className="px-2 text-muted-foreground">...</span>
+          <Button variant="outline" size="sm" onClick={() => setCurrentPage(totalPages)}>{totalPages}</Button>
+          <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>›</Button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

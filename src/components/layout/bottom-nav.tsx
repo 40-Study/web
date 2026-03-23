@@ -7,9 +7,11 @@ import {
   BookOpen,
   Trophy,
   User,
-  PlusCircle,
+  Calendar,
   BarChart3,
   Users,
+  Wallet,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,11 +31,11 @@ const navConfigs: Record<UserRole, NavItem[]> = {
     { icon: <User className="w-5 h-5" />, label: "Profile", href: "/profile" },
   ],
   teacher: [
-    { icon: <Home className="w-5 h-5" />, label: "Home", href: "/teacher/dashboard" },
-    { icon: <BookOpen className="w-5 h-5" />, label: "Courses", href: "/teacher/courses" },
-    { icon: <Users className="w-5 h-5" />, label: "Classes", href: "/teacher/classes" },
-    { icon: <BarChart3 className="w-5 h-5" />, label: "Analytics", href: "/teacher/analytics" },
-    { icon: <User className="w-5 h-5" />, label: "Settings", href: "/teacher/settings" },
+    { icon: <Calendar className="w-5 h-5" />, label: "Lịch", href: "/teacher/schedule" },
+    { icon: <BookOpen className="w-5 h-5" />, label: "Khóa học", href: "/teacher/courses" },
+    { icon: <Users className="w-5 h-5" />, label: "Học sinh", href: "/teacher/students" },
+    { icon: <BarChart3 className="w-5 h-5" />, label: "Thống kê", href: "/teacher/analytics" },
+    { icon: <Wallet className="w-5 h-5" />, label: "Ví", href: "/teacher/wallet" },
   ],
   parent: [
     { icon: <Home className="w-5 h-5" />, label: "Home", href: "/dashboard/parent" },
@@ -64,7 +66,7 @@ export function BottomNav({ role = "student", className }: BottomNavProps) {
           const isActive =
             pathname === tab.href ||
             (tab.href !== "/dashboard" &&
-              tab.href !== "/teacher/dashboard" &&
+              tab.href !== "/teacher/schedule" &&
               tab.href !== "/dashboard/parent" &&
               pathname.startsWith(tab.href));
 
