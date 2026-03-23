@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -250,15 +250,15 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                             onClose={handleActualClose}
                             onSwitchToRegister={() => setView("register")}
                             onLoginSuccess={(nextStep) => {
-                                if (nextStep === "select-org") {
-                                    setView("login-org");
-                                } else if (nextStep === "completed") {
-                                    // Already fully authenticated, show role selection briefly then auto-continue
-                                    setView("login-role");
-                                } else {
-                                    // Multiple roles → need role selection
-                                    setView("login-role");
-                                }
+                                // Defer view change to next tick to allow Zustand store updates to complete
+                                // This prevents "Cannot update a component while rendering" warning
+                                setTimeout(() => {
+                                    if (nextStep === "select-org") {
+                                        setView("login-org");
+                                    } else {
+                                        setView("login-role");
+                                    }
+                                }, 0);
                             }}
                         />
                     )}
@@ -440,19 +440,26 @@ function LoginRoleView({ onNext, onComplete }: { onNext: () => void; onComplete:
     const { systemRoles, sessionToken, token, setActiveRole, setPermissions } = useAuthStore();
     const selectProfile = useSelectProfile();
     const qc = useQueryClient();
-    const [selectedRole, setSelectedRole] = useState<SystemRole | null>(
-        systemRoles.length > 0 ? systemRoles[0] : null
-    );
+    const [selectedRole, setSelectedRole] = useState<SystemRole | null>(null);
     const [isAutoNavigating, setIsAutoNavigating] = useState(false);
+
+    // Ensure systemRoles is always an array (memoized to prevent useEffect dependency issues)
+    const roles = useMemo(() => systemRoles ?? [], [systemRoles]);
 
     // Login already completed (1 role, 0 orgs) → token already set, no sessionToken
     const isAlreadyCompleted = !!token && !sessionToken;
 
-    // Auto-navigate when login is already completed (use useEffect to avoid setState during render)
+    // Initialize selected role after mount
+    useEffect(() => {
+        if (roles.length > 0 && !selectedRole) {
+            setSelectedRole(roles[0]);
+        }
+    }, [roles, selectedRole]);
+
+    // Auto-navigate when login is already completed
     useEffect(() => {
         if (isAlreadyCompleted && selectedRole && !isAutoNavigating) {
             setIsAutoNavigating(true);
-            // Set active role and navigate
             setActiveRole(selectedRole.id);
             authService.getMe()
                 .then((me) => setPermissions(me.permissions as Permission[]))
@@ -467,8 +474,6 @@ function LoginRoleView({ onNext, onComplete }: { onNext: () => void; onComplete:
 
     const handleContinue = async () => {
         if (!selectedRole || isAutoNavigating) return;
-
-        // isAlreadyCompleted case is handled by useEffect above
 
         // Need to call selectProfile with session token
         try {
@@ -488,8 +493,8 @@ function LoginRoleView({ onNext, onComplete }: { onNext: () => void; onComplete:
             <p className="mb-6 text-center text-sm text-gray-500">Chọn vai trò của bạn để tiếp tục</p>
 
             <div className="space-y-3" role="radiogroup" aria-label="Chọn vai trò">
-                {systemRoles.length > 0 ? (
-                    systemRoles.map((role) => (
+                {roles.length > 0 ? (
+                    roles.map((role) => (
                         <RoleCard
                             key={role.id}
                             role={role.name.toLowerCase() as RoleType}
