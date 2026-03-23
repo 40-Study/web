@@ -103,21 +103,28 @@ export interface SystemRole {
 export interface LoginResponse {
   message: string;
   data: {
-    completed: boolean;
-    session_token: string;
-    system_roles: SystemRole[];
-    user: {
-      id: string;
-      email: string;
-      name: string;
-      avatar?: string;
-    };
-    // When completed=true (auto-login, 1 role + 0 orgs)
+    // Direct login (1 role, 0 orgs) - backend returns tokens directly
     access_token?: string;
     refresh_token?: string;
+    user: {
+      id: string;
+      username?: string;
+      email: string;
+      name?: string;
+      avatar?: string;
+      is_active?: boolean;
+    };
+    current_device?: {
+      device_id: string;
+      device_name: string;
+      logged_in_at: string;
+    };
+    // Multi-step login flow (multiple roles or orgs)
+    session_token?: string;
+    system_roles?: SystemRole[];
+    completed?: boolean;
     active_role?: SystemRole;
     active_org?: { id: string; name: string } | null;
-    // When requires_org_selection=true (1 role, has orgs)
     requires_org_selection?: boolean;
     organizations?: Array<{ id: string; name: string; code?: string }>;
   };

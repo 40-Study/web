@@ -250,10 +250,13 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                             onClose={handleActualClose}
                             onSwitchToRegister={() => setView("register")}
                             onLoginSuccess={(nextStep) => {
-                                // Defer view change to next tick to allow Zustand store updates to complete
-                                // This prevents "Cannot update a component while rendering" warning
+                                // Defer to next tick to allow Zustand store updates to complete
                                 setTimeout(() => {
-                                    if (nextStep === "select-org") {
+                                    if (nextStep === "direct") {
+                                        // Direct login complete - go to dashboard
+                                        handleActualClose();
+                                        window.location.href = "/dashboard";
+                                    } else if (nextStep === "select-org") {
                                         setView("login-org");
                                     } else {
                                         setView("login-role");
@@ -318,7 +321,7 @@ function LoginView({
 }: {
     onClose: () => void;
     onSwitchToRegister: () => void;
-    onLoginSuccess: (nextStep: "completed" | "select-role" | "select-org") => void;
+    onLoginSuccess: (nextStep: "direct" | "select-role" | "select-org") => void;
 }) {
     const loginMutation = useLogin();
     const [email, setEmail] = useState("");
@@ -333,9 +336,10 @@ function LoginView({
                 onSuccess: (response) => {
                     const data = response.data;
 
-                    // completed=true → already fully logged in (1 role, 0 orgs)
-                    if (data.completed && data.access_token) {
-                        onLoginSuccess("completed");
+                    // Direct login - access_token returned without session_token
+                    // This means login is complete (1 role, 0 orgs)
+                    if (data.access_token && !data.session_token) {
+                        onLoginSuccess("direct");
                         return;
                     }
 
@@ -346,6 +350,12 @@ function LoginView({
                     }
 
                     // Multiple roles → need role selection
+                    if (data.system_roles && data.system_roles.length > 1) {
+                        onLoginSuccess("select-role");
+                        return;
+                    }
+
+                    // Single role with session_token → might need org selection later
                     onLoginSuccess("select-role");
                 },
             }

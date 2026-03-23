@@ -26,8 +26,17 @@ export default function LoginPage() {
       { email, password, device_info: getDeviceInfo() },
       {
         onSuccess: (response) => {
-          const { system_roles } = response.data;
-          if (system_roles.length > 1) {
+          const data = response.data;
+
+          // Direct login - access_token returned without session_token
+          if (data.access_token && !data.session_token) {
+            router.push("/dashboard");
+            return;
+          }
+
+          // Multiple roles → role selection
+          const systemRoles = data.system_roles || [];
+          if (systemRoles.length > 1) {
             router.push("/login/role");
           } else {
             router.push("/login/organization");

@@ -111,29 +111,40 @@ export function useLogin() {
     mutationFn: authService.login,
     onSuccess: async (response) => {
       const data = response.data;
-      const { session_token, system_roles } = data;
 
-      login(data.user, system_roles);
-      setSystemRoles(system_roles);
+      // Store user info
+      const user = {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name || data.user.username || data.user.email,
+        avatar: data.user.avatar,
+      };
+      login(user, data.system_roles || []);
 
-      // Backend returned completed=true (1 role + 0 orgs)
-      // Store token but let modal handle showing role selection first
-      if (data.completed && data.access_token) {
+      // Case 1: Direct login - backend returns access_token directly (1 role, 0 orgs)
+      if (data.access_token && !data.session_token) {
         setToken(data.access_token);
         setSessionToken(null);
         if (data.active_role) setActiveRole(data.active_role.id);
         return;
       }
 
-      // Backend returned requires_org_selection=true (1 role, has orgs)
+      // Case 2: Multi-step login with system_roles
+      if (data.system_roles) {
+        setSystemRoles(data.system_roles);
+      }
+
+      // Case 3: Requires org selection (1 role, has orgs)
       if (data.requires_org_selection) {
-        setSessionToken(session_token);
+        setSessionToken(data.session_token || null);
         setOrganizations(data.organizations || []);
         return;
       }
 
-      // Multiple roles → need profile selection
-      setSessionToken(session_token);
+      // Case 4: Multiple roles → need profile selection
+      if (data.session_token) {
+        setSessionToken(data.session_token);
+      }
     },
     onError: (error: unknown) => {
       console.error("Login error:", error);
