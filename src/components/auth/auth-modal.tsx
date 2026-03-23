@@ -250,11 +250,13 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                             onClose={handleActualClose}
                             onSwitchToRegister={() => setView("register")}
                             onLoginSuccess={(nextStep) => {
-                                // Always show role selection first
                                 if (nextStep === "select-org") {
                                     setView("login-org");
+                                } else if (nextStep === "completed") {
+                                    // Already fully authenticated, show role selection briefly then auto-continue
+                                    setView("login-role");
                                 } else {
-                                    // "completed" (1 role, 0 orgs) or "select-role" (multiple roles)
+                                    // Multiple roles → need role selection
                                     setView("login-role");
                                 }
                             }}
@@ -435,33 +437,38 @@ const roleRoutes: Record<RoleType, string> = {
 
 function LoginRoleView({ onNext, onComplete }: { onNext: () => void; onComplete: () => void }) {
     const router = useRouter();
-    const { systemRoles, sessionToken, token, setActiveRole, setToken, setPermissions, setSessionToken } = useAuthStore();
+    const { systemRoles, sessionToken, token, setActiveRole, setPermissions } = useAuthStore();
     const selectProfile = useSelectProfile();
     const qc = useQueryClient();
     const [selectedRole, setSelectedRole] = useState<SystemRole | null>(
         systemRoles.length > 0 ? systemRoles[0] : null
     );
+    const [isAutoNavigating, setIsAutoNavigating] = useState(false);
 
     // Login already completed (1 role, 0 orgs) → token already set, no sessionToken
     const isAlreadyCompleted = !!token && !sessionToken;
 
-    const handleContinue = async () => {
-        if (!selectedRole) return;
-
-        if (isAlreadyCompleted) {
-            // Token already exists, just set active role and go to dashboard
+    // Auto-navigate when login is already completed (use useEffect to avoid setState during render)
+    useEffect(() => {
+        if (isAlreadyCompleted && selectedRole && !isAutoNavigating) {
+            setIsAutoNavigating(true);
+            // Set active role and navigate
             setActiveRole(selectedRole.id);
-            try {
-                const me = await authService.getMe();
-                setPermissions(me.permissions as Permission[]);
-            } catch {
-                // Non-critical
-            }
-            qc.invalidateQueries({ queryKey: authKeys.all });
-            onComplete();
-            router.push("/dashboard");
-            return;
+            authService.getMe()
+                .then((me) => setPermissions(me.permissions as Permission[]))
+                .catch(() => { /* Non-critical */ })
+                .finally(() => {
+                    qc.invalidateQueries({ queryKey: authKeys.all });
+                    onComplete();
+                    router.push("/dashboard");
+                });
         }
+    }, [isAlreadyCompleted, selectedRole, isAutoNavigating, setActiveRole, setPermissions, qc, onComplete, router]);
+
+    const handleContinue = async () => {
+        if (!selectedRole || isAutoNavigating) return;
+
+        // isAlreadyCompleted case is handled by useEffect above
 
         // Need to call selectProfile with session token
         try {
@@ -499,10 +506,10 @@ function LoginRoleView({ onNext, onComplete }: { onNext: () => void; onComplete:
 
             <Button
                 onClick={handleContinue}
-                disabled={!selectedRole || selectProfile.isPending}
+                disabled={!selectedRole || selectProfile.isPending || isAutoNavigating}
                 className="mt-6 h-12 w-full"
             >
-                {selectProfile.isPending ? "Đang xử lý..." : "Tiếp tục"}
+                {(selectProfile.isPending || isAutoNavigating) ? "Đang xử lý..." : "Tiếp tục"}
             </Button>
         </>
     );
