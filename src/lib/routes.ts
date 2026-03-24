@@ -18,16 +18,21 @@ export const AUTH_ROUTES = {
 export const ROLE_HOME_ROUTES: Record<string, string> = {
   STUDENT: "/student/home",
   TEACHER: "/teacher/schedule",
-  PARENT: "/parent/home",
-  SYSTEM_ADMIN: "/admin/dashboard",
-  ORG_OWNER: "/admin/dashboard",
+  PARENT: "/dashboard/parent",
+  SYSTEM_ADMIN: "/dashboard",
+  ORG_OWNER: "/dashboard",
 } as const;
+
+export function normalizeRole(role?: string | null): string | null {
+  if (!role) return null;
+  return role.trim().toUpperCase();
+}
 
 // Get home route based on role (fallback to student home)
 export function getRoleHomeRoute(role?: string | null): string {
-  if (!role) return ROLE_HOME_ROUTES.STUDENT;
-  const upperRole = role.toUpperCase();
-  return ROLE_HOME_ROUTES[upperRole] || ROLE_HOME_ROUTES.STUDENT;
+  const normalizedRole = normalizeRole(role);
+  if (!normalizedRole) return ROLE_HOME_ROUTES.STUDENT;
+  return ROLE_HOME_ROUTES[normalizedRole] || ROLE_HOME_ROUTES.STUDENT;
 }
 
 export const ROUTES = {

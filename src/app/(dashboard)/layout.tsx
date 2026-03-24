@@ -5,6 +5,8 @@ import { DashboardHeader } from "@/components/layout/dashboard-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { TeacherSidebar } from "@/components/layout";
 import { useAuthStore } from "@/stores/auth.store";
+import { DOMAIN_ACCESS_POLICY } from "@/lib/domain-access-policy";
+import { normalizeRole } from "@/lib/routes";
 
 export default function DashboardLayout({
   children,
@@ -14,13 +16,14 @@ export default function DashboardLayout({
   const { activeRole } = useAuthStore();
 
   const getRole = () => {
-    if (activeRole === "teacher") return "teacher";
-    if (activeRole === "parent") return "parent";
+    const role = normalizeRole(activeRole);
+    if (role === "TEACHER") return "teacher";
+    if (role === "PARENT") return "parent";
     return "student";
   };
 
   return (
-    <RoleGuard>
+    <RoleGuard roles={[...DOMAIN_ACCESS_POLICY.dashboard]}>
       <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
         {getRole() === "teacher" && <TeacherSidebar />}
         <div className="flex-1 flex flex-col min-w-0">

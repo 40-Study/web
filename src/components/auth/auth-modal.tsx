@@ -24,8 +24,7 @@ import type { SystemRole } from "@/services/auth.service";
 import type { Permission } from "@/lib/permissions";
 import { useAuthStore } from "@/stores/auth.store";
 import { roleService } from "@/services/role.service";
-import { AUTH_ROUTES, getRoleHomeRoute } from "@/lib/routes";
-import { getRoleFromToken } from "@/lib/jwt";
+import { AUTH_ROUTES, getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -469,7 +468,7 @@ function LoginRoleView({ onNext, onComplete }: { onNext: () => void; onComplete:
     useEffect(() => {
         if (isAlreadyCompleted && selectedRole && !isAutoNavigating) {
             setIsAutoNavigating(true);
-            setActiveRole(selectedRole.id);
+            setActiveRole(normalizeRole(selectedRole.name));
             authService.getMe()
                 .then((me) => setPermissions(me.permissions as Permission[]))
                 .catch(() => { /* Non-critical */ })
@@ -487,7 +486,7 @@ function LoginRoleView({ onNext, onComplete }: { onNext: () => void; onComplete:
         // Need to call selectProfile with session token
         try {
             await selectProfile.mutateAsync(selectedRole.id);
-            setActiveRole(selectedRole.id);
+            setActiveRole(normalizeRole(selectedRole.name));
             onNext();
         } catch (error) {
             console.error("Failed to select profile:", error);
@@ -532,8 +531,7 @@ function LoginRoleView({ onNext, onComplete }: { onNext: () => void; onComplete:
 // ─── LOGIN ORG VIEW ─────────────────────────────────────────────────────────
 
 function LoginOrgView({ onClose }: { onClose: () => void }) {
-    const router = useRouter();
-    const { organizations, activeRole, setActiveOrg } = useAuthStore();
+    const { organizations, setActiveOrg } = useAuthStore();
     const selectOrg = useSelectOrg();
     const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
 
@@ -546,7 +544,6 @@ function LoginOrgView({ onClose }: { onClose: () => void }) {
                 setActiveOrg({ id: org.id, name: org.name });
             }
             onClose();
-            router.push(getRoleHomeRoute(activeRole));
         } catch (error) {
             console.error("Failed to select organization:", error);
         }

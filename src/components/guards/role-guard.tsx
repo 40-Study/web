@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth.store";
 import type { Permission } from "@/lib/permissions";
+import { normalizeRole } from "@/lib/routes";
 
 interface RoleGuardProps {
   roles?: string[];
@@ -27,6 +28,8 @@ export function RoleGuard({
 }: RoleGuardProps) {
   const router = useRouter();
   const { isAuthenticated, activeRole, permissions } = useAuthStore();
+  const normalizedRole = normalizeRole(activeRole);
+  const normalizedAllowedRoles = roles?.map((role) => normalizeRole(role)).filter(Boolean) as string[] | undefined;
 
   useEffect(() => {
     // Not authenticated → redirect to login
@@ -36,7 +39,7 @@ export function RoleGuard({
     }
 
     // Check role access
-    if (roles && activeRole && !roles.includes(activeRole)) {
+    if (normalizedAllowedRoles && (!normalizedRole || !normalizedAllowedRoles.includes(normalizedRole))) {
       router.replace("/403");
       return;
     }
@@ -52,11 +55,11 @@ export function RoleGuard({
         router.replace("/403");
       }
     }
-  }, [isAuthenticated, activeRole, permissions, roles, requiredPerms, permissionMode, router, redirectTo]);
+  }, [isAuthenticated, normalizedRole, normalizedAllowedRoles, permissions, requiredPerms, permissionMode, router, redirectTo]);
 
   // Don't render until we verify access
   if (!isAuthenticated) return null;
-  if (roles && activeRole && !roles.includes(activeRole)) return null;
+  if (normalizedAllowedRoles && (!normalizedRole || !normalizedAllowedRoles.includes(normalizedRole))) return null;
 
   return <>{children}</>;
 }

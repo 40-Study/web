@@ -6,7 +6,7 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { RoleCard } from "@/components/auth/role-card";
 import type { RoleType } from "@/components/auth/role-card";
 import { Button } from "@/components/ui/button";
-import { AUTH_ROUTES } from "@/lib/routes";
+import { AUTH_ROUTES, normalizeRole } from "@/lib/routes";
 import { useAuthStore } from "@/stores";
 import { useSelectProfile } from "@/hooks/queries/use-auth";
 import type { SystemRole } from "@/services/auth.service";
@@ -31,7 +31,7 @@ export default function LoginRolePage() {
     
     try {
       await selectProfile.mutateAsync(selectedRole.id);
-      setActiveRole(selectedRole.id);
+      setActiveRole(normalizeRole(selectedRole.name));
       
       const roleType = selectedRole.name.toLowerCase() as RoleType;
       const route = roleRoutes[roleType] || AUTH_ROUTES.LOGIN_ORGANIZATION;

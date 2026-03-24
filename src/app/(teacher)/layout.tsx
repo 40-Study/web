@@ -2,6 +2,7 @@ import { RoleGuard } from "@/components/guards";
 import { DashboardHeader } from "@/components/layout/dashboard-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { TeacherSidebar } from "@/components/layout";
+import { DOMAIN_ACCESS_POLICY } from "@/lib/domain-access-policy";
 
 export default function TeacherRouteLayout({
   children,
@@ -9,7 +10,7 @@ export default function TeacherRouteLayout({
   children: React.ReactNode;
 }) {
   return (
-    <RoleGuard>
+    <RoleGuard roles={[...DOMAIN_ACCESS_POLICY.teacher]}>
       <div className="flex min-h-screen bg-gray-50">
         <TeacherSidebar />
         <div className="flex-1 flex flex-col min-w-0">

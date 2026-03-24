@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { getRoleFromToken } from "@/lib/jwt";
-import { getRoleHomeRoute } from "@/lib/routes";
+import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import type { Permission } from "@/lib/permissions";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -97,7 +97,7 @@ export function useChildren() {
   return useQuery({
     queryKey: authKeys.children(),
     queryFn: authService.getChildren,
-    enabled: isAuthenticated && activeRole === "parent",
+    enabled: isAuthenticated && normalizeRole(activeRole) === "PARENT",
   });
 }
 
@@ -129,7 +129,7 @@ export function useLogin() {
         setSessionToken(null);
         // Extract role from JWT if not in response
         const role = data.active_role?.name || getRoleFromToken(data.access_token);
-        if (role) setActiveRole(role);
+        setActiveRole(normalizeRole(role));
         return;
       }
 

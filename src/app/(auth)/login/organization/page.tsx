@@ -1,17 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/auth-card";
 import { SelectionCard } from "@/components/auth/selection-card";
 import { Button } from "@/components/ui/button";
-import { getRoleHomeRoute } from "@/lib/routes";
 import { useAuthStore } from "@/stores";
 import { useSelectOrg } from "@/hooks/queries/use-auth";
 
 export default function LoginOrganizationPage() {
-  const router = useRouter();
-  const { organizations, activeOrg, activeRole, setActiveOrg } = useAuthStore();
+  const { organizations, activeOrg, setActiveOrg } = useAuthStore();
   const selectOrg = useSelectOrg();
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(activeOrg?.id ?? null);
 
@@ -24,7 +21,6 @@ export default function LoginOrganizationPage() {
       if (org) {
         setActiveOrg({ id: org.id, name: org.name });
       }
-      router.push(getRoleHomeRoute(activeRole));
     } catch (error) {
       console.error("Failed to select organization:", error);
     }
