@@ -17,7 +17,7 @@ export const AUTH_ROUTES = {
 // Role-based home routes
 export const ROLE_HOME_ROUTES: Record<string, string> = {
   STUDENT: "/student/home",
-  TEACHER: "/teacher/dashboard",
+  TEACHER: "/teacher/schedule",
   PARENT: "/parent/home",
   SYSTEM_ADMIN: "/admin/dashboard",
   ORG_OWNER: "/admin/dashboard",
