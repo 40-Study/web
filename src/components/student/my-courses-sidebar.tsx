@@ -32,7 +32,7 @@ export function MyCourseSidebar({ otherCourses, achievements }: MyCourseSidebarP
           {otherCourses.map((course) => (
             <Link
               key={course.id}
-              href={`/learn/${course.id}`}
+              href={`/courses/${course.id}`}
               className="group block"
             >
               <div className="flex items-center gap-3 mb-1.5">

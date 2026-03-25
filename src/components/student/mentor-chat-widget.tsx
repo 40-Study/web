@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 
 export function MentorChatWidget() {
@@ -23,9 +24,12 @@ export function MentorChatWidget() {
           về lộ trình học và các vấn đề kỹ thuật
         </p>
 
-        <button className="w-full py-2.5 bg-white text-black text-sm font-semibold rounded-xl hover:bg-white/90 transition-colors">
+        <Link
+          href="/chat"
+          className="block w-full py-2.5 bg-white text-black text-sm font-semibold rounded-xl hover:bg-white/90 transition-colors text-center"
+        >
           Bắt đầu chat
-        </button>
+        </Link>
       </div>
     </div>
   );
