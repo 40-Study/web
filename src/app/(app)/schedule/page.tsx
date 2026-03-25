@@ -20,12 +20,10 @@ import {
   Bell,
   Video,
   Radio,
-  BookOpen,
   Clock,
   User,
   MapPin,
   ExternalLink,
-  CheckCircle2,
   PlayCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -112,162 +110,11 @@ interface ScheduleEvent {
   description?: string;
 }
 
-interface EventTooltipProps {
-  event: ScheduleEvent;
-  position: { top: number; left: number };
-  onClose: () => void;
-}
-
-function EventTooltip({ event, position, onClose }: EventTooltipProps) {
-  const tooltipRef = useRef<HTMLDivElement>(null);
-  const [showDetails, setShowDetails] = useState(false);
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const handleMouseEnter = () => {
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-      hideTimeoutRef.current = null;
-    }
-  };
-
-  const handleMouseLeave = () => {
-    hideTimeoutRef.current = setTimeout(() => {
-      onClose();
-    }, 100);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (hideTimeoutRef.current) {
-        clearTimeout(hideTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  return (
-    <div
-      ref={tooltipRef}
-      className={cn(
-        "absolute z-50 w-80 rounded-xl shadow-2xl border p-4",
-        "bg-white dark:bg-gray-900 animate-in fade-in zoom-in-95 duration-200",
-        event.status === "completed" && "border-green-200",
-        event.status === "ongoing" && "border-red-300 bg-gradient-to-br from-white to-red-50",
-        event.status === "upcoming" && "border-blue-200"
-      )}
-      style={{ top: position.top, left: position.left }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-2">
-          {event.title}
-        </h3>
-        {event.status === "ongoing" && (
-          <Badge className="bg-red-500 text-white text-[10px] shrink-0 animate-pulse">
-            ĐANG DIỄN RA
-          </Badge>
-        )}
-        {event.status === "completed" && (
-          <Badge className="bg-green-100 text-green-700 text-[10px] shrink-0">
-            ĐÃ HOÀN THÀNH
-          </Badge>
-        )}
-        {event.status === "upcoming" && (
-          <Badge className="bg-blue-100 text-blue-700 text-[10px] shrink-0">
-            SẮP DIỄN RA
-          </Badge>
-        )}
-      </div>
-
-      {/* Quick Info */}
-      <div className="space-y-2 mb-3">
-        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-          <Clock className="w-4 h-4 text-gray-400" />
-          <span>
-            {format(parseISO(event.startTime), "HH:mm")} - {format(parseISO(event.endTime), "HH:mm")}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-          <User className="w-4 h-4 text-gray-400" />
-          <span>{event.teacher}</span>
-        </div>
-        {event.location && (
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-            <MapPin className="w-4 h-4 text-gray-400" />
-            <span>{event.location}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Type Badge */}
-      <div className="flex items-center gap-2 mb-3">
-        {event.type === "video" && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
-            <Video className="w-3 h-3" /> Video
-          </span>
-        )}
-        {event.type === "livestream" && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">
-            <Radio className="w-3 h-3" /> Livestream
-          </span>
-        )}
-        {event.type === "hybrid" && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
-            <Video className="w-3 h-3" /> <Radio className="w-3 h-3" /> Hybrid
-          </span>
-        )}
-      </div>
-
-      {/* Description - shown when details expanded */}
-      {showDetails && event.description && (
-        <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 font-medium">Mô tả:</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{event.description}</p>
-        </div>
-      )}
-
-      {/* Action Buttons */}
-      <div className="flex gap-2">
-        {event.status === "ongoing" && event.meetingUrl && (
-          <Button
-            size="sm"
-            className="flex-1 bg-red-500 hover:bg-red-600 text-white"
-            onClick={() => window.open(event.meetingUrl, "_blank")}
-          >
-            <ExternalLink className="w-4 h-4 mr-1" />
-            Tham gia ngay
-          </Button>
-        )}
-        {event.status === "upcoming" && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex-1"
-            onClick={() => setShowDetails(!showDetails)}
-          >
-            {showDetails ? "Ẩn chi tiết" : "Xem chi tiết"}
-          </Button>
-        )}
-        {event.status === "completed" && (
-          <Button size="sm" variant="outline" className="flex-1">
-            <PlayCircle className="w-4 h-4 mr-1" />
-            Xem lại
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}
-
 const TIME_SLOTS = Array.from({ length: 14 }, (_, i) => i + 7);
 
 export default function StudentSchedulePage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [hoveredEvent, setHoveredEvent] = useState<{
-    event: ScheduleEvent;
-    position: { top: number; left: number };
-  } | null>(null);
+  const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -287,32 +134,6 @@ export default function StudentSchedulePage() {
     const top = (startHour - 7) * 60;
     const height = duration * 60;
     return { top, height };
-  };
-
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const handleEventMouseLeave = () => {
-    hideTimeoutRef.current = setTimeout(() => {
-      setHoveredEvent(null);
-    }, 100);
-  };
-
-  const handleEventMouseEnter = (event: ScheduleEvent, e: React.MouseEvent) => {
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-      hideTimeoutRef.current = null;
-    }
-    const rect = e.currentTarget.getBoundingClientRect();
-    const container = e.currentTarget.closest(".calendar-container") as HTMLDivElement | null;
-    if (!container) return;
-    const containerRect = container.getBoundingClientRect();
-    setHoveredEvent({
-      event,
-      position: {
-        top: rect.bottom - containerRect.top + 8,
-        left: rect.left - containerRect.left,
-      },
-    });
   };
 
   return (
@@ -463,8 +284,8 @@ export default function StudentSchedulePage() {
                         left: `calc(${leftOffset}% + 4px)`,
                         width: `calc(${100 / 8}% - 10px)`,
                       }}
-                      onMouseEnter={(e) => handleEventMouseEnter(event, e)}
-                      onMouseLeave={handleEventMouseLeave}
+                      onMouseEnter={() => setHoveredEventId(event.id)}
+                      onMouseLeave={() => setHoveredEventId(null)}
                     >
                       <div className="h-full p-2 flex flex-col justify-between">
                         {/* Title */}
@@ -480,19 +301,87 @@ export default function StudentSchedulePage() {
                           </span>
                         </div>
                       </div>
+
+                      {/* Inline Tooltip */}
+                      {hoveredEventId === event.id && (
+                        <div
+                          className={cn(
+                            "absolute left-full top-0 ml-2 w-72 rounded-xl shadow-2xl border p-4 z-50",
+                            "bg-white dark:bg-gray-900",
+                            event.status === "completed" && "border-green-200",
+                            event.status === "ongoing" && "border-red-300 bg-gradient-to-br from-white to-red-50",
+                            event.status === "upcoming" && "border-blue-200"
+                          )}
+                          onMouseEnter={() => setHoveredEventId(event.id)}
+                          onMouseLeave={() => setHoveredEventId(null)}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <h3 className="font-semibold text-gray-900 dark:text-white text-sm line-clamp-2">
+                              {event.title}
+                            </h3>
+                            {event.status === "ongoing" && (
+                              <Badge className="bg-red-500 text-white text-[10px] shrink-0 animate-pulse">
+                                ĐANG DIỄN RA
+                              </Badge>
+                            )}
+                            {event.status === "completed" && (
+                              <Badge className="bg-green-100 text-green-700 text-[10px] shrink-0">
+                                ĐÃ HOÀN THÀNH
+                              </Badge>
+                            )}
+                            {event.status === "upcoming" && (
+                              <Badge className="bg-blue-100 text-blue-700 text-[10px] shrink-0">
+                                SẮP DIỄN RA
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="space-y-1.5 mb-2">
+                            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                              <Clock className="w-3.5 h-3.5 text-gray-400" />
+                              <span>
+                                {format(parseISO(event.startTime), "HH:mm")} - {format(parseISO(event.endTime), "HH:mm")}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                              <User className="w-3.5 h-3.5 text-gray-400" />
+                              <span>{event.teacher}</span>
+                            </div>
+                            {event.location && (
+                              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                                <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                                <span>{event.location}</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            {event.status === "ongoing" && event.meetingUrl && (
+                              <Button
+                                size="sm"
+                                className="flex-1 bg-red-500 hover:bg-red-600 text-white text-xs h-8"
+                                onClick={() => window.open(event.meetingUrl, "_blank")}
+                              >
+                                <ExternalLink className="w-3 h-3 mr-1" />
+                                Tham gia
+                              </Button>
+                            )}
+                            {event.status === "upcoming" && (
+                              <Button size="sm" variant="outline" className="flex-1 text-xs h-8">
+                                Chi tiết
+                              </Button>
+                            )}
+                            {event.status === "completed" && (
+                              <Button size="sm" variant="outline" className="flex-1 text-xs h-8">
+                                <PlayCircle className="w-3 h-3 mr-1" />
+                                Xem lại
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 });
               })}
-
-              {/* Tooltip */}
-              {hoveredEvent && (
-                <EventTooltip
-                  event={hoveredEvent.event}
-                  position={hoveredEvent.position}
-                  onClose={() => setHoveredEvent(null)}
-                />
-              )}
             </div>
           </div>
         </div>
