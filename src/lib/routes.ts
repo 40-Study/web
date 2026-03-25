@@ -16,11 +16,11 @@ export const AUTH_ROUTES = {
 
 // Role-based home routes
 export const ROLE_HOME_ROUTES: Record<string, string> = {
-  STUDENT: "/student/home",
+  STUDENT: "/home",
   TEACHER: "/teacher/schedule",
-  PARENT: "/student/home",
-  SYSTEM_ADMIN: "/roles",
-  ORG_OWNER: "/roles",
+  PARENT: "/home",
+  SYSTEM_ADMIN: "/admin",
+  ORG_OWNER: "/admin",
 } as const;
 
 export function normalizeRole(role?: string | null): string | null {

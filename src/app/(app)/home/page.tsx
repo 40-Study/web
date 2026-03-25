@@ -1,3 +1,7 @@
+/**
+ * Student Home - authenticated dashboard
+ * Shared route for all authenticated users
+ */
 import {
   ResumeBanner,
   TaskGrid,
@@ -10,7 +14,7 @@ import {
   mockRecommendedCourses,
 } from "@/lib/mock-data/student-dashboard";
 
-export default function StudentHomePage() {
+export default function HomePage() {
   return (
     <div className="p-8 space-y-6">
       {/* Resume Banner */}

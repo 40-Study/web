@@ -1,3 +1,7 @@
+/**
+ * My Courses - enrolled courses page
+ * For authenticated users to see their enrolled courses
+ */
 import Link from "next/link";
 import { StatsWidgets } from "@/components/student/stats-widgets";
 import { FeaturedCourseCard } from "@/components/student/featured-course-card";

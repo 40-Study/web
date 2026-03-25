@@ -25,7 +25,7 @@ interface NavItem {
 
 const navConfigs: Record<UserRole, NavItem[]> = {
   student: [
-    { icon: <Home className="w-5 h-5" />, label: "Home", href: "/student/home" },
+    { icon: <Home className="w-5 h-5" />, label: "Home", href: "/home" },
     { icon: <Calendar className="w-5 h-5" />, label: "Lịch học", href: "/schedule" },
     { icon: <BookOpen className="w-5 h-5" />, label: "Courses", href: "/courses" },
     { icon: <Trophy className="w-5 h-5" />, label: "Leaderboard", href: "/leaderboard" },
