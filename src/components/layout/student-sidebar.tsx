@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, MessageSquare } from "lucide-react";
+import { Home, BookOpen, MessageSquare, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const studentNavItems = [
   { label: "TRANG CHỦ", href: "/student/home", icon: Home },
-  { label: "KHÓA HỌC", href: "/student/courses", icon: BookOpen },
+  { label: "LỊCH HỌC", href: "/schedule", icon: Calendar },
+  { label: "KHÓA HỌC", href: "/courses", icon: BookOpen },
   { label: "THẢO LUẬN", href: "/discussions", icon: MessageSquare },
 ];
 
