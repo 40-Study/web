@@ -236,7 +236,7 @@ export default function StudentSchedulePage() {
             </div>
 
             {/* Time Grid */}
-            <div className="relative" onClick={() => setHoveredEvent(null)}>
+            <div className="relative" onClick={() => setHoveredEventId(null)}>
               {TIME_SLOTS.map((hour) => (
                 <div
                   key={hour}
