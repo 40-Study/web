@@ -121,16 +121,28 @@ interface EventTooltipProps {
 function EventTooltip({ event, position, onClose }: EventTooltipProps) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnter = () => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+  };
+
+  const handleMouseLeave = () => {
+    hideTimeoutRef.current = setTimeout(() => {
+      onClose();
+    }, 100);
+  };
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (tooltipRef.current && !tooltipRef.current.contains(event.target as Node)) {
-        onClose();
+    return () => {
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
       }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [onClose]);
+    };
+  }, []);
 
   return (
     <div
@@ -143,6 +155,8 @@ function EventTooltip({ event, position, onClose }: EventTooltipProps) {
         event.status === "upcoming" && "border-blue-200"
       )}
       style={{ top: position.top, left: position.left }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-3">
@@ -254,7 +268,6 @@ export default function StudentSchedulePage() {
     event: ScheduleEvent;
     position: { top: number; left: number };
   } | null>(null);
-  const eventRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -276,11 +289,22 @@ export default function StudentSchedulePage() {
     return { top, height };
   };
 
-  const handleEventMouseEnter = (event: ScheduleEvent, eventEl: HTMLDivElement | null) => {
-    if (!eventEl) return;
-    const container = eventEl.closest(".calendar-container") as HTMLDivElement | null;
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleEventMouseLeave = () => {
+    hideTimeoutRef.current = setTimeout(() => {
+      setHoveredEvent(null);
+    }, 100);
+  };
+
+  const handleEventMouseEnter = (event: ScheduleEvent, e: React.MouseEvent) => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const container = e.currentTarget.closest(".calendar-container") as HTMLDivElement | null;
     if (!container) return;
-    const rect = eventEl.getBoundingClientRect();
     const containerRect = container.getBoundingClientRect();
     setHoveredEvent({
       event,
@@ -289,10 +313,6 @@ export default function StudentSchedulePage() {
         left: rect.left - containerRect.left,
       },
     });
-  };
-
-  const handleEventMouseLeave = () => {
-    setHoveredEvent(null);
   };
 
   return (
@@ -395,7 +415,7 @@ export default function StudentSchedulePage() {
             </div>
 
             {/* Time Grid */}
-            <div className="relative" onClick={() => setSelectedEvent(null)}>
+            <div className="relative" onClick={() => setHoveredEvent(null)}>
               {TIME_SLOTS.map((hour) => (
                 <div
                   key={hour}
@@ -427,10 +447,6 @@ export default function StudentSchedulePage() {
                   return (
                     <div
                       key={event.id}
-                      ref={(el) => {
-                        if (el) eventRefs.current.set(event.id, el);
-                        else eventRefs.current.delete(event.id);
-                      }}
                       className={cn(
                         "absolute rounded-lg cursor-pointer transition-all duration-200",
                         "hover:shadow-lg hover:z-20",
@@ -447,7 +463,7 @@ export default function StudentSchedulePage() {
                         left: `calc(${leftOffset}% + 4px)`,
                         width: `calc(${100 / 8}% - 10px)`,
                       }}
-                      onMouseEnter={() => handleEventMouseEnter(event, eventRefs.current.get(event.id) || null)}
+                      onMouseEnter={(e) => handleEventMouseEnter(event, e)}
                       onMouseLeave={handleEventMouseLeave}
                     >
                       <div className="h-full p-2 flex flex-col justify-between">
@@ -468,19 +484,19 @@ export default function StudentSchedulePage() {
                   );
                 });
               })}
+
+              {/* Tooltip */}
+              {hoveredEvent && (
+                <EventTooltip
+                  event={hoveredEvent.event}
+                  position={hoveredEvent.position}
+                  onClose={() => setHoveredEvent(null)}
+                />
+              )}
             </div>
           </div>
         </div>
       </Card>
-
-      {/* Tooltip */}
-      {hoveredEvent && (
-        <EventTooltip
-          event={hoveredEvent.event}
-          position={hoveredEvent.position}
-          onClose={() => setHoveredEvent(null)}
-        />
-      )}
     </div>
   );
 }
