@@ -58,7 +58,7 @@ export function ProfileHeader({
   return (
     <div
       className={cn(
-        "bg-gradient-to-r from-primary-600 to-secondary-600 text-white",
+        "bg-primary-600 text-white",
         className
       )}
     >

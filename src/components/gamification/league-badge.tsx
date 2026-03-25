@@ -17,35 +17,35 @@ export const LEAGUES: League[] = [
     id: "bronze",
     name: "Bronze",
     icon: "🥉",
-    color: "from-orange-600 to-orange-800",
+    color: "bg-orange-600",
     minXP: 0,
   },
   {
     id: "silver",
     name: "Silver",
     icon: "🥈",
-    color: "from-gray-400 to-gray-600",
+    color: "bg-gray-400",
     minXP: 1000,
   },
   {
     id: "gold",
     name: "Gold",
     icon: "🥇",
-    color: "from-yellow-400 to-yellow-600",
+    color: "bg-yellow-500",
     minXP: 5000,
   },
   {
     id: "diamond",
     name: "Diamond",
     icon: "💎",
-    color: "from-cyan-400 to-blue-600",
+    color: "bg-blue-500",
     minXP: 15000,
   },
   {
     id: "champion",
     name: "Champion",
     icon: "👑",
-    color: "from-purple-500 to-pink-600",
+    color: "bg-purple-500",
     minXP: 50000,
   },
 ];
@@ -91,7 +91,7 @@ export function LeagueBadge({
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-2 rounded-full bg-gradient-to-r text-white font-medium",
+        "inline-flex items-center gap-2 rounded-full text-white font-medium",
         leagueData.color,
         styles.container,
         className
@@ -142,7 +142,7 @@ export function LeagueProgress({
       </div>
       <div className="relative h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          className={cn("h-full rounded-full transition-all duration-500", `bg-gradient-to-r ${currentLeagueData.color}`)}
+          className={cn("h-full rounded-full transition-all duration-500", currentLeagueData.color)}
           style={{ width: `${progressPercent}%` }}
         />
       </div>

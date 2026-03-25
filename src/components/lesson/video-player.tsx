@@ -357,7 +357,7 @@ export function VideoPlayer({
       {/* Controls overlay */}
       <div
         className={cn(
-          "absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent",
+          "absolute inset-0 bg-black/60",
           "transition-opacity duration-300",
           showControls || !isPlaying ? "opacity-100" : "opacity-0"
         )}

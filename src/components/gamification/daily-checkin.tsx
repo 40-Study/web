@@ -81,7 +81,7 @@ export function DailyCheckin({
       </div>
 
       {/* Day 7 bonus highlight */}
-      <div className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-lg p-3 flex items-center gap-3 mb-4">
+      <div className="bg-purple-100 dark:bg-purple-900/30 rounded-lg p-3 flex items-center gap-3 mb-4">
         <div className="text-3xl">🎁</div>
         <div className="flex-1">
           <p className="font-medium text-gray-900 dark:text-white">7-Day Bonus</p>

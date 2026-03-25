@@ -39,7 +39,7 @@ export function ContinueLearningCard({
             className="object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary-400 to-secondary-500 flex items-center justify-center">
+          <div className="w-full h-full bg-primary-500 flex items-center justify-center">
             <Play className="w-8 h-8 text-white" />
           </div>
         )}

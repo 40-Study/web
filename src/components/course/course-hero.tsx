@@ -33,7 +33,7 @@ export function CourseHero({
   return (
     <div
       className={cn(
-        "bg-gradient-to-r from-primary-900 to-secondary-900 text-white",
+        "bg-primary-900 text-white",
         className
       )}
     >

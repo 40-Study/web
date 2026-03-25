@@ -179,7 +179,7 @@ export default function ProfilePage() {
                         key={course.id}
                         className="flex items-center gap-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800"
                       >
-                        <div className="w-16 h-12 rounded-lg bg-gradient-to-br from-primary-400 to-secondary-500 flex items-center justify-center">
+                        <div className="w-16 h-12 rounded-lg bg-primary-500 flex items-center justify-center">
                           <BookOpen className="h-6 w-6 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -286,7 +286,7 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {MOCK_ENROLLED_COURSES.map((course) => (
                 <Card key={course.id} className="overflow-hidden">
-                  <div className="h-32 bg-gradient-to-br from-primary-400 to-secondary-500 flex items-center justify-center">
+                  <div className="h-32 bg-primary-500 flex items-center justify-center">
                     <BookOpen className="h-12 w-12 text-white" />
                   </div>
                   <div className="p-4">

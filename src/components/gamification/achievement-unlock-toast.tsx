@@ -5,10 +5,10 @@ import { Sparkles } from "lucide-react";
 import type { Achievement, AchievementRarity } from "./achievement-card";
 
 const rarityColors: Record<AchievementRarity, string> = {
-  common: "from-gray-400 to-gray-500",
-  rare: "from-blue-400 to-blue-600",
-  epic: "from-purple-400 to-purple-600",
-  legendary: "from-yellow-400 to-amber-500",
+  common: "bg-gray-400",
+  rare: "bg-blue-500",
+  epic: "bg-purple-500",
+  legendary: "bg-yellow-500",
 };
 
 interface AchievementToastContentProps {
@@ -22,7 +22,7 @@ function AchievementToastContent({ achievement }: AchievementToastContentProps) 
   return (
     <div className="flex items-center gap-3">
       <div
-        className={`w-12 h-12 rounded-lg bg-gradient-to-br ${
+        className={`w-12 h-12 rounded-lg ${
           rarityColors[achievement.rarity]
         } flex items-center justify-center text-2xl shadow-lg`}
       >

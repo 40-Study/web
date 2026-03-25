@@ -19,10 +19,10 @@ interface FeaturedAchievementsProps {
 }
 
 const rarityGradients: Record<string, string> = {
-  common: "from-gray-400 to-gray-500",
-  rare: "from-blue-400 to-blue-500",
-  epic: "from-purple-400 to-purple-500",
-  legendary: "from-yellow-400 to-amber-500",
+  common: "bg-gray-400",
+  rare: "bg-blue-500",
+  epic: "bg-purple-500",
+  legendary: "bg-yellow-500",
 };
 
 export function FeaturedAchievements({
@@ -66,7 +66,7 @@ export function FeaturedAchievements({
           >
             <div
               className={cn(
-                "w-16 h-16 mx-auto rounded-xl bg-gradient-to-br flex items-center justify-center text-2xl mb-2 shadow-lg transition-transform group-hover:scale-110",
+                "w-16 h-16 mx-auto rounded-xl flex items-center justify-center text-2xl mb-2 shadow-lg transition-transform group-hover:scale-110",
                 rarityGradients[achievement.rarity]
               )}
             >

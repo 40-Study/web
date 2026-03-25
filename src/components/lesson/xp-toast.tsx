@@ -50,7 +50,7 @@ export function XPToast({
           : "opacity-0 translate-y-4"
       )}
     >
-      <Card className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 flex items-center gap-4 shadow-lg">
+      <Card className="bg-green-500 text-white px-6 py-4 flex items-center gap-4 shadow-lg">
         <button
           onClick={handleClose}
           className="absolute top-2 right-2 p-1 hover:bg-white/20 rounded"

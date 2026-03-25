@@ -135,7 +135,7 @@ export default function PublicProfilePage() {
                         className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center">
                             <span className="text-white text-lg">✓</span>
                           </div>
                           <div>
@@ -199,7 +199,7 @@ export default function PublicProfilePage() {
                     {MOCK_PUBLIC_ACHIEVEMENTS.slice(0, 6).map((achievement) => (
                       <div
                         key={achievement.id}
-                        className="aspect-square rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center text-2xl"
+                        className="aspect-square rounded-xl bg-yellow-500 flex items-center justify-center text-2xl"
                         title={achievement.name}
                       >
                         {achievement.icon}
@@ -223,7 +223,7 @@ export default function PublicProfilePage() {
                     key={achievement.id}
                     className="text-center p-4 rounded-xl bg-gray-50 dark:bg-gray-800"
                   >
-                    <div className="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center text-2xl mb-2 shadow-lg">
+                    <div className="w-14 h-14 mx-auto rounded-xl bg-yellow-500 flex items-center justify-center text-2xl mb-2 shadow-lg">
                       {achievement.icon}
                     </div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">

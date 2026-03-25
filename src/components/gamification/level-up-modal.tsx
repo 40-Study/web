@@ -47,11 +47,11 @@ export function LevelUpModal({
 
         {/* Level badge */}
         <div className="relative mx-auto w-32 h-32 mb-6">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-400 to-secondary-500 rounded-full animate-pulse-glow" />
+          <div className="absolute inset-0 bg-primary-500 rounded-full animate-pulse-glow" />
           <div className="absolute inset-2 bg-white dark:bg-gray-900 rounded-full flex items-center justify-center">
             <div className="text-center">
               <p className="text-xs text-muted-foreground font-medium">LEVEL</p>
-              <p className="text-4xl font-bold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
+              <p className="text-4xl font-bold text-primary-500">
                 {newLevel}
               </p>
             </div>

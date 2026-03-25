@@ -14,7 +14,7 @@ export function FloatingButtons({ onSandboxOpen, className }: FloatingButtonsPro
     <div className={cn("fixed bottom-6 right-6 flex flex-col gap-3 z-30", className)}>
       {/* AI Assistant button */}
       <button
-        className="flex items-center gap-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white pl-3 pr-4 py-2.5 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+        className="flex items-center gap-3 bg-purple-600 text-white pl-3 pr-4 py-2.5 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"
         onClick={() => {
           // TODO: Open AI assistant chat panel
         }}

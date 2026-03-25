@@ -43,7 +43,7 @@ export default function HomePage() {
                         </p>
                         <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
                             Chào mừng đến với{" "}
-                            <span className="bg-gradient-to-r from-primary-500 to-secondary-600 bg-clip-text text-transparent">
+                            <span className="text-primary-500">
                                 ForteX
                             </span>
                         </h1>

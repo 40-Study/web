@@ -24,7 +24,7 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center">
                 <span className="text-white font-bold text-sm">FX</span>
               </div>
               <span className="text-xl font-bold text-gray-900">{siteConfig.name}</span>

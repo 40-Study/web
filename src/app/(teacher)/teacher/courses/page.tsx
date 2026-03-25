@@ -120,7 +120,7 @@ function PublishedCourseCard({ course }: { course: Course }) {
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
       {/* Thumbnail */}
-      <div className="relative aspect-video bg-gradient-to-br from-gray-800 to-gray-900">
+      <div className="relative aspect-video bg-gray-800">
         {course.thumbnail ? (
           <Image src={course.thumbnail} alt={course.title} fill className="object-cover" />
         ) : (

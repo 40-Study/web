@@ -152,7 +152,7 @@ export default function LeaderboardPage() {
       <Card
         className={cn(
           "mb-6 overflow-hidden",
-          `bg-gradient-to-r ${currentLeague.color}`
+          currentLeague.color
         )}
       >
         <div className="p-6 text-white">

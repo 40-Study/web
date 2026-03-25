@@ -45,7 +45,7 @@ const rarityStyles: Record<
     badge: "secondary",
   },
   legendary: {
-    bg: "bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20",
+    bg: "bg-yellow-50 dark:bg-yellow-900/20",
     border: "border-yellow-200 dark:border-yellow-700",
     badge: "achievement",
   },
@@ -75,7 +75,7 @@ export function AchievementCard({
     >
       {/* Legendary glow effect */}
       {isUnlocked && achievement.rarity === "legendary" && (
-        <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 to-amber-400/10 animate-pulse-glow" />
+        <div className="absolute inset-0 bg-yellow-400/10 animate-pulse-glow" />
       )}
 
       <div className="relative z-10 flex items-center gap-4">
@@ -84,7 +84,7 @@ export function AchievementCard({
           className={cn(
             "w-16 h-16 rounded-xl flex items-center justify-center text-3xl shrink-0",
             isUnlocked
-              ? "bg-gradient-to-br from-yellow-400 to-amber-500 shadow-lg"
+              ? "bg-yellow-500 shadow-lg"
               : "bg-gray-200 dark:bg-gray-700"
           )}
         >

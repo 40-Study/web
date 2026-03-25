@@ -188,8 +188,8 @@ export function StreakCard({
       className={cn(
         "p-6 relative overflow-hidden",
         hasCompletedToday
-          ? "bg-gradient-to-br from-orange-500 to-red-500 text-white"
-          : "bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30",
+          ? "bg-orange-500 text-white"
+          : "bg-orange-100 dark:bg-orange-900/30",
         className
       )}
     >

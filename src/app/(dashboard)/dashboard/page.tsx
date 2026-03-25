@@ -140,7 +140,7 @@ export default function DashboardPage() {
                   href={`/courses/${course.slug}`}
                   className="flex-shrink-0 w-48 p-4 rounded-lg border bg-white dark:bg-gray-800 hover:shadow-md transition-shadow"
                 >
-                  <div className="w-full h-24 rounded-lg bg-gradient-to-br from-primary-400 to-secondary-500 mb-3 overflow-hidden">
+                  <div className="w-full h-24 rounded-lg bg-primary-500 mb-3 overflow-hidden">
                     {course.thumbnail && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img

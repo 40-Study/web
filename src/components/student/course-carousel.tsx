@@ -77,7 +77,7 @@ function CourseCard({ course }: { course: RecommendedCourse }) {
   return (
     <div className="group cursor-pointer">
       {/* Thumbnail */}
-      <div className="aspect-[4/3] rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 mb-3 overflow-hidden relative">
+      <div className="aspect-[4/3] rounded-xl bg-blue-700 mb-3 overflow-hidden relative">
         <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4">
           <div className="w-16 h-16 mb-2">
             {/* Diamond icon placeholder */}
