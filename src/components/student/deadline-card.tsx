@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Calendar, Clock, FileText } from "lucide-react";
 import type { DeadlineTask } from "@/lib/mock-data/student-dashboard";
 
@@ -35,9 +36,12 @@ export function DeadlineCard({ task }: DeadlineCardProps) {
       </div>
 
       {/* Action */}
-      <button className="w-full h-12 mt-4 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-xl transition-colors">
+      <Link
+        href="/student/courses"
+        className="w-full h-12 mt-4 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-xl transition-colors flex items-center justify-center"
+      >
         Nộp bài
-      </button>
+      </Link>
     </div>
   );
 }

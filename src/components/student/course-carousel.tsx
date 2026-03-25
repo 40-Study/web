@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight, Users, Eye, Clock } from "lucide-react";
 import type { RecommendedCourse } from "@/lib/mock-data/student-dashboard";
 
@@ -75,7 +76,10 @@ export function CourseCarousel({ title, subtitle, courses }: CourseCarouselProps
 
 function CourseCard({ course }: { course: RecommendedCourse }) {
   return (
-    <div className="group cursor-pointer">
+    <Link
+      href={`/courses/${course.id}`}
+      className="group block cursor-pointer"
+    >
       {/* Thumbnail */}
       <div className="aspect-[4/3] rounded-xl bg-blue-700 mb-3 overflow-hidden relative">
         <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4">
@@ -118,6 +122,6 @@ function CourseCard({ course }: { course: RecommendedCourse }) {
           {course.duration}
         </span>
       </div>
-    </div>
+    </Link>
   );
 }

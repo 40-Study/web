@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Users, Video, ArrowRight } from "lucide-react";
 import type { LiveClass } from "@/lib/mock-data/student-dashboard";
 
@@ -40,10 +41,13 @@ export function LiveClassCard({ liveClass }: LiveClassCardProps) {
       </div>
 
       {/* Action */}
-      <button className="w-full h-12 mt-4 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2">
+      <Link
+        href={`/rooms/${liveClass.id}`}
+        className="w-full h-12 mt-4 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+      >
         <ArrowRight className="w-5 h-5" />
         Vào lớp
-      </button>
+      </Link>
     </div>
   );
 }

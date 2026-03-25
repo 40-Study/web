@@ -22,7 +22,7 @@ export function EnrolledCourseCard({ course }: EnrolledCourseCardProps) {
 
   return (
     <Link
-      href={`/learn/${course.id}`}
+      href={`/courses/${course.id}`}
       className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow block"
     >
       {/* Thumbnail */}
