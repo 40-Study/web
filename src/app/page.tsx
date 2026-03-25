@@ -79,8 +79,7 @@ export default function LandingPage() {
         {/* Left Floating Sidebar */}
         <aside className="fixed left-0 top-16 bottom-0 w-20 bg-white border-r border-slate-200 z-40 hidden lg:flex flex-col items-center py-8 gap-8">
           <nav className="flex flex-col items-center gap-6 w-full">
-            <Link href="/" className="group flex flex-col items-center gap-1 w-full relative">
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary-600 rounded-r-md"></div>
+            <Link href="/" className="group flex flex-col items-center gap-1 w-full">
               <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
                 <Home className="w-5 h-5" />
               </div>
