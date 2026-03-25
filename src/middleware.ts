@@ -40,7 +40,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Note: Auth protection is handled client-side by RoleGuard in (dashboard)/layout.tsx
+  // Note: Auth protection is handled client-side by RoleGuard in layouts
   // Middleware cannot access localStorage, so we don't check auth state here
   return NextResponse.next();
 }

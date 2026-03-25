@@ -18,9 +18,9 @@ export const AUTH_ROUTES = {
 export const ROLE_HOME_ROUTES: Record<string, string> = {
   STUDENT: "/student/home",
   TEACHER: "/teacher/schedule",
-  PARENT: "/dashboard/parent",
-  SYSTEM_ADMIN: "/dashboard",
-  ORG_OWNER: "/dashboard",
+  PARENT: "/student/home",
+  SYSTEM_ADMIN: "/roles",
+  ORG_OWNER: "/roles",
 } as const;
 
 export function normalizeRole(role?: string | null): string | null {

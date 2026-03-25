@@ -16,7 +16,7 @@ export function DashboardHeader() {
     <header className="sticky top-0 z-40 w-full border-b bg-white dark:bg-gray-900">
       <div className="flex h-14 md:h-16 items-center justify-between px-4 md:px-6 max-w-7xl mx-auto">
         {/* Logo */}
-        <Link href="/dashboard" className="flex items-center space-x-2">
+        <Link href="/" className="flex items-center space-x-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-500">
             <span className="text-sm font-bold text-white">FX</span>
           </div>

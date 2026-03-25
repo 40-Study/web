@@ -5,10 +5,9 @@ import { DashboardHeader } from "@/components/layout/dashboard-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { TeacherSidebar } from "@/components/layout";
 import { useAuthStore } from "@/stores/auth.store";
-import { DOMAIN_ACCESS_POLICY } from "@/lib/domain-access-policy";
 import { normalizeRole } from "@/lib/routes";
 
-export default function DashboardLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -23,9 +22,9 @@ export default function DashboardLayout({
   };
 
   return (
-    <RoleGuard roles={[...DOMAIN_ACCESS_POLICY.dashboard]}>
+    <RoleGuard roles={["SYSTEM_ADMIN", "ORG_OWNER"]}>
       <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-        {getRole() === "teacher" && <TeacherSidebar />}
+        <TeacherSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <DashboardHeader />
           <main className="p-4 md:p-6 pb-20 md:pb-6 w-full max-w-7xl mx-auto flex-1">

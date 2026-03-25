@@ -11,7 +11,7 @@ export default function ForbiddenPage() {
         Bạn không có quyền truy cập trang này.
       </p>
       <Link
-        href="/dashboard"
+        href="/"
         className="mt-6 rounded-lg bg-primary-600 px-6 py-2 text-white hover:bg-primary-700"
       >
         Về trang chủ
