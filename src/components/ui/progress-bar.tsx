@@ -12,10 +12,10 @@ interface ProgressBarProps {
 
 const variants = {
   default: "bg-primary-500",
-  xp: "bg-gradient-to-r from-green-400 to-green-600",
-  streak: "bg-gradient-to-r from-orange-400 to-orange-600",
-  course: "bg-gradient-to-r from-primary-400 to-secondary-500",
-  level: "bg-gradient-to-r from-primary-500 to-secondary-600",
+  xp: "bg-green-500",
+  streak: "bg-orange-500",
+  course: "bg-primary-500",
+  level: "bg-primary-600",
 };
 
 const sizes = {

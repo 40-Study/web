@@ -26,7 +26,7 @@ export function EnrolledCourseCard({ course }: EnrolledCourseCardProps) {
       className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow block"
     >
       {/* Thumbnail */}
-      <div className="aspect-video bg-gradient-to-br from-blue-600 to-blue-900 relative overflow-hidden">
+      <div className="aspect-video bg-blue-700 relative overflow-hidden">
         <div className="absolute inset-0 flex items-center justify-center opacity-20">
           <div className="w-16 h-16 border-4 border-white rounded-full" />
         </div>

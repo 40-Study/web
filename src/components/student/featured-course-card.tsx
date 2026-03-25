@@ -11,7 +11,7 @@ interface FeaturedCourseCardProps {
 
 export function FeaturedCourseCard({ course }: FeaturedCourseCardProps) {
   return (
-    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 via-blue-950 to-gray-900 text-white p-8 min-h-[220px] flex flex-col justify-between shadow-lg">
+    <div className="relative rounded-2xl overflow-hidden bg-blue-900 text-white p-8 min-h-[220px] flex flex-col justify-between shadow-lg">
       {/* Background decoration */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
@@ -50,7 +50,7 @@ export function FeaturedCourseCard({ course }: FeaturedCourseCardProps) {
             </div>
             <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full transition-all duration-500"
+                className="h-full bg-blue-500 rounded-full transition-all duration-500"
                 style={{ width: `${course.progress}%` }}
               />
             </div>

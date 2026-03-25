@@ -20,12 +20,12 @@ export function StreakCard({
   return (
     <Card
       className={cn(
-        "bg-gradient-to-br from-orange-500 to-red-500 text-white p-4 overflow-hidden relative",
+        "bg-orange-500 text-white p-4 overflow-hidden relative",
         className
       )}
     >
       {/* Background glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-orange-400/20 to-transparent animate-pulse-glow" />
+      <div className="absolute inset-0 bg-orange-400/20 animate-pulse-glow" />
 
       <div className="relative z-10 flex items-center gap-3">
         <div className="flex items-center justify-center w-14 h-14 bg-white/20 rounded-full">
@@ -43,7 +43,7 @@ export function StreakCard({
       </div>
 
       {!hasStreakToday && (
-        <div className="relative z-10 mt-3 text-sm bg-white/20 rounded px-2 py-1.5 backdrop-blur-sm">
+        <div className="relative z-10 mt-3 text-sm bg-white/20 rounded px-2 py-1.5">
           Complete a lesson to keep your streak!
         </div>
       )}

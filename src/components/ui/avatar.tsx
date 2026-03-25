@@ -54,7 +54,7 @@ export function Avatar({
     <div className={cn("relative inline-block", className)}>
       <div
         className={cn(
-          "rounded-full bg-gradient-to-br from-primary-400 to-secondary-500 flex items-center justify-center overflow-hidden",
+          "rounded-full bg-primary-500 flex items-center justify-center overflow-hidden",
           sizes[size]
         )}
       >

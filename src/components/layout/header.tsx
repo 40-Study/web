@@ -32,7 +32,7 @@ export function Header() {
     return (
         <header
             role="banner"
-            className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+            className="sticky top-0 z-50 w-full border-b bg-white"
         >
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 {/* Logo */}
@@ -42,7 +42,7 @@ export function Header() {
                     aria-label={`${siteConfig.name} - Trang chủ`}
                 >
                     <div
-                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-secondary-600"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-500"
                         aria-hidden="true"
                     >
                         <span className="text-sm font-bold text-white">FX</span>
