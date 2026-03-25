@@ -21,7 +21,7 @@ export function MyCourseSidebar({ otherCourses, achievements }: MyCourseSidebarP
             Đang học khác
           </h3>
           <Link
-            href="/student/courses"
+            href="/my-courses"
             className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors"
           >
             Xem tất cả
