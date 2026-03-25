@@ -1,16 +1,16 @@
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
+import { StudentLayout } from "@/components/layout/student-layout";
+import { RoleGuard } from "@/components/guards/role-guard";
 
-export default function MainLayout({
+export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <Header />
-      <main className="flex-1">{children}</main>
-      <Footer />
-    </div>
+    <RoleGuard roles={["STUDENT", "TEACHER", "PARENT", "SYSTEM_ADMIN", "ORG_OWNER"]}>
+      <StudentLayout>
+        {children}
+      </StudentLayout>
+    </RoleGuard>
   );
 }
