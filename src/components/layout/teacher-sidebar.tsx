@@ -41,7 +41,7 @@ export function TeacherSidebar({ className }: TeacherSidebarProps) {
             role="complementary"
             aria-label="Thanh điều hướng giáo viên"
             className={cn(
-                "hidden lg:flex h-screen flex-col border-r bg-background transition-all duration-300 motion-reduce:transition-none sticky top-0",
+                "hidden lg:flex h-[calc(100vh-4rem)] flex-col border-r bg-background transition-all duration-300 motion-reduce:transition-none sticky top-16",
                 isCollapsed ? "w-16" : "w-64",
                 className
             )}
