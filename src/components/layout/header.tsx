@@ -31,6 +31,7 @@ export function Header() {
   const { isAuthenticated, user, activeRole } = useAuthStore();
   const logoutMutation = useLogout();
   const normalizedRole = normalizeRole(activeRole);
+  const isTeacher = normalizedRole === "TEACHER";
   const homeHref = isAuthenticated ? getRoleHomeRoute(normalizedRole) : "/";
 
   useEffect(() => {
@@ -88,6 +89,14 @@ export function Header() {
           <div className="hidden sm:flex items-center gap-2" ref={dropdownRef}>
             {isAuthenticated ? (
               <>
+                {isTeacher && (
+                  <Link href="/teacher/schedule">
+                    <Button variant="outline" className="font-medium">
+                      Quản lý giáo viên
+                    </Button>
+                  </Link>
+                )}
+
                 <button
                   onClick={() => setIsDropdownOpen((v) => !v)}
                   className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition-colors"
@@ -163,6 +172,16 @@ export function Header() {
               <div className="absolute right-0 top-12 w-64 bg-white rounded-xl shadow-lg border py-2 z-50">
                 {isAuthenticated ? (
                   <>
+                    {isTeacher && (
+                      <div className="px-3 pt-3">
+                        <Link href="/teacher/schedule" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Button variant="outline" className="w-full justify-start font-medium">
+                            Quản lý giáo viên
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+
                     <div className="px-4 py-3 border-b">
                       <p className="font-semibold text-gray-900">{user?.name || "Tài khoản"}</p>
                       <p className="text-sm text-gray-500">{user?.email || ""}</p>
