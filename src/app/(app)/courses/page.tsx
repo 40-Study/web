@@ -6,8 +6,10 @@ import { toast } from "sonner";
 import { CourseGrid } from "@/components/course/course-grid";
 import { CourseFiltersComponent } from "@/components/course/course-filters";
 import { CourseSearch } from "@/components/course/course-search";
-import { useCourses, useCategories, useSearchSuggestions } from "@/hooks/use-courses";
+import { useSearchSuggestions } from "@/hooks/use-courses";
 import { CourseFilters } from "@/types/course";
+import { mockCourses } from "@/lib/mock-data/courses";
+import { mockCategories } from "@/lib/mock-data/courses";
 
 export default function CoursesPage() {
   const searchParams = useSearchParams();
@@ -16,19 +18,20 @@ export default function CoursesPage() {
   const [filters, setFilters] = useState<CourseFilters>({});
   const [searchQuery, setSearchQuery] = useState(initialQuery);
 
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
-  const { data: courses = [], isLoading: coursesLoading } = useCourses(filters);
+  const categories = mockCategories;
+  const coursesLoading = false;
+  const categoriesLoading = false;
   const { data: suggestions = [] } = useSearchSuggestions(searchQuery);
 
-  // Filter courses by search query
+  // Filter courses by search query and filters
   const filteredCourses = searchQuery
-    ? courses.filter(
+    ? mockCourses.filter(
         (c) =>
           c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           c.instructor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           c.description.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : courses;
+    : mockCourses;
 
   const handleFilterChange = (newFilters: CourseFilters) => {
     setFilters(newFilters);

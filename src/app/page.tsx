@@ -31,8 +31,6 @@ import {
 } from "lucide-react";
 import { siteConfig } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth.store";
-import { CourseCard } from "@/components/course/course-card";
-import { mockCourses } from "@/lib/mock-data/courses";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -257,26 +255,6 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
-            </div>
-          </section>
-
-          {/* 3b. Explore Courses Section */}
-          <section className="py-20 px-6 max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-12">
-              <div>
-                <h2 className="text-3xl font-bold text-slate-900 mb-2">Khám phá khóa học</h2>
-                <p className="text-slate-500">Học từ những giảng viên hàng đầu</p>
-              </div>
-              <Link href="/courses">
-                <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl">
-                  Xem tất cả
-                </Button>
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {mockCourses.slice(0, 4).map((course) => (
-                <CourseCard key={course.id} course={course} />
-              ))}
             </div>
           </section>
 
