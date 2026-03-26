@@ -10,12 +10,14 @@ interface AppShellLayoutProps {
 
 export function AppShellLayout({ children }: AppShellLayoutProps) {
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Header />
-        <main className="flex-1 overflow-auto">{children}</main>
-        <Footer />
+    <div className="min-h-screen bg-slate-50">
+      <Header />
+      <div className="flex flex-1 pt-16">
+        <Sidebar />
+        <div className="flex-1 w-full lg:pl-20 flex flex-col overflow-x-hidden">
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </div>
       </div>
     </div>
   );

@@ -26,8 +26,8 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="w-[96px] min-h-screen bg-white border-r flex flex-col items-center py-6">
-      <nav className="flex flex-col gap-2 w-full px-2">
+    <aside className="fixed left-0 top-16 bottom-0 w-20 bg-white border-r border-slate-200 z-40 hidden lg:flex flex-col items-center py-8">
+      <nav className="flex flex-col items-center gap-6 w-full">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
