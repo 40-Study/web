@@ -111,6 +111,40 @@ export function useCreateOrgRole() {
   });
 }
 
+export function useCreateSystemRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: roleService.createSystemRole,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: adminKeys.systemRoles() });
+      toast.success("Tạo vai trò hệ thống thành công");
+    },
+  });
+}
+
+export function useUpdateSystemRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ roleId, data }: { roleId: string; data: Parameters<typeof roleService.updateSystemRole>[1] }) =>
+      roleService.updateSystemRole(roleId, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: adminKeys.systemRoles() });
+      toast.success("Cập nhật vai trò hệ thống thành công");
+    },
+  });
+}
+
+export function useDeleteSystemRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: roleService.deleteSystemRole,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: adminKeys.systemRoles() });
+      toast.success("Xóa vai trò hệ thống thành công");
+    },
+  });
+}
+
 export function useAssignOrgRole() {
   const qc = useQueryClient();
   return useMutation({

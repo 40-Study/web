@@ -1,62 +1,207 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePermissions } from "@/hooks/queries/use-admin";
+
+type PermissionState = {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+};
+
+type PermissionForm = {
+  id?: string;
+  name: string;
+  description: string;
+  category: string;
+};
+
+const emptyForm: PermissionForm = { name: "", description: "", category: "general" };
 
 export default function AdminPermissionsPage() {
   const { data: permissions = [], isLoading } = usePermissions();
+  const [permissionState, setPermissionState] = useState<PermissionState[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [form, setForm] = useState<PermissionForm>(emptyForm);
+
+  useEffect(() => {
+    if (permissions.length > 0 && permissionState.length === 0) {
+      setPermissionState(permissions);
+      setSelectedId(permissions[0].id);
+    }
+  }, [permissions, permissionState.length]);
 
   const grouped = useMemo(() => {
-    return permissions.reduce<Record<string, typeof permissions>>((acc, perm) => {
+    return permissionState.reduce<Record<string, PermissionState[]>>((acc, perm) => {
       const key = perm.category || "Khác";
       if (!acc[key]) acc[key] = [];
       acc[key].push(perm);
       return acc;
     }, {});
-  }, [permissions]);
+  }, [permissionState]);
+
+  const selected = useMemo(
+    () => permissionState.find((item) => item.id === selectedId) || null,
+    [permissionState, selectedId]
+  );
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name || !form.category) return;
+
+    if (form.id) {
+      setPermissionState((prev) =>
+        prev.map((item) =>
+          item.id === form.id
+            ? {
+                ...item,
+                name: form.name,
+                description: form.description,
+                category: form.category,
+              }
+            : item
+        )
+      );
+      setSelectedId(form.id);
+    } else {
+      const newItem: PermissionState = {
+        id: `${Date.now()}`,
+        name: form.name,
+        description: form.description,
+        category: form.category,
+      };
+      setPermissionState((prev) => [newItem, ...prev]);
+      setSelectedId(newItem.id);
+    }
+
+    setForm(emptyForm);
+  };
+
+  const onEdit = (item: PermissionState) => {
+    setForm({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      category: item.category,
+    });
+  };
+
+  const onDelete = (id: string) => {
+    setPermissionState((prev) => prev.filter((item) => item.id !== id));
+    if (selectedId === id) setSelectedId(null);
+    if (form.id === id) setForm(emptyForm);
+  };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Phân quyền hệ thống</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Danh sách quyền được nhóm theo module để dễ theo dõi.
+          CRUD chi tiết cho quyền: tạo, xem, sửa, xóa với nhóm theo module.
         </p>
       </div>
 
-      {isLoading ? (
-        <div className="rounded-xl border bg-white p-6 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-          Đang tải dữ liệu quyền...
-        </div>
-      ) : Object.keys(grouped).length === 0 ? (
-        <div className="rounded-xl border bg-white p-6 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-          Chưa có quyền nào.
-        </div>
-      ) : (
+      <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
         <div className="space-y-4">
-          {Object.entries(grouped).map(([category, items]) => (
-            <section key={category} className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{category}</h2>
-              <div className="mt-3 space-y-2">
-                {items.map((perm) => (
-                  <div
-                    key={perm.id}
-                    className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-800"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{perm.name}</p>
-                      <p className="text-xs text-gray-500">{perm.description}</p>
+          {isLoading ? (
+            <div className="rounded-xl border bg-white p-6 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+              Đang tải dữ liệu quyền...
+            </div>
+          ) : Object.keys(grouped).length === 0 ? (
+            <div className="rounded-xl border bg-white p-6 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+              Chưa có quyền nào.
+            </div>
+          ) : (
+            Object.entries(grouped).map(([category, items]) => (
+              <section key={category} className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{category}</h2>
+                <div className="mt-3 space-y-2">
+                  {items.map((perm) => (
+                    <div
+                      key={perm.id}
+                      className={`rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-800 ${selected?.id === perm.id ? "ring-2 ring-primary-200" : ""}`}
+                    >
+                      <button className="w-full text-left" onClick={() => setSelectedId(perm.id)}>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{perm.name}</p>
+                        <p className="text-xs text-gray-500">{perm.description || "Không có mô tả"}</p>
+                      </button>
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          onClick={() => onEdit(perm)}
+                          className="rounded bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700"
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          onClick={() => onDelete(perm.id)}
+                          className="rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-700"
+                        >
+                          Xóa
+                        </button>
+                      </div>
                     </div>
-                    <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                      {perm.category}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ))}
+                  ))}
+                </div>
+              </section>
+            ))
+          )}
         </div>
-      )}
+
+        <div className="space-y-4">
+          <form onSubmit={onSubmit} className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+              {form.id ? "Cập nhật quyền" : "Tạo quyền mới"}
+            </h2>
+            <div className="mt-3 space-y-2">
+              <input
+                placeholder="Tên quyền"
+                value={form.name}
+                onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                className="h-10 w-full rounded border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+              />
+              <input
+                placeholder="Mô tả"
+                value={form.description}
+                onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                className="h-10 w-full rounded border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+              />
+              <input
+                placeholder="Category"
+                value={form.category}
+                onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
+                className="h-10 w-full rounded border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+              />
+              <div className="flex gap-2">
+                <button type="submit" className="rounded bg-primary-600 px-3 py-2 text-sm font-medium text-white">
+                  {form.id ? "Lưu" : "Tạo"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm(emptyForm)}
+                  className="rounded bg-gray-100 px-3 py-2 text-sm font-medium dark:bg-gray-800"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Chi tiết quyền</h2>
+            {selected ? (
+              <div className="mt-3 space-y-2 text-sm">
+                <p><span className="text-gray-500">ID:</span> {selected.id}</p>
+                <p><span className="text-gray-500">Tên:</span> {selected.name}</p>
+                <p><span className="text-gray-500">Mô tả:</span> {selected.description || "-"}</p>
+                <p><span className="text-gray-500">Category:</span> {selected.category}</p>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-gray-500">Chọn một quyền để xem chi tiết.</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
