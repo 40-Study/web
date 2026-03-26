@@ -2,18 +2,23 @@
 
 import Link from "next/link";
 import { useState, useId } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { navItems, siteConfig } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { AuthModal } from "@/components/auth/auth-modal";
+import { Avatar } from "@/components/ui/avatar";
+import { useAuthStore } from "@/stores/auth.store";
 
 export function Header() {
+    const router = useRouter();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [authModal, setAuthModal] = useState<{ isOpen: boolean; mode: "login" | "register" }>({
         isOpen: false,
         mode: "login",
     });
     const mobileMenuId = useId();
+    const { isAuthenticated, user, logout } = useAuthStore();
 
     const openLogin = () => {
         setIsMenuOpen(false);
@@ -27,6 +32,12 @@ export function Header() {
 
     const closeAuthModal = () => {
         setAuthModal({ isOpen: false, mode: "login" });
+    };
+
+    const handleLogout = () => {
+        logout();
+        setIsMenuOpen(false);
+        router.push("/");
     };
 
     return (
@@ -70,12 +81,26 @@ export function Header() {
                 {/* Actions */}
                 <div className="flex items-center space-x-4">
                     <div className="hidden md:flex md:items-center md:space-x-2">
-                        <Button variant="ghost" size="sm" onClick={openLogin}>
-                            Đăng nhập
-                        </Button>
-                        <Button size="sm" onClick={openRegister}>
-                            Đăng ký
-                        </Button>
+                        {isAuthenticated ? (
+                            <>
+                                <Link href="/home" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+                                    {user?.name || "Tài khoản"}
+                                </Link>
+                                <Avatar fallback={user?.name || "TK"} size="sm" />
+                                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                                    Đăng xuất
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button variant="ghost" size="sm" onClick={openLogin}>
+                                    Đăng nhập
+                                </Button>
+                                <Button size="sm" onClick={openRegister}>
+                                    Đăng ký
+                                </Button>
+                            </>
+                        )}
                     </div>
 
                     {/* Mobile Menu Button */}
@@ -139,12 +164,29 @@ export function Header() {
                         </Link>
                     ))}
                     <div className="mt-4 flex flex-col space-y-2">
-                        <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={openLogin}>
-                            Đăng nhập
-                        </Button>
-                        <Button size="sm" className="min-h-[44px]" onClick={openRegister}>
-                            Đăng ký
-                        </Button>
+                        {isAuthenticated ? (
+                            <>
+                                <Link
+                                    href="/home"
+                                    className="block py-3 min-h-[44px] text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-md px-2"
+                                    onClick={() => setIsMenuOpen(false)}
+                                >
+                                    {user?.name || "Tài khoản"}
+                                </Link>
+                                <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={handleLogout}>
+                                    Đăng xuất
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={openLogin}>
+                                    Đăng nhập
+                                </Button>
+                                <Button size="sm" className="min-h-[44px]" onClick={openRegister}>
+                                    Đăng ký
+                                </Button>
+                            </>
+                        )}
                     </div>
                 </nav>
             </div>

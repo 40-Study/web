@@ -5,21 +5,30 @@ import { usePathname } from "next/navigation";
 import { Home, BookOpen, MessageSquare, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const studentNavItems = [
-  { label: "TRANG CHỦ", href: "/home", icon: Home },
-  { label: "LỊCH HỌC", href: "/schedule", icon: Calendar },
-  { label: "KHÓA HỌC", href: "/courses", icon: BookOpen },
-  { label: "THẢO LUẬN", href: "/discussions", icon: MessageSquare },
-];
+interface StudentSidebarProps {
+  isAuthenticated?: boolean;
+}
 
-export function StudentSidebar() {
+export function StudentSidebar({ isAuthenticated = true }: StudentSidebarProps) {
   const pathname = usePathname();
+  const navItems = [
+    {
+      label: "TRANG CHỦ",
+      href: isAuthenticated ? "/home" : "/",
+      icon: Home,
+    },
+    ...(isAuthenticated
+      ? [{ label: "LỊCH HỌC", href: "/schedule", icon: Calendar }]
+      : []),
+    { label: "KHÓA HỌC", href: "/courses", icon: BookOpen },
+    { label: "THẢO LUẬN", href: "/discussions", icon: MessageSquare },
+  ];
 
   return (
     <aside className="w-[96px] min-h-screen bg-white border-r flex flex-col items-center py-6">
       {/* Navigation */}
       <nav className="flex flex-col gap-2 w-full px-2">
-        {studentNavItems.map((item) => {
+        {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;
 
