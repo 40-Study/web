@@ -73,11 +73,13 @@ export default function StudentSchedulePage() {
   const events = MOCK_STUDENT_EVENTS;
 
   return (
-    <WeekCalendarGrid
-      events={events}
-      title="Lịch học"
-      subtitle="Xem lịch học và tham gia lớp học"
-      renderEventTooltip={(event) => <ScheduleEventTooltip event={event} />}
-    />
+    <div className="p-6">
+      <WeekCalendarGrid
+        events={events}
+        title="Lịch học"
+        subtitle="Xem lịch học và tham gia lớp học"
+        renderEventTooltip={(event) => <ScheduleEventTooltip event={event} />}
+      />
+    </div>
   );
 }

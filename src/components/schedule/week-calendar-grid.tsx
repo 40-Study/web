@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   startOfWeek,
   endOfWeek,
@@ -15,6 +15,14 @@ import {
 } from "date-fns";
 import { vi } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Bell, Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -76,10 +84,20 @@ export default function WeekCalendarGrid({
 }: WeekCalendarGridProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  const weekNotifications = useMemo(() => {
+    return events
+      .filter((event) => {
+        const eventDate = parseISO(event.startTime);
+        return eventDate >= weekStart && eventDate <= weekEnd;
+      })
+      .sort((a, b) => parseISO(a.startTime).getTime() - parseISO(b.startTime).getTime())
+      .slice(0, 5);
+  }, [events, weekStart, weekEnd]);
 
   const getEventsForDay = (day: Date) =>
     events.filter((event) => isSameDay(parseISO(event.startTime), day));
@@ -93,15 +111,15 @@ export default function WeekCalendarGrid({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h1>
-          {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+          {subtitle && <p className="mt-1 text-sm text-gray-500">{subtitle}</p>}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 self-start lg:self-auto">
           {headerActions}
           {/* Date Navigation */}
-          <div className="flex items-center gap-1 rounded-xl border bg-white dark:bg-gray-800 px-3 py-2 shadow-sm">
+          <div className="flex items-center gap-1 rounded-xl border bg-white px-3 py-2 shadow-sm dark:bg-gray-800">
             <Button
               variant="ghost"
               size="icon"
@@ -123,9 +141,9 @@ export default function WeekCalendarGrid({
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <Button variant="ghost" size="icon" className="relative">
+          <Button variant="ghost" size="icon" className="relative" onClick={() => setIsNotificationOpen(true)}>
             <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+            {weekNotifications.length > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />}
           </Button>
         </div>
       </div>
@@ -279,6 +297,36 @@ export default function WeekCalendarGrid({
           </div>
         </div>
       </Card>
+
+      <Dialog open={isNotificationOpen} onOpenChange={setIsNotificationOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Thông báo lịch học tuần này</DialogTitle>
+            <DialogDescription>
+              Tổng hợp các buổi học sắp tới trong tuần để bạn không bị lỡ lịch.
+            </DialogDescription>
+          </DialogHeader>
+
+          {weekNotifications.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Tuần này chưa có lịch học nào.</p>
+          ) : (
+            <div className="space-y-2">
+              {weekNotifications.map((event) => (
+                <div key={event.id} className="rounded-lg border p-3">
+                  <p className="text-sm font-medium">{event.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(parseISO(event.startTime), "EEEE, dd/MM - HH:mm", { locale: vi })} • {event.status === "ongoing" ? "Đang diễn ra" : event.status === "completed" ? "Đã hoàn thành" : "Sắp diễn ra"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button onClick={() => setIsNotificationOpen(false)}>Đã hiểu</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
