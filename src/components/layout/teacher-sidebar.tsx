@@ -46,25 +46,6 @@ export function TeacherSidebar({ className }: TeacherSidebarProps) {
                 className
             )}
         >
-            {/* Logo/Brand Header */}
-            <div className="flex h-16 items-center justify-between border-b px-4 shrink-0">
-                {!isCollapsed && (
-                    <Link href="/teacher/schedule" className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-white font-bold text-sm">
-                            40
-                        </div>
-                        <span className="text-lg font-bold">ForteX</span>
-                    </Link>
-                )}
-                {isCollapsed && (
-                    <Link href="/teacher/schedule" className="flex items-center justify-center w-full">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-white font-bold text-sm">
-                            4
-                        </div>
-                    </Link>
-                )}
-            </div>
-
             <nav
                 className="flex-1 space-y-1 p-2 overflow-y-auto"
                 role="navigation"
