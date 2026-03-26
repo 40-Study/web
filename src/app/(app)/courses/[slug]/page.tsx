@@ -8,7 +8,7 @@ import { CourseHero } from "@/components/course/course-hero";
 import { CourseSyllabus } from "@/components/course/course-syllabus";
 import { CourseReviews } from "@/components/course/course-reviews";
 import { InstructorCard } from "@/components/course/instructor-card";
-import { useCourseDetail } from "@/hooks/use-courses";
+import { useCourseBySlug } from "@/hooks/use-courses";
 
 type TabType = "overview" | "syllabus" | "instructor" | "reviews";
 
@@ -36,11 +36,11 @@ function LoadingSkeleton() {
 }
 
 export default function CourseDetailPage() {
-  const params = useParams();
-  const slug = params.slug as string;
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   const [activeTab, setActiveTab] = useState<TabType>("overview");
 
-  const { data: course, isLoading, error } = useCourseDetail(slug);
+  const { data: course, isLoading, error } = useCourseBySlug(slug);
 
   // For demo purposes - simulate enrollment status
   const [isEnrolled] = useState(false);

@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 
 interface Course {
   id: string;
+  slug: string;
+  currentLessonId: string;
   title: string;
   thumbnail: string;
   currentLesson: number;
@@ -69,7 +71,7 @@ export function ContinueLearningCard({
         </div>
 
         <Button size="sm" className="mt-1" asChild>
-          <Link href={`/courses/${course.id}/learn`}>
+          <Link href={`/learn/${course.slug}/${course.currentLessonId}`}>
             <Play className="w-4 h-4 mr-1" />
             Continue
           </Link>

@@ -77,7 +77,7 @@ export function CourseCarousel({ title, subtitle, courses }: CourseCarouselProps
 function CourseCard({ course }: { course: RecommendedCourse }) {
   return (
     <Link
-      href={`/courses/${course.id}`}
+      href={`/courses/${course.slug}`}
       className="group block cursor-pointer"
     >
       {/* Thumbnail */}

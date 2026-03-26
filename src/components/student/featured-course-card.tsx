@@ -60,7 +60,7 @@ export function FeaturedCourseCard({ course }: FeaturedCourseCardProps) {
         {/* Right: CTA */}
         <div className="flex-shrink-0 flex flex-col items-end justify-between h-full">
           <Link
-            href={`/courses/${course.id}`}
+            href={`/courses/${course.slug}`}
             className="flex items-center gap-2 px-5 py-3 bg-white text-gray-900 font-semibold rounded-xl hover:bg-blue-50 transition-colors text-sm whitespace-nowrap"
           >
             Tiếp tục học ngay

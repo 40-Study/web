@@ -6,6 +6,7 @@ import type { EnrolledCourse } from "@/lib/mock-data/my-courses";
 
 interface EnrolledCourseCardProps {
   course: EnrolledCourse;
+  href: string;
 }
 
 const categoryColors: Record<string, string> = {
@@ -16,13 +17,13 @@ const categoryColors: Record<string, string> = {
   CLOUD: "bg-cyan-100 text-cyan-700",
 };
 
-export function EnrolledCourseCard({ course }: EnrolledCourseCardProps) {
+export function EnrolledCourseCard({ course, href }: EnrolledCourseCardProps) {
   const colorClass = categoryColors[course.category] ?? "bg-gray-100 text-gray-700";
   const isCompleted = course.progress >= 100;
 
   return (
     <Link
-      href={`/courses/${course.id}`}
+      href={href}
       className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow block"
     >
       {/* Thumbnail */}

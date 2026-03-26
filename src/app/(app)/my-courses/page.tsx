@@ -57,7 +57,11 @@ export default function MyCoursesPage() {
 
             <div className="grid grid-cols-3 gap-4">
               {mockEnrolledCourses.map((course) => (
-                <EnrolledCourseCard key={course.id} course={course} />
+                <EnrolledCourseCard
+                  key={course.id}
+                  course={course}
+                  href={`/courses/${course.slug}`}
+                />
               ))}
             </div>
           </section>

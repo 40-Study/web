@@ -39,7 +39,7 @@ export function ResumeBanner({ course }: ResumeBannerProps) {
           <ProgressBar value={course.progress} variant="course" className="mb-4" />
 
           <Link
-            href={`/courses/${course.id}`}
+            href={`/learn/${course.slug}/${course.currentLessonId}`}
             className="flex items-center justify-center gap-2 w-full h-12 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl transition-colors"
           >
             Tiếp tục

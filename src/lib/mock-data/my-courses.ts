@@ -10,6 +10,7 @@ export interface TodayStats {
 
 export interface FeaturedCourse {
   id: string;
+  slug: string;
   title: string;
   description: string;
   thumbnail: string;
@@ -22,6 +23,7 @@ export interface FeaturedCourse {
 
 export interface EnrolledCourse {
   id: string;
+  slug: string;
   title: string;
   thumbnail: string;
   progress: number;
@@ -30,6 +32,7 @@ export interface EnrolledCourse {
 
 export interface OtherLearningCourse {
   id: string;
+  slug: string;
   title: string;
   progress: number;
   category: string;
@@ -51,6 +54,7 @@ export const mockTodayStats: TodayStats = {
 
 export const mockFeaturedCourse: FeaturedCourse = {
   id: "1",
+  slug: "reactjs-nextjs-web-hien-dai",
   title: "Xây dựng ứng dụng Web Fullstack với React 19 & Go Fiber",
   description: "Học cách kết nối React và Go Fiber để xây dựng ứng dụng hoàn chỉnh.",
   thumbnail: "/courses/fullstack.jpg",
@@ -64,6 +68,7 @@ export const mockFeaturedCourse: FeaturedCourse = {
 export const mockEnrolledCourses: EnrolledCourse[] = [
   {
     id: "2",
+    slug: "html-css-zero-to-hero",
     title: "HTML CSS từ Zero đến Hero",
     thumbnail: "/courses/html-css.png",
     progress: 100,
@@ -71,6 +76,7 @@ export const mockEnrolledCourses: EnrolledCourse[] = [
   },
   {
     id: "3",
+    slug: "javascript-nang-cao",
     title: "JavaScript nâng cao",
     thumbnail: "/courses/javascript.png",
     progress: 68,
@@ -78,6 +84,7 @@ export const mockEnrolledCourses: EnrolledCourse[] = [
   },
   {
     id: "4",
+    slug: "docker-kubernetes-thuc-chien",
     title: "Docker & Kubernetes thực chiến",
     thumbnail: "/courses/docker.png",
     progress: 20,
@@ -85,6 +92,7 @@ export const mockEnrolledCourses: EnrolledCourse[] = [
   },
   {
     id: "5",
+    slug: "reactjs-co-ban-den-nang-cao",
     title: "ReactJS từ cơ bản đến nâng cao",
     thumbnail: "/courses/react.png",
     progress: 45,
@@ -92,6 +100,7 @@ export const mockEnrolledCourses: EnrolledCourse[] = [
   },
   {
     id: "6",
+    slug: "go-backend-development",
     title: "Go Backend Development",
     thumbnail: "/courses/golang.png",
     progress: 10,
@@ -99,6 +108,7 @@ export const mockEnrolledCourses: EnrolledCourse[] = [
   },
   {
     id: "7",
+    slug: "postgresql-database-design",
     title: "PostgreSQL & Database Design",
     thumbnail: "/courses/postgres.png",
     progress: 55,
@@ -109,18 +119,21 @@ export const mockEnrolledCourses: EnrolledCourse[] = [
 export const mockOtherLearning: OtherLearningCourse[] = [
   {
     id: "8",
+    slug: "typescript-advanced-patterns",
     title: "TypeScript Advanced Patterns",
     progress: 30,
     category: "FRONTEND",
   },
   {
     id: "9",
+    slug: "nodejs-microservices",
     title: "Node.js Microservices",
     progress: 15,
     category: "BACKEND",
   },
   {
     id: "10",
+    slug: "aws-cloud-practitioner",
     title: "AWS Cloud Practitioner",
     progress: 50,
     category: "CLOUD",

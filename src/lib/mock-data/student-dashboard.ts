@@ -5,6 +5,8 @@
 
 export interface CurrentCourse {
   id: string;
+  slug: string;
+  currentLessonId: string;
   title: string;
   highlightedText: string;
   chapter: string;
@@ -30,6 +32,7 @@ export interface LiveClass {
 
 export interface RecommendedCourse {
   id: string;
+  slug: string;
   title: string;
   thumbnail: string;
   price: number;
@@ -40,6 +43,8 @@ export interface RecommendedCourse {
 
 export const mockCurrentCourse: CurrentCourse = {
   id: "1",
+  slug: "reactjs-nextjs-web-hien-dai",
+  currentLessonId: "l1",
   title: "Xây dựng ứng dụng Web Fullstack với",
   highlightedText: "React 19 & Go Fiber",
   chapter: "Chương 4: Tối ưu hóa hiệu năng và Deploy với Docker",
@@ -66,6 +71,7 @@ export const mockLiveClass: LiveClass = {
 export const mockRecommendedCourses: RecommendedCourse[] = [
   {
     id: "1",
+    slug: "reactjs-nextjs-web-hien-dai",
     title: "HTML CSS từ Zero đến Hero",
     thumbnail: "/courses/html-css.png",
     price: 1050000,
@@ -75,6 +81,7 @@ export const mockRecommendedCourses: RecommendedCourse[] = [
   },
   {
     id: "2",
+    slug: "nodejs-express-rest-api",
     title: "HTML CSS từ Zero đến Hero",
     thumbnail: "/courses/html-css.png",
     price: 1050000,
@@ -84,6 +91,7 @@ export const mockRecommendedCourses: RecommendedCourse[] = [
   },
   {
     id: "3",
+    slug: "react-native-mobile-app",
     title: "HTML CSS từ Zero đến Hero",
     thumbnail: "/courses/html-css.png",
     price: 1050000,
@@ -93,6 +101,7 @@ export const mockRecommendedCourses: RecommendedCourse[] = [
   },
   {
     id: "4",
+    slug: "docker-kubernetes-devops",
     title: "HTML CSS từ Zero đến Hero",
     thumbnail: "/courses/html-css.png",
     price: 1050000,
