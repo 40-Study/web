@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   ChevronLeft,
   Play,
@@ -69,8 +69,42 @@ const LESSON_LABELS: Record<string, string> = {
 
 export default function CourseDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const courseId = params.id as string;
   const [curriculum, setCurriculum] = useState(MOCK_CURRICULUM);
+
+  const handleAddLesson = (chapterId: string) => {
+    setCurriculum((prev) =>
+      prev.map((chapter) => {
+        if (chapter.id !== chapterId) return chapter;
+        const nextIndex = chapter.lessons.length + 1;
+        return {
+          ...chapter,
+          lessons: [
+            ...chapter.lessons,
+            {
+              id: `new-${chapterId}-${Date.now()}`,
+              title: `Bài học mới ${nextIndex}`,
+              type: "video",
+              duration: "10:00",
+            },
+          ],
+        };
+      })
+    );
+  };
+
+  const handleAddChapter = () => {
+    const nextIndex = curriculum.length + 1;
+    setCurriculum((prev) => [
+      ...prev,
+      {
+        id: `c${Date.now()}`,
+        title: `Chương ${nextIndex}: Nội dung mới`,
+        lessons: [],
+      },
+    ]);
+  };
 
   return (
     <div className="space-y-6">
@@ -92,11 +126,11 @@ export default function CourseDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => router.push(`/teacher/courses/${courseId}/members`)}>
             <Eye className="w-4 h-4 mr-2" />
-            Xem trước
+            Xem thành viên
           </Button>
-          <Button>Cập nhật</Button>
+          <Button onClick={() => router.push("/teacher/courses")}>Cập nhật</Button>
         </div>
       </div>
 
@@ -109,7 +143,7 @@ export default function CourseDetailPage() {
           </p>
         </div>
 
-        {curriculum.map((chapter, chapterIndex) => (
+        {curriculum.map((chapter) => (
           <Card key={chapter.id}>
             <CardContent className="p-4">
               {/* Chapter Header */}
@@ -149,6 +183,7 @@ export default function CourseDetailPage() {
               <Button
                 variant="ghost"
                 className="w-full mt-4 text-muted-foreground border border-dashed"
+                onClick={() => handleAddLesson(chapter.id)}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Thêm bài học mới
@@ -160,7 +195,7 @@ export default function CourseDetailPage() {
         {/* Add Chapter Button */}
         <Card className="border-dashed">
           <CardContent className="p-6 text-center">
-            <Button variant="ghost" className="text-muted-foreground">
+            <Button variant="ghost" className="text-muted-foreground" onClick={handleAddChapter}>
               <Plus className="w-4 h-4 mr-2" />
               Thêm chương nội dung mới
             </Button>

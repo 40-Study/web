@@ -168,9 +168,14 @@ function PublishedCourseCard({ course }: { course: Course }) {
           )}
         </div>
 
-        <Button variant="default" className="w-full" asChild>
-          <Link href={`/teacher/courses/${course.id}`}>Xem chi tiết</Link>
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" className="w-full" asChild>
+            <Link href={`/teacher/courses/${course.id}/members`}>Thành viên</Link>
+          </Button>
+          <Button variant="default" className="w-full" asChild>
+            <Link href={`/teacher/courses/${course.id}`}>Xem chi tiết</Link>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
