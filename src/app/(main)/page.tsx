@@ -62,7 +62,7 @@ export default function LandingPage() {
             <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
               40
             </div>
-            <span className="text-xl font-bold text-slate-900 tracking-tight">40Study</span>
+            <span className="text-xl font-bold text-slate-900 tracking-tight">ForteX</span>
           </Link>
 
           {/* Search Bar - Hidden on mobile */}
@@ -263,7 +263,7 @@ export default function LandingPage() {
             <div className="bg-white rounded-3xl p-8 lg:p-12 shadow-sm border border-slate-100 flex flex-col lg:flex-row items-center gap-12">
               <div className="lg:w-1/3 space-y-6">
                 <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 leading-tight">
-                  Học viên 40Study đã tự xây dựng:
+                  Học viên ForteX đã tự xây dựng:
                 </h2>
                 <p className="text-slate-500 text-lg">
                   Từ những ứng dụng nhỏ đầu tiên đến các nền tảng phức tạp có hàng nghìn người dùng thực tế.
@@ -532,7 +532,7 @@ export default function LandingPage() {
                   <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                     40
                   </div>
-                  <span className="text-xl font-bold tracking-tight">40Study</span>
+                  <span className="text-xl font-bold tracking-tight">ForteX</span>
                 </Link>
                 <p className="text-sm leading-relaxed">
                   {siteConfig.description}
@@ -557,7 +557,7 @@ export default function LandingPage() {
               <div>
                 <h4 className="text-white font-semibold mb-6">Về chúng tôi</h4>
                 <ul className="space-y-4 text-sm">
-                  <li><a href="#" className="hover:text-primary-400 transition-colors">Giới thiệu 40Study</a></li>
+                  <li><a href="#" className="hover:text-primary-400 transition-colors">Giới thiệu ForteX</a></li>
                   <li><a href="#" className="hover:text-primary-400 transition-colors">Tuyển dụng</a></li>
                   <li><a href="#" className="hover:text-primary-400 transition-colors">Tin tức & Blog</a></li>
                   <li><a href="#" className="hover:text-primary-400 transition-colors">Liên hệ</a></li>
@@ -596,7 +596,7 @@ export default function LandingPage() {
             </div>
 
             <div className="max-w-7xl mx-auto pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
-              <p>© {new Date().getFullYear()} 40Study. Đã đăng ký bản quyền.</p>
+              <p>© {new Date().getFullYear()} ForteX. Đã đăng ký bản quyền.</p>
               <div className="flex items-center gap-6">
                 <a href="#" className="hover:text-white transition-colors">Điều khoản sử dụng</a>
                 <a href="#" className="hover:text-white transition-colors">Chính sách bảo mật</a>

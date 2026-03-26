@@ -67,7 +67,7 @@ export function Header() {
             <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
               40
             </div>
-            <span className="text-xl font-bold text-slate-900 tracking-tight">40Study</span>
+            <span className="text-xl font-bold text-slate-900 tracking-tight">ForteX</span>
           </Link>
 
           <div className="hidden md:flex items-center bg-slate-100 rounded-full px-4 py-2 w-64 lg:w-96">

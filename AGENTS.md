@@ -6,7 +6,7 @@
 
 ## OVERVIEW
 
-40Study — Next.js 14 App Router education platform with gamification (XP, streaks, leagues, achievements). Multi-role auth (student/teacher/parent/admin), org-scoped permissions, code sandbox IDE.
+ForteX — Next.js 14 App Router education platform with gamification (XP, streaks, leagues, achievements). Multi-role auth (student/teacher/parent/admin), org-scoped permissions, code sandbox IDE.
 
 ## STRUCTURE
 

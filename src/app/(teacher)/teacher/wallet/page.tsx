@@ -106,7 +106,7 @@ export default function TeacherWalletPage() {
             </div>
             <p className="text-3xl font-bold text-blue-600 mb-2">{formatCurrency(pendingBalance)}</p>
             <Badge variant="secondary" className="mb-2">Sẽ khả dụng sau 7-15 ngày</Badge>
-            <p className="text-xs text-muted-foreground">Dựa trên chính sách hoàn tiền 14 ngày của 40Study.</p>
+            <p className="text-xs text-muted-foreground">Dựa trên chính sách hoàn tiền 14 ngày của ForteX.</p>
           </CardContent>
         </Card>
 

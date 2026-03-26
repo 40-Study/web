@@ -53,7 +53,7 @@ export function TeacherSidebar({ className }: TeacherSidebarProps) {
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-white font-bold text-sm">
                             40
                         </div>
-                        <span className="text-lg font-bold">40Study</span>
+                        <span className="text-lg font-bold">ForteX</span>
                     </Link>
                 )}
                 {isCollapsed && (
