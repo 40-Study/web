@@ -1,13 +1,18 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar } from "@/components/ui/avatar";
 import Link from "next/link";
-import { 
-  Home, 
-  BookOpen, 
-  MessageSquare, 
-  Search, 
-  Bell, 
-  Menu, 
+import {
+  Home,
+  BookOpen,
+  MessageSquare,
+  Search,
+  Bell,
+  Menu,
   Play,
   Code,
   Terminal,
@@ -21,11 +26,32 @@ import {
   Facebook,
   Twitter,
   Linkedin,
-  Instagram
+  Instagram,
+  LogOut
 } from "lucide-react";
 import { siteConfig } from "@/lib/constants";
+import { useAuthStore } from "@/stores/auth.store";
 
 export default function LandingPage() {
+  const router = useRouter();
+  const { isAuthenticated, user, logout } = useAuthStore();
+
+  // Redirect authenticated users to /home
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/home");
+    }
+  }, [isAuthenticated, router]);
+
+  // Show nothing while checking auth (avoid flash)
+  if (isAuthenticated) {
+    return null;
+  }
+
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  };
   return (
     <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
       {/* Header (Fixed Top) */}
@@ -55,20 +81,37 @@ export default function LandingPage() {
           <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-full hidden md:block">
             <Bell className="w-5 h-5" />
           </button>
-          
+
           <div className="hidden sm:flex items-center gap-2">
-            <Link href="/login">
-              <Button variant="ghost" className="text-slate-600 hover:text-slate-900 font-medium">
-                Đăng nhập
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button className="bg-primary-600 hover:bg-primary-700 text-white font-medium shadow-sm">
-                Đăng ký
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link href="/home">
+                  <Button variant="ghost" className="text-slate-600 hover:text-slate-900 font-medium">
+                    {user?.name || "Tài khoản"}
+                  </Button>
+                </Link>
+                <Avatar fallback={user?.name || "TK"} size="sm" />
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-1" />
+                  Đăng xuất
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" className="text-slate-600 hover:text-slate-900 font-medium">
+                    Đăng nhập
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button className="bg-primary-600 hover:bg-primary-700 text-white font-medium shadow-sm">
+                    Đăng ký
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
-          
+
           <button className="p-2 text-slate-500 sm:hidden">
             <Menu className="w-6 h-6" />
           </button>
