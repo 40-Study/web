@@ -48,6 +48,7 @@ interface AuthState {
   // Auth state
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasHydrated: boolean;
 
   // Registration ephemeral state
   registerRole: string | null;
@@ -64,6 +65,7 @@ interface AuthState {
   setChildren: (children: Child[]) => void;
   setSelectedChild: (child: Child | null) => void;
   setRegisterRole: (role: string | null) => void;
+  setHasHydrated: (value: boolean) => void;
 
   login: (user: User, roles?: SystemRole[]) => void;
   logout: () => void;
@@ -83,6 +85,7 @@ const initialState = {
   selectedChild: null,
   isAuthenticated: false,
   isLoading: false,
+  hasHydrated: false,
   registerRole: null,
 };
 
@@ -102,6 +105,7 @@ export const useAuthStore = create<AuthState>()(
       setChildren: (children) => set({ children }),
       setSelectedChild: (selectedChild) => set({ selectedChild }),
       setRegisterRole: (registerRole) => set({ registerRole }),
+      setHasHydrated: (hasHydrated) => set({ hasHydrated }),
 
       login: (user, roles = []) =>
         set({
@@ -115,6 +119,9 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
       partialize: (state) => ({
         user: state.user,
         token: state.token,
