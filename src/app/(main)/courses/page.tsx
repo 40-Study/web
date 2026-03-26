@@ -8,8 +8,7 @@ import { CourseFiltersComponent } from "@/components/course/course-filters";
 import { CourseSearch } from "@/components/course/course-search";
 import { useSearchSuggestions } from "@/hooks/use-courses";
 import { CourseFilters } from "@/types/course";
-import { mockCourses } from "@/lib/mock-data/courses";
-import { mockCategories } from "@/lib/mock-data/courses";
+import { mockCourses, mockCategories } from "@/lib/mock-data/courses";
 
 export default function CoursesPage() {
   const searchParams = useSearchParams();
@@ -82,17 +81,17 @@ export default function CoursesPage() {
         loading={coursesLoading || categoriesLoading}
       />
 
-       {/* Load More (for future pagination) */}
-       {filteredCourses.length > 0 && filteredCourses.length >= 12 && (
-         <div className="mt-8 text-center">
-           <button
-             onClick={() => toast.info("Đang tải thêm...")}
-             className="px-6 py-2 border rounded-lg hover:bg-muted transition-colors"
-           >
-             Xem thêm khóa học
-           </button>
-         </div>
-       )}
+      {/* Load More */}
+      {filteredCourses.length > 0 && filteredCourses.length >= 12 && (
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => toast.info("Đang tải thêm...")}
+            className="px-6 py-2 border rounded-lg hover:bg-muted transition-colors"
+          >
+            Xem thêm khóa học
+          </button>
+        </div>
+      )}
     </div>
   );
 }
