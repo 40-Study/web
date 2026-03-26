@@ -9,6 +9,7 @@ import { CourseSyllabus } from "@/components/course/course-syllabus";
 import { CourseReviews } from "@/components/course/course-reviews";
 import { InstructorCard } from "@/components/course/instructor-card";
 import { useCourseBySlug } from "@/hooks/use-courses";
+import { getMockCourseDetail } from "@/lib/mock-data/courses";
 
 type TabType = "overview" | "syllabus" | "instructor" | "reviews";
 
@@ -40,7 +41,9 @@ export default function CourseDetailPage() {
   const slug = params.slug;
   const [activeTab, setActiveTab] = useState<TabType>("overview");
 
-  const { data: course, isLoading, error } = useCourseBySlug(slug);
+  const { data: apiCourse, isLoading } = useCourseBySlug(slug);
+  const fallbackCourse = getMockCourseDetail(slug);
+  const resolvedCourse = apiCourse ?? fallbackCourse;
 
   // For demo purposes - simulate enrollment status
   const [isEnrolled] = useState(false);
@@ -50,25 +53,25 @@ export default function CourseDetailPage() {
     return <LoadingSkeleton />;
   }
 
-  if (error || !course) {
+  if (!resolvedCourse) {
     notFound();
   }
 
   const handleEnroll = () => {
     // TODO: Implement enrollment logic
-    console.log("Enrolling in course:", course.slug);
+    console.log("Enrolling in course:", resolvedCourse.slug);
   };
 
   const handlePreview = () => {
     // TODO: Open video preview modal
-    console.log("Opening preview for:", course.slug);
+    console.log("Opening preview for:", resolvedCourse.slug);
   };
 
   return (
     <div>
       {/* Hero Section */}
       <CourseHero
-        course={course}
+        course={resolvedCourse}
         isEnrolled={isEnrolled}
         progress={progress}
         onEnroll={handleEnroll}
@@ -111,7 +114,7 @@ export default function CourseDetailPage() {
                     Bạn sẽ học được gì
                   </h2>
                   <div className="grid sm:grid-cols-2 gap-3 p-6 bg-muted/50 rounded-lg">
-                    {course.learningOutcomes.map((outcome, idx) => (
+                    {resolvedCourse.learningOutcomes.map((outcome, idx) => (
                       <div key={idx} className="flex items-start gap-2">
                         <Check className="h-5 w-5 text-xp flex-shrink-0 mt-0.5" />
                         <span className="text-sm">{outcome}</span>
@@ -121,11 +124,11 @@ export default function CourseDetailPage() {
                 </section>
 
                 {/* Requirements */}
-                {course.requirements && course.requirements.length > 0 && (
+                {resolvedCourse.requirements && resolvedCourse.requirements.length > 0 && (
                   <section>
                     <h2 className="text-xl font-semibold mb-4">Yêu cầu</h2>
                     <ul className="space-y-2">
-                      {course.requirements.map((req, idx) => (
+                      {resolvedCourse.requirements.map((req, idx) => (
                         <li
                           key={idx}
                           className="flex items-start gap-2 text-sm"
@@ -142,13 +145,13 @@ export default function CourseDetailPage() {
                 <section>
                   <h2 className="text-xl font-semibold mb-4">Mô tả khóa học</h2>
                   <p className="text-muted-foreground leading-relaxed">
-                    {course.description}
+                    {resolvedCourse.description}
                   </p>
                 </section>
 
                 {/* Syllabus Preview */}
                 <CourseSyllabus
-                  sections={course.sections}
+                  sections={resolvedCourse.sections}
                   isEnrolled={isEnrolled}
                 />
               </>
@@ -157,24 +160,24 @@ export default function CourseDetailPage() {
             {/* Syllabus Tab */}
             {activeTab === "syllabus" && (
               <CourseSyllabus
-                sections={course.sections}
+                sections={resolvedCourse.sections}
                 isEnrolled={isEnrolled}
               />
             )}
 
             {/* Instructor Tab */}
             {activeTab === "instructor" && (
-              <InstructorCard instructor={course.instructor} />
+              <InstructorCard instructor={resolvedCourse.instructor} />
             )}
 
             {/* Reviews Tab */}
             {activeTab === "reviews" && (
               <CourseReviews
-                rating={course.rating}
-                reviewCount={course.reviewCount}
-                reviews={course.reviews}
-                ratingDistribution={course.ratingDistribution}
-                hasMore={course.reviews.length >= 3}
+                rating={resolvedCourse.rating}
+                reviewCount={resolvedCourse.reviewCount}
+                reviews={resolvedCourse.reviews}
+                ratingDistribution={resolvedCourse.ratingDistribution}
+                hasMore={resolvedCourse.reviews.length >= 3}
                 onLoadMore={() => console.log("Load more reviews")}
               />
             )}
@@ -190,31 +193,31 @@ export default function CourseDetailPage() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Trình độ</span>
                     <span className="font-medium capitalize">
-                      {course.level === "beginner"
+                      {resolvedCourse.level === "beginner"
                         ? "Cơ bản"
-                        : course.level === "intermediate"
+                        : resolvedCourse.level === "intermediate"
                         ? "Trung cấp"
                         : "Nâng cao"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Số bài học</span>
-                    <span className="font-medium">{course.lessonCount}</span>
+                    <span className="font-medium">{resolvedCourse.lessonCount}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Thời lượng</span>
                     <span className="font-medium">
-                      {Math.floor(course.duration / 60)} giờ
+                      {Math.floor(resolvedCourse.duration / 60)} giờ
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Ngôn ngữ</span>
-                    <span className="font-medium">{course.language}</span>
+                    <span className="font-medium">{resolvedCourse.language}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Học viên</span>
                     <span className="font-medium">
-                      {course.studentCount.toLocaleString()}
+                      {resolvedCourse.studentCount.toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -225,14 +228,14 @@ export default function CourseDetailPage() {
                 <h3 className="font-semibold mb-4">Giảng viên</h3>
                 <div className="flex items-center gap-3">
                   <img
-                    src={course.instructor.avatar}
-                    alt={course.instructor.name}
+                    src={resolvedCourse.instructor.avatar}
+                    alt={resolvedCourse.instructor.name}
                     className="w-12 h-12 rounded-full"
                   />
                   <div>
-                    <p className="font-medium">{course.instructor.name}</p>
+                    <p className="font-medium">{resolvedCourse.instructor.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {course.instructor.title}
+                      {resolvedCourse.instructor.title}
                     </p>
                   </div>
                 </div>
