@@ -111,7 +111,6 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
     const [view, setView] = useState<ModalView>(initialMode);
     const [mounted, setMounted] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
-    const activeRole = useAuthStore((s) => s.activeRole);
 
     // Register state
     const [registerEmail, setRegisterEmail] = useState("");
@@ -255,9 +254,10 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                                 // Defer to next tick to allow Zustand store updates to complete
                                 setTimeout(() => {
                                     if (nextStep === "direct") {
-                                        // Direct login complete - redirect based on role
+                                        // Direct login complete - redirect based on latest active role in store
                                         handleActualClose();
-                                        window.location.href = getRoleHomeRoute(activeRole);
+                                        const currentRole = useAuthStore.getState().activeRole;
+                                        window.location.href = getRoleHomeRoute(currentRole);
                                     } else if (nextStep === "select-org") {
                                         setView("login-org");
                                     } else {
