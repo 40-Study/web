@@ -1,91 +1,67 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Home, BookOpen, MessageSquare, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSidebarStore } from "@/stores";
+import { useAuthStore } from "@/stores/auth.store";
+import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 
-interface SidebarProps {
-    className?: string;
-    children?: React.ReactNode;
-    /** Accessible label for the sidebar navigation */
-    "aria-label"?: string;
-}
+export function Sidebar() {
+  const pathname = usePathname();
+  const { isAuthenticated, activeRole } = useAuthStore();
+  const normalizedRole = normalizeRole(activeRole);
+  const isStudent = normalizedRole === "STUDENT";
+  const homeHref = isAuthenticated ? getRoleHomeRoute(normalizedRole) : "/";
 
-interface SidebarItemProps {
-    href: string;
-    icon?: React.ReactNode;
-    children: React.ReactNode;
-    isActive?: boolean;
-}
+  const navItems = [
+    {
+      label: "TRANG CHỦ",
+      href: homeHref,
+      icon: Home,
+    },
+    ...(isStudent ? [{ label: "LỊCH HỌC", href: "/schedule", icon: Calendar }] : []),
+    { label: "KHÓA HỌC", href: "/courses", icon: BookOpen },
+    { label: "THẢO LUẬN", href: "/discussions", icon: MessageSquare },
+  ];
 
-export function Sidebar({ className, children, "aria-label": ariaLabel = "Thanh điều hướng bên" }: SidebarProps) {
-    const { isCollapsed, toggle } = useSidebarStore();
+  return (
+    <aside className="w-[96px] min-h-screen bg-white border-r flex flex-col items-center py-6">
+      <nav className="flex flex-col gap-2 w-full px-2">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const Icon = item.icon;
 
-    return (
-        <aside
-            role="complementary"
-            aria-label={ariaLabel}
-            className={cn(
-                "flex h-screen flex-col border-r bg-background transition-all duration-300 motion-reduce:transition-none",
-                isCollapsed ? "w-16" : "w-64",
-                className
-            )}
-        >
-            <div className="flex h-16 items-center justify-between border-b px-4">
-                {!isCollapsed && (
-                    <span className="text-lg font-semibold" id="sidebar-title">Menu</span>
-                )}
-                <button
-                    onClick={toggle}
-                    className="rounded-md p-2 hover:bg-muted min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
-                    aria-expanded={!isCollapsed}
-                    aria-label={isCollapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
-                >
-                    <svg
-                        className={cn(
-                            "h-4 w-4 transition-transform motion-reduce:transition-none",
-                            isCollapsed && "rotate-180"
-                        )}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        aria-hidden="true"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                        />
-                    </svg>
-                </button>
-            </div>
-            <nav
-                className="flex-1 space-y-1 p-2"
-                role="navigation"
-                aria-label="Menu chính"
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors text-center",
+                "hover:bg-gray-100",
+                isActive && "bg-primary-50 text-primary-600"
+              )}
             >
-                {children}
-            </nav>
-        </aside>
-    );
-}
-
-export function SidebarItem({ href, icon, children, isActive }: SidebarItemProps) {
-    return (
-        <Link
-            href={href}
-            className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 min-h-[44px] text-sm font-medium transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2",
-                isActive
-                    ? "bg-primary-100 text-primary-700"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-            aria-current={isActive ? "page" : undefined}
-        >
-            {icon && <span className="flex-shrink-0" aria-hidden="true">{icon}</span>}
-            <span className="truncate">{children}</span>
-        </Link>
-    );
+              <div
+                className={cn(
+                  "w-10 h-10 rounded-lg flex items-center justify-center",
+                  isActive ? "bg-primary-100" : "bg-gray-100"
+                )}
+              >
+                <Icon className={cn("w-5 h-5", isActive ? "text-primary-600" : "text-gray-600")} />
+              </div>
+              <span
+                className={cn(
+                  "text-[10px] font-medium leading-tight",
+                  isActive ? "text-primary-600" : "text-gray-600"
+                )}
+              >
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
+      </nav>
+    </aside>
+  );
 }
