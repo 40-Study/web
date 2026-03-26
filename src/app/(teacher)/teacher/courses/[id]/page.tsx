@@ -12,10 +12,13 @@ import {
   Plus,
   GripVertical,
   Eye,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import TeacherNotificationDialog from "@/components/teacher/teacher-notification-dialog";
+import { getStudentsByCourseId } from "../../students/student-mock-data";
 import { cn } from "@/lib/utils";
 
 interface Lesson {
@@ -72,6 +75,9 @@ export default function CourseDetailPage() {
   const router = useRouter();
   const courseId = params.id as string;
   const [curriculum, setCurriculum] = useState(MOCK_CURRICULUM);
+  const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false);
+
+  const courseMembers = getStudentsByCourseId(courseId);
 
   const handleAddLesson = (chapterId: string) => {
     setCurriculum((prev) =>
@@ -129,6 +135,10 @@ export default function CourseDetailPage() {
           <Button variant="outline" onClick={() => router.push(`/teacher/courses/${courseId}/members`)}>
             <Eye className="w-4 h-4 mr-2" />
             Xem thành viên
+          </Button>
+          <Button variant="outline" onClick={() => setIsNotifyDialogOpen(true)} disabled={courseMembers.length === 0}>
+            <Bell className="w-4 h-4 mr-2" />
+            Gửi thông báo
           </Button>
           <Button onClick={() => router.push("/teacher/courses")}>Cập nhật</Button>
         </div>
@@ -202,6 +212,17 @@ export default function CourseDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      <TeacherNotificationDialog
+        open={isNotifyDialogOpen}
+        onOpenChange={setIsNotifyDialogOpen}
+        recipients={courseMembers.map((member) => ({
+          id: member.id,
+          name: member.name,
+          phone: member.parentPhone,
+        }))}
+        contextLabel="Chi tiết khóa học"
+      />
     </div>
   );
 }

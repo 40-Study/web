@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Search, Users } from "lucide-react";
+import { ArrowLeft, Bell, Search, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import TeacherNotificationDialog from "@/components/teacher/teacher-notification-dialog";
 import { getStudentsByCourseId } from "../../../students/student-mock-data";
 
 const COURSE_TITLE_MAP: Record<string, string> = {
@@ -29,6 +30,7 @@ export default function TeacherCourseMembersPage() {
   const params = useParams<{ id: string }>();
   const courseId = params.id;
   const [searchQuery, setSearchQuery] = useState("");
+  const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false);
 
   const members = getStudentsByCourseId(courseId);
   const courseTitle = COURSE_TITLE_MAP[courseId] || `Khóa học #${courseId}`;
@@ -54,6 +56,10 @@ export default function TeacherCourseMembersPage() {
             <p className="text-sm text-muted-foreground">{courseTitle}</p>
           </div>
         </div>
+        <Button onClick={() => setIsNotifyDialogOpen(true)} disabled={filteredMembers.length === 0}>
+          <Bell className="mr-2 h-4 w-4" />
+          Gửi thông báo ({filteredMembers.length})
+        </Button>
       </div>
 
       <Card>
@@ -114,6 +120,17 @@ export default function TeacherCourseMembersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <TeacherNotificationDialog
+        open={isNotifyDialogOpen}
+        onOpenChange={setIsNotifyDialogOpen}
+        recipients={filteredMembers.map((member) => ({
+          id: member.id,
+          name: member.name,
+          phone: member.parentPhone,
+        }))}
+        contextLabel={`Khóa học: ${courseTitle}`}
+      />
     </div>
   );
 }

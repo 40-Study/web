@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import TeacherNotificationDialog from "@/components/teacher/teacher-notification-dialog";
 import { TEACHER_MOCK_STUDENTS } from "./student-mock-data";
 
 export default function TeacherStudentsPage() {
@@ -32,6 +33,7 @@ export default function TeacherStudentsPage() {
   const [statusFilter, setStatusFilter] = useState("active");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false);
   const pageSize = 10;
 
   const courseOptions = useMemo(
@@ -91,7 +93,7 @@ export default function TeacherStudentsPage() {
 
   const handleNotifySelected = () => {
     if (selectedIds.length === 0) return;
-    window.alert(`Đã gửi thông báo cho ${selectedIds.length} học viên.`);
+    setIsNotifyDialogOpen(true);
   };
 
   return (
@@ -228,6 +230,17 @@ export default function TeacherStudentsPage() {
           </Button>
         </div>
       </div>
+
+      <TeacherNotificationDialog
+        open={isNotifyDialogOpen}
+        onOpenChange={setIsNotifyDialogOpen}
+        recipients={TEACHER_MOCK_STUDENTS.filter((student) => selectedIds.includes(student.id)).map((student) => ({
+          id: student.id,
+          name: student.name,
+          phone: student.parentPhone,
+        }))}
+        contextLabel="Quản lý học viên"
+      />
     </div>
   );
 }
