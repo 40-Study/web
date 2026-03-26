@@ -23,9 +23,14 @@ export const ROLE_HOME_ROUTES: Record<string, string> = {
   ORG_OWNER: "/admin",
 } as const;
 
+const ROLE_ALIASES: Record<string, string> = {
+  ADMIN: "SYSTEM_ADMIN",
+};
+
 export function normalizeRole(role?: string | null): string | null {
   if (!role) return null;
-  return role.trim().toUpperCase();
+  const normalized = role.trim().toUpperCase();
+  return ROLE_ALIASES[normalized] || normalized;
 }
 
 // Get home route based on role (fallback to student home)

@@ -31,7 +31,7 @@ export default function LoginPage() {
 
           // Direct login - access_token returned without session_token
           if (data.access_token && !data.session_token) {
-            const role = getRoleFromToken(data.access_token);
+            const role = data.active_role?.name || getRoleFromToken(data.access_token);
             router.push(getRoleHomeRoute(role));
             return;
           }
