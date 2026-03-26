@@ -18,14 +18,22 @@ const userMenuItems = [
   { label: "Cài đặt tài khoản", href: "/settings", icon: Settings },
 ];
 
+const notificationItems = [
+  { id: 1, title: "Có bài tập mới", time: "2 phút trước" },
+  { id: 2, title: "Lớp học sắp bắt đầu", time: "15 phút trước" },
+  { id: 3, title: "Bạn có phản hồi mới", time: "1 giờ trước" },
+];
+
 export function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [authModal, setAuthModal] = useState<{ isOpen: boolean; mode: "login" | "register" }>({
     isOpen: false,
     mode: "login",
   });
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   const { isAuthenticated, user, activeRole } = useAuthStore();
@@ -38,10 +46,12 @@ export function Header() {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node;
       const isInDesktopDropdown = dropdownRef.current?.contains(target);
+      const isInNotification = notificationRef.current?.contains(target);
       const isInMobileMenu = mobileMenuRef.current?.contains(target);
 
-      if (!isInDesktopDropdown && !isInMobileMenu) {
+      if (!isInDesktopDropdown && !isInNotification && !isInMobileMenu) {
         setIsDropdownOpen(false);
+        setIsNotificationOpen(false);
         setIsMobileMenuOpen(false);
       }
     }
@@ -82,9 +92,37 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-3 lg:gap-4">
-          <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-full hidden md:block">
-            <Bell className="w-5 h-5" />
-          </button>
+          <div className="relative hidden md:block" ref={notificationRef}>
+            <button
+              className="p-2 text-slate-500 hover:bg-slate-100 rounded-full"
+              onClick={() => {
+                setIsDropdownOpen(false);
+                setIsNotificationOpen((v) => !v);
+              }}
+            >
+              <Bell className="w-5 h-5" />
+            </button>
+
+            {isNotificationOpen && (
+              <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-lg border py-2 z-50">
+                <div className="px-4 py-3 border-b">
+                  <p className="font-semibold text-gray-900">Thông báo</p>
+                </div>
+                <div className="py-1">
+                  {notificationItems.map((item) => (
+                    <button
+                      key={item.id}
+                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors"
+                      onClick={() => setIsNotificationOpen(false)}
+                    >
+                      <p className="text-sm text-gray-800">{item.title}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{item.time}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="hidden sm:flex items-center gap-2" ref={dropdownRef}>
             {isAuthenticated ? (
@@ -162,6 +200,7 @@ export function Header() {
               className="p-2 text-slate-500"
               onClick={() => {
                 setIsDropdownOpen(false);
+                setIsNotificationOpen(false);
                 setIsMobileMenuOpen((v) => !v);
               }}
             >
