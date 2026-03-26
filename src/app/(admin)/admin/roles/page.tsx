@@ -24,34 +24,40 @@ export default function RolesPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {rolesData?.map((role) => (
-                <div key={role.id} className="rounded-lg bg-white p-4 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-gray-900">{role.name}</h3>
-                    <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
-                      {role.user_count || 0} users
-                    </span>
-                  </div>
-                  {role.description && (
-                    <p className="mt-1 text-sm text-gray-500">{role.description}</p>
-                  )}
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {role.permissions.slice(0, 3).map((perm) => (
-                      <span
-                        key={perm}
-                        className="rounded bg-primary-50 px-2 py-0.5 text-xs text-primary-700"
-                      >
-                        {perm}
+              {rolesData?.map((role) => {
+                const rolePermissions = Array.isArray(role.permissions)
+                  ? role.permissions
+                  : [];
+
+                return (
+                  <div key={role.id} className="rounded-lg bg-white p-4 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium text-gray-900">{role.name}</h3>
+                      <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
+                        {role.user_count || 0} users
                       </span>
-                    ))}
-                    {role.permissions.length > 3 && (
-                      <span className="text-xs text-gray-400">
-                        +{role.permissions.length - 3} more
-                      </span>
+                    </div>
+                    {role.description && (
+                      <p className="mt-1 text-sm text-gray-500">{role.description}</p>
                     )}
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {rolePermissions.slice(0, 3).map((perm) => (
+                        <span
+                          key={perm}
+                          className="rounded bg-primary-50 px-2 py-0.5 text-xs text-primary-700"
+                        >
+                          {perm}
+                        </span>
+                      ))}
+                      {rolePermissions.length > 3 && (
+                        <span className="text-xs text-gray-400">
+                          +{rolePermissions.length - 3} more
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
