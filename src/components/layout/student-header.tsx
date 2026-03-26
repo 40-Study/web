@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
+import { useLogout } from "@/hooks/queries/use-auth";
 import {
   Search,
   ShoppingCart,
@@ -28,6 +29,7 @@ const userMenuItems = [
 export function StudentHeader() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const logoutMutation = useLogout();
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -124,8 +126,9 @@ export function StudentHeader() {
                   className="flex items-center gap-3 px-4 py-2.5 w-full hover:bg-gray-50 transition-colors text-red-600"
                   onClick={() => {
                     setIsDropdownOpen(false);
-                    // TODO: Handle logout
+                    logoutMutation.mutate();
                   }}
+                  disabled={logoutMutation.isPending}
                 >
                   <LogOut className="w-5 h-5" />
                   <span className="text-sm">Đăng xuất</span>

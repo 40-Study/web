@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useLogout } from "@/hooks/queries/use-auth";
 import {
   User,
   Bell,
@@ -46,6 +47,8 @@ export function SettingsSidebar({
   onSectionChange,
   className,
 }: SettingsSidebarProps) {
+  const logoutMutation = useLogout();
+
   return (
     <nav className={cn("w-full md:w-64 shrink-0", className)}>
       <div className="space-y-1">
@@ -80,11 +83,9 @@ export function SettingsSidebar({
           Help & Support
         </Link>
         <button
-          onClick={() => {
-            // Handle logout
-            console.log("Logout clicked");
-          }}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          onClick={() => logoutMutation.mutate()}
+          disabled={logoutMutation.isPending}
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-60"
         >
           <LogOut className="h-5 w-5" />
           Log Out

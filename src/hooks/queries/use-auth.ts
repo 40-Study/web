@@ -244,13 +244,13 @@ export function useLogout() {
     onSuccess: () => {
       logout();
       qc.clear();
-      router.push("/login");
+      router.push("/");
     },
     onError: () => {
       // Force logout on error too
       logout();
       qc.clear();
-      router.push("/login");
+      router.push("/");
     },
   });
 }
@@ -282,7 +282,7 @@ export function useLogoutAll() {
       logout();
       qc.clear();
       toast.success("Đã đăng xuất tất cả thiết bị");
-      router.push("/login");
+      router.push("/");
     },
   });
 }
