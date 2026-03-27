@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronRight, Star } from "lucide-react";
 import Link from "next/link";
 import { VideoPlayer } from "@/components/lesson/video-player";
 import {
@@ -13,11 +13,65 @@ import {
   CodeEditorModal,
 } from "@/components/player";
 import type { PlayerTabsHandle } from "@/components/player";
+import { QuizPlayer, QuizResult, CodeExercise } from "@/components/exercise";
 import {
   mockPlayerCourse,
   getLessonById,
   getAdjacentLessons,
 } from "@/lib/mock-data/course-player";
+import { getQuizByLessonId } from "@/lib/mock-data/quiz-data";
+import { getExerciseByLessonId } from "@/lib/mock-data/exercise-data";
+
+/** Video lesson content — video player + title/rating + tabs */
+function VideoLessonContent({
+  videoSrc, currentLesson, course, next, courseSlug, tabsRef,
+}: {
+  videoSrc: string;
+  currentLesson: ReturnType<typeof getLessonById>;
+  course: typeof mockPlayerCourse;
+  next: ReturnType<typeof getAdjacentLessons>["next"];
+  courseSlug: string;
+  tabsRef: React.RefObject<PlayerTabsHandle>;
+}) {
+  return (
+    <div className="flex-1 flex flex-col overflow-y-auto p-5 gap-4">
+      <div className="rounded-2xl overflow-hidden shadow-sm bg-black">
+        <VideoPlayer src={videoSrc} className="rounded-none" />
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm px-6 pt-5 pb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">
+              {currentLesson?.title ?? "Đang tải bài học..."}
+            </h1>
+            <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
+              <div className="flex items-center gap-1 bg-gray-100 rounded-full px-2.5 py-0.5">
+                <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+                <span className="font-medium text-gray-700">{course.rating}/5.0</span>
+              </div>
+              <span>{course.instructor.studentCount.toLocaleString()} học viên</span>
+              <span>•</span>
+              <span>Cập nhật 2 ngày trước</span>
+            </div>
+          </div>
+          {next && (
+            <Link
+              href={`/learn/${courseSlug}/${next.id}`}
+              className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary-600 text-white font-medium text-sm hover:bg-primary-700 transition-colors shrink-0 shadow-sm"
+            >
+              Bài tiếp theo
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          )}
+        </div>
+        <div className="mt-4 border-t border-gray-100 pt-1">
+          <PlayerTabs ref={tabsRef} course={course} courseSlug={courseSlug} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function CourseLessonPage() {
   const params = useParams<{ courseSlug: string; lessonId: string }>();
@@ -26,104 +80,89 @@ export default function CourseLessonPage() {
   const [isCodeEditorOpen, setCodeEditorOpen] = useState(false);
   const tabsRef = useRef<PlayerTabsHandle>(null);
 
-  // Resolve lesson from mock data (replace with API call in production)
-  const course = mockPlayerCourse;
+  // Quiz state
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, string> | null>(null);
+  const [quizTimeSpent, setQuizTimeSpent] = useState(0);
 
-  // Count exercises/quizzes for header badge
+  const course = mockPlayerCourse;
   const exerciseCount = course.chapters
     .flatMap((ch) => ch.lessons)
     .filter((l) => (l.type === "exercise" || l.type === "quiz") && !l.completed).length;
-  const currentLesson = getLessonById(course, lessonId);
-  const { prev, next } = getAdjacentLessons(course, lessonId);
 
-  // Fallback video URL for lessons without a specific URL
-  const videoSrc =
-    currentLesson?.videoUrl ??
-    "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+  const currentLesson = getLessonById(course, lessonId);
+  const { next } = getAdjacentLessons(course, lessonId);
+  const videoSrc = currentLesson?.videoUrl ?? "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+
+  // Resolve quiz/exercise data for current lesson
+  const quiz = getQuizByLessonId(lessonId);
+  const exercise = getExerciseByLessonId(lessonId);
+
+  /** Determine which content view to show */
+  const renderContent = () => {
+    // Quiz lesson — show quiz player or results
+    if (currentLesson?.type === "quiz" && quiz) {
+      if (quizAnswers) {
+        return (
+          <div className="flex-1 overflow-y-auto p-5">
+            <QuizResult
+              quiz={quiz}
+              answers={quizAnswers}
+              timeSpent={quizTimeSpent}
+              onRetry={() => setQuizAnswers(null)}
+            />
+          </div>
+        );
+      }
+      return (
+        <div className="flex-1 overflow-y-auto p-5">
+          <QuizPlayer
+            quiz={quiz}
+            onSubmit={(answers) => {
+              setQuizAnswers(answers);
+              setQuizTimeSpent(quiz.timeLimit - 0); // placeholder — real timer tracked inside
+            }}
+          />
+        </div>
+      );
+    }
+
+    // Exercise lesson — show code exercise
+    if (currentLesson?.type === "exercise" && exercise) {
+      return (
+        <div className="flex-1 overflow-hidden">
+          <CodeExercise
+            exercise={exercise}
+            onSubmit={(code, lang) => console.log("Submit:", lang, code)}
+            onRun={(code, lang) => console.log("Run:", lang, code)}
+          />
+        </div>
+      );
+    }
+
+    // Default — video lesson
+    return (
+      <VideoLessonContent
+        videoSrc={videoSrc}
+        currentLesson={currentLesson}
+        course={course}
+        next={next}
+        courseSlug={courseSlug}
+        tabsRef={tabsRef}
+      />
+    );
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-950">
-      {/* Minimal player header */}
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <PlayerHeader
         courseTitle={course.title}
         exerciseCount={exerciseCount}
         onExercisesClick={() => tabsRef.current?.switchToExercises()}
       />
 
-      {/* Main content area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left: video + info + tabs */}
-        <div className="flex-1 flex flex-col overflow-y-auto">
-          {/* Video player — full-width dark background */}
-          <div className="bg-black">
-            <div className="max-w-5xl mx-auto w-full">
-              <VideoPlayer
-                src={videoSrc}
-                className="rounded-none"
-              />
-            </div>
-          </div>
+        {renderContent()}
 
-          {/* Lesson title + prev/next navigation */}
-          <div className="max-w-5xl mx-auto w-full px-6 pt-5 pb-2">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-lg font-semibold text-white">
-                  {currentLesson?.title ?? "Đang tải bài học..."}
-                </h1>
-                {currentLesson && (
-                  <p className="text-sm text-gray-400 mt-0.5">
-                    {currentLesson.type === "video" && "Video bài giảng"}
-                    {currentLesson.type === "quiz" && "Bài kiểm tra"}
-                    {currentLesson.type === "exercise" && "Bài tập thực hành"}
-                    {currentLesson.type === "reading" && "Tài liệu đọc"}
-                    {" · "}{currentLesson.duration}
-                  </p>
-                )}
-              </div>
-
-              {/* Prev / Next buttons */}
-              <div className="flex items-center gap-2 shrink-0">
-                {prev ? (
-                  <Link
-                    href={`/learn/${courseSlug}/${prev.id}`}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors text-sm"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                    Trước
-                  </Link>
-                ) : (
-                  <span className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-800/50 text-gray-600 text-sm cursor-not-allowed">
-                    <ChevronLeft className="w-4 h-4" />
-                    Trước
-                  </span>
-                )}
-
-                {next ? (
-                  <Link
-                    href={`/learn/${courseSlug}/${next.id}`}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors text-sm"
-                  >
-                    Tiếp
-                    <ChevronRight className="w-4 h-4" />
-                  </Link>
-                ) : (
-                  <span className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-800/50 text-gray-600 text-sm cursor-not-allowed">
-                    Tiếp
-                    <ChevronRight className="w-4 h-4" />
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Tabs: Overview, Resources, Reviews */}
-          <div className="max-w-5xl mx-auto w-full px-6 pb-24">
-            <PlayerTabs ref={tabsRef} course={course} courseSlug={courseSlug} />
-          </div>
-        </div>
-
-        {/* Right: lesson/chapter tree sidebar */}
         <PlayerLessonSidebar
           chapters={course.chapters}
           currentLessonId={lessonId}
@@ -131,10 +170,8 @@ export default function CourseLessonPage() {
         />
       </div>
 
-      {/* Floating AI Assistant + Sandbox buttons */}
       <FloatingButtons onSandboxOpen={() => setCodeEditorOpen(true)} />
 
-      {/* Code editor modal (lazy-loaded) */}
       {isCodeEditorOpen && (
         <CodeEditorModal onClose={() => setCodeEditorOpen(false)} />
       )}

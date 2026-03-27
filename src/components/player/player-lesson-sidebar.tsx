@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  ChevronRight,
+  ChevronUp,
+  ChevronDown,
   CheckCircle,
   PlayCircle,
-  Play,
+  Clock,
   HelpCircle,
   Code,
   FileText,
@@ -22,33 +23,70 @@ interface PlayerLessonSidebarProps {
   className?: string;
 }
 
-function getLessonIcon(lesson: PlayerLesson, isCurrent: boolean) {
-  if (lesson.locked) return <Lock className="h-4 w-4 text-gray-500 shrink-0" />;
-  if (lesson.completed) return <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />;
-  if (isCurrent) return <PlayCircle className="h-4 w-4 text-primary-500 shrink-0" />;
-
-  switch (lesson.type) {
-    case "video":
-      return <Play className="h-4 w-4 text-gray-400 shrink-0" />;
-    case "quiz":
-      return <HelpCircle className="h-4 w-4 text-gray-400 shrink-0" />;
-    case "exercise":
-      return <Code className="h-4 w-4 text-gray-400 shrink-0" />;
-    case "reading":
-      return <FileText className="h-4 w-4 text-gray-400 shrink-0" />;
-    default:
-      return <Play className="h-4 w-4 text-gray-400 shrink-0" />;
+/** Numbered circle icon for each lesson in the sidebar */
+function LessonStatusIcon({ lesson, index, isCurrent }: { lesson: PlayerLesson; index: number; isCurrent: boolean }) {
+  if (lesson.completed) {
+    return (
+      <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+        <CheckCircle className="w-4 h-4 text-white" />
+      </div>
+    );
   }
+  if (isCurrent) {
+    return (
+      <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center shrink-0">
+        <PlayCircle className="w-4 h-4 text-white" />
+      </div>
+    );
+  }
+  if (lesson.locked) {
+    return (
+      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
+        <span className="text-xs font-medium text-gray-400">{index + 1}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center shrink-0">
+      <span className="text-xs font-medium text-gray-500">{index + 1}</span>
+    </div>
+  );
 }
 
-/** Right sidebar showing chapter/lesson tree with progress indicators */
+/** Sub-items under current lesson (quiz, exercise) */
+function LessonSubItems({ chapter, currentLessonId }: { chapter: PlayerChapter; currentLessonId: string }) {
+  const currentLesson = chapter.lessons.find((l) => l.id === currentLessonId);
+  if (!currentLesson) return null;
+
+  // Show quiz/exercise sub-items for the current lesson's chapter context
+  const subItems = chapter.lessons.filter(
+    (l) => (l.type === "quiz" || l.type === "exercise") && l.id !== currentLessonId
+  );
+  if (subItems.length === 0) return null;
+
+  return (
+    <div className="ml-14 space-y-1.5 pb-2">
+      {subItems.map((item) => (
+        <div key={item.id} className="flex items-center gap-2 text-xs text-gray-500">
+          {item.type === "quiz" ? (
+            <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+          ) : (
+            <Code className="w-3.5 h-3.5 text-gray-400" />
+          )}
+          <span>{item.type === "quiz" ? "Quiz" : "Thực hành"}: {item.title.replace(/^(Bài tập:|Quiz:)\s*/, "")}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Right sidebar — light theme with progress and chapter accordion */
 export function PlayerLessonSidebar({
   chapters,
   currentLessonId,
   courseSlug,
   className,
 }: PlayerLessonSidebarProps) {
-  // Find chapter containing current lesson for default expanded state
   const currentChapterId = chapters.find((ch) =>
     ch.lessons.some((l) => l.id === currentLessonId)
   )?.id;
@@ -75,91 +113,100 @@ export function PlayerLessonSidebar({
   return (
     <aside
       className={cn(
-        "w-80 bg-gray-900 text-white overflow-y-auto shrink-0 flex flex-col",
+        "w-[380px] bg-white border-l border-gray-200 overflow-y-auto shrink-0 flex flex-col",
         className
       )}
     >
-      {/* Header */}
-      <div className="p-4 border-b border-gray-700 shrink-0">
-        <h2 className="font-semibold text-sm">Lộ trình học tập</h2>
-        <p className="text-xs text-gray-400 mt-0.5">
-          {completedLessons}/{totalLessons} bài hoàn thành
-        </p>
-        {/* Progress bar */}
-        <div className="mt-2 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+      {/* Progress header */}
+      <div className="p-5 border-b border-gray-100 shrink-0">
+        <h2 className="font-bold text-base text-gray-900">Lộ trình học tập</h2>
+        <div className="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-primary-500 rounded-full transition-all"
             style={{ width: `${progressPct}%` }}
           />
         </div>
-        <p className="text-xs text-gray-400 mt-1">{progressPct}%</p>
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-xs text-gray-500">Tiến độ: {progressPct}%</span>
+          <span className="text-xs text-gray-500">
+            {completedLessons}/{totalLessons} bài học
+          </span>
+        </div>
       </div>
 
-      {/* Chapter list */}
-      <div className="flex-1 py-2">
-        {chapters.map((chapter, idx) => {
+      {/* Chapter accordion list */}
+      <div className="flex-1">
+        {chapters.map((chapter, chIdx) => {
           const isExpanded = expandedChapters.includes(chapter.id);
-          const chapterCompleted = chapter.lessons.filter((l) => l.completed).length;
+          const allLocked = chapter.lessons.every((l) => l.locked);
 
           return (
-            <div key={chapter.id}>
-              {/* Chapter toggle button */}
+            <div key={chapter.id} className="border-b border-gray-100 last:border-0">
+              {/* Chapter header */}
               <button
                 onClick={() => toggleChapter(chapter.id)}
-                className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-gray-800 transition-colors"
+                className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
               >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <ChevronRight
-                    className={cn(
-                      "h-4 w-4 shrink-0 text-gray-400 transition-transform",
-                      isExpanded && "rotate-90"
-                    )}
-                  />
-                  <span className="text-sm font-medium text-gray-200 truncate">
-                    Chương {idx + 1}: {chapter.title}
-                  </span>
-                </div>
-                <span className="text-xs text-gray-500 ml-2 shrink-0">
-                  {chapterCompleted}/{chapter.lessons.length}
+                <span className="text-sm font-semibold text-gray-900">
+                  Chương {chIdx + 1}: {chapter.title}
                 </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  {allLocked && <Lock className="w-4 h-4 text-gray-400" />}
+                  {isExpanded ? (
+                    <ChevronUp className="w-4 h-4 text-gray-400" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  )}
+                </div>
               </button>
 
               {/* Lessons */}
               {isExpanded && (
-                <div className="bg-gray-800/50">
-                  {chapter.lessons.map((lesson) => {
+                <div className="pb-2">
+                  {chapter.lessons.map((lesson, lIdx) => {
                     const isCurrent = lesson.id === currentLessonId;
 
-                    if (lesson.locked) {
-                      return (
-                        <div
-                          key={lesson.id}
-                          className="px-4 py-2.5 flex items-center gap-3 opacity-50 cursor-not-allowed"
-                        >
-                          {getLessonIcon(lesson, false)}
-                          <span className="text-sm text-gray-400 flex-1 line-clamp-1">
-                            {lesson.title}
-                          </span>
-                          <span className="text-xs text-gray-500 shrink-0">{lesson.duration}</span>
+                    const content = (
+                      <div
+                        className={cn(
+                          "flex items-center gap-3 px-5 py-3 transition-colors",
+                          isCurrent && "bg-primary-50 border-l-3 border-primary-500",
+                          lesson.locked && "opacity-50"
+                        )}
+                      >
+                        <LessonStatusIcon lesson={lesson} index={lIdx} isCurrent={isCurrent} />
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className={cn(
+                              "text-sm leading-tight",
+                              isCurrent ? "font-semibold text-primary-700" : "text-gray-700",
+                              lesson.locked && "text-gray-400"
+                            )}
+                          >
+                            {isCurrent && <span className="inline-block w-2 h-2 rounded-full bg-green-400 mr-1.5 align-middle" />}
+                            Bài {chIdx + 1}.{lIdx}: {lesson.title}
+                          </p>
+                          <div className="flex items-center gap-1 mt-0.5 text-xs text-gray-400">
+                            <Clock className="w-3 h-3" />
+                            <span>{lesson.duration}</span>
+                          </div>
                         </div>
-                      );
+                        {lesson.locked && <Lock className="w-4 h-4 text-gray-300 shrink-0" />}
+                      </div>
+                    );
+
+                    if (lesson.locked) {
+                      return <div key={lesson.id} className="cursor-not-allowed">{content}</div>;
                     }
 
                     return (
-                      <Link
-                        key={lesson.id}
-                        href={`/learn/${courseSlug}/${lesson.id}`}
-                        className={cn(
-                          "px-4 py-2.5 flex items-center gap-3 text-sm transition-colors",
-                          isCurrent
-                            ? "bg-primary-900/50 border-l-2 border-primary-500 text-primary-300"
-                            : "hover:bg-gray-700/50 text-gray-300"
-                        )}
-                      >
-                        {getLessonIcon(lesson, isCurrent)}
-                        <span className="flex-1 line-clamp-1">{lesson.title}</span>
-                        <span className="text-xs text-gray-500 shrink-0">{lesson.duration}</span>
-                      </Link>
+                      <div key={lesson.id}>
+                        <Link href={`/learn/${courseSlug}/${lesson.id}`} className="block">
+                          {content}
+                        </Link>
+                        {/* Show sub-items (quiz/exercise) under current lesson */}
+                        {isCurrent && <LessonSubItems chapter={chapter} currentLessonId={currentLessonId} />}
+                      </div>
                     );
                   })}
                 </div>
