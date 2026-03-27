@@ -21,6 +21,8 @@ import {
   Twitter,
   Linkedin,
   Instagram,
+  ArrowRight,
+  Sparkles,
 } from "lucide-react";
 import { siteConfig } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth.store";
@@ -62,11 +64,27 @@ export default function LandingPage() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 mb-20 w-full sm:w-auto">
-              <Button size="lg" className="bg-primary-600 hover:bg-primary-700 text-white px-8 h-14 text-base font-semibold shadow-lg shadow-primary-500/20 rounded-xl">
-                Khám phá các khóa học
+              <Button
+                size="lg"
+                asChild
+                className="group bg-primary-600 hover:bg-primary-700 text-white px-8 h-14 text-base font-semibold shadow-lg shadow-primary-500/20 rounded-xl transition-all duration-200 hover:shadow-xl hover:shadow-primary-500/30"
+              >
+                <Link href="/courses" className="inline-flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Khám phá các khóa học
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+                </Link>
               </Button>
-              <Button size="lg" variant="outline" className="px-8 h-14 text-base font-semibold border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl">
-                Xem dự án học viên
+              <Button
+                size="lg"
+                variant="outline"
+                asChild
+                className="group px-8 h-14 text-base font-semibold border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl transition-all duration-200 hover:border-primary-300 hover:text-primary-700"
+              >
+                <Link href="#student-projects" className="inline-flex items-center gap-2">
+                  Xem dự án học viên
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+                </Link>
               </Button>
             </div>
 
@@ -154,7 +172,7 @@ export default function LandingPage() {
           </section>
 
           {/* 4. Student Outcomes Section */}
-          <section className="py-20 px-6 max-w-7xl mx-auto">
+          <section id="student-projects" className="py-20 px-6 max-w-7xl mx-auto">
             <div className="bg-white rounded-3xl p-8 lg:p-12 shadow-sm border border-slate-100 flex flex-col lg:flex-row items-center gap-12">
               <div className="lg:w-1/3 space-y-6">
                 <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 leading-tight">
