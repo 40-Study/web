@@ -22,6 +22,7 @@ import {
   PolarRadiusAxis, 
   ResponsiveContainer 
 } from "recharts";
+import { useRouter } from "next/navigation";
 
 interface AchievementModalProps {
   open: boolean;
@@ -45,7 +46,43 @@ const heatmapData = Array.from({length: 364}).map((_, i) => {
   return "bg-slate-100";
 });
 
+function CustomTick({ payload, x, y, textAnchor, stroke, radius }: any) {
+  return (
+    <g className="recharts-polar-angle-axis-tick">
+      <rect 
+        x={x - 36} 
+        y={y - 12} 
+        width="72" 
+        height="24" 
+        fill="white" 
+        rx="12" 
+        stroke="#e2e8f0" 
+        strokeWidth="1"
+        style={{ filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.06))" }}
+      />
+      <text 
+        x={x} 
+        y={y + 3.5} 
+        textAnchor="middle" 
+        fill="#334155" 
+        fontSize="9" 
+        fontWeight="800" 
+        letterSpacing="0.05em"
+      >
+        {payload.value}
+      </text>
+    </g>
+  );
+}
+
 export function AchievementModal({ open, onOpenChange }: AchievementModalProps) {
+  const router = useRouter();
+
+  const handleViewAllAchievements = () => {
+    onOpenChange(false);
+    router.push("/achievements");
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl w-[95vw] sm:max-w-7xl max-h-[90vh] overflow-y-auto bg-slate-50 border-0 p-6 md:p-8 rounded-[2rem]">
@@ -119,7 +156,10 @@ export function AchievementModal({ open, onOpenChange }: AchievementModalProps) 
                 <Award className="w-6 h-6 text-blue-500" />
                 Bộ sưu tập Huy hiệu
               </h3>
-              <button className="text-xs md:text-sm px-5 py-2 bg-blue-50 text-blue-600 font-bold rounded-full hover:bg-blue-100 transition-colors">
+              <button 
+                onClick={handleViewAllAchievements}
+                className="text-xs md:text-sm px-5 py-2 bg-blue-50 text-blue-600 font-bold rounded-full hover:bg-blue-100 transition-colors"
+              >
                 Xem tất cả
               </button>
             </div>
@@ -168,17 +208,31 @@ export function AchievementModal({ open, onOpenChange }: AchievementModalProps) 
               <Activity className="w-5 h-5 text-blue-500" />
               Phân tích Năng lực
             </h3>
-            <div className="w-full h-[240px] mb-4">
+            <div className="w-full h-[300px] mb-2 -mt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="60%" data={radarData}>
-                  <PolarGrid className="stroke-slate-200" />
-                  <PolarAngleAxis dataKey="subject" className="text-[9px] font-bold fill-slate-700 tracking-wider" />
+                  <defs>
+                    <linearGradient id="colorRadar" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.5}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
+                    </linearGradient>
+                  </defs>
+                  <PolarGrid gridType="polygon" stroke="#e2e8f0" strokeWidth={1.5} />
+                  <PolarAngleAxis dataKey="subject" tick={<CustomTick />} />
                   <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                  <Radar name="Student" dataKey="A" stroke="#3b82f6" strokeWidth={3} fill="#3b82f6" fillOpacity={0.15} />
+                  <Radar 
+                    name="Student" 
+                    dataKey="A" 
+                    stroke="#2563eb" 
+                    strokeWidth={3} 
+                    fill="url(#colorRadar)" 
+                    dot={{ r: 4, fill: '#3b82f6', stroke: '#ffffff', strokeWidth: 2 }}
+                    activeDot={{ r: 6, fill: '#1d4ed8', stroke: '#ffffff', strokeWidth: 2 }}
+                  />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
-            <div className="w-full pt-5 border-t border-slate-100">
+            <div className="w-full pt-4 border-t border-slate-100">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1.5">Top Stat</p>
               <p className="text-[13px] font-black text-blue-600 uppercase tracking-wide">Cloud Architecture (98%)</p>
             </div>
