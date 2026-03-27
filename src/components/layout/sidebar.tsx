@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, MessageSquare, Calendar } from "lucide-react";
+import { useState } from "react";
+import { Home, BookOpen, MessageSquare, Calendar, Award } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
+import { AchievementModal } from "@/components/student/achievement-modal";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -13,6 +15,7 @@ export function Sidebar() {
   const normalizedRole = normalizeRole(activeRole);
   const isStudent = normalizedRole === "STUDENT";
   const homeHref = isAuthenticated ? getRoleHomeRoute(normalizedRole) : "/";
+  const [achievementModalOpen, setAchievementModalOpen] = useState(false);
 
   const navItems = [
     {
@@ -23,6 +26,16 @@ export function Sidebar() {
     ...(isStudent ? [{ label: "LỊCH HỌC", href: "/schedule", icon: Calendar }] : []),
     { label: "KHÓA HỌC", href: "/courses", icon: BookOpen },
     { label: "THẢO LUẬN", href: "/discussions", icon: MessageSquare },
+    ...(isStudent
+      ? [
+          {
+            label: "THÀNH TÍCH",
+            href: "#",
+            icon: Award,
+            onClick: () => setAchievementModalOpen(true),
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -32,7 +45,23 @@ export function Sidebar() {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
 
-          return (
+          return "onClick" in item ? (
+            <button
+              key={item.label}
+              onClick={item.onClick}
+              className={cn(
+                "flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors text-center w-full",
+                "hover:bg-gray-100"
+              )}
+            >
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-gray-100">
+                <Icon className="w-5 h-5 text-gray-600" />
+              </div>
+              <span className="text-[10px] font-medium leading-tight text-gray-600">
+                {item.label}
+              </span>
+            </button>
+          ) : (
             <Link
               key={item.href}
               href={item.href}
@@ -62,6 +91,7 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <AchievementModal open={achievementModalOpen} onOpenChange={setAchievementModalOpen} />
     </aside>
   );
 }
