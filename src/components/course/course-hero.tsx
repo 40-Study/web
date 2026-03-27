@@ -39,14 +39,14 @@ export function CourseHero({
   return (
     <div
       className={cn(
-        "bg-primary-900 text-white",
+        "bg-gradient-to-br from-primary-800 via-primary-900 to-primary-950 text-white",
         className
       )}
     >
-      <div className="container mx-auto px-4 py-8 md:py-12">
-        <div className="grid md:grid-cols-2 gap-8 items-center">
+      <div className="container mx-auto px-4 py-10 md:py-14">
+        <div className="grid md:grid-cols-2 gap-10 items-center">
           {/* Thumbnail with play button */}
-          <div className="relative aspect-video rounded-xl overflow-hidden shadow-2xl">
+          <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
             <img
               src={course.thumbnail}
               alt={course.title}
@@ -65,7 +65,7 @@ export function CourseHero({
           {/* Course info */}
           <div>
             {/* Category Badge */}
-            <span className="inline-block bg-white/20 text-white text-sm font-medium px-3 py-1 rounded-full mb-3">
+            <span className="inline-block bg-white/15 backdrop-blur-sm text-white text-sm font-medium px-4 py-1.5 rounded-full mb-4">
               {course.category.name}
             </span>
 
@@ -133,7 +133,7 @@ export function CourseHero({
                     <span>Tiến độ học tập</span>
                     <span>{progress}%</span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-white/20">
+                  <div className="h-2.5 overflow-hidden rounded-full bg-white/20">
                     <div
                       className="h-full bg-xp transition-all duration-300"
                       style={{ width: `${progress}%` }}
