@@ -19,7 +19,7 @@ interface MenuItem {
 
 // Student-only menu items (shown before common items)
 const studentMenuItems: MenuItem[] = [
-  { label: "Bài tập", href: "/assignments", icon: FileText, badge: true },
+  { label: "Bài tập", href: "/my-assignments", icon: FileText, badge: true },
 ];
 
 // Common menu items for all roles
