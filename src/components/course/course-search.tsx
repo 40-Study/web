@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X } from "lucide-react";
+import { Search, X, Loader2 } from "lucide-react";
 import { cn, debounce } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { CourseSearchResult } from "@/types/course";
@@ -12,6 +12,7 @@ interface CourseSearchProps {
   suggestions?: CourseSearchResult[];
   className?: string;
   placeholder?: string;
+  isLoading?: boolean;
 }
 
 export function CourseSearch({
@@ -19,6 +20,7 @@ export function CourseSearch({
   suggestions = [],
   className,
   placeholder = "Tìm kiếm khóa học...",
+  isLoading = false,
 }: CourseSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -90,7 +92,11 @@ export function CourseSearch({
     <div ref={containerRef} className={cn("relative w-full", className)}>
       <form onSubmit={handleSubmit}>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          {isLoading ? (
+            <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
+          ) : (
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          )}
           <Input
             ref={inputRef}
             type="text"
@@ -113,7 +119,13 @@ export function CourseSearch({
       </form>
 
       {/* Autocomplete dropdown */}
-      {showSuggestions && filteredSuggestions.length > 0 && (
+      {showSuggestions && isLoading && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-card border rounded-lg shadow-lg z-50 p-4 flex items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <span className="ml-2 text-sm text-muted-foreground">Đang tìm kiếm...</span>
+        </div>
+      )}
+      {showSuggestions && !isLoading && filteredSuggestions.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-card border rounded-lg shadow-lg z-50 overflow-hidden">
           {filteredSuggestions.map((course) => (
             <button

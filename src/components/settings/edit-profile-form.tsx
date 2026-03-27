@@ -194,11 +194,11 @@ export function EditProfileForm({ user, onSubmit, onCancel }: EditProfileFormPro
 
       {/* Submit */}
       <div className="flex justify-end gap-3">
-        <Button type="button" variant="outline" onClick={resetForm}>
+        <Button type="button" variant="outline" onClick={resetForm} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save Changes"}
+        <Button type="submit" isLoading={isSubmitting} loadingText="Saving...">
+          Save Changes
         </Button>
       </div>
     </form>

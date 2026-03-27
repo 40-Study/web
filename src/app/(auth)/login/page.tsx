@@ -95,9 +95,10 @@ export default function LoginPage() {
         <Button
           type="submit"
           className="h-12 w-full"
-          disabled={loginMutation.isPending}
+          isLoading={loginMutation.isPending}
+          loadingText="Đang đăng nhập..."
         >
-          {loginMutation.isPending ? "Đang đăng nhập..." : "Đăng nhập"}
+          Đăng nhập
         </Button>
       </form>
 

@@ -15,14 +15,19 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       setError("Mật khẩu xác nhận không khớp");
       return;
     }
     setError("");
+    setIsLoading(true);
+    // TODO: Call API to reset password
+    await new Promise((r) => setTimeout(r, 1000)); // Simulate API call
+    setIsLoading(false);
     router.push(AUTH_ROUTES.RESET_PASSWORD_SUCCESS);
   };
 
@@ -61,7 +66,7 @@ export default function ResetPasswordPage() {
 
         <PasswordChecklist password={password} />
 
-        <Button type="submit" className="h-12 w-full">
+        <Button type="submit" className="h-12 w-full" isLoading={isLoading} loadingText="Đang xử lý...">
           Đặt lại mật khẩu
         </Button>
       </form>

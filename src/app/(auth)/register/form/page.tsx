@@ -139,12 +139,13 @@ export default function RegisterFormPage() {
           <p className="text-sm text-red-500">{error}</p>
         )}
 
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           className="h-12 w-full"
-          disabled={registerRequest.isPending}
+          isLoading={registerRequest.isPending}
+          loadingText="Đang gửi mã..."
         >
-          {registerRequest.isPending ? "Đang gửi mã..." : "Tiếp tục"}
+          Tiếp tục
         </Button>
       </form>
 

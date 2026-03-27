@@ -13,9 +13,14 @@ import { AUTH_ROUTES } from "@/lib/routes";
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    // TODO: Call API to send reset email
+    await new Promise((r) => setTimeout(r, 1000)); // Simulate API call
+    setIsLoading(false);
     router.push(AUTH_ROUTES.FORGOT_PASSWORD_OTP);
   };
 
@@ -39,7 +44,7 @@ export default function ForgotPasswordPage() {
           className="h-12"
           required
         />
-        <Button type="submit" className="h-12 w-full">
+        <Button type="submit" className="h-12 w-full" isLoading={isLoading} loadingText="Đang gửi...">
           Gửi mã xác thực
         </Button>
       </form>
