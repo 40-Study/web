@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Monitor, Moon, Sun } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Monitor, Moon, Sun, Check } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import {
   Select,
@@ -25,15 +24,27 @@ interface AppearanceSettingsProps {
   onLanguageChange?: (language: Language) => void;
 }
 
-const themes: Array<{ id: Theme; label: string; icon: React.ComponentType<{ className?: string }> }> = [
-  { id: "light", label: "Light", icon: Sun },
-  { id: "dark", label: "Dark", icon: Moon },
-  { id: "system", label: "System", icon: Monitor },
+const themes: Array<{
+  id: Theme;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  bg: string;
+  iconColor: string;
+}> = [
+  { id: "light", label: "Sáng", icon: Sun, bg: "bg-white border border-gray-200", iconColor: "text-amber-400" },
+  { id: "dark", label: "Tối", icon: Moon, bg: "bg-gray-900", iconColor: "text-blue-400" },
+  {
+    id: "system",
+    label: "Hệ thống",
+    icon: Monitor,
+    bg: "bg-gradient-to-r from-white to-gray-900 border border-gray-200",
+    iconColor: "text-gray-500",
+  },
 ];
 
 const languages = [
-  { id: "vi", label: "Tieng Viet" },
-  { id: "en", label: "English" },
+  { id: "vi", label: "Tiếng Việt", flag: "🇻🇳" },
+  { id: "en", label: "English", flag: "🇬🇧" },
 ];
 
 export function AppearanceSettings({
@@ -66,99 +77,85 @@ export function AppearanceSettings({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
-          Appearance
-        </h2>
-        <p className="text-muted-foreground">Customize how ForteX looks</p>
+        <h2 className="text-xl font-bold text-gray-900">Giao diện</h2>
+        <p className="text-sm text-gray-500 mt-1">Tùy chỉnh giao diện ForteX theo ý bạn</p>
       </div>
 
       {/* Theme */}
-      <Card className="p-4">
-        <p className="font-medium mb-4 text-gray-900 dark:text-white">Theme</p>
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+        <p className="font-medium text-gray-900 mb-4">Chủ đề</p>
         <div className="grid grid-cols-3 gap-3">
           {themes.map((theme) => {
             const Icon = theme.icon;
+            const isActive = currentTheme === theme.id;
             return (
               <button
                 key={theme.id}
                 onClick={() => handleThemeChange(theme.id)}
                 className={cn(
-                  "p-4 rounded-lg border-2 transition-all",
-                  currentTheme === theme.id
-                    ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
-                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                  "relative p-4 rounded-2xl border-2 transition-all duration-200",
+                  isActive
+                    ? "border-primary-500 bg-primary-50 shadow-md shadow-primary-100"
+                    : "border-gray-100 hover:border-gray-200 hover:shadow-sm"
                 )}
               >
+                {isActive && (
+                  <div className="absolute top-2 right-2 p-1 bg-primary-500 rounded-full">
+                    <Check className="h-3 w-3 text-white" />
+                  </div>
+                )}
                 <div
-                  className={cn(
-                    "w-full aspect-video rounded mb-3 flex items-center justify-center",
-                    theme.id === "light" && "bg-white border border-gray-200",
-                    theme.id === "dark" && "bg-gray-900",
-                    theme.id === "system" &&
-                      "bg-gradient-to-r from-white to-gray-900 border border-gray-200"
-                  )}
+                  className={cn("w-full aspect-video rounded-xl mb-3 flex items-center justify-center", theme.bg)}
                 >
-                  <Icon
-                    className={cn(
-                      "h-6 w-6",
-                      theme.id === "light" && "text-yellow-500",
-                      theme.id === "dark" && "text-blue-400",
-                      theme.id === "system" && "text-gray-500"
-                    )}
-                  />
+                  <Icon className={cn("h-6 w-6", theme.iconColor)} />
                 </div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {theme.label}
-                </p>
+                <p className="text-sm font-medium text-gray-900">{theme.label}</p>
               </button>
             );
           })}
         </div>
-      </Card>
+      </div>
 
       {/* Font Size */}
-      <Card className="p-4">
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <p className="font-medium text-gray-900 dark:text-white">Font Size</p>
-          <span className="text-sm text-muted-foreground">{fontSize}%</span>
+          <p className="font-medium text-gray-900">Cỡ chữ</p>
+          <span className="text-sm font-semibold text-primary-600 bg-primary-50 px-3 py-1 rounded-full">
+            {fontSize}%
+          </span>
         </div>
-        <Slider
-          value={[fontSize]}
-          onValueChange={handleFontSizeChange}
-          min={80}
-          max={150}
-          step={10}
-        />
-        <div className="flex justify-between text-xs text-muted-foreground mt-2">
-          <span>Small</span>
-          <span>Normal</span>
-          <span>Large</span>
+        <Slider value={[fontSize]} onValueChange={handleFontSizeChange} min={80} max={150} step={10} />
+        <div className="flex justify-between text-xs text-gray-400 mt-2 px-1">
+          <span>Nhỏ</span>
+          <span>Bình thường</span>
+          <span>Lớn</span>
         </div>
-      </Card>
+      </div>
 
       {/* Language */}
-      <Card className="p-4">
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">Language</p>
-            <p className="text-sm text-muted-foreground">
-              Choose your display language
-            </p>
+            <p className="font-medium text-gray-900">Ngôn ngữ</p>
+            <p className="text-sm text-gray-500">Chọn ngôn ngữ hiển thị</p>
           </div>
           <Select value={language} onValueChange={handleLanguageChange}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-44 rounded-xl">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {languages.map((lang) => (
                 <SelectItem key={lang.id} value={lang.id}>
-                  {lang.label}
+                  <span className="flex items-center gap-2">
+                    <span>{lang.flag}</span>
+                    {lang.label}
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

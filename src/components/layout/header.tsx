@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-import { Search, Bell, BarChart2, Calendar, BookOpen, FileText, Settings, LogOut, Menu, X } from "lucide-react";
+import { Search, Bell, FileText, Settings, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { AuthModal } from "@/components/auth/auth-modal";
@@ -10,11 +10,20 @@ import { useLogout } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth.store";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 
-const userMenuItems = [
-  { label: "Tiến độ khóa học", href: "/progress", icon: BarChart2 },
-  { label: "Thời khóa biểu", href: "/schedule", icon: Calendar },
-  { label: "Khóa học của tôi", href: "/my-courses", icon: BookOpen },
+interface MenuItem {
+  label: string;
+  href: string;
+  icon: typeof FileText;
+  badge?: boolean;
+}
+
+// Student-only menu items (shown before common items)
+const studentMenuItems: MenuItem[] = [
   { label: "Bài tập", href: "/assignments", icon: FileText, badge: true },
+];
+
+// Common menu items for all roles
+const commonMenuItems: MenuItem[] = [
   { label: "Cài đặt tài khoản", href: "/settings", icon: Settings },
 ];
 
@@ -40,7 +49,11 @@ export function Header() {
   const logoutMutation = useLogout();
   const normalizedRole = normalizeRole(activeRole);
   const isTeacher = normalizedRole === "TEACHER";
+  const isStudent = normalizedRole === "STUDENT";
   const homeHref = isAuthenticated ? getRoleHomeRoute(normalizedRole) : "/";
+
+  // Students: Bài tập + Cài đặt; Teachers/Admins: only Cài đặt
+  const userMenuItems = [...(isStudent ? studentMenuItems : []), ...commonMenuItems];
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

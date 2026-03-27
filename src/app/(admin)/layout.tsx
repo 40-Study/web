@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BarChart3, Building2, FileText, LayoutDashboard, LogOut, Settings, ShieldCheck } from "lucide-react";
+
 import { RoleGuard } from "@/components/guards";
 import { Avatar } from "@/components/ui/avatar";
 import { useLogout } from "@/hooks/queries/use-auth";
@@ -92,11 +93,12 @@ export default function AdminLayout({
                 {isProfileOpen && (
                   <div className="absolute right-0 top-11 w-52 rounded-xl border bg-white py-2 shadow-lg dark:border-gray-800 dark:bg-gray-900">
                     <Link
-                      href={user?.id ? `/profile/${user.id}` : "/home"}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                      href="/settings"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
                       onClick={() => setIsProfileOpen(false)}
                     >
-                      Hồ sơ cá nhân
+                      <Settings className="h-4 w-4" />
+                      Cài đặt tài khoản
                     </Link>
                     <button
                       onClick={() => {
