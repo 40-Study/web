@@ -4,81 +4,79 @@ import WeekCalendarGrid from "@/components/schedule/week-calendar-grid";
 import ScheduleEventTooltip from "@/components/schedule/schedule-event-tooltip";
 import type { ScheduleEvent } from "@/components/schedule/week-calendar-grid";
 
-// Mock data - replace with API
 const MOCK_STUDENT_EVENTS: ScheduleEvent[] = [
   {
     id: "1",
-    title: "Toán Cao cấp A1",
+    title: "Tự học: React Native & Expo",
     courseId: "c1",
-    startTime: "2026-03-23T08:00:00",
-    endTime: "2026-03-23T09:30:00",
+    startTime: "2026-03-23T09:00:00",
+    endTime: "2026-03-23T11:00:00",
+    type: "video",
+    status: "upcoming",
+    teacher: "Tự học",
+    description: "Ôn tập React Native cơ bản",
+  },
+  {
+    id: "2",
+    title: "Bài tập lớn: Phát triển Web",
+    courseId: "c2",
+    startTime: "2026-03-25T19:00:00",
+    endTime: "2026-03-25T21:00:00",
+    type: "hybrid",
+    status: "upcoming",
+    tag: "GIAO VIỆC",
+    teacher: "Trợ giảng Linh",
+    participants: 12,
+    description: "Hoàn thành Bài tập lớn: Phát triển Ứng dụng Web",
+  },
+  {
+    id: "3",
+    title: "Code dự án: Game Mobile Candy Crush",
+    courseId: "c3",
+    startTime: "2026-03-28T14:00:00",
+    endTime: "2026-03-28T17:00:00",
+    type: "video",
+    status: "upcoming",
+    teacher: "Nhóm 5",
+    description: "Làm việc nhóm dự án game mobile",
+  },
+  {
+    id: "4",
+    title: "Toán Cao cấp A1",
+    courseId: "c4",
+    startTime: "2026-03-24T08:00:00",
+    endTime: "2026-03-24T09:30:00",
     type: "video",
     status: "completed",
     teacher: "TS. Nguyễn Văn A",
     location: "Phòng A101",
-    description: "Học về giới hạn và đạo hàm",
-  },
-  {
-    id: "2",
-    title: "Tiếng Anh Giao tiếp",
-    courseId: "c2",
-    startTime: "2026-03-23T10:00:00",
-    endTime: "2026-03-23T11:30:00",
-    type: "livestream",
-    status: "ongoing",
-    meetingUrl: "https://meet.google.com/abc",
-    teacher: "Cô Trần Thị B",
-    location: "Online - Google Meet",
-    description: "Conversation skills - Daily topics",
-  },
-  {
-    id: "3",
-    title: "Lập trình Python cơ bản",
-    courseId: "c3",
-    startTime: "2026-03-24T14:00:00",
-    endTime: "2026-03-24T15:30:00",
-    type: "video",
-    status: "upcoming",
-    teacher: "Th.S Hoàng Văn C",
-    location: "Phòng B202",
-    description: "Python fundamentals - Functions & Modules",
-  },
-  {
-    id: "4",
-    title: "Kỹ năng mềm",
-    courseId: "c4",
-    startTime: "2026-03-25T09:00:00",
-    endTime: "2026-03-25T10:30:00",
-    type: "hybrid",
-    status: "upcoming",
-    teacher: "TS. Lê Thị D",
-    location: "Phòng C303 - Online",
-    description: "Teamwork & Communication skills",
   },
   {
     id: "5",
-    title: "Toán rời rạc",
+    title: "Tiếng Anh Giao tiếp",
     courseId: "c5",
-    startTime: "2026-03-26T08:00:00",
-    endTime: "2026-03-26T09:30:00",
-    type: "video",
+    startTime: "2026-03-26T10:00:00",
+    endTime: "2026-03-26T11:30:00",
+    type: "livestream",
     status: "upcoming",
-    teacher: "PGS.TS. Phạm Văn E",
-    location: "Phòng D404",
-    description: "Logic và chứng minh toán học",
+    meetingUrl: "https://meet.google.com/abc",
+    teacher: "Cô Trần Thị B",
+    location: "Online - Google Meet",
   },
 ];
 
 export default function StudentSchedulePage() {
-  const events = MOCK_STUDENT_EVENTS;
-
   return (
     <div className="p-6">
       <WeekCalendarGrid
-        events={events}
-        title="Lịch học"
-        subtitle="Xem lịch học và tham gia lớp học"
+        events={MOCK_STUDENT_EVENTS}
         renderEventTooltip={(event) => <ScheduleEventTooltip event={event} />}
+        stats={{
+          studyHours: 32.5,
+          tasksCompleted: 12,
+          tasksTotal: 15,
+          focusPercent: 88,
+        }}
       />
     </div>
   );

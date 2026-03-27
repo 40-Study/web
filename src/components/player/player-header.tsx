@@ -6,10 +6,12 @@ import { Avatar } from "@/components/ui/avatar";
 
 interface PlayerHeaderProps {
   courseTitle?: string;
+  onExercisesClick?: () => void;
+  exerciseCount?: number;
 }
 
 /** Minimal header for course player - no search, no sidebar toggle */
-export function PlayerHeader({ courseTitle }: PlayerHeaderProps) {
+export function PlayerHeader({ courseTitle, onExercisesClick, exerciseCount = 0 }: PlayerHeaderProps) {
   return (
     <header className="h-14 bg-gray-900 text-white flex items-center justify-between px-4 shrink-0 z-20">
       {/* Left: Back + course title */}
@@ -31,17 +33,18 @@ export function PlayerHeader({ courseTitle }: PlayerHeaderProps) {
 
       {/* Right: Assignment badge + avatar */}
       <div className="flex items-center gap-3">
-        <Link
-          href="/assignments"
+        <button
+          onClick={onExercisesClick}
           className="flex items-center gap-1.5 text-gray-300 hover:text-white transition-colors text-sm"
         >
           <FileText className="w-4 h-4" />
           <span>Bài tập</span>
-          {/* Notification badge */}
-          <span className="bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-medium">
-            2
-          </span>
-        </Link>
+          {exerciseCount > 0 && (
+            <span className="bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-medium">
+              {exerciseCount}
+            </span>
+          )}
+        </button>
 
         <button className="p-1 rounded hover:bg-gray-700 transition-colors">
           <Avatar fallback="TK" size="sm" />

@@ -6,6 +6,12 @@ import {
   endOfWeek,
   addWeeks,
   subWeeks,
+  addDays,
+  subDays,
+  addMonths,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
   format,
   eachDayOfInterval,
   isSameDay,
@@ -14,17 +20,7 @@ import {
   differenceInMinutes,
 } from "date-fns";
 import { vi } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Bell, Plus } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { ChevronLeft, ChevronRight, Plus, Clock, CheckCircle, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface ScheduleEvent {
@@ -39,204 +35,230 @@ export interface ScheduleEvent {
   teacher?: string;
   location?: string;
   description?: string;
+  /** Optional tag label shown on event card */
+  tag?: string;
+  /** Number of participants */
+  participants?: number;
+  /** Avatar URL of instructor/student */
+  avatarUrl?: string;
 }
+
+type ViewMode = "day" | "week" | "month";
 
 interface WeekCalendarGridProps {
   events: ScheduleEvent[];
-  title: string;
+  title?: string;
   subtitle?: string;
   editable?: boolean;
-  /** Called when clicking an empty cell (for creating events) */
   onCellClick?: (day: Date, hour: number) => void;
-  /** Called when clicking an event (for editing) */
   onEventClick?: (event: ScheduleEvent) => void;
-  /** Render custom content inside event card (default: built-in card) */
   renderEventCard?: (event: ScheduleEvent, isHovered: boolean) => React.ReactNode;
-  /** Render custom tooltip on hover */
   renderEventTooltip?: (event: ScheduleEvent) => React.ReactNode;
-  /** Custom header actions (right side) */
   headerActions?: React.ReactNode;
+  /** Weekly stats displayed at bottom */
+  stats?: {
+    studyHours?: number;
+    tasksCompleted?: number;
+    tasksTotal?: number;
+    focusPercent?: number;
+  };
 }
 
-const TIME_SLOTS = Array.from({ length: 14 }, (_, i) => i + 7);
-const SLOT_HEIGHT = 72;
+const SLOT_HEIGHT = 64;
 
-export function getEventPosition(event: ScheduleEvent) {
+/* Abbreviated Vietnamese day labels matching the design */
+const DAY_LABELS = ["THL 2", "THL 3", "THL 4", "THL 5", "THL 6", "THL 7", "CN"];
+
+const VIEW_OPTIONS: { id: ViewMode; label: string }[] = [
+  { id: "day", label: "Ngày" },
+  { id: "week", label: "Tuần" },
+  { id: "month", label: "Tháng" },
+];
+
+export function getEventPosition(event: ScheduleEvent, startHourOffset = 7) {
   const start = parseISO(event.startTime);
   const end = parseISO(event.endTime);
   const startHour = start.getHours() + start.getMinutes() / 60;
   const duration = differenceInMinutes(end, start) / 60;
-  const top = (startHour - 7) * SLOT_HEIGHT;
+  const top = (startHour - startHourOffset) * SLOT_HEIGHT;
   const height = duration * SLOT_HEIGHT;
   return { top, height };
 }
 
+/** Event color based on type/status */
+function getEventColor(event: ScheduleEvent) {
+  if (event.tag === "GIAO VIỆC" || event.type === "hybrid") {
+    return { border: "border-l-purple-500", bg: "bg-purple-50", text: "text-purple-700", tagBg: "bg-purple-100 text-purple-700" };
+  }
+  if (event.status === "ongoing") {
+    return { border: "border-l-red-500", bg: "bg-red-50", text: "text-red-700", tagBg: "bg-red-100 text-red-700" };
+  }
+  if (event.status === "completed") {
+    return { border: "border-l-green-500", bg: "bg-green-50", text: "text-green-700", tagBg: "bg-green-100 text-green-700" };
+  }
+  // Default: blue for upcoming / self-study
+  return { border: "border-l-blue-500", bg: "bg-blue-50", text: "text-blue-700", tagBg: "bg-blue-100 text-blue-700" };
+}
+
 export default function WeekCalendarGrid({
   events,
-  title,
-  subtitle,
   editable = false,
   onCellClick,
   onEventClick,
   renderEventCard,
   renderEventTooltip,
   headerActions,
+  stats,
 }: WeekCalendarGridProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
-  const weekNotifications = useMemo(() => {
-    return events
-      .filter((event) => {
-        const eventDate = parseISO(event.startTime);
-        return eventDate >= weekStart && eventDate <= weekEnd;
-      })
-      .sort((a, b) => parseISO(a.startTime).getTime() - parseISO(b.startTime).getTime())
-      .slice(0, 5);
-  }, [events, weekStart, weekEnd]);
+
+  /* Navigation based on view mode */
+  const navigateBack = () => {
+    if (viewMode === "day") setCurrentDate(subDays(currentDate, 1));
+    else if (viewMode === "week") setCurrentDate(subWeeks(currentDate, 1));
+    else setCurrentDate(subMonths(currentDate, 1));
+  };
+  const navigateForward = () => {
+    if (viewMode === "day") setCurrentDate(addDays(currentDate, 1));
+    else if (viewMode === "week") setCurrentDate(addWeeks(currentDate, 1));
+    else setCurrentDate(addMonths(currentDate, 1));
+  };
+
+  const dateRangeLabel = useMemo(() => {
+    if (viewMode === "day") return format(currentDate, "dd/MM/yyyy");
+    if (viewMode === "week") {
+      return `${format(weekStart, "dd/MM/yyyy")} - ${format(weekEnd, "dd/MM/yyyy")}`;
+    }
+    const ms = startOfMonth(currentDate);
+    const me = endOfMonth(currentDate);
+    return `${format(ms, "dd/MM")} - ${format(me, "dd/MM/yyyy")}`;
+  }, [currentDate, viewMode, weekStart, weekEnd]);
+
+  const monthTitle = format(currentDate, "'Tháng' M, yyyy", { locale: vi });
+
+  /* Time slots from 07:00 to 22:00 */
+  const timeSlots = Array.from({ length: 16 }, (_, i) => i + 7);
 
   const getEventsForDay = (day: Date) =>
     events.filter((event) => isSameDay(parseISO(event.startTime), day));
 
-  const handleCellClick = (day: Date, hour: number) => {
-    if (editable && onCellClick) {
-      onCellClick(day, hour);
-    }
-  };
+  /* Days to render based on view mode */
+  const visibleDays = viewMode === "day" ? [currentDate] : weekDays;
+  const gridCols = viewMode === "day" ? "grid-cols-2" : "grid-cols-8";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h1>
-          {subtitle && <p className="mt-1 text-sm text-gray-500">{subtitle}</p>}
-        </div>
-        <div className="flex items-center gap-3 self-start lg:self-auto">
-          {headerActions}
-          {/* Date Navigation */}
-          <div className="flex items-center gap-1 rounded-xl border bg-white px-3 py-2 shadow-sm dark:bg-gray-800">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-700"
-              onClick={() => setCurrentDate(subWeeks(currentDate, 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm font-medium min-w-[160px] text-center">
-              {format(weekStart, "dd MMM", { locale: vi })} -{" "}
-              {format(weekEnd, "dd MMM yyyy", { locale: vi })}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-700"
-              onClick={() => setCurrentDate(addWeeks(currentDate, 1))}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-          <Button variant="ghost" size="icon" className="relative" onClick={() => setIsNotificationOpen(true)}>
-            <Bell className="h-5 w-5" />
-            {weekNotifications.length > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />}
-          </Button>
-        </div>
-      </div>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{monthTitle}</h1>
 
-      {/* Legend */}
-      <div className="flex items-center gap-6 text-sm">
+        {/* Center: date range navigation */}
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-gradient-to-br from-green-400 to-green-600" />
-          <span className="text-gray-600 dark:text-gray-300">Đã hoàn thành</span>
+          <button
+            onClick={navigateBack}
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4 text-gray-500" />
+          </button>
+          <span className="text-sm text-gray-600 min-w-[220px] text-center">
+            {dateRangeLabel}
+          </span>
+          <button
+            onClick={navigateForward}
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <ChevronRight className="h-4 w-4 text-gray-500" />
+          </button>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-gradient-to-br from-red-400 to-red-600 animate-pulse" />
-          <span className="text-gray-600 dark:text-gray-300">Đang diễn ra</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-gradient-to-br from-blue-400 to-blue-600" />
-          <span className="text-gray-600 dark:text-gray-300">Sắp diễn ra</span>
+
+        {/* Right: view toggle + actions */}
+        <div className="flex items-center gap-3">
+          <div className="flex rounded-full bg-gray-100 p-1">
+            {VIEW_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => setViewMode(opt.id)}
+                className={cn(
+                  "px-4 py-1.5 text-sm font-medium rounded-full transition-all",
+                  viewMode === opt.id
+                    ? "bg-primary-600 text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          {headerActions}
         </div>
       </div>
 
       {/* Calendar Grid */}
-      <Card className="overflow-hidden border shadow-sm">
+      <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <div className="min-w-[900px] calendar-container relative">
+          <div className={cn("min-w-[900px]", viewMode === "day" && "min-w-0")}>
             {/* Day Headers */}
-            <div className="grid grid-cols-8 bg-gray-50 dark:bg-gray-900/50 border-b">
-              <div className="p-4 text-center text-sm font-medium text-gray-400" />
-              {weekDays.map((day) => (
-                <div
-                  key={day.toISOString()}
-                  className={cn(
-                    "p-4 text-center border-l transition-all",
-                    isToday(day)
-                      ? "bg-gradient-to-b from-primary-600 to-primary-700 text-white"
-                      : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                  )}
-                >
+            <div className={cn("grid border-b", gridCols)}>
+              {/* Time column header */}
+              <div className="p-3 flex items-center justify-center">
+                <Clock className="h-4 w-4 text-gray-400" />
+              </div>
+              {visibleDays.map((day, idx) => {
+                const today = isToday(day);
+                return (
                   <div
-                    className={cn(
-                      "text-xs uppercase tracking-wider",
-                      isToday(day) ? "text-white/80" : "text-gray-400"
-                    )}
+                    key={day.toISOString()}
+                    className={cn("py-4 text-center border-l", today && "bg-primary-50")}
                   >
-                    {isToday(day) ? "Hôm nay" : format(day, "EEEE", { locale: vi })}
+                    <div className="text-xs text-gray-400 font-medium tracking-wide">
+                      {viewMode === "day"
+                        ? format(day, "EEEE", { locale: vi }).toUpperCase()
+                        : DAY_LABELS[idx]}
+                    </div>
+                    <div
+                      className={cn(
+                        "text-2xl font-bold mt-1",
+                        today ? "text-primary-600" : "text-gray-900"
+                      )}
+                    >
+                      {format(day, "d")}
+                    </div>
                   </div>
-                  <div
-                    className={cn(
-                      "text-2xl font-bold mt-1",
-                      isToday(day) ? "text-white" : "text-gray-900 dark:text-white"
-                    )}
-                  >
-                    {format(day, "d")}
-                  </div>
-                  <div
-                    className={cn(
-                      "text-xs mt-1",
-                      isToday(day) ? "text-white/70" : "text-gray-400"
-                    )}
-                  >
-                    {format(day, "MMM", { locale: vi })}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Time Grid */}
             <div className="relative" onClick={() => setHoveredEventId(null)}>
-              {TIME_SLOTS.map((hour) => (
+              {timeSlots.map((hour) => (
                 <div
                   key={hour}
-                  className="grid grid-cols-8 border-b border-gray-100 dark:border-gray-800"
+                  className={cn("grid border-b border-gray-100", gridCols)}
                   style={{ height: SLOT_HEIGHT }}
                 >
-                  <div className="p-3 text-sm text-gray-400 text-right pr-4 border-r border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30">
-                    <span className="font-medium">
-                      {String(hour).padStart(2, "0")}:00
-                    </span>
+                  {/* Time label */}
+                  <div className="px-3 py-2 text-xs text-gray-400 text-right pr-4 border-r border-gray-100">
+                    {String(hour).padStart(2, "0")}:00
                   </div>
-                  {weekDays.map((day) => (
+                  {visibleDays.map((day) => (
                     <div
                       key={day.toISOString()}
                       className={cn(
-                        "relative border-l border-gray-100 dark:border-gray-800 transition-colors",
-                        editable
-                          ? "hover:bg-primary-50/50 dark:hover:bg-primary-900/20 cursor-pointer group"
-                          : "hover:bg-gray-50/50 dark:hover:bg-gray-800/30"
+                        "relative border-l border-gray-100 transition-colors",
+                        editable && "hover:bg-primary-50/30 cursor-pointer group",
+                        isToday(day) && "bg-primary-50/20"
                       )}
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleCellClick(day, hour);
+                        if (editable && onCellClick) onCellClick(day, hour);
                       }}
                     >
-                      {/* "+" indicator on hover for editable mode */}
                       {editable && (
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                           <Plus className="w-4 h-4 text-primary-400" />
@@ -248,11 +270,12 @@ export default function WeekCalendarGrid({
               ))}
 
               {/* Events Overlay */}
-              {weekDays.map((day, dayIndex) => {
+              {visibleDays.map((day, dayIndex) => {
                 const dayEvents = getEventsForDay(day);
                 return dayEvents.map((event) => {
                   const { top, height } = getEventPosition(event);
-                  const leftOffset = (dayIndex + 1) * (100 / 8);
+                  const colCount = viewMode === "day" ? 2 : 8;
+                  const leftOffset = (dayIndex + 1) * (100 / colCount);
                   const isHovered = hoveredEventId === event.id;
 
                   return (
@@ -263,7 +286,7 @@ export default function WeekCalendarGrid({
                         top: top + 2,
                         height: height - 4,
                         left: `calc(${leftOffset}% + 4px)`,
-                        width: `calc(${100 / 8}% - 10px)`,
+                        width: `calc(${100 / colCount}% - 10px)`,
                         zIndex: isHovered ? 20 : 10,
                       }}
                       onMouseEnter={() => setHoveredEventId(event.id)}
@@ -279,7 +302,7 @@ export default function WeekCalendarGrid({
                         <DefaultEventCard event={event} />
                       )}
 
-                      {/* Tooltip */}
+                      {/* Tooltip on hover */}
                       {isHovered && renderEventTooltip && (
                         <div
                           className="absolute left-full top-0 ml-2 z-50"
@@ -296,66 +319,91 @@ export default function WeekCalendarGrid({
             </div>
           </div>
         </div>
-      </Card>
+      </div>
 
-      <Dialog open={isNotificationOpen} onOpenChange={setIsNotificationOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Thông báo lịch học tuần này</DialogTitle>
-            <DialogDescription>
-              Tổng hợp các buổi học sắp tới trong tuần để bạn không bị lỡ lịch.
-            </DialogDescription>
-          </DialogHeader>
+      {/* Bottom Stats Bar */}
+      {stats && (
+        <div className="grid grid-cols-3 gap-4">
+          <StatCard
+            icon={<Clock className="h-5 w-5 text-primary-500" />}
+            label="THỜI GIAN HỌC TUẦN NÀY"
+            value={`${stats.studyHours ?? 0} Giờ`}
+          />
+          <StatCard
+            icon={<CheckCircle className="h-5 w-5 text-green-500" />}
+            label="NHIỆM VỤ HOÀN THÀNH"
+            value={`${stats.tasksCompleted ?? 0} / ${stats.tasksTotal ?? 0}`}
+          />
+          <StatCard
+            icon={<TrendingUp className="h-5 w-5 text-purple-500" />}
+            label="HIỆU SUẤT TẬP TRUNG"
+            value={`${stats.focusPercent ?? 0}%`}
+          />
+        </div>
+      )}
 
-          {weekNotifications.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Tuần này chưa có lịch học nào.</p>
-          ) : (
-            <div className="space-y-2">
-              {weekNotifications.map((event) => (
-                <div key={event.id} className="rounded-lg border p-3">
-                  <p className="text-sm font-medium">{event.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(parseISO(event.startTime), "EEEE, dd/MM - HH:mm", { locale: vi })} • {event.status === "ongoing" ? "Đang diễn ra" : event.status === "completed" ? "Đã hoàn thành" : "Sắp diễn ra"}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button onClick={() => setIsNotificationOpen(false)}>Đã hiểu</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* FAB - create button for editable mode */}
+      {editable && (
+        <button
+          onClick={() => onCellClick?.(new Date(), new Date().getHours())}
+          className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-primary-600 text-white shadow-lg hover:bg-primary-700 hover:shadow-xl transition-all flex items-center justify-center"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      )}
     </div>
   );
 }
 
-/** Default event card with status-based gradient styling */
+/** Event card matching the design - colored left border, tag, time, title */
 function DefaultEventCard({ event }: { event: ScheduleEvent }) {
+  const colors = getEventColor(event);
   return (
     <div
       className={cn(
-        "h-full rounded-lg cursor-pointer transition-all duration-200",
-        "hover:shadow-lg",
-        event.status === "completed" &&
-          "bg-gradient-to-br from-green-50 to-green-100/50 border border-green-200",
-        event.status === "ongoing" &&
-          "bg-gradient-to-br from-white to-red-50 border-2 border-red-400 shadow-md shadow-red-100",
-        event.status === "upcoming" &&
-          "bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200"
+        "h-full rounded-lg border-l-4 cursor-pointer transition-all hover:shadow-md overflow-hidden",
+        colors.border,
+        colors.bg
       )}
     >
-      <div className="h-full p-2 flex flex-col justify-between">
-        <h4 className="font-semibold text-gray-900 dark:text-white text-xs line-clamp-1">
-          {event.title}
-        </h4>
-        <div className="flex items-center gap-1 text-xs text-gray-500">
-          <span>
-            {format(parseISO(event.startTime), "HH:mm")} -{" "}
-            {format(parseISO(event.endTime), "HH:mm")}
-          </span>
+      <div className="h-full p-2.5 flex flex-col justify-between">
+        <div>
+          {/* Time range */}
+          <p className={cn("text-[11px] font-semibold", colors.text)}>
+            {format(parseISO(event.startTime), "HH:mm")} - {format(parseISO(event.endTime), "HH:mm")}
+          </p>
+          {/* Title */}
+          <h4 className="font-semibold text-gray-900 text-xs mt-1 line-clamp-2">
+            {event.title}
+          </h4>
         </div>
+
+        {/* Bottom: tag or participants */}
+        {(event.tag || event.participants) && (
+          <div className="flex items-center justify-between mt-1">
+            {event.tag && (
+              <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded", colors.tagBg)}>
+                {event.tag}
+              </span>
+            )}
+            {event.participants && (
+              <span className="text-[10px] text-gray-500">+{event.participants}</span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Stat card for bottom bar */
+function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-3 bg-white rounded-2xl border px-5 py-4 shadow-sm">
+      <div className="p-2 bg-gray-50 rounded-xl">{icon}</div>
+      <div>
+        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
+        <p className="text-xl font-bold text-gray-900">{value}</p>
       </div>
     </div>
   );

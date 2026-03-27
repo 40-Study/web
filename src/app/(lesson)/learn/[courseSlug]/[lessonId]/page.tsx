@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -12,6 +12,7 @@ import {
   FloatingButtons,
   CodeEditorModal,
 } from "@/components/player";
+import type { PlayerTabsHandle } from "@/components/player";
 import {
   mockPlayerCourse,
   getLessonById,
@@ -23,9 +24,15 @@ export default function CourseLessonPage() {
   const { courseSlug, lessonId } = params;
 
   const [isCodeEditorOpen, setCodeEditorOpen] = useState(false);
+  const tabsRef = useRef<PlayerTabsHandle>(null);
 
   // Resolve lesson from mock data (replace with API call in production)
   const course = mockPlayerCourse;
+
+  // Count exercises/quizzes for header badge
+  const exerciseCount = course.chapters
+    .flatMap((ch) => ch.lessons)
+    .filter((l) => (l.type === "exercise" || l.type === "quiz") && !l.completed).length;
   const currentLesson = getLessonById(course, lessonId);
   const { prev, next } = getAdjacentLessons(course, lessonId);
 
@@ -37,7 +44,11 @@ export default function CourseLessonPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-950">
       {/* Minimal player header */}
-      <PlayerHeader courseTitle={course.title} />
+      <PlayerHeader
+        courseTitle={course.title}
+        exerciseCount={exerciseCount}
+        onExercisesClick={() => tabsRef.current?.switchToExercises()}
+      />
 
       {/* Main content area */}
       <div className="flex-1 flex overflow-hidden">
@@ -108,7 +119,7 @@ export default function CourseLessonPage() {
 
           {/* Tabs: Overview, Resources, Reviews */}
           <div className="max-w-5xl mx-auto w-full px-6 pb-24">
-            <PlayerTabs course={course} />
+            <PlayerTabs ref={tabsRef} course={course} courseSlug={courseSlug} />
           </div>
         </div>
 

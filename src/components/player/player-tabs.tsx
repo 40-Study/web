@@ -1,18 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { Star, Download, ExternalLink, FileText, Link as LinkIcon } from "lucide-react";
+import { forwardRef, useImperativeHandle, useState } from "react";
+import { Star, Download, ExternalLink, FileText, Link as LinkIcon, Code2, HelpCircle, Lock } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { PlayerCourse, PlayerResource } from "@/lib/mock-data/course-player";
 
 interface PlayerTabsProps {
   course: PlayerCourse;
+  courseSlug: string;
 }
 
-type TabKey = "overview" | "resources" | "reviews";
+type TabKey = "overview" | "exercises" | "resources" | "reviews";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview", label: "Tổng quan" },
+  { key: "exercises", label: "Bài tập" },
   { key: "resources", label: "Tài liệu học tập" },
   { key: "reviews", label: "Đánh giá" },
 ];
@@ -46,9 +49,17 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-/** Tabs below the video: Overview, Resources, Reviews */
-export function PlayerTabs({ course }: PlayerTabsProps) {
+export interface PlayerTabsHandle {
+  switchToExercises: () => void;
+}
+
+/** Tabs below the video: Overview, Exercises, Resources, Reviews */
+export const PlayerTabs = forwardRef<PlayerTabsHandle, PlayerTabsProps>(function PlayerTabs({ course, courseSlug }, ref) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
+
+  useImperativeHandle(ref, () => ({
+    switchToExercises: () => setActiveTab("exercises"),
+  }));
 
   return (
     <div className="mt-4">
@@ -126,6 +137,57 @@ export function PlayerTabs({ course }: PlayerTabsProps) {
           </div>
         )}
 
+        {activeTab === "exercises" && (
+          <div className="space-y-3">
+            {(() => {
+              const exercises = course.chapters.flatMap((ch) =>
+                ch.lessons
+                  .filter((l) => l.type === "exercise" || l.type === "quiz")
+                  .map((l) => ({ ...l, chapterTitle: ch.title }))
+              );
+              if (exercises.length === 0) {
+                return <p className="text-sm text-gray-500">Khóa học chưa có bài tập nào.</p>;
+              }
+              return exercises.map((ex) => (
+                <div
+                  key={ex.id}
+                  className={cn(
+                    "flex items-center gap-3 p-3 border rounded-lg transition-colors",
+                    ex.locked
+                      ? "border-gray-200 bg-gray-50 opacity-60"
+                      : "border-gray-200 hover:border-primary-300 hover:bg-primary-50"
+                  )}
+                >
+                  {ex.type === "exercise" ? (
+                    <Code2 className="w-5 h-5 text-blue-500 shrink-0" />
+                  ) : (
+                    <HelpCircle className="w-5 h-5 text-orange-500 shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    {ex.locked ? (
+                      <p className="text-sm font-medium text-gray-500 truncate">{ex.title}</p>
+                    ) : (
+                      <Link
+                        href={`/learn/${courseSlug}/${ex.id}`}
+                        className="text-sm font-medium text-gray-900 hover:text-primary-600 truncate block"
+                      >
+                        {ex.title}
+                      </Link>
+                    )}
+                    <p className="text-xs text-gray-500">
+                      {ex.chapterTitle} · {ex.type === "quiz" ? "Trắc nghiệm" : "Thực hành"} · {ex.duration}
+                    </p>
+                  </div>
+                  {ex.locked && <Lock className="w-4 h-4 text-gray-400 shrink-0" />}
+                  {ex.completed && (
+                    <span className="text-xs text-green-600 font-medium shrink-0">Hoàn thành</span>
+                  )}
+                </div>
+              ));
+            })()}
+          </div>
+        )}
+
         {activeTab === "resources" && (
           <div className="space-y-3">
             {course.resources.length === 0 ? (
@@ -187,4 +249,4 @@ export function PlayerTabs({ course }: PlayerTabsProps) {
       </div>
     </div>
   );
-}
+});

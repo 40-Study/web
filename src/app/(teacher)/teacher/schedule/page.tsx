@@ -9,11 +9,10 @@ import ScheduleEventFormDialog from "@/components/schedule/schedule-event-form-d
 import type { ScheduleEvent } from "@/components/schedule/week-calendar-grid";
 import type { EventFormData } from "@/components/schedule/schedule-event-form-dialog";
 
-// Mock data - replace with API
 const INITIAL_EVENTS: ScheduleEvent[] = [
   {
     id: "1",
-    title: "Lập trình Python",
+    title: "Lập trình Python - Buổi 5",
     courseId: "c1",
     startTime: "2026-03-23T09:00:00",
     endTime: "2026-03-23T10:30:00",
@@ -24,26 +23,40 @@ const INITIAL_EVENTS: ScheduleEvent[] = [
   },
   {
     id: "2",
-    title: "Seminar Công nghệ",
+    title: "Seminar Công nghệ AI",
     courseId: "c2",
-    startTime: "2026-03-23T14:00:00",
-    endTime: "2026-03-23T15:30:00",
+    startTime: "2026-03-24T14:00:00",
+    endTime: "2026-03-24T16:00:00",
     type: "livestream",
-    status: "ongoing",
+    status: "upcoming",
     meetingUrl: "https://meet.google.com/abc",
     teacher: "Bạn",
     location: "Online - Google Meet",
+    tag: "LIVESTREAM",
+    participants: 45,
   },
   {
     id: "3",
     title: "React Advanced Patterns",
     courseId: "c3",
-    startTime: "2026-03-24T10:00:00",
-    endTime: "2026-03-24T11:30:00",
+    startTime: "2026-03-25T10:00:00",
+    endTime: "2026-03-25T11:30:00",
     type: "video",
     status: "upcoming",
     teacher: "Bạn",
     location: "Phòng B202",
+  },
+  {
+    id: "4",
+    title: "Chấm bài tập lớn nhóm 3",
+    courseId: "c4",
+    startTime: "2026-03-26T19:00:00",
+    endTime: "2026-03-26T21:00:00",
+    type: "hybrid",
+    status: "upcoming",
+    teacher: "Bạn",
+    tag: "GIAO VIỆC",
+    participants: 8,
   },
 ];
 
@@ -70,16 +83,10 @@ export default function TeacherSchedulePage() {
 
   const handleSave = useCallback((data: EventFormData, eventId?: string) => {
     if (eventId) {
-      // Update existing event
       setEvents((prev) =>
-        prev.map((e) =>
-          e.id === eventId
-            ? { ...e, ...data, status: e.status }
-            : e
-        )
+        prev.map((e) => (e.id === eventId ? { ...e, ...data, status: e.status } : e))
       );
     } else {
-      // Create new event
       const newEvent: ScheduleEvent = {
         id: crypto.randomUUID(),
         title: data.title,
@@ -94,29 +101,21 @@ export default function TeacherSchedulePage() {
       };
       setEvents((prev) => [...prev, newEvent]);
     }
-    // TODO: call API - classService.createSchedule / updateSchedule
   }, []);
 
   const handleDelete = useCallback((eventId: string) => {
     setEvents((prev) => prev.filter((e) => e.id !== eventId));
-    // TODO: call API - classService.deleteSchedule
   }, []);
 
   return (
-    <>
+    <div className="p-6">
       <WeekCalendarGrid
         events={events}
-        title="Lịch giảng dạy"
-        subtitle="Quản lý lịch dạy và tạo buổi học mới"
         editable
         onCellClick={handleCellClick}
         onEventClick={handleEventClick}
         renderEventTooltip={(event) => (
-          <ScheduleEventTooltip
-            event={event}
-            editable
-            onEdit={handleEventClick}
-          />
+          <ScheduleEventTooltip event={event} editable onEdit={handleEventClick} />
         )}
         headerActions={
           <Button
@@ -127,12 +126,18 @@ export default function TeacherSchedulePage() {
               setDialogOpen(true);
             }}
             size="sm"
-            className="gap-1"
+            className="gap-1 rounded-full"
           >
             <Plus className="w-4 h-4" />
             Tạo buổi học
           </Button>
         }
+        stats={{
+          studyHours: 18,
+          tasksCompleted: 6,
+          tasksTotal: 8,
+          focusPercent: 92,
+        }}
       />
 
       <ScheduleEventFormDialog
@@ -144,6 +149,6 @@ export default function TeacherSchedulePage() {
         onSave={handleSave}
         onDelete={handleDelete}
       />
-    </>
+    </div>
   );
 }
