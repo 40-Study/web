@@ -254,7 +254,11 @@ export default function CourseDetailPage() {
                   <p className="leading-relaxed text-muted-foreground">{resolvedCourse.description}</p>
                 </section>
 
-                <CourseSyllabus sections={resolvedCourse.sections} isEnrolled={isEnrolled} />
+                <CourseSyllabus
+                  sections={resolvedCourse.sections}
+                  isEnrolled={isEnrolled}
+                  courseSlug={courseSlug}
+                />
               </>
             )}
 

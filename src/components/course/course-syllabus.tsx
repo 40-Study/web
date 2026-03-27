@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   ChevronRight,
   CheckCircle,
@@ -18,6 +19,7 @@ import { Section, Lesson } from "@/types/course";
 interface CourseSyllabusProps {
   sections: Section[];
   isEnrolled?: boolean;
+  courseSlug?: string;
   className?: string;
 }
 
@@ -62,6 +64,7 @@ function getLessonTypeLabel(type: Lesson["type"]) {
 export function CourseSyllabus({
   sections,
   isEnrolled = false,
+  courseSlug,
   className,
 }: CourseSyllabusProps) {
   const [expandedSections, setExpandedSections] = useState<string[]>(
@@ -156,17 +159,12 @@ export function CourseSyllabus({
                   {section.lessons.map((lesson) => {
                     const LessonIcon = getLessonIcon(lesson.type);
                     const canAccess = isEnrolled || lesson.isFreePreview;
+                    const canNavigate = canAccess && Boolean(courseSlug);
+                    const lessonHref = `/learn/${courseSlug}/${lesson.id}`;
 
-                    return (
-                      <div
-                        key={lesson.id}
-                        className={cn(
-                          "flex items-center justify-between py-3 px-4 pl-12 border-t border-muted",
-                          canAccess && "hover:bg-muted/50 cursor-pointer"
-                        )}
-                      >
+                    const lessonContent = (
+                      <>
                         <div className="flex items-center gap-3">
-                          {/* Completion Status or Lock */}
                           {isEnrolled ? (
                             lesson.completed ? (
                               <CheckCircle className="h-5 w-5 text-xp flex-shrink-0" />
@@ -180,15 +178,11 @@ export function CourseSyllabus({
                           )}
 
                           <div>
-                            <span
-                              className={cn(
-                                lesson.completed && "text-muted-foreground"
-                              )}
-                            >
+                            <span className={cn(lesson.completed && "text-muted-foreground")}>
                               {lesson.title}
                             </span>
                             {lesson.type !== "video" && (
-                              <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded">
+                              <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs">
                                 {getLessonTypeLabel(lesson.type)}
                               </span>
                             )}
@@ -199,12 +193,36 @@ export function CourseSyllabus({
                           <span className="text-sm text-muted-foreground">
                             {formatDuration(lesson.duration)}
                           </span>
-                          {!isEnrolled && lesson.isFreePreview && (
-                            <Button size="sm" variant="ghost">
-                              Xem trước
+                          {!isEnrolled && lesson.isFreePreview && canNavigate && (
+                            <Button size="sm" variant="ghost" asChild>
+                              <Link href={lessonHref}>Xem trước</Link>
                             </Button>
                           )}
                         </div>
+                      </>
+                    );
+
+                    if (canNavigate) {
+                      return (
+                        <Link
+                          key={lesson.id}
+                          href={lessonHref}
+                          className="flex items-center justify-between border-t border-muted py-3 pl-12 pr-4 hover:bg-muted/50"
+                        >
+                          {lessonContent}
+                        </Link>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={lesson.id}
+                        className={cn(
+                          "flex items-center justify-between border-t border-muted py-3 pl-12 pr-4",
+                          canAccess && "cursor-pointer hover:bg-muted/50"
+                        )}
+                      >
+                        {lessonContent}
                       </div>
                     );
                   })}
