@@ -9,12 +9,14 @@ interface ScheduleEventTooltipProps {
   event: ScheduleEvent;
   editable?: boolean;
   onEdit?: (event: ScheduleEvent) => void;
+  onViewDetail?: (event: ScheduleEvent) => void;
 }
 
 export default function ScheduleEventTooltip({
   event,
   editable = false,
   onEdit,
+  onViewDetail,
 }: ScheduleEventTooltipProps) {
   return (
     <div
@@ -85,12 +87,22 @@ export default function ScheduleEventTooltip({
           </Button>
         )}
         {event.status === "upcoming" && !editable && (
-          <Button size="sm" variant="outline" className="flex-1 text-xs h-8">
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 text-xs h-8"
+            onClick={() => onViewDetail?.(event)}
+          >
             Chi tiết
           </Button>
         )}
         {event.status === "completed" && !editable && (
-          <Button size="sm" variant="outline" className="flex-1 text-xs h-8">
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 text-xs h-8"
+            onClick={() => onViewDetail?.(event)}
+          >
             <PlayCircle className="w-3 h-3 mr-1" />
             Xem lại
           </Button>

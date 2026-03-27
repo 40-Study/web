@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import WeekCalendarGrid from "@/components/schedule/week-calendar-grid";
 import ScheduleEventTooltip from "@/components/schedule/schedule-event-tooltip";
+import ScheduleEventDetailDialog from "@/components/schedule/schedule-event-detail-dialog";
 import type { ScheduleEvent } from "@/components/schedule/week-calendar-grid";
 
 const MOCK_STUDENT_EVENTS: ScheduleEvent[] = [
@@ -66,16 +68,28 @@ const MOCK_STUDENT_EVENTS: ScheduleEvent[] = [
 ];
 
 export default function StudentSchedulePage() {
+  const [selectedEvent, setSelectedEvent] = useState<ScheduleEvent | null>(null);
+
   return (
     <div className="p-6">
       <WeekCalendarGrid
         events={MOCK_STUDENT_EVENTS}
-        renderEventTooltip={(event) => <ScheduleEventTooltip event={event} />}
+        renderEventTooltip={(event) => (
+          <ScheduleEventTooltip event={event} onViewDetail={setSelectedEvent} />
+        )}
         stats={{
           studyHours: 32.5,
           tasksCompleted: 12,
           tasksTotal: 15,
           focusPercent: 88,
+        }}
+      />
+
+      <ScheduleEventDetailDialog
+        event={selectedEvent}
+        open={!!selectedEvent}
+        onOpenChange={(open) => {
+          if (!open) setSelectedEvent(null);
         }}
       />
     </div>
