@@ -44,23 +44,27 @@ export default function CoursesPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50/50">
       {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Khám phá khóa học</h1>
-        <p className="text-muted-foreground">
-          Tìm kiếm và học những khóa học phù hợp với bạn
-        </p>
+      <div className="bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white">
+        <div className="container mx-auto px-4 py-10 md:py-14">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">Khám phá khóa học</h1>
+          <p className="text-white/80 text-lg">
+            Tìm kiếm và học những khóa học phù hợp với bạn
+          </p>
+
+          {/* Search Bar */}
+          <div className="mt-6 max-w-2xl">
+            <CourseSearch
+              onSearch={handleSearch}
+              suggestions={suggestions}
+              placeholder="Tìm kiếm khóa học, giảng viên..."
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="mb-6 max-w-2xl">
-        <CourseSearch
-          onSearch={handleSearch}
-          suggestions={suggestions}
-          placeholder="Tìm kiếm khóa học, giảng viên..."
-        />
-      </div>
+      <div className="container mx-auto px-4 py-8">
 
       {/* Filters */}
       <CourseFiltersComponent
@@ -72,15 +76,15 @@ export default function CoursesPage() {
 
       {/* Results Count */}
       {!coursesLoading && (
-        <p className="mb-4 text-sm text-muted-foreground">
+        <p className="mb-4 text-sm text-gray-500">
           {filteredCourses.length} khóa học
           {searchQuery && ` cho "${searchQuery}"`}
         </p>
       )}
 
       {/* Free courses */}
-      <section className="mb-10">
-        <h2 className="mb-4 text-xl font-semibold">Khóa học miễn phí</h2>
+      <section className="mb-12">
+        <h2 className="mb-5 text-xl font-bold text-gray-900">Khóa học miễn phí</h2>
         <CourseGrid
           courses={freeCourses}
           loading={coursesLoading || categoriesLoading}
@@ -88,8 +92,8 @@ export default function CoursesPage() {
       </section>
 
       {/* Paid courses */}
-      <section>
-        <h2 className="mb-4 text-xl font-semibold">Khóa học trả phí</h2>
+      <section className="mb-12">
+        <h2 className="mb-5 text-xl font-bold text-gray-900">Khóa học trả phí</h2>
         <CourseGrid
           courses={paidCourses}
           loading={coursesLoading || categoriesLoading}
@@ -101,12 +105,13 @@ export default function CoursesPage() {
         <div className="mt-8 text-center">
           <button
             onClick={() => toast.info("Đang tải thêm...")}
-            className="px-6 py-2 border rounded-lg hover:bg-muted transition-colors"
+            className="px-8 py-3 border border-gray-200 rounded-2xl hover:bg-white hover:shadow-sm transition-all font-medium text-gray-700"
           >
             Xem thêm khóa học
           </button>
         </div>
       )}
+      </div>
     </div>
   );
 }

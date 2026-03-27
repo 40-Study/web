@@ -101,7 +101,7 @@ export function CourseSearch({
             ref={inputRef}
             type="text"
             placeholder={placeholder}
-            className="pl-10 pr-10 h-12 text-base"
+            className="pl-10 pr-10 h-12 text-base rounded-2xl border-gray-200 bg-white/90 backdrop-blur-sm shadow-sm"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => query.length >= 2 && setShowSuggestions(true)}
@@ -120,35 +120,33 @@ export function CourseSearch({
 
       {/* Autocomplete dropdown */}
       {showSuggestions && isLoading && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-card border rounded-lg shadow-lg z-50 p-4 flex items-center justify-center">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 p-4 flex items-center justify-center">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          <span className="ml-2 text-sm text-muted-foreground">Đang tìm kiếm...</span>
+          <span className="ml-2 text-sm text-gray-500">Đang tìm kiếm...</span>
         </div>
       )}
       {showSuggestions && !isLoading && filteredSuggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-card border rounded-lg shadow-lg z-50 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden">
           {filteredSuggestions.map((course) => (
             <button
               key={course.id}
               onClick={() => handleSelect(course)}
-              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted text-left transition-colors"
+              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 text-left transition-colors"
             >
               <img
                 src={course.thumbnail}
                 alt={course.title}
-                className="w-12 h-12 rounded object-cover flex-shrink-0"
+                className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
               />
               <div className="min-w-0">
-                <p className="font-medium line-clamp-1">{course.title}</p>
-                <p className="text-xs text-muted-foreground">
-                  {course.instructor}
-                </p>
+                <p className="font-medium text-gray-900 line-clamp-1">{course.title}</p>
+                <p className="text-xs text-gray-500">{course.instructor}</p>
               </div>
             </button>
           ))}
           <button
             onClick={handleSubmit}
-            className="w-full px-4 py-2 text-sm text-primary-600 hover:bg-muted text-left border-t"
+            className="w-full px-4 py-3 text-sm font-medium text-primary-600 hover:bg-primary-50 text-left border-t border-gray-100 transition-colors"
           >
             Xem tất cả kết quả cho &quot;{query}&quot;
           </button>
