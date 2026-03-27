@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Building2, FileText, LayoutDashboard, Settings, ShieldCheck } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { BarChart3, Building2, FileText, LayoutDashboard, LogOut, Settings, ShieldCheck } from "lucide-react";
 import { RoleGuard } from "@/components/guards";
 import { Avatar } from "@/components/ui/avatar";
+import { useLogout } from "@/hooks/queries/use-auth";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
 
@@ -24,6 +26,19 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const { user } = useAuthStore();
+  const logoutMutation = useLogout();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onClickOutside = (event: MouseEvent) => {
+      if (!profileMenuRef.current?.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
 
   return (
     <RoleGuard roles={["SYSTEM_ADMIN", "ORG_OWNER"]}>
@@ -65,10 +80,38 @@ export default function AdminLayout({
                 <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Quản lý vai trò, tổ chức và phân quyền</p>
               </div>
-              <Link href="/profile" className="flex items-center gap-2">
-                <Avatar src={user?.avatar} fallback={user?.name || "AD"} size="sm" />
-                <span className="hidden text-sm font-medium md:inline">{user?.name || "Administrator"}</span>
-              </Link>
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  onClick={() => setIsProfileOpen((v) => !v)}
+                  className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <Avatar src={user?.avatar} fallback={user?.name || "AD"} size="sm" />
+                  <span className="hidden text-sm font-medium md:inline">{user?.name || "Administrator"}</span>
+                </button>
+
+                {isProfileOpen && (
+                  <div className="absolute right-0 top-11 w-52 rounded-xl border bg-white py-2 shadow-lg dark:border-gray-800 dark:bg-gray-900">
+                    <Link
+                      href={user?.id ? `/profile/${user.id}` : "/home"}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                      onClick={() => setIsProfileOpen(false)}
+                    >
+                      Hồ sơ cá nhân
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setIsProfileOpen(false);
+                        logoutMutation.mutate();
+                      }}
+                      disabled={logoutMutation.isPending}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60 dark:hover:bg-red-950/40"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Đăng xuất
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
             <nav className="flex gap-2 overflow-x-auto border-t px-4 py-2 md:hidden dark:border-gray-800">
               {adminMenu.map((item) => {
