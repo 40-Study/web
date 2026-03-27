@@ -261,9 +261,18 @@ export function useCourseBySlug(slug: string) {
       try {
         const raw = await courseService.getCourseBySlug(slug);
         return mapApiCourseDetail(raw);
-      } catch (error: unknown) {
-        console.error("Failed to fetch course:", error);
-        return null;
+      } catch (slugError: unknown) {
+        try {
+          const byId = await courseService.getCourseById(slug);
+          return mapApiCourseDetail(byId);
+        } catch (idError: unknown) {
+          console.error("Failed to fetch course by slug or id:", {
+            slug,
+            slugError,
+            idError,
+          });
+          return null;
+        }
       }
     },
     enabled: !!slug,
