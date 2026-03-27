@@ -105,14 +105,14 @@ function AssignmentCard({ item }: { item: MyAssignment }) {
           </button>
         ) : isCompleted ? (
           <Link
-            href={`/courses/${item.courseSlug}/learn/${item.lessonId}`}
+            href={`/learn/${item.courseSlug}/${item.lessonId}`}
             className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Xem chi tiết
           </Link>
         ) : (
           <Link
-            href={`/courses/${item.courseSlug}/learn/${item.lessonId}`}
+            href={`/learn/${item.courseSlug}/${item.lessonId}`}
             className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
           >
             Làm bài ngay
