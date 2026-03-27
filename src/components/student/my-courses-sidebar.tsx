@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { AchievementSidebar } from "./achievement-sidebar";
 import { MentorChatWidget } from "./mentor-chat-widget";
@@ -12,6 +13,9 @@ interface MyCourseSidebarProps {
 }
 
 export function MyCourseSidebar({ otherCourses, achievements }: MyCourseSidebarProps) {
+  const pathname = usePathname();
+  const isOnMyCoursesPage = pathname === "/my-courses";
+
   return (
     <div className="w-72 flex-shrink-0 space-y-4">
       {/* Other learning courses */}
@@ -20,12 +24,14 @@ export function MyCourseSidebar({ otherCourses, achievements }: MyCourseSidebarP
           <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">
             Đang học khác
           </h3>
-          <Link
-            href="/my-courses"
-            className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors"
-          >
-            Xem tất cả
-          </Link>
+          {!isOnMyCoursesPage && (
+            <Link
+              href="/my-courses"
+              className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors"
+            >
+              Xem tất cả
+            </Link>
+          )}
         </div>
 
         <div className="space-y-4">

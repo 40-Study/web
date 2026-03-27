@@ -111,22 +111,22 @@ export const mockEnrolledCourses: EnrolledCourse[] = [
 export const mockOtherLearning: OtherLearningCourse[] = [
   {
     id: "8",
-    slug: "typescript-advanced-patterns",
-    title: "TypeScript Advanced Patterns",
+    slug: "html-css-zero-to-hero",
+    title: "HTML CSS từ Zero đến Hero",
     progress: 30,
     category: "FRONTEND",
   },
   {
     id: "9",
-    slug: "nodejs-microservices",
-    title: "Node.js Microservices",
+    slug: "nodejs-express-rest-api",
+    title: "Node.js Express REST API",
     progress: 15,
     category: "BACKEND",
   },
   {
     id: "10",
-    slug: "aws-cloud-practitioner",
-    title: "AWS Cloud Practitioner",
+    slug: "docker-kubernetes-devops",
+    title: "Docker & Kubernetes DevOps",
     progress: 50,
     category: "CLOUD",
   },
