@@ -1,15 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { useParams, notFound } from "next/navigation";
+import { useMemo, useState } from "react";
+import { useParams, useRouter, useSearchParams, notFound } from "next/navigation";
 import { Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { cn, formatCurrency } from "@/lib/utils";
 import { CourseHero } from "@/components/course/course-hero";
 import { CourseSyllabus } from "@/components/course/course-syllabus";
 import { CourseReviews } from "@/components/course/course-reviews";
 import { InstructorCard } from "@/components/course/instructor-card";
-import { useCourseBySlug } from "@/hooks/use-courses";
-import { getMockCourseDetail } from "@/lib/mock-data/courses";
+import { useCourseBySlug, useEnrolledCourses, useEnrollCourse } from "@/hooks/use-courses";
+import {
+  getMockCourseDetail,
+  mockEnrolledCourses as mockFallbackEnrolledCourses,
+  resolveCourseSlug,
+} from "@/lib/mock-data/courses";
 
 type TabType = "overview" | "syllabus" | "instructor" | "reviews";
 
@@ -24,12 +29,12 @@ function LoadingSkeleton() {
   return (
     <div className="animate-pulse">
       <div className="h-[400px] bg-muted" />
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        <div className="h-10 bg-muted rounded w-1/3" />
+      <div className="container mx-auto space-y-8 px-4 py-8">
+        <div className="h-10 w-1/3 rounded bg-muted" />
         <div className="space-y-4">
-          <div className="h-4 bg-muted rounded w-full" />
-          <div className="h-4 bg-muted rounded w-5/6" />
-          <div className="h-4 bg-muted rounded w-4/6" />
+          <div className="h-4 w-full rounded bg-muted" />
+          <div className="h-4 w-5/6 rounded bg-muted" />
+          <div className="h-4 w-4/6 rounded bg-muted" />
         </div>
       </div>
     </div>
@@ -38,16 +43,51 @@ function LoadingSkeleton() {
 
 export default function CourseDetailPage() {
   const params = useParams<{ slug: string }>();
-  const slug = params.slug;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawSlug = params.slug;
+  const slug = resolveCourseSlug(rawSlug);
   const [activeTab, setActiveTab] = useState<TabType>("overview");
+  const [justEnrolled, setJustEnrolled] = useState(false);
 
   const { data: apiCourse, isLoading } = useCourseBySlug(slug);
+  const { data: enrolledCourses = [] } = useEnrolledCourses();
+  const enrollMutation = useEnrollCourse();
+
   const fallbackCourse = getMockCourseDetail(slug);
   const resolvedCourse = apiCourse ?? fallbackCourse;
 
-  // For demo purposes - simulate enrollment status
-  const [isEnrolled] = useState(false);
-  const progress = 35;
+  const enrolledCourse = useMemo(() => {
+    const apiMatched = enrolledCourses.find((course) => {
+      const enrolledSlug = resolveCourseSlug(course.slug);
+      return enrolledSlug === slug || course.slug === rawSlug;
+    });
+
+    if (apiMatched) {
+      return apiMatched;
+    }
+
+    return mockFallbackEnrolledCourses.find((course) => {
+      const enrolledSlug = resolveCourseSlug(course.slug);
+      return enrolledSlug === slug || course.slug === rawSlug;
+    });
+  }, [enrolledCourses, rawSlug, slug]);
+
+  const isEnrolled = Boolean(enrolledCourse) || justEnrolled;
+  const progress = enrolledCourse?.progress ?? 0;
+  const showCheckout = searchParams.get("checkout") === "1";
+
+  const firstLessonId = useMemo(() => {
+    if (!resolvedCourse) return "l1";
+    return resolvedCourse.sections.flatMap((section) => section.lessons)[0]?.id ?? "l1";
+  }, [resolvedCourse]);
+
+  const previewLessonId = useMemo(() => {
+    if (!resolvedCourse) return firstLessonId;
+
+    const allLessons = resolvedCourse.sections.flatMap((section) => section.lessons);
+    return allLessons.find((lesson) => lesson.isFreePreview)?.id ?? firstLessonId;
+  }, [firstLessonId, resolvedCourse]);
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -57,29 +97,96 @@ export default function CourseDetailPage() {
     notFound();
   }
 
-  const handleEnroll = () => {
-    // TODO: Implement enrollment logic
-    console.log("Enrolling in course:", resolvedCourse.slug);
+  const courseSlug = resolveCourseSlug(resolvedCourse.slug);
+
+  const handleStartLearning = () => {
+    router.push(`/learn/${courseSlug}/${firstLessonId}`);
+  };
+
+  const handleEnroll = async () => {
+    if (isEnrolled) {
+      handleStartLearning();
+      return;
+    }
+
+    try {
+      await enrollMutation.mutateAsync(String(resolvedCourse.id));
+      setJustEnrolled(true);
+      toast.success("Bạn đã đăng ký khóa học. Sẵn sàng vào học!");
+    } catch {
+      // Toast error is already handled in mutation hook
+    }
   };
 
   const handlePreview = () => {
-    // TODO: Open video preview modal
-    console.log("Opening preview for:", resolvedCourse.slug);
+    if (!resolvedCourse.previewVideoUrl) {
+      toast.info("Khóa học này chưa có video demo");
+      return;
+    }
+
+    window.open(resolvedCourse.previewVideoUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleTrial = () => {
+    router.push(`/learn/${courseSlug}/${previewLessonId}`);
+  };
+
+  const handleBuyNow = () => {
+    router.push(`/courses/${courseSlug}?checkout=1`);
   };
 
   return (
     <div>
-      {/* Hero Section */}
       <CourseHero
         course={resolvedCourse}
         isEnrolled={isEnrolled}
         progress={progress}
         onEnroll={handleEnroll}
         onPreview={handlePreview}
+        onStartLearning={handleStartLearning}
+        onTrial={handleTrial}
+        onBuyNow={handleBuyNow}
       />
 
-      {/* Tab Navigation */}
-      <div className="sticky top-16 z-40 bg-background border-b">
+      {showCheckout && !isEnrolled && resolvedCourse.price > 0 && (
+        <div className="border-b bg-amber-50/70">
+          <div className="container mx-auto px-4 py-6">
+            <div className="rounded-xl border border-amber-200 bg-white p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                    Checkout
+                  </p>
+                  <h2 className="mt-1 text-lg font-semibold">Xác nhận thanh toán khóa học</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">{resolvedCourse.title}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">Tổng thanh toán</p>
+                  <p className="text-2xl font-bold text-amber-700">
+                    {formatCurrency(resolvedCourse.price)}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  onClick={() => toast.success("Đã chuyển sang bước thanh toán")}
+                  className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+                >
+                  Thanh toán ngay
+                </button>
+                <button
+                  onClick={() => router.push(`/courses/${courseSlug}`)}
+                  className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted"
+                >
+                  Quay lại chi tiết khóa học
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="sticky top-16 z-40 border-b bg-background">
         <div className="container mx-auto px-4">
           <nav className="flex gap-8 overflow-x-auto">
             {TABS.map((tab) => (
@@ -87,7 +194,7 @@ export default function CourseDetailPage() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap",
+                  "whitespace-nowrap border-b-2 py-4 text-sm font-medium transition-colors",
                   activeTab === tab.id
                     ? "border-primary-500 text-primary-600"
                     : "border-transparent text-muted-foreground hover:text-foreground"
@@ -100,39 +207,40 @@ export default function CourseDetailPage() {
         </div>
       </div>
 
-      {/* Tab Content */}
       <div className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Overview Tab */}
+        <div className="grid gap-8 lg:grid-cols-3">
+          <div className="space-y-8 lg:col-span-2">
             {activeTab === "overview" && (
               <>
-                {/* What You'll Learn */}
+                {!isEnrolled && resolvedCourse.price > 0 && (
+                  <section className="rounded-xl border bg-muted/30 p-6">
+                    <h2 className="text-xl font-semibold">Khóa học này dành cho ai?</h2>
+                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                      <li>• Người muốn học bài bản từ nền tảng đến triển khai dự án thực tế.</li>
+                      <li>• Người cần portfolio hoặc nâng cấp kỹ năng để đi làm nhanh hơn.</li>
+                      <li>• Người muốn có lộ trình rõ ràng, thực hành liên tục theo từng phần.</li>
+                    </ul>
+                  </section>
+                )}
+
                 <section>
-                  <h2 className="text-xl font-semibold mb-4">
-                    Bạn sẽ học được gì
-                  </h2>
-                  <div className="grid sm:grid-cols-2 gap-3 p-6 bg-muted/50 rounded-lg">
+                  <h2 className="mb-4 text-xl font-semibold">Bạn sẽ học được gì</h2>
+                  <div className="grid gap-3 rounded-lg bg-muted/50 p-6 sm:grid-cols-2">
                     {resolvedCourse.learningOutcomes.map((outcome, idx) => (
                       <div key={idx} className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-xp flex-shrink-0 mt-0.5" />
+                        <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-xp" />
                         <span className="text-sm">{outcome}</span>
                       </div>
                     ))}
                   </div>
                 </section>
 
-                {/* Requirements */}
                 {resolvedCourse.requirements && resolvedCourse.requirements.length > 0 && (
                   <section>
-                    <h2 className="text-xl font-semibold mb-4">Yêu cầu</h2>
+                    <h2 className="mb-4 text-xl font-semibold">Yêu cầu</h2>
                     <ul className="space-y-2">
                       {resolvedCourse.requirements.map((req, idx) => (
-                        <li
-                          key={idx}
-                          className="flex items-start gap-2 text-sm"
-                        >
+                        <li key={idx} className="flex items-start gap-2 text-sm">
                           <span className="text-muted-foreground">•</span>
                           {req}
                         </li>
@@ -141,36 +249,21 @@ export default function CourseDetailPage() {
                   </section>
                 )}
 
-                {/* Description */}
                 <section>
-                  <h2 className="text-xl font-semibold mb-4">Mô tả khóa học</h2>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {resolvedCourse.description}
-                  </p>
+                  <h2 className="mb-4 text-xl font-semibold">Mô tả khóa học</h2>
+                  <p className="leading-relaxed text-muted-foreground">{resolvedCourse.description}</p>
                 </section>
 
-                {/* Syllabus Preview */}
-                <CourseSyllabus
-                  sections={resolvedCourse.sections}
-                  isEnrolled={isEnrolled}
-                />
+                <CourseSyllabus sections={resolvedCourse.sections} isEnrolled={isEnrolled} />
               </>
             )}
 
-            {/* Syllabus Tab */}
             {activeTab === "syllabus" && (
-              <CourseSyllabus
-                sections={resolvedCourse.sections}
-                isEnrolled={isEnrolled}
-              />
+              <CourseSyllabus sections={resolvedCourse.sections} isEnrolled={isEnrolled} />
             )}
 
-            {/* Instructor Tab */}
-            {activeTab === "instructor" && (
-              <InstructorCard instructor={resolvedCourse.instructor} />
-            )}
+            {activeTab === "instructor" && <InstructorCard instructor={resolvedCourse.instructor} />}
 
-            {/* Reviews Tab */}
             {activeTab === "reviews" && (
               <CourseReviews
                 rating={resolvedCourse.rating}
@@ -183,11 +276,9 @@ export default function CourseDetailPage() {
             )}
           </div>
 
-          {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-32 space-y-6">
-              {/* Course Stats Card */}
-              <div className="border rounded-lg p-6 space-y-4">
+              <div className="space-y-4 rounded-lg border p-6">
                 <h3 className="font-semibold">Thông tin khóa học</h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
@@ -206,9 +297,7 @@ export default function CourseDetailPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Thời lượng</span>
-                    <span className="font-medium">
-                      {Math.floor(resolvedCourse.duration / 60)} giờ
-                    </span>
+                    <span className="font-medium">{Math.floor(resolvedCourse.duration / 60)} giờ</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Ngôn ngữ</span>
@@ -216,27 +305,22 @@ export default function CourseDetailPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Học viên</span>
-                    <span className="font-medium">
-                      {resolvedCourse.studentCount.toLocaleString()}
-                    </span>
+                    <span className="font-medium">{resolvedCourse.studentCount.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Instructor Mini Card */}
-              <div className="border rounded-lg p-6">
-                <h3 className="font-semibold mb-4">Giảng viên</h3>
+              <div className="rounded-lg border p-6">
+                <h3 className="mb-4 font-semibold">Giảng viên</h3>
                 <div className="flex items-center gap-3">
                   <img
                     src={resolvedCourse.instructor.avatar}
                     alt={resolvedCourse.instructor.name}
-                    className="w-12 h-12 rounded-full"
+                    className="h-12 w-12 rounded-full"
                   />
                   <div>
                     <p className="font-medium">{resolvedCourse.instructor.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {resolvedCourse.instructor.title}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{resolvedCourse.instructor.title}</p>
                   </div>
                 </div>
               </div>

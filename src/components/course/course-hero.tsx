@@ -11,6 +11,9 @@ interface CourseHeroProps {
   progress?: number;
   onEnroll?: () => void;
   onPreview?: () => void;
+  onStartLearning?: () => void;
+  onTrial?: () => void;
+  onBuyNow?: () => void;
   className?: string;
 }
 
@@ -28,6 +31,9 @@ export function CourseHero({
   progress = 0,
   onEnroll,
   onPreview,
+  onStartLearning,
+  onTrial,
+  onBuyNow,
   className,
 }: CourseHeroProps) {
   return (
@@ -122,13 +128,12 @@ export function CourseHero({
             {/* CTA */}
             {isEnrolled ? (
               <div className="space-y-3">
-                {/* Progress Bar */}
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
+                  <div className="mb-1 flex justify-between text-sm">
                     <span>Tiến độ học tập</span>
                     <span>{progress}%</span>
                   </div>
-                  <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                  <div className="h-2 overflow-hidden rounded-full bg-white/20">
                     <div
                       className="h-full bg-xp transition-all duration-300"
                       style={{ width: `${progress}%` }}
@@ -137,26 +142,50 @@ export function CourseHero({
                 </div>
                 <Button
                   size="lg"
-                  className="w-full md:w-auto bg-white text-primary-900 hover:bg-white/90"
+                  className="w-full bg-white text-primary-900 hover:bg-white/90 md:w-auto"
+                  onClick={onStartLearning}
                 >
-                  Tiếp tục học
+                  Vào học
+                </Button>
+              </div>
+            ) : course.price === 0 ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  size="lg"
+                  className="flex-1 bg-white text-primary-900 hover:bg-white/90 md:flex-none"
+                  onClick={onEnroll}
+                >
+                  Đăng ký miễn phí
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-white text-white hover:bg-white/10"
+                  aria-label="Lưu vào danh sách yêu thích"
+                >
+                  <Heart className="h-5 w-5" />
                 </Button>
               </div>
             ) : (
               <div className="flex flex-wrap items-center gap-3">
                 <Button
                   size="lg"
-                  className="flex-1 md:flex-none bg-white text-primary-900 hover:bg-white/90"
-                  onClick={onEnroll}
+                  className="bg-white text-primary-900 hover:bg-white/90"
+                  onClick={onTrial}
                 >
-                  {course.price === 0
-                    ? "Đăng ký miễn phí"
-                    : `Đăng ký - ${formatCurrency(course.price)}`}
+                  Học thử
+                </Button>
+                <Button
+                  size="lg"
+                  className="bg-yellow-400 text-gray-900 hover:bg-yellow-300"
+                  onClick={onBuyNow}
+                >
+                  Mua ngay - {formatCurrency(course.price)}
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
-                  className="text-white border-white hover:bg-white/10"
+                  className="border-white text-white hover:bg-white/10"
                   aria-label="Lưu vào danh sách yêu thích"
                 >
                   <Heart className="h-5 w-5" />

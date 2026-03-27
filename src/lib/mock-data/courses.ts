@@ -113,7 +113,7 @@ export const mockCourses: Course[] = [
     isPublished: true,
   },
   {
-    id: "3",
+    id: "7",
     title: "React Native - Lập trình ứng dụng di động đa nền tảng",
     slug: "react-native-mobile-app",
     description: "Học React Native để xây dựng ứng dụng iOS và Android từ một codebase duy nhất.",
@@ -285,8 +285,17 @@ const mockReviews: Review[] = [
   },
 ];
 
+const COURSE_SLUG_ALIASES: Record<string, string> = {
+  "docker-kubernetes-thuc-chien": "docker-kubernetes-devops",
+};
+
+export function resolveCourseSlug(slug: string): string {
+  return COURSE_SLUG_ALIASES[slug] ?? slug;
+}
+
 export const getMockCourseDetail = (slug: string): CourseDetail | null => {
-  const course = mockCourses.find((c) => c.slug === slug);
+  const resolvedSlug = resolveCourseSlug(slug);
+  const course = mockCourses.find((c) => c.slug === resolvedSlug);
   if (!course) return null;
 
   return {

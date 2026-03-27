@@ -32,6 +32,9 @@ export default function CoursesPage() {
       )
     : mockCourses;
 
+  const freeCourses = filteredCourses.filter((course) => course.price === 0);
+  const paidCourses = filteredCourses.filter((course) => course.price > 0);
+
   const handleFilterChange = (newFilters: CourseFilters) => {
     setFilters(newFilters);
   };
@@ -69,17 +72,29 @@ export default function CoursesPage() {
 
       {/* Results Count */}
       {!coursesLoading && (
-        <p className="text-sm text-muted-foreground mb-4">
+        <p className="mb-4 text-sm text-muted-foreground">
           {filteredCourses.length} khóa học
           {searchQuery && ` cho "${searchQuery}"`}
         </p>
       )}
 
-      {/* Course Grid */}
-      <CourseGrid
-        courses={filteredCourses}
-        loading={coursesLoading || categoriesLoading}
-      />
+      {/* Free courses */}
+      <section className="mb-10">
+        <h2 className="mb-4 text-xl font-semibold">Khóa học miễn phí</h2>
+        <CourseGrid
+          courses={freeCourses}
+          loading={coursesLoading || categoriesLoading}
+        />
+      </section>
+
+      {/* Paid courses */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold">Khóa học trả phí</h2>
+        <CourseGrid
+          courses={paidCourses}
+          loading={coursesLoading || categoriesLoading}
+        />
+      </section>
 
       {/* Load More */}
       {filteredCourses.length > 0 && filteredCourses.length >= 12 && (
