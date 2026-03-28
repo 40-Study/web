@@ -88,7 +88,7 @@ export default function LeaderboardPage() {
         <div className="relative flex-1">
           <button
             onClick={() => setIsLeagueDropdownOpen(!isLeagueDropdownOpen)}
-            className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+            className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl hover:border-gray-200 dark:hover:border-gray-600 transition-colors"
           >
             <div className="flex items-center gap-3">
               <span className="text-3xl">{currentLeague.icon}</span>
@@ -113,7 +113,7 @@ export default function LeaderboardPage() {
 
           {/* Dropdown menu */}
           {isLeagueDropdownOpen && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-10 overflow-hidden">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl z-10 overflow-hidden">
               {LEAGUES.map((league) => (
                 <button
                   key={league.id}

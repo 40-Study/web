@@ -18,7 +18,7 @@ const learningLinks = [
 
 export function Footer() {
   return (
-    <footer className="bg-white border-t">
+    <footer className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
       <div className="container mx-auto px-8 py-12">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
@@ -83,11 +83,11 @@ export function Footer() {
               <input
                 type="email"
                 placeholder="Email của bạn"
-                className="flex-1 h-10 px-4 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="flex-1 h-10 px-4 rounded-xl border border-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               <button
                 type="submit"
-                className="h-10 px-4 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors"
+                className="h-10 px-4 bg-primary-500 text-white text-sm font-medium rounded-xl hover:bg-primary-600 transition-colors"
               >
                 Gửi
               </button>

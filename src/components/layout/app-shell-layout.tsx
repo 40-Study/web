@@ -10,7 +10,7 @@ interface AppShellLayoutProps {
 
 export function AppShellLayout({ children }: AppShellLayoutProps) {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gray-50/50">
       <Header />
       <div className="flex flex-1 pt-16">
         <Sidebar />

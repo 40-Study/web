@@ -85,7 +85,7 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-50 flex items-center justify-between px-4 lg:px-8">
+      <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-100 dark:border-gray-800 z-50 flex items-center justify-between px-4 lg:px-8">
         <div className="flex items-center gap-6 lg:gap-12">
           <Link href={homeHref} className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">

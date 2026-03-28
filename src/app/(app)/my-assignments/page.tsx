@@ -58,7 +58,7 @@ function AssignmentCard({ item }: { item: MyAssignment }) {
   const isCompleted = item.status === "completed";
 
   return (
-    <div className={cn("bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-4", STATUS_BORDER[item.status])}>
+    <div className={cn("bg-white rounded-2xl border border-gray-100 p-5 flex flex-col gap-4 shadow-sm", STATUS_BORDER[item.status])}>
       {/* Top section */}
       <div className="flex gap-3 items-start">
         <div className={cn("w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0", typeConf.bg)}>
@@ -154,7 +154,7 @@ export default function MyAssignmentsPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex items-center gap-3 flex-wrap">
+      <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-6 flex items-center gap-3 flex-wrap shadow-sm">
         {/* Tabs */}
         <div className="flex gap-1 flex-1">
           {TABS.map((tab) => (
@@ -185,7 +185,7 @@ export default function MyAssignmentsPage() {
           <select
             value={courseFilter}
             onChange={(e) => setCourseFilter(e.target.value)}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="text-sm border border-gray-100 rounded-xl px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">Khóa học</option>
             {uniqueCourses.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -194,13 +194,13 @@ export default function MyAssignmentsPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="text-sm border border-gray-100 rounded-xl px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">Loại bài tập</option>
             {uniqueTypes.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
 
-          <div className="flex border border-gray-200 rounded-lg overflow-hidden">
+          <div className="flex border border-gray-100 rounded-xl overflow-hidden">
             <button
               onClick={() => setViewMode("grid")}
               className={cn("p-1.5 transition-colors", viewMode === "grid" ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100")}
@@ -232,11 +232,11 @@ export default function MyAssignmentsPage() {
       <div className="flex items-center justify-between text-sm text-gray-500">
         <span>Hiển thị {filtered.length} trong số {mockMyAssignments.length} bài tập</span>
         <div className="flex items-center gap-1">
-          <button className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40" disabled>
+          <button className="p-1.5 rounded-xl border border-gray-100 hover:bg-gray-50 disabled:opacity-40" disabled>
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <button className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-medium">1</button>
-          <button className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40" disabled>
+          <button className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-sm font-medium">1</button>
+          <button className="p-1.5 rounded-xl border border-gray-100 hover:bg-gray-50 disabled:opacity-40" disabled>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>

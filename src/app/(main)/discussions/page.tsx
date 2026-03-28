@@ -95,13 +95,13 @@ export default function DiscussionsPage() {
         <p className="text-muted-foreground">Không gian trao đổi kiến thức, kinh nghiệm học và góp ý dự án.</p>
       </div>
 
-      <section className="rounded-xl border bg-white p-4 md:p-5 space-y-3">
+      <section className="rounded-2xl border border-gray-100 bg-white p-4 md:p-5 space-y-3 shadow-sm">
         <h2 className="text-base font-semibold">Tạo bài viết mới</h2>
         <input
           value={newPost.title}
           onChange={(e) => setNewPost((prev) => ({ ...prev, title: e.target.value }))}
           placeholder="Tiêu đề bài viết"
-          className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500"
+          className="w-full rounded-xl border border-gray-100 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500"
         />
         <div className="flex flex-col md:flex-row gap-3">
           <select
@@ -109,7 +109,7 @@ export default function DiscussionsPage() {
             onChange={(e) =>
               setNewPost((prev) => ({ ...prev, category: e.target.value as DiscussionPost["category"] }))
             }
-            className="rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500 md:w-56"
+            className="rounded-xl border border-gray-100 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500 md:w-56"
           >
             <option value="Lập trình">Lập trình</option>
             <option value="Thiết kế">Thiết kế</option>
@@ -118,7 +118,7 @@ export default function DiscussionsPage() {
           </select>
           <button
             onClick={handleCreatePost}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
           >
             <Send className="h-4 w-4" />
             Đăng bài
@@ -129,7 +129,7 @@ export default function DiscussionsPage() {
           onChange={(e) => setNewPost((prev) => ({ ...prev, content: e.target.value }))}
           placeholder="Nội dung chia sẻ của bạn..."
           rows={4}
-          className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500"
+          className="w-full rounded-xl border border-gray-100 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500"
         />
       </section>
 
@@ -137,7 +137,7 @@ export default function DiscussionsPage() {
 
       <div className="grid gap-4">
         {posts.map((post) => (
-          <article key={post.slug} className="rounded-xl border bg-white p-5">
+          <article key={post.slug} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
             <div className="mb-3 flex items-center justify-between gap-4">
               <span className="inline-flex rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700">
                 {post.category}

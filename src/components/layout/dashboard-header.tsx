@@ -13,7 +13,7 @@ export function DashboardHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-white dark:bg-gray-900">
+    <header className="sticky top-0 z-40 w-full border-b border-gray-100 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg">
       <div className="flex h-14 md:h-16 items-center justify-between px-4 md:px-6 max-w-7xl mx-auto">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
@@ -30,7 +30,7 @@ export function DashboardHeader() {
             <input
               type="text"
               placeholder="Search courses, lessons..."
-              className="w-full h-10 pl-10 pr-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full h-10 pl-10 pr-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -80,7 +80,7 @@ export function DashboardHeader() {
           <input
             type="text"
             placeholder="Search courses, lessons..."
-            className="w-full h-10 pl-10 pr-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full h-10 pl-10 pr-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
       </div>

@@ -39,7 +39,7 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="fixed left-0 top-16 bottom-0 w-20 bg-white border-r border-slate-200 z-40 hidden lg:flex flex-col items-center py-8">
+    <aside className="fixed left-0 top-16 bottom-0 w-20 bg-white dark:bg-gray-900 shadow-sm z-40 hidden lg:flex flex-col items-center py-8">
       <nav className="flex flex-col items-center gap-6 w-full">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -51,10 +51,10 @@ export function Sidebar() {
               onClick={item.onClick}
               className={cn(
                 "flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors text-center w-full",
-                "hover:bg-gray-100"
+                "hover:bg-gray-50"
               )}
             >
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-gray-100">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gray-100">
                 <Icon className="w-5 h-5 text-gray-600" />
               </div>
               <span className="text-[10px] font-medium leading-tight text-gray-600">
@@ -67,13 +67,13 @@ export function Sidebar() {
               href={item.href}
               className={cn(
                 "flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors text-center",
-                "hover:bg-gray-100",
+                "hover:bg-gray-50",
                 isActive && "bg-primary-50 text-primary-600"
               )}
             >
               <div
                 className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center",
+                  "w-10 h-10 rounded-xl flex items-center justify-center",
                   isActive ? "bg-primary-100" : "bg-gray-100"
                 )}
               >

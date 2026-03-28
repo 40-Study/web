@@ -85,7 +85,7 @@ export function DialogContent({
         role="dialog"
         aria-modal="true"
         className={cn(
-          "relative z-50 w-full max-w-lg mx-4 bg-white dark:bg-gray-900 rounded-xl shadow-xl",
+          "relative z-50 w-full max-w-lg mx-4 bg-white dark:bg-gray-900 rounded-2xl shadow-xl",
           "animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4",
           "duration-200",
           className
