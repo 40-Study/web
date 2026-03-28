@@ -6,17 +6,13 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { RoleCard } from "@/components/auth/role-card";
 import type { RoleType } from "@/components/auth/role-card";
 import { Button } from "@/components/ui/button";
-import { AUTH_ROUTES, normalizeRole } from "@/lib/routes";
+import { AUTH_ROUTES, getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { useAuthStore } from "@/stores";
 import { useSelectProfile } from "@/hooks/queries/use-auth";
 import type { SystemRole } from "@/services/auth.service";
 
-const roleRoutes: Record<RoleType, string> = {
-  student: AUTH_ROUTES.LOGIN_ORGANIZATION,
-  parent: AUTH_ROUTES.LOGIN_CHILDREN,
-  teacher: AUTH_ROUTES.LOGIN_ORGANIZATION,
-  admin: AUTH_ROUTES.LOGIN_ORGANIZATION,
-};
+// Roles that require children selection instead of org selection
+const CHILDREN_ROLES: RoleType[] = ["parent"];
 
 export default function LoginRolePage() {
   const router = useRouter();
@@ -28,14 +24,29 @@ export default function LoginRolePage() {
 
   const handleContinue = async () => {
     if (!selectedRole) return;
-    
+
     try {
-      await selectProfile.mutateAsync(selectedRole.id);
-      setActiveRole(normalizeRole(selectedRole.name));
-      
+      const response = await selectProfile.mutateAsync(selectedRole.id);
+      const normalizedRole = normalizeRole(selectedRole.name);
+      setActiveRole(normalizedRole);
+
       const roleType = selectedRole.name.toLowerCase() as RoleType;
-      const route = roleRoutes[roleType] || AUTH_ROUTES.LOGIN_ORGANIZATION;
-      router.push(route);
+
+      // Parent role → children selection
+      if (CHILDREN_ROLES.includes(roleType)) {
+        router.push(AUTH_ROUTES.LOGIN_CHILDREN);
+        return;
+      }
+
+      // If organizations returned → org selection (needed to get access_token)
+      const orgs = response?.data?.organizations || [];
+      if (orgs.length > 0) {
+        router.push(AUTH_ROUTES.LOGIN_ORGANIZATION);
+        return;
+      }
+
+      // No org needed → redirect directly to role home
+      router.push(getRoleHomeRoute(normalizedRole));
     } catch (error) {
       console.error("Failed to select profile:", error);
     }
