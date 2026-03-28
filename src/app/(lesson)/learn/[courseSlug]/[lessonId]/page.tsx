@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { ChevronRight, Star } from "lucide-react";
 import Link from "next/link";
@@ -12,7 +12,6 @@ import {
   FloatingButtons,
   CodeEditorModal,
 } from "@/components/player";
-import type { PlayerTabsHandle } from "@/components/player";
 import { QuizPlayer, QuizResult, CodeExercise } from "@/components/exercise";
 import {
   mockPlayerCourse,
@@ -24,14 +23,13 @@ import { getExerciseByLessonId } from "@/lib/mock-data/exercise-data";
 
 /** Video lesson content — video player + title/rating + tabs */
 function VideoLessonContent({
-  videoSrc, currentLesson, course, next, courseSlug, tabsRef,
+  videoSrc, currentLesson, course, next, courseSlug,
 }: {
   videoSrc: string;
   currentLesson: ReturnType<typeof getLessonById>;
   course: typeof mockPlayerCourse;
   next: ReturnType<typeof getAdjacentLessons>["next"];
   courseSlug: string;
-  tabsRef: React.RefObject<PlayerTabsHandle>;
 }) {
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-5 gap-4">
@@ -66,7 +64,7 @@ function VideoLessonContent({
           )}
         </div>
         <div className="mt-4 border-t border-gray-100 pt-1">
-          <PlayerTabs ref={tabsRef} course={course} courseSlug={courseSlug} />
+          <PlayerTabs course={course} courseSlug={courseSlug} />
         </div>
       </div>
     </div>
@@ -78,7 +76,6 @@ export default function CourseLessonPage() {
   const { courseSlug, lessonId } = params;
 
   const [isCodeEditorOpen, setCodeEditorOpen] = useState(false);
-  const tabsRef = useRef<PlayerTabsHandle>(null);
 
   // Quiz state
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string> | null>(null);
@@ -147,7 +144,6 @@ export default function CourseLessonPage() {
         course={course}
         next={next}
         courseSlug={courseSlug}
-        tabsRef={tabsRef}
       />
     );
   };
@@ -156,8 +152,8 @@ export default function CourseLessonPage() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <PlayerHeader
         courseTitle={course.title}
+        courseSlug={courseSlug}
         exerciseCount={exerciseCount}
-        onExercisesClick={() => tabsRef.current?.switchToExercises()}
       />
 
       <div className="flex-1 flex overflow-hidden">

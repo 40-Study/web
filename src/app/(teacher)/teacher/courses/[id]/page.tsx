@@ -213,29 +213,37 @@ export default function CourseDetailPage() {
                   chapter.lessons.map((lesson) => {
                     const icon = LESSON_ICONS[lesson.type];
                     return (
-                      <button
-                        key={lesson.id}
-                        type="button"
-                        onClick={() => router.push(`/teacher/courses/${courseId}/lessons/${lesson.id}`)}
-                        className="flex w-full items-center gap-3 rounded-lg bg-gray-50 p-3 text-left transition-colors hover:bg-gray-100"
-                      >
-                        <GripVertical className="h-4 w-4 cursor-move text-muted-foreground" />
-                        <div className={cn("flex h-8 w-8 items-center justify-center rounded-full", icon.bg, icon.color)}>
-                          {icon.icon}
+                      <div key={lesson.id} className="space-y-2">
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/teacher/courses/${courseId}/lessons/${lesson.id}`)}
+                          className="flex w-full items-center gap-3 rounded-lg bg-gray-50 p-3 text-left transition-colors hover:bg-gray-100"
+                        >
+                          <GripVertical className="h-4 w-4 cursor-move text-muted-foreground" />
+                          <div className={cn("flex h-8 w-8 items-center justify-center rounded-full", icon.bg, icon.color)}>
+                            {icon.icon}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{lesson.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {LESSON_LABELS[lesson.type]}
+                              {lesson.duration && ` • ${lesson.duration}`}
+                              {lesson.questionCount && ` • ${lesson.questionCount} câu hỏi`}
+                              {lesson.fileSize && ` • ${lesson.fileSize}`}
+                            </p>
+                          </div>
+                          <Badge variant={lesson.status === "published" ? "success" : "secondary"}>
+                            {lesson.status === "published" ? "Published" : "Draft"}
+                          </Badge>
+                        </button>
+                        <div className="flex justify-end">
+                          <Button variant="outline" size="sm" asChild>
+                            <Link href={`/teacher/assignments?courseId=${courseId}&lessonId=${lesson.id}`}>
+                              Giao bài tập
+                            </Link>
+                          </Button>
                         </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{lesson.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {LESSON_LABELS[lesson.type]}
-                            {lesson.duration && ` • ${lesson.duration}`}
-                            {lesson.questionCount && ` • ${lesson.questionCount} câu hỏi`}
-                            {lesson.fileSize && ` • ${lesson.fileSize}`}
-                          </p>
-                        </div>
-                        <Badge variant={lesson.status === "published" ? "success" : "secondary"}>
-                          {lesson.status === "published" ? "Published" : "Draft"}
-                        </Badge>
-                      </button>
+                      </div>
                     );
                   })
                 )}

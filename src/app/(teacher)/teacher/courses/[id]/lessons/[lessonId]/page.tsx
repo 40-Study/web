@@ -77,16 +77,23 @@ export default function TeacherLessonDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href={`/teacher/courses/${courseId}`}>
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-xl font-semibold">{lesson.title}</h1>
-          <p className="text-sm text-muted-foreground">{chapter.title}</p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Link href={`/teacher/courses/${courseId}`}>
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-xl font-semibold">{lesson.title}</h1>
+            <p className="text-sm text-muted-foreground">{chapter.title}</p>
+          </div>
         </div>
+        <Button asChild>
+          <Link href={`/teacher/assignments?courseId=${courseId}&lessonId=${lesson.id}`}>
+            Giao bài tập
+          </Link>
+        </Button>
       </div>
 
       <Card>

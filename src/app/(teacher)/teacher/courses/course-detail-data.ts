@@ -1,5 +1,7 @@
 export type TeacherCourseStatus = "published" | "draft";
 export type LessonType = "video" | "quiz" | "sandbox" | "document";
+export type TeacherAssignmentType = "quiz" | "code" | "document" | "project";
+export type TeacherAssignmentStatus = "draft" | "published" | "closed";
 
 export interface TeacherCourseLesson {
   id: string;
@@ -28,6 +30,12 @@ export interface TeacherCourseDetail {
   chapters: TeacherCourseChapter[];
 }
 
+export interface TeacherCourseSummary {
+  id: string;
+  title: string;
+  status: TeacherCourseStatus;
+}
+
 export interface TeacherLessonComment {
   id: string;
   studentName: string;
@@ -36,8 +44,23 @@ export interface TeacherLessonComment {
   likes: number;
 }
 
+export interface TeacherLessonAssignment {
+  id: string;
+  courseId: string;
+  lessonId: string;
+  title: string;
+  type: TeacherAssignmentType;
+  instructions: string;
+  status: TeacherAssignmentStatus;
+  dueAt: string;
+  maxScore?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const COURSE_STORAGE_PREFIX = "teacher-course-detail-v1";
 const LESSON_COMMENT_STORAGE_PREFIX = "teacher-lesson-comments-v1";
+const LESSON_ASSIGNMENT_STORAGE_PREFIX = "teacher-lesson-assignments-v1";
 
 export const TEACHER_COURSE_DETAIL_MAP: Record<string, TeacherCourseDetail> = {
   "1": {
@@ -107,6 +130,71 @@ export const TEACHER_COURSE_DETAIL_MAP: Record<string, TeacherCourseDetail> = {
       },
     ],
   },
+  "2": {
+    id: "2",
+    title: "Mastering Python for Data Science 2026",
+    status: "published",
+    chapters: [
+      {
+        id: "c1",
+        title: "Chương 1: Python Core for DS",
+        description: "Ôn tập Python theo hướng xử lý dữ liệu.",
+        learningGoal: "Sử dụng thành thạo list/dict/comprehension và thao tác file.",
+        lessons: [
+          {
+            id: "l1",
+            title: "Python refresher",
+            type: "video",
+            summary: "Ôn tập syntax quan trọng.",
+            content: "Variables, control-flow, function patterns dùng thường xuyên trong data science.",
+            status: "published",
+            duration: "16:05",
+          },
+          {
+            id: "l2",
+            title: "Numpy coding drills",
+            type: "sandbox",
+            summary: "Luyện vectorized operations.",
+            content: "Bộ bài tập coding ngắn để luyện xử lý mảng và performance.",
+            status: "published",
+          },
+        ],
+      },
+    ],
+  },
+  "3": {
+    id: "3",
+    title: "JavaScript Pro: From Zero to Senior Engineer",
+    status: "draft",
+    chapters: [
+      {
+        id: "c1",
+        title: "Chương 1: JavaScript Foundations",
+        description: "Củng cố nền tảng JS hiện đại.",
+        learningGoal: "Hiểu rõ scope, closure, async model.",
+        lessons: [
+          {
+            id: "l1",
+            title: "Scope và Closure",
+            type: "video",
+            summary: "Deep-dive về lexical scope.",
+            content: "Phân tích closure với ví dụ thực tế trong React/Node.",
+            status: "draft",
+            duration: "14:40",
+          },
+          {
+            id: "l2",
+            title: "Bài tập quiz async",
+            type: "quiz",
+            summary: "Kiểm tra Promise và async/await.",
+            content: "Quiz 12 câu về event loop và async patterns.",
+            status: "draft",
+            questionCount: 12,
+          },
+        ],
+      },
+    ],
+  },
 };
 
 const TEACHER_LESSON_COMMENT_MAP: Record<string, TeacherLessonComment[]> = {
@@ -128,6 +216,39 @@ const TEACHER_LESSON_COMMENT_MAP: Record<string, TeacherLessonComment[]> = {
   ],
 };
 
+const TEACHER_LESSON_ASSIGNMENT_MAP: Record<string, TeacherLessonAssignment[]> = {
+  "1:l2": [
+    {
+      id: "asg-1",
+      courseId: "1",
+      lessonId: "l2",
+      title: "Code: Build Profile Card Component",
+      type: "code",
+      instructions: "Tạo component ProfileCard nhận props name, role, avatar. Có validate dữ liệu đầu vào.",
+      status: "published",
+      dueAt: "2026-04-02T23:59",
+      maxScore: 100,
+      createdAt: "2026-03-26T09:00",
+      updatedAt: "2026-03-26T09:00",
+    },
+  ],
+  "1:l4": [
+    {
+      id: "asg-2",
+      courseId: "1",
+      lessonId: "l4",
+      title: "Quiz: JSX Fundamentals",
+      type: "quiz",
+      instructions: "12 câu hỏi trắc nghiệm về JSX expressions, list rendering và keys.",
+      status: "draft",
+      dueAt: "2026-04-03T21:00",
+      maxScore: 10,
+      createdAt: "2026-03-26T11:00",
+      updatedAt: "2026-03-26T11:00",
+    },
+  ],
+};
+
 export function getTeacherCourseDetail(courseId: string): TeacherCourseDetail {
   return (
     TEACHER_COURSE_DETAIL_MAP[courseId] ?? {
@@ -139,12 +260,24 @@ export function getTeacherCourseDetail(courseId: string): TeacherCourseDetail {
   );
 }
 
+export function getTeacherAssignmentCourseSummaries(): TeacherCourseSummary[] {
+  return Object.values(TEACHER_COURSE_DETAIL_MAP).map((course) => ({
+    id: course.id,
+    title: course.title,
+    status: course.status,
+  }));
+}
+
 export function getTeacherCourseStorageKey(courseId: string) {
   return `${COURSE_STORAGE_PREFIX}:${courseId}`;
 }
 
 export function getTeacherLessonCommentsStorageKey(courseId: string, lessonId: string) {
   return `${LESSON_COMMENT_STORAGE_PREFIX}:${courseId}:${lessonId}`;
+}
+
+export function getTeacherLessonAssignmentsStorageKey(courseId: string, lessonId: string) {
+  return `${LESSON_ASSIGNMENT_STORAGE_PREFIX}:${courseId}:${lessonId}`;
 }
 
 function isTeacherCourseLesson(value: unknown): value is TeacherCourseLesson {
@@ -187,6 +320,27 @@ function isTeacherLessonComment(value: unknown): value is TeacherLessonComment {
     typeof comment.content === "string" &&
     typeof comment.createdAt === "string" &&
     typeof comment.likes === "number"
+  );
+}
+
+function isTeacherLessonAssignment(value: unknown): value is TeacherLessonAssignment {
+  if (!value || typeof value !== "object") return false;
+  const assignment = value as TeacherLessonAssignment;
+  const validType = assignment.type === "quiz" || assignment.type === "code" || assignment.type === "document" || assignment.type === "project";
+  const validStatus = assignment.status === "draft" || assignment.status === "published" || assignment.status === "closed";
+
+  return (
+    typeof assignment.id === "string" &&
+    typeof assignment.courseId === "string" &&
+    typeof assignment.lessonId === "string" &&
+    typeof assignment.title === "string" &&
+    validType &&
+    typeof assignment.instructions === "string" &&
+    validStatus &&
+    typeof assignment.dueAt === "string" &&
+    (assignment.maxScore === undefined || typeof assignment.maxScore === "number") &&
+    typeof assignment.createdAt === "string" &&
+    typeof assignment.updatedAt === "string"
   );
 }
 
@@ -233,6 +387,30 @@ export function saveTeacherLessonComments(courseId: string, lessonId: string, co
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(getTeacherLessonCommentsStorageKey(courseId, lessonId), JSON.stringify(comments));
+  } catch {
+    return;
+  }
+}
+
+export function loadTeacherLessonAssignments(courseId: string, lessonId: string): TeacherLessonAssignment[] {
+  const fallback = TEACHER_LESSON_ASSIGNMENT_MAP[`${courseId}:${lessonId}`] ?? [];
+  if (typeof window === "undefined") return fallback;
+
+  try {
+    const raw = localStorage.getItem(getTeacherLessonAssignmentsStorageKey(courseId, lessonId));
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || !parsed.every(isTeacherLessonAssignment)) return fallback;
+    return parsed;
+  } catch {
+    return fallback;
+  }
+}
+
+export function saveTeacherLessonAssignments(courseId: string, lessonId: string, assignments: TeacherLessonAssignment[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(getTeacherLessonAssignmentsStorageKey(courseId, lessonId), JSON.stringify(assignments));
   } catch {
     return;
   }

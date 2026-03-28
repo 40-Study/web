@@ -6,12 +6,12 @@ import { Avatar } from "@/components/ui/avatar";
 
 interface PlayerHeaderProps {
   courseTitle?: string;
-  onExercisesClick?: () => void;
+  courseSlug: string;
   exerciseCount?: number;
 }
 
 /** Light minimal header for course player */
-export function PlayerHeader({ courseTitle, onExercisesClick, exerciseCount = 0 }: PlayerHeaderProps) {
+export function PlayerHeader({ courseTitle, courseSlug, exerciseCount = 0 }: PlayerHeaderProps) {
   return (
     <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-20">
       {/* Left: Back arrow */}
@@ -33,8 +33,8 @@ export function PlayerHeader({ courseTitle, onExercisesClick, exerciseCount = 0 
           Khóa học của tôi
         </Link>
 
-        <button
-          onClick={onExercisesClick}
+        <Link
+          href={`/courses/${courseSlug}/exercises`}
           className="relative text-sm text-gray-700 hover:text-gray-900 transition-colors"
         >
           Bài tập
@@ -43,7 +43,7 @@ export function PlayerHeader({ courseTitle, onExercisesClick, exerciseCount = 0 
               {exerciseCount}
             </span>
           )}
-        </button>
+        </Link>
 
         <button className="p-0.5 rounded-full hover:ring-2 hover:ring-gray-200 transition-all">
           <Avatar fallback="TK" size="sm" />
