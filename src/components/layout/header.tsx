@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ForteXLogoIcon } from "@/components/landing/fortex-logo-icon";
 import { useState, useRef, useEffect } from "react";
 import { Bell, FileText, Settings, LogOut, Menu, X, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -89,9 +90,7 @@ export function Header() {
       <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-100 dark:border-gray-800 z-50 flex items-center justify-between px-4 lg:px-8">
         <div className="flex items-center gap-6 lg:gap-12">
           <Link href={homeHref} className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-              40
-            </div>
+            <ForteXLogoIcon size={32} className="text-primary-600" />
             <span className="text-xl font-bold text-slate-900 tracking-tight">ForteX</span>
           </Link>
 

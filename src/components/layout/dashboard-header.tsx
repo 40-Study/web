@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ForteXLogoIcon } from "@/components/landing/fortex-logo-icon";
 import { Bell, Search, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
@@ -17,9 +18,7 @@ export function DashboardHeader() {
       <div className="flex h-14 md:h-16 items-center justify-between px-4 md:px-6 max-w-7xl mx-auto">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-500">
-            <span className="text-sm font-bold text-white">FX</span>
-          </div>
+          <ForteXLogoIcon size={32} className="text-primary-500" />
           <span className="text-lg font-bold hidden sm:inline">ForteX</span>
         </Link>
 

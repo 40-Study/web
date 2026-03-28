@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import Image from "next/image";
+import { ForteXLogoIcon } from "@/components/landing/fortex-logo-icon";
 import {
   MessageSquare,
   Code,
@@ -29,6 +31,8 @@ import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { AnimatedCounterOnScroll } from "@/components/landing/animated-counter-on-scroll";
 import { AnimatedProgressBarOnScroll } from "@/components/landing/animated-progress-bar-on-scroll";
 import { AnimatedBarChartOnScroll } from "@/components/landing/animated-bar-chart-on-scroll";
+import { ParticleWaveBackground } from "@/components/landing/particle-wave-background";
+import { FloatingDecorativeShapes } from "@/components/landing/floating-decorative-shapes";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -50,8 +54,20 @@ export default function LandingPage() {
     <div className="w-full overflow-x-hidden">
       {/* 3. Hero Section */}
           <section className="relative px-6 py-16 md:py-24 lg:py-32 max-w-7xl mx-auto flex flex-col items-center text-center overflow-hidden">
-            {/* Background glows */}
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 scale-150 bg-primary-400/20 blur-3xl rounded-full pointer-events-none -z-10" />
+            {/* Particle wave background — follows mouse */}
+            <ParticleWaveBackground
+              particleCount={120}
+              color="99, 102, 241"
+              maxSize={4}
+              mouseRadius={150}
+              className="rounded-3xl"
+            />
+
+            {/* Floating decorative shapes — idle animation */}
+            <FloatingDecorativeShapes />
+
+            {/* Background glows — idle pulse */}
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 scale-150 bg-primary-400/20 blur-3xl rounded-full pointer-events-none -z-10 animate-[pulse_6s_ease-in-out_infinite]" />
             
             <ScrollReveal direction="fade">
               <Badge variant="outline" className="mb-6 px-4 py-1.5 border-primary-200 bg-primary-50/50 text-primary-700 text-xs font-bold tracking-wider rounded-full backdrop-blur-sm">
@@ -126,8 +142,8 @@ export default function LandingPage() {
               </ScrollReveal>
 
               <ScrollReveal direction="right" delay={200} className="lg:w-2/3 w-full bg-primary-600 rounded-2xl p-6 lg:p-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary-400 rounded-full blur-3xl opacity-50 mix-blend-screen" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary-400 rounded-full blur-3xl opacity-50 mix-blend-screen" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary-400 rounded-full blur-3xl opacity-50 mix-blend-screen animate-[float_10s_ease-in-out_infinite]" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary-400 rounded-full blur-3xl opacity-50 mix-blend-screen animate-[float_12s_ease-in-out_infinite_2s]" />
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
                   {/* Mobile App Mockup */}
@@ -190,7 +206,7 @@ export default function LandingPage() {
               <ScrollReveal delay={0}>
               <div className="bg-slate-900 rounded-3xl p-8 lg:p-10 text-white relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-6">
-                  <div className="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center text-primary-400">
+                  <div className="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center text-primary-400 group-hover:scale-110 transition-transform duration-300">
                     <MessageSquare className="w-6 h-6" />
                   </div>
                 </div>
@@ -223,7 +239,7 @@ export default function LandingPage() {
               <ScrollReveal delay={150}>
               <div className="bg-white border border-slate-200 rounded-3xl p-8 lg:p-10 relative overflow-hidden group shadow-sm">
                 <div className="absolute top-0 right-0 p-6">
-                  <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-500">
+                  <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform duration-300">
                     <BarChart className="w-6 h-6" />
                   </div>
                 </div>
@@ -253,7 +269,7 @@ export default function LandingPage() {
               <ScrollReveal delay={300}>
               <div className="bg-primary-50 border border-primary-100 rounded-3xl p-8 lg:p-10 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-6">
-                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-primary-600 shadow-sm">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-primary-600 shadow-sm group-hover:scale-110 transition-transform duration-300">
                     <Target className="w-6 h-6" />
                   </div>
                 </div>
@@ -295,7 +311,7 @@ export default function LandingPage() {
               <ScrollReveal delay={450}>
               <div className="bg-white border border-slate-200 rounded-3xl p-8 lg:p-10 relative overflow-hidden group shadow-sm">
                 <div className="absolute top-0 right-0 p-6">
-                  <div className="w-12 h-12 bg-secondary-100 rounded-2xl flex items-center justify-center text-secondary-600">
+                  <div className="w-12 h-12 bg-secondary-100 rounded-2xl flex items-center justify-center text-secondary-600 group-hover:scale-110 transition-transform duration-300">
                     <Smartphone className="w-6 h-6" />
                   </div>
                 </div>
@@ -307,8 +323,8 @@ export default function LandingPage() {
                 {/* Notification Mockup — slides up on hover */}
                 <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mt-8 translate-y-4 group-hover:translate-y-0 transition-transform duration-500 ease-out">
                   <div className="flex gap-4 items-start">
-                    <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center flex-shrink-0 text-primary-600 font-bold">
-                      40
+                    <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center flex-shrink-0 text-primary-600">
+                      <ForteXLogoIcon size={24} />
                     </div>
                     <div>
                       <h4 className="font-semibold text-slate-900 text-sm">Cập nhật tiến độ</h4>
@@ -325,12 +341,12 @@ export default function LandingPage() {
           {/* 6. Instructor CTA Section */}
           <section className="py-20 px-6 max-w-7xl mx-auto">
             <div className="bg-slate-900 rounded-3xl relative overflow-hidden p-10 md:p-16 lg:p-20 flex flex-col md:flex-row items-center gap-12">
-              {/* Background Shapes */}
+              {/* Background Shapes — idle floating animation */}
               <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary-600 rounded-full blur-3xl opacity-40 scale-150" />
-                <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-secondary-600 rounded-full blur-3xl opacity-30 scale-150" />
-                <div className="absolute top-1/4 right-1/4 w-32 h-32 border border-slate-700 rotate-45 rounded-xl opacity-20" />
-                <div className="absolute bottom-1/4 right-10 w-16 h-16 border-2 border-primary-500/20 rounded-full" />
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary-600 rounded-full blur-3xl opacity-40 scale-150 animate-[float_12s_ease-in-out_infinite]" />
+                <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-secondary-600 rounded-full blur-3xl opacity-30 scale-150 animate-[float_10s_ease-in-out_infinite_2s]" />
+                <div className="absolute top-1/4 right-1/4 w-32 h-32 border border-slate-700 rotate-45 rounded-xl opacity-20 animate-[float_8s_ease-in-out_infinite_1s]" />
+                <div className="absolute bottom-1/4 right-10 w-16 h-16 border-2 border-primary-500/20 rounded-full animate-[float_9s_ease-in-out_infinite_3s]" />
               </div>
 
               <ScrollReveal direction="left" className="flex-1 relative z-10">
@@ -408,9 +424,7 @@ export default function LandingPage() {
               {/* Brand Col */}
               <ScrollReveal delay={0} className="space-y-6">
                 <Link href="/" className="flex items-center gap-2 text-white">
-                  <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                    40
-                  </div>
+                  <ForteXLogoIcon size={32} gradient={false} className="text-white" />
                   <span className="text-xl font-bold tracking-tight">ForteX</span>
                 </Link>
                 <p className="text-sm leading-relaxed">
