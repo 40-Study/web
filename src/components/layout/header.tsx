@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-import { Search, Bell, FileText, Settings, LogOut, Menu, X } from "lucide-react";
+import { Search, Bell, FileText, Settings, LogOut, Menu, X, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { AuthModal } from "@/components/auth/auth-modal";
@@ -20,6 +20,7 @@ interface MenuItem {
 // Student-only menu items (shown before common items)
 const studentMenuItems: MenuItem[] = [
   { label: "Bài tập", href: "/my-assignments", icon: FileText, badge: true },
+  { label: "Voucher của tôi", href: "/my-vouchers", icon: Ticket },
 ];
 
 // Common menu items for all roles
@@ -48,7 +49,6 @@ export function Header() {
   const { isAuthenticated, user, activeRole } = useAuthStore();
   const logoutMutation = useLogout();
   const normalizedRole = normalizeRole(activeRole);
-  const isTeacher = normalizedRole === "TEACHER";
   const isStudent = normalizedRole === "STUDENT";
   const homeHref = isAuthenticated ? getRoleHomeRoute(normalizedRole) : "/";
 
@@ -140,13 +140,11 @@ export function Header() {
           <div className="hidden sm:flex items-center gap-2" ref={dropdownRef}>
             {isAuthenticated ? (
               <>
-                {isTeacher && (
-                  <Link href="/teacher/schedule">
-                    <Button variant="outline" className="font-medium">
-                      Quản lý giáo viên
-                    </Button>
-                  </Link>
-                )}
+                <Link href={homeHref}>
+                  <Button variant="outline" className="font-medium">
+                    Dashboard
+                  </Button>
+                </Link>
 
                 <button
                   onClick={() => setIsDropdownOpen((v) => !v)}
@@ -224,15 +222,13 @@ export function Header() {
               <div className="absolute right-0 top-12 w-64 bg-white rounded-xl shadow-lg border py-2 z-50">
                 {isAuthenticated ? (
                   <>
-                    {isTeacher && (
-                      <div className="px-3 pt-3">
-                        <Link href="/teacher/schedule" onClick={() => setIsMobileMenuOpen(false)}>
-                          <Button variant="outline" className="w-full justify-start font-medium">
-                            Quản lý giáo viên
-                          </Button>
-                        </Link>
-                      </div>
-                    )}
+                    <div className="px-3 pt-3">
+                      <Link href={homeHref} onClick={() => setIsMobileMenuOpen(false)}>
+                        <Button variant="outline" className="w-full justify-start font-medium">
+                          Dashboard
+                        </Button>
+                      </Link>
+                    </div>
 
                     <div className="px-4 py-3 border-b">
                       <p className="font-semibold text-gray-900">{user?.name || "Tài khoản"}</p>

@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Star, Play, Heart, Clock, Users, BookOpen } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { CheckoutModal } from "@/components/checkout/checkout-modal";
 import { CourseDetail } from "@/types/course";
 
 interface CourseHeroProps {
@@ -36,7 +38,20 @@ export function CourseHero({
   onBuyNow,
   className,
 }: CourseHeroProps) {
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+
+  function handleBuyNow() {
+    setCheckoutOpen(true);
+    onBuyNow?.();
+  }
+
   return (
+    <>
+    <CheckoutModal
+      open={checkoutOpen}
+      onOpenChange={setCheckoutOpen}
+      course={course}
+    />
     <div
       className={cn(
         "bg-gradient-to-br from-primary-800 via-primary-900 to-primary-950 text-white",
@@ -178,7 +193,7 @@ export function CourseHero({
                 <Button
                   size="lg"
                   className="bg-yellow-400 text-gray-900 hover:bg-yellow-300"
-                  onClick={onBuyNow}
+                  onClick={handleBuyNow}
                 >
                   Mua ngay - {formatCurrency(course.price)}
                 </Button>
@@ -214,5 +229,6 @@ export function CourseHero({
         </div>
       </div>
     </div>
+    </>
   );
 }
