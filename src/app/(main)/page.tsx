@@ -25,6 +25,7 @@ import {
 import { siteConfig } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth.store";
 import { AnimatedShowcasePanel } from "@/components/landing/animated-showcase-panel";
+import { ScrollReveal } from "@/components/landing/scroll-reveal";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -49,19 +50,26 @@ export default function LandingPage() {
             {/* Background glows */}
             <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 scale-150 bg-primary-400/20 blur-3xl rounded-full pointer-events-none -z-10" />
             
-            <Badge variant="outline" className="mb-6 px-4 py-1.5 border-primary-200 bg-primary-50/50 text-primary-700 text-xs font-bold tracking-wider rounded-full backdrop-blur-sm">
-              NỀN TẢNG HỌC TẬP THÍCH ỨNG
-            </Badge>
-            
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-tight">
-              <span className="block text-slate-900">Khai phóng Tiềm năng</span>
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400">Công nghệ của bạn</span>
-            </h1>
-            
-            <p className="max-w-2xl text-lg md:text-xl text-slate-500 mb-10 leading-relaxed">
-              Hệ thống giáo dục cá nhân hóa với trợ lý ảo AI, giúp bạn làm chủ lập trình và thiết kế thông qua các dự án thực tế.
-            </p>
-            
+            <ScrollReveal direction="fade">
+              <Badge variant="outline" className="mb-6 px-4 py-1.5 border-primary-200 bg-primary-50/50 text-primary-700 text-xs font-bold tracking-wider rounded-full backdrop-blur-sm">
+                NỀN TẢNG HỌC TẬP THÍCH ỨNG
+              </Badge>
+            </ScrollReveal>
+
+            <ScrollReveal delay={150}>
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-tight text-center">
+                <span className="block text-slate-900">Khai phóng Tiềm năng</span>
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400">Công nghệ của bạn</span>
+              </h1>
+            </ScrollReveal>
+
+            <ScrollReveal delay={300}>
+              <p className="max-w-2xl text-lg md:text-xl text-slate-500 mb-10 leading-relaxed text-center">
+                Hệ thống giáo dục cá nhân hóa với trợ lý ảo AI, giúp bạn làm chủ lập trình và thiết kế thông qua các dự án thực tế.
+              </p>
+            </ScrollReveal>
+
+            <ScrollReveal delay={450}>
             <div className="flex flex-col sm:flex-row gap-4 mb-20 w-full sm:w-auto">
               <Button
                 size="lg"
@@ -86,15 +94,18 @@ export default function LandingPage() {
                 </Link>
               </Button>
             </div>
+            </ScrollReveal>
 
             {/* Animated Showcase Panel */}
-            <AnimatedShowcasePanel />
+            <ScrollReveal delay={100} direction="scale">
+              <AnimatedShowcasePanel />
+            </ScrollReveal>
           </section>
 
           {/* 4. Student Outcomes Section */}
           <section id="student-projects" className="py-20 px-6 max-w-7xl mx-auto">
             <div className="bg-white rounded-3xl p-8 lg:p-12 shadow-sm border border-slate-100 flex flex-col lg:flex-row items-center gap-12">
-              <div className="lg:w-1/3 space-y-6">
+              <ScrollReveal direction="left" className="lg:w-1/3 space-y-6">
                 <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 leading-tight">
                   Học viên ForteX đã tự xây dựng:
                 </h2>
@@ -109,9 +120,9 @@ export default function LandingPage() {
                   </div>
                   <span className="text-sm font-medium text-slate-600">+10,000 học viên</span>
                 </div>
-              </div>
-              
-              <div className="lg:w-2/3 w-full bg-primary-600 rounded-2xl p-6 lg:p-8 relative overflow-hidden">
+              </ScrollReveal>
+
+              <ScrollReveal direction="right" delay={200} className="lg:w-2/3 w-full bg-primary-600 rounded-2xl p-6 lg:p-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary-400 rounded-full blur-3xl opacity-50 mix-blend-screen" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary-400 rounded-full blur-3xl opacity-50 mix-blend-screen" />
                 
@@ -158,19 +169,22 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </ScrollReveal>
             </div>
           </section>
 
           {/* 5. Feature Cards */}
           <section className="py-20 px-6 max-w-7xl mx-auto">
-            <div className="text-center max-w-2xl mx-auto mb-16">
-              <h2 className="text-3xl font-bold text-slate-900 mb-4">Hệ sinh thái học tập toàn diện</h2>
-              <p className="text-slate-500">Mọi công cụ bạn cần để tiến xa hơn trên con đường phát triển sự nghiệp.</p>
-            </div>
-            
+            <ScrollReveal>
+              <div className="text-center max-w-2xl mx-auto mb-16">
+                <h2 className="text-3xl font-bold text-slate-900 mb-4">Hệ sinh thái học tập toàn diện</h2>
+                <p className="text-slate-500">Mọi công cụ bạn cần để tiến xa hơn trên con đường phát triển sự nghiệp.</p>
+              </div>
+            </ScrollReveal>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Card 1: Dark */}
+              <ScrollReveal delay={0}>
               <div className="bg-slate-900 rounded-3xl p-8 lg:p-10 text-white relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-6">
                   <div className="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center text-primary-400">
@@ -200,8 +214,10 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
+              </ScrollReveal>
 
               {/* Card 2: Light */}
+              <ScrollReveal delay={150}>
               <div className="bg-white border border-slate-200 rounded-3xl p-8 lg:p-10 relative overflow-hidden group shadow-sm">
                 <div className="absolute top-0 right-0 p-6">
                   <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-500">
@@ -224,8 +240,10 @@ export default function LandingPage() {
                   ))}
                 </div>
               </div>
+              </ScrollReveal>
 
               {/* Card 3: Light Blue */}
+              <ScrollReveal delay={300}>
               <div className="bg-primary-50 border border-primary-100 rounded-3xl p-8 lg:p-10 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-6">
                   <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-primary-600 shadow-sm">
@@ -264,8 +282,10 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
+              </ScrollReveal>
 
               {/* Card 4: White */}
+              <ScrollReveal delay={450}>
               <div className="bg-white border border-slate-200 rounded-3xl p-8 lg:p-10 relative overflow-hidden group shadow-sm">
                 <div className="absolute top-0 right-0 p-6">
                   <div className="w-12 h-12 bg-secondary-100 rounded-2xl flex items-center justify-center text-secondary-600">
@@ -291,6 +311,7 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
+              </ScrollReveal>
             </div>
           </section>
 
@@ -305,7 +326,7 @@ export default function LandingPage() {
                 <div className="absolute bottom-1/4 right-10 w-16 h-16 border-2 border-primary-500/20 rounded-full" />
               </div>
 
-              <div className="flex-1 relative z-10">
+              <ScrollReveal direction="left" className="flex-1 relative z-10">
                 <Badge variant="outline" className="mb-6 px-4 py-1.5 border-slate-700 bg-slate-800 text-slate-300 text-xs font-bold tracking-wider rounded-full">
                   DÀNH CHO CHUYÊN GIA
                 </Badge>
@@ -319,9 +340,9 @@ export default function LandingPage() {
                 <Button size="lg" className="bg-white hover:bg-slate-100 text-slate-900 px-8 h-14 text-base font-semibold rounded-xl">
                   Đăng ký Hồ sơ ngay
                 </Button>
-              </div>
+              </ScrollReveal>
 
-              <div className="flex-1 w-full max-w-sm relative z-10">
+              <ScrollReveal direction="right" delay={200} className="flex-1 w-full max-w-sm relative z-10">
                 <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl">
                   <div className="flex items-center justify-between mb-6">
                     <span className="text-white font-medium">Thu nhập tháng này</span>
@@ -352,7 +373,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </ScrollReveal>
             </div>
           </section>
 
