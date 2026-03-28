@@ -10,11 +10,13 @@ interface AppShellLayoutProps {
 
 export function AppShellLayout({ children }: AppShellLayoutProps) {
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen bg-gray-50/50 flex flex-col">
       <Header />
-      <div className="flex flex-1 pt-16">
+      {/* pt-16 accounts for fixed header height */}
+      <div className="flex flex-1 pt-16 min-h-0">
         <Sidebar />
-        <div className="flex-1 w-full lg:pl-20 flex flex-col overflow-x-hidden">
+        {/* lg:pl-16 pulls content slightly closer to sidebar (sidebar is w-16 = 64px) */}
+        <div className="flex-1 w-full lg:pl-16 flex flex-col overflow-x-hidden min-h-[calc(100vh-4rem)]">
           <main className="flex-1">{children}</main>
           <Footer />
         </div>

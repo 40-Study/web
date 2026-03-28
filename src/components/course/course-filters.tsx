@@ -5,6 +5,10 @@ import { Filter, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Category, CourseFilters } from "@/types/course";
+import { PriceRangeSlider } from "./price-range-slider";
+
+// Maximum course price for the slider range (VND)
+const PRICE_SLIDER_MAX = 2_000_000;
 
 interface CourseFiltersProps {
   categories: Category[];
@@ -35,10 +39,14 @@ export function CourseFiltersComponent({
 }: CourseFiltersProps) {
   const [showFilters, setShowFilters] = useState(false);
 
+  const hasPriceFilter =
+    (filters.priceMin !== undefined && filters.priceMin > 0) ||
+    (filters.priceMax !== undefined && filters.priceMax < PRICE_SLIDER_MAX);
+
   const activeFilterCount =
     (filters.category ? 1 : 0) +
     (filters.levels?.length || 0) +
-    (filters.priceRange && filters.priceRange !== "all" ? 1 : 0);
+    (hasPriceFilter ? 1 : 0);
 
   const handleCategoryChange = (categorySlug: string | undefined) => {
     onFilterChange({ ...filters, category: categorySlug });
@@ -52,10 +60,13 @@ export function CourseFiltersComponent({
     onFilterChange({ ...filters, levels: newLevels.length > 0 ? newLevels : undefined });
   };
 
-  const handlePriceChange = (priceRange: "free" | "paid" | "all") => {
+  const handlePriceRangeChange = (range: [number, number]) => {
     onFilterChange({
       ...filters,
-      priceRange: priceRange === "all" ? undefined : priceRange,
+      priceMin: range[0] > 0 ? range[0] : undefined,
+      priceMax: range[1] < PRICE_SLIDER_MAX ? range[1] : undefined,
+      // Keep legacy priceRange for backward compat: free if max=0
+      priceRange: range[1] === 0 ? "free" : undefined,
     });
   };
 
@@ -64,7 +75,7 @@ export function CourseFiltersComponent({
   };
 
   const clearFilters = () => {
-    onFilterChange({});
+    onFilterChange({ sortBy: filters.sortBy });
   };
 
   return (
@@ -148,41 +159,19 @@ export function CourseFiltersComponent({
               </div>
             </div>
 
-            {/* Price Filter */}
+            {/* Price Range Filter */}
             <div>
-              <p className="text-sm font-medium mb-2">Giá</p>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="price"
-                    checked={!filters.priceRange || filters.priceRange === "all"}
-                    onChange={() => handlePriceChange("all")}
-                    className="border-input"
-                  />
-                  <span className="text-sm">Tất cả</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="price"
-                    checked={filters.priceRange === "free"}
-                    onChange={() => handlePriceChange("free")}
-                    className="border-input"
-                  />
-                  <span className="text-sm">Miễn phí</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="price"
-                    checked={filters.priceRange === "paid"}
-                    onChange={() => handlePriceChange("paid")}
-                    className="border-input"
-                  />
-                  <span className="text-sm">Có phí</span>
-                </label>
-              </div>
+              <p className="text-sm font-medium mb-3">Khoảng giá</p>
+              <PriceRangeSlider
+                min={0}
+                max={PRICE_SLIDER_MAX}
+                step={100_000}
+                value={[
+                  filters.priceMin ?? 0,
+                  filters.priceMax ?? PRICE_SLIDER_MAX,
+                ]}
+                onChange={handlePriceRangeChange}
+              />
             </div>
 
             {/* Sort Filter */}

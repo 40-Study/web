@@ -39,8 +39,8 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="fixed left-0 top-16 bottom-0 w-20 bg-white dark:bg-gray-900 shadow-sm z-40 hidden lg:flex flex-col items-center py-8">
-      <nav className="flex flex-col items-center gap-6 w-full">
+    <aside className="fixed left-0 top-16 bottom-0 w-16 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 z-40 hidden lg:flex flex-col items-center py-6">
+      <nav className="flex flex-col items-center gap-4 w-full">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
@@ -49,15 +49,16 @@ export function Sidebar() {
             <button
               key={item.label}
               onClick={item.onClick}
+              title={item.label}
               className={cn(
-                "flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors text-center w-full",
+                "flex flex-col items-center gap-1 py-2 px-1 rounded-lg transition-colors text-center w-full",
                 "hover:bg-gray-50"
               )}
             >
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gray-100">
-                <Icon className="w-5 h-5 text-gray-600" />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gray-100">
+                <Icon className="w-4 h-4 text-gray-600" />
               </div>
-              <span className="text-[10px] font-medium leading-tight text-gray-600">
+              <span className="text-[9px] font-medium leading-tight text-gray-600">
                 {item.label}
               </span>
             </button>
@@ -65,23 +66,24 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              title={item.label}
               className={cn(
-                "flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors text-center",
+                "flex flex-col items-center gap-1 py-2 px-1 rounded-lg transition-colors text-center w-full",
                 "hover:bg-gray-50",
                 isActive && "bg-primary-50 text-primary-600"
               )}
             >
               <div
                 className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center",
+                  "w-9 h-9 rounded-xl flex items-center justify-center",
                   isActive ? "bg-primary-100" : "bg-gray-100"
                 )}
               >
-                <Icon className={cn("w-5 h-5", isActive ? "text-primary-600" : "text-gray-600")} />
+                <Icon className={cn("w-4 h-4", isActive ? "text-primary-600" : "text-gray-600")} />
               </div>
               <span
                 className={cn(
-                  "text-[10px] font-medium leading-tight",
+                  "text-[9px] font-medium leading-tight",
                   isActive ? "text-primary-600" : "text-gray-600"
                 )}
               >

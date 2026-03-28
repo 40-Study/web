@@ -95,6 +95,8 @@ export interface CourseFilters {
   category?: string;
   levels?: string[];
   priceRange?: "free" | "paid" | "all";
+  priceMin?: number;
+  priceMax?: number;
   minRating?: number;
   sortBy?: "popular" | "newest" | "rating" | "price-low" | "price-high";
 }
