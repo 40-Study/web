@@ -84,7 +84,16 @@ export default function TeacherSchedulePage() {
   const handleSave = useCallback((data: EventFormData, eventId?: string) => {
     if (eventId) {
       setEvents((prev) =>
-        prev.map((e) => (e.id === eventId ? { ...e, ...data, status: e.status } : e))
+        prev.map((e) =>
+          e.id === eventId
+            ? {
+                ...e,
+                ...data,
+                status: e.status,
+                recurrenceRule: data.recurrenceRule || undefined,
+              }
+            : e
+        )
       );
     } else {
       const newEvent: ScheduleEvent = {
@@ -97,6 +106,7 @@ export default function TeacherSchedulePage() {
         location: data.location || undefined,
         meetingUrl: data.meetingUrl || undefined,
         description: data.description || undefined,
+        recurrenceRule: data.recurrenceRule || undefined,
         teacher: "Bạn",
       };
       setEvents((prev) => [...prev, newEvent]);
@@ -107,6 +117,18 @@ export default function TeacherSchedulePage() {
     setEvents((prev) => prev.filter((e) => e.id !== eventId));
   }, []);
 
+  /** Called by FullCalendar after drag-drop or resize */
+  const handleEventChange = useCallback(
+    (eventId: string, newStart: string, newEnd: string) => {
+      setEvents((prev) =>
+        prev.map((e) =>
+          e.id === eventId ? { ...e, startTime: newStart, endTime: newEnd } : e
+        )
+      );
+    },
+    []
+  );
+
   return (
     <div className="p-6">
       <WeekCalendarGrid
@@ -114,6 +136,7 @@ export default function TeacherSchedulePage() {
         editable
         onCellClick={handleCellClick}
         onEventClick={handleEventClick}
+        onEventChange={handleEventChange}
         renderEventTooltip={(event) => (
           <ScheduleEventTooltip event={event} editable onEdit={handleEventClick} />
         )}

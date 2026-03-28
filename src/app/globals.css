@@ -565,3 +565,43 @@ html {
   cursor: pointer;
   pointer-events: all;
 }
+
+/* FullCalendar custom overrides — .fc-custom-wrap */
+.fc-custom-wrap .fc-toolbar-title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+.fc-custom-wrap .fc-button {
+  background-color: transparent;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+}
+.fc-custom-wrap .fc-button:hover {
+  background-color: #f3f4f6;
+}
+.fc-custom-wrap .fc-button-active,
+.fc-custom-wrap .fc-button-primary:not(:disabled).fc-button-active {
+  background-color: var(--color-primary-600, #4f46e5) !important;
+  border-color: var(--color-primary-600, #4f46e5) !important;
+  color: #fff !important;
+}
+.fc-custom-wrap .fc-timegrid-slot {
+  height: 2rem;
+}
+.fc-custom-wrap .fc-event {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+.fc-custom-wrap .fc-event-main {
+  padding: 0 !important;
+}
+.fc-custom-wrap .fc-col-header-cell {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  padding: 0.5rem 0;
+}

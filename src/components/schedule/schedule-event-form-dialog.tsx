@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { format, setHours, setMinutes } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Clock, MapPin, Video, Radio, Trash2 } from "lucide-react";
+import { Clock, MapPin, Video, Radio, Trash2, RepeatIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,11 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { ScheduleEvent } from "./week-calendar-grid";
+import RecurrenceSelector, {
+  type RecurrenceConfig,
+  DEFAULT_RECURRENCE,
+  buildRRule,
+} from "./recurrence-selector";
 
 export interface EventFormData {
   title: string;
@@ -33,6 +38,7 @@ export interface EventFormData {
   location: string;
   meetingUrl: string;
   description: string;
+  recurrenceRule?: string;
 }
 
 interface ScheduleEventFormDialogProps {
@@ -72,6 +78,8 @@ export default function ScheduleEventFormDialog({
   const [meetingUrl, setMeetingUrl] = useState("");
   const [description, setDescription] = useState("");
   const [dateStr, setDateStr] = useState("");
+  const [recurrence, setRecurrence] = useState<RecurrenceConfig>(DEFAULT_RECURRENCE);
+  const [showRecurrence, setShowRecurrence] = useState(false);
 
   // Populate form when event or defaults change
   useEffect(() => {
@@ -92,6 +100,8 @@ export default function ScheduleEventFormDialog({
       setLocation("");
       setMeetingUrl("");
       setDescription("");
+      setRecurrence(DEFAULT_RECURRENCE);
+      setShowRecurrence(false);
       if (defaultDate) {
         setDateStr(format(defaultDate, "yyyy-MM-dd"));
       }
@@ -119,6 +129,7 @@ export default function ScheduleEventFormDialog({
         location,
         meetingUrl,
         description,
+        recurrenceRule: buildRRule(recurrence),
       },
       event?.id
     );
@@ -240,6 +251,34 @@ export default function ScheduleEventFormDialog({
               />
             </div>
           )}
+
+          {/* Recurrence toggle */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowRecurrence((v) => !v)}
+              className={cn(
+                "flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg w-full transition-colors",
+                showRecurrence
+                  ? "bg-primary-50 text-primary-700"
+                  : "text-gray-600 hover:bg-gray-50"
+              )}
+            >
+              <RepeatIcon className="w-4 h-4" />
+              {showRecurrence ? "Ẩn lặp lịch" : "Thêm lặp lịch"}
+              {recurrence.frequency !== "none" && !showRecurrence && (
+                <span className="ml-auto text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">
+                  Đang bật
+                </span>
+              )}
+            </button>
+
+            {showRecurrence && (
+              <div className="mt-3 pl-2 border-l-2 border-primary-200">
+                <RecurrenceSelector value={recurrence} onChange={setRecurrence} />
+              </div>
+            )}
+          </div>
 
           {/* Footer Actions */}
           <DialogFooter className="gap-2">
