@@ -55,17 +55,36 @@ export function AnimatedShowcasePanel() {
   const [fpsCount, setFpsCount] = useState(0);
   const [typedCount, setTypedCount] = useState(0);
   const hasAnimated = useRef(false);
+  const hasScrolled = useRef(false);
+  const isInViewport = useRef(false);
 
-  // Intersection Observer — trigger once when panel enters viewport
+  // Scroll gate — only allow animation after user has scrolled
+  useEffect(() => {
+    const onScroll = () => {
+      hasScrolled.current = true;
+      // If element was already in viewport, trigger now
+      if (isInViewport.current && !hasAnimated.current) {
+        setIsVisible(true);
+        hasAnimated.current = true;
+      }
+      window.removeEventListener("scroll", onScroll);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Intersection Observer — trigger only when scroll gate is open
   useEffect(() => {
     const el = panelRef.current;
     if (!el) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !hasAnimated.current) {
+        isInViewport.current = entry.isIntersecting;
+        if (entry.isIntersecting && hasScrolled.current && !hasAnimated.current) {
           setIsVisible(true);
           hasAnimated.current = true;
+          observer.disconnect();
         }
       },
       { threshold: 0.3 }

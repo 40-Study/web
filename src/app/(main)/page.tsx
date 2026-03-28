@@ -26,6 +26,9 @@ import { siteConfig } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth.store";
 import { AnimatedShowcasePanel } from "@/components/landing/animated-showcase-panel";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
+import { AnimatedCounterOnScroll } from "@/components/landing/animated-counter-on-scroll";
+import { AnimatedProgressBarOnScroll } from "@/components/landing/animated-progress-bar-on-scroll";
+import { AnimatedBarChartOnScroll } from "@/components/landing/animated-bar-chart-on-scroll";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -229,15 +232,19 @@ export default function LandingPage() {
                   <p className="text-slate-500 mb-8">Phân tích dữ liệu học tập để đưa ra gợi ý phù hợp với khả năng.</p>
                 </div>
                 
-                {/* Chart Mockup */}
-                <div className="flex items-end gap-3 mt-12 h-32 px-4 relative z-10">
-                  {[40, 70, 45, 90, 60, 100, 80].map((height, i) => (
-                    <div 
-                      key={i} 
-                      className={`flex-1 rounded-t-md transition-all duration-700 ${i === 3 || i === 5 ? 'bg-orange-500' : 'bg-slate-100'}`}
-                      style={{ height: `${height}%`, transitionDelay: `${i * 100}ms` }}
-                    />
-                  ))}
+                {/* Chart Mockup — animated on scroll */}
+                <div className="mt-12 relative z-10">
+                  <AnimatedBarChartOnScroll
+                    bars={[
+                      { height: 40 },
+                      { height: 70 },
+                      { height: 45 },
+                      { height: 90, highlight: true },
+                      { height: 60 },
+                      { height: 100, highlight: true },
+                      { height: 80 },
+                    ]}
+                  />
                 </div>
               </div>
               </ScrollReveal>
@@ -297,8 +304,8 @@ export default function LandingPage() {
                   <p className="text-slate-500 mb-8">Theo dõi tiến độ, nhận thông báo ngay trên ứng dụng di động.</p>
                 </div>
                 
-                {/* Notification Mockup */}
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mt-8 translate-y-2 group-hover:-translate-y-2 transition-transform duration-500">
+                {/* Notification Mockup — slides up on hover */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mt-8 translate-y-4 group-hover:translate-y-0 transition-transform duration-500 ease-out">
                   <div className="flex gap-4 items-start">
                     <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center flex-shrink-0 text-primary-600 font-bold">
                       40
@@ -349,27 +356,45 @@ export default function LandingPage() {
                     <span className="text-green-400 text-sm font-semibold">+24.5%</span>
                   </div>
                   <div className="text-4xl font-bold text-white mb-8">
-                    18,500,000<span className="text-xl text-slate-400 font-normal ml-1">đ</span>
+                    <AnimatedCounterOnScroll
+                      target={18500000}
+                      duration={2000}
+                      formatter={(v) => v.toLocaleString("vi-VN")}
+                    />
+                    <span className="text-xl text-slate-400 font-normal ml-1">đ</span>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div>
                       <div className="flex justify-between text-sm mb-2 text-slate-300">
                         <span>Lượt đăng ký mới</span>
-                        <span className="text-white font-medium">142</span>
+                        <AnimatedCounterOnScroll
+                          target={142}
+                          duration={1500}
+                          className="text-white font-medium"
+                        />
                       </div>
-                      <div className="w-full bg-slate-800 rounded-full h-2">
-                        <div className="bg-primary-400 h-2 rounded-full w-2/3" />
-                      </div>
+                      <AnimatedProgressBarOnScroll
+                        targetPercent={66}
+                        barClassName="bg-primary-400"
+                        trackClassName="bg-slate-800"
+                      />
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-2 text-slate-300">
                         <span>Đánh giá 5 sao</span>
-                        <span className="text-white font-medium">98%</span>
+                        <AnimatedCounterOnScroll
+                          target={98}
+                          duration={1500}
+                          className="text-white font-medium"
+                          suffix="%"
+                        />
                       </div>
-                      <div className="w-full bg-slate-800 rounded-full h-2">
-                        <div className="bg-yellow-400 h-2 rounded-full w-11/12" />
-                      </div>
+                      <AnimatedProgressBarOnScroll
+                        targetPercent={92}
+                        barClassName="bg-yellow-400"
+                        trackClassName="bg-slate-800"
+                      />
                     </div>
                   </div>
                 </div>
@@ -381,7 +406,7 @@ export default function LandingPage() {
           <footer className="bg-slate-950 text-slate-400 pt-20 pb-10 px-6 mt-10 border-t border-slate-900">
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
               {/* Brand Col */}
-              <div className="space-y-6">
+              <ScrollReveal delay={0} className="space-y-6">
                 <Link href="/" className="flex items-center gap-2 text-white">
                   <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                     40
@@ -405,10 +430,10 @@ export default function LandingPage() {
                     <Linkedin className="w-4 h-4" />
                   </a>
                 </div>
-              </div>
+              </ScrollReveal>
 
               {/* Links Col 1 */}
-              <div>
+              <ScrollReveal delay={150}>
                 <h4 className="text-white font-semibold mb-6">Về chúng tôi</h4>
                 <ul className="space-y-4 text-sm">
                   <li><a href="#" className="hover:text-primary-400 transition-colors">Giới thiệu ForteX</a></li>
@@ -416,10 +441,10 @@ export default function LandingPage() {
                   <li><a href="#" className="hover:text-primary-400 transition-colors">Tin tức & Blog</a></li>
                   <li><a href="#" className="hover:text-primary-400 transition-colors">Liên hệ</a></li>
                 </ul>
-              </div>
+              </ScrollReveal>
 
               {/* Links Col 2 */}
-              <div>
+              <ScrollReveal delay={300}>
                 <h4 className="text-white font-semibold mb-6">Học tập</h4>
                 <ul className="space-y-4 text-sm">
                   <li><a href="#" className="hover:text-primary-400 transition-colors">Khóa học Lập trình</a></li>
@@ -427,10 +452,10 @@ export default function LandingPage() {
                   <li><a href="#" className="hover:text-primary-400 transition-colors">Chương trình Bootcamp</a></li>
                   <li><a href="#" className="hover:text-primary-400 transition-colors">Dự án Mẫu</a></li>
                 </ul>
-              </div>
+              </ScrollReveal>
 
               {/* Newsletter Col */}
-              <div>
+              <ScrollReveal delay={450}>
                 <h4 className="text-white font-semibold mb-6">Đăng ký nhận tin</h4>
                 <p className="text-sm mb-4">Nhận thông báo về các khóa học mới và ưu đãi đặc biệt.</p>
                 <div className="flex gap-2">
@@ -446,16 +471,18 @@ export default function LandingPage() {
                     Gửi
                   </Button>
                 </div>
-              </div>
+              </ScrollReveal>
             </div>
 
-            <div className="max-w-7xl mx-auto pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
-              <p>© {new Date().getFullYear()} ForteX. Đã đăng ký bản quyền.</p>
-              <div className="flex items-center gap-6">
-                <a href="#" className="hover:text-white transition-colors">Điều khoản sử dụng</a>
-                <a href="#" className="hover:text-white transition-colors">Chính sách bảo mật</a>
+            <ScrollReveal direction="fade" delay={200}>
+              <div className="max-w-7xl mx-auto pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
+                <p>© {new Date().getFullYear()} ForteX. Đã đăng ký bản quyền.</p>
+                <div className="flex items-center gap-6">
+                  <a href="#" className="hover:text-white transition-colors">Điều khoản sử dụng</a>
+                  <a href="#" className="hover:text-white transition-colors">Chính sách bảo mật</a>
+                </div>
               </div>
-            </div>
+            </ScrollReveal>
           </footer>
     </div>
   );
