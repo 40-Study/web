@@ -7,9 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import {
   MessageSquare,
-  Play,
   Code,
-  Terminal,
   Activity,
   Cpu,
   BarChart,
@@ -26,6 +24,7 @@ import {
 } from "lucide-react";
 import { siteConfig } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth.store";
+import { AnimatedShowcasePanel } from "@/components/landing/animated-showcase-panel";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -88,87 +87,8 @@ export default function LandingPage() {
               </Button>
             </div>
 
-            {/* Showcase Panel Mockup */}
-            <div className="w-full max-w-5xl rounded-3xl bg-slate-900 shadow-2xl shadow-primary-900/20 border border-slate-800 p-2 md:p-4 overflow-hidden relative">
-              {/* Fake Window Controls */}
-              <div className="flex items-center gap-2 px-4 py-3 mb-2 border-b border-slate-800">
-                <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                <div className="w-3 h-3 rounded-full bg-green-500/80" />
-              </div>
-              
-              <div className="flex flex-col md:flex-row gap-4">
-                {/* Left: Code Editor */}
-                <div className="flex-1 bg-slate-950 rounded-xl p-6 border border-slate-800/60 font-code text-sm text-left">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-slate-400 text-xs">app/layout.tsx</span>
-                    <Terminal className="w-4 h-4 text-slate-500" />
-                  </div>
-                  <pre className="text-slate-300">
-                    <code className="block">
-<span className="text-pink-400">import</span> {"{"} ThemeProvider {"}"} <span className="text-pink-400">from</span> <span className="text-green-300">&quot;next-themes&quot;</span>;{"\n"}
-<span className="text-pink-400">import</span> {"{"} Inter {"}"} <span className="text-pink-400">from</span> <span className="text-green-300">&quot;next/font/google&quot;</span>;{"\n\n"}
-<span className="text-primary-400">export default function</span> <span className="text-yellow-200">RootLayout</span>({"{"}{"\n"}
-  children,{"\n"}
-{"}"}: {"{"} children: React.ReactNode {"}"}) {"{"}{"\n"}
-  <span className="text-pink-400">return</span> ({"\n"}
-    <span className="text-slate-500">&lt;</span><span className="text-primary-400">html</span> <span className="text-slate-300">lang=</span><span className="text-green-300">&quot;en&quot;</span><span className="text-slate-500">&gt;</span>{"\n"}
-      <span className="text-slate-500">&lt;</span><span className="text-primary-400">body</span><span className="text-slate-500">&gt;</span>{"\n"}
-        <span className="text-slate-500">&lt;</span><span className="text-primary-400">ThemeProvider</span><span className="text-slate-500">&gt;</span>{"\n"}
-          {"{"}children{"}"}{"\n"}
-        <span className="text-slate-500">&lt;/</span><span className="text-primary-400">ThemeProvider</span><span className="text-slate-500">&gt;</span>{"\n"}
-      <span className="text-slate-500">&lt;/</span><span className="text-primary-400">body</span><span className="text-slate-500">&gt;</span>{"\n"}
-    <span className="text-slate-500">&lt;/</span><span className="text-primary-400">html</span><span className="text-slate-500">&gt;</span>{"\n"}
-  );{"\n"}
-{"}"}
-                    </code>
-                  </pre>
-                  
-                  {/* AI Prompt Box Overlay */}
-                  <div className="mt-6 bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg p-3 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary-600/20 flex items-center justify-center">
-                      <Cpu className="w-4 h-4 text-primary-400" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-slate-300">Optimize this component for better hydration...</p>
-                    </div>
-                    <Button size="icon" variant="ghost" className="w-8 h-8 hover:bg-slate-700">
-                      <Play className="w-4 h-4 text-primary-400" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Right: Performance Panel */}
-                <div className="flex-1 bg-white rounded-xl p-6 relative overflow-hidden flex flex-col">
-                  <div className="flex items-center justify-between mb-8">
-                    <h3 className="font-semibold text-slate-800">Performance Metrics</h3>
-                    <Badge variant="success" className="bg-green-100 text-green-700">Live</Badge>
-                  </div>
-                  
-                  <div className="flex-1 flex flex-col items-center justify-center relative">
-                    {/* 60 FPS Circle */}
-                    <div className="w-32 h-32 rounded-full border-8 border-primary-100 flex flex-col items-center justify-center relative">
-                      <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="44" fill="none" stroke="currentColor" strokeWidth="12" className="text-primary-500" strokeLinecap="round" style={{ strokeDasharray: 276, strokeDashoffset: 20 }} />
-                      </svg>
-                      <span className="text-3xl font-black text-slate-800">60</span>
-                      <span className="text-xs font-bold text-slate-500">FPS</span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 mt-8 w-full">
-                      <div className="bg-slate-50 rounded-lg p-3 text-left">
-                        <span className="text-xs text-slate-500 block mb-1">Time to Interactive</span>
-                        <span className="text-lg font-bold text-slate-800">0.8s</span>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-3 text-left">
-                        <span className="text-xs text-slate-500 block mb-1">Bundle Size</span>
-                        <span className="text-lg font-bold text-slate-800">42kb</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Animated Showcase Panel */}
+            <AnimatedShowcasePanel />
           </section>
 
           {/* 4. Student Outcomes Section */}
