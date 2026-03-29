@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Filter, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Category, CourseFilters } from "@/types/course";
 import { PriceRangeSlider } from "./price-range-slider";
 
@@ -83,57 +82,66 @@ export function CourseFiltersComponent({
       {/* Category Pills */}
       <div className="flex flex-wrap gap-2 items-center">
         <div className="flex gap-2 overflow-x-auto pb-2 flex-wrap">
-          <Button
-            variant={!filters.category ? "default" : "outline"}
-            size="sm"
+          <button
             onClick={() => handleCategoryChange(undefined)}
+            className={cn(
+              "px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200",
+              !filters.category
+                ? "bg-slate-900 text-white shadow-md shadow-slate-900/20"
+                : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+            )}
           >
             Tất cả
-          </Button>
+          </button>
           {categories.map((cat) => (
-            <Button
+            <button
               key={cat.id}
-              variant={filters.category === cat.slug ? "default" : "outline"}
-              size="sm"
               onClick={() => handleCategoryChange(cat.slug)}
+              className={cn(
+                "px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200",
+                filters.category === cat.slug
+                  ? "bg-primary-600 text-white shadow-md shadow-primary-600/20"
+                  : "bg-white text-slate-600 border border-slate-200 hover:border-primary-200 hover:text-primary-700 hover:bg-primary-50/50"
+              )}
             >
               {cat.name}
-            </Button>
+            </button>
           ))}
         </div>
 
         {/* Filter Toggle Button */}
-        <Button
-          variant="outline"
-          size="sm"
+        <button
           onClick={() => setShowFilters(!showFilters)}
-          className="ml-auto"
+          className={cn(
+            "ml-auto flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border",
+            showFilters
+              ? "bg-primary-50 text-primary-700 border-primary-200"
+              : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+          )}
         >
-          <Filter className="h-4 w-4 mr-2" />
+          <Filter className="h-4 w-4" />
           Bộ lọc
           {activeFilterCount > 0 && (
-            <span className="ml-2 bg-primary-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+            <span className="bg-primary-600 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
               {activeFilterCount}
             </span>
           )}
-        </Button>
+        </button>
       </div>
 
       {/* Expanded Filters */}
       {showFilters && (
-        <div className="p-5 border border-gray-100 rounded-2xl bg-white shadow-sm space-y-4">
+        <div className="p-5 border border-slate-200/60 rounded-2xl bg-white shadow-sm shadow-slate-100 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-medium">Bộ lọc nâng cao</h3>
             {activeFilterCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={clearFilters}
-                className="text-muted-foreground"
+                className="flex items-center gap-1 text-sm text-slate-500 hover:text-rose-600 transition-colors"
               >
-                <X className="h-4 w-4 mr-1" />
+                <X className="h-4 w-4" />
                 Xóa bộ lọc
-              </Button>
+              </button>
             )}
           </div>
 

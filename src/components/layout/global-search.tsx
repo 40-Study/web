@@ -142,105 +142,109 @@ export function GlobalSearch() {
     closeModal();
   }
 
-  if (!open) {
-    return (
-      // Trigger button shown in header — clicking opens the modal
-      <button
-        onClick={openModal}
-        className="hidden md:flex items-center gap-2 bg-slate-100 hover:bg-slate-200 rounded-full px-4 py-2 w-64 lg:w-96 transition-colors text-left"
-        aria-label="Mở tìm kiếm (Cmd+K)"
-      >
-        <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
-        <span className="text-sm text-slate-400 flex-1">Tìm kiếm khóa học...</span>
-        <kbd className="hidden lg:inline-flex items-center gap-0.5 text-[10px] text-slate-400 bg-white border border-slate-200 rounded px-1.5 py-0.5">
-          <span>⌘</span>K
-        </kbd>
-      </button>
-    );
-  }
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close when clicking outside
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        closeModal();
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open, closeModal]);
 
   return (
-    // ── Modal backdrop ────────────────────────────────────────────────────
-    <div
-      className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm flex items-start justify-center pt-[10vh]"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) closeModal();
-      }}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Tìm kiếm toàn cục"
-    >
-      <div className="w-full max-w-xl mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden">
-        {/* Search input row */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
-          {loading ? (
-            <Loader2 className="w-4 h-4 text-slate-400 animate-spin flex-shrink-0" />
-          ) : (
-            <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
-          )}
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setActiveIndex(-1);
-            }}
-            onKeyDown={handleInputKeyDown}
-            placeholder="Tìm kiếm khóa học..."
-            className="flex-1 bg-transparent border-none outline-none text-sm text-slate-700 placeholder:text-slate-400"
-          />
+    <div ref={containerRef} className="relative hidden md:block">
+      {/* Search input - always visible */}
+      <div
+        className={cn(
+          "flex items-center gap-2 bg-slate-100 rounded-full px-4 py-2 w-64 lg:w-96 transition-colors",
+          open ? "ring-2 ring-primary-500 bg-white" : "hover:bg-slate-200"
+        )}
+      >
+        {loading ? (
+          <Loader2 className="w-4 h-4 text-slate-400 animate-spin flex-shrink-0" />
+        ) : (
+          <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+        )}
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onClick={() => !open && openModal()}
+          onChange={(e) => {
+            if (!open) openModal();
+            setQuery(e.target.value);
+            setActiveIndex(-1);
+          }}
+          onKeyDown={handleInputKeyDown}
+          placeholder="Tìm kiếm khóa học..."
+          className="flex-1 bg-transparent border-none outline-none text-sm text-slate-700 placeholder:text-slate-400"
+        />
+        {open ? (
           <button
             onClick={closeModal}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="p-0.5 rounded text-slate-400 hover:text-slate-600 transition-colors"
             aria-label="Đóng"
           >
             <X className="w-4 h-4" />
           </button>
-        </div>
-
-        {/* Results list */}
-        {results.length > 0 && (
-          <div className="py-2 max-h-80 overflow-y-auto">
-            <p className="px-4 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
-              Khóa học
-            </p>
-            {results.map((item, idx) => (
-              <button
-                key={item.id}
-                onClick={() => navigateTo(item.href)}
-                onMouseEnter={() => setActiveIndex(idx)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
-                  idx === activeIndex ? "bg-primary-50" : "hover:bg-slate-50"
-                )}
-              >
-                <div className="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
-                  <BookOpen className="w-4 h-4 text-primary-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-800 truncate">{item.title}</p>
-                  <p className="text-xs text-slate-500 truncate">{item.subtitle}</p>
-                </div>
-              </button>
-            ))}
-          </div>
+        ) : (
+          <kbd className="hidden lg:inline-flex items-center gap-0.5 text-[10px] text-slate-400 bg-white border border-slate-200 rounded px-1.5 py-0.5">
+            <span>⌘</span>K
+          </kbd>
         )}
-
-        {/* Empty state — only shown after user types and no results */}
-        {!loading && query.trim() && results.length === 0 && (
-          <div className="py-10 text-center text-sm text-slate-400">
-            Không tìm thấy kết quả cho &ldquo;{query}&rdquo;
-          </div>
-        )}
-
-        {/* Footer hint */}
-        <div className="flex items-center gap-4 px-4 py-2.5 border-t border-gray-100 text-[11px] text-slate-400">
-          <span><kbd className="font-mono">↑↓</kbd> điều hướng</span>
-          <span><kbd className="font-mono">↵</kbd> chọn</span>
-          <span><kbd className="font-mono">Esc</kbd> đóng</span>
-        </div>
       </div>
+
+      {/* Dropdown results */}
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+          {/* Results list */}
+          {results.length > 0 && (
+            <div className="py-2 max-h-80 overflow-y-auto">
+              <p className="px-4 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+                Khóa học
+              </p>
+              {results.map((item, idx) => (
+                <button
+                  key={item.id}
+                  onClick={() => navigateTo(item.href)}
+                  onMouseEnter={() => setActiveIndex(idx)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
+                    idx === activeIndex ? "bg-primary-50" : "hover:bg-slate-50"
+                  )}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
+                    <BookOpen className="w-4 h-4 text-primary-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-800 truncate">{item.title}</p>
+                    <p className="text-xs text-slate-500 truncate">{item.subtitle}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!loading && query.trim() && results.length === 0 && (
+            <div className="py-8 text-center text-sm text-slate-400">
+              Không tìm thấy kết quả cho &ldquo;{query}&rdquo;
+            </div>
+          )}
+
+          {/* Footer hint */}
+          <div className="flex items-center gap-4 px-4 py-2 border-t border-gray-100 text-[11px] text-slate-400">
+            <span><kbd className="font-mono">↑↓</kbd> điều hướng</span>
+            <span><kbd className="font-mono">↵</kbd> chọn</span>
+            <span><kbd className="font-mono">Esc</kbd> đóng</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
