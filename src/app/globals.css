@@ -581,6 +581,13 @@ html {
   align-items: center;
   border-bottom: 1px solid #e0e0e0;
   margin-bottom: 0 !important;
+  position: relative;
+  z-index: 10;
+}
+
+.fc-custom-wrap .fc-toolbar button {
+  position: relative;
+  z-index: 11;
 }
 
 .fc-custom-wrap .fc-toolbar-title {
