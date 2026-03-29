@@ -566,42 +566,283 @@ html {
   pointer-events: all;
 }
 
-/* FullCalendar custom overrides — .fc-custom-wrap */
+/* ─── FullCalendar Google Calendar-style overrides — .fc-custom-wrap ────────── */
+
+/* Base font + reset */
+.fc-custom-wrap {
+  font-family: 'Inter', 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  color: #3c4043;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────────────── */
+.fc-custom-wrap .fc-toolbar {
+  padding: 8px 16px 8px 12px;
+  align-items: center;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 0 !important;
+}
+
 .fc-custom-wrap .fc-toolbar-title {
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.125rem;
+  font-weight: 400;
+  color: #3c4043;
+  letter-spacing: 0;
 }
-.fc-custom-wrap .fc-button {
-  background-color: transparent;
-  border: 1px solid #e5e7eb;
-  color: #374151;
-  font-size: 0.75rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
+
+/* ── Toolbar buttons — Google-style ghost/pill buttons ───────────────────── */
+.fc-custom-wrap .fc-button,
+.fc-custom-wrap .fc-button-primary {
+  background-color: transparent !important;
+  border: 1px solid #dadce0 !important;
+  color: #3c4043 !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  padding: 0.3125rem 0.75rem !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  line-height: 1.5 !important;
+  transition: background-color 100ms ease, box-shadow 100ms ease !important;
 }
-.fc-custom-wrap .fc-button:hover {
-  background-color: #f3f4f6;
+
+.fc-custom-wrap .fc-button:hover,
+.fc-custom-wrap .fc-button-primary:hover {
+  background-color: #f1f3f4 !important;
+  box-shadow: none !important;
 }
+
+.fc-custom-wrap .fc-button:focus,
+.fc-custom-wrap .fc-button:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.4) !important;
+}
+
+/* "Hôm nay" button — outlined blue like Google */
+.fc-custom-wrap .fc-today-button {
+  border-color: #dadce0 !important;
+  color: #1a73e8 !important;
+  border-radius: 4px !important;
+  padding: 0.3125rem 0.875rem !important;
+  font-weight: 500 !important;
+}
+
+.fc-custom-wrap .fc-today-button:hover {
+  background-color: #e8f0fe !important;
+}
+
+/* Prev/next navigation arrows */
+.fc-custom-wrap .fc-prev-button,
+.fc-custom-wrap .fc-next-button {
+  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: none !important;
+}
+
+/* Active view button — blue pill */
 .fc-custom-wrap .fc-button-active,
 .fc-custom-wrap .fc-button-primary:not(:disabled).fc-button-active {
-  background-color: var(--color-primary-600, #4f46e5) !important;
-  border-color: var(--color-primary-600, #4f46e5) !important;
-  color: #fff !important;
+  background-color: #e8f0fe !important;
+  border-color: #e8f0fe !important;
+  color: #1a73e8 !important;
+  box-shadow: none !important;
 }
+
+/* ── Column header — day name + date number ───────────────────────────────── */
+.fc-custom-wrap .fc-col-header {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.fc-custom-wrap .fc-col-header-cell {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #70757a;
+  padding: 6px 0 4px;
+  border: none !important;
+  background: #fff;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.fc-custom-wrap .fc-col-header-cell-cushion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  text-decoration: none !important;
+  color: inherit;
+}
+
+/* Large date number — Google Calendar style */
+.fc-custom-wrap .fc-col-header-cell-cushion::after {
+  content: attr(data-date);
+}
+
+/* Style the date number via the link's inner text — target the <a> wrapper */
+.fc-custom-wrap .fc-col-header-cell a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-decoration: none;
+  color: #3c4043;
+}
+
+/* Today column header — blue circle around date */
+.fc-custom-wrap .fc-day-today .fc-col-header-cell-cushion,
+.fc-custom-wrap .fc-day-today a {
+  color: #1a73e8;
+  font-weight: 600;
+}
+
+/* ── Time grid lines ─────────────────────────────────────────────────────── */
+.fc-custom-wrap .fc-scrollgrid {
+  border: none !important;
+}
+
+.fc-custom-wrap .fc-scrollgrid-section > td,
+.fc-custom-wrap .fc-scrollgrid td,
+.fc-custom-wrap .fc-scrollgrid th {
+  border-color: #e0e0e0 !important;
+}
+
+/* Remove outer border */
+.fc-custom-wrap .fc-scrollgrid-section-header .fc-scroller-harness,
+.fc-custom-wrap table.fc-scrollgrid {
+  border: none !important;
+}
+
+/* Thin 1px horizontal slot lines */
 .fc-custom-wrap .fc-timegrid-slot {
-  height: 2rem;
+  height: 48px;
+  border-top: 1px solid #f1f3f4 !important;
 }
+
+/* Full-hour lines slightly darker */
+.fc-custom-wrap .fc-timegrid-slot-major {
+  border-top: 1px solid #e0e0e0 !important;
+}
+
+/* Half-hour dashed line */
+.fc-custom-wrap .fc-timegrid-slot-minor {
+  border-top: 1px dashed #f1f3f4 !important;
+}
+
+/* Vertical day column dividers */
+.fc-custom-wrap .fc-timegrid-col {
+  border-right: 1px solid #e0e0e0 !important;
+}
+
+/* ── Time labels (left axis) ─────────────────────────────────────────────── */
+.fc-custom-wrap .fc-timegrid-slot-label {
+  font-size: 0.625rem;
+  font-weight: 400;
+  color: #70757a;
+  text-align: right;
+  vertical-align: top;
+  padding-right: 8px !important;
+  border: none !important;
+  letter-spacing: 0.3px;
+}
+
+.fc-custom-wrap .fc-timegrid-slot-label-cushion {
+  padding: 0;
+  white-space: nowrap;
+  /* shift label to sit on the hour line rather than inside the slot */
+  transform: translateY(-50%);
+  display: block;
+}
+
+/* ── Now indicator — red line + dot ──────────────────────────────────────── */
+.fc-custom-wrap .fc-timegrid-now-indicator-line {
+  border-color: #ea4335 !important;
+  border-width: 2px 0 0 !important;
+  z-index: 5;
+}
+
+.fc-custom-wrap .fc-timegrid-now-indicator-arrow {
+  border-top-color: #ea4335 !important;
+  border-bottom-color: #ea4335 !important;
+  /* Replace the triangle with a circle dot */
+  border: none !important;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #ea4335 !important;
+  margin-top: -5px;
+  margin-left: -6px;
+}
+
+/* ── Events ──────────────────────────────────────────────────────────────── */
 .fc-custom-wrap .fc-event {
   border: none !important;
   background: transparent !important;
   padding: 0 !important;
+  border-radius: 4px !important;
 }
+
 .fc-custom-wrap .fc-event-main {
   padding: 0 !important;
 }
-.fc-custom-wrap .fc-col-header-cell {
+
+/* Drag-select highlight — Google's translucent blue */
+.fc-custom-wrap .fc-highlight {
+  background-color: rgba(26, 115, 232, 0.12) !important;
+  border: 1px solid rgba(26, 115, 232, 0.4) !important;
+  border-radius: 4px !important;
+}
+
+/* Select mirror while dragging */
+.fc-custom-wrap .fc-event.fc-event-mirror {
+  opacity: 0.7;
+}
+
+/* ── Today column background ─────────────────────────────────────────────── */
+.fc-custom-wrap .fc-day-today {
+  background-color: rgba(26, 115, 232, 0.04) !important;
+}
+
+/* ── Day grid (month view) ───────────────────────────────────────────────── */
+.fc-custom-wrap .fc-daygrid-day-number {
   font-size: 0.75rem;
-  font-weight: 600;
-  color: #6b7280;
-  padding: 0.5rem 0;
+  font-weight: 400;
+  color: #3c4043;
+  padding: 4px 8px;
+  text-decoration: none;
+}
+
+.fc-custom-wrap .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  background-color: #1a73e8;
+  color: #fff;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 4px auto 0;
+}
+
+/* ── Scrollbar inside time grid ──────────────────────────────────────────── */
+.fc-custom-wrap .fc-scroller::-webkit-scrollbar {
+  width: 6px;
+}
+
+.fc-custom-wrap .fc-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.fc-custom-wrap .fc-scroller::-webkit-scrollbar-thumb {
+  background: #dadce0;
+  border-radius: 3px;
+}
+
+.fc-custom-wrap .fc-scroller::-webkit-scrollbar-thumb:hover {
+  background: #bdc1c6;
 }
