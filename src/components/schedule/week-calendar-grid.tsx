@@ -47,6 +47,8 @@ export interface ScheduleEvent {
 interface WeekCalendarGridProps {
   events: ScheduleEvent[];
   editable?: boolean;
+  /** Slot duration for grid snapping, e.g. "00:15:00" for 15min (default: 15min) */
+  slotDuration?: string;
   onCellClick?: (day: Date, hour: number) => void;
   onEventClick?: (event: ScheduleEvent) => void;
   onEventChange?: (eventId: string, newStart: string, newEnd: string) => void;
@@ -101,6 +103,7 @@ function toFcEvents(events: ScheduleEvent[]) {
 export default function WeekCalendarGrid({
   events,
   editable = false,
+  slotDuration = "00:15:00",
   onCellClick,
   onEventClick,
   onEventChange,
@@ -209,7 +212,8 @@ export default function WeekCalendarGrid({
           firstDay={1}
           slotMinTime="07:00:00"
           slotMaxTime="23:00:00"
-          slotDuration="00:30:00"
+          slotDuration={slotDuration}
+          snapDuration={slotDuration}
           height="auto"
           events={fcEvents}
           editable={editable}
