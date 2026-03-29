@@ -76,9 +76,9 @@ export default function LandingPage() {
             </ScrollReveal>
 
             <ScrollReveal delay={150}>
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-tight text-center">
-                <span className="block text-slate-900">Khai phóng Tiềm năng</span>
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400">Công nghệ của bạn</span>
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 text-center">
+                <span className="block text-slate-900 leading-[1.15]">Khai phóng Tiềm năng</span>
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400 leading-[1.15] -mt-2 md:-mt-4">Công nghệ của bạn</span>
               </h1>
             </ScrollReveal>
 

@@ -119,6 +119,7 @@ export function TiptapEditor({
                 className={cn(
                     "prose prose-sm max-w-none px-4 py-3",
                     "focus-within:outline-none",
+                    "[&_.tiptap]:outline-none [&_.tiptap]:min-h-[var(--editor-min-height)]",
                     // Mention chip styling
                     "[&_.mention]:rounded-md [&_.mention]:bg-primary-100 [&_.mention]:px-1 [&_.mention]:py-0.5",
                     "[&_.mention]:text-primary-700 [&_.mention]:font-medium",
@@ -143,7 +144,12 @@ export function TiptapEditor({
                     "[&_.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]",
                     editorClassName
                 )}
-                style={{ minHeight }}
+                style={
+                    {
+                        minHeight,
+                        "--editor-min-height": `${minHeight}px`,
+                    } as React.CSSProperties
+                }
             />
         </div>
     );
