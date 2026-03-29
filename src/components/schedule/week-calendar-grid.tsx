@@ -131,7 +131,10 @@ export default function WeekCalendarGrid({
   // ── Event rendering ──────────────────────────────────────────────────────
 
   const renderEventContent = (arg: EventContentArg) => {
-    const ev: ScheduleEvent = arg.event.extendedProps.scheduleEvent;
+    const ev: ScheduleEvent | undefined = arg.event.extendedProps.scheduleEvent;
+    // Selection mirror (drag preview) has no scheduleEvent - render nothing
+    if (!ev) return null;
+
     const isHovered = hoveredEventId === ev.id;
 
     if (renderEventTooltip) {
