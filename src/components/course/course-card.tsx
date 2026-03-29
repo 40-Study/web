@@ -25,7 +25,9 @@ export function CourseCard({ course, className }: CourseCardProps) {
     <Link href={`/courses/${course.slug}`}>
       <Card
         className={cn(
-          "overflow-hidden hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1.5 transition-all duration-300 group cursor-pointer h-full border-slate-200/60 rounded-2xl bg-white",
+          "overflow-hidden group cursor-pointer h-full border-slate-200/60 rounded-2xl bg-white",
+          "will-change-transform transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]",
+          "hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/50",
           className
         )}
       >
@@ -34,7 +36,7 @@ export function CourseCard({ course, className }: CourseCardProps) {
           <img
             src={course.thumbnail}
             alt={course.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+            className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]"
             loading="lazy"
           />
           {/* Gradient overlay on hover */}

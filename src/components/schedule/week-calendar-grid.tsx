@@ -7,8 +7,9 @@
  * minimal changes.
  */
 
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
+import * as Popover from "@radix-ui/react-popover";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin, {
@@ -103,16 +104,48 @@ export default function WeekCalendarGrid({
   onCellClick,
   onEventClick,
   onEventChange,
+  renderEventTooltip,
   headerActions,
   stats,
 }: WeekCalendarGridProps) {
   const calendarRef = useRef<FullCalendar>(null);
+  const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
 
   const fcEvents = useMemo(() => toFcEvents(events), [events]);
 
-  // FullCalendar renders custom event content
+  // FullCalendar renders custom event content with hover tooltip
   const renderEventContent = (arg: EventContentArg) => {
     const ev: ScheduleEvent = arg.event.extendedProps.scheduleEvent;
+    const isHovered = hoveredEventId === ev.id;
+
+    if (renderEventTooltip) {
+      return (
+        <Popover.Root open={isHovered}>
+          <Popover.Anchor asChild>
+            <div
+              className="w-full h-full p-0 overflow-hidden"
+              onMouseEnter={() => setHoveredEventId(ev.id)}
+              onMouseLeave={() => setHoveredEventId(null)}
+            >
+              <CalendarEventCard event={ev} />
+            </div>
+          </Popover.Anchor>
+          <Popover.Portal>
+            <Popover.Content
+              side="right"
+              align="start"
+              sideOffset={8}
+              className="z-50"
+              onMouseEnter={() => setHoveredEventId(ev.id)}
+              onMouseLeave={() => setHoveredEventId(null)}
+            >
+              {renderEventTooltip(ev)}
+            </Popover.Content>
+          </Popover.Portal>
+        </Popover.Root>
+      );
+    }
+
     return (
       <div className="w-full h-full p-0 overflow-hidden">
         <CalendarEventCard event={ev} />

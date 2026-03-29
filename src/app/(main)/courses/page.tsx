@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Sparkles, BookOpen, TrendingUp } from "lucide-react";
 import { CourseGrid } from "@/components/course/course-grid";
 import { CourseFiltersComponent } from "@/components/course/course-filters";
 import { CourseSearch } from "@/components/course/course-search";
+import { CourseBannerCarousel } from "@/components/course/course-banner-carousel";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { useSearchSuggestions } from "@/hooks/use-courses";
 import { CourseFilters } from "@/types/course";
@@ -47,65 +47,33 @@ export default function CoursesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-primary-950 to-slate-900 text-white">
-        {/* Decorative blobs */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary-500/20 rounded-full blur-3xl animate-[float_10s_ease-in-out_infinite]" />
-          <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-secondary-500/15 rounded-full blur-3xl animate-[float_12s_ease-in-out_infinite_2s]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary-600/10 rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative container mx-auto px-4 py-14 md:py-20">
+      <div className="container mx-auto px-4 pt-6 pb-8">
+        {/* Compact Header: Title + Search */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <ScrollReveal direction="fade">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-primary-500/20 flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-primary-300" />
-              </div>
-              <span className="text-sm font-medium text-primary-300 tracking-wide uppercase">Khám phá & Học tập</span>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Khám phá khóa học</h1>
+              <p className="text-slate-500 text-sm mt-1">
+                {mockCourses.length}+ khóa học &middot; Cập nhật liên tục
+              </p>
             </div>
           </ScrollReveal>
-
-          <ScrollReveal delay={100}>
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-3 tracking-tight">
-              Khám phá khóa học
-            </h1>
-          </ScrollReveal>
-
-          <ScrollReveal delay={200}>
-            <p className="text-slate-400 text-lg max-w-xl mb-8">
-              Tìm kiếm và học những khóa học phù hợp với mục tiêu phát triển của bạn
-            </p>
-          </ScrollReveal>
-
-          {/* Search Bar */}
-          <ScrollReveal delay={300}>
-            <div className="max-w-2xl">
+          <ScrollReveal direction="fade" delay={100}>
+            <div className="w-full md:w-80">
               <CourseSearch
                 onSearch={handleSearch}
                 suggestions={suggestions}
-                placeholder="Tìm kiếm khóa học, giảng viên..."
+                placeholder="Tìm kiếm khóa học..."
               />
             </div>
           </ScrollReveal>
-
-          {/* Quick stats */}
-          <ScrollReveal delay={400}>
-            <div className="flex flex-wrap gap-6 mt-8">
-              <div className="flex items-center gap-2 text-slate-400">
-                <BookOpen className="w-4 h-4 text-primary-400" />
-                <span className="text-sm">{mockCourses.length}+ khóa học</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-400">
-                <TrendingUp className="w-4 h-4 text-green-400" />
-                <span className="text-sm">Cập nhật liên tục</span>
-              </div>
-            </div>
-          </ScrollReveal>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-8">
+        {/* Banner Carousel */}
+        <ScrollReveal direction="scale" className="mb-8">
+          <CourseBannerCarousel />
+        </ScrollReveal>
+
         {/* Filters */}
         <ScrollReveal direction="fade">
           <CourseFiltersComponent
