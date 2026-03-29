@@ -338,27 +338,21 @@ function LoginView({
                 onSuccess: (response) => {
                     const data = response.data;
 
-                    // Direct login - access_token returned without session_token
-                    // This means login is complete (1 role, 0 orgs)
-                    if (data.access_token && !data.session_token) {
-                        onLoginSuccess("direct");
+                    // Always show role selection if user has roles
+                    // Even single-role users should see the role picker for clarity
+                    if (data.system_roles && data.system_roles.length >= 1) {
+                        onLoginSuccess("select-role");
                         return;
                     }
 
-                    // requires_org_selection → 1 role, needs org selection
+                    // requires_org_selection → needs org selection
                     if (data.requires_org_selection) {
                         onLoginSuccess("select-org");
                         return;
                     }
 
-                    // Multiple roles → need role selection
-                    if (data.system_roles && data.system_roles.length > 1) {
-                        onLoginSuccess("select-role");
-                        return;
-                    }
-
-                    // Single role with session_token → might need org selection later
-                    onLoginSuccess("select-role");
+                    // Fallback: direct login (no roles returned)
+                    onLoginSuccess("direct");
                 },
             }
         );

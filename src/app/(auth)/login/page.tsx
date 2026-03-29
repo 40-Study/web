@@ -29,20 +29,22 @@ export default function LoginPage() {
         onSuccess: (response) => {
           const data = response.data;
 
-          // Direct login - access_token returned without session_token
-          if (data.access_token && !data.session_token) {
+          // Always show role selection if user has roles
+          const systemRoles = data.system_roles || [];
+          if (systemRoles.length >= 1) {
+            router.push(AUTH_ROUTES.LOGIN_ROLE);
+            return;
+          }
+
+          // Fallback: direct login (no roles returned)
+          if (data.access_token) {
             const role = data.active_role?.name || getRoleFromToken(data.access_token);
             router.push(getRoleHomeRoute(role));
             return;
           }
 
-          // Multiple roles → role selection
-          const systemRoles = data.system_roles || [];
-          if (systemRoles.length > 1) {
-            router.push(AUTH_ROUTES.LOGIN_ROLE);
-          } else {
-            router.push(AUTH_ROUTES.LOGIN_ORGANIZATION);
-          }
+          // Requires org selection
+          router.push(AUTH_ROUTES.LOGIN_ORGANIZATION);
         },
       }
     );
