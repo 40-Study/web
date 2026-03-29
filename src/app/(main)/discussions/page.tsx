@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { MessageSquare, ThumbsUp, Clock3, Send } from "lucide-react";
+import { TiptapEditor } from "@/components/editor";
 import {
   discussionPosts,
   DiscussionPost,
@@ -57,7 +58,11 @@ export default function DiscussionsPage() {
   const handleCreatePost = () => {
     const title = newPost.title.trim();
     const content = newPost.content.trim();
-    if (!title || !content) return;
+    if (!title || !content || content === "<p></p>") return;
+
+    // Strip HTML tags for summary
+    const plainText = content.replace(/<[^>]*>/g, "").trim();
+    const summary = plainText.slice(0, 120) + (plainText.length > 120 ? "..." : "");
 
     const slugBase = title
       .toLowerCase()
@@ -70,13 +75,13 @@ export default function DiscussionsPage() {
     const created: DiscussionPost = {
       slug: `${slugBase}-${Date.now().toString().slice(-6)}`,
       title,
-      summary: content.slice(0, 120) + (content.length > 120 ? "..." : ""),
+      summary,
       category: newPost.category,
       author: "Bạn",
       createdAt: new Date().toISOString().slice(0, 10),
       replies: 0,
       likes: 0,
-      content: content.split("\n").map((line) => line.trim()).filter(Boolean),
+      content: [content], // Store HTML as single entry
       comments: [],
     };
 
@@ -103,34 +108,31 @@ export default function DiscussionsPage() {
           placeholder="Tiêu đề bài viết"
           className="w-full rounded-xl border border-gray-100 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500"
         />
-        <div className="flex flex-col md:flex-row gap-3">
-          <select
-            value={newPost.category}
-            onChange={(e) =>
-              setNewPost((prev) => ({ ...prev, category: e.target.value as DiscussionPost["category"] }))
-            }
-            className="rounded-xl border border-gray-100 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500 md:w-56"
-          >
-            <option value="Lập trình">Lập trình</option>
-            <option value="Thiết kế">Thiết kế</option>
-            <option value="Kinh nghiệm học">Kinh nghiệm học</option>
-            <option value="Dự án">Dự án</option>
-          </select>
-          <button
-            onClick={handleCreatePost}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
-          >
-            <Send className="h-4 w-4" />
-            Đăng bài
-          </button>
-        </div>
-        <textarea
+        <select
+          value={newPost.category}
+          onChange={(e) =>
+            setNewPost((prev) => ({ ...prev, category: e.target.value as DiscussionPost["category"] }))
+          }
+          className="rounded-xl border border-gray-100 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500 md:w-56"
+        >
+          <option value="Lập trình">Lập trình</option>
+          <option value="Thiết kế">Thiết kế</option>
+          <option value="Kinh nghiệm học">Kinh nghiệm học</option>
+          <option value="Dự án">Dự án</option>
+        </select>
+        <TiptapEditor
           value={newPost.content}
-          onChange={(e) => setNewPost((prev) => ({ ...prev, content: e.target.value }))}
+          onChange={(html) => setNewPost((prev) => ({ ...prev, content: html }))}
           placeholder="Nội dung chia sẻ của bạn..."
-          rows={4}
-          className="w-full rounded-xl border border-gray-100 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500"
+          minHeight={150}
         />
+        <button
+          onClick={handleCreatePost}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 self-start"
+        >
+          <Send className="h-4 w-4" />
+          Đăng bài
+        </button>
       </section>
 
       <p className="text-sm text-muted-foreground">{postCount} bài viết</p>

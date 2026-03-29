@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { notFound, useParams } from "next/navigation";
 import { ChevronLeft, MessageSquare, Reply, Send, ThumbsUp } from "lucide-react";
+import { TiptapEditor } from "@/components/editor";
 import {
   discussionPosts,
   DiscussionComment,
@@ -192,7 +193,10 @@ export default function DiscussionDetailPage() {
           </div>
         </div>
 
-        <p className="mt-3 text-sm text-slate-700 whitespace-pre-wrap">{comment.content}</p>
+        <div
+          className="mt-3 text-sm text-slate-700 prose prose-sm max-w-none"
+          dangerouslySetInnerHTML={{ __html: comment.content }}
+        />
 
         <div className="mt-3 flex items-center gap-3 text-sm">
           <button
@@ -217,23 +221,24 @@ export default function DiscussionDetailPage() {
         </div>
 
         {isReplyOpen && (
-          <div className="mt-3 flex gap-2">
-            <input
+          <div className="mt-3 space-y-2">
+            <TiptapEditor
               value={replyInputs[comment.id] || ""}
-              onChange={(e) =>
+              onChange={(html) =>
                 setReplyInputs((prev) => ({
                   ...prev,
-                  [comment.id]: e.target.value,
+                  [comment.id]: html,
                 }))
               }
               placeholder="Viết trả lời..."
-              className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500"
+              minHeight={100}
             />
             <button
               onClick={() => handleAddReply(comment.id)}
-              className="inline-flex items-center justify-center rounded-lg bg-primary-600 px-3 py-2 text-white hover:bg-primary-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
             >
               <Send className="h-4 w-4" />
+              Gửi trả lời
             </button>
           </div>
         )}
@@ -287,9 +292,12 @@ export default function DiscussionDetailPage() {
           </div>
         </header>
 
-        <div className="space-y-4 text-slate-700">
+        <div className="prose prose-slate max-w-none">
           {post.content.map((paragraph, index) => (
-            <p key={`${post.slug}-paragraph-${index}`}>{paragraph}</p>
+            <div
+              key={`${post.slug}-paragraph-${index}`}
+              dangerouslySetInnerHTML={{ __html: paragraph }}
+            />
           ))}
         </div>
       </article>
@@ -297,22 +305,21 @@ export default function DiscussionDetailPage() {
       <section className="mt-8 rounded-2xl border bg-white p-6 md:p-8">
         <h2 className="text-lg font-semibold text-slate-900">Bình luận ({post.replies})</h2>
 
-        <div className="mt-4 flex gap-2">
-          <input
+        <div className="mt-4 space-y-3">
+          <TiptapEditor
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
+            onChange={setNewComment}
             placeholder="Viết bình luận của bạn..."
-            className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500"
+            minHeight={120}
           />
           <button
             onClick={handleAddComment}
-            className="inline-flex items-center justify-center rounded-lg bg-primary-600 px-3 py-2 text-white hover:bg-primary-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
           >
             <Send className="h-4 w-4" />
+            Gửi bình luận
           </button>
         </div>
-
-        <div className="mt-2 text-xs text-muted-foreground">Nhấn Enter trong ô input sẽ không gửi, hãy bấm nút gửi.</div>
 
         <div className="mt-4">
           {post.comments.length === 0 ? (

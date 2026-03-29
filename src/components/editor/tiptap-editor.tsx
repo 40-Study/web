@@ -4,7 +4,7 @@
  * TipTap rich text editor component
  * Supports: formatting, headings, lists, code blocks, tables, mentions, image upload
  */
-import React, { useCallback } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { cn } from "@/lib/utils";
 import { buildExtensions } from "@/lib/tiptap-config";
@@ -38,6 +38,8 @@ export function TiptapEditor({
     readOnly = false,
     minHeight = 200,
 }: TiptapEditorProps) {
+    const [isMounted, setIsMounted] = useState(false);
+
     const mentionSuggestion = fetchMentionUsers
         ? buildMentionSuggestion({ fetchUsers: fetchMentionUsers })
         : undefined;
@@ -51,16 +53,22 @@ export function TiptapEditor({
         onUpdate({ editor }) {
             onChange?.(editor.getHTML());
         },
+        immediatelyRender: false, // Prevents SSR hydration mismatch
     });
 
+    // Wait for client-side mount
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     // Sync external value changes (e.g. form reset)
-    React.useEffect(() => {
-        if (!editor) return;
+    useEffect(() => {
+        if (!editor || !isMounted) return;
         const current = editor.getHTML();
         if (value !== undefined && value !== current) {
             editor.commands.setContent(value, { emitUpdate: false });
         }
-    }, [value, editor]);
+    }, [value, editor, isMounted]);
 
     const handleImageUpload = useCallback(async () => {
         if (!editor || !onImageUpload) return;
@@ -80,7 +88,18 @@ export function TiptapEditor({
         input.click();
     }, [editor, onImageUpload]);
 
-    if (!editor) return null;
+    if (!editor || !isMounted) {
+        // Placeholder to prevent layout shift
+        return (
+            <div
+                className={cn(
+                    "overflow-hidden rounded-xl border border-border bg-background",
+                    className
+                )}
+                style={{ minHeight }}
+            />
+        );
+    }
 
     return (
         <div

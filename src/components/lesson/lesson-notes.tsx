@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { TiptapEditor } from "@/components/editor";
 import { cn } from "@/lib/utils";
 
 export interface Note {
@@ -50,47 +51,33 @@ export function LessonNotes({
     setNewNote("");
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      handleAddNote();
-    }
-  };
-
   return (
     <div className={cn("space-y-4", className)}>
       {/* Add note input */}
       <div className="space-y-2">
-        <div className="relative">
-          <textarea
-            placeholder="Them ghi chu..."
-            value={newNote}
-            onChange={(e) => setNewNote(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="w-full min-h-[100px] p-3 pr-12 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 bg-background"
-          />
-          <Button
-            size="sm"
-            className="absolute bottom-2 right-2"
-            onClick={handleAddNote}
-            disabled={!newNote.trim()}
-          >
-            Luu
+        <TiptapEditor
+          value={newNote}
+          onChange={setNewNote}
+          placeholder="Thêm ghi chú..."
+          minHeight={100}
+        />
+        <div className="flex items-center justify-between">
+          {/* Timestamp toggle */}
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={includeTimestamp}
+              onChange={(e) => setIncludeTimestamp(e.target.checked)}
+              className="rounded border-muted-foreground"
+            />
+            <span className="text-muted-foreground">
+              Gắn thời gian video ({formatTimestamp(currentVideoTime)})
+            </span>
+          </label>
+          <Button size="sm" onClick={handleAddNote} disabled={!newNote.trim()}>
+            Lưu
           </Button>
         </div>
-
-        {/* Timestamp toggle */}
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            checked={includeTimestamp}
-            onChange={(e) => setIncludeTimestamp(e.target.checked)}
-            className="rounded border-muted-foreground"
-          />
-          <span className="text-muted-foreground">
-            Gan thoi gian video ({formatTimestamp(currentVideoTime)})
-          </span>
-        </label>
       </div>
 
       {/* Notes list */}
@@ -112,9 +99,10 @@ export function LessonNotes({
                       {formatTimestamp(note.timestamp)}
                     </button>
                   )}
-                  <p className="text-sm whitespace-pre-wrap break-words">
-                    {note.content}
-                  </p>
+                  <div
+                    className="text-sm prose prose-sm max-w-none break-words"
+                    dangerouslySetInnerHTML={{ __html: note.content }}
+                  />
                   <p className="text-xs text-muted-foreground mt-2">
                     {new Date(note.createdAt).toLocaleDateString("vi-VN", {
                       day: "numeric",

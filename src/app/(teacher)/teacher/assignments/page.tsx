@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { TiptapEditor } from "@/components/editor";
 import {
   getTeacherAssignmentCourseSummaries,
   loadTeacherCourseChapters,
@@ -386,14 +386,16 @@ export default function TeacherAssignmentsPage() {
 
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="assignment-instructions">Yêu cầu chi tiết *</Label>
-                <Textarea
-                  id="assignment-instructions"
-                  rows={4}
-                  value={instructions}
-                  onChange={(event) => setInstructions(event.target.value)}
-                  placeholder="Mô tả tiêu chí chấm, yêu cầu đầu ra, deadline..."
-                  disabled={!selectedLessonId}
-                />
+                {selectedLessonId ? (
+                  <TiptapEditor
+                    value={instructions}
+                    onChange={setInstructions}
+                    placeholder="Mô tả tiêu chí chấm, yêu cầu đầu ra, deadline..."
+                    minHeight={150}
+                  />
+                ) : (
+                  <div className="h-[150px] rounded-xl border border-border bg-muted/50" />
+                )}
               </div>
 
               <div className="md:col-span-2">
@@ -461,7 +463,10 @@ export default function TeacherAssignmentsPage() {
               {selectedAssignment && (
                 <div className="rounded-lg border bg-gray-50 p-4">
                   <p className="text-sm font-medium">Chi tiết nhanh: {selectedAssignment.title}</p>
-                  <p className="mt-2 text-sm text-muted-foreground whitespace-pre-line">{selectedAssignment.instructions}</p>
+                  <div
+                  className="mt-2 text-sm text-muted-foreground prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: selectedAssignment.instructions }}
+                />
                 </div>
               )}
             </CardContent>
