@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { format } from "date-fns";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import WeekCalendarGrid from "@/components/schedule/week-calendar-grid";
@@ -8,6 +9,7 @@ import ScheduleEventTooltip from "@/components/schedule/schedule-event-tooltip";
 import ScheduleEventFormDialog from "@/components/schedule/schedule-event-form-dialog";
 import type { ScheduleEvent } from "@/components/schedule/week-calendar-grid";
 import type { EventFormData } from "@/components/schedule/schedule-event-form-dialog";
+import type { QuickCreateData } from "@/components/schedule/schedule-quick-create-popover";
 
 const INITIAL_EVENTS: ScheduleEvent[] = [
   {
@@ -66,11 +68,13 @@ export default function TeacherSchedulePage() {
   const [editingEvent, setEditingEvent] = useState<ScheduleEvent | null>(null);
   const [defaultDate, setDefaultDate] = useState<Date | undefined>();
   const [defaultHour, setDefaultHour] = useState<number | undefined>();
+  const [defaultEndTime, setDefaultEndTime] = useState<string | undefined>();
 
   const handleCellClick = useCallback((day: Date, hour: number) => {
     setEditingEvent(null);
     setDefaultDate(day);
     setDefaultHour(hour);
+    setDefaultEndTime(undefined);
     setDialogOpen(true);
   }, []);
 
@@ -129,6 +133,34 @@ export default function TeacherSchedulePage() {
     []
   );
 
+  /** Called from QuickCreatePopover "Lưu" — creates a minimal event immediately */
+  const handleQuickCreate = useCallback((data: QuickCreateData) => {
+    const newEvent: ScheduleEvent = {
+      id: crypto.randomUUID(),
+      title: data.title,
+      type: "video",
+      startTime: data.startTime.toISOString(),
+      endTime: data.endTime.toISOString(),
+      status: "upcoming",
+      teacher: "Bạn",
+    };
+    setEvents((prev) => [...prev, newEvent]);
+  }, []);
+
+  /**
+   * Called from QuickCreatePopover "Thêm tùy chọn" — pre-fills and opens
+   * the full form dialog with the drag-selected time range.
+   */
+  const handleSelectMore = useCallback((start: Date, end: Date) => {
+    setEditingEvent(null);
+    setDefaultDate(start);
+    setDefaultHour(start.getHours());
+    // Pass end time via a temporary approach: store as ISO so form can use it
+    // We encode end into defaultHour using a custom defaultEndTime state
+    setDefaultEndTime(format(end, "HH:mm"));
+    setDialogOpen(true);
+  }, []);
+
   return (
     <div className="p-6">
       <WeekCalendarGrid
@@ -137,6 +169,8 @@ export default function TeacherSchedulePage() {
         onCellClick={handleCellClick}
         onEventClick={handleEventClick}
         onEventChange={handleEventChange}
+        onQuickCreate={handleQuickCreate}
+        onSelectMore={handleSelectMore}
         renderEventTooltip={(event) => (
           <ScheduleEventTooltip event={event} editable onEdit={handleEventClick} />
         )}
@@ -146,6 +180,7 @@ export default function TeacherSchedulePage() {
               setEditingEvent(null);
               setDefaultDate(new Date());
               setDefaultHour(8);
+              setDefaultEndTime(undefined);
               setDialogOpen(true);
             }}
             size="sm"
@@ -169,6 +204,7 @@ export default function TeacherSchedulePage() {
         event={editingEvent}
         defaultDate={defaultDate}
         defaultHour={defaultHour}
+        defaultEndTime={defaultEndTime}
         onSave={handleSave}
         onDelete={handleDelete}
       />

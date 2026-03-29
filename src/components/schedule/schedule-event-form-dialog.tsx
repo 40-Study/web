@@ -49,6 +49,8 @@ interface ScheduleEventFormDialogProps {
   /** Pre-filled date/hour when clicking empty cell */
   defaultDate?: Date;
   defaultHour?: number;
+  /** Pre-filled end time string "HH:mm" from drag selection */
+  defaultEndTime?: string;
   onSave: (data: EventFormData, eventId?: string) => void;
   onDelete?: (eventId: string) => void;
 }
@@ -65,6 +67,7 @@ export default function ScheduleEventFormDialog({
   event,
   defaultDate,
   defaultHour,
+  defaultEndTime,
   onSave,
   onDelete,
 }: ScheduleEventFormDialogProps) {
@@ -107,10 +110,11 @@ export default function ScheduleEventFormDialog({
       }
       if (defaultHour !== undefined) {
         setStartTime(`${String(defaultHour).padStart(2, "0")}:00`);
-        setEndTime(`${String(defaultHour + 1).padStart(2, "0")}:30`);
+        // Use drag-selected end time when available, otherwise default +1.5h
+        setEndTime(defaultEndTime ?? `${String(defaultHour + 1).padStart(2, "0")}:30`);
       }
     }
-  }, [event, defaultDate, defaultHour, open]);
+  }, [event, defaultDate, defaultHour, defaultEndTime, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
