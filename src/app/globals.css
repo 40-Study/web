@@ -747,22 +747,23 @@ html {
 
 /* ── Time labels (left axis) ─────────────────────────────────────────────── */
 .fc-custom-wrap .fc-timegrid-slot-label {
-  font-size: 0.625rem;
-  font-weight: 400;
+  font-size: 0.6875rem;
+  font-weight: 500;
   color: #70757a;
   text-align: right;
   vertical-align: top;
-  padding-right: 8px !important;
+  padding: 0 8px 0 0 !important;
   border: none !important;
-  letter-spacing: 0.3px;
+  letter-spacing: 0;
+  position: relative;
 }
 
 .fc-custom-wrap .fc-timegrid-slot-label-cushion {
   padding: 0;
   white-space: nowrap;
-  /* shift label to sit on the hour line rather than inside the slot */
-  transform: translateY(-50%);
-  display: block;
+  display: inline-block;
+  position: relative;
+  top: -0.5em;
 }
 
 /* ── Now indicator — red line + dot ──────────────────────────────────────── */
