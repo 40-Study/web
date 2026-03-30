@@ -132,8 +132,22 @@ export default function WeekCalendarGrid({
 
   const renderEventContent = (arg: EventContentArg) => {
     const ev: ScheduleEvent | undefined = arg.event.extendedProps.scheduleEvent;
-    // Selection mirror (drag preview) has no scheduleEvent - render nothing
-    if (!ev) return null;
+
+    // Selection mirror (drag preview) — show time range inside
+    if (!ev) {
+      const start = arg.event.start;
+      const end = arg.event.end;
+      if (start && end) {
+        const fmt = (d: Date) =>
+          `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+        return (
+          <div className="flex items-center justify-center h-full text-sm font-medium text-blue-700">
+            {fmt(start)} – {fmt(end)}
+          </div>
+        );
+      }
+      return null;
+    }
 
     const isHovered = hoveredEventId === ev.id;
 

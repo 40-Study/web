@@ -70,14 +70,6 @@ export default function TeacherSchedulePage() {
   const [defaultHour, setDefaultHour] = useState<number | undefined>();
   const [defaultEndTime, setDefaultEndTime] = useState<string | undefined>();
 
-  const handleCellClick = useCallback((day: Date, hour: number) => {
-    setEditingEvent(null);
-    setDefaultDate(day);
-    setDefaultHour(hour);
-    setDefaultEndTime(undefined);
-    setDialogOpen(true);
-  }, []);
-
   const handleEventClick = useCallback((event: ScheduleEvent) => {
     setEditingEvent(event);
     setDefaultDate(undefined);
@@ -166,7 +158,6 @@ export default function TeacherSchedulePage() {
       <WeekCalendarGrid
         events={events}
         editable
-        onCellClick={handleCellClick}
         onEventClick={handleEventClick}
         onEventChange={handleEventChange}
         onQuickCreate={handleQuickCreate}
