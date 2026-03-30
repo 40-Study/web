@@ -21,6 +21,8 @@ export interface TiptapEditorProps {
     fetchMentionUsers?: (query: string) => Promise<MentionItem[]> | MentionItem[];
     /** Called with File when user triggers image upload; should resolve to public URL */
     onImageUpload?: (file: File) => Promise<string>;
+    /** Called with File when user triggers file upload; should resolve to { url, name } */
+    onFileUpload?: (file: File) => Promise<{ url: string; name: string }>;
     className?: string;
     editorClassName?: string;
     readOnly?: boolean;
@@ -33,6 +35,7 @@ export function TiptapEditor({
     placeholder = "Write something...",
     fetchMentionUsers,
     onImageUpload,
+    onFileUpload,
     className,
     editorClassName,
     readOnly = false,
@@ -70,8 +73,17 @@ export function TiptapEditor({
         }
     }, [value, editor, isMounted]);
 
+    // Convert file to base64 data URL
+    const toBase64 = (file: File): Promise<string> =>
+        new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+
     const handleImageUpload = useCallback(async () => {
-        if (!editor || !onImageUpload) return;
+        if (!editor) return;
         const input = document.createElement("input");
         input.type = "file";
         input.accept = "image/*";
@@ -79,7 +91,8 @@ export function TiptapEditor({
             const file = input.files?.[0];
             if (!file) return;
             try {
-                const url = await onImageUpload(file);
+                // Use custom handler or fallback to base64
+                const url = onImageUpload ? await onImageUpload(file) : await toBase64(file);
                 editor.chain().focus().setImage({ src: url }).run();
             } catch (err) {
                 console.error("Image upload failed:", err);
@@ -87,6 +100,31 @@ export function TiptapEditor({
         };
         input.click();
     }, [editor, onImageUpload]);
+
+    const handleFileUpload = useCallback(async () => {
+        if (!editor) return;
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "*/*";
+        input.onchange = async () => {
+            const file = input.files?.[0];
+            if (!file) return;
+            try {
+                // Use custom handler or fallback to base64
+                const result = onFileUpload
+                    ? await onFileUpload(file)
+                    : { url: await toBase64(file), name: file.name };
+                editor
+                    .chain()
+                    .focus()
+                    .insertContent(`<a href="${result.url}" target="_blank" rel="noopener noreferrer">📎 ${result.name}</a> `)
+                    .run();
+            } catch (err) {
+                console.error("File upload failed:", err);
+            }
+        };
+        input.click();
+    }, [editor, onFileUpload]);
 
     if (!editor || !isMounted) {
         // Placeholder to prevent layout shift
@@ -111,7 +149,8 @@ export function TiptapEditor({
             {!readOnly && (
                 <TiptapToolbar
                     editor={editor}
-                    onImageUpload={onImageUpload ? handleImageUpload : undefined}
+                    onImageUpload={handleImageUpload}
+                    onFileUpload={handleFileUpload}
                 />
             )}
             <EditorContent
