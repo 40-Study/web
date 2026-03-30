@@ -265,6 +265,13 @@ export default function WeekCalendarGrid({
           selectable={editable}
           selectMirror={true}
           unselectAuto={false}
+          selectAllow={(info) => {
+            // Only allow selection within the same day (single column)
+            return info.start.toDateString() === info.end.toDateString() ||
+              // Allow if end is midnight of next day (full day selection edge case)
+              (info.end.getHours() === 0 && info.end.getMinutes() === 0 &&
+                new Date(info.end.getTime() - 1).toDateString() === info.start.toDateString());
+          }}
           eventContent={renderEventContent}
           dateClick={handleDateClick}
           eventClick={handleEventClick}
