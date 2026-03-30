@@ -5,7 +5,8 @@
  * and Google Calendar-style drag-to-select with QuickCreatePopover.
  */
 
-import { useRef, useMemo, useState, useCallback } from "react";
+import { useRef, useMemo, useState, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -343,8 +344,8 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
 }
 
 /**
- * Tooltip wrapper — renders a custom tooltip popover on hover using a
- * simple CSS-positioned approach (no Radix, no external deps).
+ * Tooltip wrapper — renders tooltip via portal to escape FullCalendar's
+ * stacking context and overlay above other events.
  */
 function TooltipWrapper({
   ev,
@@ -359,24 +360,55 @@ function TooltipWrapper({
   onMouseLeave: () => void;
   tooltip: React.ReactNode;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (isHovered && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const tooltipWidth = 288; // w-72 = 18rem = 288px
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      let left = rect.right + 8;
+      let top = rect.top;
+
+      // If overflows right, show on left side
+      if (left + tooltipWidth > vw - 16) {
+        left = rect.left - tooltipWidth - 8;
+      }
+      // Keep within viewport vertically
+      if (top + 200 > vh) {
+        top = vh - 216;
+      }
+      if (top < 8) top = 8;
+
+      setPos({ top, left: Math.max(8, left) });
+    }
+  }, [isHovered]);
+
   return (
     <div
-      className="relative w-full h-full p-0 overflow-visible"
+      ref={containerRef}
+      className="relative w-full h-full p-0"
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
       <div className="w-full h-full overflow-hidden">
         <CalendarEventCard event={ev} />
       </div>
-      {isHovered && (
-        <div
-          className="absolute left-full top-0 ml-2 z-50 min-w-[220px]"
-          onMouseEnter={onMouseEnter}
-          onMouseLeave={onMouseLeave}
-        >
-          {tooltip}
-        </div>
-      )}
+      {isHovered &&
+        createPortal(
+          <div
+            style={{ top: pos.top, left: pos.left }}
+            className="fixed z-[9999]"
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+          >
+            {tooltip}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
