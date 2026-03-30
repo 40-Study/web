@@ -15,8 +15,8 @@ export function AppShellLayout({ children }: AppShellLayoutProps) {
       {/* pt-16 accounts for fixed header height */}
       <div className="flex flex-1 pt-16 min-h-0">
         <Sidebar />
-        {/* lg:pl-16 pulls content slightly closer to sidebar (sidebar is w-16 = 64px) */}
-        <div className="flex-1 w-full lg:pl-16 flex flex-col overflow-x-hidden min-h-[calc(100vh-4rem)]">
+        {/* lg:pl-20 matches sidebar width (w-20 = 80px) */}
+        <div className="flex-1 w-full lg:pl-20 flex flex-col overflow-x-hidden min-h-[calc(100vh-4rem)]">
           <main className="flex-1">{children}</main>
           <Footer />
         </div>
