@@ -1,12 +1,13 @@
 ---
 title: "Backend-Web API Integration"
 description: "Complete API integration between Go/Fiber backend and Next.js web frontend"
-status: pending
+status: completed
 priority: P1
 effort: 16h
 branch: main
 tags: [api, integration, backend, frontend]
 created: 2026-03-30
+completed: 2026-04-01
 ---
 
 # Backend-Web API Integration
@@ -18,10 +19,10 @@ Full integration of Go/Fiber backend APIs with Next.js web services and React Qu
 
 | Phase | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| [Phase 1](phase-01-api-checklist.md) | Scan backend routes, create API checklist | pending | 2h |
-| [Phase 2](phase-02-gap-analysis.md) | Map backend APIs to web services/hooks | pending | 3h |
-| [Phase 3](phase-03-integration.md) | Implement missing integrations | pending | 8h |
-| [Phase 4](phase-04-seed-data.md) | Seed rich demo data | pending | 3h |
+| [Phase 1](phase-01-api-checklist.md) | Scan backend routes, create API checklist | completed | 2h |
+| [Phase 2](phase-02-gap-analysis.md) | Map backend APIs to web services/hooks | completed | 3h |
+| [Phase 3](phase-03-integration.md) | Implement missing integrations | completed | 8h |
+| [Phase 4](phase-04-seed-data.md) | Seed rich demo data | completed | 3h |
 
 ## Backend Summary
 - **Framework**: Go/Fiber
