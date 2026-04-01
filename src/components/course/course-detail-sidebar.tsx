@@ -219,7 +219,7 @@ export function CourseDetailSidebar({
         {!isEnrolled && !isFree && (
           <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
             <h3 className="mb-3 font-semibold text-gray-900">Mã giảm giá</h3>
-            <VoucherInput coursePrice={course.price} onApplied={() => {}} />
+            <VoucherInput courseIds={[String(course.id)]} onApplied={() => {}} />
           </div>
         )}
       </div>

@@ -14,12 +14,13 @@ import { useValidateVoucher } from "@/hooks/queries/use-voucher";
 import type { VoucherValidateResponse } from "@/types/voucher";
 
 interface VoucherInputProps {
-  coursePrice: number;
+  /** Course ID(s) to validate the voucher against */
+  courseIds: string[];
   onApplied: (result: VoucherValidateResponse | null) => void;
   className?: string;
 }
 
-export function VoucherInput({ coursePrice, onApplied, className }: VoucherInputProps) {
+export function VoucherInput({ courseIds, onApplied, className }: VoucherInputProps) {
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<VoucherValidateResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -32,7 +33,7 @@ export function VoucherInput({ coursePrice, onApplied, className }: VoucherInput
 
     setErrorMessage(null);
     validateMutation.mutate(
-      { code: trimmed, coursePrice },
+      { code: trimmed, courseIds },
       {
         onSuccess(result) {
           if (result.valid) {
@@ -64,7 +65,7 @@ export function VoucherInput({ coursePrice, onApplied, className }: VoucherInput
         <div className="flex items-center gap-2 text-green-700">
           <Tag className="h-4 w-4 shrink-0" />
           <span className="text-sm font-medium">{applied.voucher?.code}</span>
-          <span className="text-sm">— Giảm {formatCurrency(applied.discountAmount)}</span>
+          <span className="text-sm">— Giảm {formatCurrency(applied.discount_amount)}</span>
         </div>
         <button onClick={handleRemove} className="p-1 hover:bg-green-100 rounded" aria-label="Xóa voucher">
           <X className="h-4 w-4 text-green-600" />

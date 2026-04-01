@@ -123,3 +123,24 @@ export function useMarkAttendance() {
     },
   });
 }
+
+export function useClassMembers(classId: string) {
+  return useQuery({
+    queryKey: [...classKeys.all, "members", classId] as const,
+    queryFn: () => classService.getMembers(classId),
+    enabled: !!classId,
+  });
+}
+
+export function useAddMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ classId, userId }: { classId: string; userId: string }) =>
+      classService.addMember(classId, userId),
+    onSuccess: (_, { classId }) => {
+      qc.invalidateQueries({ queryKey: [...classKeys.all, "members", classId] });
+      toast.success("Thêm thành viên thành công");
+    },
+    onError: () => toast.error("Không thể thêm thành viên"),
+  });
+}

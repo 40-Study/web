@@ -3,6 +3,7 @@
  */
 
 import { api } from "@/lib/api-client";
+import type { ClassMember } from "@/types/class";
 
 export interface Class {
   id: string;
@@ -13,6 +14,7 @@ export interface Class {
   teacher_ids: string[];
   student_count: number;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface Schedule {
@@ -77,6 +79,17 @@ export const classService = {
 
   delete: (id: string) =>
     api.delete<{ message: string }>(`/classes/${id}`).then((r) => r.data),
+
+  // Members (generic: includes both students and teachers)
+  getMembers: (classId: string) =>
+    api
+      .get<{ message: string; data: { members: ClassMember[] } }>(`/classes/${classId}/members`)
+      .then((r) => r.data.data.members),
+
+  addMember: (classId: string, userId: string) =>
+    api
+      .post<{ message: string }>(`/classes/${classId}/members`, { user_id: userId })
+      .then((r) => r.data),
 
   // Teachers
   assignTeacher: (classId: string, teacherId: string) =>

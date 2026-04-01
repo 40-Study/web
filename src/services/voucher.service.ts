@@ -1,110 +1,181 @@
 /**
- * Voucher service - handles voucher API calls
- * Uses mock data until backend voucher API is available
+ * Voucher service — real API calls for voucher management
  */
 
-import { BaseService } from "./base.service";
-import type { Voucher, VoucherValidateRequest, VoucherValidateResponse } from "@/types/voucher";
+import { api } from "@/lib/api-client";
 
-// Mock vouchers for development
-const MOCK_VOUCHERS: Voucher[] = [
-  {
-    id: "1",
-    code: "WELCOME20",
-    discountType: "percentage",
-    discountValue: 20,
-    maxDiscount: 100000,
-    minOrderValue: 0,
-    expiresAt: "2026-06-30T23:59:59Z",
-    status: "active",
-    description: "Giảm 20% cho đơn hàng đầu tiên",
-    createdAt: "2026-01-01T00:00:00Z",
-    updatedAt: "2026-01-01T00:00:00Z",
-  },
-  {
-    id: "2",
-    code: "SUMMER50K",
-    discountType: "fixed",
-    discountValue: 50000,
-    minOrderValue: 200000,
-    expiresAt: "2026-05-31T23:59:59Z",
-    status: "active",
-    description: "Giảm 50,000₫ cho đơn từ 200,000₫",
-    createdAt: "2026-01-01T00:00:00Z",
-    updatedAt: "2026-01-01T00:00:00Z",
-  },
-  {
-    id: "3",
-    code: "USED2025",
-    discountType: "percentage",
-    discountValue: 15,
-    expiresAt: "2025-12-31T23:59:59Z",
-    status: "used",
-    description: "Voucher đã dùng",
-    createdAt: "2025-01-01T00:00:00Z",
-    updatedAt: "2025-01-01T00:00:00Z",
-  },
-];
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-class VoucherService extends BaseService<Voucher> {
-  constructor() {
-    super("/vouchers");
-  }
+export type VoucherStatus = "active" | "inactive" | "expired";
+export type VoucherDiscountType = "percentage" | "fixed";
 
-  /** Get current user's vouchers (mock) */
-  async getMyVouchers(): Promise<Voucher[]> {
-    // TODO: replace with real API call when backend is ready
-    // return apiClient.get<Voucher[]>(`${this.endpoint}/my`);
-    return Promise.resolve(MOCK_VOUCHERS);
-  }
-
-  /** Validate voucher code and calculate discount */
-  async validateVoucher(request: VoucherValidateRequest): Promise<VoucherValidateResponse> {
-    // TODO: replace with real API call when backend is ready
-    // return apiClient.post<VoucherValidateResponse>(`${this.endpoint}/validate`, request);
-
-    const voucher = MOCK_VOUCHERS.find(
-      (v) => v.code.toUpperCase() === request.code.toUpperCase()
-    );
-
-    if (!voucher) {
-      return { valid: false, discountAmount: 0, finalPrice: request.coursePrice, message: "Mã voucher không tồn tại" };
-    }
-
-    if (voucher.status === "used") {
-      return { valid: false, discountAmount: 0, finalPrice: request.coursePrice, message: "Voucher này đã được sử dụng" };
-    }
-
-    if (voucher.status === "expired" || new Date(voucher.expiresAt) < new Date()) {
-      return { valid: false, discountAmount: 0, finalPrice: request.coursePrice, message: "Voucher đã hết hạn" };
-    }
-
-    if (voucher.minOrderValue && request.coursePrice < voucher.minOrderValue) {
-      return {
-        valid: false,
-        discountAmount: 0,
-        finalPrice: request.coursePrice,
-        message: `Đơn hàng tối thiểu ${voucher.minOrderValue.toLocaleString("vi-VN")}₫`,
-      };
-    }
-
-    let discountAmount: number;
-    if (voucher.discountType === "percentage") {
-      discountAmount = Math.floor(request.coursePrice * (voucher.discountValue / 100));
-      if (voucher.maxDiscount) {
-        discountAmount = Math.min(discountAmount, voucher.maxDiscount);
-      }
-    } else {
-      discountAmount = Math.min(voucher.discountValue, request.coursePrice);
-    }
-
-    return {
-      valid: true,
-      voucher,
-      discountAmount,
-      finalPrice: request.coursePrice - discountAmount,
-    };
-  }
+export interface Voucher {
+  id: string;
+  code: string;
+  discount_type: VoucherDiscountType;
+  discount_value: number;
+  max_discount?: number;
+  min_order_value?: number;
+  max_uses?: number;
+  used_count?: number;
+  expires_at?: string;
+  status: VoucherStatus;
+  description?: string;
+  created_at: string;
+  updated_at?: string;
 }
 
-export const voucherService = new VoucherService();
+export interface VoucherValidateResult {
+  valid: boolean;
+  voucher?: Voucher;
+  discount_amount: number;
+  final_total: number;
+  message?: string;
+}
+
+export interface CreateVoucherDTO {
+  code: string;
+  discount_type: VoucherDiscountType;
+  discount_value: number;
+  max_discount?: number;
+  min_order_value?: number;
+  max_uses?: number;
+  expires_at?: string;
+  description?: string;
+}
+
+// ─── Service ─────────────────────────────────────────────────────────────────
+
+export const voucherService = {
+  // ── Public ──────────────────────────────────────────────────────────────
+
+  /**
+   * GET /vouchers/public — list publicly visible vouchers
+   */
+  getPublicVouchers: () =>
+    api
+      .get<{ message: string; data: Voucher[] }>("/vouchers/public")
+      .then((r) => r.data.data),
+
+  /**
+   * GET /vouchers/code/:code — get voucher by code
+   */
+  getVoucherByCode: (code: string) =>
+    api
+      .get<{ message: string; data: Voucher }>(`/vouchers/code/${code}`)
+      .then((r) => r.data.data),
+
+  /**
+   * GET /vouchers/me — get current user's saved vouchers
+   */
+  getMyVouchers: () =>
+    api
+      .get<{ message: string; data: Voucher[] }>("/vouchers/me")
+      .then((r) => r.data.data),
+
+  /**
+   * POST /vouchers/:id/save — save a voucher to user's collection
+   */
+  saveVoucher: (id: string) =>
+    api
+      .post<{ message: string }>(`/vouchers/${id}/save`, {})
+      .then((r) => r.data),
+
+  /**
+   * DELETE /vouchers/:id/save — remove a voucher from user's collection
+   */
+  unsaveVoucher: (id: string) =>
+    api
+      .delete<{ message: string }>(`/vouchers/${id}/save`)
+      .then((r) => r.data),
+
+  /**
+   * POST /vouchers/validate — validate a voucher code against course IDs
+   */
+  validate: (code: string, courseIds: string[]) =>
+    api
+      .post<{ message: string; data: VoucherValidateResult }>("/vouchers/validate", {
+        code,
+        course_ids: courseIds,
+      })
+      .then((r) => r.data.data),
+
+  /**
+   * POST /vouchers/:code/apply — apply a voucher to an order
+   */
+  apply: (code: string, orderId: string) =>
+    api
+      .post<{ message: string; data: { discount_amount: number; final_total: number } }>(
+        `/vouchers/${code}/apply`,
+        { order_id: orderId }
+      )
+      .then((r) => r.data.data),
+
+  // ── Admin ────────────────────────────────────────────────────────────────
+
+  /**
+   * GET /vouchers — list all vouchers (admin)
+   */
+  getAllVouchers: () =>
+    api
+      .get<{ message: string; data: Voucher[] }>("/vouchers")
+      .then((r) => r.data.data),
+
+  /**
+   * POST /vouchers — create a voucher (admin)
+   */
+  createVoucher: (dto: CreateVoucherDTO) =>
+    api
+      .post<{ message: string; data: Voucher }>("/vouchers", dto)
+      .then((r) => r.data.data),
+
+  /**
+   * PUT /vouchers/:id — update a voucher (admin)
+   */
+  updateVoucher: (id: string, dto: Partial<CreateVoucherDTO>) =>
+    api
+      .put<{ message: string; data: Voucher }>(`/vouchers/${id}`, dto)
+      .then((r) => r.data.data),
+
+  /**
+   * DELETE /vouchers/:id — delete a voucher (admin)
+   */
+  deleteVoucher: (id: string) =>
+    api
+      .delete<{ message: string }>(`/vouchers/${id}`)
+      .then((r) => r.data),
+
+  /**
+   * POST /vouchers/:id/restore — restore a deleted voucher (admin)
+   */
+  restoreVoucher: (id: string) =>
+    api
+      .post<{ message: string }>(`/vouchers/${id}/restore`, {})
+      .then((r) => r.data),
+
+  /**
+   * POST /vouchers/:id/activate — activate a voucher (admin)
+   */
+  activateVoucher: (id: string) =>
+    api
+      .post<{ message: string }>(`/vouchers/${id}/activate`, {})
+      .then((r) => r.data),
+
+  /**
+   * POST /vouchers/:id/deactivate — deactivate a voucher (admin)
+   */
+  deactivateVoucher: (id: string) =>
+    api
+      .post<{ message: string }>(`/vouchers/${id}/deactivate`, {})
+      .then((r) => r.data),
+
+  /**
+   * GET /vouchers/:id/stats — get usage stats for a voucher (admin)
+   */
+  getVoucherStats: (id: string) =>
+    api
+      .get<{ message: string; data: { total_uses: number; total_discount: number } }>(
+        `/vouchers/${id}/stats`
+      )
+      .then((r) => r.data.data),
+};

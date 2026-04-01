@@ -23,8 +23,8 @@ const STATUS_CONFIG: Record<VoucherStatus, StatusConfig> = {
     className: "bg-green-50 text-green-700 border-green-200",
     icon: <CheckCircle className="h-3.5 w-3.5" />,
   },
-  used: {
-    label: "Đã sử dụng",
+  inactive: {
+    label: "Không hoạt động",
     className: "bg-gray-100 text-gray-500 border-gray-200",
     icon: <XCircle className="h-3.5 w-3.5" />,
   },
@@ -39,20 +39,22 @@ const STATUS_CONFIG: Record<VoucherStatus, StatusConfig> = {
 
 function VoucherCard({ voucher }: { voucher: Voucher }) {
   const status = STATUS_CONFIG[voucher.status];
-  const isExpiredByDate = new Date(voucher.expiresAt) < new Date();
+  const isExpiredByDate = voucher.expires_at ? new Date(voucher.expires_at) < new Date() : false;
   const effectiveStatus =
     voucher.status === "active" && isExpiredByDate ? STATUS_CONFIG.expired : status;
 
   const discountLabel =
-    voucher.discountType === "percentage"
-      ? `Giảm ${voucher.discountValue}%${voucher.maxDiscount ? ` (tối đa ${formatCurrency(voucher.maxDiscount)})` : ""}`
-      : `Giảm ${formatCurrency(voucher.discountValue)}`;
+    voucher.discount_type === "percentage"
+      ? `Giảm ${voucher.discount_value}%${voucher.max_discount ? ` (tối đa ${formatCurrency(voucher.max_discount)})` : ""}`
+      : `Giảm ${formatCurrency(voucher.discount_value)}`;
 
-  const expiryDate = new Date(voucher.expiresAt).toLocaleDateString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  const expiryDate = voucher.expires_at
+    ? new Date(voucher.expires_at).toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    : null;
 
   return (
     <div
@@ -92,15 +94,17 @@ function VoucherCard({ voucher }: { voucher: Voucher }) {
 
       {/* Footer: min order + expiry */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400 border-t pt-2 mt-2">
-        {voucher.minOrderValue ? (
-          <span>Đơn tối thiểu {formatCurrency(voucher.minOrderValue)}</span>
+        {voucher.min_order_value ? (
+          <span>Đơn tối thiểu {formatCurrency(voucher.min_order_value)}</span>
         ) : (
           <span>Không yêu cầu đơn tối thiểu</span>
         )}
-        <span className="flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          HSD: {expiryDate}
-        </span>
+        {expiryDate && (
+          <span className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            HSD: {expiryDate}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -112,10 +116,10 @@ export default function MyVouchersPage() {
   const { data: vouchers = [], isLoading, isError } = useMyVouchers();
 
   const activeVouchers = vouchers.filter(
-    (v) => v.status === "active" && new Date(v.expiresAt) >= new Date()
+    (v) => v.status === "active" && (!v.expires_at || new Date(v.expires_at) >= new Date())
   );
   const inactiveVouchers = vouchers.filter(
-    (v) => v.status !== "active" || new Date(v.expiresAt) < new Date()
+    (v) => v.status !== "active" || (v.expires_at && new Date(v.expires_at) < new Date())
   );
 
   return (

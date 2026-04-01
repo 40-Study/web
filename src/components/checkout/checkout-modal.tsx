@@ -42,7 +42,7 @@ export function CheckoutModal({ open, onOpenChange, course, onConfirm }: Checkou
 
   const originalPrice = course.originalPrice ?? course.price;
   const courseDiscount = originalPrice > course.price ? originalPrice - course.price : 0;
-  const voucherDiscount = voucherResult?.discountAmount ?? 0;
+  const voucherDiscount = voucherResult?.discount_amount ?? 0;
   const finalPrice = Math.max(0, course.price - voucherDiscount);
 
   function handleConfirm() {
@@ -80,7 +80,7 @@ export function CheckoutModal({ open, onOpenChange, course, onConfirm }: Checkou
         <div>
           <p className="text-sm font-medium text-gray-700 mb-2">Mã giảm giá</p>
           <VoucherInput
-            coursePrice={course.price}
+            courseIds={[String(course.id)]}
             onApplied={setVoucherResult}
           />
         </div>
