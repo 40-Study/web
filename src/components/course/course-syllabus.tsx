@@ -20,6 +20,8 @@ interface CourseSyllabusProps {
   sections: Section[];
   isEnrolled?: boolean;
   courseSlug?: string;
+  /** Show "Xem thử" links for free-preview lessons on paid courses */
+  showTrialLinks?: boolean;
   className?: string;
 }
 
@@ -65,6 +67,7 @@ export function CourseSyllabus({
   sections,
   isEnrolled = false,
   courseSlug,
+  showTrialLinks = false,
   className,
 }: CourseSyllabusProps) {
   const [expandedSections, setExpandedSections] = useState<string[]>(
@@ -193,9 +196,9 @@ export function CourseSyllabus({
                           <span className="text-sm text-muted-foreground">
                             {formatDuration(lesson.duration)}
                           </span>
-                          {!isEnrolled && lesson.isFreePreview && canNavigate && (
-                            <Button size="sm" variant="ghost" asChild>
-                              <Link href={lessonHref}>Xem trước</Link>
+                          {!isEnrolled && lesson.isFreePreview && canNavigate && showTrialLinks && (
+                            <Button size="sm" variant="ghost" className="text-primary-600 hover:text-primary-700" asChild>
+                              <Link href={lessonHref}>Xem thử</Link>
                             </Button>
                           )}
                         </div>
