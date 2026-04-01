@@ -1,6 +1,7 @@
 export * from "./use-auth";
 export * from "./use-admin";
 export * from "./use-classes";
+export * from "./use-courses";
 export * from "./use-class-schedule";
 export * from "./use-enrollments";
 export * from "./use-livestream";

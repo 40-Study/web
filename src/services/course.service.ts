@@ -175,4 +175,36 @@ export const courseService = {
     api
       .post<{ message: string; data: { xp_awarded?: number } }>(`/lessons/${lessonId}/complete`, {})
       .then((r) => r.data),
+
+  /**
+   * GET /courses/me — get current teacher's courses
+   */
+  getMyCourses: (params?: { status?: string }) =>
+    api
+      .get<{ message: string; data: ApiCourse[] }>("/courses/me", { params })
+      .then((r) => r.data.data),
+
+  /**
+   * POST /courses — create a new course
+   */
+  createCourse: (data: Partial<ApiCourse>) =>
+    api
+      .post<{ message: string; data: ApiCourse }>("/courses", data)
+      .then((r) => r.data.data),
+
+  /**
+   * PUT /courses/:id — update course
+   */
+  updateCourse: (id: string, data: Partial<ApiCourse>) =>
+    api
+      .put<{ message: string; data: ApiCourse }>(`/courses/${id}`, data)
+      .then((r) => r.data.data),
+
+  /**
+   * DELETE /courses/:id — delete course
+   */
+  deleteCourse: (id: string) =>
+    api
+      .delete<{ message: string }>(`/courses/${id}`)
+      .then((r) => r.data),
 };

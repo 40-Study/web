@@ -17,12 +17,6 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useChangePassword } from "@/hooks/queries/use-auth";
 import { getDeviceInfo } from "@/services/auth.service";
 
-// User account data — will be replaced with real API data
-const MOCK_USER = {
-  email: "user@example.com",
-  has2FA: false,
-  lastPasswordChange: new Date("2024-12-01"),
-};
 
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("account");
@@ -59,7 +53,7 @@ export default function SettingsPage() {
       case "account":
         return (
           <AccountSettings
-            user={{ ...MOCK_USER, email: user?.email || MOCK_USER.email }}
+            user={{ email: user?.email || "", has2FA: false, lastPasswordChange: undefined }}
             onEmailChange={handleEmailChange}
             onPasswordChange={handlePasswordChange}
             onToggle2FA={handleToggle2FA}
@@ -81,7 +75,7 @@ export default function SettingsPage() {
       default:
         return (
           <AccountSettings
-            user={{ ...MOCK_USER, email: user?.email || MOCK_USER.email }}
+            user={{ email: user?.email || "", has2FA: false, lastPasswordChange: undefined }}
             onEmailChange={handleEmailChange}
             onPasswordChange={handlePasswordChange}
             onToggle2FA={handleToggle2FA}
