@@ -139,4 +139,14 @@ export const classService = {
   updateAttendance: (classId: string, attendanceId: string, data: Partial<MarkAttendanceDTO>) =>
     api.put<{ message: string; data: Attendance }>(`/classes/${classId}/attendances/${attendanceId}`, data)
       .then((r) => r.data.data),
+
+  // Teacher's classes
+  getMyClasses: () =>
+    api.get<{ message: string; data: { classes: Class[] } }>("/classes/me")
+      .then((r) => r.data.data.classes),
+
+  // All students across teacher's classes
+  getMyStudents: () =>
+    api.get<{ message: string; data: { students: TeacherStudent[] } }>("/teachers/me/students")
+      .then((r) => r.data.data.students),
 };

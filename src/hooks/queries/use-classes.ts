@@ -132,6 +132,22 @@ export function useClassMembers(classId: string) {
   });
 }
 
+/** Teacher's own classes */
+export function useMyClasses() {
+  return useQuery({
+    queryKey: [...classKeys.all, "my"] as const,
+    queryFn: () => classService.getMyClasses(),
+  });
+}
+
+/** All students across teacher's classes */
+export function useMyStudents() {
+  return useQuery({
+    queryKey: [...classKeys.all, "my-students"] as const,
+    queryFn: () => classService.getMyStudents(),
+  });
+}
+
 export function useAddMember() {
   const qc = useQueryClient();
   return useMutation({
