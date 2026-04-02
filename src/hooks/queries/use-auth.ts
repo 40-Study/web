@@ -18,6 +18,8 @@ import type { Permission } from "@/lib/permissions";
 export const authKeys = {
   all: ["auth"] as const,
   me: () => [...authKeys.all, "me"] as const,
+  profile: () => [...authKeys.all, "profile"] as const,
+  publicProfile: (userId: string) => [...authKeys.all, "public-profile", userId] as const,
   devices: () => [...authKeys.all, "devices"] as const,
   organizations: () => [...authKeys.all, "organizations"] as const,
   children: () => [...authKeys.all, "children"] as const,
@@ -44,9 +46,19 @@ export function useMyProfile() {
   const { isAuthenticated } = useAuthStore();
 
   return useQuery({
-    queryKey: [...authKeys.all, "profile"] as const,
+    queryKey: authKeys.profile(),
     queryFn: authService.getMyProfile,
     enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Get public profile */
+export function usePublicProfile(userId: string) {
+  return useQuery({
+    queryKey: authKeys.publicProfile(userId),
+    queryFn: () => authService.getPublicProfile(userId),
+    enabled: Boolean(userId),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -59,7 +71,7 @@ export function useUpdateProfile() {
     mutationFn: authService.updateProfile,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: authKeys.me() });
-      qc.invalidateQueries({ queryKey: [...authKeys.all, "profile"] });
+      qc.invalidateQueries({ queryKey: authKeys.profile() });
       toast.success("Cập nhật thành công");
     },
     onError: () => {

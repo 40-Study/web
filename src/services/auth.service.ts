@@ -173,6 +173,51 @@ export interface UpdateProfileDTO {
   avatar_url?: string;
 }
 
+export interface PublicProfileAchievement {
+  id: string;
+  name: string;
+  icon_url?: string;
+  badge_url?: string;
+  category: string;
+  earned_at: string;
+}
+
+export interface PublicProfileActivity {
+  date: string;
+  count: number;
+}
+
+export interface PublicProfileCompletedCourse {
+  id: string;
+  title: string;
+  thumbnail_url?: string;
+  completed_at: string;
+}
+
+export interface PublicProfileResponse {
+  user_id: string;
+  user_name: string;
+  full_name?: string;
+  avatar_url?: string;
+  bio?: string;
+  joined_at: string;
+  stats: {
+    total_points: number;
+    level: number;
+    level_progress: number;
+    current_streak: number;
+    longest_streak: number;
+    total_checkins: number;
+    achievement_count: number;
+    courses_completed: number;
+    lessons_completed: number;
+    total_study_time_minutes: number;
+  };
+  featured_achievements: PublicProfileAchievement[];
+  activity: PublicProfileActivity[];
+  completed_courses: PublicProfileCompletedCourse[];
+}
+
 export interface TokenResponse {
   message: string;
   data: {
@@ -288,6 +333,10 @@ export const authService = {
   /** Get full profile (user + roles + orgs + active context) */
   getMyProfile: () =>
     api.get<{ message: string; data: MyProfileResponse }>("/auth/me/profile").then((r) => r.data.data),
+
+  /** Get public profile */
+  getPublicProfile: (userId: string) =>
+    api.get<{ data: PublicProfileResponse }>(`/users/${userId}/public-profile`).then((r) => r.data.data),
 
   /** Update profile */
   updateProfile: (data: UpdateProfileDTO) =>

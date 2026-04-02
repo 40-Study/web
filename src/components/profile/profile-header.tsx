@@ -11,7 +11,7 @@ export interface User {
   id: string;
   fullName: string;
   username: string;
-  email: string;
+  email?: string;
   avatar?: string;
   bio?: string;
   level: number;

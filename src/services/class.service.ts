@@ -3,7 +3,7 @@
  */
 
 import { api } from "@/lib/api-client";
-import type { ClassMember } from "@/types/class";
+import type { ClassMember, TeacherStudent } from "@/types/class";
 
 export interface Class {
   id: string;
