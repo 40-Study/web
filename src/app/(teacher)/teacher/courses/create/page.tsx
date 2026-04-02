@@ -98,12 +98,10 @@ export default function CreateCoursePage() {
   };
 
   const handleSaveDraft = () => {
-    console.log("Saving draft:", formData);
     // TODO: API call
   };
 
   const handlePublish = () => {
-    console.log("Publishing:", formData);
     // TODO: API call
     router.push("/teacher/courses");
   };

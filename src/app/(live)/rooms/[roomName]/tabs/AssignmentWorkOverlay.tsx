@@ -112,11 +112,9 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
 
     try {
       const parsed = JSON.parse(trimmed);
-      console.log('[AssignmentType] parsed:', parsed.type);
       if (parsed.type === 'essay') return 'essay';
       if (parsed.type === 'multiple_choice') return 'multiple_choice';
-    } catch (e) {
-      console.log('[AssignmentType] parse error:', e);
+    } catch {
     }
     return 'code';
   }, [assignment?.starter_code, code]);
@@ -134,12 +132,10 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
 
   // Parse multiple choice config
   const mcConfig = useMemo(() => {
-    console.log('[mcConfig] assignmentType:', assignmentType);
     if (assignmentType !== 'multiple_choice') return null;
     try {
       const starterCode = assignment?.starter_code ?? code;
       const parsed = JSON.parse(starterCode || '{}');
-      console.log('[mcConfig] parsed:', parsed);
       // Support both old format (single question) and new format (multiple questions)
       if (parsed.questions) {
         return { questions: parsed.questions };
@@ -154,8 +150,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
         };
       }
       return null;
-    } catch (e) {
-      console.log('[mcConfig] error:', e);
+    } catch {
       return null;
     }
   }, [assignment, assignmentType, code]);
@@ -209,8 +204,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
             }
           }
         }
-      } catch (err) {
-        console.log('No existing submission');
+      } catch {
       }
     }
     load();

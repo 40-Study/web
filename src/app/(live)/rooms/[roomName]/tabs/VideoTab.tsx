@@ -385,12 +385,6 @@ function VideoContent({ pip, handRaised }: { pip?: boolean; handRaised?: boolean
   const { localParticipant } = useLocalParticipant();
   const remoteParticipants = useParticipants();
 
-  // Debug: log participants vs tracks
-  useEffect(() => {
-    console.log('[VideoContent] Connection:', connectionState);
-    console.log('[VideoContent] Remote participants:', remoteParticipants.length, remoteParticipants.map(p => p.identity));
-    console.log('[VideoContent] Tracks:', tracks.length, tracks.map(t => `${t.participant?.identity}:${t.source}`));
-  }, [connectionState, remoteParticipants, tracks]);
 
   // Show local participant placeholder immediately on connect even before any tracks
   const showLocalFallback = tracks.length === 0 && connectionState === ConnectionState.Connected;

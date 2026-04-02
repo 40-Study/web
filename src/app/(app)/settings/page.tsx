@@ -25,7 +25,6 @@ export default function SettingsPage() {
 
   const handleEmailChange = async (newEmail: string) => {
     // TODO: implement email change API
-    console.log("Changing email to:", newEmail);
   };
 
   const handlePasswordChange = async (currentPassword: string, newPassword: string) => {
@@ -40,12 +39,10 @@ export default function SettingsPage() {
 
   const handleToggle2FA = async (enabled: boolean) => {
     // TODO: implement 2FA toggle API
-    console.log("Toggling 2FA:", enabled);
   };
 
   const handleDeleteAccount = async () => {
     // TODO: implement account deletion API
-    console.log("Deleting account");
   };
 
   const renderContent = () => {

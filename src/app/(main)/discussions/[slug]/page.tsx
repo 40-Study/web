@@ -1,5 +1,6 @@
 "use client";
 
+import DOMPurify from "isomorphic-dompurify";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { notFound, useParams } from "next/navigation";
@@ -195,7 +196,7 @@ export default function DiscussionDetailPage() {
 
         <div
           className="mt-3 text-sm text-slate-700 prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: comment.content }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(comment.content) }}
         />
 
         <div className="mt-3 flex items-center gap-3 text-sm">
@@ -296,7 +297,7 @@ export default function DiscussionDetailPage() {
           {post.content.map((paragraph, index) => (
             <div
               key={`${post.slug}-paragraph-${index}`}
-              dangerouslySetInnerHTML={{ __html: paragraph }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(paragraph) }}
             />
           ))}
         </div>

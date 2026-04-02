@@ -142,7 +142,6 @@ export default function RoomClient({
   }, []);
 
   const isHost = currentUserId !== null && hostId !== null && currentUserId === hostId;
-  console.log('[RoomClient] isHost:', isHost, 'currentUserId:', currentUserId, 'hostId:', hostId);
 
   useEffect(() => {
     // Fetch current user
@@ -158,7 +157,6 @@ export default function RoomClient({
       .then((res: any) => {
         const hid = res?.data?.host_id || res?.host_id || '';
         setHostId(hid);
-        console.log('[RoomClient] Fetched hostId:', hid);
       })
       .catch((err) => {
         console.error('[RoomClient] Failed to fetch hostId:', err);
@@ -178,7 +176,6 @@ export default function RoomClient({
           end_time: a.end_time,
         }));
         setAssignmentList(mapped);
-        console.log('[RoomClient] Fetched assignments:', mapped.length);
 
         // Check which assignments have been submitted by this user
         if (currentUserId && mapped.length > 0) {

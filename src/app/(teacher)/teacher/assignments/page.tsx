@@ -1,5 +1,6 @@
 "use client";
 
+import DOMPurify from "isomorphic-dompurify";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Calendar, CheckCircle2, ClipboardList, Code2, FileText, HelpCircle, Layers3, Plus, Target } from "lucide-react";
@@ -465,7 +466,7 @@ export default function TeacherAssignmentsPage() {
                   <p className="text-sm font-medium">Chi tiết nhanh: {selectedAssignment.title}</p>
                   <div
                   className="mt-2 text-sm text-muted-foreground prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: selectedAssignment.instructions }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedAssignment.instructions) }}
                 />
                 </div>
               )}

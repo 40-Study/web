@@ -129,8 +129,8 @@ export default function CourseLessonPage() {
         <div className="flex-1 overflow-hidden">
           <CodeExercise
             exercise={exercise}
-            onSubmit={(code, lang) => console.log("Submit:", lang, code)}
-            onRun={(code, lang) => console.log("Run:", lang, code)}
+            onSubmit={(_code, _lang) => {}}
+            onRun={(_code, _lang) => {}}
           />
         </div>
       );
