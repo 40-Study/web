@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import { getMockCourseDetail } from "@/lib/mock-data/courses";
 
 interface CourseLayoutProps {
   children: React.ReactNode;
@@ -11,29 +10,12 @@ export async function generateMetadata({
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
-  const course = getMockCourseDetail(params.slug);
-
-  if (!course) {
-    return {
-      title: "Khóa học không tồn tại",
-    };
-  }
+  const slug = params.slug;
+  const title = slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   return {
-    title: course.title,
-    description: course.description,
-    openGraph: {
-      title: course.title,
-      description: course.description,
-      images: [course.thumbnail],
-      type: "website",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: course.title,
-      description: course.description,
-      images: [course.thumbnail],
-    },
+    title: `${title} - Khóa học`,
+    description: `Chi tiết khóa học ${title}`,
   };
 }
 

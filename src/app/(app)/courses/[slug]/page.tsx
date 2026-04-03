@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Course detail page - redesigned with 2-column layout
+ * Course detail page - 2-column layout
  * Left: learning outcomes, syllabus, requirements, instructor
  * Right: sticky sidebar with video preview, price, CTAs, voucher
  */
@@ -14,11 +14,6 @@ import { CourseDetailHeader } from "@/components/course/course-detail-header";
 import { CourseDetailContent } from "@/components/course/course-detail-content";
 import { CourseDetailSidebar } from "@/components/course/course-detail-sidebar";
 import { useCourseBySlug, useEnrolledCourses, useEnrollCourse } from "@/hooks/use-courses";
-import {
-  getMockCourseDetail,
-  mockEnrolledCourses as mockFallbackEnrolledCourses,
-  resolveCourseSlug,
-} from "@/lib/mock-data/courses";
 
 function LoadingSkeleton() {
   return (
@@ -39,51 +34,52 @@ function LoadingSkeleton() {
 export default function CourseDetailPage() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
-  const rawSlug = params.slug;
-  const slug = resolveCourseSlug(rawSlug);
+  const slug = params.slug;
 
   const [justEnrolled, setJustEnrolled] = useState(false);
 
-  const { data: apiCourse, isLoading } = useCourseBySlug(slug);
+  const { data: course, isLoading, error } = useCourseBySlug(slug);
   const { data: enrolledCourses = [] } = useEnrolledCourses();
   const enrollMutation = useEnrollCourse();
 
-  const fallbackCourse = getMockCourseDetail(slug);
-  const resolvedCourse = apiCourse ?? fallbackCourse;
-
   const enrolledCourse = useMemo(() => {
-    const apiMatched = enrolledCourses.find((c) => {
-      const s = resolveCourseSlug(c.slug);
-      return s === slug || c.slug === rawSlug;
-    });
-    if (apiMatched) return apiMatched;
-    return mockFallbackEnrolledCourses.find((c) => {
-      const s = resolveCourseSlug(c.slug);
-      return s === slug || c.slug === rawSlug;
-    });
-  }, [enrolledCourses, rawSlug, slug]);
+    return enrolledCourses.find((c) => c.slug === slug || c.id === course?.id);
+  }, [enrolledCourses, slug, course?.id]);
 
   const isEnrolled = Boolean(enrolledCourse) || justEnrolled;
   const progress = enrolledCourse?.progress ?? 0;
 
   const firstLessonId = useMemo(() => {
-    if (!resolvedCourse) return "l1";
-    return resolvedCourse.sections.flatMap((s) => s.lessons)[0]?.id ?? "l1";
-  }, [resolvedCourse]);
+    if (!course) return null;
+    return course.sections?.flatMap((s) => s.lessons)[0]?.id ?? null;
+  }, [course]);
 
   const previewLessonId = useMemo(() => {
-    if (!resolvedCourse) return firstLessonId;
-    const allLessons = resolvedCourse.sections.flatMap((s) => s.lessons);
+    if (!course) return firstLessonId;
+    const allLessons = course.sections?.flatMap((s) => s.lessons) ?? [];
     return allLessons.find((l) => l.isFreePreview)?.id ?? firstLessonId;
-  }, [firstLessonId, resolvedCourse]);
+  }, [firstLessonId, course]);
 
   if (isLoading) return <LoadingSkeleton />;
-  if (!resolvedCourse) notFound();
 
-  const courseSlug = resolveCourseSlug(resolvedCourse.slug);
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <h2 className="text-2xl font-bold text-destructive mb-2">Lỗi tải khóa học</h2>
+        <p className="text-muted-foreground mb-4">
+          {error instanceof Error ? error.message : "Không thể tải thông tin khóa học"}
+        </p>
+        <p className="text-sm text-muted-foreground">Slug: {slug}</p>
+      </div>
+    );
+  }
+
+  if (!course) notFound();
+
+  const courseSlug = course.slug;
 
   const handleStartLearning = () => {
-    router.push(`/learn/${courseSlug}/${firstLessonId}`);
+    if (firstLessonId) router.push(`/learn/${courseSlug}/${firstLessonId}`);
   };
 
   const handleEnroll = async () => {
@@ -92,7 +88,7 @@ export default function CourseDetailPage() {
       return;
     }
     try {
-      await enrollMutation.mutateAsync(String(resolvedCourse.id));
+      await enrollMutation.mutateAsync(String(course.id));
       setJustEnrolled(true);
       toast.success("Đăng ký thành công! Sẵn sàng vào học.");
     } catch {
@@ -101,30 +97,22 @@ export default function CourseDetailPage() {
   };
 
   const handleTrial = () => {
-    router.push(`/learn/${courseSlug}/${previewLessonId}`);
+    if (previewLessonId) router.push(`/learn/${courseSlug}/${previewLessonId}`);
   };
 
   return (
     <div>
-      {/* Blue header: breadcrumb + title + badges */}
-      <CourseDetailHeader course={resolvedCourse} />
+      <CourseDetailHeader course={course} />
 
-      {/* Main 2-column layout */}
       <div className="container mx-auto px-4 py-8">
         <div className="grid gap-8 lg:grid-cols-3">
-          {/* Left: content */}
           <div className="lg:col-span-2">
-            <CourseDetailContent
-              course={resolvedCourse}
-              isEnrolled={isEnrolled}
-              courseSlug={courseSlug}
-            />
+            <CourseDetailContent course={course} isEnrolled={isEnrolled} courseSlug={courseSlug} />
           </div>
 
-          {/* Right: sticky sidebar */}
           <div className="lg:col-span-1">
             <CourseDetailSidebar
-              course={resolvedCourse}
+              course={course}
               isEnrolled={isEnrolled}
               progress={progress}
               onEnroll={handleEnroll}
