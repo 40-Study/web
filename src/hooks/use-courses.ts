@@ -253,26 +253,18 @@ export function useFeaturedCourses() {
   });
 }
 
-/** Fetch course by slug */
+/** Fetch course by slug — tries slug first, falls back to ID lookup */
 export function useCourseBySlug(slug: string) {
   return useQuery({
     queryKey: courseKeys.detail(slug),
-    queryFn: async (): Promise<CourseDetail | null> => {
+    queryFn: async (): Promise<CourseDetail> => {
       try {
         const raw = await courseService.getCourseBySlug(slug);
         return mapApiCourseDetail(raw);
-      } catch (slugError: unknown) {
-        try {
-          const byId = await courseService.getCourseById(slug);
-          return mapApiCourseDetail(byId);
-        } catch (idError: unknown) {
-          console.error("Failed to fetch course by slug or id:", {
-            slug,
-            slugError,
-            idError,
-          });
-          return null;
-        }
+      } catch {
+        // Slug endpoint may not exist yet — try by ID as fallback
+        const byId = await courseService.getCourseById(slug);
+        return mapApiCourseDetail(byId);
       }
     },
     enabled: !!slug,
