@@ -39,7 +39,7 @@ interface Course {
 }
 
 /** Map API course to local Course type */
-function mapApiCourse(c: { id: string; title: string; thumbnail_url?: string; status?: string; total_students?: number; average_rating?: number; price?: number; discount_price?: number; is_featured?: boolean }): Course {
+function mapApiCourse(c: { id: string; title: string; thumbnail_url?: string; status?: string; total_students?: number; average_rating?: number | string; price?: number | string; discount_price?: number | string; is_featured?: boolean }): Course {
   const status = c.status === "published" ? "published" : c.status === "archived" ? "archived" : "draft";
   return {
     id: c.id,

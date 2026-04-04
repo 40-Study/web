@@ -49,13 +49,13 @@ function mapApiCourse(c: ApiCourse): Course {
     id: c.id,
     title: c.title,
     slug: c.slug ?? c.id,
-    description: c.description ?? "",
-    thumbnail: c.thumbnail ?? "",
-    price: c.price ?? 0,
-    originalPrice: c.original_price,
-    rating: c.rating ?? 0,
-    reviewCount: c.review_count ?? 0,
-    studentCount: c.student_count ?? 0,
+    description: c.short_description || c.description || "",
+    thumbnail: c.thumbnail_url ?? "",
+    price: Number(c.price) || 0,
+    originalPrice: c.discount_price ? Number(c.discount_price) : undefined,
+    rating: Number(c.average_rating) || 0,
+    reviewCount: c.total_reviews ?? 0,
+    studentCount: c.total_students ?? 0,
     instructor: c.instructor
       ? mapApiInstructor(c.instructor)
       : { id: c.instructor_id ?? "", name: "Unknown" },
@@ -63,13 +63,13 @@ function mapApiCourse(c: ApiCourse): Course {
       ? mapApiCategory(c.category)
       : { id: c.category_id ?? "", name: "Unknown", slug: "unknown" },
     level: (c.level as Course["level"]) ?? "beginner",
-    language: c.language ?? "Tiếng Việt",
-    duration: c.duration ?? 0,
-    lessonCount: c.lesson_count ?? 0,
-    learningOutcomes: c.learning_outcomes ?? [],
+    language: c.language === "vi" ? "Tiếng Việt" : (c.language ?? "Tiếng Việt"),
+    duration: c.total_duration_minutes ?? 0,
+    lessonCount: c.total_lessons ?? 0,
+    learningOutcomes: c.objectives ?? [],
     requirements: c.requirements,
     isFeatured: c.is_featured,
-    isPublished: c.is_published,
+    isPublished: c.status === "published",
     createdAt: c.created_at ?? "",
     updatedAt: c.updated_at ?? "",
   };
@@ -218,7 +218,7 @@ export function useSearchSuggestions(query: string) {
         (c): CourseSearchResult => ({
           id: c.id,
           title: c.title,
-          thumbnail: c.thumbnail ?? "",
+          thumbnail: c.thumbnail_url ?? "",
           instructor: c.instructor?.name ?? "Unknown",
           slug: c.slug ?? c.id,
         })
