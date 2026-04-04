@@ -89,8 +89,8 @@ export const courseService = {
    */
   getCourses: (params?: CourseListParams) =>
     api
-      .get<{ message: string; data: ApiCourse[] }>("/courses", { params })
-      .then((r) => r.data.data),
+      .get<{ message: string; data: { courses: ApiCourse[]; total: number } }>("/courses", { params })
+      .then((r) => r.data.data.courses),
 
   /**
    * GET /courses/:id — get single course by ID
@@ -113,10 +113,10 @@ export const courseService = {
    */
   getCategories: (keyword?: string) =>
     api
-      .get<{ message: string; data: ApiCategory[] }>("/categories", {
+      .get<{ message: string; data: { categories: ApiCategory[]; total: number } }>("/categories", {
         params: keyword ? { keyword } : {},
       })
-      .then((r) => r.data.data),
+      .then((r) => r.data.data.categories),
 
   /**
    * GET /courses with keyword — search courses by keyword
@@ -124,10 +124,10 @@ export const courseService = {
    */
   searchCourses: (keyword: string, limit = 10) =>
     api
-      .get<{ message: string; data: ApiCourse[] }>("/courses", {
+      .get<{ message: string; data: { courses: ApiCourse[]; total: number } }>("/courses", {
         params: { keyword, page_size: limit },
       })
-      .then((r) => r.data.data),
+      .then((r) => r.data.data.courses),
 
   /**
    * GET /courses with is_featured filter
@@ -136,10 +136,10 @@ export const courseService = {
    */
   getFeaturedCourses: () =>
     api
-      .get<{ message: string; data: ApiCourse[] }>("/courses", {
+      .get<{ message: string; data: { courses: ApiCourse[]; total: number } }>("/courses", {
         params: { page_size: 6 },
       })
-      .then((r) => r.data.data),
+      .then((r) => r.data.data.courses),
 
   /**
    * GET /courses/slug/:slug — get course by slug

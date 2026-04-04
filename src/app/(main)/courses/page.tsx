@@ -8,9 +8,8 @@ import { CourseFiltersComponent } from "@/components/course/course-filters";
 import { CourseSearch } from "@/components/course/course-search";
 import { CourseBannerCarousel } from "@/components/course/course-banner-carousel";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
-import { useSearchSuggestions } from "@/hooks/use-courses";
+import { useCourses, useCategories, useSearchSuggestions } from "@/hooks/use-courses";
 import { CourseFilters } from "@/types/course";
-import { mockCourses, mockCategories } from "@/lib/mock-data/courses";
 
 export default function CoursesPage() {
   const searchParams = useSearchParams();
@@ -19,20 +18,19 @@ export default function CoursesPage() {
   const [filters, setFilters] = useState<CourseFilters>({});
   const [searchQuery, setSearchQuery] = useState(initialQuery);
 
-  const categories = mockCategories;
-  const coursesLoading = false;
-  const categoriesLoading = false;
+  const { data: allCourses = [], isLoading: coursesLoading } = useCourses(filters);
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: suggestions = [] } = useSearchSuggestions(searchQuery);
 
-  // Filter courses by search query and filters
+  // Filter courses by search query (API filters handled by useCourses)
   const filteredCourses = searchQuery
-    ? mockCourses.filter(
+    ? allCourses.filter(
         (c) =>
           c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           c.instructor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           c.description.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : mockCourses;
+    : allCourses;
 
   const freeCourses = filteredCourses.filter((course) => course.price === 0);
   const paidCourses = filteredCourses.filter((course) => course.price > 0);
@@ -54,7 +52,7 @@ export default function CoursesPage() {
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Khám phá khóa học</h1>
               <p className="text-slate-500 text-sm mt-1">
-                {mockCourses.length}+ khóa học &middot; Cập nhật liên tục
+                {allCourses.length}+ khóa học &middot; Cập nhật liên tục
               </p>
             </div>
           </ScrollReveal>
