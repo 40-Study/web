@@ -89,7 +89,7 @@ function mapApiEnrollment(e: ApiEnrollment): EnrolledCourse {
   return {
     id: e.course_id || e.id,
     title: e.course_title || "Unknown",
-    slug: e.course_id || e.id,
+    slug: e.course_slug || e.course_id || e.id,
     description: "",
     thumbnail: e.course_thumbnail || "",
     price: 0,
@@ -97,7 +97,7 @@ function mapApiEnrollment(e: ApiEnrollment): EnrolledCourse {
     reviewCount: 0,
     studentCount: 0,
     instructor: { id: "", name: "Unknown" },
-    category: { id: "", name: "Unknown", slug: "unknown" },
+    category: { id: "", name: e.course_category || "Khóa học", slug: "" },
     level: "beginner",
     language: "Tiếng Việt",
     duration: 0,

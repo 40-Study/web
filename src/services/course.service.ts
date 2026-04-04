@@ -62,7 +62,9 @@ export interface ApiEnrollment {
   user_id: string;
   course_id: string;
   course_title?: string;
+  course_slug?: string;
   course_thumbnail?: string;
+  course_category?: string;
   progress_percentage?: number | string;
   completed_at?: string;
   last_accessed_at?: string;
