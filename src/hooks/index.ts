@@ -14,7 +14,7 @@ export {
   useLogin,
   useRegisterRequest,
   useRegister,
-  useSelectProfile,
+  useSelectRole,
   useSelectOrg,
   useLogout,
   authKeys,

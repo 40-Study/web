@@ -1,10 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Permission } from "@/lib/permissions";
-import type { SystemRole } from "@/services/auth.service";
+import type { UnifiedRole } from "@/services/auth.service";
 
 export type RoleType = "student" | "teacher" | "parent" | "admin";
-export type { SystemRole };
+export type { UnifiedRole };
 
 interface User {
   id: string;
@@ -32,8 +32,8 @@ interface AuthState {
   token: string | null;
   sessionToken: string | null;
 
-  // Multi-role system
-  systemRoles: SystemRole[];
+  // Multi-role system (unified roles from backend)
+  roles: UnifiedRole[];
   activeRole: string | null;
   permissions: Permission[];
 
@@ -57,7 +57,7 @@ interface AuthState {
   setUser: (user: User | null) => void;
   setToken: (token: string | null) => void;
   setSessionToken: (token: string | null) => void;
-  setSystemRoles: (roles: SystemRole[]) => void;
+  setRoles: (roles: UnifiedRole[]) => void;
   setActiveRole: (role: string | null) => void;
   setPermissions: (permissions: Permission[]) => void;
   setOrganizations: (orgs: Organization[]) => void;
@@ -67,7 +67,7 @@ interface AuthState {
   setRegisterRole: (role: string | null) => void;
   setHasHydrated: (value: boolean) => void;
 
-  login: (user: User, roles?: SystemRole[]) => void;
+  login: (user: User, roles?: UnifiedRole[]) => void;
   logout: () => void;
   reset: () => void;
 }
@@ -76,7 +76,7 @@ const initialState = {
   user: null,
   token: null,
   sessionToken: null,
-  systemRoles: [],
+  roles: [],
   activeRole: null,
   permissions: [],
   organizations: [],
@@ -97,7 +97,7 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) => set({ user }),
       setToken: (token) => set({ token }),
       setSessionToken: (sessionToken) => set({ sessionToken }),
-      setSystemRoles: (systemRoles) => set({ systemRoles }),
+      setRoles: (roles) => set({ roles }),
       setActiveRole: (activeRole) => set({ activeRole }),
       setPermissions: (permissions) => set({ permissions }),
       setOrganizations: (organizations) => set({ organizations }),
@@ -110,7 +110,7 @@ export const useAuthStore = create<AuthState>()(
       login: (user, roles = []) =>
         set({
           user,
-          systemRoles: roles,
+          roles,
           isAuthenticated: true,
         }),
 
@@ -125,7 +125,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         token: state.token,
-        systemRoles: state.systemRoles,
+        roles: state.roles,
         activeRole: state.activeRole,
         permissions: state.permissions,
         organizations: state.organizations,

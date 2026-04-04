@@ -7,6 +7,8 @@ export type RoleType = "student" | "parent" | "teacher" | "admin";
 
 interface RoleCardProps {
   role: RoleType;
+  /** Override display label (e.g. from UnifiedRole.display_name) */
+  label?: string;
   selected?: boolean;
   onClick?: () => void;
   className?: string;
@@ -35,7 +37,7 @@ const roleConfig: Record<RoleType, { label: string; description: string; icon: R
   },
 };
 
-export function RoleCard({ role, selected, onClick, className }: RoleCardProps) {
+export function RoleCard({ role, label, selected, onClick, className }: RoleCardProps) {
   const config = roleConfig[role];
 
   return (
@@ -62,7 +64,7 @@ export function RoleCard({ role, selected, onClick, className }: RoleCardProps) 
         {config.icon}
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-semibold">{config.label}</p>
+        <p className="text-sm font-semibold">{label || config.label}</p>
         <p className={cn("text-xs", selected ? "text-primary-600" : "text-gray-500")}>
           {config.description}
         </p>

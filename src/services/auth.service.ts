@@ -101,10 +101,26 @@ export interface SystemRole {
   description?: string;
 }
 
+/** Unified role from backend - can be system or organization role */
+export interface UnifiedRole {
+  id: string;
+  type: "system" | "organization";
+  role_name: string;
+  organization_id?: string;
+  organization_name?: string;
+  display_name: string;
+}
+
 export interface LoginResponse {
   message: string;
   data: {
-    // Direct login (1 role, 0 orgs) - backend returns tokens directly
+    completed: boolean;
+    session_token?: string;
+    // Unified roles list (system + org roles)
+    roles?: UnifiedRole[];
+    requires_org_selection?: boolean;
+    organizations?: Array<{ id: string; name: string }>;
+    // Only present when completed=true
     access_token?: string;
     refresh_token?: string;
     user: {
@@ -112,28 +128,49 @@ export interface LoginResponse {
       username?: string;
       email: string;
       name?: string;
+      full_name?: string;
       avatar?: string;
+      avatar_url?: string;
       is_active?: boolean;
+    };
+    active_role?: UnifiedRole;
+    active_org?: { id: string; name: string } | null;
+    entry_context?: {
+      primary_role: string;
+      requires_setup: boolean;
+      setup_endpoint?: string;
     };
     current_device?: {
       device_id: string;
       device_name: string;
       logged_in_at: string;
     };
-    // Multi-step login flow (multiple roles or orgs)
-    session_token?: string;
-    system_roles?: SystemRole[];
-    completed?: boolean;
-    active_role?: SystemRole;
-    active_org?: { id: string; name: string } | null;
-    requires_org_selection?: boolean;
-    organizations?: Array<{ id: string; name: string; code?: string }>;
   };
 }
 
-export interface SelectProfileDTO {
+/** Select role during login flow (with session_token) */
+export interface SelectRoleDTO {
   session_token: string;
-  system_role_id: string;
+  role_id: string;
+  role_type: "system" | "organization";
+}
+
+/** Select role response from backend */
+export interface SelectRoleResponse {
+  message: string;
+  data: {
+    completed: boolean;
+    session_token?: string;
+    requires_org_selection?: boolean;
+    organizations?: Array<{ id: string; name: string }>;
+    access_token?: string;
+    refresh_token?: string;
+    user: LoginResponse["data"]["user"];
+    active_role: UnifiedRole;
+    active_org?: { id: string; name: string } | null;
+    entry_context?: LoginResponse["data"]["entry_context"];
+    current_device?: LoginResponse["data"]["current_device"];
+  };
 }
 
 export interface SelectOrgDTO {
@@ -302,19 +339,19 @@ export const authService = {
   login: (data: LoginDTO) =>
     api.post<LoginResponse>("/auth/login", data).then((r) => r.data),
 
-  /** Select profile/role after login */
-  selectProfile: (data: SelectProfileDTO) =>
-    api.post<{ message: string; data: { organizations: Organization[] } }>("/auth/select-profile", data).then((r) => r.data),
+  /** Select role after login (using session_token) */
+  selectRole: (data: SelectRoleDTO) =>
+    api.post<SelectRoleResponse>("/auth/select-role", data).then((r) => r.data),
 
   /** Select organization */
   selectOrg: (data: SelectOrgDTO) =>
     api.post<TokenResponse>("/auth/select-org", data).then((r) => r.data),
 
-  /** Switch to different profile/role */
-  switchProfile: (data: SelectProfileDTO) =>
-    api.post<TokenResponse>("/auth/switch-profile", data).then((r) => r.data),
+  /** Switch role while already logged in */
+  switchRole: (data: { role_id: string; role_type: "system" | "organization" }) =>
+    api.post<SelectRoleResponse>("/auth/switch-role", data).then((r) => r.data),
 
-  /** Switch to different organization */
+  /** Switch organization while already logged in */
   switchOrg: (data: SelectOrgDTO) =>
     api.post<TokenResponse>("/auth/switch-org", data).then((r) => r.data),
 

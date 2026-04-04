@@ -8,8 +8,7 @@ import { SocialLoginButton } from "@/components/auth/social-login-button";
 import { AuthFooterLink } from "@/components/auth/auth-footer-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AUTH_ROUTES, getRoleHomeRoute } from "@/lib/routes";
-import { getRoleFromToken } from "@/lib/jwt";
+import { AUTH_ROUTES, getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { showComingSoon } from "@/lib/toast-helpers";
 import { useLogin } from "@/hooks/queries/use-auth";
 import { getDeviceInfo } from "@/services/auth.service";
@@ -29,22 +28,15 @@ export default function LoginPage() {
         onSuccess: (response) => {
           const data = response.data;
 
-          // Always show role selection if user has roles
-          const systemRoles = data.system_roles || [];
-          if (systemRoles.length >= 1) {
+          // Multi-role: session_token + roles but no access_token → role selection
+          if (!data.access_token && data.session_token && (data.roles?.length ?? 0) > 1) {
             router.push(AUTH_ROUTES.LOGIN_ROLE);
             return;
           }
 
-          // Fallback: direct login (no roles returned)
-          if (data.access_token) {
-            const role = data.active_role?.name || getRoleFromToken(data.access_token);
-            router.push(getRoleHomeRoute(role));
-            return;
-          }
-
-          // Requires org selection
-          router.push(AUTH_ROUTES.LOGIN_ORGANIZATION);
+          // Auto-completed login → redirect to role home
+          const role = data.active_role?.role_name;
+          router.push(getRoleHomeRoute(normalizeRole(role)));
         },
       }
     );

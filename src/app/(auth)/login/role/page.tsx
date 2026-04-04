@@ -8,47 +8,45 @@ import type { RoleType } from "@/components/auth/role-card";
 import { Button } from "@/components/ui/button";
 import { AUTH_ROUTES, getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { useAuthStore } from "@/stores";
-import { useSelectProfile } from "@/hooks/queries/use-auth";
-import type { SystemRole } from "@/services/auth.service";
+import { useSelectRole } from "@/hooks/queries/use-auth";
+import type { UnifiedRole } from "@/services/auth.service";
 
-// Roles that require children selection instead of org selection
-const CHILDREN_ROLES: RoleType[] = ["parent"];
+/** Map backend role_name to RoleCard display type */
+function toRoleType(role: UnifiedRole): RoleType {
+  const name = role.role_name.toLowerCase();
+  if (name.includes("student")) return "student";
+  if (name.includes("teacher")) return "teacher";
+  if (name.includes("parent")) return "parent";
+  if (name.includes("admin") || name.includes("owner")) return "admin";
+  return "student";
+}
 
 export default function LoginRolePage() {
   const router = useRouter();
-  const { systemRoles, setActiveRole } = useAuthStore();
-  const selectProfile = useSelectProfile();
-  const [selectedRole, setSelectedRole] = useState<SystemRole | null>(
-    systemRoles.length > 0 ? systemRoles[0] : null
+  const { roles, setActiveRole } = useAuthStore();
+  const selectRole = useSelectRole();
+  const [selectedRole, setSelectedRole] = useState<UnifiedRole | null>(
+    roles.length > 0 ? roles[0] : null
   );
 
   const handleContinue = async () => {
     if (!selectedRole) return;
 
     try {
-      const response = await selectProfile.mutateAsync(selectedRole.id);
-      const normalizedRole = normalizeRole(selectedRole.name);
-      setActiveRole(normalizedRole);
+      const response = await selectRole.mutateAsync(selectedRole);
 
-      const roleType = selectedRole.name.toLowerCase() as RoleType;
-
-      // Parent role → children selection
-      if (CHILDREN_ROLES.includes(roleType)) {
-        router.push(AUTH_ROUTES.LOGIN_CHILDREN);
-        return;
-      }
-
-      // If organizations returned → org selection (needed to get access_token)
-      const orgs = response?.data?.organizations || [];
-      if (orgs.length > 0) {
+      if (response.data.completed) {
+        // Login complete → redirect to role home
+        router.push(getRoleHomeRoute(normalizeRole(selectedRole.role_name)));
+      } else if (response.data.requires_org_selection) {
+        // Need org selection next
         router.push(AUTH_ROUTES.LOGIN_ORGANIZATION);
-        return;
+      } else {
+        // Fallback: redirect to role home
+        router.push(getRoleHomeRoute(normalizeRole(selectedRole.role_name)));
       }
-
-      // No org needed → redirect directly to role home
-      router.push(getRoleHomeRoute(normalizedRole));
-    } catch (error) {
-      console.error("Failed to select profile:", error);
+    } catch {
+      // Error handled by hook
     }
   };
 
@@ -60,11 +58,12 @@ export default function LoginRolePage() {
       <p className="mb-6 text-center text-sm text-gray-500">Chọn vai trò của bạn để tiếp tục</p>
 
       <div className="space-y-3" role="radiogroup" aria-label="Chọn vai trò">
-        {systemRoles.length > 0 ? (
-          systemRoles.map((role) => (
+        {roles.length > 0 ? (
+          roles.map((role) => (
             <RoleCard
               key={role.id}
-              role={role.name.toLowerCase() as RoleType}
+              role={toRoleType(role)}
+              label={role.display_name}
               selected={selectedRole?.id === role.id}
               onClick={() => setSelectedRole(role)}
             />
@@ -76,12 +75,12 @@ export default function LoginRolePage() {
         )}
       </div>
 
-      <Button 
-        onClick={handleContinue} 
-        disabled={!selectedRole || selectProfile.isPending} 
+      <Button
+        onClick={handleContinue}
+        disabled={!selectedRole || selectRole.isPending}
         className="mt-6 h-12 w-full"
       >
-        {selectProfile.isPending ? "Đang xử lý..." : "Tiếp tục"}
+        {selectRole.isPending ? "Đang xử lý..." : "Tiếp tục"}
       </Button>
     </AuthCard>
   );

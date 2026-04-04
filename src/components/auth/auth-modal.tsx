@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,11 +17,9 @@ import { OtpInput } from "@/components/auth/otp-input";
 import { AuthIconHeader } from "@/components/auth/auth-icon-header";
 import { MailIcon } from "@/components/icons";
 import type { RoleType } from "@/components/auth/role-card";
-import { useQueryClient } from "@tanstack/react-query";
-import { useLogin, useRegisterRequest, useRegister, useSelectProfile, useSelectOrg, authKeys } from "@/hooks/queries/use-auth";
+import { useLogin, useRegisterRequest, useRegister, useSelectRole, useSelectOrg } from "@/hooks/queries/use-auth";
 import { authService, getDeviceInfo } from "@/services/auth.service";
-import type { SystemRole } from "@/services/auth.service";
-import type { Permission } from "@/lib/permissions";
+import type { UnifiedRole } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { roleService } from "@/services/role.service";
 import { AUTH_ROUTES, getRoleHomeRoute, normalizeRole } from "@/lib/routes";
@@ -338,20 +336,13 @@ function LoginView({
                 onSuccess: (response) => {
                     const data = response.data;
 
-                    // Always show role selection if user has roles
-                    // Even single-role users should see the role picker for clarity
-                    if (data.system_roles && data.system_roles.length >= 1) {
+                    // Multi-role: session_token + roles but no access_token
+                    if (!data.access_token && data.session_token && (data.roles?.length ?? 0) > 1) {
                         onLoginSuccess("select-role");
                         return;
                     }
 
-                    // requires_org_selection → needs org selection
-                    if (data.requires_org_selection) {
-                        onLoginSuccess("select-org");
-                        return;
-                    }
-
-                    // Fallback: direct login (no roles returned)
+                    // Auto-completed login → direct redirect
                     onLoginSuccess("direct");
                 },
             }
@@ -430,60 +421,43 @@ function LoginView({
 
 // ─── LOGIN ROLE VIEW ────────────────────────────────────────────────────────
 
-const roleRoutes: Record<RoleType, string> = {
-    student: AUTH_ROUTES.LOGIN_ORGANIZATION,
-    parent: AUTH_ROUTES.LOGIN_CHILDREN,
-    teacher: AUTH_ROUTES.LOGIN_ORGANIZATION,
-    admin: AUTH_ROUTES.LOGIN_ORGANIZATION,
-};
+/** Map backend role_name to RoleCard display type */
+function toRoleType(role: UnifiedRole): RoleType {
+    const name = role.role_name.toLowerCase();
+    if (name.includes("student")) return "student";
+    if (name.includes("teacher")) return "teacher";
+    if (name.includes("parent")) return "parent";
+    if (name.includes("admin") || name.includes("owner")) return "admin";
+    return "student";
+}
 
 function LoginRoleView({ onNext, onComplete }: { onNext: () => void; onComplete: () => void }) {
     const router = useRouter();
-    const { systemRoles, sessionToken, token, setActiveRole, setPermissions } = useAuthStore();
-    const selectProfile = useSelectProfile();
-    const qc = useQueryClient();
-    const [selectedRole, setSelectedRole] = useState<SystemRole | null>(null);
-    const [isAutoNavigating, setIsAutoNavigating] = useState(false);
-
-    // Ensure systemRoles is always an array (memoized to prevent useEffect dependency issues)
-    const roles = useMemo(() => systemRoles ?? [], [systemRoles]);
-
-    // Login already completed (1 role, 0 orgs) → token already set, no sessionToken
-    const isAlreadyCompleted = !!token && !sessionToken;
-
-    // Initialize selected role after mount
-    useEffect(() => {
-        if (roles.length > 0 && !selectedRole) {
-            setSelectedRole(roles[0]);
-        }
-    }, [roles, selectedRole]);
-
-    // Auto-navigate when login is already completed
-    useEffect(() => {
-        if (isAlreadyCompleted && selectedRole && !isAutoNavigating) {
-            setIsAutoNavigating(true);
-            setActiveRole(normalizeRole(selectedRole.name));
-            authService.getMe()
-                .then((me) => setPermissions(me.permissions as Permission[]))
-                .catch(() => { /* Non-critical */ })
-                .finally(() => {
-                    qc.invalidateQueries({ queryKey: authKeys.all });
-                    onComplete();
-                    router.push(getRoleHomeRoute(selectedRole?.name));
-                });
-        }
-    }, [isAlreadyCompleted, selectedRole, isAutoNavigating, setActiveRole, setPermissions, qc, onComplete, router]);
+    const { roles } = useAuthStore();
+    const selectRole = useSelectRole();
+    const [selectedRole, setSelectedRole] = useState<UnifiedRole | null>(
+        roles.length > 0 ? roles[0] : null
+    );
 
     const handleContinue = async () => {
-        if (!selectedRole || isAutoNavigating) return;
+        if (!selectedRole) return;
 
-        // Need to call selectProfile with session token
         try {
-            await selectProfile.mutateAsync(selectedRole.id);
-            setActiveRole(normalizeRole(selectedRole.name));
-            onNext();
-        } catch (error) {
-            console.error("Failed to select profile:", error);
+            const response = await selectRole.mutateAsync(selectedRole);
+
+            if (response.data.completed) {
+                // Login complete → close modal and redirect
+                onComplete();
+                router.push(getRoleHomeRoute(normalizeRole(selectedRole.role_name)));
+            } else if (response.data.requires_org_selection) {
+                // Need org selection next
+                onNext();
+            } else {
+                onComplete();
+                router.push(getRoleHomeRoute(normalizeRole(selectedRole.role_name)));
+            }
+        } catch {
+            // Error handled by hook
         }
     };
 
@@ -499,7 +473,8 @@ function LoginRoleView({ onNext, onComplete }: { onNext: () => void; onComplete:
                     roles.map((role) => (
                         <RoleCard
                             key={role.id}
-                            role={role.name.toLowerCase() as RoleType}
+                            role={toRoleType(role)}
+                            label={role.display_name}
                             selected={selectedRole?.id === role.id}
                             onClick={() => setSelectedRole(role)}
                         />
@@ -513,10 +488,10 @@ function LoginRoleView({ onNext, onComplete }: { onNext: () => void; onComplete:
 
             <Button
                 onClick={handleContinue}
-                disabled={!selectedRole || selectProfile.isPending || isAutoNavigating}
+                disabled={!selectedRole || selectRole.isPending}
                 className="mt-6 h-12 w-full"
             >
-                {(selectProfile.isPending || isAutoNavigating) ? "Đang xử lý..." : "Tiếp tục"}
+                {selectRole.isPending ? "Đang xử lý..." : "Tiếp tục"}
             </Button>
         </>
     );

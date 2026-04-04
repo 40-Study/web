@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { authService } from "@/services/auth.service";
+import type { UnifiedRole } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { getRoleFromToken } from "@/lib/jwt";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
@@ -117,49 +118,45 @@ export function useChildren() {
 // Mutations
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Login mutation - stores auth state, does NOT navigate (callers handle navigation via modal) */
+/** Login mutation - stores auth state, does NOT navigate (callers handle navigation) */
 export function useLogin() {
-  const { login, setSystemRoles, setSessionToken, setOrganizations, setToken, setActiveRole } = useAuthStore();
+  const { login, setRoles, setSessionToken, setOrganizations, setToken, setActiveRole } = useAuthStore();
 
   return useMutation({
     mutationFn: authService.login,
     onSuccess: async (response) => {
       const data = response.data;
 
-      // Store user info
-      const user = {
-        id: data.user.id,
-        email: data.user.email,
-        name: data.user.name || data.user.username || data.user.email,
-        avatar: data.user.avatar,
-      };
-      login(user, data.system_roles || []);
+      // Store roles for role selection screen
+      if (data.roles) {
+        setRoles(data.roles);
+      }
 
-      // Case 1: Direct login - backend returns access_token directly (1 role, 0 orgs)
-      if (data.access_token && !data.session_token) {
+      // Store user info (user may not be present when completed=false)
+      if (data.user) {
+        const user = {
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.full_name || data.user.name || data.user.username || data.user.email,
+          avatar: data.user.avatar_url || data.user.avatar,
+        };
+        login(user, data.roles || []);
+      }
+
+      // Multi-role: has session_token + roles but no access_token → need role selection
+      const needsRoleSelection = !data.access_token && data.session_token && (data.roles?.length ?? 0) > 1;
+
+      if (needsRoleSelection) {
+        setSessionToken(data.session_token || null);
+        if (data.organizations) {
+          setOrganizations(data.organizations);
+        }
+      } else if (data.access_token) {
+        // Auto-login: backend returned tokens directly
         setToken(data.access_token);
         setSessionToken(null);
-        // Extract role from JWT if not in response
-        const role = data.active_role?.name || getRoleFromToken(data.access_token);
+        const role = data.active_role?.role_name || getRoleFromToken(data.access_token);
         setActiveRole(normalizeRole(role));
-        return;
-      }
-
-      // Case 2: Multi-step login with system_roles
-      if (data.system_roles) {
-        setSystemRoles(data.system_roles);
-      }
-
-      // Case 3: Requires org selection (1 role, has orgs)
-      if (data.requires_org_selection) {
-        setSessionToken(data.session_token || null);
-        setOrganizations(data.organizations || []);
-        return;
-      }
-
-      // Case 4: Multiple roles → need profile selection
-      if (data.session_token) {
-        setSessionToken(data.session_token);
       }
     },
     onError: (error: unknown) => {
@@ -189,23 +186,37 @@ export function useRegister() {
   });
 }
 
-/** Select profile/role */
-export function useSelectProfile() {
-  const { setOrganizations, sessionToken } = useAuthStore();
+/** Select role during login flow (uses session_token) */
+export function useSelectRole() {
+  const { setToken, setSessionToken, setActiveRole, setOrganizations, setPermissions, sessionToken } = useAuthStore();
+  const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async (roleId: string) => {
+    mutationFn: async (role: UnifiedRole) => {
       if (!sessionToken) throw new Error("No session token");
-      return authService.selectProfile({
+      return authService.selectRole({
         session_token: sessionToken,
-        system_role_id: roleId,
+        role_id: role.id,
+        role_type: role.type,
       });
     },
     onSuccess: (response) => {
-      setOrganizations(response.data.organizations);
+      const data = response.data;
+      setActiveRole(normalizeRole(data.active_role.role_name));
+
+      if (data.completed && data.access_token) {
+        // Role selection completed login → store tokens
+        setToken(data.access_token);
+        setSessionToken(null);
+        qc.invalidateQueries({ queryKey: authKeys.all });
+      } else if (data.requires_org_selection && data.organizations) {
+        // Need org selection next
+        setOrganizations(data.organizations);
+        setSessionToken(data.session_token || null);
+      }
     },
     onError: (error: unknown) => {
-      console.error("Select profile error:", error);
+      console.error("Select role error:", error);
       toast.error("Chọn vai trò thất bại", {
         description: "Vui lòng thử lại hoặc đăng nhập lại",
       });
