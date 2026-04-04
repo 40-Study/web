@@ -34,7 +34,14 @@ export default function HomePage() {
     }
   }, [isAuthenticated, router]);
 
-  if (!isAuthenticated) return null;
+  // Show loading while auth hydrates from localStorage
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+      </div>
+    );
+  }
 
   // Sort by last access
   const sorted = [...enrolledCourses].sort((a, b) => {

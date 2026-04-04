@@ -35,14 +35,14 @@ export default function LoginRolePage() {
     try {
       const response = await selectRole.mutateAsync(selectedRole);
 
+      // Wait for Zustand persist to flush before navigating
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       if (response.data.completed) {
-        // Login complete → redirect to role home
         router.push(getRoleHomeRoute(normalizeRole(selectedRole.role_name)));
       } else if (response.data.requires_org_selection) {
-        // Need org selection next
         router.push(AUTH_ROUTES.LOGIN_ORGANIZATION);
       } else {
-        // Fallback: redirect to role home
         router.push(getRoleHomeRoute(normalizeRole(selectedRole.role_name)));
       }
     } catch {
