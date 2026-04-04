@@ -194,37 +194,35 @@ export function useSelectRole() {
   return useMutation({
     mutationFn: async (role: UnifiedRole) => {
       if (!sessionToken) throw new Error("No session token");
-      return authService.selectRole({
+      const response = await authService.selectRole({
         session_token: sessionToken,
         role_id: role.id,
         role_type: role.type,
       });
-    },
-    onSuccess: (response) => {
+
+      // Set auth state BEFORE mutateAsync resolves so redirect works
       const data = response.data;
       setActiveRole(normalizeRole(data.active_role.role_name));
 
-      // Store user info and mark as authenticated
       if (data.user) {
-        const user = {
+        login({
           id: data.user.id,
           email: data.user.email,
           name: data.user.full_name || data.user.username || data.user.email,
           avatar: data.user.avatar_url,
-        };
-        login(user);
+        });
       }
 
       if (data.access_token) {
-        // Role selection completed login → store tokens
         setToken(data.access_token);
         setSessionToken(null);
         qc.invalidateQueries({ queryKey: authKeys.all });
       } else if (data.requires_org_selection && data.organizations) {
-        // Need org selection next
         setOrganizations(data.organizations);
         setSessionToken(data.session_token || null);
       }
+
+      return response;
     },
     onError: (error: unknown) => {
       console.error("Select role error:", error);
