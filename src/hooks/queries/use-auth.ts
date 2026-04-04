@@ -188,7 +188,7 @@ export function useRegister() {
 
 /** Select role during login flow (uses session_token) */
 export function useSelectRole() {
-  const { setToken, setSessionToken, setActiveRole, setOrganizations, setPermissions, sessionToken } = useAuthStore();
+  const { login, setToken, setSessionToken, setActiveRole, setOrganizations, setPermissions, sessionToken } = useAuthStore();
   const qc = useQueryClient();
 
   return useMutation({
@@ -204,7 +204,18 @@ export function useSelectRole() {
       const data = response.data;
       setActiveRole(normalizeRole(data.active_role.role_name));
 
-      if (data.completed && data.access_token) {
+      // Store user info and mark as authenticated
+      if (data.user) {
+        const user = {
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.full_name || data.user.username || data.user.email,
+          avatar: data.user.avatar_url,
+        };
+        login(user);
+      }
+
+      if (data.access_token) {
         // Role selection completed login → store tokens
         setToken(data.access_token);
         setSessionToken(null);
