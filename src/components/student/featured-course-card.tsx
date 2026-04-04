@@ -3,10 +3,19 @@
 import Link from "next/link";
 import { ChevronRight, BookOpen } from "lucide-react";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import type { FeaturedCourse } from "@/lib/mock-data/my-courses";
+interface FeaturedCourseCardCourse {
+  id: string;
+  slug: string;
+  title: string;
+  tags: string[];
+  progress: number;
+  completedLessons: number;
+  totalLessons: number;
+  nextLesson: string;
+}
 
 interface FeaturedCourseCardProps {
-  course: FeaturedCourse;
+  course: FeaturedCourseCardCourse;
 }
 
 export function FeaturedCourseCard({ course }: FeaturedCourseCardProps) {

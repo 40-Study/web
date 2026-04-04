@@ -61,10 +61,10 @@ export interface ApiEnrollment {
   id: string;
   user_id: string;
   course_id: string;
-  course?: ApiCourse;
-  progress?: number;
-  completed_lessons?: number;
-  total_lessons?: number;
+  course_title?: string;
+  course_thumbnail?: string;
+  progress_percentage?: number | string;
+  completed_at?: string;
   last_accessed_at?: string;
   enrolled_at?: string;
   created_at?: string;
@@ -107,8 +107,8 @@ export const courseService = {
    */
   getEnrolledCourses: () =>
     api
-      .get<{ message: string; data: ApiEnrollment[] }>("/enrollments")
-      .then((r) => r.data.data),
+      .get<{ message: string; data: { enrollments: ApiEnrollment[]; total: number } }>("/enrollments")
+      .then((r) => r.data.data.enrollments),
 
   /**
    * GET /categories — list all categories

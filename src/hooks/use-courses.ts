@@ -86,12 +86,28 @@ function mapApiCourseDetail(c: ApiCourse): CourseDetail {
 }
 
 function mapApiEnrollment(e: ApiEnrollment): EnrolledCourse {
-  const base = e.course ? mapApiCourse(e.course) : ({} as Course);
   return {
-    ...base,
-    progress: e.progress ?? 0,
-    completedLessons: e.completed_lessons ?? 0,
-    totalLessons: e.total_lessons ?? 0,
+    id: e.course_id || e.id,
+    title: e.course_title || "Unknown",
+    slug: e.course_id || e.id,
+    description: "",
+    thumbnail: e.course_thumbnail || "",
+    price: 0,
+    rating: 0,
+    reviewCount: 0,
+    studentCount: 0,
+    instructor: { id: "", name: "Unknown" },
+    category: { id: "", name: "Unknown", slug: "unknown" },
+    level: "beginner",
+    language: "Tiếng Việt",
+    duration: 0,
+    lessonCount: 0,
+    learningOutcomes: [],
+    createdAt: e.enrolled_at || "",
+    updatedAt: "",
+    progress: Number(e.progress_percentage) || 0,
+    completedLessons: 0,
+    totalLessons: 0,
     lastAccessedAt: e.last_accessed_at,
     enrolledAt: e.enrolled_at ?? e.created_at ?? "",
   };

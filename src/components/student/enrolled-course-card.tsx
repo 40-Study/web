@@ -2,10 +2,17 @@
 
 import Link from "next/link";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import type { EnrolledCourse } from "@/lib/mock-data/my-courses";
+interface EnrolledCourseCardCourse {
+  id: string;
+  slug: string;
+  title: string;
+  thumbnail?: string;
+  progress: number;
+  category: string;
+}
 
 interface EnrolledCourseCardProps {
-  course: EnrolledCourse;
+  course: EnrolledCourseCardCourse;
   href: string;
 }
 
