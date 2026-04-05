@@ -76,9 +76,24 @@ function mapApiCourse(c: ApiCourse): Course {
 }
 
 function mapApiCourseDetail(c: ApiCourse): CourseDetail {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const apiSections = (c as any).sections ?? [];
   return {
     ...mapApiCourse(c),
-    sections: [],
+    sections: apiSections.map((s: any, si: number) => ({
+      id: s.id,
+      title: s.title,
+      order: s.display_order ?? si + 1,
+      duration: (s.lessons ?? []).reduce((sum: number, l: any) => sum + (l.duration_minutes ?? 0), 0),
+      lessons: (s.lessons ?? []).map((l: any, li: number) => ({
+        id: l.id,
+        title: l.title,
+        duration: l.duration_minutes ?? 0,
+        type: "video" as const,
+        isFreePreview: l.is_preview ?? false,
+        order: l.display_order ?? li + 1,
+      })),
+    })),
     reviews: [],
     ratingDistribution: {},
     previewVideoUrl: undefined,

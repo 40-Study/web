@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Star, BookOpen } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Course, EnrolledCourse } from "@/types/course";
 
 interface CourseCardProps {
@@ -99,9 +98,9 @@ export function CourseCard({ course, className }: CourseCardProps) {
               <span className="text-sm text-slate-500">
                 {course.progress}% hoàn thành
               </span>
-              <Button size="sm" className="rounded-xl bg-primary-600 hover:bg-primary-700" onClick={(e) => e.preventDefault()}>
+              <span className="inline-flex items-center justify-center h-9 px-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors">
                 Tiếp tục
-              </Button>
+              </span>
             </div>
           ) : (
             <div className="flex items-center justify-between pt-1 border-t border-slate-100">
