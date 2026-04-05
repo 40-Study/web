@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Trophy, Clock, ChevronDown } from "lucide-react";
+import { Trophy, Clock, ChevronDown, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,60 +10,96 @@ import {
   LeagueProgress,
   LEAGUES,
 } from "@/components/gamification";
-import type { LeaderboardEntry, LeagueType, League } from "@/components/gamification";
+import type { LeaderboardEntry, LeagueType } from "@/components/gamification";
 import { cn } from "@/lib/utils";
-
-// Mock data - replace with API calls
-const MOCK_LEADERBOARD: LeaderboardEntry[] = [
-  { userId: "1", name: "Nguyen Van A", level: 25, weeklyXP: 2450, trend: 2, avatar: undefined },
-  { userId: "2", name: "Tran Thi B", level: 23, weeklyXP: 2180, trend: -1, avatar: undefined },
-  { userId: "3", name: "Le Van C", level: 22, weeklyXP: 1950, trend: 1, avatar: undefined },
-  { userId: "4", name: "Pham Thi D", level: 21, weeklyXP: 1820, trend: 0, avatar: undefined },
-  { userId: "5", name: "Hoang Van E", level: 20, weeklyXP: 1650, trend: 3, avatar: undefined },
-  { userId: "6", name: "Vo Thi F", level: 19, weeklyXP: 1520, trend: -2, avatar: undefined },
-  { userId: "7", name: "Dang Van G", level: 18, weeklyXP: 1380, trend: 1, avatar: undefined },
-  { userId: "8", name: "Bui Thi H", level: 17, weeklyXP: 1250, trend: -1, avatar: undefined },
-  { userId: "9", name: "Ngo Van I", level: 16, weeklyXP: 1120, trend: 0, avatar: undefined },
-  { userId: "10", name: "Do Thi K", level: 15, weeklyXP: 980, trend: 2, avatar: undefined },
-];
-
-const CURRENT_USER_ID = "current-user";
-const CURRENT_USER_ENTRY: LeaderboardEntry & { rank: number } = {
-  userId: CURRENT_USER_ID,
-  name: "You",
-  level: 12,
-  weeklyXP: 450,
-  trend: 5,
-  rank: 42,
-};
+import { useLeaderboard, useMyRank } from "@/hooks/queries/use-leaderboard";
+import type { PeriodType } from "@/services/leaderboard.service";
 
 /**
- * Format time remaining until weekly reset
+ * Map backend period type to UI period selector options
+ */
+const PERIOD_OPTIONS: { label: string; value: PeriodType }[] = [
+  { label: "Weekly", value: "weekly" },
+  { label: "Monthly", value: "monthly" },
+  { label: "All Time", value: "all_time" },
+  { label: "Daily", value: "daily" },
+];
+
+/**
+ * Map backend LeaderboardEntryDTO to UI LeaderboardEntry
+ * Backend has rank, user_id, user_name, full_name, avatar_url, points
+ * UI expects userId, name, avatar, level, weeklyXP, trend
+ */
+function mapToUiEntry(dto: {
+  rank: number;
+  user_id: string;
+  user_name: string;
+  full_name?: string;
+  avatar_url?: string;
+  points: number;
+}): LeaderboardEntry & { rank: number } {
+  return {
+    userId: dto.user_id,
+    name: dto.full_name || dto.user_name,
+    avatar: dto.avatar_url,
+    level: 0, // backend doesn't expose level separately
+    weeklyXP: dto.points,
+    trend: 0, // backend doesn't expose trend
+    rank: dto.rank,
+  };
+}
+
+/**
+ * Format time remaining until weekly reset (Sunday midnight)
  */
 function formatTimeRemaining(seconds: number): string {
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-
-  if (days > 0) {
-    return `${days}d ${hours}h`;
-  }
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
+}
+
+/**
+ * Compute seconds until next Sunday midnight (UTC)
+ */
+function secondsUntilWeeklyReset(): number {
+  const now = new Date();
+  const nextSunday = new Date(now);
+  nextSunday.setUTCDate(now.getUTCDate() + (7 - now.getUTCDay()));
+  nextSunday.setUTCHours(0, 0, 0, 0);
+  return Math.max(0, Math.floor((nextSunday.getTime() - now.getTime()) / 1000));
 }
 
 export default function LeaderboardPage() {
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>("gold");
   const [isLeagueDropdownOpen, setIsLeagueDropdownOpen] = useState(false);
+  const [periodType, setPeriodType] = useState<PeriodType>("weekly");
 
-  // Mock: Time until weekly reset (Sunday midnight)
-  const timeRemaining = 3 * 24 * 3600 + 5 * 3600 + 30 * 60; // 3 days, 5 hours, 30 minutes
+  const {
+    data: leaderboardData,
+    isLoading: isLeaderboardLoading,
+  } = useLeaderboard({ period_type: periodType, limit: 10 });
+
+  const { data: myRankData, isLoading: isMyRankLoading } = useMyRank({
+    period_type: periodType,
+  });
 
   const currentLeague = LEAGUES.find((l) => l.id === selectedLeague) || LEAGUES[2];
   const nextLeagueIndex = LEAGUES.findIndex((l) => l.id === selectedLeague) + 1;
   const nextLeague = LEAGUES[nextLeagueIndex];
+
+  const timeRemaining = secondsUntilWeeklyReset();
+
+  // Map backend entries to UI format
+  const entries: (LeaderboardEntry & { rank: number })[] =
+    leaderboardData?.entries.map(mapToUiEntry) ?? [];
+
+  const myEntry = myRankData?.entry ? mapToUiEntry(myRankData.entry) : null;
+  const myUserId = myEntry?.userId ?? "";
+
+  const isLoading = isLeaderboardLoading || isMyRankLoading;
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8">
@@ -73,13 +109,23 @@ export default function LeaderboardPage() {
           <Trophy className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Leaderboard
-          </h1>
-          <p className="text-muted-foreground">
-            Compete with others and climb the ranks
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Leaderboard</h1>
+          <p className="text-muted-foreground">Compete with others and climb the ranks</p>
         </div>
+      </div>
+
+      {/* Period selector */}
+      <div className="flex gap-2 mb-6 flex-wrap">
+        {PERIOD_OPTIONS.map((opt) => (
+          <Button
+            key={opt.value}
+            variant={periodType === opt.value ? "default" : "outline"}
+            size="sm"
+            onClick={() => setPeriodType(opt.value)}
+          >
+            {opt.label}
+          </Button>
+        ))}
       </div>
 
       {/* League selector and timer */}
@@ -111,7 +157,6 @@ export default function LeaderboardPage() {
             />
           </button>
 
-          {/* Dropdown menu */}
           {isLeagueDropdownOpen && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl z-10 overflow-hidden">
               {LEAGUES.map((league) => (
@@ -149,12 +194,7 @@ export default function LeaderboardPage() {
       </div>
 
       {/* League header banner */}
-      <Card
-        className={cn(
-          "mb-6 overflow-hidden",
-          currentLeague.color
-        )}
-      >
+      <Card className={cn("mb-6 overflow-hidden", currentLeague.color)}>
         <div className="p-6 text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -177,47 +217,50 @@ export default function LeaderboardPage() {
       </Card>
 
       {/* Your position summary */}
-      <Card className="p-4 mb-6 bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
-              <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
-                #{CURRENT_USER_ENTRY.rank}
-              </span>
+      {myEntry && (
+        <Card className="p-4 mb-6 bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
+                <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
+                  #{myEntry.rank}
+                </span>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white">Your Position</p>
+                <p className="text-sm text-muted-foreground">
+                  +{myEntry.weeklyXP.toLocaleString()} XP this period
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-semibold text-gray-900 dark:text-white">
-                Your Position
-              </p>
-              <p className="text-sm text-muted-foreground">
-                +{CURRENT_USER_ENTRY.weeklyXP} XP this week
-              </p>
+            <div className="text-right">
+              <LeagueBadge league={selectedLeague} size="sm" />
             </div>
           </div>
-          <div className="text-right">
-            <LeagueBadge league={selectedLeague} size="sm" />
-            <p className="text-xs text-muted-foreground mt-1">
-              {CURRENT_USER_ENTRY.trend > 0 ? "↑" : CURRENT_USER_ENTRY.trend < 0 ? "↓" : "−"}
-              {Math.abs(CURRENT_USER_ENTRY.trend)} from last week
-            </p>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       {/* League progress */}
       <Card className="p-4 mb-6">
-        <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">
-          League Progress
-        </h3>
-        <LeagueProgress currentXP={3500} currentLeague={selectedLeague} />
+        <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">League Progress</h3>
+        <LeagueProgress
+          currentXP={myEntry?.weeklyXP ?? 0}
+          currentLeague={selectedLeague}
+        />
       </Card>
 
       {/* Leaderboard list */}
-      <LeaderboardList
-        entries={MOCK_LEADERBOARD}
-        currentUserId={CURRENT_USER_ID}
-        currentUserEntry={CURRENT_USER_ENTRY}
-      />
+      {isLoading ? (
+        <div className="flex justify-center p-8">
+          <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
+        </div>
+      ) : (
+        <LeaderboardList
+          entries={entries}
+          currentUserId={myUserId}
+          currentUserEntry={myEntry ?? undefined}
+        />
+      )}
 
       {/* Bottom CTA */}
       <div className="mt-8 text-center">
