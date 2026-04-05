@@ -141,10 +141,10 @@ export function useMyClasses() {
 }
 
 /** All students across teacher's classes */
-export function useMyStudents() {
+export function useMyStudents(pageSize = 200) {
   return useQuery({
-    queryKey: [...classKeys.all, "my-students"] as const,
-    queryFn: () => classService.getMyStudents(),
+    queryKey: [...classKeys.all, "my-students", pageSize] as const,
+    queryFn: () => classService.getMyStudents(pageSize),
   });
 }
 

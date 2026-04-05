@@ -145,8 +145,12 @@ export const classService = {
     api.get<{ message: string; data: { classes: Class[] } }>("/classes/me")
       .then((r) => r.data.data.classes),
 
-  // All students across teacher's classes
-  getMyStudents: () =>
-    api.get<{ message: string; data: { students: TeacherStudent[] } }>("/teachers/me/students")
+  // All students across teacher's classes (paginated, use large page_size to get all)
+  getMyStudents: (pageSize = 200) =>
+    api
+      .get<{ message: string; data: { students: TeacherStudent[]; total: number } }>(
+        "/teachers/me/students",
+        { params: { page: 1, page_size: pageSize } }
+      )
       .then((r) => r.data.data.students),
 };
