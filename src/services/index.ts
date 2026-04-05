@@ -37,3 +37,4 @@ export {
   userStatsService,
 } from "./user-stats.service";
 export type { PublicProfileResponse as UserPublicProfileResponse } from "./user-stats.service";
+export * from "./discussion.service";

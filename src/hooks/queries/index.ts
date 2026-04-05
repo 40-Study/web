@@ -43,3 +43,4 @@ export {
 export * from "./use-analytics";
 export * from "./use-wallet";
 export { userStatsKeys, usePublicProfile } from "./use-user-stats";
+export * from "./use-discussions";
