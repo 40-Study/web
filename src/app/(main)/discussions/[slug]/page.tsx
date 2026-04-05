@@ -4,7 +4,6 @@
  * Discussion post detail page — full post content with nested comment thread
  */
 
-import { use } from "react";
 import Link from "next/link";
 import { ArrowLeft, Heart, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,7 +18,7 @@ import { DiscussionComment } from "./discussion-comment";
 import { useState } from "react";
 
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -41,7 +40,7 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function DiscussionDetailPage({ params }: PageProps) {
-  const { slug } = use(params);
+  const { slug } = params;
   const { data: post, isLoading } = useDiscussionPost(slug);
   const addComment = useAddDiscussionComment(slug);
   const votePost = useVoteDiscussion();
