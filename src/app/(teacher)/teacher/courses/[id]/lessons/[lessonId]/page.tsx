@@ -1,79 +1,94 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { notFound, useParams } from "next/navigation";
-import { ArrowLeft, Heart, MessageSquare } from "lucide-react";
+import { ArrowLeft, Loader2, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar } from "@/components/ui/avatar";
-import {
-  findLessonInChapters,
-  getTeacherCourseDetail,
-  loadTeacherCourseChapters,
-  loadTeacherLessonComments,
-  saveTeacherLessonComments,
-  TeacherLessonComment,
-} from "../../../course-detail-data";
+import { useSections } from "@/hooks/queries/use-sections";
+import { useLessons } from "@/hooks/queries/use-lessons";
+import type { Section } from "@/types/section";
+import type { Lesson } from "@/types/lesson";
 
-export default function TeacherLessonDetailPage() {
-  const params = useParams<{ id: string; lessonId: string }>();
-  const courseId = params.id;
-  const lessonId = params.lessonId;
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [comments, setComments] = useState<TeacherLessonComment[]>([]);
-  const [studentName, setStudentName] = useState("");
-  const [commentContent, setCommentContent] = useState("");
+/** Find lesson across all sections, returns { section, lesson } or null */
+function findLessonInSections(
+  sections: Section[],
+  lessons: Map<string, Lesson[]>,
+  lessonId: string
+): { section: Section; lesson: Lesson } | null {
+  for (const section of sections) {
+    const sectionLessons = lessons.get(section.id) ?? [];
+    const lesson = sectionLessons.find((l) => l.id === lessonId);
+    if (lesson) return { section, lesson };
+  }
+  return null;
+}
 
-  const chapters = useMemo(() => {
-    if (!isHydrated) return getTeacherCourseDetail(courseId).chapters;
-    return loadTeacherCourseChapters(courseId);
-  }, [courseId, isHydrated]);
+const LESSON_TYPE_LABEL: Record<string, string> = {
+  video: "VIDEO",
+  quiz: "QUIZ",
+  article: "ARTICLE",
+  sandbox: "SANDBOX",
+  document: "DOCUMENT",
+};
 
-  const lessonData = useMemo(() => findLessonInChapters(chapters, lessonId), [chapters, lessonId]);
+// ─── Inner component — rendered after sections load ───────────────────────────
 
-  useEffect(() => {
-    setComments(loadTeacherLessonComments(courseId, lessonId));
-    setIsHydrated(true);
-  }, [courseId, lessonId]);
+function LessonDetailContent({
+  courseId,
+  lessonId,
+  sections,
+}: {
+  courseId: string;
+  lessonId: string;
+  sections: Section[];
+}) {
+  // Load lessons for each section in parallel via individual hooks.
+  // This is safe because hooks run in a stable order (sections order is stable).
+  const s0 = useLessons(courseId, sections[0]?.id ?? "");
+  const s1 = useLessons(courseId, sections[1]?.id ?? "");
+  const s2 = useLessons(courseId, sections[2]?.id ?? "");
+  const s3 = useLessons(courseId, sections[3]?.id ?? "");
+  const s4 = useLessons(courseId, sections[4]?.id ?? "");
+  const s5 = useLessons(courseId, sections[5]?.id ?? "");
+  const s6 = useLessons(courseId, sections[6]?.id ?? "");
+  const s7 = useLessons(courseId, sections[7]?.id ?? "");
+  const s8 = useLessons(courseId, sections[8]?.id ?? "");
+  const s9 = useLessons(courseId, sections[9]?.id ?? "");
 
-  useEffect(() => {
-    if (!isHydrated) return;
-    saveTeacherLessonComments(courseId, lessonId, comments);
-  }, [comments, courseId, lessonId, isHydrated]);
+  const allResults = [s0, s1, s2, s3, s4, s5, s6, s7, s8, s9];
+  const isLoading = allResults.slice(0, sections.length).some((r) => r.isLoading);
 
-  if (isHydrated && !lessonData) {
-    notFound();
+  const lessonsMap = useMemo(() => {
+    const map = new Map<string, Lesson[]>();
+    sections.forEach((section, idx) => {
+      const result = allResults[idx];
+      if (result?.data) map.set(section.id, result.data);
+    });
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sections, s0.data, s1.data, s2.data, s3.data, s4.data, s5.data, s6.data, s7.data, s8.data, s9.data]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
-  if (!lessonData) return null;
+  const found = findLessonInSections(sections, lessonsMap, lessonId);
 
-  const { chapter, lesson } = lessonData;
+  if (!found) {
+    notFound();
+    return null;
+  }
 
-  const handleAddComment = () => {
-    if (!studentName.trim() || !commentContent.trim()) return;
-    setComments((prev) => [
-      {
-        id: `cmt-${Date.now()}`,
-        studentName: studentName.trim(),
-        content: commentContent.trim(),
-        createdAt: new Date().toLocaleString("vi-VN"),
-        likes: 0,
-      },
-      ...prev,
-    ]);
-    setStudentName("");
-    setCommentContent("");
-  };
-
-  const handleLikeComment = (commentId: string) => {
-    setComments((prev) => prev.map((comment) => (comment.id === commentId ? { ...comment, likes: comment.likes + 1 } : comment)));
-  };
+  const { section, lesson } = found;
 
   return (
     <div className="space-y-6">
@@ -86,7 +101,7 @@ export default function TeacherLessonDetailPage() {
           </Link>
           <div>
             <h1 className="text-xl font-semibold">{lesson.title}</h1>
-            <p className="text-sm text-muted-foreground">{chapter.title}</p>
+            <p className="text-sm text-muted-foreground">{section.title}</p>
           </div>
         </div>
         <Button asChild>
@@ -96,81 +111,62 @@ export default function TeacherLessonDetailPage() {
         </Button>
       </div>
 
+      {/* Lesson info card */}
       <Card>
         <CardContent className="space-y-3 p-6">
           <div className="flex items-center gap-2">
-            <Badge>{lesson.type.toUpperCase()}</Badge>
-            <Badge variant={lesson.status === "published" ? "success" : "secondary"}>
-              {lesson.status === "published" ? "Published" : "Draft"}
+            <Badge>{LESSON_TYPE_LABEL[lesson.type] ?? lesson.type.toUpperCase()}</Badge>
+            <Badge variant={lesson.is_preview ? "success" : "secondary"}>
+              {lesson.is_preview ? "Preview" : "Draft"}
             </Badge>
-            {lesson.duration && <Badge variant="outline">{lesson.duration}</Badge>}
-            {lesson.questionCount && <Badge variant="outline">{lesson.questionCount} câu hỏi</Badge>}
-            {lesson.fileSize && <Badge variant="outline">{lesson.fileSize}</Badge>}
+            {lesson.duration && (
+              <Badge variant="outline">{Math.floor(lesson.duration / 60)}:{String(lesson.duration % 60).padStart(2, "0")}</Badge>
+            )}
           </div>
-          <div>
-            <p className="text-sm font-medium">Tóm tắt</p>
-            <p className="text-sm text-muted-foreground">{lesson.summary}</p>
-          </div>
-          <div>
-            <p className="text-sm font-medium">Nội dung bài học</p>
-            <p className="whitespace-pre-line text-sm text-muted-foreground">{lesson.content}</p>
+          {lesson.description && (
+            <div>
+              <p className="text-sm font-medium">Mô tả</p>
+              <p className="whitespace-pre-line text-sm text-muted-foreground">{lesson.description}</p>
+            </div>
+          )}
+          <div className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Vị trí:</span> {lesson.position}
           </div>
         </CardContent>
       </Card>
 
+      {/* Comments — no backend endpoint yet, show empty state */}
       <Card>
         <CardContent className="space-y-4 p-6">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
-            <h2 className="text-lg font-semibold">Bình luận học viên ({comments.length})</h2>
+            <h2 className="text-lg font-semibold">Bình luận học viên</h2>
           </div>
-
-          <div className="space-y-3 rounded-lg border p-4">
-            <div className="space-y-2">
-              <Label htmlFor="student-name">Tên học viên *</Label>
-              <Input id="student-name" placeholder="VD: Nguyễn Văn A" value={studentName} onChange={(e) => setStudentName(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="student-comment">Nội dung bình luận *</Label>
-              <Textarea
-                id="student-comment"
-                rows={3}
-                placeholder="Đặt câu hỏi hoặc phản hồi về bài học..."
-                value={commentContent}
-                onChange={(e) => setCommentContent(e.target.value)}
-              />
-            </div>
-            <Button onClick={handleAddComment} disabled={!studentName.trim() || !commentContent.trim()}>
-              Thêm bình luận
-            </Button>
-          </div>
-
-          {comments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Chưa có bình luận nào cho bài học này.</p>
-          ) : (
-            <div className="space-y-3">
-              {comments.map((comment) => (
-                <div key={comment.id} className="rounded-lg border p-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Avatar fallback={comment.studentName.charAt(0)} size="sm" className="bg-primary-100 text-primary-700" />
-                      <div>
-                        <p className="text-sm font-medium">{comment.studentName}</p>
-                        <p className="text-xs text-muted-foreground">{comment.createdAt}</p>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => handleLikeComment(comment.id)}>
-                      <Heart className="mr-1 h-4 w-4" />
-                      {comment.likes}
-                    </Button>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{comment.content}</p>
-                </div>
-              ))}
-            </div>
-          )}
+          <p className="text-sm text-muted-foreground">Chưa có bình luận nào cho bài học này.</p>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// ─── Page entry point ─────────────────────────────────────────────────────────
+
+export default function TeacherLessonDetailPage() {
+  const params = useParams<{ id: string; lessonId: string }>();
+  const courseId = params.id;
+  const lessonId = params.lessonId;
+
+  const { data: sections, isLoading: sectionsLoading } = useSections(courseId);
+
+  if (sectionsLoading || !sections) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <LessonDetailContent courseId={courseId} lessonId={lessonId} sections={sections} />
   );
 }
