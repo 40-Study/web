@@ -1,126 +1,221 @@
 "use client";
 
 /**
- * My Assignments page - shows student's assignments with filtering and pagination
+ * My Assignments page — shows student's assignments fetched from real API.
+ * Assignments are session-scoped; we list all classes then aggregate assignments.
  */
 
 import { useState } from "react";
 import Link from "next/link";
 import {
-  FileUp,
   CheckCircle,
   Code,
-  Code2,
   Clock,
   Calendar,
   LayoutGrid,
   List,
   ChevronLeft,
   ChevronRight,
+  Loader2,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  mockMyAssignments,
-  type MyAssignment,
-  type AssignmentStatus,
-} from "@/lib/mock-data/my-assignments";
+import { useQuery } from "@tanstack/react-query";
+import { assignmentService, type AssignmentResponseDTO } from "@/services/assignment.service";
+import { classService } from "@/services/class.service";
+import { livestreamClassroomService } from "@/services/livestream-classroom.service";
 
-// ---- Config maps ----
+// ---- Display helpers ----
 
-const TYPE_CONFIG = {
-  "NỘP FILE": { icon: FileUp, bg: "bg-orange-100", color: "text-orange-600", badge: "bg-orange-100 text-orange-700" },
-  QUIZ: { icon: CheckCircle, bg: "bg-blue-100", color: "text-blue-600", badge: "bg-blue-100 text-blue-700" },
-  SANDBOX: { icon: Code, bg: "bg-green-100", color: "text-green-600", badge: "bg-green-100 text-green-700" },
-  "THỰC HÀNH": { icon: Code2, bg: "bg-pink-100", color: "text-pink-600", badge: "bg-pink-100 text-pink-700" },
+const DIFFICULTY_CONFIG = {
+  easy: { label: "Dễ", badge: "bg-green-100 text-green-700" },
+  medium: { label: "Trung bình", badge: "bg-orange-100 text-orange-700" },
+  hard: { label: "Khó", badge: "bg-red-100 text-red-700" },
 } as const;
 
-const STATUS_BORDER: Record<AssignmentStatus, string> = {
-  pending: "border-l-4 border-l-orange-400",
-  completed: "border-l-4 border-l-green-400",
-  overdue: "border-l-4 border-l-red-300",
-};
+function formatDateTime(iso?: string): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
 
-type TabKey = "all" | "pending" | "completed" | "overdue";
+function isActive(item: AssignmentResponseDTO): boolean {
+  if (!item.is_published) return false;
+  const now = Date.now();
+  if (item.start_time && new Date(item.start_time).getTime() > now) return false;
+  if (item.end_time && new Date(item.end_time).getTime() < now) return false;
+  return true;
+}
+
+type TabKey = "all" | "active" | "upcoming" | "ended";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "all", label: "Tất cả" },
-  { key: "pending", label: "Chưa làm" },
-  { key: "completed", label: "Hoàn thành" },
-  { key: "overdue", label: "Quá hạn" },
+  { key: "active", label: "Đang mở" },
+  { key: "upcoming", label: "Sắp tới" },
+  { key: "ended", label: "Đã đóng" },
 ];
 
-// ---- Sub-components ----
+// ---- Assignment card ----
 
-function AssignmentCard({ item }: { item: MyAssignment }) {
-  const typeConf = TYPE_CONFIG[item.type];
-  const Icon = typeConf.icon;
-  const isOverdue = item.status === "overdue";
-  const isCompleted = item.status === "completed";
+function AssignmentCard({ item }: { item: AssignmentResponseDTO }) {
+  const diffConf = DIFFICULTY_CONFIG[item.difficulty] ?? DIFFICULTY_CONFIG.easy;
+  const active = isActive(item);
+  const ended = item.end_time && new Date(item.end_time).getTime() < Date.now();
+
+  const borderCls = ended
+    ? "border-l-4 border-l-red-300"
+    : active
+    ? "border-l-4 border-l-green-400"
+    : "border-l-4 border-l-orange-400";
 
   return (
-    <div className={cn("bg-white rounded-2xl border border-gray-100 p-5 flex flex-col gap-4 shadow-sm", STATUS_BORDER[item.status])}>
+    <div className={cn("bg-white rounded-2xl border border-gray-100 p-5 flex flex-col gap-4 shadow-sm", borderCls)}>
       {/* Top section */}
       <div className="flex gap-3 items-start">
-        <div className={cn("w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0", typeConf.bg)}>
-          <Icon className={cn("w-5 h-5", typeConf.color)} />
+        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+          <Code className="w-5 h-5 text-blue-600" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className={cn("font-semibold text-sm leading-snug", isOverdue && "text-gray-400")}>{item.title}</p>
-          <p className="text-xs text-gray-500 mt-0.5 truncate">{item.courseName}</p>
+          <p className={cn("font-semibold text-sm leading-snug", ended && "text-gray-400")}>
+            {item.title}
+          </p>
+          {item.description && (
+            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{item.description}</p>
+          )}
         </div>
       </div>
 
       {/* Bottom row */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        {/* Type badge */}
-        <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full", typeConf.badge)}>{item.type}</span>
+        {/* Difficulty badge */}
+        <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full", diffConf.badge)}>
+          {diffConf.label}
+        </span>
 
-        {/* Status info */}
+        {/* Languages */}
+        {item.language.length > 0 && (
+          <span className="text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full">
+            {item.language.slice(0, 2).join(", ")}
+          </span>
+        )}
+
+        {/* Timing info */}
         <div className="flex items-center gap-1 text-xs">
-          {item.status === "pending" && item.deadline && (
+          {active && item.end_time && (
             <>
               <Clock className="w-3.5 h-3.5 text-orange-500" />
-              <span className="text-orange-600 font-medium">{item.deadline}</span>
+              <span className="text-orange-600 font-medium">
+                Hết hạn {formatDateTime(item.end_time)}
+              </span>
             </>
           )}
-          {item.status === "completed" && item.score && (
-            <>
-              <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-              <span className="text-green-600 font-medium">{item.score}</span>
-            </>
-          )}
-          {item.status === "completed" && item.submittedAt && !item.score && (
+          {!active && item.start_time && !ended && (
             <>
               <Calendar className="w-3.5 h-3.5 text-gray-400" />
-              <span className="text-gray-500">{item.submittedAt}</span>
+              <span className="text-gray-500">Bắt đầu {formatDateTime(item.start_time)}</span>
             </>
           )}
-          {isOverdue && <span className="text-red-500 font-medium">Quá hạn</span>}
+          {ended && (
+            <span className="text-red-500 font-medium">Đã đóng</span>
+          )}
+          {!item.is_published && (
+            <span className="text-gray-400">Chưa công bố</span>
+          )}
         </div>
 
+        {/* Duration */}
+        {item.duration_minutes > 0 && (
+          <span className="text-xs text-gray-400 flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            {item.duration_minutes} phút
+          </span>
+        )}
+
         {/* Action button */}
-        {isOverdue ? (
-          <button disabled className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed">
+        {ended ? (
+          <button
+            disabled
+            className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed"
+          >
             Đã đóng
           </button>
-        ) : isCompleted ? (
-          <Link
-            href={`/learn/${item.courseSlug}/${item.lessonId}`}
-            className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            Xem chi tiết
-          </Link>
-        ) : (
-          <Link
-            href={`/learn/${item.courseSlug}/${item.lessonId}`}
-            className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-          >
+        ) : active ? (
+          <button className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
             Làm bài ngay
-          </Link>
+          </button>
+        ) : (
+          <button
+            disabled
+            className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-400 cursor-not-allowed"
+          >
+            Chưa mở
+          </button>
         )}
       </div>
     </div>
   );
+}
+
+// ---- Empty state ----
+
+function EmptyState() {
+  return (
+    <div className="col-span-3 flex flex-col items-center justify-center py-16 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
+        <BookOpen className="w-8 h-8 text-blue-400" />
+      </div>
+      <p className="text-gray-500 text-sm">Không có bài tập nào.</p>
+    </div>
+  );
+}
+
+// ---- Aggregate assignments hook ----
+
+function useAllAssignments() {
+  return useQuery({
+    queryKey: ["my-assignments-aggregated"],
+    queryFn: async () => {
+      // Step 1: fetch user's classes
+      const classes = await classService.list();
+      if (!classes || classes.length === 0) return [];
+
+      // Step 2: fetch sessions for each class in parallel
+      const sessionResults = await Promise.allSettled(
+        classes.map((c: { id: string }) =>
+          livestreamClassroomService.listSessions(c.id)
+        )
+      );
+
+      const sessionIds: string[] = [];
+      for (const result of sessionResults) {
+        if (result.status === "fulfilled" && Array.isArray(result.value)) {
+          for (const session of result.value) {
+            sessionIds.push(session.id);
+          }
+        }
+      }
+
+      if (sessionIds.length === 0) return [];
+
+      // Step 3: fetch published assignments for each session in parallel
+      const assignmentResults = await Promise.allSettled(
+        sessionIds.map((sid) => assignmentService.getBySession(sid))
+      );
+
+      const allAssignments: AssignmentResponseDTO[] = [];
+      for (const result of assignmentResults) {
+        if (result.status === "fulfilled") {
+          allAssignments.push(...(result.value.assignments ?? []));
+        }
+      }
+
+      return allAssignments;
+    },
+  });
 }
 
 // ---- Main Page ----
@@ -128,20 +223,24 @@ function AssignmentCard({ item }: { item: MyAssignment }) {
 export default function MyAssignmentsPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [courseFilter, setCourseFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
 
-  const pendingCount = mockMyAssignments.filter((a) => a.status === "pending").length;
+  const { data: assignments = [], isLoading } = useAllAssignments();
 
-  const filtered = mockMyAssignments.filter((a) => {
-    const tabMatch = activeTab === "all" || a.status === activeTab;
-    const courseMatch = courseFilter === "all" || a.courseName === courseFilter;
-    const typeMatch = typeFilter === "all" || a.type === typeFilter;
-    return tabMatch && courseMatch && typeMatch;
+  const now = Date.now();
+
+  const filtered = assignments.filter((a) => {
+    if (activeTab === "all") return true;
+    if (activeTab === "active") return isActive(a);
+    if (activeTab === "upcoming") {
+      return a.is_published && a.start_time && new Date(a.start_time).getTime() > now;
+    }
+    if (activeTab === "ended") {
+      return a.end_time && new Date(a.end_time).getTime() < now;
+    }
+    return true;
   });
 
-  const uniqueCourses = Array.from(new Set(mockMyAssignments.map((a) => a.courseName)));
-  const uniqueTypes = Array.from(new Set(mockMyAssignments.map((a) => a.type)));
+  const activeCount = assignments.filter(isActive).length;
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -149,7 +248,9 @@ export default function MyAssignmentsPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Bài tập của tôi</h1>
         <p className="text-gray-500 mt-1">
-          Chào buổi sáng! Bạn có {pendingCount} bài tập cần hoàn thành hôm nay.
+          {isLoading
+            ? "Đang tải..."
+            : `Bạn có ${activeCount} bài tập đang mở.`}
         </p>
       </div>
 
@@ -169,78 +270,67 @@ export default function MyAssignmentsPage() {
               )}
             >
               {tab.label}
-              {tab.key === "pending" && (
-                <span className={cn("text-xs px-1.5 py-0.5 rounded-full font-semibold",
-                  activeTab === "pending" ? "bg-white text-blue-600" : "bg-orange-100 text-orange-600"
+              {tab.key === "active" && activeCount > 0 && (
+                <span className={cn(
+                  "text-xs px-1.5 py-0.5 rounded-full font-semibold",
+                  activeTab === "active" ? "bg-white text-blue-600" : "bg-orange-100 text-orange-600"
                 )}>
-                  {pendingCount}
+                  {activeCount}
                 </span>
               )}
             </button>
           ))}
         </div>
 
-        {/* Right controls */}
-        <div className="flex items-center gap-2">
-          <select
-            value={courseFilter}
-            onChange={(e) => setCourseFilter(e.target.value)}
-            className="text-sm border border-gray-100 rounded-xl px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        {/* View mode toggle */}
+        <div className="flex border border-gray-100 rounded-xl overflow-hidden">
+          <button
+            onClick={() => setViewMode("grid")}
+            className={cn("p-1.5 transition-colors", viewMode === "grid" ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100")}
           >
-            <option value="all">Khóa học</option>
-            {uniqueCourses.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="text-sm border border-gray-100 rounded-xl px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setViewMode("list")}
+            className={cn("p-1.5 transition-colors", viewMode === "list" ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100")}
           >
-            <option value="all">Loại bài tập</option>
-            {uniqueTypes.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-
-          <div className="flex border border-gray-100 rounded-xl overflow-hidden">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={cn("p-1.5 transition-colors", viewMode === "grid" ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100")}
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={cn("p-1.5 transition-colors", viewMode === "list" ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100")}
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
+            <List className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
       {/* Assignment cards */}
-      <div className={cn(
-        "grid gap-4 mb-6",
-        viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
-      )}>
-        {filtered.length > 0
-          ? filtered.map((item) => <AssignmentCard key={item.id} item={item} />)
-          : <p className="col-span-3 text-center text-gray-500 py-12">Không có bài tập nào.</p>
-        }
-      </div>
-
-      {/* Pagination */}
-      <div className="flex items-center justify-between text-sm text-gray-500">
-        <span>Hiển thị {filtered.length} trong số {mockMyAssignments.length} bài tập</span>
-        <div className="flex items-center gap-1">
-          <button className="p-1.5 rounded-xl border border-gray-100 hover:bg-gray-50 disabled:opacity-40" disabled>
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-sm font-medium">1</button>
-          <button className="p-1.5 rounded-xl border border-gray-100 hover:bg-gray-50 disabled:opacity-40" disabled>
-            <ChevronRight className="w-4 h-4" />
-          </button>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
-      </div>
+      ) : (
+        <div className={cn(
+          "grid gap-4 mb-6",
+          viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
+        )}>
+          {filtered.length > 0
+            ? filtered.map((item) => <AssignmentCard key={item.id} item={item} />)
+            : <EmptyState />
+          }
+        </div>
+      )}
+
+      {/* Pagination summary */}
+      {!isLoading && (
+        <div className="flex items-center justify-between text-sm text-gray-500">
+          <span>Hiển thị {filtered.length} trong số {assignments.length} bài tập</span>
+          <div className="flex items-center gap-1">
+            <button className="p-1.5 rounded-xl border border-gray-100 hover:bg-gray-50 disabled:opacity-40" disabled>
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-sm font-medium">1</button>
+            <button className="p-1.5 rounded-xl border border-gray-100 hover:bg-gray-50 disabled:opacity-40" disabled>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
