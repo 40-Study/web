@@ -132,6 +132,7 @@ export interface LoginResponse {
       avatar?: string;
       avatar_url?: string;
       is_active?: boolean;
+      password_changed_at?: string;
     };
     active_role?: UnifiedRole;
     active_org?: { id: string; name: string } | null;

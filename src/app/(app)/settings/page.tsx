@@ -14,13 +14,14 @@ import {
 } from "@/components/settings";
 import type { SettingsSection } from "@/components/settings";
 import { useAuthStore } from "@/stores/auth.store";
-import { useChangePassword, useDeleteAccount } from "@/hooks/queries/use-auth";
+import { useMe, useChangePassword, useDeleteAccount } from "@/hooks/queries/use-auth";
 import { getDeviceInfo } from "@/services/auth.service";
 import { appearanceStorage } from "@/lib/appearance-storage";
 
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("account");
   const { user } = useAuthStore();
+  const { data: meData } = useMe();
   const changePassword = useChangePassword();
   const deleteAccount = useDeleteAccount();
 
@@ -43,7 +44,7 @@ export default function SettingsPage() {
       case "account":
         return (
           <AccountSettings
-            user={{ email: user?.email || "", has2FA: false, lastPasswordChange: undefined }}
+            user={{ email: user?.email || "", has2FA: false, lastPasswordChange: meData?.user?.password_changed_at }}
             onPasswordChange={handlePasswordChange}
             onDeleteAccount={handleDeleteAccount}
           />
@@ -72,7 +73,7 @@ export default function SettingsPage() {
       default:
         return (
           <AccountSettings
-            user={{ email: user?.email || "", has2FA: false, lastPasswordChange: undefined }}
+            user={{ email: user?.email || "", has2FA: false, lastPasswordChange: meData?.user?.password_changed_at }}
             onPasswordChange={handlePasswordChange}
             onDeleteAccount={handleDeleteAccount}
           />
