@@ -1,31 +1,33 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Link2 } from "lucide-react";
+import { Check, Link2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLinkedAccounts, useDisconnectProvider } from "@/hooks/queries/use-auth";
 
-interface LinkedAccount {
+// API base for OAuth redirect — strip trailing /api if present
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api").replace(/\/api$/, "");
+
+interface ProviderMeta {
   id: string;
   name: string;
   color: string;
   initial: string;
-  connected: boolean;
 }
 
-const initialAccounts: LinkedAccount[] = [
-  { id: "google", name: "Google", color: "bg-[#4285F4]", initial: "G", connected: false },
-  { id: "facebook", name: "Facebook", color: "bg-[#1877F2]", initial: "f", connected: false },
-  { id: "github", name: "GitHub", color: "bg-gray-800", initial: "GH", connected: false },
+const PROVIDERS: ProviderMeta[] = [
+  { id: "google", name: "Google", color: "bg-[#4285F4]", initial: "G" },
+  { id: "facebook", name: "Facebook", color: "bg-[#1877F2]", initial: "f" },
+  { id: "github", name: "GitHub", color: "bg-gray-800", initial: "GH" },
 ];
 
 export function LinkedAccountsSettings() {
-  const [accounts, setAccounts] = useState<LinkedAccount[]>(initialAccounts);
+  const { data: linked = [], isLoading } = useLinkedAccounts();
+  const { mutate: disconnect, isPending } = useDisconnectProvider();
 
-  const handleToggle = (id: string) => {
-    setAccounts((prev) =>
-      prev.map((acc) => (acc.id === id ? { ...acc, connected: !acc.connected } : acc))
-    );
-    // TODO: API call to connect/disconnect OAuth provider
+  const connectedSet = new Set(linked.map((a) => a.provider));
+
+  const handleConnect = (providerId: string) => {
+    window.location.href = `${API_BASE}/api/auth/oauth/${providerId}`;
   };
 
   return (
@@ -35,52 +37,69 @@ export function LinkedAccountsSettings() {
         <p className="text-sm text-gray-500 mt-1">Kết nối tài khoản mạng xã hội để đăng nhập nhanh hơn</p>
       </div>
 
-      <div className="space-y-3">
-        {accounts.map((account) => (
-          <div
-            key={account.id}
-            className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div
-                  className={`w-11 h-11 rounded-xl ${account.color} flex items-center justify-center`}
-                >
-                  <span className="text-white font-bold text-sm">{account.initial}</span>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">{account.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {account.connected ? (
-                      <span className="flex items-center gap-1 text-green-600">
-                        <Check className="h-3.5 w-3.5" />
-                        Đã kết nối
-                      </span>
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-gray-500 py-4">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm">Đang tải...</span>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {PROVIDERS.map((provider) => {
+            const isConnected = connectedSet.has(provider.id);
+            const linkedAccount = linked.find((a) => a.provider === provider.id);
+
+            return (
+              <div
+                key={provider.id}
+                className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-11 h-11 rounded-xl ${provider.color} flex items-center justify-center`}
+                    >
+                      <span className="text-white font-bold text-sm">{provider.initial}</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{provider.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {isConnected ? (
+                          <span className="flex items-center gap-1 text-green-600">
+                            <Check className="h-3.5 w-3.5" />
+                            {linkedAccount?.email ? linkedAccount.email : "Đã kết nối"}
+                          </span>
+                        ) : (
+                          "Chưa kết nối"
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant={isConnected ? "outline" : "default"}
+                    size="sm"
+                    className="rounded-xl min-w-[100px]"
+                    disabled={isPending}
+                    onClick={() =>
+                      isConnected ? disconnect(provider.id) : handleConnect(provider.id)
+                    }
+                  >
+                    {isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : isConnected ? (
+                      "Ngắt kết nối"
                     ) : (
-                      "Chưa kết nối"
+                      <span className="flex items-center gap-1.5">
+                        <Link2 className="h-4 w-4" />
+                        Kết nối
+                      </span>
                     )}
-                  </p>
+                  </Button>
                 </div>
               </div>
-              <Button
-                variant={account.connected ? "outline" : "default"}
-                size="sm"
-                className="rounded-xl min-w-[100px]"
-                onClick={() => handleToggle(account.id)}
-              >
-                {account.connected ? (
-                  "Ngắt kết nối"
-                ) : (
-                  <span className="flex items-center gap-1.5">
-                    <Link2 className="h-4 w-4" />
-                    Kết nối
-                  </span>
-                )}
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

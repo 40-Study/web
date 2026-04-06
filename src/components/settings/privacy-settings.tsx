@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Eye, Users, Trophy } from "lucide-react";
 import {
   Select,
@@ -9,6 +8,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { usePrivacySettings, useUpdatePrivacySettings } from "@/hooks/queries/use-user-preferences";
+
+// ─── Static config ───────────────────────────────────────────────────────────
 
 interface PrivacyOption {
   id: string;
@@ -23,7 +25,7 @@ interface PrivacyOption {
 
 const privacyOptions: PrivacyOption[] = [
   {
-    id: "profile-visibility",
+    id: "profile_visibility",
     label: "Hiển thị hồ sơ",
     description: "Ai có thể xem hồ sơ của bạn",
     icon: Eye,
@@ -37,7 +39,7 @@ const privacyOptions: PrivacyOption[] = [
     defaultValue: "public",
   },
   {
-    id: "activity-status",
+    id: "activity_status",
     label: "Trạng thái hoạt động",
     description: "Cho người khác biết khi bạn đang học",
     icon: Users,
@@ -51,7 +53,7 @@ const privacyOptions: PrivacyOption[] = [
     defaultValue: "everyone",
   },
   {
-    id: "leaderboard-visibility",
+    id: "leaderboard_visibility",
     label: "Bảng xếp hạng",
     description: "Hiển thị tên bạn trên bảng xếp hạng công khai",
     icon: Trophy,
@@ -66,14 +68,19 @@ const privacyOptions: PrivacyOption[] = [
   },
 ];
 
+// ─── Component ───────────────────────────────────────────────────────────────
+
 export function PrivacySettings() {
-  const [values, setValues] = useState<Record<string, string>>(
-    Object.fromEntries(privacyOptions.map((o) => [o.id, o.defaultValue]))
-  );
+  const { data: settings, isLoading } = usePrivacySettings();
+  const { mutate: updateSetting } = useUpdatePrivacySettings();
+
+  const getValue = (id: string): string => {
+    if (!settings) return privacyOptions.find((o) => o.id === id)?.defaultValue ?? "";
+    return settings[id] ?? privacyOptions.find((o) => o.id === id)?.defaultValue ?? "";
+  };
 
   const handleChange = (id: string, value: string) => {
-    setValues((prev) => ({ ...prev, [id]: value }));
-    // TODO: API call to save privacy setting
+    updateSetting({ [id]: value });
   };
 
   return (
@@ -83,7 +90,7 @@ export function PrivacySettings() {
         <p className="text-sm text-gray-500 mt-1">Kiểm soát ai có thể xem thông tin của bạn</p>
       </div>
 
-      <div className="space-y-3">
+      <div className={`space-y-3 ${isLoading ? "pointer-events-none opacity-60" : ""}`}>
         {privacyOptions.map((option) => {
           const Icon = option.icon;
           return (
@@ -101,7 +108,10 @@ export function PrivacySettings() {
                     <p className="text-sm text-gray-500">{option.description}</p>
                   </div>
                 </div>
-                <Select value={values[option.id]} onValueChange={(v) => handleChange(option.id, v)}>
+                <Select
+                  value={getValue(option.id)}
+                  onValueChange={(v) => handleChange(option.id, v)}
+                >
                   <SelectTrigger className="w-40 rounded-xl">
                     <SelectValue />
                   </SelectTrigger>

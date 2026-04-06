@@ -24,6 +24,7 @@ export const authKeys = {
   devices: () => [...authKeys.all, "devices"] as const,
   organizations: () => [...authKeys.all, "organizations"] as const,
   children: () => [...authKeys.all, "children"] as const,
+  linkedAccounts: () => [...authKeys.all, "linked-accounts"] as const,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -351,6 +352,78 @@ export function useChangePassword() {
     mutationFn: authService.changePassword,
     onSuccess: () => {
       toast.success("Đổi mật khẩu thành công");
+    },
+  });
+}
+
+/** Request email change — sends OTP to new email */
+export function useChangeEmailRequest() {
+  return useMutation({
+    mutationFn: (data: { new_email: string; password: string }) => authService.changeEmailRequest(data),
+    onSuccess: () => {
+      toast.success("Mã OTP đã được gửi đến email mới");
+    },
+    onError: () => {
+      toast.error("Không thể gửi OTP, vui lòng kiểm tra lại email và mật khẩu");
+    },
+  });
+}
+
+/** Verify OTP and complete email change */
+export function useChangeEmail() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { new_email: string; otp: string }) => authService.changeEmail(data),
+    onSuccess: () => {
+      toast.success("Đổi email thành công");
+      qc.invalidateQueries({ queryKey: authKeys.me() });
+      qc.invalidateQueries({ queryKey: authKeys.profile() });
+    },
+    onError: () => {
+      toast.error("Mã OTP không đúng hoặc đã hết hạn");
+    },
+  });
+}
+
+/** Get OAuth providers linked to the current user */
+export function useLinkedAccounts() {
+  const { isAuthenticated } = useAuthStore();
+
+  return useQuery({
+    queryKey: authKeys.linkedAccounts(),
+    queryFn: authService.getLinkedAccounts,
+    enabled: isAuthenticated,
+  });
+}
+
+/** Disconnect an OAuth provider from the current user */
+export function useDisconnectProvider() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (provider: string) => authService.disconnectProvider(provider),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: authKeys.linkedAccounts() });
+      toast.success("Đã ngắt kết nối tài khoản");
+    },
+    onError: (error: unknown) => {
+      const msg = error instanceof Error ? error.message : "Không thể ngắt kết nối";
+      toast.error(msg);
+    },
+  });
+}
+
+/** Delete (soft) the current account */
+export function useDeleteAccount() {
+  const authStore = useAuthStore.getState();
+  return useMutation({
+    mutationFn: (data: { password: string }) => authService.deleteAccount(data),
+    onSuccess: () => {
+      authStore.logout();
+      window.location.href = "/login";
+    },
+    onError: () => {
+      toast.error("Xóa tài khoản thất bại, vui lòng kiểm tra lại mật khẩu");
     },
   });
 }

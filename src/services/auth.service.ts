@@ -318,6 +318,12 @@ export interface Child {
   avatar?: string;
 }
 
+export interface LinkedAccount {
+  provider: string;
+  email?: string;
+  connected_at: string;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Service
 // ═══════════════════════════════════════════════════════════════════════════
@@ -424,4 +430,28 @@ export const authService = {
   /** Get my system roles */
   getMySystemRoles: () =>
     api.get<{ message: string; data: { system_roles: SystemRole[] } }>("/me/system-roles").then((r) => r.data.data),
+
+  // ─── Account Security ────────────────────────────────────────────────────
+
+  /** Request email change OTP */
+  changeEmailRequest: (data: { new_email: string; password: string }) =>
+    api.post<{ message: string }>("/auth/change-email/request", data).then((r) => r.data),
+
+  /** Confirm email change with OTP */
+  changeEmail: (data: { new_email: string; otp: string }) =>
+    api.post<{ message: string }>("/auth/change-email", data).then((r) => r.data),
+
+  /** Soft-delete current account */
+  deleteAccount: (data: { password: string }) =>
+    api.delete<{ message: string }>("/auth/me", { data }).then((r) => r.data),
+
+  // ─── Linked Accounts ────────────────────────────────────────────────────
+
+  /** Get list of OAuth providers linked to the current user */
+  getLinkedAccounts: (): Promise<LinkedAccount[]> =>
+    api.get<{ message: string; data: LinkedAccount[] }>("/auth/linked-accounts").then((r) => r.data.data),
+
+  /** Disconnect an OAuth provider from the current user account */
+  disconnectProvider: (provider: string) =>
+    api.delete<{ message: string }>(`/auth/linked-accounts/${provider}`).then((r) => r.data),
 };

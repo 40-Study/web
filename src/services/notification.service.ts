@@ -37,4 +37,18 @@ export const notificationService = {
     api
       .delete<ApiResponse<null>>(`/notifications/${id}`)
       .then((r) => r.data),
+
+  // ─── Notification preferences ────────────────────────────────────────────
+
+  /** GET /notifications/settings */
+  getSettings: () =>
+    api
+      .get<ApiResponse<Record<string, boolean>>>("/notifications/settings")
+      .then((r) => r.data.data),
+
+  /** PUT /notifications/settings */
+  updateSettings: (data: Record<string, boolean>) =>
+    api
+      .put<ApiResponse<Record<string, boolean>>>("/notifications/settings", data)
+      .then((r) => r.data),
 };

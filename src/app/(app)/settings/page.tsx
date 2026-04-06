@@ -14,22 +14,29 @@ import {
 } from "@/components/settings";
 import type { SettingsSection } from "@/components/settings";
 import { useAuthStore } from "@/stores/auth.store";
-import { useChangePassword } from "@/hooks/queries/use-auth";
+import { useChangePassword, useChangeEmailRequest, useChangeEmail, useDeleteAccount } from "@/hooks/queries/use-auth";
 import { getDeviceInfo } from "@/services/auth.service";
-
+import { appearanceStorage } from "@/lib/appearance-storage";
 
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("account");
   const { user } = useAuthStore();
   const changePassword = useChangePassword();
+  const changeEmailRequest = useChangeEmailRequest();
+  const changeEmail = useChangeEmail();
+  const deleteAccount = useDeleteAccount();
 
-  const handleEmailChange = async (newEmail: string) => {
-    // TODO: implement email change API
+  const handleEmailChange = async (data: { new_email: string; password: string }) => {
+    await changeEmailRequest.mutateAsync(data);
+  };
+
+  const handleVerifyEmailOTP = async (data: { new_email: string; otp: string }) => {
+    await changeEmail.mutateAsync(data);
   };
 
   const handlePasswordChange = async (currentPassword: string, newPassword: string) => {
     const deviceInfo = getDeviceInfo();
-    changePassword.mutate({
+    await changePassword.mutateAsync({
       old_password: currentPassword,
       new_password: newPassword,
       confirm_password: newPassword,
@@ -37,12 +44,8 @@ export default function SettingsPage() {
     });
   };
 
-  const handleToggle2FA = async (enabled: boolean) => {
-    // TODO: implement 2FA toggle API
-  };
-
-  const handleDeleteAccount = async () => {
-    // TODO: implement account deletion API
+  const handleDeleteAccount = async (password: string) => {
+    await deleteAccount.mutateAsync({ password });
   };
 
   const renderContent = () => {
@@ -52,8 +55,8 @@ export default function SettingsPage() {
           <AccountSettings
             user={{ email: user?.email || "", has2FA: false, lastPasswordChange: undefined }}
             onEmailChange={handleEmailChange}
+            onVerifyEmailOTP={handleVerifyEmailOTP}
             onPasswordChange={handlePasswordChange}
-            onToggle2FA={handleToggle2FA}
             onDeleteAccount={handleDeleteAccount}
           />
         );
@@ -62,7 +65,16 @@ export default function SettingsPage() {
       case "notifications":
         return <NotificationSettings />;
       case "appearance":
-        return <AppearanceSettings />;
+        return (
+          <AppearanceSettings
+            initialTheme={appearanceStorage.getTheme() as "light" | "dark" | "system"}
+            initialFontSize={appearanceStorage.getFontSize()}
+            initialLanguage={appearanceStorage.getLanguage() as "vi" | "en"}
+            onThemeChange={appearanceStorage.setTheme}
+            onFontSizeChange={appearanceStorage.setFontSize}
+            onLanguageChange={appearanceStorage.setLanguage}
+          />
+        );
       case "privacy":
         return <PrivacySettings />;
       case "devices":
@@ -74,8 +86,8 @@ export default function SettingsPage() {
           <AccountSettings
             user={{ email: user?.email || "", has2FA: false, lastPasswordChange: undefined }}
             onEmailChange={handleEmailChange}
+            onVerifyEmailOTP={handleVerifyEmailOTP}
             onPasswordChange={handlePasswordChange}
-            onToggle2FA={handleToggle2FA}
             onDeleteAccount={handleDeleteAccount}
           />
         );
