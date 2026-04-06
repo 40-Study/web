@@ -11,6 +11,7 @@ import { GlobalSearch } from "@/components/layout/global-search";
 import { useLogout } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth.store";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
+import { useNotifications, useUnreadCount, useMarkNotificationRead, useMarkAllNotificationsRead } from "@/hooks/queries/use-notifications";
 
 interface MenuItem {
   label: string;
@@ -30,11 +31,14 @@ const commonMenuItems: MenuItem[] = [
   { label: "Cài đặt tài khoản", href: "/settings", icon: Settings },
 ];
 
-const notificationItems = [
-  { id: 1, title: "Có bài tập mới", time: "2 phút trước" },
-  { id: 2, title: "Lớp học sắp bắt đầu", time: "15 phút trước" },
-  { id: 3, title: "Bạn có phản hồi mới", time: "1 giờ trước" },
-];
+/** Format a UTC timestamp into Vietnamese relative time */
+function timeAgo(dateStr: string): string {
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (diff < 60) return "Vừa xong";
+  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+  return `${Math.floor(diff / 86400)} ngày trước`;
+}
 
 export function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -50,6 +54,15 @@ export function Header() {
 
   const { isAuthenticated, user, activeRole } = useAuthStore();
   const logoutMutation = useLogout();
+
+  // Notification hooks — only fetch when authenticated
+  const { data: unreadData } = useUnreadCount();
+  const { data: notifData } = useNotifications();
+  const markReadMutation = useMarkNotificationRead();
+  const markAllReadMutation = useMarkAllNotificationsRead();
+
+  const unreadCount = isAuthenticated ? (unreadData?.unread_count ?? 0) : 0;
+  const notifications = isAuthenticated ? (notifData?.notifications ?? []) : [];
   const normalizedRole = normalizeRole(activeRole);
   const isStudent = normalizedRole === "STUDENT";
   const homeHref = isAuthenticated ? getRoleHomeRoute(normalizedRole) : "/";
@@ -100,31 +113,52 @@ export function Header() {
         <div className="flex items-center gap-3 lg:gap-4">
           <div className="relative hidden md:block" ref={notificationRef}>
             <button
-              className="p-2 text-slate-500 hover:bg-slate-100 rounded-full"
+              className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full"
               onClick={() => {
                 setIsDropdownOpen(false);
                 setIsNotificationOpen((v) => !v);
               }}
             >
               <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </button>
 
             {isNotificationOpen && (
               <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-lg border py-2 z-50">
-                <div className="px-4 py-3 border-b">
+                <div className="px-4 py-3 border-b flex items-center justify-between">
                   <p className="font-semibold text-gray-900">Thông báo</p>
-                </div>
-                <div className="py-1">
-                  {notificationItems.map((item) => (
+                  {unreadCount > 0 && (
                     <button
-                      key={item.id}
-                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors"
-                      onClick={() => setIsNotificationOpen(false)}
+                      className="text-xs text-primary-600 hover:underline disabled:opacity-50"
+                      onClick={() => markAllReadMutation.mutate()}
+                      disabled={markAllReadMutation.isPending}
                     >
-                      <p className="text-sm text-gray-800">{item.title}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{item.time}</p>
+                      Đánh dấu tất cả đã đọc
                     </button>
-                  ))}
+                  )}
+                </div>
+                <div className="py-1 max-h-80 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-6">Không có thông báo</p>
+                  ) : (
+                    notifications.map((item) => (
+                      <button
+                        key={item.id}
+                        className={`w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors ${!item.is_read ? "bg-blue-50/60" : ""}`}
+                        onClick={() => {
+                          if (!item.is_read) markReadMutation.mutate(item.id);
+                          setIsNotificationOpen(false);
+                        }}
+                      >
+                        <p className="text-sm text-gray-800">{item.title}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{timeAgo(item.created_at)}</p>
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
             )}
