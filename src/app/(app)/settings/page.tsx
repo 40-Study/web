@@ -14,7 +14,7 @@ import {
 } from "@/components/settings";
 import type { SettingsSection } from "@/components/settings";
 import { useAuthStore } from "@/stores/auth.store";
-import { useChangePassword, useChangeEmailRequest, useChangeEmail, useDeleteAccount } from "@/hooks/queries/use-auth";
+import { useChangePassword, useDeleteAccount } from "@/hooks/queries/use-auth";
 import { getDeviceInfo } from "@/services/auth.service";
 import { appearanceStorage } from "@/lib/appearance-storage";
 
@@ -22,17 +22,7 @@ export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("account");
   const { user } = useAuthStore();
   const changePassword = useChangePassword();
-  const changeEmailRequest = useChangeEmailRequest();
-  const changeEmail = useChangeEmail();
   const deleteAccount = useDeleteAccount();
-
-  const handleEmailChange = async (data: { new_email: string; password: string }) => {
-    await changeEmailRequest.mutateAsync(data);
-  };
-
-  const handleVerifyEmailOTP = async (data: { new_email: string; otp: string }) => {
-    await changeEmail.mutateAsync(data);
-  };
 
   const handlePasswordChange = async (currentPassword: string, newPassword: string) => {
     const deviceInfo = getDeviceInfo();
@@ -54,8 +44,6 @@ export default function SettingsPage() {
         return (
           <AccountSettings
             user={{ email: user?.email || "", has2FA: false, lastPasswordChange: undefined }}
-            onEmailChange={handleEmailChange}
-            onVerifyEmailOTP={handleVerifyEmailOTP}
             onPasswordChange={handlePasswordChange}
             onDeleteAccount={handleDeleteAccount}
           />
@@ -85,8 +73,6 @@ export default function SettingsPage() {
         return (
           <AccountSettings
             user={{ email: user?.email || "", has2FA: false, lastPasswordChange: undefined }}
-            onEmailChange={handleEmailChange}
-            onVerifyEmailOTP={handleVerifyEmailOTP}
             onPasswordChange={handlePasswordChange}
             onDeleteAccount={handleDeleteAccount}
           />

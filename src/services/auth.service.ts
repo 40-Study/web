@@ -433,14 +433,6 @@ export const authService = {
 
   // ─── Account Security ────────────────────────────────────────────────────
 
-  /** Request email change OTP */
-  changeEmailRequest: (data: { new_email: string; password: string }) =>
-    api.post<{ message: string }>("/auth/change-email/request", data).then((r) => r.data),
-
-  /** Confirm email change with OTP */
-  changeEmail: (data: { new_email: string; otp: string }) =>
-    api.post<{ message: string }>("/auth/change-email", data).then((r) => r.data),
-
   /** Soft-delete current account */
   deleteAccount: (data: { password: string }) =>
     api.delete<{ message: string }>("/auth/me", { data }).then((r) => r.data),

@@ -356,35 +356,6 @@ export function useChangePassword() {
   });
 }
 
-/** Request email change — sends OTP to new email */
-export function useChangeEmailRequest() {
-  return useMutation({
-    mutationFn: (data: { new_email: string; password: string }) => authService.changeEmailRequest(data),
-    onSuccess: () => {
-      toast.success("Mã OTP đã được gửi đến email mới");
-    },
-    onError: () => {
-      toast.error("Không thể gửi OTP, vui lòng kiểm tra lại email và mật khẩu");
-    },
-  });
-}
-
-/** Verify OTP and complete email change */
-export function useChangeEmail() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: { new_email: string; otp: string }) => authService.changeEmail(data),
-    onSuccess: () => {
-      toast.success("Đổi email thành công");
-      qc.invalidateQueries({ queryKey: authKeys.me() });
-      qc.invalidateQueries({ queryKey: authKeys.profile() });
-    },
-    onError: () => {
-      toast.error("Mã OTP không đúng hoặc đã hết hạn");
-    },
-  });
-}
-
 /** Get OAuth providers linked to the current user */
 export function useLinkedAccounts() {
   const { isAuthenticated } = useAuthStore();
