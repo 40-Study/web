@@ -6,10 +6,10 @@ import {
   DollarSign,
   Clock,
   Search,
-  CheckCircle,
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Landmark,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,85 +23,65 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/utils";
-import { useWallet, useWalletTransactions } from "@/hooks/queries/use-wallet";
-import type { WalletTransaction, TransactionStatus } from "@/services/wallet.service";
+import { useTeacherWallet, useTeacherTransactions } from "@/hooks/queries/use-wallet";
+import type { TeacherTransaction } from "@/services/wallet.service";
+import { BankInfoDialog } from "./bank-info-dialog";
 
-// ─── Status display config ───────────────────────────────────────────────────
+// ─── Status display config ───────��───────────────────────────────────────────
 
 type BadgeVariant = "success" | "warning" | "secondary" | "destructive";
 
-const STATUS_CONFIG: Record<TransactionStatus, { label: string; variant: BadgeVariant }> = {
-  completed: { label: "Khả dụng", variant: "success" },
-  pending: { label: "Chờ đối soát", variant: "warning" },
+const STATUS_CONFIG: Record<string, { label: string; variant: BadgeVariant }> = {
+  completed: { label: "Hoàn thành", variant: "success" },
+  pending: { label: "Chờ xử lý", variant: "warning" },
   cancelled: { label: "Đã huỷ", variant: "secondary" },
-  failed: { label: "Thất bại", variant: "destructive" },
+  failed: { label: "Thất b��i", variant: "destructive" },
+  refunded: { label: "Hoàn tiền", variant: "destructive" },
 };
 
 function getStatusConfig(status: string): { label: string; variant: BadgeVariant } {
-  return (
-    STATUS_CONFIG[status as TransactionStatus] ?? {
-      label: status,
-      variant: "secondary" as BadgeVariant,
-    }
-  );
+  return STATUS_CONFIG[status] ?? { label: status, variant: "secondary" as BadgeVariant };
 }
 
-/**
- * Format ISO date string to dd/MM/yyyy
- */
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("vi-VN");
-}
-
-/**
- * Derive transaction type from WalletTransaction
- * "purchase" / "credit" = income; "withdrawal" / "refund" = outgoing
- */
-function getTxType(tx: WalletTransaction): "income" | "withdrawal" {
-  return tx.type === "withdrawal" || tx.type === "refund" ? "withdrawal" : "income";
 }
 
 export default function TeacherWalletPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [monthFilter, setMonthFilter] = useState("this-month");
-  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [page, setPage] = useState(1);
+  const [showBankDialog, setShowBankDialog] = useState(false);
+  const limit = 20;
 
-  const { data: wallet, isLoading: isWalletLoading } = useWallet();
-  const { data: txResponse, isLoading: isTxLoading } = useWalletTransactions();
+  // Map tab to API type param
+  const txTypeParam = activeTab === "income" ? "income" : activeTab === "refund" ? "refund" : "";
+
+  const { data: wallet, isLoading: isWalletLoading } = useTeacherWallet();
+  const { data: txResponse, isLoading: isTxLoading } = useTeacherTransactions({
+    type: txTypeParam || undefined,
+    page,
+    limit,
+  });
 
   const isLoading = isWalletLoading || isTxLoading;
 
-  // Unwrap paginated response — API returns { transactions[], total, page, limit }
-  const transactions: WalletTransaction[] = txResponse?.transactions ?? [];
+  const transactions: TeacherTransaction[] = txResponse?.transactions ?? [];
+  const totalPages = txResponse?.total_pages ?? 1;
 
-  // Derive balance figures from wallet data
-  const totalSpent = wallet?.total_spent ?? 0;
-  // Use total_spent as available balance proxy; pending is unknown from current API shape
-  const availableBalance = totalSpent;
+  // Client-side search filter on top of server-side type filter
+  const filteredTransactions = searchQuery
+    ? transactions.filter(
+        (tx) =>
+          tx.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          tx.course_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          tx.buyer_name?.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+    : transactions;
 
-  const filteredTransactions = transactions.filter((tx) => {
-    const type = getTxType(tx);
-    if (activeTab === "income" && type !== "income") return false;
-    if (activeTab === "withdrawal" && type !== "withdrawal") return false;
-    if (
-      searchQuery &&
-      !tx.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !tx.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    ) {
-      return false;
-    }
-    return true;
-  });
+  // Bank info display
+  const hasBankInfo = wallet?.bank_name && wallet?.bank_account_number;
 
   return (
     <div className="space-y-6">
@@ -135,12 +115,13 @@ export default function TeacherWalletPage() {
                 </div>
                 <span className="text-sm text-muted-foreground">Số dư khả dụng</span>
               </div>
-              <p className="text-3xl font-bold text-green-600 mb-4">
-                {formatCurrency(availableBalance)}
+              <p className="text-3xl font-bold text-green-600 mb-1">
+                {formatCurrency(wallet?.available_balance ?? 0)}
               </p>
-              <Button className="w-full" onClick={() => setShowWithdrawModal(true)}>
-                Rút tiền về NH
-              </Button>
+              <p className="text-xs text-muted-foreground mb-4">
+                Tổng thu nhập: {formatCurrency(wallet?.total_earnings ?? 0)} · Đã rút:{" "}
+                {formatCurrency(wallet?.total_paid_out ?? 0)}
+              </p>
             </CardContent>
           </Card>
 
@@ -156,7 +137,7 @@ export default function TeacherWalletPage() {
               <p className="text-3xl font-bold text-blue-600 mb-2">
                 {wallet?.order_count ?? 0}
               </p>
-              <p className="text-xs text-muted-foreground">Tổng đơn đã xử lý</p>
+              <p className="text-xs text-muted-foreground">Tổng đơn học sinh đã mua</p>
             </CardContent>
           </Card>
 
@@ -165,22 +146,34 @@ export default function TeacherWalletPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-sm font-medium">Tài khoản nhận tiền</span>
-                <Button variant="link" className="h-auto p-0 text-primary-600">
-                  Thay đổi
+                <Button
+                  variant="link"
+                  className="h-auto p-0 text-primary-600"
+                  onClick={() => setShowBankDialog(true)}
+                >
+                  {hasBankInfo ? "Thay đổi" : "Thêm TK"}
                 </Button>
               </div>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-8 bg-green-700 rounded flex items-center justify-center text-white text-xs font-bold">
-                  VCB
-                </div>
-                <div>
-                  <p className="font-medium flex items-center gap-1">
-                    Vietcombank <CheckCircle className="w-4 h-4 text-green-500" />
-                  </p>
-                  <p className="text-sm text-muted-foreground">**** **** 1290</p>
-                </div>
-              </div>
-              <p className="text-xs text-green-600">Tài khoản đã xác thực chính chủ.</p>
+              {hasBankInfo ? (
+                <>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-8 bg-green-700 rounded flex items-center justify-center">
+                      <Landmark className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{wallet.bank_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        **** {wallet.bank_account_number?.slice(-4)}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{wallet.bank_account_name}</p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Chưa có tài khoản ngân hàng. Vui lòng thêm để nhận thanh toán.
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -189,36 +182,32 @@ export default function TeacherWalletPage() {
       {/* Transactions */}
       <Card>
         <CardHeader className="pb-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => {
+              setActiveTab(v);
+              setPage(1);
+            }}
+          >
             <TabsList>
               <TabsTrigger value="all">Tất cả giao dịch</TabsTrigger>
-              <TabsTrigger value="income">Tiền vào</TabsTrigger>
-              <TabsTrigger value="withdrawal">Rút tiền</TabsTrigger>
+              <TabsTrigger value="income">Thu nhập</TabsTrigger>
+              <TabsTrigger value="refund">Hoàn tiền</TabsTrigger>
             </TabsList>
           </Tabs>
         </CardHeader>
         <CardContent>
-          {/* Filters */}
+          {/* Search */}
           <div className="flex gap-4 my-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 className="pl-9"
-                placeholder="Tìm kiếm mã giao dịch..."
+                placeholder="Tìm mã GD, tên khóa học, tên người mua..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Select value={monthFilter} onValueChange={setMonthFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="this-month">Tháng này</SelectItem>
-                <SelectItem value="last-month">Tháng trước</SelectItem>
-                <SelectItem value="all">Tất cả</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           {/* Table */}
@@ -232,8 +221,8 @@ export default function TeacherWalletPage() {
                 <tr className="border-b text-left">
                   <th className="p-3 text-xs font-medium text-muted-foreground">MÃ GD</th>
                   <th className="p-3 text-xs font-medium text-muted-foreground">NGÀY</th>
-                  <th className="p-3 text-xs font-medium text-muted-foreground">NỘI DUNG</th>
-                  <th className="p-3 text-xs font-medium text-muted-foreground">PHƯƠNG THỨC</th>
+                  <th className="p-3 text-xs font-medium text-muted-foreground">KHÓA HỌC</th>
+                  <th className="p-3 text-xs font-medium text-muted-foreground">NGƯỜI MUA</th>
                   <th className="p-3 text-xs font-medium text-muted-foreground text-right">
                     SỐ TIỀN
                   </th>
@@ -249,25 +238,20 @@ export default function TeacherWalletPage() {
                   </tr>
                 ) : (
                   filteredTransactions.map((tx) => {
-                    const type = getTxType(tx);
-                    const isOutgoing = type === "withdrawal";
+                    const isRefund = tx.type === "expense";
                     const cfg = getStatusConfig(tx.status);
                     return (
-                      <tr key={tx.id} className="border-b last:border-0 hover:bg-gray-50">
-                        <td className="p-3 text-sm font-medium">
-                          {tx.order_number ?? tx.id}
-                        </td>
+                      <tr key={`${tx.order_id}-${tx.course_id}`} className="border-b last:border-0 hover:bg-gray-50">
+                        <td className="p-3 text-sm font-medium">{tx.order_number}</td>
                         <td className="p-3 text-sm text-muted-foreground">
                           {formatDate(tx.created_at)}
                         </td>
-                        <td className="p-3 text-sm">{tx.description ?? "-"}</td>
-                        <td className="p-3 text-sm text-muted-foreground">
-                          {tx.payment_method ?? "-"}
-                        </td>
+                        <td className="p-3 text-sm">{tx.course_name}</td>
+                        <td className="p-3 text-sm text-muted-foreground">{tx.buyer_name}</td>
                         <td
-                          className={`p-3 text-sm text-right font-medium ${isOutgoing ? "text-red-500" : "text-green-600"}`}
+                          className={`p-3 text-sm text-right font-medium ${isRefund ? "text-red-500" : "text-green-600"}`}
                         >
-                          {isOutgoing ? "-" : "+"}
+                          {isRefund ? "-" : "+"}
                           {formatCurrency(tx.amount)}
                         </td>
                         <td className="p-3">
@@ -284,16 +268,26 @@ export default function TeacherWalletPage() {
           {/* Pagination */}
           <div className="flex items-center justify-between mt-4 pt-4 border-t">
             <p className="text-sm text-muted-foreground">
-              Hiển thị {filteredTransactions.length} giao dịch
+              Trang {page}/{totalPages} · {txResponse?.total_count ?? 0} giao dịch
             </p>
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <Button variant="default" size="sm">
-                1
+                {page}
               </Button>
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
@@ -301,54 +295,14 @@ export default function TeacherWalletPage() {
         </CardContent>
       </Card>
 
-      {/* Withdraw Modal */}
-      <Dialog open={showWithdrawModal} onOpenChange={setShowWithdrawModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rút tiền về tài khoản</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <label className="text-sm font-medium">Số tiền rút</label>
-              <Input
-                type="number"
-                placeholder="Nhập số tiền..."
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
-                className="mt-1"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Số dư khả dụng: {formatCurrency(availableBalance)}
-              </p>
-            </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium mb-2">Tài khoản nhận</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-6 bg-green-700 rounded text-white text-xs font-bold flex items-center justify-center">
-                  VCB
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Vietcombank</p>
-                  <p className="text-xs text-muted-foreground">**** **** 1290</p>
-                </div>
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Phí rút tiền: Miễn phí. Thời gian xử lý: 1-2 ngày làm việc.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowWithdrawModal(false)}>
-              Hủy
-            </Button>
-            <Button
-              disabled={!withdrawAmount || Number(withdrawAmount) > availableBalance}
-            >
-              Xác nhận rút tiền
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Bank Info Dialog */}
+      <BankInfoDialog
+        open={showBankDialog}
+        onOpenChange={setShowBankDialog}
+        currentBankName={wallet?.bank_name}
+        currentAccountNumber={wallet?.bank_account_number}
+        currentAccountName={wallet?.bank_account_name}
+      />
     </div>
   );
 }
