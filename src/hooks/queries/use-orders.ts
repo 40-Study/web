@@ -4,7 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { orderService, type CreateOrderDTO } from "@/services/order.service";
+import { orderService, type CreateOrderDTO, type PaymentIntentDTO } from "@/services/order.service";
 
 export const orderKeys = {
   all: ["orders"] as const,
@@ -73,7 +73,8 @@ export function useCancelOrder() {
 /** Create a Stripe payment intent for an order */
 export function useCreatePaymentIntent() {
   return useMutation({
-    mutationFn: (id: string) => orderService.createPaymentIntent(id),
+    mutationFn: ({ id, data }: { id: string; data: PaymentIntentDTO }) =>
+      orderService.createPaymentIntent(id, data),
     onError: () => {
       toast.error("Không thể tạo phiên thanh toán");
     },

@@ -14,7 +14,7 @@ import {
 } from "@/components/player";
 import { useCourseBySlug } from "@/hooks/queries/use-courses";
 import { useSections } from "@/hooks/queries/use-sections";
-import { useLessonVideo } from "@/hooks/queries/use-lesson-content";
+import { useLessonContents } from "@/hooks/queries/use-lesson-content";
 import type { PlayerCourse, PlayerChapter, PlayerLesson } from "@/types/course-player";
 import type { Section } from "@/types/section";
 import type { Lesson } from "@/types/lesson";
@@ -142,7 +142,8 @@ export default function CourseLessonPage() {
 
   const { data: apiCourse, isLoading: courseLoading } = useCourseBySlug(courseSlug);
   const { data: sections = [], isLoading: sectionsLoading } = useSections(apiCourse?.id ?? "");
-  const { data: lessonVideo } = useLessonVideo(lessonId);
+  const { data: lessonContents } = useLessonContents(lessonId);
+  const lessonVideo = lessonContents?.find((c) => c.type === "video");
 
   const isLoading = courseLoading || sectionsLoading;
 
@@ -166,7 +167,7 @@ export default function CourseLessonPage() {
   const currentLesson = getLessonById(course, lessonId);
   const next = getNextLesson(course, lessonId);
 
-  const videoSrc = lessonVideo?.hls_url ?? "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+  const videoSrc = lessonVideo?.video_url ?? "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
 
   const exerciseCount = course.chapters
     .flatMap((ch) => ch.lessons)

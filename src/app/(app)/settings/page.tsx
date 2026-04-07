@@ -44,7 +44,7 @@ export default function SettingsPage() {
       case "account":
         return (
           <AccountSettings
-            user={{ email: user?.email || "", has2FA: false, lastPasswordChange: meData?.user?.password_changed_at }}
+            user={{ email: user?.email || "", has2FA: false, lastPasswordChange: meData?.password_changed_at }}
             onPasswordChange={handlePasswordChange}
             onDeleteAccount={handleDeleteAccount}
           />
@@ -73,7 +73,7 @@ export default function SettingsPage() {
       default:
         return (
           <AccountSettings
-            user={{ email: user?.email || "", has2FA: false, lastPasswordChange: meData?.user?.password_changed_at }}
+            user={{ email: user?.email || "", has2FA: false, lastPasswordChange: meData?.password_changed_at }}
             onPasswordChange={handlePasswordChange}
             onDeleteAccount={handleDeleteAccount}
           />

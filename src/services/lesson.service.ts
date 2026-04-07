@@ -1,74 +1,82 @@
 /**
- * Lesson service — CRUD for lessons nested under sections
- * Endpoints nested: /courses/:courseId/sections/:sectionId/lessons
+ * Lesson service — CRUD for lessons
+ * Endpoints: /sections/:sectionId/lessons, /lessons/:lessonId
  */
 
 import { api } from "@/lib/api-client";
-import type {
-  Lesson,
-  CreateLessonDTO,
-  UpdateLessonDTO,
-} from "@/types/lesson";
+
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+export interface Lesson {
+  id: string;
+  section_id: string;
+  title: string;
+  description?: string;
+  duration_minutes?: number;
+  is_preview?: boolean;
+  is_mandatory?: boolean;
+  display_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateLessonDTO {
+  title: string;
+  description?: string;
+  duration_minutes?: number;
+  is_preview?: boolean;
+  is_mandatory?: boolean;
+}
+
+export interface UpdateLessonDTO {
+  title?: string;
+  description?: string;
+  duration_minutes?: number;
+  is_preview?: boolean;
+  is_mandatory?: boolean;
+}
+
+export interface ReorderItem {
+  id: string;
+  display_order: number;
+}
+
+// ─── Service ────────────────────────────────────────────────────────────────
 
 export const lessonService = {
-  /**
-   * GET /courses/:courseId/sections/:sectionId/lessons — list lessons in a section
-   */
-  getLessons: (courseId: string, sectionId: string) =>
+  /** GET /sections/:sectionId/lessons */
+  getLessons: (sectionId: string) =>
     api
-      .get<{ message: string; data: Lesson[] }>(
-        `/courses/${courseId}/sections/${sectionId}/lessons`
-      )
+      .get<{ message: string; data: Lesson[] }>(`/sections/${sectionId}/lessons`)
       .then((r) => r.data.data),
 
-  /**
-   * GET /lessons/:id — get a single lesson by ID
-   */
-  getLesson: (id: string) =>
+  /** GET /lessons/:lessonId */
+  getLesson: (lessonId: string) =>
     api
-      .get<{ message: string; data: Lesson }>(`/lessons/${id}`)
+      .get<{ message: string; data: Lesson }>(`/lessons/${lessonId}`)
       .then((r) => r.data.data),
 
-  /**
-   * POST /courses/:courseId/sections/:sectionId/lessons — create a lesson
-   */
-  createLesson: (courseId: string, sectionId: string, data: CreateLessonDTO) =>
+  /** POST /sections/:sectionId/lessons */
+  createLesson: (sectionId: string, data: CreateLessonDTO) =>
     api
-      .post<{ message: string; data: Lesson }>(
-        `/courses/${courseId}/sections/${sectionId}/lessons`,
-        data
-      )
+      .post<{ message: string; data: Lesson }>(`/sections/${sectionId}/lessons`, data)
       .then((r) => r.data.data),
 
-  /**
-   * PUT /courses/:courseId/sections/:sectionId/lessons/:id — update a lesson
-   */
-  updateLesson: (courseId: string, sectionId: string, id: string, data: UpdateLessonDTO) =>
+  /** PUT /lessons/:lessonId */
+  updateLesson: (lessonId: string, data: UpdateLessonDTO) =>
     api
-      .put<{ message: string; data: Lesson }>(
-        `/courses/${courseId}/sections/${sectionId}/lessons/${id}`,
-        data
-      )
+      .put<{ message: string; data: Lesson }>(`/lessons/${lessonId}`, data)
       .then((r) => r.data.data),
 
-  /**
-   * DELETE /courses/:courseId/sections/:sectionId/lessons/:id — delete a lesson
-   */
-  deleteLesson: (courseId: string, sectionId: string, id: string) =>
+  /** PUT /sections/:sectionId/lessons/reorder */
+  reorderLessons: (sectionId: string, items: ReorderItem[]) =>
     api
-      .delete<{ message: string }>(
-        `/courses/${courseId}/sections/${sectionId}/lessons/${id}`
-      )
+      .put<{ message: string }>(`/sections/${sectionId}/lessons/reorder`, { items })
       .then((r) => r.data),
 
-  /**
-   * PUT /courses/:courseId/sections/:sectionId/lessons/reorder — reorder lessons
-   */
-  reorderLessons: (courseId: string, sectionId: string, lessonIds: string[]) =>
+  /** DELETE /lessons/:lessonId */
+  deleteLesson: (lessonId: string) =>
     api
-      .put<{ message: string }>(
-        `/courses/${courseId}/sections/${sectionId}/lessons/reorder`,
-        { lesson_ids: lessonIds }
-      )
+      .delete<{ message: string }>(`/lessons/${lessonId}`)
       .then((r) => r.data),
 };

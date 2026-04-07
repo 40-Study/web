@@ -18,7 +18,7 @@ export const lessonKeys = {
 export function useLessons(courseId: string, sectionId: string) {
   return useQuery({
     queryKey: lessonKeys.bySection(courseId, sectionId),
-    queryFn: () => lessonService.getLessons(courseId, sectionId),
+    queryFn: () => lessonService.getLessons(sectionId),
     enabled: !!courseId && !!sectionId,
   });
 }
@@ -37,7 +37,7 @@ export function useCreateLesson(courseId: string, sectionId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateLessonDTO) =>
-      lessonService.createLesson(courseId, sectionId, data),
+      lessonService.createLesson(sectionId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: lessonKeys.bySection(courseId, sectionId) });
       toast.success("Đã tạo bài học");
@@ -51,7 +51,7 @@ export function useUpdateLesson(courseId: string, sectionId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateLessonDTO }) =>
-      lessonService.updateLesson(courseId, sectionId, id, data),
+      lessonService.updateLesson(id, data),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: lessonKeys.bySection(courseId, sectionId) });
       qc.invalidateQueries({ queryKey: lessonKeys.detail(id) });
@@ -65,7 +65,7 @@ export function useUpdateLesson(courseId: string, sectionId: string) {
 export function useDeleteLesson(courseId: string, sectionId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => lessonService.deleteLesson(courseId, sectionId, id),
+    mutationFn: (id: string) => lessonService.deleteLesson(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: lessonKeys.bySection(courseId, sectionId) });
       toast.success("Đã xóa bài học");
@@ -78,8 +78,8 @@ export function useDeleteLesson(courseId: string, sectionId: string) {
 export function useReorderLessons(courseId: string, sectionId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (lessonIds: string[]) =>
-      lessonService.reorderLessons(courseId, sectionId, lessonIds),
+    mutationFn: (items: { id: string; display_order: number }[]) =>
+      lessonService.reorderLessons(sectionId, items),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: lessonKeys.bySection(courseId, sectionId) });
     },

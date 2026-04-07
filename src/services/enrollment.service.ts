@@ -1,73 +1,52 @@
 /**
- * Enrollment service - handles course enrollment and progress tracking
+ * Enrollment service — enroll/unenroll and lesson progress
+ * Endpoints: /courses/:courseId/enroll, /enrollments, /lessons/:lessonId/progress
  */
 
 import { api } from "@/lib/api-client";
+
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 export interface Enrollment {
   id: string;
   course_id: string;
   user_id: string;
-  status: "active" | "completed" | "dropped";
-  progress: number; // percentage 0-100
-  enrolled_at: string;
+  status?: string;
+  progress_percentage?: number;
+  enrolled_at?: string;
   completed_at?: string;
-}
-
-export interface EnrollmentProgress {
-  enrollment_id: string;
-  course_id: string;
-  progress: number;
-  completed_lessons: string[];
-  total_lessons: number;
-  last_accessed_at?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface UpdateProgressDTO {
-  completed: boolean;
-  time_spent?: number; // seconds
-  position?: number;   // video position in seconds
+  status: string;
+  progress_percentage?: number;
+  video_watched_seconds?: number;
 }
 
-type ApiResponse<T> = { message: string; data: T };
+type R<T> = { message: string; data: T };
+
+// ─── Service ────────────────────────────────────────────────────────────────
 
 export const enrollmentService = {
-  /** GET /enrollments/me - get current user's enrollments */
-  getMyEnrollments: () =>
-    api
-      .get<ApiResponse<{ enrollments: Enrollment[] }>>("/enrollments/me")
-      .then((r) => r.data.data.enrollments),
-
-  /** GET /enrollments/course/:courseId - get all enrollments for a course */
-  getCourseEnrollments: (courseId: string) =>
-    api
-      .get<ApiResponse<{ enrollments: Enrollment[] }>>(`/enrollments/course/${courseId}`)
-      .then((r) => r.data.data.enrollments),
-
-  /** POST /enrollments - enroll current user in a course */
+  /** POST /courses/:courseId/enroll */
   enroll: (courseId: string) =>
-    api
-      .post<ApiResponse<Enrollment>>("/enrollments", { course_id: courseId })
-      .then((r) => r.data.data),
+    api.post<R<Enrollment>>(`/courses/${courseId}/enroll`, {}).then((r) => r.data.data),
 
-  /** DELETE /enrollments/:id - unenroll from a course */
-  unenroll: (enrollmentId: string) =>
-    api
-      .delete<ApiResponse<null>>(`/enrollments/${enrollmentId}`)
-      .then((r) => r.data),
+  /** DELETE /courses/:courseId/enroll */
+  unenroll: (courseId: string) =>
+    api.delete<R<null>>(`/courses/${courseId}/enroll`).then((r) => r.data),
 
-  /** GET /enrollments/:id/progress - get lesson progress for an enrollment */
-  getProgress: (enrollmentId: string) =>
-    api
-      .get<ApiResponse<EnrollmentProgress>>(`/enrollments/${enrollmentId}/progress`)
-      .then((r) => r.data.data),
+  /** GET /enrollments */
+  getAll: () =>
+    api.get<R<Enrollment[]>>("/enrollments").then((r) => r.data.data),
 
-  /** PUT /enrollments/:id/progress - update progress for a specific lesson */
-  updateProgress: (enrollmentId: string, lessonId: string, data: UpdateProgressDTO) =>
-    api
-      .put<ApiResponse<EnrollmentProgress>>(
-        `/enrollments/${enrollmentId}/progress`,
-        { lesson_id: lessonId, ...data }
-      )
-      .then((r) => r.data.data),
+  /** GET /enrollments/:enrollmentId */
+  getById: (enrollmentId: string) =>
+    api.get<R<Enrollment>>(`/enrollments/${enrollmentId}`).then((r) => r.data.data),
+
+  /** PUT /lessons/:lessonId/progress */
+  updateProgress: (lessonId: string, data: UpdateProgressDTO) =>
+    api.put<R<null>>(`/lessons/${lessonId}/progress`, data).then((r) => r.data),
 };

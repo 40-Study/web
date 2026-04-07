@@ -30,6 +30,7 @@ interface AuthState {
   // User data
   user: User | null;
   token: string | null;
+  refreshToken: string | null;
   sessionToken: string | null;
 
   // Multi-role system (unified roles from backend)
@@ -57,6 +58,7 @@ interface AuthState {
   // Actions
   setUser: (user: User | null) => void;
   setToken: (token: string | null) => void;
+  setRefreshToken: (token: string | null) => void;
   setSessionToken: (token: string | null) => void;
   setRoles: (roles: UnifiedRole[]) => void;
   setActiveRole: (role: string | null) => void;
@@ -77,6 +79,7 @@ interface AuthState {
 const initialState = {
   user: null,
   token: null,
+  refreshToken: null,
   sessionToken: null,
   roles: [] as UnifiedRole[],
   activeRole: null,
@@ -99,6 +102,7 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user) => set({ user }),
       setToken: (token) => set({ token, isAuthenticated: !!token }),
+      setRefreshToken: (refreshToken) => set({ refreshToken }),
       setSessionToken: (sessionToken) => set({ sessionToken }),
       setRoles: (roles) => set({ roles }),
       setActiveRole: (activeRole) => set({ activeRole }),
@@ -129,6 +133,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         token: state.token,
+        refreshToken: state.refreshToken,
         roles: state.roles,
         activeRole: state.activeRole,
         activeUnifiedRole: state.activeUnifiedRole,

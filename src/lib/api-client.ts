@@ -13,7 +13,7 @@ import {
   NotFoundError,
 } from "./errors";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 // Create axios instance
 export const api = axios.create({
@@ -46,15 +46,35 @@ function getToken(): string | null {
 }
 
 /**
- * Set token in auth store
+ * Get refresh token from auth store
  */
-function setToken(token: string): void {
+function getRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem("auth-storage");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return parsed.state?.refreshToken || null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+/**
+ * Set tokens in auth store
+ */
+function setTokens(accessToken: string, refreshToken?: string): void {
   if (typeof window === "undefined") return;
   try {
     const stored = localStorage.getItem("auth-storage");
     if (stored) {
       const parsed = JSON.parse(stored);
-      parsed.state.token = token;
+      parsed.state.token = accessToken;
+      if (refreshToken) {
+        parsed.state.refreshToken = refreshToken;
+      }
       localStorage.setItem("auth-storage", JSON.stringify(parsed));
     }
   } catch {
@@ -74,15 +94,18 @@ function clearAuth(): void {
 /**
  * Refresh the access token
  */
-async function refreshToken(): Promise<string> {
+async function refreshAccessToken(): Promise<string> {
+  const rt = getRefreshToken();
+  if (!rt) throw new Error("No refresh token");
+
   const response = await axios.post(
     `${API_BASE_URL}/auth/refresh-token`,
-    {},
+    { refresh_token: rt },
     { withCredentials: true }
   );
-  const newToken = response.data.data.access_token;
-  setToken(newToken);
-  return newToken;
+  const { access_token, refresh_token } = response.data.data;
+  setTokens(access_token, refresh_token);
+  return access_token;
 }
 
 // Request interceptor: attach access token
@@ -106,26 +129,38 @@ api.interceptors.response.use(
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     const { status, data } = error.response;
 
-    // Handle 401: try refresh token
+    // Handle 401: try refresh token (only if we had a token and have a refresh token)
     if (status === 401 && !original._retry) {
       original._retry = true;
 
-      try {
-        // Deduplicate: all concurrent 401s share one refresh call
-        if (!refreshPromise) {
-          refreshPromise = refreshToken().finally(() => {
-            refreshPromise = null;
-          });
-        }
+      const hadToken = !!getToken();
+      const hasRefresh = !!getRefreshToken();
 
-        const newToken = await refreshPromise;
-        original.headers.Authorization = `Bearer ${newToken}`;
-        return api(original);
-      } catch {
-        // Refresh failed, clear auth and redirect
-        clearAuth();
-        throw new AuthError(data?.message);
+      if (hadToken && hasRefresh) {
+        try {
+          // Deduplicate: all concurrent 401s share one refresh call
+          if (!refreshPromise) {
+            refreshPromise = refreshAccessToken().finally(() => {
+              refreshPromise = null;
+            });
+          }
+
+          const newToken = await refreshPromise;
+          original.headers.Authorization = `Bearer ${newToken}`;
+          return api(original);
+        } catch {
+          // Refresh failed, clear auth and redirect
+          clearAuth();
+          throw new AuthError(data?.message);
+        }
       }
+
+      // No refresh token available — just throw 401, don't redirect
+      if (hadToken) {
+        // Had a token but no refresh token — session is stale, clear it
+        clearAuth();
+      }
+      throw new AuthError(data?.message);
     }
 
     // Normalize other errors

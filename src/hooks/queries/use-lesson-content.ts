@@ -1,154 +1,62 @@
 /**
- * React Query hooks for lesson content (video, article, attachments)
+ * React Query hooks for lesson content (video, livestream, exercise)
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { lessonContentService } from "@/services/lesson-content.service";
-import type {
-  CreateLessonVideoDTO,
-  UpdateLessonVideoDTO,
-  CreateLessonArticleDTO,
-  UpdateLessonArticleDTO,
-  CreateLessonAttachmentDTO,
-} from "@/types/lesson-content";
+import type { CreateContentDTO, UpdateContentDTO } from "@/services/lesson-content.service";
 
 export const lessonContentKeys = {
   all: ["lesson-content"] as const,
-  video: (lessonId: string) => [...lessonContentKeys.all, "video", lessonId] as const,
-  article: (lessonId: string) => [...lessonContentKeys.all, "article", lessonId] as const,
-  attachments: (lessonId: string) =>
-    [...lessonContentKeys.all, "attachments", lessonId] as const,
+  contents: (lessonId: string) => [...lessonContentKeys.all, "contents", lessonId] as const,
 };
 
-// ─── Video hooks ──────────────────────────────────────────────────────────────
-
-export function useLessonVideo(lessonId: string) {
+/** Fetch all contents for a lesson */
+export function useLessonContents(lessonId: string) {
   return useQuery({
-    queryKey: lessonContentKeys.video(lessonId),
-    queryFn: () => lessonContentService.getVideo(lessonId),
+    queryKey: lessonContentKeys.contents(lessonId),
+    queryFn: () => lessonContentService.getContents(lessonId),
     enabled: !!lessonId,
   });
 }
 
-export function useCreateLessonVideo(lessonId: string) {
+/** Create a new content item (video, livestream, or exercise) */
+export function useCreateLessonContent(lessonId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateLessonVideoDTO) =>
-      lessonContentService.createVideo(lessonId, data),
+    mutationFn: (data: CreateContentDTO) => lessonContentService.createContent(lessonId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: lessonContentKeys.video(lessonId) });
-      toast.success("Đã thêm video bài học");
+      qc.invalidateQueries({ queryKey: lessonContentKeys.contents(lessonId) });
+      toast.success("Đã thêm nội dung bài học");
     },
-    onError: () => toast.error("Không thể thêm video"),
+    onError: () => toast.error("Không thể thêm nội dung"),
   });
 }
 
-export function useUpdateLessonVideo(lessonId: string) {
+/** Update an existing content item */
+export function useUpdateLessonContent(lessonId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: UpdateLessonVideoDTO) =>
-      lessonContentService.updateVideo(lessonId, data),
+    mutationFn: ({ contentId, data }: { contentId: string; data: UpdateContentDTO }) =>
+      lessonContentService.updateContent(lessonId, contentId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: lessonContentKeys.video(lessonId) });
-      toast.success("Đã cập nhật video");
+      qc.invalidateQueries({ queryKey: lessonContentKeys.contents(lessonId) });
+      toast.success("Đã cập nhật nội dung");
     },
-    onError: () => toast.error("Không thể cập nhật video"),
+    onError: () => toast.error("Không thể cập nhật nội dung"),
   });
 }
 
-export function useDeleteLessonVideo(lessonId: string) {
+/** Delete a content item */
+export function useDeleteLessonContent(lessonId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => lessonContentService.deleteVideo(lessonId),
+    mutationFn: (contentId: string) => lessonContentService.deleteContent(lessonId, contentId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: lessonContentKeys.video(lessonId) });
-      toast.success("Đã xóa video");
+      qc.invalidateQueries({ queryKey: lessonContentKeys.contents(lessonId) });
+      toast.success("Đã xóa nội dung");
     },
-    onError: () => toast.error("Không thể xóa video"),
-  });
-}
-
-// ─── Article hooks ────────────────────────────────────────────────────────────
-
-export function useLessonArticle(lessonId: string) {
-  return useQuery({
-    queryKey: lessonContentKeys.article(lessonId),
-    queryFn: () => lessonContentService.getArticle(lessonId),
-    enabled: !!lessonId,
-  });
-}
-
-export function useCreateLessonArticle(lessonId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateLessonArticleDTO) =>
-      lessonContentService.createArticle(lessonId, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: lessonContentKeys.article(lessonId) });
-      toast.success("Đã tạo bài viết");
-    },
-    onError: () => toast.error("Không thể tạo bài viết"),
-  });
-}
-
-export function useUpdateLessonArticle(lessonId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: UpdateLessonArticleDTO) =>
-      lessonContentService.updateArticle(lessonId, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: lessonContentKeys.article(lessonId) });
-      toast.success("Đã cập nhật bài viết");
-    },
-    onError: () => toast.error("Không thể cập nhật bài viết"),
-  });
-}
-
-export function useDeleteLessonArticle(lessonId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: () => lessonContentService.deleteArticle(lessonId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: lessonContentKeys.article(lessonId) });
-      toast.success("Đã xóa bài viết");
-    },
-    onError: () => toast.error("Không thể xóa bài viết"),
-  });
-}
-
-// ─── Attachment hooks ─────────────────────────────────────────────────────────
-
-export function useLessonAttachments(lessonId: string) {
-  return useQuery({
-    queryKey: lessonContentKeys.attachments(lessonId),
-    queryFn: () => lessonContentService.getAttachments(lessonId),
-    enabled: !!lessonId,
-  });
-}
-
-export function useCreateLessonAttachment(lessonId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateLessonAttachmentDTO) =>
-      lessonContentService.createAttachment(lessonId, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: lessonContentKeys.attachments(lessonId) });
-      toast.success("Đã thêm tài liệu đính kèm");
-    },
-    onError: () => toast.error("Không thể thêm tài liệu"),
-  });
-}
-
-export function useDeleteLessonAttachment(lessonId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (attachmentId: string) =>
-      lessonContentService.deleteAttachment(lessonId, attachmentId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: lessonContentKeys.attachments(lessonId) });
-      toast.success("Đã xóa tài liệu đính kèm");
-    },
-    onError: () => toast.error("Không thể xóa tài liệu"),
+    onError: () => toast.error("Không thể xóa nội dung"),
   });
 }

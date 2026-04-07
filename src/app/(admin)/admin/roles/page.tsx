@@ -10,7 +10,7 @@ import {
 } from "@/hooks/queries/use-admin";
 import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
-import type { Role } from "@/services/role.service";
+import type { SystemRole } from "@/services/role.service";
 
 type RoleFormState = {
   id?: string;
@@ -36,8 +36,8 @@ type UserFormState = {
 const emptyRoleForm: RoleFormState = { name: "", description: "", permissions: [] };
 const emptyUserForm: UserFormState = { name: "", email: "", status: "ACTIVE" };
 
-function seedUsersForRole(role: Role): RoleUser[] {
-  const count = Math.max(1, Math.min(role.user_count || 1, 5));
+function seedUsersForRole(role: SystemRole): RoleUser[] {
+  const count = Math.max(1, Math.min(3, 5));
   return Array.from({ length: count }).map((_, index) => {
     const order = index + 1;
     const slug = role.name.toLowerCase().replace(/\s+/g, "-");
@@ -92,12 +92,11 @@ export default function RolesPage() {
 
   const submitRole = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!roleForm.name || roleForm.permissions.length === 0) return;
+    if (!roleForm.name) return;
 
     const payload = {
       name: roleForm.name,
       description: roleForm.description || undefined,
-      permissions: roleForm.permissions,
     };
 
     if (roleForm.id) updateRole.mutate({ roleId: roleForm.id, data: payload });
@@ -115,12 +114,12 @@ export default function RolesPage() {
     }));
   };
 
-  const startEditRole = (role: Role) => {
+  const startEditRole = (role: SystemRole) => {
     setRoleForm({
       id: role.id,
       name: role.name,
       description: role.description || "",
-      permissions: Array.isArray(role.permissions) ? role.permissions : [],
+      permissions: [],
     });
   };
 
@@ -189,7 +188,6 @@ export default function RolesPage() {
           ) : (
             rolesData.map((role) => {
               const active = selectedRole?.id === role.id;
-              const rolePermissions = Array.isArray(role.permissions) ? role.permissions : [];
               const users = roleUsersMap[role.id] || [];
 
               return (
@@ -201,12 +199,6 @@ export default function RolesPage() {
                     </div>
                     <p className="mt-1 text-xs text-gray-500">{role.description || "Không có mô tả"}</p>
                   </button>
-
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {rolePermissions.slice(0, 4).map((perm) => (
-                      <span key={perm} className="rounded bg-primary-50 px-2 py-0.5 text-xs text-primary-700">{perm}</span>
-                    ))}
-                  </div>
 
                   <Can permission={PERMISSIONS.MANAGE_ROLES}>
                     <div className="mt-3 flex gap-2">

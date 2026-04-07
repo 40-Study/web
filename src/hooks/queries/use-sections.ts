@@ -67,8 +67,8 @@ export function useDeleteSection(courseId: string) {
 export function useReorderSections(courseId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (sectionIds: string[]) =>
-      sectionService.reorderSections(courseId, sectionIds),
+    mutationFn: (items: { id: string; display_order: number }[]) =>
+      sectionService.reorderSections(courseId, items),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: sectionKeys.byCourse(courseId) });
     },

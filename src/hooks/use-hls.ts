@@ -1,37 +1,28 @@
 "use client";
 
 /**
- * Hook for HLS manifest and processing status
+ * Hook for HLS video info
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { hlsService } from "@/services/hls.service";
-import type { HlsManifest, HlsProcessingStatus } from "@/types/video";
+import { hlsService, type VideoInfo } from "@/services/hls.service";
 
 /**
- * Fetch HLS manifest for a video.
+ * Fetch HLS video info (status, qualities, duration).
+ * Polls while status is not "ready" or "failed".
  */
-export function useHlsManifest(videoId: string | null) {
-  return useQuery<HlsManifest>({
-    queryKey: ["hls-manifest", videoId],
-    queryFn: () => hlsService.getManifest(videoId!),
+export function useHlsInfo(videoId: string | null, poll = false) {
+  return useQuery<VideoInfo>({
+    queryKey: ["hls-info", videoId],
+    queryFn: () => hlsService.getInfo(videoId!),
     enabled: !!videoId,
     staleTime: 10 * 60 * 1000,
-  });
-}
-
-/**
- * Poll HLS processing status until ready or failed.
- */
-export function useHlsProcessingStatus(videoId: string | null, enabled = true) {
-  return useQuery<HlsProcessingStatus>({
-    queryKey: ["hls-status", videoId],
-    queryFn: () => hlsService.getProcessingStatus(videoId!),
-    enabled: !!videoId && enabled,
-    refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      if (status === "ready" || status === "failed") return false;
-      return 3000;
-    },
+    refetchInterval: poll
+      ? (query) => {
+          const status = query.state.data?.status;
+          if (status === "ready" || status === "failed") return false;
+          return 3000;
+        }
+      : false,
   });
 }

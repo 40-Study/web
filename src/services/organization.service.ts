@@ -1,21 +1,29 @@
 /**
- * Organization management service
+ * Organization service
+ * Endpoints: /organizations
  */
 
 import { api } from "@/lib/api-client";
 
+// ─── Types ──────────────────────────────────────────────────────────────────
+
 export interface Organization {
   id: string;
   name: string;
-  code: string;
-  logo?: string;
   description?: string;
-  created_at: string;
+  code?: string;
+  logo?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CreateOrgDTO {
   name: string;
-  code: string;
+  description?: string;
+}
+
+export interface UpdateOrgDTO {
+  name?: string;
   description?: string;
 }
 
@@ -28,27 +36,38 @@ export interface OrgMember {
   joined_at: string;
 }
 
+type R<T> = { message: string; data: T };
+
+// ─── Service ────────────────────────────────────────────────────────────────
+
 export const organizationService = {
-  list: () =>
-    api.get<{ message: string; data: { organizations: Organization[] } }>("/organizations")
-      .then((r) => r.data.data.organizations),
-
-  getById: (id: string) =>
-    api.get<{ message: string; data: Organization }>(`/organizations/${id}`)
-      .then((r) => r.data.data),
-
+  /** POST /organizations */
   create: (data: CreateOrgDTO) =>
-    api.post<{ message: string; data: Organization }>("/organizations", data)
-      .then((r) => r.data.data),
+    api.post<R<Organization>>("/organizations", data).then((r) => r.data.data),
 
-  update: (id: string, data: Partial<CreateOrgDTO>) =>
-    api.put<{ message: string; data: Organization }>(`/organizations/${id}`, data)
-      .then((r) => r.data.data),
+  /** GET /organizations */
+  list: () =>
+    api.get<R<Organization[]>>("/organizations").then((r) => r.data.data),
 
-  delete: (id: string) =>
-    api.delete<{ message: string }>(`/organizations/${id}`).then((r) => r.data),
+  /** GET /organizations/:orgId */
+  getById: (orgId: string) =>
+    api.get<R<Organization>>(`/organizations/${orgId}`).then((r) => r.data.data),
 
+  /** PUT /organizations/:orgId */
+  update: (orgId: string, data: UpdateOrgDTO) =>
+    api.put<R<Organization>>(`/organizations/${orgId}`, data).then((r) => r.data.data),
+
+  /** DELETE /organizations/:orgId */
+  delete: (orgId: string) =>
+    api.delete<R<null>>(`/organizations/${orgId}`).then((r) => r.data),
+
+  /** GET /organizations/:orgId/members */
   getMembers: (orgId: string) =>
-    api.get<{ message: string; data: { members: OrgMember[] } }>(`/organizations/${orgId}/members`)
-      .then((r) => r.data.data.members),
+    api.get<R<OrgMember[]>>(`/organizations/${orgId}/members`).then((r) => r.data.data),
+
+  /** GET /organizations/:orgId/roles/:roleId/users */
+  getUsersByRole: (orgId: string, roleId: string) =>
+    api
+      .get<R<OrgMember[]>>(`/organizations/${orgId}/roles/${roleId}/users`)
+      .then((r) => r.data.data),
 };

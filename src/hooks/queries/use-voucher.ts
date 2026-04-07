@@ -4,7 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { voucherService } from "@/services/voucher.service";
+import { voucherService, type Voucher } from "@/services/voucher.service";
 
 export const voucherKeys = {
   all: ["vouchers"] as const,
@@ -39,27 +39,12 @@ export function useVoucherByCode(code: string) {
   });
 }
 
-/** Validate a voucher code against a list of course IDs */
-export function useValidateVoucher() {
+/** Look up a voucher by code (mutation-style for form submission) */
+export function useVoucherLookup() {
   return useMutation({
-    mutationFn: ({ code, courseIds }: { code: string; courseIds: string[] }) =>
-      voucherService.validate(code, courseIds),
+    mutationFn: (code: string) => voucherService.getVoucherByCode(code),
     onError: () => {
       toast.error("Mã voucher không hợp lệ");
-    },
-  });
-}
-
-/** Apply a voucher to an order */
-export function useApplyVoucher() {
-  return useMutation({
-    mutationFn: ({ code, orderId }: { code: string; orderId: string }) =>
-      voucherService.apply(code, orderId),
-    onSuccess: () => {
-      toast.success("Áp dụng voucher thành công");
-    },
-    onError: () => {
-      toast.error("Không thể áp dụng voucher");
     },
   });
 }

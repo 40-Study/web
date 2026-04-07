@@ -1,64 +1,110 @@
 /**
- * Video upload service — handles multipart file upload with progress tracking
+ * Video upload service — chunked upload with presigned URLs
+ * Endpoints: /videos/upload/*, /videos/health, /videos/processing/queue
  */
 
 import { api } from "@/lib/api-client";
-import type { Video, VideoUploadProgress } from "@/types/video";
 
-export interface UploadVideoOptions {
-  onProgress?: (progress: number) => void;
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+export interface InitUploadDTO {
+  resource_id: string;
+  resource_type: string;
+  original_file_name: string;
+  content_type: string;
+  file_size: number;
+  chunk_size: number;
 }
 
-/**
- * Upload a video file using multipart/form-data with optional progress callback.
- * POST /videos/upload
- */
-async function uploadVideo(file: File, options?: UploadVideoOptions): Promise<Video> {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const response = await api.post<Video>("/videos/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-    onUploadProgress: (event) => {
-      if (options?.onProgress && event.total) {
-        const percent = Math.round((event.loaded * 100) / event.total);
-        options.onProgress(percent);
-      }
-    },
-  });
-
-  return response.data;
+export interface InitUploadResponse {
+  upload_id: string;
+  chunk_count: number;
+  chunk_size: number;
 }
 
-/**
- * Get video info by ID.
- * GET /videos/:id
- */
-async function getVideo(id: string): Promise<Video> {
-  const response = await api.get<Video>(`/videos/${id}`);
-  return response.data;
+export interface PresignedUrlsDTO {
+  upload_id: string;
+  chunk_numbers: number[];
 }
 
-/**
- * Get upload/processing status for a video.
- * GET /videos/:id/status
- */
-async function getStatus(id: string): Promise<VideoUploadProgress> {
-  const response = await api.get<VideoUploadProgress>(`/videos/${id}/status`);
-  return response.data;
+export interface PresignedUrl {
+  chunk_number: number;
+  url: string;
 }
 
-/**
- * Delete a video by ID.
- * DELETE /videos/:id
- */
-async function deleteVideo(id: string): Promise<void> {
-  await api.delete(`/videos/${id}`);
+export interface ChunkCompleteDTO {
+  upload_id: string;
+  chunk_number: number;
+  etag: string;
+  size: number;
 }
+
+export interface UploadStatus {
+  upload_id: string;
+  status: string;
+  progress: number;
+  completed_chunks: number;
+  total_chunks: number;
+}
+
+export interface IncompleteUpload {
+  upload_id: string;
+  resource_id: string;
+  original_file_name: string;
+  progress: number;
+  created_at: string;
+}
+
+type R<T> = { message: string; data: T };
+
+// ─── Service ────────────────────────────────────────────────────────────────
 
 export const videoUploadService = {
-  uploadVideo,
-  getVideo,
-  getStatus,
-  deleteVideo,
+  /** GET /videos/health — check video service health (public) */
+  health: () =>
+    api.get<R<{ status: string }>>("/videos/health").then((r) => r.data.data),
+
+  /** POST /videos/upload/init — initialize chunked upload */
+  initUpload: (data: InitUploadDTO) =>
+    api.post<R<InitUploadResponse>>("/videos/upload/init", data).then((r) => r.data.data),
+
+  /** POST /videos/upload/presigned-urls — get presigned URLs for chunks */
+  getPresignedUrls: (data: PresignedUrlsDTO) =>
+    api
+      .post<R<PresignedUrl[]>>("/videos/upload/presigned-urls", data)
+      .then((r) => r.data.data),
+
+  /** POST /videos/upload/chunk-complete — mark a chunk as uploaded */
+  chunkComplete: (data: ChunkCompleteDTO) =>
+    api.post<R<null>>("/videos/upload/chunk-complete", data).then((r) => r.data),
+
+  /** POST /videos/upload/complete — finalize upload */
+  completeUpload: (uploadId: string) =>
+    api
+      .post<R<null>>("/videos/upload/complete", { upload_id: uploadId })
+      .then((r) => r.data),
+
+  /** GET /videos/upload/:uploadId/status */
+  getUploadStatus: (uploadId: string) =>
+    api.get<R<UploadStatus>>(`/videos/upload/${uploadId}/status`).then((r) => r.data.data),
+
+  /** GET /videos/upload/:uploadId/resume — resume info */
+  getResumeInfo: (uploadId: string) =>
+    api.get<R<UploadStatus>>(`/videos/upload/${uploadId}/resume`).then((r) => r.data.data),
+
+  /** GET /videos/upload/incomplete — list incomplete uploads */
+  getIncompleteUploads: () =>
+    api
+      .get<R<IncompleteUpload[]>>("/videos/upload/incomplete")
+      .then((r) => r.data.data),
+
+  /** DELETE /videos/upload/:uploadId — cancel/abort upload */
+  cancelUpload: (uploadId: string, reason?: string) =>
+    api
+      .delete<R<null>>(`/videos/upload/${uploadId}`, { data: { reason } })
+      .then((r) => r.data),
+
+  /** GET /videos/processing/queue — processing queue status */
+  getProcessingQueue: () =>
+    api.get<R<unknown[]>>("/videos/processing/queue").then((r) => r.data.data),
 };

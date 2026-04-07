@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { organizationService } from "@/services/organization.service";
+import { permissionService } from "@/services/permission.service";
 import { roleService } from "@/services/role.service";
 
 // Query Keys
@@ -80,7 +81,7 @@ export function useOrgMembers(orgId: string) {
 export function useOrgRoles(orgId: string) {
   return useQuery({
     queryKey: adminKeys.orgRoles(orgId),
-    queryFn: () => roleService.listOrgRoles(orgId),
+    queryFn: () => roleService.listOrgRoles(),
     enabled: !!orgId,
   });
 }
@@ -95,15 +96,15 @@ export function useSystemRoles() {
 export function usePermissions() {
   return useQuery({
     queryKey: adminKeys.permissions(),
-    queryFn: roleService.listPermissions,
+    queryFn: permissionService.getAll,
   });
 }
 
 export function useCreateOrgRole() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ orgId, data }: { orgId: string; data: Parameters<typeof roleService.createOrgRole>[1] }) =>
-      roleService.createOrgRole(orgId, data),
+    mutationFn: ({ orgId, data }: { orgId: string; data: Omit<Parameters<typeof roleService.createOrgRole>[0], "organization_id"> }) =>
+      roleService.createOrgRole({ ...data, organization_id: orgId }),
     onSuccess: (_, { orgId }) => {
       qc.invalidateQueries({ queryKey: adminKeys.orgRoles(orgId) });
       toast.success("Tạo vai trò thành công");
@@ -149,7 +150,7 @@ export function useAssignOrgRole() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ userId, orgId, roleId }: { userId: string; orgId: string; roleId: string }) =>
-      roleService.assignOrgRole(userId, orgId, roleId),
+      roleService.assignOrgRoles(userId, { role_ids: [roleId], organization_id: orgId }),
     onSuccess: (_, { orgId }) => {
       qc.invalidateQueries({ queryKey: adminKeys.orgMembers(orgId) });
       toast.success("Gán vai trò thành công");

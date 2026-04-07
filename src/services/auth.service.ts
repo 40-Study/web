@@ -59,6 +59,7 @@ export interface DeviceSessionDto {
   user_agent?: string;
   logged_in_at: string;
   is_current?: boolean;
+  ip_address?: string;
 }
 
 // Backend EntryContext
@@ -333,7 +334,11 @@ export function getDeviceInfo(): DeviceInfo {
 // OAuth Helper
 // ═══════════════════════════════════════════════════════════════════════════
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+export interface MyOrgRolesResponse {
+  roles: UnifiedRole[];
+}
 
 export function startOAuthFlow(provider: "google" | "github" | "facebook") {
   const device = getDeviceInfo();

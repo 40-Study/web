@@ -1,39 +1,34 @@
 /**
- * Permission management service
+ * Permission service
+ * Endpoints: /permissions
  */
 
 import { api } from "@/lib/api-client";
-import type { Permission, CreatePermissionData } from "@/types/permission";
 
-/**
- * List all permissions.
- * GET /permissions
- */
-async function getPermissions(): Promise<Permission[]> {
-  const response = await api.get<{ message: string; data: { permissions: Permission[] } }>("/permissions");
-  return response.data.data.permissions;
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+export interface Permission {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  created_at?: string;
 }
 
-/**
- * Get a single permission by ID.
- * GET /permissions/:id
- */
-async function getPermission(id: string): Promise<Permission> {
-  const response = await api.get<{ message: string; data: Permission }>(`/permissions/${id}`);
-  return response.data.data;
-}
+type R<T> = { message: string; data: T };
 
-/**
- * Create a new permission.
- * POST /permissions
- */
-async function createPermission(data: CreatePermissionData): Promise<Permission> {
-  const response = await api.post<{ message: string; data: Permission }>("/permissions", data);
-  return response.data.data;
-}
+// ─── Service ────────────────────────────────────────────────────────────────
 
 export const permissionService = {
-  getPermissions,
-  getPermission,
-  createPermission,
+  /** GET /permissions */
+  getAll: () =>
+    api.get<R<Permission[]>>("/permissions").then((r) => r.data.data),
+
+  /** GET /permissions/:id */
+  getById: (id: string) =>
+    api.get<R<Permission>>(`/permissions/${id}`).then((r) => r.data.data),
+
+  /** PUT /permissions/:id */
+  update: (id: string, data: { description: string }) =>
+    api.put<R<Permission>>(`/permissions/${id}`, data).then((r) => r.data.data),
 };

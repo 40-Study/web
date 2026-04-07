@@ -5,17 +5,15 @@ export * from "./use-reduced-motion";
 export * from "./use-media-query";
 export {
   useMe,
-  useMyProfile,
+  useMyProfiles,
   usePublicProfile,
   useUpdateProfile,
   useDevices,
-  useMyOrganizations,
   useChildren,
   useLogin,
   useRegisterRequest,
   useRegister,
   useSelectRole,
-  useSelectOrg,
   useLogout,
   authKeys,
 } from "./queries/use-auth";

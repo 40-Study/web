@@ -126,7 +126,7 @@ function LessonRow({
   courseId: string;
   router: ReturnType<typeof useRouter>;
 }) {
-  const icon = getLessonIcon(lesson.type);
+  const icon = getLessonIcon(lesson.type ?? "article");
   return (
     <div className="space-y-2">
       <button
@@ -141,7 +141,7 @@ function LessonRow({
         <div className="flex-1">
           <p className="text-sm font-medium">{lesson.title}</p>
           <p className="text-xs text-muted-foreground">
-            {LESSON_LABELS[lesson.type] ?? lesson.type}
+            {LESSON_LABELS[lesson.type ?? "article"] ?? lesson.type}
             {lesson.duration && ` • ${lesson.duration}s`}
           </p>
         </div>
@@ -203,7 +203,6 @@ export default function CourseDetailPage() {
     await createSection.mutateAsync({
       title: chapterTitle.trim(),
       description: chapterDescription.trim() || undefined,
-      position: sections.length + 1,
     });
     setChapterTitle("");
     setChapterDescription("");
@@ -214,14 +213,13 @@ export default function CourseDetailPage() {
 
   const handleCreateLesson = async () => {
     if (!targetSectionId || !lessonTitle.trim()) return;
-    // Map teacher lesson type to backend supported type
-    const backendType = lessonType === "sandbox" || lessonType === "document" ? "article" : lessonType;
     await createLesson.mutateAsync({
       title: lessonTitle.trim(),
       description: lessonSummary.trim() || undefined,
-      type: backendType as "video" | "article" | "quiz",
-      duration: lessonType === "video" && lessonDuration.trim() ? Number(lessonDuration) || undefined : undefined,
-      position: 0,
+      duration_minutes:
+        lessonType === "video" && lessonDuration.trim()
+          ? Math.ceil((Number(lessonDuration) || 0) / 60) || undefined
+          : undefined,
       is_preview: false,
     });
     setIsLessonDialogOpen(false);

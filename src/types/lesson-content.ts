@@ -1,57 +1,56 @@
 /**
- * TypeScript types for lesson content (video, article, attachments)
+ * TypeScript types for lesson content (video, livestream, exercise)
  */
 
-export interface LessonVideo {
+export type ContentType = "video" | "livestream" | "exercise";
+
+export interface LessonContent {
   id: string;
   lesson_id: string;
-  video_upload_id: string;
-  hls_url?: string;
-  duration: number;
+  type: ContentType;
+  title: string;
+  video_url?: string;
+  duration?: number;
+  exercise_id?: string;
+  is_mandatory?: boolean;
+  display_order: number;
   created_at?: string;
   updated_at?: string;
 }
 
-export interface LessonArticle {
-  id: string;
-  lesson_id: string;
-  /** HTML or Markdown content */
-  content: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface LessonAttachment {
-  id: string;
-  lesson_id: string;
-  name: string;
-  url: string;
-  size: number;
-  type: string;
-  created_at?: string;
-}
+// Legacy aliases for backward compatibility
+export type LessonVideo = LessonContent;
+export type LessonArticle = LessonContent;
+export type LessonAttachment = LessonContent;
 
 export interface CreateLessonVideoDTO {
-  video_upload_id: string;
+  type: "video";
+  title: string;
+  video_url: string;
   duration?: number;
+  is_mandatory?: boolean;
 }
 
 export interface UpdateLessonVideoDTO {
-  video_upload_id?: string;
+  title?: string;
   duration?: number;
+  is_mandatory?: boolean;
 }
 
 export interface CreateLessonArticleDTO {
-  content: string;
+  type: "exercise";
+  title: string;
+  exercise_id: string;
+  is_mandatory?: boolean;
 }
 
 export interface UpdateLessonArticleDTO {
-  content: string;
+  title?: string;
+  is_mandatory?: boolean;
 }
 
 export interface CreateLessonAttachmentDTO {
-  name: string;
-  url: string;
-  size: number;
-  type: string;
+  type: "livestream";
+  title: string;
+  is_mandatory?: boolean;
 }

@@ -11,17 +11,16 @@ import type { CreateCategoryDTO, UpdateCategoryDTO } from "@/services/category.s
 
 export const categoryKeys = {
   all: ["categories"] as const,
-  list: (keyword?: string) => [...categoryKeys.all, "list", keyword ?? ""] as const,
+  list: () => [...categoryKeys.all, "list"] as const,
   detail: (id: string) => [...categoryKeys.all, "detail", id] as const,
-  courses: (id: string) => [...categoryKeys.all, "courses", id] as const,
   tags: ["tags"] as const,
 };
 
-/** Fetch all categories (supports keyword filter, returns raw ApiCategory) */
-export function useCategoryList(keyword?: string) {
+/** Fetch all categories */
+export function useCategoryList() {
   return useQuery({
-    queryKey: categoryKeys.list(keyword),
-    queryFn: () => categoryService.getAll(keyword),
+    queryKey: categoryKeys.list(),
+    queryFn: () => categoryService.getAll(),
   });
 }
 
@@ -30,15 +29,6 @@ export function useCategoryDetail(id: string) {
   return useQuery({
     queryKey: categoryKeys.detail(id),
     queryFn: () => categoryService.getById(id),
-    enabled: !!id,
-  });
-}
-
-/** Fetch courses belonging to a category */
-export function useCategoryCourses(id: string) {
-  return useQuery({
-    queryKey: categoryKeys.courses(id),
-    queryFn: () => categoryService.getCourses(id),
     enabled: !!id,
   });
 }

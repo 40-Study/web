@@ -4,139 +4,114 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { classService } from "@/services/class.service";
+import { classService, type CreateClassDTO, type UpdateClassDTO } from "@/services/class.service";
+import { teacherService } from "@/services/teacher.service";
 
 export const classKeys = {
   all: ["classes"] as const,
-  list: (orgId?: string) => [...classKeys.all, "list", orgId] as const,
-  detail: (id: string) => [...classKeys.all, "detail", id] as const,
-  students: (id: string) => [...classKeys.all, "students", id] as const,
-  schedules: (id: string) => [...classKeys.all, "schedules", id] as const,
-  attendance: (id: string, date: string) => [...classKeys.all, "attendance", id, date] as const,
+  list: (courseId: string) => [...classKeys.all, "list", courseId] as const,
+  detail: (courseId: string, classId: string) =>
+    [...classKeys.all, "detail", courseId, classId] as const,
+  students: (courseId: string, classId: string) =>
+    [...classKeys.all, "students", courseId, classId] as const,
+  teachers: (courseId: string, classId: string) =>
+    [...classKeys.all, "teachers", courseId, classId] as const,
+  attendances: (courseId: string, classId: string) =>
+    [...classKeys.all, "attendances", courseId, classId] as const,
 };
 
-export function useClasses(orgId?: string) {
+/** List classes for a course */
+export function useClasses(courseId: string) {
   return useQuery({
-    queryKey: classKeys.list(orgId),
-    queryFn: () => classService.list(orgId),
+    queryKey: classKeys.list(courseId),
+    queryFn: () => classService.list(courseId),
+    enabled: !!courseId,
   });
 }
 
-export function useClass(id: string) {
+/** Get a single class */
+export function useClass(courseId: string, classId: string) {
   return useQuery({
-    queryKey: classKeys.detail(id),
-    queryFn: () => classService.getById(id),
-    enabled: !!id,
+    queryKey: classKeys.detail(courseId, classId),
+    queryFn: () => classService.getById(courseId, classId),
+    enabled: !!courseId && !!classId,
   });
 }
 
-export function useCreateClass() {
+/** Create a class under a course */
+export function useCreateClass(courseId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: classService.create,
+    mutationFn: (data: CreateClassDTO) => classService.create(courseId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: classKeys.all });
+      qc.invalidateQueries({ queryKey: classKeys.list(courseId) });
       toast.success("Tạo lớp học thành công");
     },
   });
 }
 
-export function useUpdateClass() {
+/** Update a class */
+export function useUpdateClass(courseId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof classService.update>[1] }) =>
-      classService.update(id, data),
+    mutationFn: ({ classId, data }: { classId: string; data: UpdateClassDTO }) =>
+      classService.update(courseId, classId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: classKeys.all });
+      qc.invalidateQueries({ queryKey: classKeys.list(courseId) });
       toast.success("Cập nhật thành công");
     },
   });
 }
 
-export function useDeleteClass() {
+/** Delete a class */
+export function useDeleteClass(courseId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: classService.delete,
+    mutationFn: (classId: string) => classService.delete(courseId, classId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: classKeys.all });
+      qc.invalidateQueries({ queryKey: classKeys.list(courseId) });
       toast.success("Xóa lớp học thành công");
     },
   });
 }
 
-export function useClassStudents(classId: string) {
+/** Get students in a class */
+export function useClassStudents(courseId: string, classId: string) {
   return useQuery({
-    queryKey: classKeys.students(classId),
-    queryFn: () => classService.getStudents(classId),
-    enabled: !!classId,
+    queryKey: classKeys.students(courseId, classId),
+    queryFn: () => classService.getStudents(courseId, classId),
+    enabled: !!courseId && !!classId,
   });
 }
 
-export function useEnrollStudent() {
+/** Add a student to a class */
+export function useAddStudent(courseId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ classId, studentId }: { classId: string; studentId: string }) =>
-      classService.enrollStudent(classId, studentId),
+      classService.addStudent(courseId, classId, studentId),
     onSuccess: (_, { classId }) => {
-      qc.invalidateQueries({ queryKey: classKeys.students(classId) });
+      qc.invalidateQueries({ queryKey: classKeys.students(courseId, classId) });
       toast.success("Thêm học sinh thành công");
     },
   });
 }
 
-export function useClassSchedules(classId: string) {
+/** Get teachers in a class */
+export function useClassTeachers(courseId: string, classId: string) {
   return useQuery({
-    queryKey: classKeys.schedules(classId),
-    queryFn: () => classService.getSchedules(classId),
-    enabled: !!classId,
+    queryKey: classKeys.teachers(courseId, classId),
+    queryFn: () => classService.getTeachers(courseId, classId),
+    enabled: !!courseId && !!classId,
   });
 }
 
-export function useCreateSchedule() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ classId, data }: { classId: string; data: Parameters<typeof classService.createSchedule>[1] }) =>
-      classService.createSchedule(classId, data),
-    onSuccess: (_, { classId }) => {
-      qc.invalidateQueries({ queryKey: classKeys.schedules(classId) });
-      toast.success("Thêm lịch học thành công");
-    },
-  });
-}
-
-export function useAttendance(classId: string, date: string) {
+/** Get attendances for a class */
+export function useAttendances(courseId: string, classId: string) {
   return useQuery({
-    queryKey: classKeys.attendance(classId, date),
-    queryFn: () => classService.getAttendance(classId, date),
-    enabled: !!classId && !!date,
-  });
-}
-
-export function useMarkAttendance() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ classId, data }: { classId: string; data: Parameters<typeof classService.markAttendance>[1] }) =>
-      classService.markAttendance(classId, data),
-    onSuccess: (_, { classId, data }) => {
-      qc.invalidateQueries({ queryKey: classKeys.attendance(classId, data.date) });
-      toast.success("Điểm danh thành công");
-    },
-  });
-}
-
-export function useClassMembers(classId: string) {
-  return useQuery({
-    queryKey: [...classKeys.all, "members", classId] as const,
-    queryFn: () => classService.getMembers(classId),
-    enabled: !!classId,
-  });
-}
-
-/** Teacher's own classes */
-export function useMyClasses() {
-  return useQuery({
-    queryKey: [...classKeys.all, "my"] as const,
-    queryFn: () => classService.getMyClasses(),
+    queryKey: classKeys.attendances(courseId, classId),
+    queryFn: () => classService.getAttendances(courseId, classId),
+    enabled: !!courseId && !!classId,
   });
 }
 
@@ -144,19 +119,6 @@ export function useMyClasses() {
 export function useMyStudents(pageSize = 200) {
   return useQuery({
     queryKey: [...classKeys.all, "my-students", pageSize] as const,
-    queryFn: () => classService.getMyStudents(pageSize),
-  });
-}
-
-export function useAddMember() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ classId, userId }: { classId: string; userId: string }) =>
-      classService.addMember(classId, userId),
-    onSuccess: (_, { classId }) => {
-      qc.invalidateQueries({ queryKey: [...classKeys.all, "members", classId] });
-      toast.success("Thêm thành viên thành công");
-    },
-    onError: () => toast.error("Không thể thêm thành viên"),
+    queryFn: () => teacherService.getMyStudents(pageSize),
   });
 }

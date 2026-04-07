@@ -15,13 +15,8 @@ export default function AdminIndexPage() {
   const { data: roles = [], isLoading: rolesLoading } = useSystemRoles();
   const { data: permissions = [], isLoading: permsLoading } = usePermissions();
 
-  const totalUsers = useMemo(
-    () => roles.reduce((sum, role) => sum + (role.user_count || 0), 0),
-    [roles]
-  );
-
   const topRoles = useMemo(
-    () => [...roles].sort((a, b) => (b.user_count || 0) - (a.user_count || 0)).slice(0, 4),
+    () => roles.slice(0, 4),
     [roles]
   );
 
@@ -58,7 +53,7 @@ export default function AdminIndexPage() {
         <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
           <p className="text-sm text-gray-500">Tổng user được gán role</p>
           <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
-            {loading ? "..." : totalUsers}
+            {loading ? "..." : "—"}
           </p>
         </div>
       </section>
@@ -79,7 +74,7 @@ export default function AdminIndexPage() {
                     <p className="text-xs text-gray-500">{role.description || "Không có mô tả"}</p>
                   </div>
                   <span className="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
-                    {role.user_count || 0} users
+                    {role.name}
                   </span>
                 </div>
               ))

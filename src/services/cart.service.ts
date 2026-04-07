@@ -1,24 +1,23 @@
 /**
- * Cart service — real API calls for cart management
+ * Cart service
+ * Endpoints: /cart
  */
 
 import { api } from "@/lib/api-client";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-export interface CartCourse {
-  id: string;
-  title: string;
-  price: number;
-  thumbnail?: string;
-  instructor?: { id: string; name: string };
-}
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 export interface CartItem {
   id: string;
   course_id: string;
-  course: CartCourse;
-  added_at: string;
+  course?: {
+    id: string;
+    title: string;
+    price: number;
+    thumbnail?: string;
+    instructor?: { id: string; name: string };
+  };
+  added_at?: string;
 }
 
 export interface Cart {
@@ -27,46 +26,28 @@ export interface Cart {
   item_count: number;
 }
 
-// ─── Service ─────────────────────────────────────────────────────────────────
+type R<T> = { message: string; data: T };
+
+// ─── Service ────────────────────────────────────────────────────────────────
 
 export const cartService = {
-  /**
-   * GET /cart — fetch current user's cart
-   */
+  /** GET /cart/ */
   getCart: () =>
-    api
-      .get<{ message: string; data: Cart }>("/cart")
-      .then((r) => r.data.data),
+    api.get<R<Cart>>("/cart/").then((r) => r.data.data),
 
-  /**
-   * POST /cart { course_id } — add a course to cart
-   */
+  /** POST /cart/ { course_id } */
   addToCart: (courseId: string) =>
-    api
-      .post<{ message: string; data: CartItem }>("/cart", { course_id: courseId })
-      .then((r) => r.data.data),
+    api.post<R<CartItem>>("/cart/", { course_id: courseId }).then((r) => r.data.data),
 
-  /**
-   * DELETE /cart { course_id } — remove a course from cart
-   */
-  removeFromCart: (courseId: string) =>
-    api
-      .delete<{ message: string }>("/cart", { data: { course_id: courseId } })
-      .then((r) => r.data),
-
-  /**
-   * DELETE /cart/clear — remove all items from cart
-   */
-  clearCart: () =>
-    api
-      .delete<{ message: string }>("/cart/clear")
-      .then((r) => r.data),
-
-  /**
-   * GET /cart/check/:courseId — check if course is in cart
-   */
+  /** GET /cart/check/:courseId */
   isInCart: (courseId: string) =>
-    api
-      .get<{ message: string; data: { in_cart: boolean } }>(`/cart/check/${courseId}`)
-      .then((r) => r.data.data.in_cart),
+    api.get<R<{ in_cart: boolean }>>(`/cart/check/${courseId}`).then((r) => r.data.data.in_cart),
+
+  /** DELETE /cart/ { course_ids } — remove specific courses */
+  removeFromCart: (courseIds: string[]) =>
+    api.delete<R<null>>("/cart/", { data: { course_ids: courseIds } }).then((r) => r.data),
+
+  /** DELETE /cart/clear — remove all items */
+  clearCart: () =>
+    api.delete<R<null>>("/cart/clear").then((r) => r.data),
 };

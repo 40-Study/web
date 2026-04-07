@@ -9,7 +9,6 @@ import {
   type SubmitCodeDTO,
   type RunCodeDTO,
   type RunCustomInputDTO,
-  type ExecuteCodeDTO,
 } from "@/services/submission.service";
 
 export const submissionKeys = {
@@ -78,10 +77,3 @@ export function useRunCustomInput() {
   });
 }
 
-/** Free sandbox execution — no assignment required */
-export function useExecuteCode() {
-  return useMutation({
-    mutationFn: (dto: ExecuteCodeDTO) => submissionService.execute(dto),
-    onError: () => toast.error("Không thể thực thi code"),
-  });
-}

@@ -6,7 +6,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { roleCrudService } from "@/services/role-crud.service";
+import { roleService } from "@/services/role.service";
 import type { CreateRoleData, UpdateRoleData } from "@/types/role";
 
 export const roleKeys = {
@@ -19,7 +19,7 @@ export const roleKeys = {
 export function useRoles(organizationId?: string) {
   return useQuery({
     queryKey: roleKeys.list(organizationId),
-    queryFn: () => roleCrudService.getRoles(organizationId),
+    queryFn: () => roleService.listOrgRoles(),
   });
 }
 
@@ -27,7 +27,7 @@ export function useRoles(organizationId?: string) {
 export function useRole(id: string) {
   return useQuery({
     queryKey: roleKeys.detail(id),
-    queryFn: () => roleCrudService.getRole(id),
+    queryFn: () => roleService.getOrgRole(id),
     enabled: !!id,
   });
 }
@@ -36,7 +36,7 @@ export function useRole(id: string) {
 export function useCreateRole(organizationId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateRoleData) => roleCrudService.createRole(data),
+    mutationFn: (data: CreateRoleData) => roleService.createOrgRole(data as { name: string; organization_id: string; description?: string }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: roleKeys.list(organizationId) });
       toast.success("Tạo vai trò thành công");
@@ -52,7 +52,7 @@ export function useUpdateRole(organizationId?: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateRoleData }) =>
-      roleCrudService.updateRole(id, data),
+      roleService.updateOrgRole(id, data),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: roleKeys.list(organizationId) });
       qc.invalidateQueries({ queryKey: roleKeys.detail(id) });
@@ -68,7 +68,7 @@ export function useUpdateRole(organizationId?: string) {
 export function useDeleteRole(organizationId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => roleCrudService.deleteRole(id),
+    mutationFn: (id: string) => roleService.deleteOrgRole(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: roleKeys.list(organizationId) });
       toast.success("Xóa vai trò thành công");

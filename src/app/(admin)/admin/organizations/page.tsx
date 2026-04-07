@@ -13,10 +13,9 @@ import { PERMISSIONS } from "@/lib/permissions";
 type OrgFormState = {
   id?: string;
   name: string;
-  code: string;
 };
 
-const emptyForm: OrgFormState = { name: "", code: "" };
+const emptyForm: OrgFormState = { name: "" };
 
 export default function OrganizationsPage() {
   const { data = [], isLoading } = useOrganizations();
@@ -34,19 +33,19 @@ export default function OrganizationsPage() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.code) return;
+    if (!form.name) return;
 
     if (form.id) {
-      updateOrg.mutate({ id: form.id, data: { name: form.name, code: form.code } });
+      updateOrg.mutate({ id: form.id, data: { name: form.name } });
     } else {
-      createOrg.mutate({ name: form.name, code: form.code });
+      createOrg.mutate({ name: form.name });
     }
 
     setForm(emptyForm);
   };
 
   const startEdit = (org: (typeof data)[number]) => {
-    setForm({ id: org.id, name: org.name, code: org.code });
+    setForm({ id: org.id, name: org.name });
   };
 
   return (
@@ -113,12 +112,6 @@ export default function OrganizationsPage() {
                   onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                   className="h-10 w-full rounded border border-gray-200 px-3 text-sm"
                 />
-                <input
-                  placeholder="Mã tổ chức"
-                  value={form.code}
-                  onChange={(e) => setForm((prev) => ({ ...prev, code: e.target.value }))}
-                  className="h-10 w-full rounded border border-gray-200 px-3 text-sm"
-                />
                 <div className="flex gap-2">
                   <button type="submit" className="rounded bg-primary-600 px-3 py-2 text-sm font-medium text-white">
                     {form.id ? "Lưu" : "Tạo"}
@@ -142,7 +135,7 @@ export default function OrganizationsPage() {
                 <p><span className="text-gray-500">ID:</span> {selected.id}</p>
                 <p><span className="text-gray-500">Tên:</span> {selected.name}</p>
                 <p><span className="text-gray-500">Mã:</span> {selected.code}</p>
-                <p><span className="text-gray-500">Tạo lúc:</span> {new Date(selected.created_at).toLocaleString("vi-VN")}</p>
+                {selected.created_at && <p><span className="text-gray-500">Tạo lúc:</span> {new Date(selected.created_at).toLocaleString("vi-VN")}</p>}
               </div>
             ) : (
               <p className="mt-2 text-sm text-gray-500">Chọn một tổ chức để xem chi tiết.</p>

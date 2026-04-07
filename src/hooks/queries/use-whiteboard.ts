@@ -5,62 +5,38 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { whiteboardService } from "@/services/whiteboard.service";
-import type { CreateWhiteboardDTO, UpdateWhiteboardDTO, WhiteboardElement } from "@/types/whiteboard";
+import type { SaveSnapshotDTO, WhiteboardEventDTO } from "@/services/whiteboard.service";
 
 export const whiteboardKeys = {
   all: ["whiteboard"] as const,
-  detail: (roomId: string) => [...whiteboardKeys.all, "detail", roomId] as const,
-  elements: (id: string) => [...whiteboardKeys.all, "elements", id] as const,
+  snapshot: (sessionId: string) => [...whiteboardKeys.all, "snapshot", sessionId] as const,
 };
 
-export function useWhiteboard(roomId: string) {
+/** Fetch the whiteboard snapshot for a session */
+export function useWhiteboardSnapshot(sessionId: string) {
   return useQuery({
-    queryKey: whiteboardKeys.detail(roomId),
-    queryFn: () => whiteboardService.getWhiteboard(roomId),
-    enabled: !!roomId,
+    queryKey: whiteboardKeys.snapshot(sessionId),
+    queryFn: () => whiteboardService.getSnapshot(sessionId),
+    enabled: !!sessionId,
   });
 }
 
-export function useWhiteboardElements(id: string) {
-  return useQuery({
-    queryKey: whiteboardKeys.elements(id),
-    queryFn: () => whiteboardService.getElements(id),
-    enabled: !!id,
-  });
-}
-
-export function useCreateWhiteboard() {
+/** Save a whiteboard snapshot */
+export function useSaveWhiteboardSnapshot(sessionId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateWhiteboardDTO) => whiteboardService.createWhiteboard(data),
+    mutationFn: (data: SaveSnapshotDTO) => whiteboardService.saveSnapshot(sessionId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: whiteboardKeys.all });
-      toast.success("Tạo bảng vẽ thành công");
-    },
-    onError: () => toast.error("Không thể tạo bảng vẽ"),
-  });
-}
-
-export function useUpdateWhiteboard() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateWhiteboardDTO }) =>
-      whiteboardService.updateWhiteboard(id, data),
-    onSuccess: (result) => {
-      qc.invalidateQueries({ queryKey: whiteboardKeys.detail(result.room_id) });
+      qc.invalidateQueries({ queryKey: whiteboardKeys.snapshot(sessionId) });
     },
     onError: () => toast.error("Không thể lưu bảng vẽ"),
   });
 }
 
-export function useAddWhiteboardElement() {
-  const qc = useQueryClient();
+/** Send a whiteboard event */
+export function useSendWhiteboardEvent(sessionId: string) {
   return useMutation({
-    mutationFn: ({ id, element }: { id: string; element: Omit<WhiteboardElement, "id"> }) =>
-      whiteboardService.addElement(id, element),
-    onSuccess: (_, { id }) => {
-      qc.invalidateQueries({ queryKey: whiteboardKeys.elements(id) });
-    },
-    onError: () => toast.error("Không thể thêm phần tử"),
+    mutationFn: (data: WhiteboardEventDTO) => whiteboardService.sendEvent(sessionId, data),
+    onError: () => toast.error("Không thể gửi sự kiện bảng vẽ"),
   });
 }

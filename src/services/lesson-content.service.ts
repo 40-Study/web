@@ -1,94 +1,157 @@
 /**
- * Lesson content service — manage video, article, and attachments per lesson
+ * Lesson content service — video, livestream, exercise contents per lesson
+ * Endpoints: /lessons/:lessonId/contents, /lesson-contents/:contentId/classes
  */
 
 import { api } from "@/lib/api-client";
-import type {
-  LessonVideo,
-  LessonArticle,
-  LessonAttachment,
-  CreateLessonVideoDTO,
-  UpdateLessonVideoDTO,
-  CreateLessonArticleDTO,
-  UpdateLessonArticleDTO,
-  CreateLessonAttachmentDTO,
-} from "@/types/lesson-content";
+
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+export type ContentType = "video" | "livestream" | "exercise";
+
+export interface LessonContent {
+  id: string;
+  lesson_id: string;
+  type: ContentType;
+  title: string;
+  video_url?: string;
+  duration?: number;
+  exercise_id?: string;
+  is_mandatory?: boolean;
+  display_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateVideoContentDTO {
+  type: "video";
+  title: string;
+  video_url: string;
+  duration?: number;
+  is_mandatory?: boolean;
+}
+
+export interface CreateLivestreamContentDTO {
+  type: "livestream";
+  title: string;
+  is_mandatory?: boolean;
+}
+
+export interface CreateExerciseContentDTO {
+  type: "exercise";
+  title: string;
+  exercise_id: string;
+  is_mandatory?: boolean;
+}
+
+export type CreateContentDTO =
+  | CreateVideoContentDTO
+  | CreateLivestreamContentDTO
+  | CreateExerciseContentDTO;
+
+export interface UpdateContentDTO {
+  title?: string;
+  duration?: number;
+  is_mandatory?: boolean;
+}
+
+export interface ReorderItem {
+  id: string;
+  display_order: number;
+}
+
+// Class-Content Schedule
+export interface ClassContentSchedule {
+  content_id: string;
+  class_id: string;
+  open_date?: string;
+  due_date?: string;
+  scheduled_at?: string;
+  end_at?: string;
+  status?: string;
+}
+
+export interface CreateClassContentDTO {
+  class_id: string;
+  open_date?: string;
+  due_date?: string;
+  scheduled_at?: string;
+  end_at?: string;
+}
+
+export interface BulkClassContentDTO {
+  class_ids: string[];
+  open_date?: string;
+  due_date?: string;
+}
+
+export interface UpdateClassContentDTO {
+  open_date?: string;
+  due_date?: string;
+  scheduled_at?: string;
+  end_at?: string;
+  status?: string;
+}
+
+type R<T> = { message: string; data: T };
+
+// ─── Service ────────────────────────────────────────────────────────────────
 
 export const lessonContentService = {
-  // ─── Video ────────────────────────────────────────────────────────────────
+  // ── Contents CRUD ─────────────────────────────────────────────────────────
 
-  /** GET /lessons/:lessonId/video */
-  getVideo: (lessonId: string) =>
+  /** GET /lessons/:lessonId/contents */
+  getContents: (lessonId: string) =>
+    api.get<R<LessonContent[]>>(`/lessons/${lessonId}/contents`).then((r) => r.data.data),
+
+  /** POST /lessons/:lessonId/contents */
+  createContent: (lessonId: string, data: CreateContentDTO) =>
+    api.post<R<LessonContent>>(`/lessons/${lessonId}/contents`, data).then((r) => r.data.data),
+
+  /** PUT /lessons/:lessonId/contents/:contentId */
+  updateContent: (lessonId: string, contentId: string, data: UpdateContentDTO) =>
     api
-      .get<{ message: string; data: LessonVideo }>(`/lessons/${lessonId}/video`)
+      .put<R<LessonContent>>(`/lessons/${lessonId}/contents/${contentId}`, data)
       .then((r) => r.data.data),
 
-  /** POST /lessons/:lessonId/video */
-  createVideo: (lessonId: string, data: CreateLessonVideoDTO) =>
+  /** PUT /lessons/:lessonId/contents/reorder */
+  reorderContents: (lessonId: string, items: ReorderItem[]) =>
+    api.put<R<null>>(`/lessons/${lessonId}/contents/reorder`, { items }).then((r) => r.data),
+
+  /** DELETE /lessons/:lessonId/contents/:contentId */
+  deleteContent: (lessonId: string, contentId: string) =>
+    api.delete<R<null>>(`/lessons/${lessonId}/contents/${contentId}`).then((r) => r.data),
+
+  // ── Class-Content Schedule ────────────────────────────────────────────────
+
+  /** POST /lesson-contents/:contentId/classes — assign content to a class */
+  assignToClass: (contentId: string, data: CreateClassContentDTO) =>
     api
-      .post<{ message: string; data: LessonVideo }>(`/lessons/${lessonId}/video`, data)
+      .post<R<ClassContentSchedule>>(`/lesson-contents/${contentId}/classes`, data)
       .then((r) => r.data.data),
 
-  /** PUT /lessons/:lessonId/video */
-  updateVideo: (lessonId: string, data: UpdateLessonVideoDTO) =>
+  /** POST /lesson-contents/:contentId/classes/bulk — bulk assign to classes */
+  bulkAssignToClasses: (contentId: string, data: BulkClassContentDTO) =>
     api
-      .put<{ message: string; data: LessonVideo }>(`/lessons/${lessonId}/video`, data)
+      .post<R<ClassContentSchedule[]>>(`/lesson-contents/${contentId}/classes/bulk`, data)
       .then((r) => r.data.data),
 
-  /** DELETE /lessons/:lessonId/video */
-  deleteVideo: (lessonId: string) =>
+  /** GET /lesson-contents/:contentId/classes */
+  getClassSchedules: (contentId: string, params?: { page?: number; page_size?: number }) =>
     api
-      .delete<{ message: string }>(`/lessons/${lessonId}/video`)
-      .then((r) => r.data),
-
-  // ─── Article ──────────────────────────────────────────────────────────────
-
-  /** GET /lessons/:lessonId/article */
-  getArticle: (lessonId: string) =>
-    api
-      .get<{ message: string; data: LessonArticle }>(`/lessons/${lessonId}/article`)
-      .then((r) => r.data.data),
-
-  /** POST /lessons/:lessonId/article */
-  createArticle: (lessonId: string, data: CreateLessonArticleDTO) =>
-    api
-      .post<{ message: string; data: LessonArticle }>(`/lessons/${lessonId}/article`, data)
-      .then((r) => r.data.data),
-
-  /** PUT /lessons/:lessonId/article */
-  updateArticle: (lessonId: string, data: UpdateLessonArticleDTO) =>
-    api
-      .put<{ message: string; data: LessonArticle }>(`/lessons/${lessonId}/article`, data)
-      .then((r) => r.data.data),
-
-  /** DELETE /lessons/:lessonId/article */
-  deleteArticle: (lessonId: string) =>
-    api
-      .delete<{ message: string }>(`/lessons/${lessonId}/article`)
-      .then((r) => r.data),
-
-  // ─── Attachments ──────────────────────────────────────────────────────────
-
-  /** GET /lessons/:lessonId/attachments */
-  getAttachments: (lessonId: string) =>
-    api
-      .get<{ message: string; data: LessonAttachment[] }>(
-        `/lessons/${lessonId}/attachments`
+      .get<R<{ schedules: ClassContentSchedule[]; total: number }>>(
+        `/lesson-contents/${contentId}/classes`,
+        { params }
       )
       .then((r) => r.data.data),
 
-  /** POST /lessons/:lessonId/attachments */
-  createAttachment: (lessonId: string, data: CreateLessonAttachmentDTO) =>
+  /** PUT /lesson-contents/:contentId/classes/:classId */
+  updateClassSchedule: (contentId: string, classId: string, data: UpdateClassContentDTO) =>
     api
-      .post<{ message: string; data: LessonAttachment }>(
-        `/lessons/${lessonId}/attachments`,
-        data
-      )
+      .put<R<ClassContentSchedule>>(`/lesson-contents/${contentId}/classes/${classId}`, data)
       .then((r) => r.data.data),
 
-  /** DELETE /lessons/:lessonId/attachments/:id */
-  deleteAttachment: (lessonId: string, attachmentId: string) =>
-    api
-      .delete<{ message: string }>(`/lessons/${lessonId}/attachments/${attachmentId}`)
-      .then((r) => r.data),
+  /** DELETE /lesson-contents/:contentId/classes/:classId */
+  removeFromClass: (contentId: string, classId: string) =>
+    api.delete<R<null>>(`/lesson-contents/${contentId}/classes/${classId}`).then((r) => r.data),
 };

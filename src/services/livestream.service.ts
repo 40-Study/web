@@ -1,60 +1,151 @@
 /**
- * Livestream service — CRUD + control operations
- * Endpoints: /livestreams, /livestreams/:id/start|stop|token
+ * Livestream service — session management and controls
+ * Endpoints: /livestream
  */
 
 import { api } from "@/lib/api-client";
-import type {
-  Livestream,
-  LivestreamToken,
-  CreateLivestreamDTO,
-  UpdateLivestreamDTO,
-} from "@/types/livestream";
+
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+export interface LivestreamSession {
+  id: string;
+  title: string;
+  description?: string;
+  host_id: string;
+  max_viewers?: number;
+  is_recorded?: boolean;
+  room_name?: string;
+  status?: string;
+  started_at?: string;
+  ended_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateLivestreamDTO {
+  title: string;
+  description?: string;
+  host_id: string;
+  max_viewers?: number;
+  is_recorded?: boolean;
+}
+
+export interface UpdateLivestreamDTO {
+  title?: string;
+  description?: string;
+  max_viewers?: number;
+}
+
+export interface Participant {
+  user_id: string;
+  user_name?: string;
+  role?: string;
+  joined_at?: string;
+}
+
+export interface ModerationAction {
+  user_id: string;
+  action: "mute" | "kick";
+  reason?: string;
+  duration?: number;
+}
+
+type R<T> = { message: string; data: T };
+
+// ─── Service ────────────────────────────────────────────────────────────────
 
 export const livestreamService = {
-  /** GET /livestreams */
-  getAll: (params?: Record<string, string>) =>
-    api
-      .get<{ data: Livestream[] }>("/livestreams", { params })
-      .then((r) => r.data.data),
+  // ── CRUD ──────────────────────────────────────────────────────────────────
 
-  /** GET /livestreams/:id */
-  getById: (id: string) =>
-    api
-      .get<{ data: Livestream }>(`/livestreams/${id}`)
-      .then((r) => r.data.data),
-
-  /** POST /livestreams */
+  /** POST /livestream */
   create: (data: CreateLivestreamDTO) =>
+    api.post<R<LivestreamSession>>("/livestream", data).then((r) => r.data.data),
+
+  /** GET /livestream */
+  getAll: () =>
+    api.get<R<LivestreamSession[]>>("/livestream").then((r) => r.data.data),
+
+  /** GET /livestream/:sessionId */
+  getById: (sessionId: string) =>
+    api.get<R<LivestreamSession>>(`/livestream/${sessionId}`).then((r) => r.data.data),
+
+  /** PUT /livestream/:sessionId */
+  update: (sessionId: string, data: UpdateLivestreamDTO) =>
+    api.put<R<LivestreamSession>>(`/livestream/${sessionId}`, data).then((r) => r.data.data),
+
+  /** DELETE /livestream/:sessionId */
+  delete: (sessionId: string) =>
+    api.delete<R<null>>(`/livestream/${sessionId}`).then((r) => r.data),
+
+  // ── Session Controls ──────────────────────────────────────────────────────
+
+  /** POST /livestream/:sessionId/start */
+  start: (sessionId: string, roomName: string) =>
     api
-      .post<{ data: Livestream }>("/livestreams", data)
+      .post<R<LivestreamSession>>(`/livestream/${sessionId}/start`, { room_name: roomName })
       .then((r) => r.data.data),
 
-  /** PUT /livestreams/:id */
-  update: (id: string, data: UpdateLivestreamDTO) =>
+  /** POST /livestream/:sessionId/end */
+  end: (sessionId: string) =>
+    api.post<R<null>>(`/livestream/${sessionId}/end`, {}).then((r) => r.data),
+
+  /** POST /livestream/:sessionId/join */
+  join: (sessionId: string, userId: string, role = "viewer") =>
     api
-      .put<{ data: Livestream }>(`/livestreams/${id}`, data)
+      .post<R<null>>(`/livestream/${sessionId}/join`, { user_id: userId, role })
+      .then((r) => r.data),
+
+  /** POST /livestream/:sessionId/leave */
+  leave: (sessionId: string, userId: string) =>
+    api
+      .post<R<null>>(`/livestream/${sessionId}/leave`, { user_id: userId })
+      .then((r) => r.data),
+
+  /** GET /livestream/:sessionId/participants */
+  getParticipants: (sessionId: string) =>
+    api
+      .get<R<Participant[]>>(`/livestream/${sessionId}/participants`)
       .then((r) => r.data.data),
 
-  /** DELETE /livestreams/:id */
-  delete: (id: string) =>
-    api.delete<void>(`/livestreams/${id}`).then(() => undefined),
+  // ── Moderation ────────────────────────────────────────────────────────────
 
-  /** POST /livestreams/:id/start */
-  start: (id: string) =>
-    api
-      .post<{ data: Livestream }>(`/livestreams/${id}/start`, {})
-      .then((r) => r.data.data),
+  /** POST /livestream/:sessionId/mute */
+  mute: (sessionId: string, data: ModerationAction) =>
+    api.post<R<null>>(`/livestream/${sessionId}/mute`, data).then((r) => r.data),
 
-  /** POST /livestreams/:id/stop */
-  stop: (id: string) =>
-    api
-      .post<{ data: Livestream }>(`/livestreams/${id}/stop`, {})
-      .then((r) => r.data.data),
+  /** POST /livestream/:sessionId/kick */
+  kick: (sessionId: string, data: ModerationAction) =>
+    api.post<R<null>>(`/livestream/${sessionId}/kick`, data).then((r) => r.data),
 
-  /** GET /livestreams/:id/token */
-  getToken: (id: string) =>
+  // ── Whiteboard Lock ───────────────────────────────────────────────────────
+
+  /** POST /livestream/:sessionId/lock-whiteboard */
+  lockWhiteboard: (sessionId: string) =>
+    api.post<R<null>>(`/livestream/${sessionId}/lock-whiteboard`, { locked: true }).then((r) => r.data),
+
+  /** POST /livestream/:sessionId/unlock-whiteboard */
+  unlockWhiteboard: (sessionId: string) =>
     api
-      .get<{ data: LivestreamToken }>(`/livestreams/${id}/token`)
-      .then((r) => r.data.data),
+      .post<R<null>>(`/livestream/${sessionId}/unlock-whiteboard`, { locked: false })
+      .then((r) => r.data),
+
+  // ── Screen Share ──────────────────────────────────────────────────────────
+
+  /** POST /livestream/:sessionId/screenshare/start */
+  startScreenShare: (sessionId: string, userId: string) =>
+    api
+      .post<R<null>>(`/livestream/${sessionId}/screenshare/start`, {
+        user_id: userId,
+        action: "start",
+      })
+      .then((r) => r.data),
+
+  /** POST /livestream/:sessionId/screenshare/stop */
+  stopScreenShare: (sessionId: string, userId: string) =>
+    api
+      .post<R<null>>(`/livestream/${sessionId}/screenshare/stop`, {
+        user_id: userId,
+        action: "stop",
+      })
+      .then((r) => r.data),
 };

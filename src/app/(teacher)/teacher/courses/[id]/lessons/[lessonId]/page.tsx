@@ -115,7 +115,7 @@ function LessonDetailContent({
       <Card>
         <CardContent className="space-y-3 p-6">
           <div className="flex items-center gap-2">
-            <Badge>{LESSON_TYPE_LABEL[lesson.type] ?? lesson.type.toUpperCase()}</Badge>
+            <Badge>{LESSON_TYPE_LABEL[lesson.type ?? "article"] ?? (lesson.type ?? "article").toUpperCase()}</Badge>
             <Badge variant={lesson.is_preview ? "success" : "secondary"}>
               {lesson.is_preview ? "Preview" : "Draft"}
             </Badge>

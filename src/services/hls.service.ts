@@ -1,29 +1,35 @@
 /**
- * HLS streaming service — manifest and processing status
+ * HLS streaming service
+ * Endpoints: /hls/:uploadId/*
  */
 
-import { api } from "@/lib/api-client";
-import type { HlsManifest, HlsProcessingStatus } from "@/types/video";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-/**
- * Get HLS manifest for a video.
- * GET /hls/:videoId/manifest
- */
-async function getManifest(videoId: string): Promise<HlsManifest> {
-  const response = await api.get<HlsManifest>(`/hls/${videoId}/manifest`);
-  return response.data;
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+export interface VideoInfo {
+  upload_id: string;
+  duration?: number;
+  qualities?: string[];
+  status: string;
 }
 
-/**
- * Get HLS processing status for a video.
- * GET /hls/:videoId/status
- */
-async function getProcessingStatus(videoId: string): Promise<HlsProcessingStatus> {
-  const response = await api.get<HlsProcessingStatus>(`/hls/${videoId}/status`);
-  return response.data;
-}
+// ─── Service ────────────────────────────────────────────────────────────────
 
 export const hlsService = {
-  getManifest,
-  getProcessingStatus,
+  /** GET /hls/:uploadId/info — video info */
+  getInfo: (uploadId: string) =>
+    fetch(`${API_BASE_URL}/hls/${uploadId}/info`).then((r) => r.json()),
+
+  /** Build master playlist URL (for HLS player) */
+  getMasterPlaylistUrl: (uploadId: string) =>
+    `${API_BASE_URL}/hls/${uploadId}/master.m3u8`,
+
+  /** Build quality playlist URL */
+  getQualityPlaylistUrl: (uploadId: string, quality: string) =>
+    `${API_BASE_URL}/hls/${uploadId}/${quality}/index.m3u8`,
+
+  /** Build segment URL */
+  getSegmentUrl: (uploadId: string, quality: string, segment: string) =>
+    `${API_BASE_URL}/hls/${uploadId}/${quality}/${segment}`,
 };

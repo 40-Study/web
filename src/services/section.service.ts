@@ -1,55 +1,73 @@
 /**
  * Section service — CRUD for course sections
- * All endpoints are nested under /courses/:courseId/sections
+ * Endpoints: /courses/:courseId/sections
  */
 
 import { api } from "@/lib/api-client";
-import type {
-  Section,
-  CreateSectionDTO,
-  UpdateSectionDTO,
-} from "@/types/section";
+
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+export interface Section {
+  id: string;
+  course_id: string;
+  title: string;
+  description?: string;
+  display_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateSectionDTO {
+  title: string;
+  description?: string;
+}
+
+export interface UpdateSectionDTO {
+  title?: string;
+  description?: string;
+}
+
+export interface ReorderItem {
+  id: string;
+  display_order: number;
+}
+
+// ─── Service ────────────────────────────────────────────────────────────────
 
 export const sectionService = {
-  /**
-   * GET /courses/:courseId/sections — list all sections for a course
-   */
+  /** GET /courses/:courseId/sections */
   getSections: (courseId: string) =>
     api
       .get<{ message: string; data: Section[] }>(`/courses/${courseId}/sections`)
       .then((r) => r.data.data),
 
-  /**
-   * POST /courses/:courseId/sections — create a new section
-   */
+  /** GET /courses/:courseId/sections/:sectionId */
+  getSection: (courseId: string, sectionId: string) =>
+    api
+      .get<{ message: string; data: Section }>(`/courses/${courseId}/sections/${sectionId}`)
+      .then((r) => r.data.data),
+
+  /** POST /courses/:courseId/sections */
   createSection: (courseId: string, data: CreateSectionDTO) =>
     api
       .post<{ message: string; data: Section }>(`/courses/${courseId}/sections`, data)
       .then((r) => r.data.data),
 
-  /**
-   * PUT /courses/:courseId/sections/:id — update a section
-   */
-  updateSection: (courseId: string, id: string, data: UpdateSectionDTO) =>
+  /** PUT /courses/:courseId/sections/:sectionId */
+  updateSection: (courseId: string, sectionId: string, data: UpdateSectionDTO) =>
     api
-      .put<{ message: string; data: Section }>(`/courses/${courseId}/sections/${id}`, data)
+      .put<{ message: string; data: Section }>(`/courses/${courseId}/sections/${sectionId}`, data)
       .then((r) => r.data.data),
 
-  /**
-   * DELETE /courses/:courseId/sections/:id — delete a section
-   */
-  deleteSection: (courseId: string, id: string) =>
+  /** PUT /courses/:courseId/sections/reorder */
+  reorderSections: (courseId: string, items: ReorderItem[]) =>
     api
-      .delete<{ message: string }>(`/courses/${courseId}/sections/${id}`)
+      .put<{ message: string }>(`/courses/${courseId}/sections/reorder`, { items })
       .then((r) => r.data),
 
-  /**
-   * PUT /courses/:courseId/sections/reorder — reorder sections by position
-   */
-  reorderSections: (courseId: string, sectionIds: string[]) =>
+  /** DELETE /courses/:courseId/sections/:sectionId */
+  deleteSection: (courseId: string, sectionId: string) =>
     api
-      .put<{ message: string }>(`/courses/${courseId}/sections/reorder`, {
-        section_ids: sectionIds,
-      })
+      .delete<{ message: string }>(`/courses/${courseId}/sections/${sectionId}`)
       .then((r) => r.data),
 };

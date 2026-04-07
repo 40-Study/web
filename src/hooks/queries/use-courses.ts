@@ -4,7 +4,13 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { courseService, type ApiCourse, type CourseListParams } from "@/services/course.service";
+import {
+  courseService,
+  type ApiCourse,
+  type CourseListParams,
+  type CreateCourseDTO,
+  type UpdateCourseDTO,
+} from "@/services/course.service";
 
 export const courseKeys = {
   all: ["courses"] as const,
@@ -70,7 +76,7 @@ export function useFeaturedCourses() {
 export function useCreateCourse() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<ApiCourse>) => courseService.createCourse(data),
+    mutationFn: (data: CreateCourseDTO) => courseService.createCourse(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: courseKeys.all });
       toast.success("Tạo khóa học thành công");
@@ -83,7 +89,7 @@ export function useCreateCourse() {
 export function useUpdateCourse() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<ApiCourse> }) =>
+    mutationFn: ({ id, data }: { id: string; data: UpdateCourseDTO }) =>
       courseService.updateCourse(id, data),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: courseKeys.all });

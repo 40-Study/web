@@ -6,15 +6,15 @@ import { usePermissions } from "@/hooks/queries/use-admin";
 type PermissionState = {
   id: string;
   name: string;
-  description: string;
-  category: string;
+  description?: string;
+  category?: string;
 };
 
 type PermissionForm = {
   id?: string;
   name: string;
-  description: string;
-  category: string;
+  description?: string;
+  category?: string;
 };
 
 const emptyForm: PermissionForm = { name: "", description: "", category: "general" };

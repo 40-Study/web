@@ -49,7 +49,7 @@ export function useAddToCart() {
 export function useRemoveFromCart() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (courseId: string) => cartService.removeFromCart(courseId),
+    mutationFn: (courseId: string) => cartService.removeFromCart([courseId]),
     onSuccess: (_, courseId) => {
       qc.invalidateQueries({ queryKey: cartKeys.detail() });
       qc.invalidateQueries({ queryKey: cartKeys.check(courseId) });

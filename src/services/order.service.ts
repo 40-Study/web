@@ -1,29 +1,32 @@
 /**
- * Order service — real API calls for order management
+ * Order service
+ * Endpoints: /orders
  */
 
 import { api } from "@/lib/api-client";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 export type OrderStatus = "pending" | "paid" | "cancelled" | "refunded";
+export type OrderSource = "buy_now" | "cart";
 
 export interface OrderItem {
   id: string;
   course_id: string;
-  course: { id: string; title: string; price: number; thumbnail?: string };
+  course?: { id: string; title: string; price: number; thumbnail?: string };
   price: number;
 }
 
 export interface Order {
   id: string;
   user_id: string;
+  source: OrderSource;
   items: OrderItem[];
   total: number;
   discount: number;
   final_total: number;
-  voucher_id?: string;
-  voucher_code?: string;
+  coupon_code?: string;
+  note?: string;
   status: OrderStatus;
   payment_method?: string;
   created_at: string;
@@ -31,66 +34,48 @@ export interface Order {
 }
 
 export interface CreateOrderDTO {
-  course_ids: string[];
-  voucher_code?: string;
+  source: OrderSource;
+  course_ids?: string[];
+  coupon_code?: string;
+  note?: string;
+  idempotency_key: string;
 }
 
-// ─── Service ─────────────────────────────────────────────────────────────────
+export interface PaymentIntentDTO {
+  payment_method: string;
+  idempotency_key: string;
+}
+
+type R<T> = { message: string; data: T };
+
+// ─── Service ────────────────────────────────────────────────────────────────
 
 export const orderService = {
-  /**
-   * POST /orders — create a new order
-   */
+  /** POST /orders — create order (buy_now or cart) */
   createOrder: (dto: CreateOrderDTO) =>
-    api
-      .post<{ message: string; data: Order }>("/orders", dto)
-      .then((r) => r.data.data),
+    api.post<R<Order>>("/orders", dto).then((r) => r.data.data),
 
-  /**
-   * GET /orders/me — get current user's orders
-   */
-  getMyOrders: () =>
-    api
-      .get<{ message: string; data: Order[] }>("/orders/me")
-      .then((r) => r.data.data),
+  /** GET /orders/me?page=&limit=&status= */
+  getMyOrders: (params?: { page?: number; limit?: number; status?: string }) =>
+    api.get<R<Order[]>>("/orders/me", { params }).then((r) => r.data.data),
 
-  /**
-   * GET /orders/:id — get a specific order by ID
-   */
+  /** GET /orders/:id */
   getOrder: (id: string) =>
-    api
-      .get<{ message: string; data: Order }>(`/orders/${id}`)
-      .then((r) => r.data.data),
+    api.get<R<Order>>(`/orders/${id}`).then((r) => r.data.data),
 
-  /**
-   * POST /orders/:id/cancel — cancel an order
-   */
-  cancelOrder: (id: string) =>
-    api
-      .post<{ message: string }>(`/orders/${id}/cancel`, {})
-      .then((r) => r.data),
+  /** POST /orders/:id/cancel */
+  cancelOrder: (id: string, reason?: string) =>
+    api.post<R<null>>(`/orders/${id}/cancel`, { reason }).then((r) => r.data),
 
-  /**
-   * POST /orders/:id/payment-intent — create Stripe payment intent
-   */
-  createPaymentIntent: (id: string) =>
-    api
-      .post<{ message: string; data: { client_secret: string } }>(`/orders/${id}/payment-intent`, {})
-      .then((r) => r.data.data),
+  /** POST /orders/:id/payment-intent */
+  createPaymentIntent: (id: string, data: PaymentIntentDTO) =>
+    api.post<R<{ client_secret: string }>>(`/orders/${id}/payment-intent`, data).then((r) => r.data.data),
 
-  /**
-   * GET /orders/:id/payment-status — get payment status of an order
-   */
+  /** GET /orders/:id/payment-status */
   getPaymentStatus: (id: string) =>
-    api
-      .get<{ message: string; data: { status: string } }>(`/orders/${id}/payment-status`)
-      .then((r) => r.data.data),
+    api.get<R<{ status: string }>>(`/orders/${id}/payment-status`).then((r) => r.data.data),
 
-  /**
-   * POST /orders/:id/check-payment — verify if order payment was completed
-   */
+  /** POST /orders/:id/check-payment */
   checkPayment: (id: string) =>
-    api
-      .post<{ message: string; data: { paid: boolean } }>(`/orders/${id}/check-payment`, {})
-      .then((r) => r.data.data),
+    api.post<R<{ paid: boolean }>>(`/orders/${id}/check-payment`, {}).then((r) => r.data.data),
 };

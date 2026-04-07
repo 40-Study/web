@@ -20,7 +20,6 @@ export * from "./use-achievements";
 export * from "./use-leaderboard";
 export {
   assignmentKeys,
-  useAssignments,
   useAssignment,
   useAssignmentSandbox,
   useAssignmentTestCases,
@@ -38,7 +37,6 @@ export {
   useSubmitCode,
   useRunCode,
   useRunCustomInput,
-  useExecuteCode,
 } from "./use-submissions";
 export * from "./use-analytics";
 export * from "./use-wallet";

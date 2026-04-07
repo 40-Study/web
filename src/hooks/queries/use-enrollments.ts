@@ -9,35 +9,14 @@ import type { UpdateProgressDTO } from "@/services/enrollment.service";
 
 export const enrollmentKeys = {
   all: ["enrollments"] as const,
-  my: () => [...enrollmentKeys.all, "my"] as const,
-  byCourse: (courseId: string) => [...enrollmentKeys.all, "course", courseId] as const,
   detail: (id: string) => [...enrollmentKeys.all, "detail", id] as const,
-  progress: (id: string) => [...enrollmentKeys.all, "progress", id] as const,
 };
 
 /** Current user's enrollments */
 export function useMyEnrollments() {
   return useQuery({
-    queryKey: enrollmentKeys.my(),
-    queryFn: () => enrollmentService.getMyEnrollments(),
-  });
-}
-
-/** All enrollments for a course (teacher/admin) */
-export function useCourseEnrollments(courseId: string) {
-  return useQuery({
-    queryKey: enrollmentKeys.byCourse(courseId),
-    queryFn: () => enrollmentService.getCourseEnrollments(courseId),
-    enabled: !!courseId,
-  });
-}
-
-/** Lesson progress for an enrollment */
-export function useEnrollmentProgress(enrollmentId: string) {
-  return useQuery({
-    queryKey: enrollmentKeys.progress(enrollmentId),
-    queryFn: () => enrollmentService.getProgress(enrollmentId),
-    enabled: !!enrollmentId,
+    queryKey: enrollmentKeys.all,
+    queryFn: () => enrollmentService.getAll(),
   });
 }
 
@@ -47,7 +26,7 @@ export function useEnroll() {
   return useMutation({
     mutationFn: (courseId: string) => enrollmentService.enroll(courseId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: enrollmentKeys.my() });
+      qc.invalidateQueries({ queryKey: enrollmentKeys.all });
       toast.success("Đăng ký khóa học thành công");
     },
     onError: () => toast.error("Không thể đăng ký khóa học"),
@@ -58,30 +37,23 @@ export function useEnroll() {
 export function useUnenroll() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (enrollmentId: string) => enrollmentService.unenroll(enrollmentId),
+    mutationFn: (courseId: string) => enrollmentService.unenroll(courseId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: enrollmentKeys.my() });
+      qc.invalidateQueries({ queryKey: enrollmentKeys.all });
       toast.success("Hủy đăng ký thành công");
     },
     onError: () => toast.error("Không thể hủy đăng ký"),
   });
 }
 
-/** Update lesson progress within an enrollment */
+/** Update lesson progress */
 export function useUpdateProgress() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      enrollmentId,
-      lessonId,
-      data,
-    }: {
-      enrollmentId: string;
-      lessonId: string;
-      data: UpdateProgressDTO;
-    }) => enrollmentService.updateProgress(enrollmentId, lessonId, data),
-    onSuccess: (_, { enrollmentId }) => {
-      qc.invalidateQueries({ queryKey: enrollmentKeys.progress(enrollmentId) });
+    mutationFn: ({ lessonId, data }: { lessonId: string; data: UpdateProgressDTO }) =>
+      enrollmentService.updateProgress(lessonId, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: enrollmentKeys.all });
     },
     onError: () => toast.error("Không thể cập nhật tiến độ"),
   });

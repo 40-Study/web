@@ -6,8 +6,8 @@ import {
   courseService,
   ApiCourse,
   ApiCategory,
-  ApiEnrollment,
 } from "@/services/course.service";
+import { categoryService } from "@/services/category.service";
 import {
   Course,
   CourseDetail,
@@ -75,17 +75,30 @@ function mapApiCourse(c: ApiCourse): Course {
   };
 }
 
+interface ApiSectionRaw {
+  id: string;
+  title: string;
+  display_order?: number;
+  lessons?: Array<{
+    id: string;
+    title: string;
+    duration_minutes?: number;
+    is_preview?: boolean;
+    display_order?: number;
+  }>;
+}
+
 function mapApiCourseDetail(c: ApiCourse): CourseDetail {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const apiSections = (c as any).sections ?? [];
+  const apiSections: ApiSectionRaw[] =
+    (c as ApiCourse & { sections?: ApiSectionRaw[] }).sections ?? [];
   return {
     ...mapApiCourse(c),
-    sections: apiSections.map((s: any, si: number) => ({
+    sections: apiSections.map((s, si) => ({
       id: s.id,
       title: s.title,
       order: s.display_order ?? si + 1,
-      duration: (s.lessons ?? []).reduce((sum: number, l: any) => sum + (l.duration_minutes ?? 0), 0),
-      lessons: (s.lessons ?? []).map((l: any, li: number) => ({
+      duration: (s.lessons ?? []).reduce((sum, l) => sum + (l.duration_minutes ?? 0), 0),
+      lessons: (s.lessons ?? []).map((l, li) => ({
         id: l.id,
         title: l.title,
         duration: l.duration_minutes ?? 0,
@@ -97,34 +110,6 @@ function mapApiCourseDetail(c: ApiCourse): CourseDetail {
     reviews: [],
     ratingDistribution: {},
     previewVideoUrl: undefined,
-  };
-}
-
-function mapApiEnrollment(e: ApiEnrollment): EnrolledCourse {
-  return {
-    id: e.course_id || e.id,
-    title: e.course_title || "Unknown",
-    slug: e.course_slug || e.course_id || e.id,
-    description: "",
-    thumbnail: e.course_thumbnail || "",
-    price: 0,
-    rating: 0,
-    reviewCount: 0,
-    studentCount: 0,
-    instructor: { id: "", name: "Unknown" },
-    category: { id: "", name: e.course_category || "Khóa học", slug: "" },
-    level: "beginner",
-    language: "Tiếng Việt",
-    duration: 0,
-    lessonCount: 0,
-    learningOutcomes: [],
-    createdAt: e.enrolled_at || "",
-    updatedAt: "",
-    progress: Number(e.progress_percentage) || 0,
-    completedLessons: 0,
-    totalLessons: 0,
-    lastAccessedAt: e.last_accessed_at,
-    enrolledAt: e.enrolled_at ?? e.created_at ?? "",
   };
 }
 
@@ -198,7 +183,7 @@ export function useCourses(filters: CourseFilters = {}) {
     queryKey: courseKeys.list(filters),
     queryFn: async (): Promise<Course[]> => {
       const raw = await courseService.getCourses();
-      const mapped = raw.map(mapApiCourse);
+      const mapped = raw.courses.map(mapApiCourse);
       return applyFilters(mapped, filters);
     },
     staleTime: 5 * 60 * 1000,
@@ -231,8 +216,13 @@ export function useCategories() {
   return useQuery({
     queryKey: courseKeys.categories(),
     queryFn: async (): Promise<Category[]> => {
-      const raw = await courseService.getCategories();
-      return raw.map(mapApiCategory);
+      const raw = await categoryService.getAll();
+      return raw.map((c): Category => ({
+        id: c.id,
+        name: c.name,
+        slug: c.name.toLowerCase().replace(/\s+/g, "-"),
+        icon: c.icon_url ?? undefined,
+      }));
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -266,7 +256,13 @@ export function useEnrolledCourses() {
     queryKey: courseKeys.enrolled(),
     queryFn: async (): Promise<EnrolledCourse[]> => {
       const raw = await courseService.getEnrolledCourses();
-      return raw.map(mapApiEnrollment);
+      return raw.map((c): EnrolledCourse => ({
+        ...mapApiCourse(c),
+        progress: 0,
+        completedLessons: 0,
+        totalLessons: c.total_lessons ?? 0,
+        enrolledAt: c.created_at ?? "",
+      }));
     },
     staleTime: 60 * 1000,
   });
@@ -322,36 +318,3 @@ export function useEnrollCourse() {
   });
 }
 
-/** Save lesson progress */
-export function useSaveProgress() {
-  return useMutation({
-    mutationFn: (data: { lessonId: string; progress: number; timestamp?: number }) =>
-      courseService.saveProgress(data),
-    onError: (error: unknown) => {
-      console.error("Failed to save progress:", error);
-    },
-  });
-}
-
-/** Mark lesson as complete */
-export function useCompleteLesson() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: (lessonId: string) => courseService.completeLesson(lessonId),
-    onSuccess: (response) => {
-      const xp = response.data?.xp_awarded;
-      if (xp) {
-        toast.success(`+${xp} XP!`, {
-          description: "Bạn đã hoàn thành bài học",
-        });
-      }
-      qc.invalidateQueries({ queryKey: courseKeys.enrolled() });
-      qc.invalidateQueries({ queryKey: courseKeys.all });
-    },
-    onError: (error: unknown) => {
-      console.error("Failed to complete lesson:", error);
-      toast.error("Không thể đánh dấu hoàn thành");
-    },
-  });
-}

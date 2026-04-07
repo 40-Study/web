@@ -7,9 +7,11 @@
 import { Ticket, Clock, CheckCircle, XCircle } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useMyVouchers } from "@/hooks/queries/use-voucher";
-import type { Voucher, VoucherStatus } from "@/types/voucher";
+import type { Voucher } from "@/services/voucher.service";
 
 // ─── Status config ──────────────────────────────────────────────────────────
+
+type VoucherStatus = "active" | "inactive" | "expired";
 
 interface StatusConfig {
   label: string;
@@ -35,21 +37,26 @@ const STATUS_CONFIG: Record<VoucherStatus, StatusConfig> = {
   },
 };
 
+/** Derive a display status from service Voucher fields */
+function getVoucherStatus(v: Voucher): VoucherStatus {
+  if (!v.is_active) return "inactive";
+  if (v.end_date && new Date(v.end_date) < new Date()) return "expired";
+  return "active";
+}
+
 // ─── Voucher card ────────────────────────────────────────────────────────────
 
 function VoucherCard({ voucher }: { voucher: Voucher }) {
-  const status = STATUS_CONFIG[voucher.status];
-  const isExpiredByDate = voucher.expires_at ? new Date(voucher.expires_at) < new Date() : false;
-  const effectiveStatus =
-    voucher.status === "active" && isExpiredByDate ? STATUS_CONFIG.expired : status;
+  const derivedStatus = getVoucherStatus(voucher);
+  const effectiveStatus = STATUS_CONFIG[derivedStatus];
 
   const discountLabel =
     voucher.discount_type === "percentage"
-      ? `Giảm ${voucher.discount_value}%${voucher.max_discount ? ` (tối đa ${formatCurrency(voucher.max_discount)})` : ""}`
+      ? `Giảm ${voucher.discount_value}%${voucher.max_discount_amount ? ` (tối đa ${formatCurrency(voucher.max_discount_amount)})` : ""}`
       : `Giảm ${formatCurrency(voucher.discount_value)}`;
 
-  const expiryDate = voucher.expires_at
-    ? new Date(voucher.expires_at).toLocaleDateString("vi-VN", {
+  const expiryDate = voucher.end_date
+    ? new Date(voucher.end_date).toLocaleDateString("vi-VN", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
@@ -60,7 +67,7 @@ function VoucherCard({ voucher }: { voucher: Voucher }) {
     <div
       className={cn(
         "relative rounded-xl border p-4 transition-shadow",
-        voucher.status === "active" && !isExpiredByDate
+        derivedStatus === "active"
           ? "bg-white shadow-sm hover:shadow-md"
           : "bg-gray-50 opacity-70"
       )}
@@ -94,8 +101,8 @@ function VoucherCard({ voucher }: { voucher: Voucher }) {
 
       {/* Footer: min order + expiry */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400 border-t pt-2 mt-2">
-        {voucher.min_order_value ? (
-          <span>Đơn tối thiểu {formatCurrency(voucher.min_order_value)}</span>
+        {voucher.min_order_amount ? (
+          <span>Đơn tối thiểu {formatCurrency(voucher.min_order_amount)}</span>
         ) : (
           <span>Không yêu cầu đơn tối thiểu</span>
         )}
@@ -115,12 +122,8 @@ function VoucherCard({ voucher }: { voucher: Voucher }) {
 export default function MyVouchersPage() {
   const { data: vouchers = [], isLoading, isError } = useMyVouchers();
 
-  const activeVouchers = vouchers.filter(
-    (v) => v.status === "active" && (!v.expires_at || new Date(v.expires_at) >= new Date())
-  );
-  const inactiveVouchers = vouchers.filter(
-    (v) => v.status !== "active" || (v.expires_at && new Date(v.expires_at) < new Date())
-  );
+  const activeVouchers = vouchers.filter((v) => getVoucherStatus(v) === "active");
+  const inactiveVouchers = vouchers.filter((v) => getVoucherStatus(v) !== "active");
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">

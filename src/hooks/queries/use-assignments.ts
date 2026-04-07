@@ -12,20 +12,10 @@ import {
 
 export const assignmentKeys = {
   all: ["assignments"] as const,
-  bySession: (sessionId: string) => [...assignmentKeys.all, "session", sessionId] as const,
   detail: (id: string) => [...assignmentKeys.all, "detail", id] as const,
   sandbox: (id: string) => [...assignmentKeys.all, "sandbox", id] as const,
   testCases: (id: string) => [...assignmentKeys.all, "testcases", id] as const,
 };
-
-/** List assignments for a session */
-export function useAssignments(sessionId: string) {
-  return useQuery({
-    queryKey: assignmentKeys.bySession(sessionId),
-    queryFn: () => assignmentService.getBySession(sessionId),
-    enabled: !!sessionId,
-  });
-}
 
 /** Single assignment details */
 export function useAssignment(id: string) {
@@ -60,7 +50,7 @@ export function useCreateAssignment() {
   return useMutation({
     mutationFn: (dto: CreateAssignmentDTO) => assignmentService.create(dto),
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: assignmentKeys.bySession(data.session_id) });
+      qc.invalidateQueries({ queryKey: assignmentKeys.detail(data.id) });
       toast.success("Đã tạo bài tập");
     },
     onError: () => toast.error("Không thể tạo bài tập"),
@@ -75,7 +65,6 @@ export function useUpdateAssignment() {
       assignmentService.update(id, dto),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: assignmentKeys.detail(data.id) });
-      qc.invalidateQueries({ queryKey: assignmentKeys.bySession(data.session_id) });
       toast.success("Đã cập nhật bài tập");
     },
     onError: () => toast.error("Không thể cập nhật bài tập"),
@@ -86,10 +75,9 @@ export function useUpdateAssignment() {
 export function useDeleteAssignment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, sessionId }: { id: string; sessionId: string }) =>
-      assignmentService.delete(id).then(() => ({ id, sessionId })),
-    onSuccess: ({ sessionId }) => {
-      qc.invalidateQueries({ queryKey: assignmentKeys.bySession(sessionId) });
+    mutationFn: (id: string) => assignmentService.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: assignmentKeys.all });
       toast.success("Đã xóa bài tập");
     },
     onError: () => toast.error("Không thể xóa bài tập"),
@@ -100,10 +88,10 @@ export function useDeleteAssignment() {
 export function usePublishAssignment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => assignmentService.publish(id),
+    mutationFn: ({ id, sessionId }: { id: string; sessionId: string }) =>
+      assignmentService.publish(id, sessionId),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: assignmentKeys.detail(data.id) });
-      qc.invalidateQueries({ queryKey: assignmentKeys.bySession(data.session_id) });
       toast.success("Bài tập đã được công bố");
     },
     onError: () => toast.error("Không thể công bố bài tập"),
@@ -115,9 +103,8 @@ export function useUnpublishAssignment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => assignmentService.unpublish(id),
-    onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: assignmentKeys.detail(data.id) });
-      qc.invalidateQueries({ queryKey: assignmentKeys.bySession(data.session_id) });
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: assignmentKeys.all });
       toast.success("Đã hủy công bố bài tập");
     },
     onError: () => toast.error("Không thể hủy công bố bài tập"),

@@ -1,40 +1,10 @@
 /**
- * Course service — real API calls following class.service.ts pattern
+ * Course service — matches backend POST /courses, GET /courses, etc.
  */
 
 import { api } from "@/lib/api-client";
 
-// ─── Response types (matching backend handler responses) ────────────────────
-
-export interface ApiCourse {
-  id: string;
-  title: string;
-  slug?: string;
-  short_description?: string;
-  description?: string;
-  thumbnail_url?: string;
-  price?: number | string;
-  discount_price?: number | string;
-  average_rating?: number | string;
-  total_reviews?: number;
-  total_students?: number;
-  instructor_id?: string;
-  instructor?: ApiInstructor;
-  category_id?: string;
-  category?: ApiCategory;
-  level?: string;
-  language?: string;
-  total_duration_minutes?: number;
-  total_lessons?: number;
-  objectives?: string[];
-  requirements?: string[];
-  is_featured?: boolean;
-  is_free?: boolean;
-  status?: string;
-  published_at?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 export interface ApiInstructor {
   id: string;
@@ -57,18 +27,36 @@ export interface ApiCategory {
   updated_at?: string;
 }
 
-export interface ApiEnrollment {
+export interface ApiCourse {
   id: string;
-  user_id: string;
-  course_id: string;
-  course_title?: string;
-  course_slug?: string;
-  course_thumbnail?: string;
-  course_category?: string;
-  progress_percentage?: number | string;
-  completed_at?: string;
-  last_accessed_at?: string;
-  enrolled_at?: string;
+  title: string;
+  slug?: string;
+  short_description?: string;
+  description?: string;
+  thumbnail_url?: string;
+  preview_video_url?: string;
+  price?: number | string;
+  discount_price?: number | string;
+  discount_expires_at?: string;
+  average_rating?: number | string;
+  total_reviews?: number;
+  total_students?: number;
+  instructor_id?: string;
+  instructor?: ApiInstructor;
+  category_id?: string;
+  category?: ApiCategory;
+  level?: string;
+  language?: string;
+  total_duration_minutes?: number;
+  total_lessons?: number;
+  objectives?: string[];
+  requirements?: string[];
+  target_audience?: string[];
+  tag_ids?: string[];
+  is_featured?: boolean;
+  is_free?: boolean;
+  status?: string;
+  published_at?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -76,56 +64,84 @@ export interface ApiEnrollment {
 export interface CourseListParams {
   keyword?: string;
   category_id?: string;
+  instructor_id?: string;
   level?: string;
+  status?: string;
   is_free?: boolean;
+  is_featured?: boolean;
   min_price?: number;
   max_price?: number;
-  status?: string;
   page?: number;
   page_size?: number;
 }
 
-// ─── Service ─────────────────────────────────────────────────────────────────
+export interface CreateCourseDTO {
+  instructor_id?: string;
+  category_id?: string | null;
+  title: string;
+  short_description?: string;
+  description?: string;
+  thumbnail_url?: string | null;
+  preview_video_url?: string | null;
+  level?: string;
+  language?: string;
+  price?: number;
+  discount_price?: number | null;
+  discount_expires_at?: string | null;
+  requirements?: string[];
+  objectives?: string[];
+  target_audience?: string[];
+  is_free?: boolean;
+  tag_ids?: string[];
+}
+
+export interface UpdateCourseDTO {
+  title?: string;
+  short_description?: string;
+  description?: string;
+  thumbnail_url?: string | null;
+  preview_video_url?: string | null;
+  level?: string;
+  language?: string;
+  price?: number;
+  discount_price?: number | null;
+  discount_expires_at?: string | null;
+  requirements?: string[];
+  objectives?: string[];
+  target_audience?: string[];
+  is_free?: boolean;
+  is_featured?: boolean;
+  status?: string;
+  tag_ids?: string[];
+  category_id?: string | null;
+}
+
+// ─── Service ────────────────────────────────────────────────────────────────
 
 export const courseService = {
-  /**
-   * GET /courses — list courses with optional filters
-   */
+  /** GET /courses — list courses with filters (public) */
   getCourses: (params?: CourseListParams) =>
     api
       .get<{ message: string; data: { courses: ApiCourse[]; total: number } }>("/courses", { params })
-      .then((r) => r.data.data.courses),
-
-  /**
-   * GET /courses/:id — get single course by ID
-   */
-  getCourseById: (id: string) =>
-    api
-      .get<{ message: string; data: ApiCourse }>(`/courses/${id}`)
       .then((r) => r.data.data),
 
-  /**
-   * GET /enrollments — get current user's enrolled courses (auth required)
-   */
-  getEnrolledCourses: () =>
-    api
-      .get<{ message: string; data: { enrollments: ApiEnrollment[]; total: number } }>("/enrollments")
-      .then((r) => r.data.data.enrollments),
+  /** GET /courses/:id — single course (public) */
+  getCourseById: (id: string) =>
+    api.get<{ message: string; data: ApiCourse }>(`/courses/${id}`).then((r) => r.data.data),
 
-  /**
-   * GET /categories — list all categories
-   */
-  getCategories: (keyword?: string) =>
-    api
-      .get<{ message: string; data: { categories: ApiCategory[]; total: number } }>("/categories", {
-        params: keyword ? { keyword } : {},
-      })
-      .then((r) => r.data.data.categories),
+  /** POST /courses — create course (auth) */
+  createCourse: (data: CreateCourseDTO) =>
+    api.post<{ message: string; data: ApiCourse }>("/courses", data).then((r) => r.data.data),
 
-  /**
-   * GET /courses with keyword — search courses by keyword
-   * Used for search suggestions (returns lightweight course list)
-   */
+  /** PUT /courses/:id — update course (auth) */
+  updateCourse: (id: string, data: UpdateCourseDTO) =>
+    api.put<{ message: string; data: ApiCourse }>(`/courses/${id}`, data).then((r) => r.data.data),
+
+  /** DELETE /courses/:id — delete course (auth) */
+  deleteCourse: (id: string) =>
+    api.delete<{ message: string }>(`/courses/${id}`).then((r) => r.data),
+
+  /** GET /courses with keyword — search */
   searchCourses: (keyword: string, limit = 10) =>
     api
       .get<{ message: string; data: { courses: ApiCourse[]; total: number } }>("/courses", {
@@ -133,82 +149,33 @@ export const courseService = {
       })
       .then((r) => r.data.data.courses),
 
-  /**
-   * GET /courses with is_featured filter
-   * Note: backend may or may not support is_featured query param.
-   * Falls back gracefully if the param is ignored.
-   */
-  getFeaturedCourses: () =>
+  /** GET /courses/slug/:slug — get course by slug */
+  getCourseBySlug: (slug: string) =>
+    api.get<{ message: string; data: ApiCourse }>(`/courses/slug/${slug}`).then((r) => r.data.data),
+
+  /** GET /courses — teacher's own courses (filtered by current user) */
+  getMyCourses: (params?: { status?: string }) =>
     api
       .get<{ message: string; data: { courses: ApiCourse[]; total: number } }>("/courses", {
-        params: { page_size: 6 },
+        params: { ...params, mine: true, page_size: 100 },
       })
       .then((r) => r.data.data.courses),
 
-  /**
-   * GET /courses/slug/:slug — get course by slug
-   */
-  getCourseBySlug: (slug: string) =>
+  /** GET /enrollments — enrolled courses for current user */
+  getEnrolledCourses: () =>
     api
-      .get<{ message: string; data: ApiCourse }>(`/courses/slug/${slug}`)
+      .get<{ message: string; data: ApiCourse[] }>("/enrollments")
       .then((r) => r.data.data),
 
-  /**
-   * POST /courses/:id/enroll — enroll in a course
-   */
+  /** POST /courses/:courseId/enroll — enroll in a course */
   enroll: (courseId: string) =>
-    api
-      .post<{ message: string }>(`/courses/${courseId}/enroll`, {})
-      .then((r) => r.data),
+    api.post<{ message: string }>(`/courses/${courseId}/enroll`).then((r) => r.data),
 
-  /**
-   * POST /lessons/:id/progress — save lesson progress
-   */
-  saveProgress: (data: { lessonId: string; progress: number; timestamp?: number }) =>
+  /** GET /courses featured */
+  getFeaturedCourses: () =>
     api
-      .post<{ message: string }>(`/lessons/${data.lessonId}/progress`, {
-        progress: data.progress,
-        timestamp: data.timestamp,
+      .get<{ message: string; data: { courses: ApiCourse[]; total: number } }>("/courses", {
+        params: { is_featured: true, page_size: 6 },
       })
-      .then((r) => r.data),
-
-  /**
-   * POST /lessons/:id/complete — mark lesson as complete
-   */
-  completeLesson: (lessonId: string) =>
-    api
-      .post<{ message: string; data: { xp_awarded?: number } }>(`/lessons/${lessonId}/complete`, {})
-      .then((r) => r.data),
-
-  /**
-   * GET /courses/me — get current teacher's courses
-   */
-  getMyCourses: (params?: { status?: string }) =>
-    api
-      .get<{ message: string; data: ApiCourse[] }>("/courses/me", { params })
-      .then((r) => r.data.data),
-
-  /**
-   * POST /courses — create a new course
-   */
-  createCourse: (data: Partial<ApiCourse>) =>
-    api
-      .post<{ message: string; data: ApiCourse }>("/courses", data)
-      .then((r) => r.data.data),
-
-  /**
-   * PUT /courses/:id — update course
-   */
-  updateCourse: (id: string, data: Partial<ApiCourse>) =>
-    api
-      .put<{ message: string; data: ApiCourse }>(`/courses/${id}`, data)
-      .then((r) => r.data.data),
-
-  /**
-   * DELETE /courses/:id — delete course
-   */
-  deleteCourse: (id: string) =>
-    api
-      .delete<{ message: string }>(`/courses/${id}`)
-      .then((r) => r.data),
+      .then((r) => r.data.data.courses),
 };

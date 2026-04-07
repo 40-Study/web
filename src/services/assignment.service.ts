@@ -1,10 +1,11 @@
 /**
- * Assignment service — CRUD for coding assignments in live sessions
+ * Assignment service — live assignments in livestream sessions
+ * Endpoints: /assignments
  */
 
 import { api } from "@/lib/api-client";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 export type DifficultyLevel = "easy" | "medium" | "hard";
 export type ProgrammingLanguage = string;
@@ -45,7 +46,7 @@ export interface TestCaseResponseDTO {
   input: string;
   expected_output: string;
   is_hidden: boolean;
-  order: number;
+  display_order: number;
 }
 
 export interface CreateAssignmentDTO {
@@ -63,62 +64,69 @@ export interface CreateAssignmentDTO {
 
 export type UpdateAssignmentDTO = Partial<Omit<CreateAssignmentDTO, "session_id">>;
 
-type ApiResponse<T> = { message: string; data: T };
+export interface CreateTestCaseDTO {
+  input: string;
+  expected_output: string;
+  is_hidden?: boolean;
+  display_order?: number;
+}
 
-// ─── Service ─────────────────────────────────────────────────────────────────
+type R<T> = { message: string; data: T };
+
+// ─── Service ────────────────────────────────────────────────────────────────
 
 export const assignmentService = {
-  /** GET /assignments/?session_id=X — list assignments for a session */
-  getBySession: (sessionId: string) =>
-    api
-      .get<ApiResponse<AssignmentListDTO>>("/assignments/", { params: { session_id: sessionId } })
-      .then((r) => r.data.data),
-
-  /** GET /assignments/:id — single assignment details */
-  getById: (id: string) =>
-    api
-      .get<ApiResponse<AssignmentResponseDTO>>(`/assignments/${id}`)
-      .then((r) => r.data.data),
-
-  /** GET /assignments/:id/sandbox — sandbox env for an assignment */
-  getSandbox: (id: string) =>
-    api
-      .get<ApiResponse<SandboxResponseDTO>>(`/assignments/${id}/sandbox`)
-      .then((r) => r.data.data),
-
-  /** POST /assignments/ — create a new assignment */
+  /** POST /assignments — create */
   create: (dto: CreateAssignmentDTO) =>
-    api
-      .post<ApiResponse<AssignmentResponseDTO>>("/assignments/", dto)
-      .then((r) => r.data.data),
+    api.post<R<AssignmentResponseDTO>>("/assignments", dto).then((r) => r.data.data),
 
-  /** PUT /assignments/:id — update an assignment */
+  /** GET /assignments/:id */
+  getById: (id: string) =>
+    api.get<R<AssignmentResponseDTO>>(`/assignments/${id}`).then((r) => r.data.data),
+
+  /** GET /assignments/:id/sandbox */
+  getSandbox: (id: string) =>
+    api.get<R<SandboxResponseDTO>>(`/assignments/${id}/sandbox`).then((r) => r.data.data),
+
+  /** PUT /assignments/:id */
   update: (id: string, dto: UpdateAssignmentDTO) =>
-    api
-      .put<ApiResponse<AssignmentResponseDTO>>(`/assignments/${id}`, dto)
-      .then((r) => r.data.data),
+    api.put<R<AssignmentResponseDTO>>(`/assignments/${id}`, dto).then((r) => r.data.data),
 
-  /** DELETE /assignments/:id — delete an assignment */
+  /** DELETE /assignments/:id */
   delete: (id: string) =>
-    api
-      .delete<ApiResponse<null>>(`/assignments/${id}`)
-      .then((r) => r.data),
+    api.delete<R<null>>(`/assignments/${id}`).then((r) => r.data),
 
-  /** POST /assignments/:id/publish — publish an assignment */
-  publish: (id: string) =>
+  /** POST /assignments/:id/publish — publish with session_id */
+  publish: (id: string, sessionId: string) =>
     api
-      .post<ApiResponse<AssignmentResponseDTO>>(`/assignments/${id}/publish`, {})
+      .post<R<AssignmentResponseDTO>>(`/assignments/${id}/publish`, { session_id: sessionId })
       .then((r) => r.data.data),
 
-  /** POST /assignments/:id/unpublish — unpublish an assignment */
+  /** POST /assignments/:id/unpublish */
   unpublish: (id: string) =>
+    api.post<R<null>>(`/assignments/${id}/unpublish`, {}).then((r) => r.data),
+
+  // ── Test Cases ────────────────────────────────────────────────────────────
+
+  /** GET /assignments/:id/testcases */
+  getTestCases: (id: string) =>
+    api.get<R<TestCaseResponseDTO[]>>(`/assignments/${id}/testcases`).then((r) => r.data.data),
+
+  /** POST /assignments/:id/testcases */
+  createTestCase: (id: string, data: CreateTestCaseDTO) =>
     api
-      .post<ApiResponse<AssignmentResponseDTO>>(`/assignments/${id}/unpublish`, {})
+      .post<R<TestCaseResponseDTO>>(`/assignments/${id}/testcases`, data)
       .then((r) => r.data.data),
 
-  /** GET /assignments/:id/testcases — list test cases for an assignment */
-  getTestCases: (id: string) =>
+  /** POST /assignments/:id/testcases/import — bulk import */
+  importTestCases: (id: string, testCases: CreateTestCaseDTO[]) =>
     api
-      .get<ApiResponse<TestCaseResponseDTO[]>>(`/assignments/${id}/testcases`)
+      .post<R<TestCaseResponseDTO[]>>(`/assignments/${id}/testcases/import`, {
+        test_cases: testCases,
+      })
       .then((r) => r.data.data),
+
+  /** DELETE /assignments/:id/testcases/:testcaseId */
+  deleteTestCase: (id: string, testcaseId: string) =>
+    api.delete<R<null>>(`/assignments/${id}/testcases/${testcaseId}`).then((r) => r.data),
 };

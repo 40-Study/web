@@ -1,10 +1,11 @@
 /**
- * Submission service — code submission, run, and sandbox execution
+ * Submission service — code submission, run, and results
+ * Endpoints: /submissions
  */
 
 import { api } from "@/lib/api-client";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 export type SubmissionStatus =
   | "pending"
@@ -44,6 +45,7 @@ export interface SubmissionResponseDTO {
 
 export interface SubmitCodeDTO {
   assignment_id: string;
+  user_id?: string;
   language: string;
   code: string;
 }
@@ -58,13 +60,7 @@ export interface RunCustomInputDTO {
   assignment_id: string;
   language: string;
   code: string;
-  input: string;
-}
-
-export interface ExecuteCodeDTO {
-  language: string;
-  code: string;
-  input?: string;
+  custom_input: string;
 }
 
 export interface RunResultDTO {
@@ -75,50 +71,42 @@ export interface RunResultDTO {
   status: string;
 }
 
-type ApiResponse<T> = { message: string; data: T };
+type R<T> = { message: string; data: T };
 
-// ─── Service ─────────────────────────────────────────────────────────────────
+// ─── Service ────────────────────────────────────────────────────────────────
 
 export const submissionService = {
-  /** POST /submissions/ — submit code for grading */
+  /** POST /submissions — submit code for grading */
   submit: (dto: SubmitCodeDTO) =>
-    api
-      .post<ApiResponse<SubmissionResponseDTO>>("/submissions/", dto)
-      .then((r) => r.data.data),
+    api.post<R<SubmissionResponseDTO>>("/submissions", dto).then((r) => r.data.data),
 
   /** POST /submissions/run — run code against test cases */
   run: (dto: RunCodeDTO) =>
-    api
-      .post<ApiResponse<RunResultDTO>>("/submissions/run", dto)
-      .then((r) => r.data.data),
+    api.post<R<RunResultDTO>>("/submissions/run", dto).then((r) => r.data.data),
 
   /** POST /submissions/run-custom — run code with custom input */
   runCustom: (dto: RunCustomInputDTO) =>
-    api
-      .post<ApiResponse<RunResultDTO>>("/submissions/run-custom", dto)
-      .then((r) => r.data.data),
-
-  /** POST /submissions/execute — free sandbox execution (no assignment) */
-  execute: (dto: ExecuteCodeDTO) =>
-    api
-      .post<ApiResponse<RunResultDTO>>("/submissions/execute", dto)
-      .then((r) => r.data.data),
+    api.post<R<RunResultDTO>>("/submissions/run-custom", dto).then((r) => r.data.data),
 
   /** GET /submissions/:id — get submission details */
   getById: (id: string) =>
-    api
-      .get<ApiResponse<SubmissionResponseDTO>>(`/submissions/${id}`)
-      .then((r) => r.data.data),
+    api.get<R<SubmissionResponseDTO>>(`/submissions/${id}`).then((r) => r.data.data),
 
   /** GET /submissions/assignment/:assignmentId — all submissions for an assignment */
   getByAssignment: (assignmentId: string) =>
     api
-      .get<ApiResponse<SubmissionResponseDTO[]>>(`/submissions/assignment/${assignmentId}`)
+      .get<R<SubmissionResponseDTO[]>>(`/submissions/assignment/${assignmentId}`)
       .then((r) => r.data.data),
 
-  /** GET /submissions/my/:assignmentId — current user's submissions for an assignment */
+  /** GET /submissions/my/:assignmentId — current user's submissions */
   getMySubmissions: (assignmentId: string) =>
     api
-      .get<ApiResponse<SubmissionResponseDTO[]>>(`/submissions/my/${assignmentId}`)
+      .get<R<SubmissionResponseDTO[]>>(`/submissions/my/${assignmentId}`)
+      .then((r) => r.data.data),
+
+  /** GET /submissions/user/:userId — all submissions by a user */
+  getByUser: (userId: string) =>
+    api
+      .get<R<SubmissionResponseDTO[]>>(`/submissions/user/${userId}`)
       .then((r) => r.data.data),
 };

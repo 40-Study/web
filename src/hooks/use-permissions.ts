@@ -4,10 +4,8 @@
  * Hooks for permission queries and creation
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { permissionService } from "@/services/permission.service";
-import type { CreatePermissionData } from "@/types/permission";
 
 export const permissionKeys = {
   all: ["permissions"] as const,
@@ -19,7 +17,7 @@ export const permissionKeys = {
 export function usePermissions() {
   return useQuery({
     queryKey: permissionKeys.list(),
-    queryFn: permissionService.getPermissions,
+    queryFn: permissionService.getAll,
     staleTime: 10 * 60 * 1000,
   });
 }
@@ -28,22 +26,7 @@ export function usePermissions() {
 export function usePermission(id: string) {
   return useQuery({
     queryKey: permissionKeys.detail(id),
-    queryFn: () => permissionService.getPermission(id),
+    queryFn: () => permissionService.getById(id),
     enabled: !!id,
-  });
-}
-
-/** Create a new permission */
-export function useCreatePermission() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreatePermissionData) => permissionService.createPermission(data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: permissionKeys.list() });
-      toast.success("Tạo quyền thành công");
-    },
-    onError: (err: Error) => {
-      toast.error("Tạo quyền thất bại", { description: err.message });
-    },
   });
 }

@@ -1,44 +1,49 @@
 /**
- * Whiteboard service — collaborative whiteboard per room
- * Endpoints: /whiteboards, /whiteboards/:id/elements
+ * Whiteboard service — snapshot and event management
+ * Endpoints: /whiteboard/:sessionId/snapshot, /whiteboard/:sessionId/event
  */
 
 import { api } from "@/lib/api-client";
-import type {
-  Whiteboard,
-  WhiteboardElement,
-  CreateWhiteboardDTO,
-  UpdateWhiteboardDTO,
-} from "@/types/whiteboard";
+
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+export interface WhiteboardSnapshot {
+  session_id: string;
+  snapshot_data: string;
+  version: number;
+  updated_at?: string;
+}
+
+export interface SaveSnapshotDTO {
+  session_id: string;
+  snapshot_data: string;
+  version: number;
+}
+
+export interface WhiteboardEventDTO {
+  type: string;
+  action: string;
+  payload: string;
+}
+
+type R<T> = { message: string; data: T };
+
+// ─── Service ────────────────────────────────────────────────────────────────
 
 export const whiteboardService = {
-  /** GET /whiteboards/:roomId */
-  getWhiteboard: (roomId: string) =>
+  /** GET /whiteboard/:sessionId/snapshot */
+  getSnapshot: (sessionId: string) =>
+    api.get<R<WhiteboardSnapshot>>(`/whiteboard/${sessionId}/snapshot`).then((r) => r.data.data),
+
+  /** POST /whiteboard/:sessionId/snapshot */
+  saveSnapshot: (sessionId: string, data: SaveSnapshotDTO) =>
     api
-      .get<{ data: Whiteboard }>(`/whiteboards/${roomId}`)
+      .post<R<WhiteboardSnapshot>>(`/whiteboard/${sessionId}/snapshot`, data)
       .then((r) => r.data.data),
 
-  /** POST /whiteboards */
-  createWhiteboard: (data: CreateWhiteboardDTO) =>
+  /** POST /whiteboard/:sessionId/event */
+  sendEvent: (sessionId: string, data: WhiteboardEventDTO) =>
     api
-      .post<{ data: Whiteboard }>("/whiteboards", data)
-      .then((r) => r.data.data),
-
-  /** PUT /whiteboards/:id */
-  updateWhiteboard: (id: string, data: UpdateWhiteboardDTO) =>
-    api
-      .put<{ data: Whiteboard }>(`/whiteboards/${id}`, data)
-      .then((r) => r.data.data),
-
-  /** GET /whiteboards/:id/elements */
-  getElements: (id: string) =>
-    api
-      .get<{ data: WhiteboardElement[] }>(`/whiteboards/${id}/elements`)
-      .then((r) => r.data.data),
-
-  /** POST /whiteboards/:id/elements */
-  addElement: (id: string, element: Omit<WhiteboardElement, "id">) =>
-    api
-      .post<{ data: WhiteboardElement }>(`/whiteboards/${id}/elements`, element)
-      .then((r) => r.data.data),
+      .post<R<null>>(`/whiteboard/${sessionId}/event`, data)
+      .then((r) => r.data),
 };

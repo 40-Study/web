@@ -10,7 +10,8 @@ import { Tag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, formatCurrency } from "@/lib/utils";
-import { useValidateVoucher } from "@/hooks/queries/use-voucher";
+import { useVoucherLookup } from "@/hooks/queries/use-voucher";
+import type { Voucher as ServiceVoucher } from "@/services/voucher.service";
 import type { VoucherValidateResponse } from "@/types/voucher";
 
 interface VoucherInputProps {
@@ -25,31 +26,44 @@ export function VoucherInput({ courseIds, onApplied, className }: VoucherInputPr
   const [applied, setApplied] = useState<VoucherValidateResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const validateMutation = useValidateVoucher();
+  const lookupMutation = useVoucherLookup();
 
   function handleApply() {
     const trimmed = code.trim();
     if (!trimmed) return;
 
     setErrorMessage(null);
-    validateMutation.mutate(
-      { code: trimmed, courseIds },
-      {
-        onSuccess(result) {
-          if (result.valid) {
-            setApplied(result);
-            onApplied(result);
-          } else {
-            setErrorMessage(result.message ?? "Mã không hợp lệ");
-            setApplied(null);
-            onApplied(null);
-          }
-        },
-        onError() {
-          setErrorMessage("Không thể kiểm tra voucher, thử lại sau");
-        },
-      }
-    );
+    lookupMutation.mutate(trimmed, {
+      onSuccess(voucher: ServiceVoucher) {
+        const discountAmount =
+          voucher.discount_type === "percentage"
+            ? voucher.discount_value // parent will compute actual amount
+            : voucher.discount_value;
+        const result: VoucherValidateResponse = {
+          valid: !!voucher.is_active,
+          voucher: {
+            id: voucher.id,
+            code: voucher.code,
+            discount_type: voucher.discount_type,
+            discount_value: voucher.discount_value,
+            status: voucher.is_active ? "active" : "inactive",
+          },
+          discount_amount: discountAmount,
+          final_total: 0,
+        };
+        if (result.valid) {
+          setApplied(result);
+          onApplied(result);
+        } else {
+          setErrorMessage("Mã voucher không còn hoạt động");
+          setApplied(null);
+          onApplied(null);
+        }
+      },
+      onError() {
+        setErrorMessage("Không thể kiểm tra voucher, thử lại sau");
+      },
+    });
   }
 
   function handleRemove() {
@@ -86,15 +100,15 @@ export function VoucherInput({ courseIds, onApplied, className }: VoucherInputPr
           }}
           onKeyDown={(e) => e.key === "Enter" && handleApply()}
           className="flex-1 uppercase placeholder:normal-case"
-          disabled={validateMutation.isPending}
+          disabled={lookupMutation.isPending}
         />
         <Button
           variant="outline"
           onClick={handleApply}
-          disabled={!code.trim() || validateMutation.isPending}
+          disabled={!code.trim() || lookupMutation.isPending}
           className="shrink-0"
         >
-          {validateMutation.isPending ? "Đang kiểm tra..." : "Áp dụng"}
+          {lookupMutation.isPending ? "Đang kiểm tra..." : "Áp dụng"}
         </Button>
       </div>
       {errorMessage && (

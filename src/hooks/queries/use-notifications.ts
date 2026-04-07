@@ -4,6 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notificationService } from "@/services/notification.service";
+import { useAuthStore } from "@/stores/auth.store";
 
 // ─── Query Keys ──────────────────────────────────────────────────────────────
 
@@ -15,19 +16,23 @@ export const notificationKeys = {
 
 // ─── Queries ─────────────────────────────────────────────────────────────────
 
-/** List notifications, paginated */
+/** List notifications, paginated — only fetches when authenticated */
 export function useNotifications(page?: number) {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: notificationKeys.list(page),
     queryFn: () => notificationService.list({ page: page ?? 1, page_size: 20 }),
+    enabled: isAuthenticated,
   });
 }
 
-/** Unread count — polls every 30s */
+/** Unread count — polls every 30s, only when authenticated */
 export function useUnreadCount() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: notificationKeys.unreadCount(),
     queryFn: () => notificationService.getUnreadCount(),
+    enabled: isAuthenticated,
     refetchInterval: 30_000,
   });
 }
