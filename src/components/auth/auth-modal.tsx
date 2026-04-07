@@ -4,26 +4,25 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { X, ArrowLeft, Plus, Mail, UserCheck, FileText, ShieldCheck } from "lucide-react";
+import { X, ArrowLeft, Mail, UserCheck, FileText, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AUTH_CONFIG, ROLE_NAME_MAP, STORAGE_KEYS } from "@/lib/constants";
+import { AUTH_CONFIG, STORAGE_KEYS } from "@/lib/constants";
 import { showComingSoon } from "@/lib/toast-helpers";
+import { startOAuthFlow } from "@/services/auth.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SocialLoginButton } from "@/components/auth/social-login-button";
 import { RoleCard } from "@/components/auth/role-card";
-import { SelectionCard } from "@/components/auth/selection-card";
+
 import { OtpInput } from "@/components/auth/otp-input";
 import { AuthIconHeader } from "@/components/auth/auth-icon-header";
 import { MailIcon } from "@/components/icons";
 import type { RoleType } from "@/components/auth/role-card";
-import { useQueryClient } from "@tanstack/react-query";
-import { useLogin, useRegisterRequest, useRegister, useSelectProfile, useSelectOrg, authKeys } from "@/hooks/queries/use-auth";
+import { useLogin, useRegisterRequest, useRegister, useSelectRole } from "@/hooks/queries/use-auth";
 import { authService, getDeviceInfo } from "@/services/auth.service";
-import type { SystemRole } from "@/services/auth.service";
-import type { Permission } from "@/lib/permissions";
+import type { SystemRoleOption } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
-import { roleService } from "@/services/role.service";
+import type { UnifiedRole } from "@/stores/auth.store";
 import { AUTH_ROUTES, getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -33,7 +32,6 @@ type ModalView =
     | "login-role"
     | "login-org"
     | "register"
-    | "register-role"
     | "register-form"
     | "register-otp"
     | "register-success";
@@ -159,8 +157,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
     const backMap: Partial<Record<ModalView, ModalView>> = {
         "login-role": "login",
         "login-org": "login-role",
-        "register-role": "register",
-        "register-form": "register-role",
+        "register-form": "register",
         "register-otp": "register-form",
     };
     const canGoBack = view in backMap;
@@ -168,9 +165,8 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
     // Register step index
     const registerStepMap: Partial<Record<ModalView, number>> = {
         register: 0,
-        "register-role": 1,
-        "register-form": 2,
-        "register-otp": 3,
+        "register-form": 1,
+        "register-otp": 2,
     };
     const isRegisterFlow = view in registerStepMap;
 
@@ -253,7 +249,10 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                             onLoginSuccess={(nextStep) => {
                                 // Defer to next tick to allow Zustand store updates to complete
                                 setTimeout(() => {
-                                    if (nextStep === "direct") {
+                                    if (nextStep === "needs-role") {
+                                        // User chưa có role → hiện cùng màn chọn role (sẽ fetch all roles)
+                                        setView("login-role");
+                                    } else if (nextStep === "direct") {
                                         // Direct login complete - redirect based on latest active role in store
                                         handleActualClose();
                                         const currentRole = useAuthStore.getState().activeRole;
@@ -279,11 +278,8 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                     {view === "register" && (
                         <RegisterMethodView
                             onSwitchToLogin={() => setView("login")}
-                            onEmailSelected={() => setView("register-role")}
+                            onEmailSelected={() => setView("register-form")}
                         />
-                    )}
-                    {view === "register-role" && (
-                        <RegisterRoleView onNext={() => setView("register-form")} />
                     )}
                     {view === "register-form" && (
                         <RegisterFormView
@@ -323,7 +319,7 @@ function LoginView({
 }: {
     onClose: () => void;
     onSwitchToRegister: () => void;
-    onLoginSuccess: (nextStep: "direct" | "select-role" | "select-org") => void;
+    onLoginSuccess: (nextStep: "direct" | "select-role" | "select-org" | "needs-role") => void;
 }) {
     const loginMutation = useLogin();
     const [email, setEmail] = useState("");
@@ -338,21 +334,26 @@ function LoginView({
                 onSuccess: (response) => {
                     const data = response.data;
 
-                    // Always show role selection if user has roles
-                    // Even single-role users should see the role picker for clarity
-                    if (data.system_roles && data.system_roles.length >= 1) {
+                    // User chưa có role → redirect chọn role đăng ký
+                    if (data.needs_role_registration) {
+                        onLoginSuccess("needs-role");
+                        return;
+                    }
+
+                    // Direct login (1 role, có access_token) → vào app
+                    if (data.access_token) {
+                        onLoginSuccess("direct");
+                        return;
+                    }
+
+                    // Multi-role → có session_token + roles → chọn role
+                    if (data.roles && data.roles.length > 0) {
                         onLoginSuccess("select-role");
                         return;
                     }
 
-                    // requires_org_selection → needs org selection
-                    if (data.requires_org_selection) {
-                        onLoginSuccess("select-org");
-                        return;
-                    }
-
-                    // Fallback: direct login (no roles returned)
-                    onLoginSuccess("direct");
+                    // Fallback
+                    onLoginSuccess("select-role");
                 },
             }
         );
@@ -413,9 +414,10 @@ function LoginView({
 
             {/* Social icons only - no text */}
             <div className="flex justify-center gap-4">
-                {(["google", "facebook", "apple", "github"] as const).map((provider) => (
-                    <SocialLoginButton key={provider} provider={provider} onClick={showComingSoon} iconOnly />
+                {(["google", "facebook", "github"] as const).map((provider) => (
+                    <SocialLoginButton key={provider} provider={provider} onClick={() => startOAuthFlow(provider)} iconOnly />
                 ))}
+                <SocialLoginButton provider="apple" onClick={showComingSoon} iconOnly />
             </div>
 
             <p className="mt-6 text-center text-sm text-gray-500">
@@ -430,167 +432,163 @@ function LoginView({
 
 // ─── LOGIN ROLE VIEW ────────────────────────────────────────────────────────
 
-const roleRoutes: Record<RoleType, string> = {
-    student: AUTH_ROUTES.LOGIN_ORGANIZATION,
-    parent: AUTH_ROUTES.LOGIN_CHILDREN,
-    teacher: AUTH_ROUTES.LOGIN_ORGANIZATION,
-    admin: AUTH_ROUTES.LOGIN_ORGANIZATION,
-};
 
-function LoginRoleView({ onNext, onComplete }: { onNext: () => void; onComplete: () => void }) {
+function LoginRoleView({ onNext: _onNext, onComplete }: { onNext: () => void; onComplete: () => void }) {
     const router = useRouter();
-    const { systemRoles, sessionToken, token, setActiveRole, setPermissions } = useAuthStore();
-    const selectProfile = useSelectProfile();
-    const qc = useQueryClient();
-    const [selectedRole, setSelectedRole] = useState<SystemRole | null>(null);
-    const [isAutoNavigating, setIsAutoNavigating] = useState(false);
+    const { roles: unifiedRoles, sessionToken, token, setActiveRole } = useAuthStore();
+    const selectRoleMutation = useSelectRole();
+    const [selectedRole, setSelectedRole] = useState<UnifiedRole | null>(null);
+    const [showAddRole, setShowAddRole] = useState(false);
+    const [allSystemRoles, setAllSystemRoles] = useState<SystemRoleOption[]>([]);
+    const [selectedSystemRole, setSelectedSystemRole] = useState<SystemRoleOption | null>(null);
+    const [loadingRoles, setLoadingRoles] = useState(false);
 
-    // Ensure systemRoles is always an array (memoized to prevent useEffect dependency issues)
-    const roles = useMemo(() => systemRoles ?? [], [systemRoles]);
-
-    // Login already completed (1 role, 0 orgs) → token already set, no sessionToken
+    const hasRoles = unifiedRoles.length > 0;
     const isAlreadyCompleted = !!token && !sessionToken;
 
-    // Initialize selected role after mount
+    // 0 roles → fetch all available system roles
     useEffect(() => {
-        if (roles.length > 0 && !selectedRole) {
-            setSelectedRole(roles[0]);
-        }
-    }, [roles, selectedRole]);
+        if (!hasRoles) fetchAllSystemRoles();
+    }, [hasRoles]);
 
-    // Auto-navigate when login is already completed
     useEffect(() => {
-        if (isAlreadyCompleted && selectedRole && !isAutoNavigating) {
-            setIsAutoNavigating(true);
-            setActiveRole(normalizeRole(selectedRole.name));
-            authService.getMe()
-                .then((me) => setPermissions(me.permissions as Permission[]))
-                .catch(() => { /* Non-critical */ })
-                .finally(() => {
-                    qc.invalidateQueries({ queryKey: authKeys.all });
-                    onComplete();
-                    router.push(getRoleHomeRoute(selectedRole?.name));
-                });
+        if (unifiedRoles.length > 0 && !selectedRole) setSelectedRole(unifiedRoles[0]);
+    }, [unifiedRoles, selectedRole]);
+
+    // If already logged in with token (direct login), just navigate
+    useEffect(() => {
+        if (isAlreadyCompleted && !selectRoleMutation.isPending) {
+            onComplete();
+            const currentRole = useAuthStore.getState().activeRole;
+            router.push(getRoleHomeRoute(currentRole));
         }
-    }, [isAlreadyCompleted, selectedRole, isAutoNavigating, setActiveRole, setPermissions, qc, onComplete, router]);
+    }, [isAlreadyCompleted, selectRoleMutation.isPending, onComplete, router]);
+
+    async function fetchAllSystemRoles() {
+        setLoadingRoles(true);
+        try {
+            const data = await authService.getAllSystemRoles();
+            setAllSystemRoles(data.system_roles || []);
+        } catch { setAllSystemRoles([]); }
+        finally { setLoadingRoles(false); }
+    }
+
+    const existingRoleNames = unifiedRoles.map((r) => r.role_name.toUpperCase());
+    const availableNewRoles = allSystemRoles.filter((r) => !existingRoleNames.includes(r.name.toUpperCase()));
+    const isNewRoleMode = !hasRoles || showAddRole;
 
     const handleContinue = async () => {
-        if (!selectedRole || isAutoNavigating) return;
-
-        // Need to call selectProfile with session token
-        try {
-            await selectProfile.mutateAsync(selectedRole.id);
-            setActiveRole(normalizeRole(selectedRole.name));
-            onNext();
-        } catch (error) {
-            console.error("Failed to select profile:", error);
+        if (selectedRole) {
+            // Chọn unified role đã có → gọi select-role
+            selectRoleMutation.mutate(
+                { roleId: selectedRole.id, roleType: selectedRole.type, organizationId: selectedRole.organization_id },
+                {
+                    onSuccess: () => {
+                        onComplete();
+                    },
+                }
+            );
+        } else if (selectedSystemRole) {
+            // User chưa có role hoặc thêm mới → gửi system role ID
+            selectRoleMutation.mutate(
+                { roleId: selectedSystemRole.id, roleType: "system" },
+                {
+                    onSuccess: () => {
+                        onComplete();
+                    },
+                }
+            );
         }
     };
 
+    const title = !hasRoles ? "Chọn vai trò của bạn" : showAddRole ? "Thêm vai trò mới" : "Đăng nhập với tư cách:";
+    const subtitle = !hasRoles ? "Chọn vai trò để bắt đầu" : showAddRole ? "Chọn vai trò bạn muốn thêm" : "Chọn vai trò của bạn để tiếp tục";
+
     return (
         <>
-            <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">
-                Đăng nhập với tư cách:
-            </h2>
-            <p className="mb-6 text-center text-sm text-gray-500">Chọn vai trò của bạn để tiếp tục</p>
+            <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">{title}</h2>
+            <p className="mb-6 text-center text-sm text-gray-500">{subtitle}</p>
 
             <div className="space-y-3" role="radiogroup" aria-label="Chọn vai trò">
-                {roles.length > 0 ? (
-                    roles.map((role) => (
+                {isNewRoleMode ? (
+                    loadingRoles ? (
+                        <div className="flex justify-center py-4">
+                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-200 border-t-primary-600" />
+                        </div>
+                    ) : availableNewRoles.length > 0 ? (
+                        availableNewRoles.map((role) => (
+                            <RoleCard
+                                key={role.id}
+                                role={role.name.toLowerCase() as RoleType}
+                                selected={selectedSystemRole?.id === role.id}
+                                onClick={() => { setSelectedSystemRole(role); setSelectedRole(null); }}
+                            />
+                        ))
+                    ) : (
+                        <p className="text-center text-sm text-gray-500">
+                            {showAddRole ? "Bạn đã có tất cả vai trò." : "Không tìm thấy vai trò nào."}
+                        </p>
+                    )
+                ) : (
+                    unifiedRoles.map((role) => (
                         <RoleCard
                             key={role.id}
-                            role={role.name.toLowerCase() as RoleType}
+                            role={role.role_name.toLowerCase() as RoleType}
                             selected={selectedRole?.id === role.id}
-                            onClick={() => setSelectedRole(role)}
+                            onClick={() => { setSelectedRole(role); setSelectedSystemRole(null); }}
+                            label={role.display_name}
+                            subtitle={role.type === "organization" && role.organization_name ? role.organization_name : undefined}
                         />
                     ))
-                ) : (
-                    <p className="text-center text-sm text-gray-500">
-                        Không tìm thấy vai trò nào. Vui lòng đăng nhập lại.
-                    </p>
                 )}
             </div>
 
-            <Button
-                onClick={handleContinue}
-                disabled={!selectedRole || selectProfile.isPending || isAutoNavigating}
-                className="mt-6 h-12 w-full"
-            >
-                {(selectProfile.isPending || isAutoNavigating) ? "Đang xử lý..." : "Tiếp tục"}
-            </Button>
+            <div className="mt-6 space-y-3">
+                <Button
+                    onClick={handleContinue}
+                    disabled={(!selectedRole && !selectedSystemRole) || selectRoleMutation.isPending}
+                    className="h-12 w-full"
+                >
+                    {selectRoleMutation.isPending ? "Đang xử lý..." : "Tiếp tục"}
+                </Button>
+
+                {hasRoles && !showAddRole && (
+                    <Button variant="outline" onClick={() => { setShowAddRole(true); setSelectedRole(null); if (allSystemRoles.length === 0) fetchAllSystemRoles(); }} className="h-12 w-full">
+                        + Thêm vai trò mới
+                    </Button>
+                )}
+
+                {showAddRole && (
+                    <Button variant="outline" onClick={() => { setShowAddRole(false); setSelectedSystemRole(null); setSelectedRole(unifiedRoles[0] || null); }} className="h-12 w-full">
+                        Quay lại chọn vai trò
+                    </Button>
+                )}
+            </div>
         </>
     );
 }
 
 // ─── LOGIN ORG VIEW ─────────────────────────────────────────────────────────
 
+/**
+ * LoginOrgView - DEPRECATED
+ * Org selection is now embedded in the unified role selection.
+ * Org roles appear as "Role - OrgName" in LoginRoleView.
+ * This view redirects back to role selection.
+ */
 function LoginOrgView({ onClose }: { onClose: () => void }) {
-    const { organizations, setActiveOrg } = useAuthStore();
-    const selectOrg = useSelectOrg();
-    const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
+    const router = useRouter();
 
-    const handleContinue = async () => {
-        if (!selectedOrgId) return;
-        try {
-            await selectOrg.mutateAsync({ organization_id: selectedOrgId });
-            const org = organizations.find((o) => o.id === selectedOrgId);
-            if (org) {
-                setActiveOrg({ id: org.id, name: org.name });
-            }
-            onClose();
-        } catch (error) {
-            console.error("Failed to select organization:", error);
-        }
-    };
+    useEffect(() => {
+        // Org selection no longer needed as a separate step
+        onClose();
+        router.push(getRoleHomeRoute(useAuthStore.getState().activeRole));
+    }, [onClose, router]);
 
     return (
-        <>
-            <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">
-                Chọn tổ chức của bạn
-            </h2>
-            <p className="mb-6 text-center text-sm text-gray-500">
-                Chọn tổ chức bạn muốn đăng nhập
-            </p>
-
-            <div className="space-y-3" role="radiogroup" aria-label="Chọn tổ chức">
-                {organizations.length > 0 ? (
-                    organizations.map((org) => (
-                        <SelectionCard
-                            key={org.id}
-                            selected={selectedOrgId === org.id}
-                            onClick={() => setSelectedOrgId(org.id)}
-                            avatar={org.code?.slice(0, 2) || org.name.slice(0, 2)}
-                            title={org.name}
-                            subtitle={org.code || ""}
-                        />
-                    ))
-                ) : (
-                    <p className="text-center text-sm text-gray-500">
-                        Không tìm thấy tổ chức nào.
-                    </p>
-                )}
-
-                {/* Add new profile / org button */}
-                <button
-                    type="button"
-                    onClick={() => showComingSoon()}
-                    className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-300 px-5 py-4 text-sm font-medium text-gray-500 transition-all hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50"
-                >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-gray-300">
-                        <Plus className="w-6 h-6" />
-                    </div>
-                    <span>Thêm hồ sơ mới</span>
-                </button>
-            </div>
-
-            <Button
-                onClick={handleContinue}
-                disabled={!selectedOrgId || selectOrg.isPending}
-                className="mt-6 h-12 w-full"
-            >
-                {selectOrg.isPending ? "Đang xử lý..." : "Tiếp tục"}
-            </Button>
-        </>
+        <div className="flex justify-center py-8">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-200 border-t-primary-600" />
+        </div>
     );
 }
 
@@ -611,10 +609,10 @@ function RegisterMethodView({
             <p className="mb-6 text-center text-sm text-gray-500">Chọn phương thức đăng ký</p>
 
             <div className="space-y-3">
-                <SocialLoginButton provider="google" onClick={showComingSoon} />
-                <SocialLoginButton provider="facebook" onClick={showComingSoon} />
+                <SocialLoginButton provider="google" onClick={() => startOAuthFlow("google")} />
+                <SocialLoginButton provider="facebook" onClick={() => startOAuthFlow("facebook")} />
                 <SocialLoginButton provider="apple" onClick={showComingSoon} />
-                <SocialLoginButton provider="github" onClick={showComingSoon} />
+                <SocialLoginButton provider="github" onClick={() => startOAuthFlow("github")} />
                 <SocialLoginButton provider="email" onClick={onEmailSelected} />
             </div>
 
@@ -630,41 +628,6 @@ function RegisterMethodView({
 
 // ─── REGISTER ROLE VIEW ─────────────────────────────────────────────────────
 
-function RegisterRoleView({ onNext }: { onNext: () => void }) {
-    const setRegisterRole = useAuthStore((s) => s.setRegisterRole);
-    const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
-
-    const handleContinue = () => {
-        if (!selectedRole) return;
-        setRegisterRole(selectedRole);
-        onNext();
-    };
-
-    return (
-        <>
-            <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">
-                Bạn sử dụng hệ thống với vai trò
-            </h2>
-            <p className="mb-6 text-center text-sm text-gray-500">Chọn vai trò phù hợp với bạn</p>
-
-            <div className="space-y-3" role="radiogroup" aria-label="Chọn vai trò">
-                {(["student", "parent", "teacher", "admin"] as RoleType[]).map((role) => (
-                    <RoleCard
-                        key={role}
-                        role={role}
-                        selected={selectedRole === role}
-                        onClick={() => setSelectedRole(role)}
-                    />
-                ))}
-            </div>
-
-            <Button onClick={handleContinue} disabled={!selectedRole} className="mt-6 h-12 w-full">
-                Tiếp tục
-            </Button>
-        </>
-    );
-}
-
 // ─── REGISTER FORM VIEW ─────────────────────────────────────────────────────
 
 function RegisterFormView({
@@ -675,7 +638,6 @@ function RegisterFormView({
     onNext: (email: string) => void;
 }) {
     const registerRequest = useRegisterRequest();
-    const registerRole = useAuthStore((s) => s.registerRole);
     const [formData, setFormData] = useState({
         username: "",
         firstName: "",
@@ -705,24 +667,12 @@ function RegisterFormView({
         }
 
         try {
-            // Resolve role ID from selected role
-            let roleId = "";
-            if (registerRole) {
-                const backendRoleName = ROLE_NAME_MAP[registerRole] || registerRole.toUpperCase();
-                const systemRoles = await roleService.listSystemRoles();
-                const matched = systemRoles.find((r) => r.name === backendRoleName);
-                if (matched) {
-                    roleId = matched.id;
-                }
-            }
-
             await registerRequest.mutateAsync({
                 email: formData.email,
                 password: formData.password,
                 confirm_password: formData.confirmPassword,
                 user_name: formData.username,
                 full_name: `${formData.lastName} ${formData.firstName}`.trim(),
-                role_id: roleId,
             });
             sessionStorage.setItem(STORAGE_KEYS.REGISTER_EMAIL, formData.email);
             onNext(formData.email);

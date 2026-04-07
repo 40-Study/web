@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AuthCard } from "@/components/auth/auth-card";
 import { SocialLoginButton } from "@/components/auth/social-login-button";
 import { AuthFooterLink } from "@/components/auth/auth-footer-link";
@@ -12,14 +12,23 @@ import { AUTH_ROUTES, getRoleHomeRoute } from "@/lib/routes";
 import { getRoleFromToken } from "@/lib/jwt";
 import { showComingSoon } from "@/lib/toast-helpers";
 import { useLogin } from "@/hooks/queries/use-auth";
-import { getDeviceInfo } from "@/services/auth.service";
+import { getDeviceInfo, startOAuthFlow } from "@/services/auth.service";
 
 export default function LoginPage() {
   const loginMutation = useLogin();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+
+  // Lưu redirect URL vào sessionStorage (từ accept-invitation flow)
+  useEffect(() => {
+    const redirect = searchParams.get("redirect");
+    if (redirect) {
+      sessionStorage.setItem("auth_redirect", redirect);
+    }
+  }, [searchParams]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,22 +38,34 @@ export default function LoginPage() {
         onSuccess: (response) => {
           const data = response.data;
 
-          // Always show role selection if user has roles
-          const systemRoles = data.system_roles || [];
-          if (systemRoles.length >= 1) {
+          // User chưa có role → redirect chọn role
+          if (data.needs_role_registration) {
             router.push(AUTH_ROUTES.LOGIN_ROLE);
             return;
           }
 
-          // Fallback: direct login (no roles returned)
-          if (data.access_token) {
-            const role = data.active_role?.name || getRoleFromToken(data.access_token);
-            router.push(getRoleHomeRoute(role));
+          // Direct login (1 role, có access_token) → vào app
+          if (data.access_token && !data.session_token) {
+            const redirect = sessionStorage.getItem("auth_redirect");
+            if (redirect) {
+              sessionStorage.removeItem("auth_redirect");
+              router.push(redirect);
+            } else {
+              const role =
+                data.active_role?.role_name || getRoleFromToken(data.access_token);
+              router.push(getRoleHomeRoute(role));
+            }
             return;
           }
 
-          // Requires org selection
-          router.push(AUTH_ROUTES.LOGIN_ORGANIZATION);
+          // Multi-role → có session_token + roles → chọn role
+          if (data.session_token) {
+            router.push(AUTH_ROUTES.LOGIN_ROLE);
+            return;
+          }
+
+          // Fallback
+          router.push(AUTH_ROUTES.LOGIN_ROLE);
         },
       }
     );
@@ -111,10 +132,10 @@ export default function LoginPage() {
       </div>
 
       <div className="grid grid-cols-4 gap-3">
-        <SocialLoginButton provider="google" onClick={showComingSoon} />
-        <SocialLoginButton provider="facebook" onClick={showComingSoon} />
+        <SocialLoginButton provider="google" onClick={() => startOAuthFlow("google")} />
+        <SocialLoginButton provider="facebook" onClick={() => startOAuthFlow("facebook")} />
         <SocialLoginButton provider="apple" onClick={showComingSoon} />
-        <SocialLoginButton provider="github" onClick={showComingSoon} />
+        <SocialLoginButton provider="github" onClick={() => startOAuthFlow("github")} />
       </div>
 
       <AuthFooterLink

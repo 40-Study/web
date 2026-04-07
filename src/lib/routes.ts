@@ -12,6 +12,7 @@ export const AUTH_ROUTES = {
   FORGOT_PASSWORD_OTP: "/forgot-password/otp",
   RESET_PASSWORD: "/reset-password",
   RESET_PASSWORD_SUCCESS: "/reset-password/success",
+  ACCEPT_INVITATION: "/accept-invitation",
 } as const;
 
 // Role-based home routes

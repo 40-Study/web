@@ -1,5 +1,6 @@
 /**
  * React Query hooks for authentication
+ * Aligned with backend: /auth/login, /auth/select-role, /auth/switch-role, etc.
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,7 +10,6 @@ import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { getRoleFromToken } from "@/lib/jwt";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
-import type { Permission } from "@/lib/permissions";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Query Keys
@@ -19,6 +19,8 @@ export const authKeys = {
   all: ["auth"] as const,
   me: () => [...authKeys.all, "me"] as const,
   devices: () => [...authKeys.all, "devices"] as const,
+  myRoles: () => [...authKeys.all, "my-roles"] as const,
+  profiles: () => [...authKeys.all, "profiles"] as const,
   organizations: () => [...authKeys.all, "organizations"] as const,
   children: () => [...authKeys.all, "children"] as const,
 };
@@ -27,7 +29,7 @@ export const authKeys = {
 // Queries
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Get current user info */
+/** GET /auth/me - Get current user info */
 export function useMe() {
   const { isAuthenticated } = useAuthStore();
 
@@ -35,23 +37,23 @@ export function useMe() {
     queryKey: authKeys.me(),
     queryFn: authService.getMe,
     enabled: isAuthenticated,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 }
 
-/** Get full profile (user + roles + orgs + active context) */
-export function useMyProfile() {
+/** GET /auth/me/profiles - Get user's profiles */
+export function useMyProfiles() {
   const { isAuthenticated } = useAuthStore();
 
   return useQuery({
-    queryKey: [...authKeys.all, "profile"] as const,
-    queryFn: authService.getMyProfile,
+    queryKey: authKeys.profiles(),
+    queryFn: authService.getMyProfiles,
     enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000,
   });
 }
 
-/** Update profile */
+/** PUT /auth/me - Update profile */
 export function useUpdateProfile() {
   const qc = useQueryClient();
 
@@ -59,7 +61,6 @@ export function useUpdateProfile() {
     mutationFn: authService.updateProfile,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: authKeys.me() });
-      qc.invalidateQueries({ queryKey: [...authKeys.all, "profile"] });
       toast.success("Cập nhật thành công");
     },
     onError: () => {
@@ -68,7 +69,7 @@ export function useUpdateProfile() {
   });
 }
 
-/** Get user's devices */
+/** GET /auth/devices - Get user's devices */
 export function useDevices() {
   const { isAuthenticated } = useAuthStore();
 
@@ -79,24 +80,27 @@ export function useDevices() {
   });
 }
 
-/** Get user's organizations */
-export function useMyOrganizations() {
+/** GET /auth/my-roles - Get unified roles (requires auth) */
+export function useMyRoles() {
   const { isAuthenticated } = useAuthStore();
 
   return useQuery({
-    queryKey: authKeys.organizations(),
-    queryFn: authService.getMyOrganizations,
+    queryKey: authKeys.myRoles(),
+    queryFn: authService.getMyRoles,
     enabled: isAuthenticated,
   });
 }
 
-/** Get children (parent role) */
+/** GET children (parent role) */
 export function useChildren() {
   const { isAuthenticated, activeRole } = useAuthStore();
 
   return useQuery({
     queryKey: authKeys.children(),
-    queryFn: authService.getChildren,
+    queryFn: async () => {
+      // TODO: confirm endpoint for children
+      return { children: [] as Array<{ id: string; name: string; avatar?: string }> };
+    },
     enabled: isAuthenticated && normalizeRole(activeRole) === "PARENT",
   });
 }
@@ -105,49 +109,56 @@ export function useChildren() {
 // Mutations
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Login mutation - stores auth state, does NOT navigate (callers handle navigation via modal) */
+/**
+ * POST /auth/login
+ * Handles all login cases and stores auth state.
+ * Does NOT navigate — callers handle navigation.
+ */
 export function useLogin() {
-  const { login, setSystemRoles, setSessionToken, setOrganizations, setToken, setActiveRole } = useAuthStore();
+  const { login, setRoles, setSessionToken, setToken, setActiveRole, setActiveUnifiedRole } =
+    useAuthStore();
 
   return useMutation({
     mutationFn: authService.login,
     onSuccess: async (response) => {
       const data = response.data;
 
-      // Store user info
-      const user = {
-        id: data.user.id,
-        email: data.user.email,
-        name: data.user.name || data.user.username || data.user.email,
-        avatar: data.user.avatar,
-      };
-      login(user, data.system_roles || []);
+      // Store user info if present
+      if (data.user) {
+        login({
+          id: data.user.id || "",
+          email: data.user.email || "",
+          name: data.user.full_name || data.user.username || data.user.email || "",
+          avatar: data.user.avatar_url,
+        });
+      }
 
-      // Case 1: Direct login - backend returns access_token directly (1 role, 0 orgs)
+      // Case 0: User chưa có role → cần chọn role để đăng ký
+      if (data.needs_role_registration && data.session_token) {
+        setSessionToken(data.session_token);
+        setRoles([]);
+        return;
+      }
+
+      // Case 1: Direct login (1 role, có access_token) → hoàn tất
       if (data.access_token && !data.session_token) {
         setToken(data.access_token);
         setSessionToken(null);
-        // Extract role from JWT if not in response
-        const role = data.active_role?.name || getRoleFromToken(data.access_token);
-        setActiveRole(normalizeRole(role));
+        if (data.active_role) {
+          setActiveRole(normalizeRole(data.active_role.role_name));
+          setActiveUnifiedRole(data.active_role);
+        } else {
+          setActiveRole(normalizeRole(getRoleFromToken(data.access_token)));
+        }
         return;
       }
 
-      // Case 2: Multi-step login with system_roles
-      if (data.system_roles) {
-        setSystemRoles(data.system_roles);
-      }
-
-      // Case 3: Requires org selection (1 role, has orgs)
-      if (data.requires_org_selection) {
-        setSessionToken(data.session_token || null);
-        setOrganizations(data.organizations || []);
-        return;
-      }
-
-      // Case 4: Multiple roles → need profile selection
+      // Case 2: Multi-role → lưu session_token + roles để chọn
       if (data.session_token) {
         setSessionToken(data.session_token);
+      }
+      if (data.roles && data.roles.length > 0) {
+        setRoles(data.roles);
       }
     },
     onError: (error: unknown) => {
@@ -157,7 +168,7 @@ export function useLogin() {
   });
 }
 
-/** Register request (OTP) - does NOT navigate */
+/** POST /auth/register/request - Request OTP */
 export function useRegisterRequest() {
   return useMutation({
     mutationFn: authService.registerRequest,
@@ -167,7 +178,7 @@ export function useRegisterRequest() {
   });
 }
 
-/** Complete registration - does NOT navigate */
+/** POST /auth/register - Complete registration */
 export function useRegister() {
   return useMutation({
     mutationFn: authService.register,
@@ -177,23 +188,54 @@ export function useRegister() {
   });
 }
 
-/** Select profile/role */
-export function useSelectProfile() {
-  const { setOrganizations, sessionToken } = useAuthStore();
+/**
+ * POST /auth/select-role - Select role during login flow (uses session_token)
+ * Completes login: returns tokens, sets auth state, navigates to home.
+ */
+export function useSelectRole() {
+  const { sessionToken, setToken, setSessionToken, setActiveRole, setActiveUnifiedRole } =
+    useAuthStore();
+  const qc = useQueryClient();
+  const router = useRouter();
 
   return useMutation({
-    mutationFn: async (roleId: string) => {
+    mutationFn: async (params: {
+      roleId: string;
+      roleType: "system" | "organization";
+      organizationId?: string;
+    }) => {
       if (!sessionToken) throw new Error("No session token");
-      return authService.selectProfile({
+      return authService.selectRole({
         session_token: sessionToken,
-        system_role_id: roleId,
+        role_id: params.roleId,
+        role_type: params.roleType,
+        organization_id: params.organizationId,
       });
     },
     onSuccess: (response) => {
-      setOrganizations(response.data.organizations);
+      const data = response.data;
+
+      if (data.completed && data.access_token) {
+        // Login hoàn tất
+        setToken(data.access_token);
+        setSessionToken(null);
+        setActiveRole(normalizeRole(data.active_role.role_name));
+        setActiveUnifiedRole(data.active_role);
+
+        qc.invalidateQueries({ queryKey: authKeys.all });
+
+        // Check redirect (e.g., from accept-invitation)
+        const redirect = sessionStorage.getItem("auth_redirect");
+        if (redirect) {
+          sessionStorage.removeItem("auth_redirect");
+          router.push(redirect);
+        } else {
+          router.push(getRoleHomeRoute(normalizeRole(data.active_role.role_name)));
+        }
+      }
     },
     onError: (error: unknown) => {
-      console.error("Select profile error:", error);
+      console.error("Select role error:", error);
       toast.error("Chọn vai trò thất bại", {
         description: "Vui lòng thử lại hoặc đăng nhập lại",
       });
@@ -201,39 +243,33 @@ export function useSelectProfile() {
   });
 }
 
-/** Select organization */
-export function useSelectOrg() {
-  const { setToken, setPermissions, setSessionToken, activeRole } = useAuthStore();
+/**
+ * POST /auth/switch-role - Switch role while already logged in
+ * Returns new tokens.
+ */
+export function useSwitchRole() {
+  const { setToken, setActiveRole, setActiveUnifiedRole } = useAuthStore();
   const qc = useQueryClient();
-  const router = useRouter();
 
   return useMutation({
-    mutationFn: authService.selectOrg,
-    onSuccess: async (response) => {
-      try {
-        const accessToken = response.data.access_token;
-        setToken(accessToken);
-        setSessionToken(null);
-        // Fetch permissions after getting token
-        const me = await authService.getMe();
-        setPermissions(me.permissions as Permission[]);
+    mutationFn: authService.switchRole,
+    onSuccess: (response) => {
+      const data = response.data;
+      if (data.access_token) {
+        setToken(data.access_token);
+        setActiveRole(normalizeRole(data.active_role.role_name));
+        setActiveUnifiedRole(data.active_role);
         qc.invalidateQueries({ queryKey: authKeys.all });
-        router.push(getRoleHomeRoute(activeRole));
-      } catch (error: unknown) {
-        console.error("Failed to get user info:", error);
-        toast.error("Lỗi lấy thông tin người dùng");
       }
     },
     onError: (error: unknown) => {
-      console.error("Select org error:", error);
-      toast.error("Chọn tổ chức thất bại", {
-        description: "Vui lòng thử lại",
-      });
+      console.error("Switch role error:", error);
+      toast.error("Đổi vai trò thất bại");
     },
   });
 }
 
-/** Logout */
+/** POST /auth/logout - Logout current device */
 export function useLogout() {
   const { logout } = useAuthStore();
   const qc = useQueryClient();
@@ -255,22 +291,7 @@ export function useLogout() {
   });
 }
 
-/**
- * Logout specific device
- * @deprecated Backend does not support per-device logout yet
- */
-export function useLogoutDevice() {
-  return useMutation({
-    mutationFn: async (_deviceId: string) => {
-      throw new Error("Per-device logout not supported by backend");
-    },
-    onError: () => {
-      toast.info("Tính năng đăng xuất từng thiết bị chưa được hỗ trợ");
-    },
-  });
-}
-
-/** Logout all devices */
+/** POST /auth/logout-all - Logout all devices */
 export function useLogoutAll() {
   const { logout } = useAuthStore();
   const qc = useQueryClient();
@@ -287,7 +308,7 @@ export function useLogoutAll() {
   });
 }
 
-/** Reset password request */
+/** POST /auth/reset-password/request */
 export function useResetPasswordRequest() {
   const router = useRouter();
 
@@ -300,7 +321,7 @@ export function useResetPasswordRequest() {
   });
 }
 
-/** Reset password */
+/** POST /auth/reset-password */
 export function useResetPassword() {
   const router = useRouter();
 
@@ -313,7 +334,7 @@ export function useResetPassword() {
   });
 }
 
-/** Change password */
+/** PUT /auth/change-password */
 export function useChangePassword() {
   return useMutation({
     mutationFn: authService.changePassword,

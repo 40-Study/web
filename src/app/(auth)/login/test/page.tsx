@@ -81,7 +81,7 @@ export default function TestBypassLoginPage() {
     setActiveRole(role);
 
     // Login with the test user
-    login(user, [{ id: role, name: role }]);
+    login(user);
 
     // Redirect to role-specific home
     const homeRoute = ROLE_HOME_ROUTES[role];

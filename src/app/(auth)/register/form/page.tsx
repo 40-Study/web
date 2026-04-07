@@ -7,15 +7,12 @@ import { AuthFooterLink } from "@/components/auth/auth-footer-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AUTH_ROUTES } from "@/lib/routes";
-import { AUTH_CONFIG, ROLE_NAME_MAP, STORAGE_KEYS } from "@/lib/constants";
+import { AUTH_CONFIG, STORAGE_KEYS } from "@/lib/constants";
 import { useRegisterRequest } from "@/hooks/queries/use-auth";
-import { useAuthStore } from "@/stores/auth.store";
-import { roleService } from "@/services/role.service";
 
 export default function RegisterFormPage() {
   const router = useRouter();
   const registerRequest = useRegisterRequest();
-  const registerRole = useAuthStore((s) => s.registerRole);
   const [formData, setFormData] = useState({
     username: "",
     firstName: "",
@@ -45,25 +42,12 @@ export default function RegisterFormPage() {
     }
 
     try {
-      // Get the role ID for the selected role
-      const backendRoleName = registerRole
-        ? (ROLE_NAME_MAP[registerRole] || registerRole.toUpperCase())
-        : "STUDENT"; // Default to STUDENT if no role selected
-      const systemRoles = await roleService.listSystemRoles();
-      const matchedRole = systemRoles.find((r) => r.name === backendRoleName);
-
-      if (!matchedRole) {
-        setError("Không tìm thấy vai trò. Vui lòng thử lại.");
-        return;
-      }
-
       await registerRequest.mutateAsync({
         email: formData.email,
         password: formData.password,
         confirm_password: formData.confirmPassword,
         user_name: formData.username,
         full_name: `${formData.lastName} ${formData.firstName}`.trim() || undefined,
-        role_id: matchedRole.id,
       });
       sessionStorage.setItem(STORAGE_KEYS.REGISTER_EMAIL, formData.email);
       router.push(AUTH_ROUTES.OTP);

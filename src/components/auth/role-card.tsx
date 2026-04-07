@@ -6,10 +6,14 @@ import { SmallCheckIcon, GraduationCapIcon, UsersIcon, SettingsIcon } from "@/co
 export type RoleType = "student" | "parent" | "teacher" | "admin";
 
 interface RoleCardProps {
-  role: RoleType;
+  role: string;
   selected?: boolean;
   onClick?: () => void;
   className?: string;
+  /** Override label (e.g., for org roles: "Kế toán - Trường PTIT") */
+  label?: string;
+  /** Override description/subtitle */
+  subtitle?: string;
 }
 
 const roleConfig: Record<RoleType, { label: string; description: string; icon: React.ReactNode }> = {
@@ -35,8 +39,16 @@ const roleConfig: Record<RoleType, { label: string; description: string; icon: R
   },
 };
 
-export function RoleCard({ role, selected, onClick, className }: RoleCardProps) {
-  const config = roleConfig[role];
+const fallbackConfig = {
+  label: "Vai trò khác",
+  description: "",
+  icon: <SettingsIcon size={28} />,
+};
+
+export function RoleCard({ role, selected, onClick, className, label, subtitle }: RoleCardProps) {
+  const config = roleConfig[role as RoleType] || fallbackConfig;
+  const displayLabel = label || config.label;
+  const displayDesc = subtitle || config.description;
 
   return (
     <button
@@ -62,10 +74,12 @@ export function RoleCard({ role, selected, onClick, className }: RoleCardProps) 
         {config.icon}
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-semibold">{config.label}</p>
-        <p className={cn("text-xs", selected ? "text-primary-600" : "text-gray-500")}>
-          {config.description}
-        </p>
+        <p className="text-sm font-semibold">{displayLabel}</p>
+        {displayDesc && (
+          <p className={cn("text-xs", selected ? "text-primary-600" : "text-gray-500")}>
+            {displayDesc}
+          </p>
+        )}
       </div>
       <div className="ml-auto shrink-0">
         <div
