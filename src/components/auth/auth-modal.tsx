@@ -439,7 +439,7 @@ function LoginView({
 
 function LoginRoleView({ onNext: _onNext, onComplete }: { onNext: () => void; onComplete: () => void }) {
     const router = useRouter();
-    const { roles: unifiedRoles, sessionToken, token } = useAuthStore();
+    const { roles: unifiedRoles, sessionToken, isAuthenticated } = useAuthStore();
     const selectRoleMutation = useSelectRole();
     const [selectedRole, setSelectedRole] = useState<UnifiedRole | null>(null);
     const [showAddRole, setShowAddRole] = useState(false);
@@ -448,7 +448,7 @@ function LoginRoleView({ onNext: _onNext, onComplete }: { onNext: () => void; on
     const [loadingRoles, setLoadingRoles] = useState(false);
 
     const hasRoles = unifiedRoles.length > 0;
-    const isAlreadyCompleted = !!token && !sessionToken;
+    const isAlreadyCompleted = isAuthenticated && !sessionToken;
 
     // 0 roles → fetch all available system roles
     useEffect(() => {

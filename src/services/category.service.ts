@@ -48,7 +48,10 @@ export const categoryService = {
 
   /** GET /categories — list all (public) */
   getAll: () =>
-    api.get<R<Category[]>>("/categories").then((r) => r.data.data),
+    api.get<R<Category[] | { categories: Category[] }>>("/categories").then((r) => {
+      const d = r.data.data;
+      return Array.isArray(d) ? d : d.categories;
+    }),
 
   /** GET /categories/:id (public) */
   getById: (id: string) =>
@@ -70,7 +73,10 @@ export const categoryService = {
 
   /** GET /tags — list all tags (public) */
   getAllTags: (params?: { page?: number; page_size?: number; keyword?: string }) =>
-    api.get<R<Tag[]>>("/tags", { params }).then((r) => r.data.data),
+    api.get<R<Tag[] | { tags: Tag[] }>>("/tags", { params }).then((r) => {
+      const d = r.data.data;
+      return Array.isArray(d) ? d : d.tags;
+    }),
 
   /** GET /tags/:id (public) */
   getTagById: (id: string) =>

@@ -3,14 +3,14 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Plus, Users, Star, Play, Radio, Layers, FileEdit, Loader2 } from "lucide-react";
-import { useMyCourses } from "@/hooks/queries/use-courses";
+import { Search, Plus, Users, Star, Play, Radio, Layers, FileEdit, Loader2, Trash2 } from "lucide-react";
+import { useMyCourses, useDeleteCourse } from "@/hooks/queries/use-courses";
+import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ProgressBar } from "@/components/ui/progress-bar";
 import {
   Select,
   SelectContent,
@@ -38,20 +38,40 @@ interface Course {
   missingItems?: string;
 }
 
-/** Map API course to local Course type */
-function mapApiCourse(c: { id: string; title: string; thumbnail_url?: string; status?: string; total_students?: number; average_rating?: number | string; price?: number | string; discount_price?: number | string; is_featured?: boolean }): Course {
+/** Map API course to local Course type + calculate progress */
+function mapApiCourse(c: { id: string; title: string; short_description?: string; description?: string; thumbnail_url?: string; status?: string; total_students?: number; average_rating?: number | string; price?: number | string; discount_price?: number | string; is_featured?: boolean; is_free?: boolean; objectives?: string[]; requirements?: string[] }): Course {
   const status = c.status === "published" ? "published" : c.status === "archived" ? "archived" : "draft";
+
+  // Calculate completion progress for drafts
+  const checks = [
+    !!c.title,
+    !!c.short_description,
+    !!c.description,
+    !!c.thumbnail_url,
+    c.is_free || (Number(c.price) > 0),
+    (c.objectives?.length ?? 0) > 0,
+  ];
+  const done = checks.filter(Boolean).length;
+  const progress = Math.round((done / checks.length) * 100);
+
+  const missing: string[] = [];
+  if (!c.description) missing.push("mô tả chi tiết");
+  if (!c.thumbnail_url) missing.push("ảnh bìa");
+  if (!c.is_free && !Number(c.price)) missing.push("giá bán");
+
   return {
     id: c.id,
     title: c.title,
     thumbnail: c.thumbnail_url,
-    type: "video", // Default, backend doesn't have course type yet
+    type: "video",
     status,
     students: c.total_students || 0,
     rating: Number(c.average_rating) || 0,
     price: Number(c.price) || 0,
     salePrice: c.discount_price ? Number(c.discount_price) : undefined,
     isBestSeller: c.is_featured,
+    progress,
+    missingItems: missing.length > 0 ? `Thiếu: ${missing.join(", ")}` : undefined,
   };
 }
 
@@ -71,112 +91,105 @@ function CourseTypeBadge({ type }: { type: CourseType }) {
   );
 }
 
-function PublishedCourseCard({ course }: { course: Course }) {
+function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: string) => void }) {
+  const isDraft = course.status === "draft";
+  const canDelete = isDraft || course.students === 0;
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!canDelete) {
+      toast.error("Không thể xóa khóa học đã có học viên đăng ký");
+      return;
+    }
+    if (confirm(`Bạn có chắc muốn xóa khóa học "${course.title}"?`)) {
+      onDelete(course.id);
+    }
+  };
+
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+    <Card className={cn("overflow-hidden hover:shadow-md transition-shadow group", isDraft && "border-dashed")}>
       {/* Thumbnail */}
-      <div className="relative aspect-video bg-gray-800">
+      <div className="relative aspect-video bg-gray-100">
         {course.thumbnail ? (
           <Image src={course.thumbnail} alt={course.title} fill className="object-cover" />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-4xl font-bold text-white/20">40</div>
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+            <FileEdit className="w-8 h-8 text-gray-200" />
           </div>
         )}
-        {/* Badges */}
-        <div className="absolute top-2 left-2 flex gap-2">
+        <div className="absolute top-2 left-2">
           <CourseTypeBadge type={course.type} />
         </div>
-        {course.isBestSeller && (
+        {isDraft && (
+          <Badge className="absolute top-2 right-2 bg-orange-100 text-orange-700 border-orange-200 text-[10px]">
+            BẢN NHÁP
+          </Badge>
+        )}
+        {course.isBestSeller && !isDraft && (
           <Badge className="absolute top-2 right-2 bg-orange-500 text-white text-[10px]">
             BÁN CHẠY
           </Badge>
         )}
+        {/* Delete button */}
+        {canDelete && (
+          <button
+            onClick={handleDelete}
+            className="absolute bottom-2 right-2 p-1.5 rounded-full bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+            title="Xóa khóa học"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
-      <CardContent className="p-4 space-y-3">
-        <h3 className="font-semibold line-clamp-2 min-h-[48px]">{course.title}</h3>
+      <CardContent className="p-3 space-y-2">
+        <h3 className="font-semibold text-sm line-clamp-2 min-h-[40px]">{course.title}</h3>
 
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-            {course.rating.toFixed(1)}
-          </span>
-          <span className="flex items-center gap-1">
-            <Users className="w-4 h-4" />
-            {course.students.toLocaleString()}
-          </span>
-        </div>
-
-        <div className="flex items-baseline gap-2">
-          {course.salePrice ? (
-            <>
-              <span className="text-lg font-bold text-primary-600">
-                {formatCurrency(course.salePrice)}
-              </span>
-              <span className="text-sm text-muted-foreground line-through">
-                {formatCurrency(course.price)}
-              </span>
-            </>
-          ) : (
-            <span className="text-lg font-bold">{formatCurrency(course.price)}</span>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" className="w-full" asChild>
-            <Link href={`/teacher/courses/${course.id}/members`}>Thành viên</Link>
-          </Button>
-          <Button variant="default" className="w-full" asChild>
-            <Link href={`/teacher/courses/${course.id}`}>Xem chi tiết</Link>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function DraftCourseCard({ course }: { course: Course }) {
-  return (
-    <Card className="overflow-hidden border-dashed">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <CourseTypeBadge type={course.type} />
-          <Badge variant="warning" className="bg-orange-100 text-orange-700 border-orange-200">
-            BẢN NHÁP
-          </Badge>
-        </div>
-
-        {/* Placeholder thumbnail */}
-        <div className="flex items-center justify-center h-24 bg-gray-100 rounded-lg mb-4">
-          <FileEdit className="w-10 h-10 text-gray-300" />
-        </div>
-
-        <h3 className="font-semibold text-lg mb-4">{course.title}</h3>
-
-        {/* Progress */}
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">TIẾN ĐỘ HOÀN THIỆN</span>
-            <span className="font-medium text-primary-600">{course.progress}%</span>
-          </div>
-          <ProgressBar value={course.progress || 0} size="sm" />
-        </div>
-
-        {/* Missing items */}
-        {course.missingItems && (
-          <div className="flex items-center gap-2 text-sm text-orange-600 bg-orange-50 rounded-lg p-3 mb-4">
-            <span className="w-4 h-4 rounded-full border-2 border-orange-400" />
-            {course.missingItems}
+        {/* Stats row — only for published */}
+        {!isDraft && (
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+              {course.rating.toFixed(1)}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Users className="w-3.5 h-3.5" />
+              {course.students}
+            </span>
+            <span className="ml-auto font-medium text-gray-900">
+              {course.price ? formatCurrency(course.price) : "Miễn phí"}
+            </span>
           </div>
         )}
 
-        <Button className="w-full" asChild>
-          <Link href={`/teacher/courses/${course.id}/edit`}>
-            <FileEdit className="w-4 h-4 mr-2" />
-            Tiếp tục soạn thảo
-          </Link>
-        </Button>
+        {/* Missing items for draft */}
+        {isDraft && course.missingItems && (
+          <p className="text-[11px] text-orange-600">{course.missingItems}</p>
+        )}
+
+        {/* Action buttons */}
+        <div className="grid grid-cols-2 gap-1.5 pt-1">
+          {isDraft ? (
+            <>
+              <Button size="sm" variant="outline" className="w-full text-xs h-8" asChild>
+                <Link href={`/teacher/courses/${course.id}`}>Phát hành</Link>
+              </Button>
+              <Button size="sm" className="w-full text-xs h-8" asChild>
+                <Link href={`/teacher/courses/${course.id}/edit`}>Tiếp tục sửa</Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button size="sm" variant="outline" className="w-full text-xs h-8" asChild>
+                <Link href={`/teacher/courses/${course.id}/members`}>Thành viên</Link>
+              </Button>
+              <Button size="sm" className="w-full text-xs h-8" asChild>
+                <Link href={`/teacher/courses/${course.id}`}>Chi tiết</Link>
+              </Button>
+            </>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -189,7 +202,12 @@ export default function TeacherCoursesPage() {
   const [sortBy, setSortBy] = useState("newest");
 
   const { data: apiCourses, isLoading } = useMyCourses();
+  const deleteCourse = useDeleteCourse();
   const courses = useMemo(() => (apiCourses || []).map(mapApiCourse), [apiCourses]);
+
+  const handleDeleteCourse = (id: string) => {
+    deleteCourse.mutate(id);
+  };
 
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
@@ -253,19 +271,19 @@ export default function TeacherCoursesPage() {
           <div className="flex gap-2">
             <Select value={formatFilter} onValueChange={setFormatFilter}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Định dạng" />
+                {formatFilter === "all" ? "Tất cả định dạng" : <SelectValue />}
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="all">Tất cả định dạng</SelectItem>
                 <SelectItem value="video">Video</SelectItem>
                 <SelectItem value="livestream">Livestream</SelectItem>
-                <SelectItem value="hybrid">Hybrid</SelectItem>
+                <SelectItem value="hybrid">Kết hợp</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Sắp xếp" />
+                {sortBy === "newest" ? "Mới nhất" : <SelectValue />}
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="newest">Mới nhất</SelectItem>
@@ -282,7 +300,7 @@ export default function TeacherCoursesPage() {
           {filteredCourses.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filteredCourses.map((course) => (
-                <PublishedCourseCard key={course.id} course={course} />
+                <CourseCard key={course.id} course={course} onDelete={handleDeleteCourse} />
               ))}
             </div>
           ) : (
@@ -292,9 +310,9 @@ export default function TeacherCoursesPage() {
 
         <TabsContent value="draft" className="mt-6">
           {filteredCourses.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filteredCourses.map((course) => (
-                <DraftCourseCard key={course.id} course={course} />
+                <CourseCard key={course.id} course={course} onDelete={handleDeleteCourse} />
               ))}
             </div>
           ) : (

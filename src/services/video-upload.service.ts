@@ -71,8 +71,8 @@ export const videoUploadService = {
   /** POST /videos/upload/presigned-urls — get presigned URLs for chunks */
   getPresignedUrls: (data: PresignedUrlsDTO) =>
     api
-      .post<R<PresignedUrl[]>>("/videos/upload/presigned-urls", data)
-      .then((r) => r.data.data),
+      .post<R<{ upload_id: string; urls: PresignedUrl[] }>>("/videos/upload/presigned-urls", data)
+      .then((r) => r.data.data.urls),
 
   /** POST /videos/upload/chunk-complete — mark a chunk as uploaded */
   chunkComplete: (data: ChunkCompleteDTO) =>

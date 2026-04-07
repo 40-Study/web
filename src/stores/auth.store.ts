@@ -27,13 +27,11 @@ interface Child {
 }
 
 interface AuthState {
-  // User data
+  // User data (token do cookies quản lý, không lưu ở đây)
   user: User | null;
-  token: string | null;
-  refreshToken: string | null;
-  sessionToken: string | null;
+  sessionToken: string | null; // Tạm thời cho multi-role login flow
 
-  // Multi-role system (unified roles from backend)
+  // Multi-role system
   roles: UnifiedRole[];
   activeRole: string | null;
   activeUnifiedRole: UnifiedRole | null;
@@ -43,7 +41,7 @@ interface AuthState {
   organizations: Organization[];
   activeOrg: Organization | null;
 
-  // Parent-child relationship
+  // Parent-child
   children: Child[];
   selectedChild: Child | null;
 
@@ -52,13 +50,12 @@ interface AuthState {
   isLoading: boolean;
   hasHydrated: boolean;
 
-  // Registration ephemeral state
+  // Registration ephemeral
   registerRole: string | null;
 
   // Actions
   setUser: (user: User | null) => void;
-  setToken: (token: string | null) => void;
-  setRefreshToken: (token: string | null) => void;
+  setAuthenticated: (value: boolean) => void;
   setSessionToken: (token: string | null) => void;
   setRoles: (roles: UnifiedRole[]) => void;
   setActiveRole: (role: string | null) => void;
@@ -71,6 +68,9 @@ interface AuthState {
   setRegisterRole: (role: string | null) => void;
   setHasHydrated: (value: boolean) => void;
 
+  /** @deprecated dùng setAuthenticated thay — token do cookies quản lý */
+  setToken: (token: string | null) => void;
+
   login: (user: User, roles?: UnifiedRole[]) => void;
   logout: () => void;
   reset: () => void;
@@ -78,8 +78,6 @@ interface AuthState {
 
 const initialState = {
   user: null,
-  token: null,
-  refreshToken: null,
   sessionToken: null,
   roles: [] as UnifiedRole[],
   activeRole: null,
@@ -101,8 +99,7 @@ export const useAuthStore = create<AuthState>()(
       ...initialState,
 
       setUser: (user) => set({ user }),
-      setToken: (token) => set({ token, isAuthenticated: !!token }),
-      setRefreshToken: (refreshToken) => set({ refreshToken }),
+      setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
       setSessionToken: (sessionToken) => set({ sessionToken }),
       setRoles: (roles) => set({ roles }),
       setActiveRole: (activeRole) => set({ activeRole }),
@@ -114,6 +111,9 @@ export const useAuthStore = create<AuthState>()(
       setSelectedChild: (selectedChild) => set({ selectedChild }),
       setRegisterRole: (registerRole) => set({ registerRole }),
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
+
+      // Compat: code cũ gọi setToken — giờ chỉ set isAuthenticated
+      setToken: (token) => set({ isAuthenticated: !!token }),
 
       login: (user, roles) =>
         set({
@@ -132,8 +132,6 @@ export const useAuthStore = create<AuthState>()(
       },
       partialize: (state) => ({
         user: state.user,
-        token: state.token,
-        refreshToken: state.refreshToken,
         roles: state.roles,
         activeRole: state.activeRole,
         activeUnifiedRole: state.activeUnifiedRole,

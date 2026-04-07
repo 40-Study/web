@@ -3,7 +3,12 @@
  * Endpoints: /hls/:uploadId/*
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+// Extract base URL for HLS endpoints
+const getBaseUrl = () => {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  return apiUrl.replace(/\/api(\/v\d+)?$/, "");
+};
+const API_BASE_URL = `${getBaseUrl()}/api`;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

@@ -21,6 +21,43 @@ export interface UseVideoUploadReturn {
 }
 
 const DEFAULT_CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_BANDWIDTH_BYTES_PER_SEC = 10 * 1024 * 1024; // 10 MB/s
+
+/** Rate limiter to enforce bandwidth limit across all chunks */
+class UploadRateLimiter {
+  private totalBytes = 0;
+  private startTime = Date.now();
+
+  /** Record bytes and wait to maintain target bandwidth */
+  async throttle(bytes: number): Promise<void> {
+    this.totalBytes += bytes;
+    const elapsed = (Date.now() - this.startTime) / 1000;
+    const expectedTime = this.totalBytes / MAX_BANDWIDTH_BYTES_PER_SEC;
+    const delay = (expectedTime - elapsed) * 1000;
+
+    if (delay > 0) {
+      console.log(
+        `[Throttle] Uploaded ${(this.totalBytes / 1024 / 1024).toFixed(1)}MB in ${elapsed.toFixed(1)}s, ` +
+          `target: ${expectedTime.toFixed(1)}s, waiting ${(delay / 1000).toFixed(1)}s`
+      );
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+}
+
+/** Upload a chunk and return ETag */
+async function uploadChunk(url: string, chunk: Blob): Promise<string> {
+  const response = await fetch(url, {
+    method: "PUT",
+    body: chunk,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Upload failed: ${response.status}`);
+  }
+
+  return response.headers.get("ETag") || "";
+}
 
 /**
  * Hook for uploading a video file via chunked upload with progress.
@@ -58,25 +95,25 @@ export function useVideoUpload(): UseVideoUploadReturn {
           chunk_numbers: chunkNumbers,
         });
 
-        // 3. Upload each chunk
+        // 3. Upload each chunk with bandwidth limiting (10 MB/s total)
+        const rateLimiter = new UploadRateLimiter();
         for (let i = 0; i < chunk_count; i++) {
           const start = i * DEFAULT_CHUNK_SIZE;
           const end = Math.min(start + DEFAULT_CHUNK_SIZE, file.size);
           const chunk = file.slice(start, end);
+          const chunkSize = end - start;
 
           const presigned = presignedUrls[i];
-          const response = await fetch(presigned.url, {
-            method: "PUT",
-            body: chunk,
-          });
+          const etag = await uploadChunk(presigned.url, chunk);
 
-          const etag = response.headers.get("ETag") || "";
+          // Throttle: wait if we're uploading faster than 10 MB/s
+          await rateLimiter.throttle(chunkSize);
 
           await videoUploadService.chunkComplete({
             upload_id,
             chunk_number: presigned.chunk_number,
             etag,
-            size: end - start,
+            size: chunkSize,
           });
 
           setProgress(Math.round(((i + 1) / chunk_count) * 100));

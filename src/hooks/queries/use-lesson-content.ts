@@ -18,6 +18,7 @@ export function useLessonContents(lessonId: string) {
     queryKey: lessonContentKeys.contents(lessonId),
     queryFn: () => lessonContentService.getContents(lessonId),
     enabled: !!lessonId,
+    staleTime: 30 * 1000, // 30s - avoid refetch on every mount
   });
 }
 

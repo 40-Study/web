@@ -21,7 +21,7 @@ function toRoleType(roleName: string): RoleType {
 }
 
 export default function LoginRolePage() {
-  const { roles, sessionToken, token } = useAuthStore();
+  const { roles, sessionToken, isAuthenticated } = useAuthStore();
   const selectRole = useSelectRole();
   const [selectedRole, setSelectedRole] = useState<UnifiedRole | null>(null);
   const [showAddRole, setShowAddRole] = useState(false);

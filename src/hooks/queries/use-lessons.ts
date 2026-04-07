@@ -20,6 +20,7 @@ export function useLessons(courseId: string, sectionId: string) {
     queryKey: lessonKeys.bySection(courseId, sectionId),
     queryFn: () => lessonService.getLessons(sectionId),
     enabled: !!courseId && !!sectionId,
+    staleTime: 30 * 1000, // 30s - avoid refetch on every mount
   });
 }
 

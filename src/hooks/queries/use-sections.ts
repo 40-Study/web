@@ -20,6 +20,7 @@ export function useSections(courseId: string) {
     queryKey: sectionKeys.byCourse(courseId),
     queryFn: () => sectionService.getSections(courseId),
     enabled: !!courseId,
+    staleTime: 30 * 1000, // 30s - avoid refetch on every mount
   });
 }
 

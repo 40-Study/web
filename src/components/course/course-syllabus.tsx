@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -11,10 +11,24 @@ import {
   HelpCircle,
   Code,
   Lock,
+  Radio,
+  Loader2,
+  Eye,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Section, Lesson } from "@/types/course";
+import { useLessonContents } from "@/hooks/queries/use-lesson-content";
+import type { LessonContent } from "@/services/lesson-content.service";
 
 interface CourseSyllabusProps {
   sections: Section[];
@@ -33,6 +47,11 @@ function formatDuration(minutes: number): string {
   return `${hours}h ${mins}p`;
 }
 
+function formatSeconds(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  return `${mins} phút`;
+}
+
 function getLessonIcon(type: Lesson["type"]) {
   switch (type) {
     case "video":
@@ -45,6 +64,32 @@ function getLessonIcon(type: Lesson["type"]) {
       return Code;
     default:
       return Circle;
+  }
+}
+
+function getContentIcon(type: string) {
+  switch (type) {
+    case "video":
+      return Play;
+    case "livestream":
+      return Radio;
+    case "exercise":
+      return Code;
+    default:
+      return Circle;
+  }
+}
+
+function getContentTypeLabel(type: string) {
+  switch (type) {
+    case "video":
+      return "Video";
+    case "livestream":
+      return "Buổi học trực tiếp";
+    case "exercise":
+      return "Bài tập";
+    default:
+      return "";
   }
 }
 
@@ -63,6 +108,333 @@ function getLessonTypeLabel(type: Lesson["type"]) {
   }
 }
 
+// ─── Lesson Contents Panel ──────────────────────────────────────────────────
+
+function LessonContentsPanel({
+  lessonId,
+  isEnrolled,
+  isFreePreview,
+  courseSlug,
+  showTrialLinks,
+  onViewVideo,
+}: {
+  lessonId: string;
+  isEnrolled: boolean;
+  isFreePreview: boolean;
+  courseSlug?: string;
+  showTrialLinks?: boolean;
+  onViewVideo: (content: LessonContent) => void;
+}) {
+  const { data: contentsRaw, isLoading } = useLessonContents(lessonId);
+  const contents: LessonContent[] = Array.isArray(contentsRaw) ? contentsRaw : [];
+  const canAccess = isEnrolled || isFreePreview;
+
+  if (isLoading) {
+    return (
+      <div className="py-3 pl-16 pr-4 flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Đang tải nội dung...
+      </div>
+    );
+  }
+
+  if (contents.length === 0) {
+    return (
+      <div className="py-3 pl-16 pr-4 text-sm text-muted-foreground">
+        Chưa có nội dung trong bài học này.
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-muted/20">
+      {contents.map((content) => {
+        const ContentIcon = getContentIcon(content.type);
+        const handleClick = () => {
+          if (!canAccess) return;
+          if (content.type === "video" && content.video_url) {
+            onViewVideo(content);
+          } else if (content.type === "exercise" && content.exercise_id) {
+            window.open(`/exercises/${content.exercise_id}`, "_blank");
+          }
+        };
+
+        return (
+          <div
+            key={content.id}
+            onClick={handleClick}
+            className={cn(
+              "flex items-center justify-between border-t border-muted/50 py-2.5 pl-16 pr-4",
+              canAccess && content.type === "video" && content.video_url && "cursor-pointer hover:bg-muted/50"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              {canAccess ? (
+                <ContentIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              ) : (
+                <Lock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              )}
+              <div>
+                <span className="text-sm">{content.title}</span>
+                <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                  {getContentTypeLabel(content.type)}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {content.duration && (
+                <span className="text-xs text-muted-foreground">
+                  {formatSeconds(content.duration)}
+                </span>
+              )}
+              {canAccess && content.type === "video" && content.video_url && showTrialLinks && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-primary-600 hover:text-primary-700 h-7 px-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewVideo(content);
+                  }}
+                >
+                  <Eye className="h-3.5 w-3.5 mr-1" />
+                  Xem thử
+                </Button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Expandable Lesson Row ──────────────────────────────────────────────────
+
+function ExpandableLessonRow({
+  lesson,
+  isEnrolled,
+  courseSlug,
+  showTrialLinks,
+  onViewVideo,
+}: {
+  lesson: Lesson;
+  isEnrolled: boolean;
+  courseSlug?: string;
+  showTrialLinks?: boolean;
+  onViewVideo: (content: LessonContent) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const LessonIcon = getLessonIcon(lesson.type);
+  const canAccess = isEnrolled || lesson.isFreePreview;
+  const lessonHref = `/learn/${courseSlug}/${lesson.id}`;
+
+  return (
+    <div>
+      {/* Lesson Header */}
+      <div
+        onClick={() => setExpanded(!expanded)}
+        className={cn(
+          "flex items-center justify-between border-t border-muted py-3 pl-8 pr-4 cursor-pointer hover:bg-muted/50"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <ChevronRight
+            className={cn(
+              "h-4 w-4 transition-transform text-muted-foreground",
+              expanded && "rotate-90"
+            )}
+          />
+          {isEnrolled ? (
+            lesson.completed ? (
+              <CheckCircle className="h-5 w-5 text-xp flex-shrink-0" />
+            ) : (
+              <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            )
+          ) : canAccess ? (
+            <LessonIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+          ) : (
+            <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+          )}
+
+          <div>
+            <span className={cn(lesson.completed && "text-muted-foreground")}>
+              {lesson.title}
+            </span>
+            {lesson.type !== "video" && (
+              <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs">
+                {getLessonTypeLabel(lesson.type)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">
+            {formatDuration(lesson.duration)}
+          </span>
+          {canAccess && showTrialLinks && (
+            <span className="text-sm text-primary-600">Xem thử</span>
+          )}
+        </div>
+      </div>
+
+      {/* Lesson Contents */}
+      {expanded && (
+        <LessonContentsPanel
+          lessonId={lesson.id.toString()}
+          isEnrolled={isEnrolled}
+          isFreePreview={lesson.isFreePreview || false}
+          courseSlug={courseSlug}
+          showTrialLinks={showTrialLinks}
+          onViewVideo={onViewVideo}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Video Preview Modal ────────────────────────────────────────────────────
+
+function VideoPreviewModal({
+  open,
+  onOpenChange,
+  content,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  content: LessonContent | null;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<any>(null);
+
+  // Construct full video URL
+  const videoUrl = useMemo(() => {
+    if (!content?.video_url) return "";
+    let url = content.video_url;
+    if (url.startsWith("/api/")) {
+      // HLS URLs need to go to backend server (remove /api suffix, keep base URL)
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+      // Extract base URL: http://localhost:5000/api -> http://localhost:5000
+      const baseUrl = apiUrl.replace(/\/api(\/v\d+)?$/, "");
+      url = `${baseUrl}${url}`;
+    }
+    return url;
+  }, [content?.video_url]);
+
+  const isHls = videoUrl.includes(".m3u8");
+
+  const [videoError, setVideoError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open || !videoUrl || !videoRef.current) return;
+
+    setVideoError(null);
+    const video = videoRef.current;
+
+    if (isHls) {
+      // Use hls.js for HLS streams
+      import("hls.js").then(({ default: Hls }) => {
+        if (Hls.isSupported()) {
+          const hls = new Hls({
+            maxBufferLength: 30,        // Max 30 giây buffer
+            maxMaxBufferLength: 60,     // Max 60 giây total
+            maxBufferSize: 10 * 1000 * 1000, // 10MB max buffer (giảm bandwidth)
+            startLevel: 0,              // Bắt đầu với quality thấp nhất
+            abrMaxWithRealBitrate: true,
+            abrBandWidthFactor: 0.7,
+          });
+          hlsRef.current = hls;
+          hls.loadSource(videoUrl);
+          hls.attachMedia(video);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            video.play().catch(() => {});
+          });
+          hls.on(Hls.Events.ERROR, (_, data) => {
+            if (data.fatal) {
+              console.error("HLS Error:", data);
+              if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                setVideoError("Không thể tải video. Video có thể đang được xử lý.");
+              } else {
+                setVideoError("Lỗi phát video: " + data.details);
+              }
+            }
+          });
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          // Safari native HLS support
+          video.src = videoUrl;
+          video.play().catch(() => {});
+        }
+      });
+    } else {
+      // Regular video
+      video.src = videoUrl;
+      video.onerror = () => setVideoError("Không thể tải video");
+      video.play().catch(() => {});
+    }
+
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    };
+  }, [open, videoUrl, isHls]);
+
+  if (!content) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>{content.title}</DialogTitle>
+          <DialogDescription>Xem trước video bài giảng</DialogDescription>
+        </DialogHeader>
+
+        <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
+          {videoUrl ? (
+            <>
+              <video
+                ref={videoRef}
+                controls
+                className="w-full h-full"
+              >
+                Trình duyệt không hỗ trợ video.
+              </video>
+              {videoError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/80 text-white text-center p-4">
+                  <div>
+                    <p className="text-red-400 mb-2">{videoError}</p>
+                    <p className="text-sm text-gray-400">URL: {videoUrl}</p>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-white">
+              <p>Video chưa được upload hoặc đang xử lý</p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Đóng
+          </Button>
+          {videoUrl && (
+            <Button onClick={() => window.open(videoUrl, "_blank")}>
+              <Eye className="w-4 h-4 mr-2" />
+              Mở trong tab mới
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Main Component ─────────────────────────────────────────────────────────
+
 export function CourseSyllabus({
   sections,
   isEnrolled = false,
@@ -73,6 +445,8 @@ export function CourseSyllabus({
   const [expandedSections, setExpandedSections] = useState<string[]>(
     sections.length > 0 ? [sections[0].id.toString()] : []
   );
+  const [videoPreviewModal, setVideoPreviewModal] = useState(false);
+  const [previewingVideo, setPreviewingVideo] = useState<LessonContent | null>(null);
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections((prev) =>
@@ -88,6 +462,11 @@ export function CourseSyllabus({
 
   const collapseAll = () => {
     setExpandedSections([]);
+  };
+
+  const handleViewVideo = (content: LessonContent) => {
+    setPreviewingVideo(content);
+    setVideoPreviewModal(true);
   };
 
   const totalLessons = sections.reduce((acc, s) => acc + s.lessons.length, 0);
@@ -159,82 +538,29 @@ export function CourseSyllabus({
               {/* Lessons */}
               {isExpanded && (
                 <div className="bg-muted/30">
-                  {section.lessons.map((lesson) => {
-                    const LessonIcon = getLessonIcon(lesson.type);
-                    const canAccess = isEnrolled || lesson.isFreePreview;
-                    const canNavigate = canAccess && Boolean(courseSlug);
-                    const lessonHref = `/learn/${courseSlug}/${lesson.id}`;
-
-                    const lessonContent = (
-                      <>
-                        <div className="flex items-center gap-3">
-                          {isEnrolled ? (
-                            lesson.completed ? (
-                              <CheckCircle className="h-5 w-5 text-xp flex-shrink-0" />
-                            ) : (
-                              <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                            )
-                          ) : canAccess ? (
-                            <LessonIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                          ) : (
-                            <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                          )}
-
-                          <div>
-                            <span className={cn(lesson.completed && "text-muted-foreground")}>
-                              {lesson.title}
-                            </span>
-                            {lesson.type !== "video" && (
-                              <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs">
-                                {getLessonTypeLabel(lesson.type)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm text-muted-foreground">
-                            {formatDuration(lesson.duration)}
-                          </span>
-                          {!isEnrolled && lesson.isFreePreview && canNavigate && showTrialLinks && (
-                            <Button size="sm" variant="ghost" className="text-primary-600 hover:text-primary-700" asChild>
-                              <Link href={lessonHref}>Xem thử</Link>
-                            </Button>
-                          )}
-                        </div>
-                      </>
-                    );
-
-                    if (canNavigate) {
-                      return (
-                        <Link
-                          key={lesson.id}
-                          href={lessonHref}
-                          className="flex items-center justify-between border-t border-muted py-3 pl-12 pr-4 hover:bg-muted/50"
-                        >
-                          {lessonContent}
-                        </Link>
-                      );
-                    }
-
-                    return (
-                      <div
-                        key={lesson.id}
-                        className={cn(
-                          "flex items-center justify-between border-t border-muted py-3 pl-12 pr-4",
-                          canAccess && "cursor-pointer hover:bg-muted/50"
-                        )}
-                      >
-                        {lessonContent}
-                      </div>
-                    );
-                  })}
+                  {section.lessons.map((lesson) => (
+                    <ExpandableLessonRow
+                      key={lesson.id}
+                      lesson={lesson}
+                      isEnrolled={isEnrolled}
+                      courseSlug={courseSlug}
+                      showTrialLinks={showTrialLinks}
+                      onViewVideo={handleViewVideo}
+                    />
+                  ))}
                 </div>
               )}
             </div>
           );
         })}
       </div>
+
+      {/* Video Preview Modal */}
+      <VideoPreviewModal
+        open={videoPreviewModal}
+        onOpenChange={setVideoPreviewModal}
+        content={previewingVideo}
+      />
     </div>
   );
 }

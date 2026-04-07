@@ -36,6 +36,7 @@ export function useCourse(id: string) {
     queryKey: courseKeys.detail(id),
     queryFn: () => courseService.getCourseById(id),
     enabled: !!id,
+    staleTime: 30 * 1000, // 30s - avoid refetch on every mount
   });
 }
 

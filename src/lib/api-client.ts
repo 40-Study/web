@@ -1,5 +1,9 @@
 /**
- * Axios API client with token refresh and error normalization
+ * Custom Axios client
+ *
+ * - access_token + refresh_token: httpOnly cookies, backend set, browser tự gửi
+ * - Frontend KHÔNG lưu/đọc token — chỉ cần withCredentials: true
+ * - 401 → gọi /auth/refresh-token (cookie tự gửi) → retry request gốc
  */
 
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
@@ -15,155 +19,69 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-// Create axios instance
+// ─── Axios instance ─────────────────────────────────────────────────────────
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true, // Cookie-based refresh token
+  withCredentials: true, // Browser tự gửi cookies mọi request
   timeout: 15_000,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
 });
 
-// Token refresh state
-let refreshPromise: Promise<string> | null = null;
+// ─── Refresh logic (deduplicate concurrent 401s) ────────────────────────────
 
-/**
- * Get token from auth store (lazy import to avoid circular deps)
- */
-function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const stored = localStorage.getItem("auth-storage");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return parsed.state?.token || null;
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
+let refreshPromise: Promise<void> | null = null;
+let isRefreshing = false;
 
-/**
- * Get refresh token from auth store
- */
-function getRefreshToken(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const stored = localStorage.getItem("auth-storage");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return parsed.state?.refreshToken || null;
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
-
-/**
- * Set tokens in auth store
- */
-function setTokens(accessToken: string, refreshToken?: string): void {
-  if (typeof window === "undefined") return;
-  try {
-    const stored = localStorage.getItem("auth-storage");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      parsed.state.token = accessToken;
-      if (refreshToken) {
-        parsed.state.refreshToken = refreshToken;
-      }
-      localStorage.setItem("auth-storage", JSON.stringify(parsed));
-    }
-  } catch {
-    // Ignore
-  }
-}
-
-/**
- * Clear auth state
- */
-function clearAuth(): void {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem("auth-storage");
-  window.location.href = "/login";
-}
-
-/**
- * Refresh the access token
- */
-async function refreshAccessToken(): Promise<string> {
-  const rt = getRefreshToken();
-  if (!rt) throw new Error("No refresh token");
-
-  const response = await axios.post(
+async function doRefresh(): Promise<void> {
+  // Gọi refresh — cookies tự gửi, backend set cookie mới
+  await axios.post(
     `${API_BASE_URL}/auth/refresh-token`,
-    { refresh_token: rt },
-    { withCredentials: true }
+    {},
+    { withCredentials: true, timeout: 10_000 }
   );
-  const { access_token, refresh_token } = response.data.data;
-  setTokens(access_token, refresh_token);
-  return access_token;
 }
 
-// Request interceptor: attach access token
-api.interceptors.request.use((config) => {
-  const token = getToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// ─── Response interceptor: 401 → refresh → retry ───────────────────────────
 
-// Response interceptor: error normalization + token refresh
 api.interceptors.response.use(
-  (response) => response,
+  (res) => res,
   async (error: AxiosError<{ code?: string; message?: string; details?: Record<string, string[]> }>) => {
-    // Network error
-    if (!error.response) {
-      throw new NetworkError();
-    }
+    if (!error.response) throw new NetworkError();
 
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     const { status, data } = error.response;
 
-    // Handle 401: try refresh token (only if we had a token and have a refresh token)
+    // 401 → thử refresh 1 lần
     if (status === 401 && !original._retry) {
       original._retry = true;
 
-      const hadToken = !!getToken();
-      const hasRefresh = !!getRefreshToken();
-
-      if (hadToken && hasRefresh) {
-        try {
-          // Deduplicate: all concurrent 401s share one refresh call
-          if (!refreshPromise) {
-            refreshPromise = refreshAccessToken().finally(() => {
-              refreshPromise = null;
-            });
-          }
-
-          const newToken = await refreshPromise;
-          original.headers.Authorization = `Bearer ${newToken}`;
-          return api(original);
-        } catch {
-          // Refresh failed, clear auth and redirect
-          clearAuth();
-          throw new AuthError(data?.message);
+      try {
+        // Deduplicate: nhiều request 401 cùng lúc chỉ gọi refresh 1 lần
+        if (!isRefreshing) {
+          isRefreshing = true;
+          refreshPromise = doRefresh().finally(() => {
+            isRefreshing = false;
+            refreshPromise = null;
+          });
         }
-      }
 
-      // No refresh token available — just throw 401, don't redirect
-      if (hadToken) {
-        // Had a token but no refresh token — session is stale, clear it
-        clearAuth();
+        await refreshPromise;
+
+        // Refresh thành công — retry request gốc (cookies mới đã được set)
+        return api(original);
+      } catch {
+        // Refresh thất bại — session hết hạn, về login
+        if (typeof window !== "undefined") {
+          // Clear UI state
+          try { localStorage.removeItem("auth-storage"); } catch { /* ignore */ }
+          window.location.href = "/login";
+        }
+        throw new AuthError(data?.message);
       }
-      throw new AuthError(data?.message);
     }
 
-    // Normalize other errors
+    // Normalize errors
     switch (status) {
       case 401:
         throw new AuthError(data?.message);
@@ -185,7 +103,8 @@ api.interceptors.response.use(
   }
 );
 
-// Legacy support: ApiClient class (deprecated, use api directly)
+// ─── Convenience wrapper (unwrap response.data) ─────────────────────────────
+
 export const apiClient = {
   get: <T>(url: string, config?: object) => api.get<T>(url, config).then((r) => r.data),
   post: <T>(url: string, data?: unknown, config?: object) => api.post<T>(url, data, config).then((r) => r.data),
