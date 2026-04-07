@@ -3,6 +3,7 @@
  */
 
 import { api } from "@/lib/api-client";
+import type { ClassMember, TeacherStudent } from "@/types/class";
 
 export interface Class {
   id: string;
@@ -13,6 +14,7 @@ export interface Class {
   teacher_ids: string[];
   student_count: number;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface Schedule {
@@ -78,6 +80,17 @@ export const classService = {
   delete: (id: string) =>
     api.delete<{ message: string }>(`/classes/${id}`).then((r) => r.data),
 
+  // Members (generic: includes both students and teachers)
+  getMembers: (classId: string) =>
+    api
+      .get<{ message: string; data: { members: ClassMember[] } }>(`/classes/${classId}/members`)
+      .then((r) => r.data.data.members),
+
+  addMember: (classId: string, userId: string) =>
+    api
+      .post<{ message: string }>(`/classes/${classId}/members`, { user_id: userId })
+      .then((r) => r.data),
+
   // Teachers
   assignTeacher: (classId: string, teacherId: string) =>
     api.post<{ message: string }>(`/classes/${classId}/teachers`, { teacher_id: teacherId }).then((r) => r.data),
@@ -126,4 +139,18 @@ export const classService = {
   updateAttendance: (classId: string, attendanceId: string, data: Partial<MarkAttendanceDTO>) =>
     api.put<{ message: string; data: Attendance }>(`/classes/${classId}/attendances/${attendanceId}`, data)
       .then((r) => r.data.data),
+
+  // Teacher's classes
+  getMyClasses: () =>
+    api.get<{ message: string; data: { classes: Class[] } }>("/classes/me")
+      .then((r) => r.data.data.classes),
+
+  // All students across teacher's classes (paginated, use large page_size to get all)
+  getMyStudents: (pageSize = 200) =>
+    api
+      .get<{ message: string; data: { students: TeacherStudent[]; total: number } }>(
+        "/teachers/me/students",
+        { params: { page: 1, page_size: pageSize } }
+      )
+      .then((r) => r.data.data.students),
 };

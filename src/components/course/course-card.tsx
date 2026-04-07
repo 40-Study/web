@@ -1,10 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Star, BookOpen } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Course, EnrolledCourse } from "@/types/course";
 
 interface CourseCardProps {
@@ -20,6 +20,7 @@ function isEnrolledCourse(
 
 export function CourseCard({ course, className }: CourseCardProps) {
   const enrolled = isEnrolledCourse(course);
+  const [imgError, setImgError] = useState(false);
 
   return (
     <Link href={`/courses/${course.slug}`}>
@@ -32,13 +33,20 @@ export function CourseCard({ course, className }: CourseCardProps) {
         )}
       >
         {/* Thumbnail */}
-        <div className="relative aspect-video overflow-hidden">
-          <img
-            src={course.thumbnail}
-            alt={course.title}
-            className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]"
-            loading="lazy"
-          />
+        <div className="relative aspect-video overflow-hidden bg-slate-100">
+          {!imgError && course.thumbnail ? (
+            <img
+              src={course.thumbnail}
+              alt={course.title}
+              className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]"
+              loading="lazy"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+              <BookOpen className="w-10 h-10 text-slate-300" />
+            </div>
+          )}
           {/* Gradient overlay on hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           {course.price === 0 && (
@@ -90,9 +98,9 @@ export function CourseCard({ course, className }: CourseCardProps) {
               <span className="text-sm text-slate-500">
                 {course.progress}% hoàn thành
               </span>
-              <Button size="sm" className="rounded-xl bg-primary-600 hover:bg-primary-700" onClick={(e) => e.preventDefault()}>
+              <span className="inline-flex items-center justify-center h-9 px-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors">
                 Tiếp tục
-              </Button>
+              </span>
             </div>
           ) : (
             <div className="flex items-center justify-between pt-1 border-t border-slate-100">

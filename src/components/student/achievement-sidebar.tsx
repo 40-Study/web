@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { Award } from "lucide-react";
-import type { Achievement } from "@/lib/mock-data/my-courses";
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  earnedAt: string;
+  color: string;
+}
 
 interface AchievementSidebarProps {
   achievements: Achievement[];

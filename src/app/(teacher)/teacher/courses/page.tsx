@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Plus, Users, Star, Play, Radio, Layers, FileEdit } from "lucide-react";
+import { Search, Plus, Users, Star, Play, Radio, Layers, FileEdit, Loader2 } from "lucide-react";
+import { useMyCourses } from "@/hooks/queries/use-courses";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -37,68 +38,22 @@ interface Course {
   missingItems?: string;
 }
 
-const MOCK_COURSES: Course[] = [
-  {
-    id: "1",
-    title: "Xây dựng API với Go Fiber cho doanh nghiệp",
-    type: "video",
-    status: "published",
-    students: 1248,
-    rating: 4.8,
-    price: 85500000,
-    isBestSeller: true,
-  },
-  {
-    id: "2",
-    title: "Mastering Python for Data Science 2026",
-    type: "video",
-    status: "published",
-    students: 5409,
-    rating: 4.9,
-    price: 162200000,
-    salePrice: 142200000,
-  },
-  {
-    id: "3",
-    title: "JavaScript Pro: From Zero to Senior Engineer",
-    type: "hybrid",
-    status: "published",
-    students: 5309,
-    rating: 4.7,
-    price: 205500000,
-  },
-  {
-    id: "4",
-    title: "Chủ đề thi AWS Solutions Architect Associate C03",
-    type: "livestream",
-    status: "published",
-    students: 456,
-    rating: 4.6,
-    price: 12400000,
-  },
-  {
-    id: "5",
-    title: "Trại huấn luyện Fullstack 2026",
-    type: "hybrid",
-    status: "draft",
-    students: 0,
-    rating: 0,
-    price: 0,
-    progress: 60,
-    missingItems: "Thiếu 4 video & 2 bài tập",
-  },
-  {
-    id: "6",
-    title: "Next.js 15 & App Router",
-    type: "video",
-    status: "draft",
-    students: 0,
-    rating: 0,
-    price: 0,
-    progress: 25,
-    missingItems: "Thiếu 12 video & nội dung chương trình",
-  },
-];
+/** Map API course to local Course type */
+function mapApiCourse(c: { id: string; title: string; thumbnail_url?: string; status?: string; total_students?: number; average_rating?: number | string; price?: number | string; discount_price?: number | string; is_featured?: boolean }): Course {
+  const status = c.status === "published" ? "published" : c.status === "archived" ? "archived" : "draft";
+  return {
+    id: c.id,
+    title: c.title,
+    thumbnail: c.thumbnail_url,
+    type: "video", // Default, backend doesn't have course type yet
+    status,
+    students: c.total_students || 0,
+    rating: Number(c.average_rating) || 0,
+    price: Number(c.price) || 0,
+    salePrice: c.discount_price ? Number(c.discount_price) : undefined,
+    isBestSeller: c.is_featured,
+  };
+}
 
 const TYPE_CONFIG: Record<CourseType, { label: string; icon: React.ReactNode; color: string }> = {
   video: { label: "VIDEO", icon: <Play className="w-3 h-3" />, color: "bg-green-500" },
@@ -233,7 +188,8 @@ export default function TeacherCoursesPage() {
   const [formatFilter, setFormatFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
 
-  const courses = MOCK_COURSES;
+  const { data: apiCourses, isLoading } = useMyCourses();
+  const courses = useMemo(() => (apiCourses || []).map(mapApiCourse), [apiCourses]);
 
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
@@ -249,6 +205,14 @@ export default function TeacherCoursesPage() {
     draft: courses.filter((c) => c.status === "draft").length,
     archived: courses.filter((c) => c.status === "archived").length,
   }), [courses]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

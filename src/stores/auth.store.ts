@@ -1,25 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Permission } from "@/lib/permissions";
+import type { UnifiedRole } from "@/services/auth.service";
 
 export type RoleType = "student" | "teacher" | "parent" | "admin";
-
-/** Matches backend UnifiedRoleDto */
-export interface UnifiedRole {
-  id: string;
-  type: "system" | "organization";
-  role_name: string;
-  display_name: string;
-  organization_id?: string;
-  organization_name?: string;
-}
-
-/** Legacy SystemRole (subset of UnifiedRole) */
-export interface SystemRole {
-  id: string;
-  name: string;
-  description?: string;
-}
+export type { UnifiedRole };
 
 interface User {
   id: string;
@@ -47,7 +32,7 @@ interface AuthState {
   token: string | null;
   sessionToken: string | null;
 
-  // Multi-role system (unified: system + org roles)
+  // Multi-role system (unified roles from backend)
   roles: UnifiedRole[];
   activeRole: string | null;
   activeUnifiedRole: UnifiedRole | null;
@@ -84,7 +69,7 @@ interface AuthState {
   setRegisterRole: (role: string | null) => void;
   setHasHydrated: (value: boolean) => void;
 
-  login: (user: User) => void;
+  login: (user: User, roles?: UnifiedRole[]) => void;
   logout: () => void;
   reset: () => void;
 }
@@ -126,9 +111,10 @@ export const useAuthStore = create<AuthState>()(
       setRegisterRole: (registerRole) => set({ registerRole }),
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
 
-      login: (user) =>
+      login: (user, roles) =>
         set({
           user,
+          roles: roles || [],
           isAuthenticated: true,
         }),
 

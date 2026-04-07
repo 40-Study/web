@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { AuthCard } from "@/components/auth/auth-card";
 import { AuthIconHeader } from "@/components/auth/auth-icon-header";
 import { PasswordChecklist } from "@/components/auth/password-checklist";
@@ -9,13 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UnlockIcon } from "@/components/icons";
 import { AUTH_ROUTES } from "@/lib/routes";
+import { useResetPassword } from "@/hooks/queries/use-auth";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const resetPassword = useResetPassword();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,12 +25,28 @@ export default function ResetPasswordPage() {
       setError("Mật khẩu xác nhận không khớp");
       return;
     }
+
+    const email = sessionStorage.getItem("reset_password_email");
+    const otp = sessionStorage.getItem("reset_password_otp");
+    if (!email || !otp) {
+      toast.error("Phiên đặt lại mật khẩu đã hết hạn");
+      router.push(AUTH_ROUTES.FORGOT_PASSWORD);
+      return;
+    }
+
     setError("");
-    setIsLoading(true);
-    // TODO: Call API to reset password
-    await new Promise((r) => setTimeout(r, 1000)); // Simulate API call
-    setIsLoading(false);
-    router.push(AUTH_ROUTES.RESET_PASSWORD_SUCCESS);
+    try {
+      await resetPassword.mutateAsync({
+        email,
+        otp,
+        new_password: password,
+        confirm_password: confirmPassword,
+      });
+      sessionStorage.removeItem("reset_password_email");
+      sessionStorage.removeItem("reset_password_otp");
+    } catch {
+      /* toast shown in hook */
+    }
   };
 
   return (
@@ -66,7 +84,12 @@ export default function ResetPasswordPage() {
 
         <PasswordChecklist password={password} />
 
-        <Button type="submit" className="h-12 w-full" isLoading={isLoading} loadingText="Đang xử lý...">
+        <Button
+          type="submit"
+          className="h-12 w-full"
+          isLoading={resetPassword.isPending}
+          loadingText="Đang xử lý..."
+        >
           Đặt lại mật khẩu
         </Button>
       </form>

@@ -28,9 +28,11 @@ const ROLE_ALIASES: Record<string, string> = {
   ADMIN: "SYSTEM_ADMIN",
 };
 
-export function normalizeRole(role?: string | null): string | null {
+/** Normalize role to uppercase string. Accepts string or UnifiedRole object. */
+export function normalizeRole(role?: string | { role_name: string } | null): string | null {
   if (!role) return null;
-  const normalized = role.trim().toUpperCase();
+  const name = typeof role === "string" ? role : role.role_name;
+  const normalized = name.trim().toUpperCase();
   return ROLE_ALIASES[normalized] || normalized;
 }
 

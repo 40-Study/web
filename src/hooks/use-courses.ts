@@ -49,13 +49,13 @@ function mapApiCourse(c: ApiCourse): Course {
     id: c.id,
     title: c.title,
     slug: c.slug ?? c.id,
-    description: c.description ?? "",
-    thumbnail: c.thumbnail ?? "",
-    price: c.price ?? 0,
-    originalPrice: c.original_price,
-    rating: c.rating ?? 0,
-    reviewCount: c.review_count ?? 0,
-    studentCount: c.student_count ?? 0,
+    description: c.short_description || c.description || "",
+    thumbnail: c.thumbnail_url ?? "",
+    price: Number(c.price) || 0,
+    originalPrice: c.discount_price ? Number(c.discount_price) : undefined,
+    rating: Number(c.average_rating) || 0,
+    reviewCount: c.total_reviews ?? 0,
+    studentCount: c.total_students ?? 0,
     instructor: c.instructor
       ? mapApiInstructor(c.instructor)
       : { id: c.instructor_id ?? "", name: "Unknown" },
@@ -63,22 +63,37 @@ function mapApiCourse(c: ApiCourse): Course {
       ? mapApiCategory(c.category)
       : { id: c.category_id ?? "", name: "Unknown", slug: "unknown" },
     level: (c.level as Course["level"]) ?? "beginner",
-    language: c.language ?? "Tiếng Việt",
-    duration: c.duration ?? 0,
-    lessonCount: c.lesson_count ?? 0,
-    learningOutcomes: c.learning_outcomes ?? [],
+    language: c.language === "vi" ? "Tiếng Việt" : (c.language ?? "Tiếng Việt"),
+    duration: c.total_duration_minutes ?? 0,
+    lessonCount: c.total_lessons ?? 0,
+    learningOutcomes: c.objectives ?? [],
     requirements: c.requirements,
     isFeatured: c.is_featured,
-    isPublished: c.is_published,
+    isPublished: c.status === "published",
     createdAt: c.created_at ?? "",
     updatedAt: c.updated_at ?? "",
   };
 }
 
 function mapApiCourseDetail(c: ApiCourse): CourseDetail {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const apiSections = (c as any).sections ?? [];
   return {
     ...mapApiCourse(c),
-    sections: [],
+    sections: apiSections.map((s: any, si: number) => ({
+      id: s.id,
+      title: s.title,
+      order: s.display_order ?? si + 1,
+      duration: (s.lessons ?? []).reduce((sum: number, l: any) => sum + (l.duration_minutes ?? 0), 0),
+      lessons: (s.lessons ?? []).map((l: any, li: number) => ({
+        id: l.id,
+        title: l.title,
+        duration: l.duration_minutes ?? 0,
+        type: "video" as const,
+        isFreePreview: l.is_preview ?? false,
+        order: l.display_order ?? li + 1,
+      })),
+    })),
     reviews: [],
     ratingDistribution: {},
     previewVideoUrl: undefined,
@@ -86,12 +101,28 @@ function mapApiCourseDetail(c: ApiCourse): CourseDetail {
 }
 
 function mapApiEnrollment(e: ApiEnrollment): EnrolledCourse {
-  const base = e.course ? mapApiCourse(e.course) : ({} as Course);
   return {
-    ...base,
-    progress: e.progress ?? 0,
-    completedLessons: e.completed_lessons ?? 0,
-    totalLessons: e.total_lessons ?? 0,
+    id: e.course_id || e.id,
+    title: e.course_title || "Unknown",
+    slug: e.course_slug || e.course_id || e.id,
+    description: "",
+    thumbnail: e.course_thumbnail || "",
+    price: 0,
+    rating: 0,
+    reviewCount: 0,
+    studentCount: 0,
+    instructor: { id: "", name: "Unknown" },
+    category: { id: "", name: e.course_category || "Khóa học", slug: "" },
+    level: "beginner",
+    language: "Tiếng Việt",
+    duration: 0,
+    lessonCount: 0,
+    learningOutcomes: [],
+    createdAt: e.enrolled_at || "",
+    updatedAt: "",
+    progress: Number(e.progress_percentage) || 0,
+    completedLessons: 0,
+    totalLessons: 0,
     lastAccessedAt: e.last_accessed_at,
     enrolledAt: e.enrolled_at ?? e.created_at ?? "",
   };
@@ -218,7 +249,7 @@ export function useSearchSuggestions(query: string) {
         (c): CourseSearchResult => ({
           id: c.id,
           title: c.title,
-          thumbnail: c.thumbnail ?? "",
+          thumbnail: c.thumbnail_url ?? "",
           instructor: c.instructor?.name ?? "Unknown",
           slug: c.slug ?? c.id,
         })
@@ -253,26 +284,18 @@ export function useFeaturedCourses() {
   });
 }
 
-/** Fetch course by slug */
+/** Fetch course by slug — tries slug first, falls back to ID lookup */
 export function useCourseBySlug(slug: string) {
   return useQuery({
     queryKey: courseKeys.detail(slug),
-    queryFn: async (): Promise<CourseDetail | null> => {
+    queryFn: async (): Promise<CourseDetail> => {
       try {
         const raw = await courseService.getCourseBySlug(slug);
         return mapApiCourseDetail(raw);
-      } catch (slugError: unknown) {
-        try {
-          const byId = await courseService.getCourseById(slug);
-          return mapApiCourseDetail(byId);
-        } catch (idError: unknown) {
-          console.error("Failed to fetch course by slug or id:", {
-            slug,
-            slugError,
-            idError,
-          });
-          return null;
-        }
+      } catch {
+        // Slug endpoint may not exist yet — try by ID as fallback
+        const byId = await courseService.getCourseById(slug);
+        return mapApiCourseDetail(byId);
       }
     },
     enabled: !!slug,

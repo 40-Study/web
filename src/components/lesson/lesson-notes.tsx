@@ -1,5 +1,6 @@
 "use client";
 
+import DOMPurify from "isomorphic-dompurify";
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -101,7 +102,7 @@ export function LessonNotes({
                   )}
                   <div
                     className="text-sm prose prose-sm max-w-none break-words"
-                    dangerouslySetInnerHTML={{ __html: note.content }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.content) }}
                   />
                   <p className="text-xs text-muted-foreground mt-2">
                     {new Date(note.createdAt).toLocaleDateString("vi-VN", {

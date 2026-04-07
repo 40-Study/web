@@ -1,7 +1,10 @@
 "use client";
 
 import { Flame, Zap } from "lucide-react";
-import type { TodayStats } from "@/lib/mock-data/my-courses";
+interface TodayStats {
+  timeSpent: string;
+  progress: number;
+}
 
 interface StatsWidgetsProps {
   stats: TodayStats;

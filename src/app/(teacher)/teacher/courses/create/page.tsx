@@ -31,6 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useCreateCourse } from "@/hooks/queries/use-courses";
+import { toast } from "sonner";
 
 const STEPS = [
   { id: 1, title: "Thông tin cơ bản", icon: "①" },
@@ -62,6 +64,7 @@ const FORMATS = [
 
 export default function CreateCoursePage() {
   const router = useRouter();
+  const createCourse = useCreateCourse();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     title: "",
@@ -97,15 +100,34 @@ export default function CreateCoursePage() {
     }
   };
 
-  const handleSaveDraft = () => {
-    console.log("Saving draft:", formData);
-    // TODO: API call
+  const buildCoursePayload = (status: string) => ({
+    title: formData.title,
+    short_description: formData.shortDescription,
+    description: formData.description,
+    level: formData.level,
+    price: formData.pricingType === "free" ? 0 : parseFloat(formData.price) || 0,
+    discount_price: formData.pricingType === "free" ? 0 : parseFloat(formData.salePrice) || 0,
+    is_free: formData.pricingType === "free",
+    is_featured: formData.featured,
+    status,
+  });
+
+  const handleSaveDraft = async () => {
+    try {
+      await createCourse.mutateAsync(buildCoursePayload("draft"));
+      toast.success("Đã lưu nháp");
+    } catch {
+      /* toast shown in hook */
+    }
   };
 
-  const handlePublish = () => {
-    console.log("Publishing:", formData);
-    // TODO: API call
-    router.push("/teacher/courses");
+  const handlePublish = async () => {
+    try {
+      await createCourse.mutateAsync(buildCoursePayload("published"));
+      router.push("/teacher/courses");
+    } catch {
+      /* toast shown in hook */
+    }
   };
 
   return (

@@ -1,61 +1,59 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/auth-card";
 import { RoleCard } from "@/components/auth/role-card";
 import type { RoleType } from "@/components/auth/role-card";
 import { Button } from "@/components/ui/button";
-import { AUTH_ROUTES } from "@/lib/routes";
 import { useAuthStore } from "@/stores";
 import { useSelectRole } from "@/hooks/queries/use-auth";
 import { authService } from "@/services/auth.service";
-import type { UnifiedRole } from "@/stores/auth.store";
-import type { SystemRoleOption } from "@/services/auth.service";
+import type { UnifiedRole, SystemRoleOption } from "@/services/auth.service";
+
+/** Map backend role_name to RoleCard display type */
+function toRoleType(roleName: string): RoleType {
+  const name = roleName.toLowerCase();
+  if (name.includes("student")) return "student";
+  if (name.includes("teacher")) return "teacher";
+  if (name.includes("parent")) return "parent";
+  if (name.includes("admin") || name.includes("owner")) return "admin";
+  return "student";
+}
 
 export default function LoginRolePage() {
-  const router = useRouter();
   const { roles, sessionToken, token } = useAuthStore();
   const selectRole = useSelectRole();
-  const [selectedRole, setSelectedRole] = useState<UnifiedRole | null>(
-    roles.length > 0 ? roles[0] : null
-  );
+  const [selectedRole, setSelectedRole] = useState<UnifiedRole | null>(null);
   const [showAddRole, setShowAddRole] = useState(false);
   const [allSystemRoles, setAllSystemRoles] = useState<SystemRoleOption[]>([]);
+  const [selectedSystemRole, setSelectedSystemRole] = useState<SystemRoleOption | null>(null);
   const [loadingRoles, setLoadingRoles] = useState(false);
 
   const hasRoles = roles.length > 0;
 
-  // User chưa có role (0 roles) → fetch all available system roles để chọn đăng ký
+  // Tự fetch system roles khi user chưa có role
   useEffect(() => {
     if (!hasRoles) {
       fetchAllSystemRoles();
     }
   }, [hasRoles]);
 
-  // Không có session_token VÀ không có token → chưa login, redirect về login
-  // (Khi selectRole thành công, sessionToken=null nhưng token đã được set → không redirect)
-  useEffect(() => {
-    if (!sessionToken && !token) {
-      router.push(AUTH_ROUTES.LOGIN);
-    }
-  }, [sessionToken, token, router]);
-
-  async function fetchAllSystemRoles() {
+  const fetchAllSystemRoles = async () => {
     setLoadingRoles(true);
     try {
       const data = await authService.getAllSystemRoles();
       setAllSystemRoles(data.system_roles || []);
     } catch {
-      setAllSystemRoles([]);
+      // ignore
     } finally {
       setLoadingRoles(false);
     }
-  }
+  };
 
   const handleAddRole = () => {
     setShowAddRole(true);
     setSelectedRole(null);
+    setSelectedSystemRole(null);
     if (allSystemRoles.length === 0) fetchAllSystemRoles();
   };
 
@@ -84,9 +82,6 @@ export default function LoginRolePage() {
     }
   };
 
-  // State cho mode chọn system role mới (khi user chưa có role)
-  const [selectedSystemRole, setSelectedSystemRole] = useState<SystemRoleOption | null>(null);
-
   // Danh sách hiển thị
   const isNewRoleMode = !hasRoles || showAddRole;
 
@@ -96,7 +91,7 @@ export default function LoginRolePage() {
       ? "Thêm vai trò mới"
       : "Đăng nhập với tư cách:";
   const subtitle = !hasRoles
-    ? "Chọn vai trò để bắt đầu sử dụng hệ thống"
+    ? "Chọn vai trò để bắt đầu"
     : showAddRole
       ? "Chọn vai trò bạn muốn thêm"
       : "Chọn vai trò của bạn để tiếp tục";
@@ -117,7 +112,7 @@ export default function LoginRolePage() {
             availableNewRoles.map((role) => (
               <RoleCard
                 key={role.id}
-                role={role.name.toLowerCase() as RoleType}
+                role={toRoleType(role.name)}
                 selected={selectedSystemRole?.id === role.id}
                 onClick={() => {
                   setSelectedSystemRole(role);
@@ -135,7 +130,7 @@ export default function LoginRolePage() {
           roles.map((role) => (
             <RoleCard
               key={role.id}
-              role={role.role_name.toLowerCase() as RoleType}
+              role={toRoleType(role.role_name)}
               selected={selectedRole?.id === role.id}
               onClick={() => {
                 setSelectedRole(role);
@@ -161,14 +156,11 @@ export default function LoginRolePage() {
           {selectRole.isPending ? "Đang xử lý..." : "Tiếp tục"}
         </Button>
 
-        {/* Nút thêm role - chỉ hiện khi đã có role và không đang ở mode thêm */}
         {hasRoles && !showAddRole && (
           <Button variant="outline" onClick={handleAddRole} className="h-12 w-full">
             + Thêm vai trò mới
           </Button>
         )}
-
-        {/* Nút quay lại - khi đang ở mode thêm role */}
         {showAddRole && (
           <Button
             variant="outline"

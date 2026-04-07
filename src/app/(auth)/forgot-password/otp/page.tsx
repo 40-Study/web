@@ -7,34 +7,23 @@ import { AuthIconHeader } from "@/components/auth/auth-icon-header";
 import { OtpInput } from "@/components/auth/otp-input";
 import { MailIcon } from "@/components/icons";
 import { AUTH_ROUTES } from "@/lib/routes";
-import { useResetPassword } from "@/hooks/queries/use-auth";
 
 export default function ForgotPasswordOtpPage() {
   const router = useRouter();
-  const resetPassword = useResetPassword();
-  const [otp, setOtp] = useState("");
+  const [, setOtp] = useState("");
 
-  const handleComplete = async (otpCode: string) => {
+  const handleComplete = (otpCode: string) => {
     setOtp(otpCode);
-    
+
     const email = sessionStorage.getItem("reset_password_email");
     if (!email) {
       router.push(AUTH_ROUTES.FORGOT_PASSWORD);
       return;
     }
 
-    try {
-      await resetPassword.mutateAsync({
-        email,
-        otp: otpCode,
-        new_password: "",
-        confirm_password: "",
-      });
-      sessionStorage.removeItem("reset_password_email");
-      router.push(AUTH_ROUTES.RESET_PASSWORD_SUCCESS);
-    } catch (error) {
-      console.error("Reset password failed:", error);
-    }
+    // Store OTP for the reset-password page
+    sessionStorage.setItem("reset_password_otp", otpCode);
+    router.push(AUTH_ROUTES.RESET_PASSWORD);
   };
 
   return (
@@ -46,13 +35,7 @@ export default function ForgotPasswordOtpPage() {
           description="Nhập mã 6 chữ số đã được gửi đến email của bạn"
           className="mb-8"
         />
-        <OtpInput 
-          onComplete={handleComplete} 
-          countdown={90}
-        />
-        {resetPassword.isPending && (
-          <p className="mt-4 text-sm text-muted-foreground">Đang xử lý...</p>
-        )}
+        <OtpInput onComplete={handleComplete} countdown={90} />
       </div>
     </AuthCard>
   );

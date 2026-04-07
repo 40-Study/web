@@ -1,25 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { Download, DollarSign, UserPlus, Users, TrendingUp, TrendingDown, Play, Radio, Layers } from "lucide-react";
+import {
+  Download,
+  Users,
+  TrendingUp,
+  MessageSquare,
+  Zap,
+  Loader2,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   LineChart,
   Line,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -27,195 +23,257 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import {
+  useLivestreamAnalytics,
+  useParticipantAnalytics,
+} from "@/hooks/queries/use-analytics";
 
-// Mock data
-const GROWTH_DATA = [
-  { date: "1ST", revenue: 2.5, students: 15 },
-  { date: "5TH", revenue: 4.2, students: 28 },
-  { date: "10TH", revenue: 3.8, students: 22 },
-  { date: "15TH", revenue: 5.5, students: 35 },
-  { date: "20TH", revenue: 6.2, students: 42 },
-  { date: "25TH", revenue: 5.8, students: 38 },
-  { date: "31ST", revenue: 7.1, students: 48 },
-];
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const DISTRIBUTION_DATA = [
-  { name: "Video", value: 720, percentage: 60, color: "#3B82F6" },
-  { name: "Livestream", value: 360, percentage: 30, color: "#EF4444" },
-  { name: "Hybrid", value: 120, percentage: 10, color: "#1E40AF" },
-];
+function formatSeconds(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}m ${s}s`;
+}
 
-const COURSE_PERFORMANCE = [
-  { id: "1", title: "Go Fiber Framework Mastery", type: "video", modules: 12, enrollments: 124, completion: 82, revenue: 45200000 },
-  { id: "2", title: "AWS Cloud Practitioner 2024", type: "hybrid", modules: 0, enrollments: 98, completion: 65, revenue: 32800000 },
-  { id: "3", title: "React Advanced Patterns", type: "video", modules: 8, enrollments: 56, completion: 90, revenue: 18500000 },
-];
-
-const KPI_DATA = [
-  { label: "Tổng doanh thu", value: "125.4M ₫", change: 12.5, icon: DollarSign, positive: true },
-  { label: "Học sinh mới", value: "342", change: 8.2, icon: UserPlus, positive: true },
-  { label: "Học sinh đang học", value: "1,240", change: -1.1, icon: Users, positive: false },
-  { label: "Tỷ lệ hoàn thành", value: "68%", change: -4.0, icon: TrendingUp, positive: false },
-];
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TeacherAnalyticsPage() {
-  const [dateRange, setDateRange] = useState("this-month");
-  const [courseFilter, setCourseFilter] = useState("all");
+  const [sessionId, setSessionId] = useState("");
+  const [inputValue, setInputValue] = useState("");
+
+  const { data: sessionAnalytics, isLoading: isSessionLoading } =
+    useLivestreamAnalytics(sessionId);
+
+  const { data: participantData, isLoading: isParticipantsLoading } =
+    useParticipantAnalytics(sessionId);
+
+  const isLoading = isSessionLoading || isParticipantsLoading;
+
+  // Build join-timeline chart data from API response
+  const timelineData =
+    sessionAnalytics?.join_timeline.map((point) => ({
+      time: new Date(point.timestamp).toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      participants: point.count,
+    })) ?? [];
+
+  const handleSearch = () => {
+    setSessionId(inputValue.trim());
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold">Thống kê tổng quan</h1>
-        <div className="flex items-center gap-3">
-          <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="this-month">Tháng này</SelectItem>
-              <SelectItem value="last-month">Tháng trước</SelectItem>
-              <SelectItem value="this-quarter">Quý này</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={courseFilter} onValueChange={setCourseFilter}>
-            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Tất cả khóa học" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả khóa học</SelectItem>
-              <SelectItem value="go-fiber">Go Fiber</SelectItem>
-              <SelectItem value="aws">AWS Cloud</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline"><Download className="w-4 h-4 mr-2" />Tải báo cáo PDF</Button>
+        <div>
+          <h1 className="text-2xl font-bold">Thống kê phiên học</h1>
+          <p className="text-sm text-muted-foreground">
+            Nhập Session ID để xem phân tích chi tiết cho một buổi livestream.
+          </p>
         </div>
+        <Button variant="outline">
+          <Download className="w-4 h-4 mr-2" />
+          Tải báo cáo PDF
+        </Button>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {KPI_DATA.map((kpi) => (
-          <Card key={kpi.label}>
+      {/* Session ID input */}
+      <div className="flex gap-3 max-w-md">
+        <Input
+          placeholder="Nhập Session ID..."
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+        />
+        <Button onClick={handleSearch} disabled={!inputValue.trim()}>
+          Xem thống kê
+        </Button>
+      </div>
+
+      {/* Empty state */}
+      {!sessionId && (
+        <Card className="p-12 text-center">
+          <p className="text-muted-foreground">
+            Nhập Session ID ở trên để tải thống kê buổi học.
+          </p>
+        </Card>
+      )}
+
+      {/* Loading */}
+      {sessionId && isLoading && (
+        <div className="flex justify-center p-12">
+          <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
+        </div>
+      )}
+
+      {/* Session KPI cards */}
+      {sessionId && !isLoading && sessionAnalytics && (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">Tổng người tham gia</span>
+                  <Users className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <span className="text-2xl font-bold">
+                  {sessionAnalytics.total_participants}
+                </span>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">Đỉnh người tham gia</span>
+                  <TrendingUp className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <span className="text-2xl font-bold">
+                  {sessionAnalytics.peak_participants}
+                </span>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">TG xem TB</span>
+                  <Zap className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <span className="text-2xl font-bold">
+                  {formatSeconds(sessionAnalytics.avg_watch_duration)}
+                </span>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">Tin nhắn</span>
+                  <MessageSquare className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <span className="text-2xl font-bold">
+                  {sessionAnalytics.total_messages}
+                </span>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Engagement rate */}
+          <Card>
             <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">{kpi.label}</span>
-                <kpi.icon className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div className="flex items-end gap-2">
-                <span className="text-2xl font-bold">{kpi.value}</span>
-                <Badge variant={kpi.positive ? "success" : "destructive"} className="text-xs gap-1">
-                  {kpi.positive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                  {kpi.positive ? "+" : ""}{kpi.change}%
-                </Badge>
-              </div>
+              <p className="text-sm font-medium mb-2">
+                Tỷ lệ tương tác:{" "}
+                <span className="font-bold">
+                  {(sessionAnalytics.engagement_rate * 100).toFixed(1)}%
+                </span>
+              </p>
+              <ProgressBar
+                value={sessionAnalytics.engagement_rate * 100}
+                size="sm"
+              />
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      {/* Charts */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Growth Chart */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Biểu đồ tăng trưởng</CardTitle>
-            <p className="text-sm text-muted-foreground">Doanh thu & Học sinh tháng này</p>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={GROWTH_DATA} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                  <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
-                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Line yAxisId="left" type="monotone" dataKey="revenue" name="Doanh thu (M)" stroke="#3B82F6" strokeWidth={2} dot={{ r: 4 }} />
-                  <Line yAxisId="right" type="monotone" dataKey="students" name="Học sinh" stroke="#10B981" strokeWidth={2} dot={{ r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Distribution Pie Chart */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Tỷ trọng học sinh</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[280px] flex items-center">
-              <div className="w-1/2 h-full relative">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={DISTRIBUTION_DATA} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value" paddingAngle={2}>
-                      {DISTRIBUTION_DATA.map((entry) => (<Cell key={entry.name} fill={entry.color} />))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-bold">1.2K</span>
-                  <span className="text-xs text-muted-foreground">TỔNG HỌC SINH</span>
+          {/* Join timeline chart */}
+          {timelineData.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Biểu đồ người tham gia theo thời gian</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[280px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={timelineData}
+                      margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="time" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="participants"
+                        name="Người tham gia"
+                        stroke="#3B82F6"
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
-              </div>
-              <div className="w-1/2 space-y-3">
-                {DISTRIBUTION_DATA.map((item) => (
-                  <div key={item.name} className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">{item.percentage}% • {item.value} học sinh</p>
-                    </div>
-                  </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+
+      {/* Participant table */}
+      {sessionId && !isLoading && participantData && participantData.participants.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              Chi tiết người tham gia ({participantData.total})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-900">
+                <tr className="border-b text-left">
+                  <th className="p-4 text-xs font-medium text-muted-foreground">HỌC SINH</th>
+                  <th className="p-4 text-xs font-medium text-muted-foreground">GIỜ VÀO</th>
+                  <th className="p-4 text-xs font-medium text-muted-foreground">THỜI GIAN XEM</th>
+                  <th className="p-4 text-xs font-medium text-muted-foreground">TIN NHẮN</th>
+                  <th className="p-4 text-xs font-medium text-muted-foreground">BÀI NỘP</th>
+                </tr>
+              </thead>
+              <tbody>
+                {participantData.participants.map((p) => (
+                  <tr
+                    key={p.user_id}
+                    className="border-b last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
+                    <td className="p-4">
+                      <div>
+                        <p className={cn("font-medium", !p.full_name && "text-muted-foreground")}>
+                          {p.full_name || p.user_name}
+                        </p>
+                        {p.full_name && (
+                          <p className="text-xs text-muted-foreground">@{p.user_name}</p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-4 text-muted-foreground">
+                      {new Date(p.join_time).toLocaleTimeString("vi-VN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+                    <td className="p-4">{formatSeconds(p.duration_seconds)}</td>
+                    <td className="p-4">{p.messages_sent}</td>
+                    <td className="p-4">{p.submissions_count}</td>
+                  </tr>
                 ))}
-              </div>
-            </div>
+              </tbody>
+            </table>
           </CardContent>
         </Card>
-      </div>
+      )}
 
-      {/* Course Performance Table */}
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="text-base">Hiệu suất khóa học chi tiết</CardTitle>
-          <Link href="#" className="text-sm text-primary-600 hover:underline">Xem báo cáo chi tiết</Link>
-        </CardHeader>
-        <CardContent className="p-0">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b text-left">
-                <th className="p-4 text-xs font-medium text-muted-foreground">KHÓA HỌC</th>
-                <th className="p-4 text-xs font-medium text-muted-foreground">LƯỢT ĐĂNG KÝ MỚI</th>
-                <th className="p-4 text-xs font-medium text-muted-foreground">TỶ LỆ HOÀN THÀNH</th>
-                <th className="p-4 text-xs font-medium text-muted-foreground">DOANH THU THÁNG</th>
-              </tr>
-            </thead>
-            <tbody>
-              {COURSE_PERFORMANCE.map((course) => (
-                <tr key={course.id} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", course.type === "video" ? "bg-green-100" : "bg-blue-100")}>
-                        {course.type === "video" ? <Play className="w-5 h-5 text-green-600" /> : <Layers className="w-5 h-5 text-blue-600" />}
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">{course.title}</p>
-                        <p className="text-xs text-muted-foreground">{course.type === "video" ? `Video course • ${course.modules} modules` : "Hybrid • Livestream & Video"}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4"><span className="font-medium">{course.enrollments}</span> <span className="text-muted-foreground text-sm">học sinh</span></td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <ProgressBar value={course.completion} size="sm" className="w-24" />
-                      <span className="text-sm font-medium">{course.completion}%</span>
-                    </div>
-                  </td>
-                  <td className="p-4 font-medium">{formatCurrency(course.revenue)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+      {/* No data for given session */}
+      {sessionId && !isLoading && !sessionAnalytics && (
+        <Card className="p-8 text-center">
+          <p className="text-muted-foreground">
+            Không tìm thấy dữ liệu cho session <strong>{sessionId}</strong>.
+          </p>
+        </Card>
+      )}
     </div>
   );
 }

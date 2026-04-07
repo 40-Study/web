@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Calendar, Clock, FileText } from "lucide-react";
-import type { DeadlineTask } from "@/lib/mock-data/student-dashboard";
+import type { DeadlineTask } from "@/types/student-dashboard";
 
 interface DeadlineCardProps {
   task: DeadlineTask;

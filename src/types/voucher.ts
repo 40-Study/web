@@ -1,38 +1,40 @@
 /**
- * Voucher type definitions
+ * Voucher type definitions — snake_case matches backend API responses
  */
 
-import { BaseEntity, ID } from "./common";
+import type { ID } from "./common";
 
-export type VoucherStatus = "active" | "used" | "expired";
+export type VoucherStatus = "active" | "inactive" | "expired";
 export type VoucherDiscountType = "percentage" | "fixed";
 
-export interface Voucher extends BaseEntity {
+export interface Voucher {
   id: ID;
   code: string;
-  discountType: VoucherDiscountType;
-  /** Percentage (0-100) or fixed VND amount */
-  discountValue: number;
+  discount_type: VoucherDiscountType;
+  discount_value: number;
   /** Maximum discount cap for percentage-type vouchers */
-  maxDiscount?: number;
+  max_discount?: number;
   /** Minimum order value required */
-  minOrderValue?: number;
-  expiresAt: string;
+  min_order_value?: number;
+  max_uses?: number;
+  used_count?: number;
+  expires_at?: string;
   status: VoucherStatus;
   description?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface VoucherValidateRequest {
   code: string;
-  /** Course price in VND to calculate discount */
-  coursePrice: number;
+  course_ids: string[];
 }
 
 export interface VoucherValidateResponse {
   valid: boolean;
   voucher?: Voucher;
   /** Calculated discount amount in VND */
-  discountAmount: number;
-  finalPrice: number;
+  discount_amount: number;
+  final_total: number;
   message?: string;
 }

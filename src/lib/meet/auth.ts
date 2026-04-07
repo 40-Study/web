@@ -12,13 +12,13 @@ export interface User {
 interface LoginData {
   completed: boolean;
   session_token?: string;
-  system_roles?: { id: string; name: string }[];
+  roles?: { id: string; type: string; role_name: string; display_name: string }[];
   requires_org_selection?: boolean;
   organizations?: { id: string; name: string }[];
   access_token?: string;
   refresh_token?: string;
   user?: User;
-  active_role?: { id: string; name: string };
+  active_role?: { id: string; type: string; role_name: string; display_name: string };
 }
 
 interface LoginResponse {
@@ -64,16 +64,18 @@ export async function login(email: string, password: string): Promise<void> {
   const data = loginRes.data;
 
   if (!data.completed) {
-    // Step 2: Select first profile (role)
-    if (!data.session_token || !data.system_roles?.length) {
+    // Step 2: Select first role
+    if (!data.session_token || !data.roles?.length) {
       throw new Error('No session token or roles available');
     }
 
-    const profileRes = await request<LoginResponse>('/auth/select-profile', {
+    const firstRole = data.roles[0];
+    const profileRes = await request<LoginResponse>('/auth/select-role', {
       method: 'POST',
       body: JSON.stringify({
         session_token: data.session_token,
-        system_role_id: data.system_roles[0].id,
+        role_id: firstRole.id,
+        role_type: firstRole.type,
       }),
     });
 

@@ -14,7 +14,7 @@ import {
   Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PlayerChapter, PlayerLesson } from "@/lib/mock-data/course-player";
+import type { PlayerChapter, PlayerLesson } from "@/types/course-player";
 
 interface PlayerLessonSidebarProps {
   chapters: PlayerChapter[];

@@ -2,25 +2,60 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Code2, HelpCircle, Lock, Clock, CheckCircle } from "lucide-react";
+import { ChevronLeft, Code2, HelpCircle, Lock, Clock, CheckCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { mockPlayerCourse } from "@/lib/mock-data/course-player";
+import { useCourseBySlug } from "@/hooks/queries/use-courses";
+import { useSections } from "@/hooks/queries/use-sections";
+import type { Section } from "@/types/section";
+import type { Lesson } from "@/types/lesson";
+
+interface ExerciseItem {
+  id: string;
+  title: string;
+  type: "exercise" | "quiz";
+  duration: string;
+  completed: boolean;
+  locked: boolean;
+  chapterTitle: string;
+  chapterIndex: number;
+}
+
+function mapSectionsToExercises(sections: Section[]): ExerciseItem[] {
+  return sections.flatMap((section, sIdx) =>
+    (section.lessons ?? [])
+      .filter((l: Lesson) => l.type === "quiz")
+      .map((l: Lesson) => ({
+        id: l.id,
+        title: l.title,
+        type: "quiz" as const,
+        duration: l.duration
+          ? `${Math.floor(l.duration / 60)}:${String(l.duration % 60).padStart(2, "0")}`
+          : "00:00",
+        completed: false,
+        locked: !l.is_preview,
+        chapterTitle: section.title,
+        chapterIndex: sIdx + 1,
+      }))
+  );
+}
 
 export default function CourseExercisesPage() {
   const { slug } = useParams<{ slug: string }>();
-  const course = mockPlayerCourse; // In production, fetch by slug
 
-  // Extract all exercises/quizzes from chapters
-  const exercises = course.chapters.flatMap((ch, chIdx) =>
-    ch.lessons
-      .filter((l) => l.type === "exercise" || l.type === "quiz")
-      .map((l) => ({
-        ...l,
-        chapterTitle: ch.title,
-        chapterIndex: chIdx + 1,
-      }))
-  );
+  const { data: course, isLoading: courseLoading } = useCourseBySlug(slug);
+  const { data: sections = [], isLoading: sectionsLoading } = useSections(course?.id ?? "");
 
+  const isLoading = courseLoading || sectionsLoading;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+      </div>
+    );
+  }
+
+  const exercises = mapSectionsToExercises(sections);
   const completedCount = exercises.filter((e) => e.completed).length;
   const pendingCount = exercises.filter((e) => !e.completed && !e.locked).length;
 
@@ -39,7 +74,7 @@ export default function CourseExercisesPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Bài tập & Kiểm tra</h1>
-          <p className="text-gray-500 mt-1">{course.title}</p>
+          <p className="text-gray-500 mt-1">{course?.title ?? ""}</p>
           <div className="flex items-center gap-4 mt-3 text-sm">
             <span className="text-green-600">{completedCount} hoàn thành</span>
             <span className="text-orange-600">{pendingCount} chưa làm</span>

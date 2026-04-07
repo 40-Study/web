@@ -1,5 +1,6 @@
 'use client';
 
+import DOMPurify from "isomorphic-dompurify";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -582,7 +583,7 @@ export function RichTextViewer({ content }: { content: string }) {
     <>
       <div
         className="rich-text-viewer"
-        dangerouslySetInnerHTML={{ __html: content }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
         style={{
           fontFamily: "var(--font-plus-jakarta), 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
           color: COLORS.text,

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Users, Video, ArrowRight } from "lucide-react";
-import type { LiveClass } from "@/lib/mock-data/student-dashboard";
+import type { LiveClass } from "@/types/student-dashboard";
 
 interface LiveClassCardProps {
   liveClass: LiveClass;

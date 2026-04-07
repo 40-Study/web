@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { ChevronRight, Star } from "lucide-react";
+import { ChevronRight, Loader2, Star } from "lucide-react";
 import Link from "next/link";
 import { VideoPlayer } from "@/components/lesson/video-player";
 import {
@@ -12,23 +12,82 @@ import {
   FloatingButtons,
   CodeEditorModal,
 } from "@/components/player";
-import { QuizPlayer, QuizResult, CodeExercise } from "@/components/exercise";
-import {
-  mockPlayerCourse,
-  getLessonById,
-  getAdjacentLessons,
-} from "@/lib/mock-data/course-player";
-import { getQuizByLessonId } from "@/lib/mock-data/quiz-data";
-import { getExerciseByLessonId } from "@/lib/mock-data/exercise-data";
+import { useCourseBySlug } from "@/hooks/queries/use-courses";
+import { useSections } from "@/hooks/queries/use-sections";
+import { useLessonVideo } from "@/hooks/queries/use-lesson-content";
+import type { PlayerCourse, PlayerChapter, PlayerLesson } from "@/types/course-player";
+import type { Section } from "@/types/section";
+import type { Lesson } from "@/types/lesson";
+import type { ApiCourse } from "@/services/course.service";
 
-/** Video lesson content — video player + title/rating + tabs */
+// ─── Backend → PlayerCourse mapping ────────────────────────────────────────
+
+function mapSectionsToChapters(sections: Section[]): PlayerChapter[] {
+  return sections.map((section) => ({
+    id: section.id,
+    title: section.title,
+    lessons: (section.lessons ?? []).map((lesson: Lesson) => ({
+      id: lesson.id,
+      title: lesson.title,
+      duration: lesson.duration ? `${Math.floor(lesson.duration / 60)}:${String(lesson.duration % 60).padStart(2, "0")}` : "00:00",
+      type: lesson.type === "article" ? "reading" : (lesson.type as PlayerLesson["type"]),
+      completed: false,
+      locked: !lesson.is_preview,
+    })),
+  }));
+}
+
+function mapApiCourseToPlayerCourse(course: ApiCourse, sections: Section[]): PlayerCourse {
+  return {
+    id: course.id,
+    title: course.title,
+    slug: course.slug ?? "",
+    description: course.description ?? course.short_description ?? "",
+    instructor: {
+      name: course.instructor?.name ?? "Giảng viên",
+      avatar: course.instructor?.avatar,
+      title: course.instructor?.title ?? "",
+      rating: Number(course.instructor?.rating ?? 0),
+      studentCount: course.instructor?.student_count ?? 0,
+      courseCount: course.instructor?.course_count ?? 0,
+    },
+    rating: Number(course.average_rating ?? 0),
+    reviewCount: course.total_reviews ?? 0,
+    level: course.level ?? "",
+    language: course.language ?? "Tiếng Việt",
+    chapters: mapSectionsToChapters(sections),
+    resources: [],
+    reviews: [],
+  };
+}
+
+function getLessonById(course: PlayerCourse, lessonId: string): PlayerLesson | undefined {
+  for (const chapter of course.chapters) {
+    const lesson = chapter.lessons.find((l) => l.id === lessonId);
+    if (lesson) return lesson;
+  }
+  return undefined;
+}
+
+function getNextLesson(course: PlayerCourse, lessonId: string): PlayerLesson | undefined {
+  const allLessons = course.chapters.flatMap((ch) => ch.lessons);
+  const idx = allLessons.findIndex((l) => l.id === lessonId);
+  return idx < allLessons.length - 1 ? allLessons[idx + 1] : undefined;
+}
+
+// ─── Sub-components ─────────────────────────────────────────────────────────
+
 function VideoLessonContent({
-  videoSrc, currentLesson, course, next, courseSlug,
+  videoSrc,
+  currentLesson,
+  course,
+  next,
+  courseSlug,
 }: {
   videoSrc: string;
-  currentLesson: ReturnType<typeof getLessonById>;
-  course: typeof mockPlayerCourse;
-  next: ReturnType<typeof getAdjacentLessons>["next"];
+  currentLesson: PlayerLesson | undefined;
+  course: PlayerCourse;
+  next: PlayerLesson | undefined;
   courseSlug: string;
 }) {
   return (
@@ -50,7 +109,7 @@ function VideoLessonContent({
               </div>
               <span>{course.instructor.studentCount.toLocaleString()} học viên</span>
               <span>•</span>
-              <span>Cập nhật 2 ngày trước</span>
+              <span>Cập nhật gần đây</span>
             </div>
           </div>
           {next && (
@@ -71,67 +130,82 @@ function VideoLessonContent({
   );
 }
 
+// ─── Main Page ──────────────────────────────────────────────────────────────
+
 export default function CourseLessonPage() {
   const params = useParams<{ courseSlug: string; lessonId: string }>();
   const { courseSlug, lessonId } = params;
 
   const [isCodeEditorOpen, setCodeEditorOpen] = useState(false);
-
-  // Quiz state
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string> | null>(null);
   const [quizTimeSpent, setQuizTimeSpent] = useState(0);
 
-  const course = mockPlayerCourse;
+  const { data: apiCourse, isLoading: courseLoading } = useCourseBySlug(courseSlug);
+  const { data: sections = [], isLoading: sectionsLoading } = useSections(apiCourse?.id ?? "");
+  const { data: lessonVideo } = useLessonVideo(lessonId);
+
+  const isLoading = courseLoading || sectionsLoading;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+      </div>
+    );
+  }
+
+  if (!apiCourse) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-500">Không tìm thấy khóa học.</p>
+      </div>
+    );
+  }
+
+  const course = mapApiCourseToPlayerCourse(apiCourse, sections);
+  const currentLesson = getLessonById(course, lessonId);
+  const next = getNextLesson(course, lessonId);
+
+  const videoSrc = lessonVideo?.hls_url ?? "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+
   const exerciseCount = course.chapters
     .flatMap((ch) => ch.lessons)
     .filter((l) => (l.type === "exercise" || l.type === "quiz") && !l.completed).length;
 
-  const currentLesson = getLessonById(course, lessonId);
-  const { next } = getAdjacentLessons(course, lessonId);
-  const videoSrc = currentLesson?.videoUrl ?? "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
-
-  // Resolve quiz/exercise data for current lesson
-  const quiz = getQuizByLessonId(lessonId);
-  const exercise = getExerciseByLessonId(lessonId);
-
-  /** Determine which content view to show */
   const renderContent = () => {
-    // Quiz lesson — show quiz player or results
-    if (currentLesson?.type === "quiz" && quiz) {
+    // Quiz lesson
+    if (currentLesson?.type === "quiz") {
       if (quizAnswers) {
         return (
-          <div className="flex-1 overflow-y-auto p-5">
-            <QuizResult
-              quiz={quiz}
-              answers={quizAnswers}
-              timeSpent={quizTimeSpent}
-              onRetry={() => setQuizAnswers(null)}
-            />
+          <div className="flex-1 overflow-y-auto p-5 flex items-center justify-center">
+            <div className="text-center text-gray-500">
+              <p>Đã nộp bài. Tính năng xem kết quả quiz đang được phát triển.</p>
+              <button
+                onClick={() => setQuizAnswers(null)}
+                className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm"
+              >
+                Làm lại
+              </button>
+            </div>
           </div>
         );
       }
       return (
-        <div className="flex-1 overflow-y-auto p-5">
-          <QuizPlayer
-            quiz={quiz}
-            onSubmit={(answers) => {
-              setQuizAnswers(answers);
-              setQuizTimeSpent(quiz.timeLimit - 0); // placeholder — real timer tracked inside
-            }}
-          />
+        <div className="flex-1 overflow-y-auto p-5 flex items-center justify-center">
+          <div className="text-center text-gray-500">
+            <p>Tính năng quiz đang được phát triển.</p>
+          </div>
         </div>
       );
     }
 
-    // Exercise lesson — show code exercise
-    if (currentLesson?.type === "exercise" && exercise) {
+    // Exercise lesson
+    if (currentLesson?.type === "exercise") {
       return (
-        <div className="flex-1 overflow-hidden">
-          <CodeExercise
-            exercise={exercise}
-            onSubmit={(code, lang) => console.log("Submit:", lang, code)}
-            onRun={(code, lang) => console.log("Run:", lang, code)}
-          />
+        <div className="flex-1 overflow-y-auto p-5 flex items-center justify-center">
+          <div className="text-center text-gray-500">
+            <p>Tính năng thực hành code đang được phát triển.</p>
+          </div>
         </div>
       );
     }

@@ -123,3 +123,40 @@ export function useMarkAttendance() {
     },
   });
 }
+
+export function useClassMembers(classId: string) {
+  return useQuery({
+    queryKey: [...classKeys.all, "members", classId] as const,
+    queryFn: () => classService.getMembers(classId),
+    enabled: !!classId,
+  });
+}
+
+/** Teacher's own classes */
+export function useMyClasses() {
+  return useQuery({
+    queryKey: [...classKeys.all, "my"] as const,
+    queryFn: () => classService.getMyClasses(),
+  });
+}
+
+/** All students across teacher's classes */
+export function useMyStudents(pageSize = 200) {
+  return useQuery({
+    queryKey: [...classKeys.all, "my-students", pageSize] as const,
+    queryFn: () => classService.getMyStudents(pageSize),
+  });
+}
+
+export function useAddMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ classId, userId }: { classId: string; userId: string }) =>
+      classService.addMember(classId, userId),
+    onSuccess: (_, { classId }) => {
+      qc.invalidateQueries({ queryKey: [...classKeys.all, "members", classId] });
+      toast.success("Thêm thành viên thành công");
+    },
+    onError: () => toast.error("Không thể thêm thành viên"),
+  });
+}

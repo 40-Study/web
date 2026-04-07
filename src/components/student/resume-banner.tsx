@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import type { CurrentCourse } from "@/lib/mock-data/student-dashboard";
+import type { CurrentCourse } from "@/types/student-dashboard";
 
 interface ResumeBannerProps {
   course: CurrentCourse;

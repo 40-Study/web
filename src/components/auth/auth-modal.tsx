@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,9 +20,8 @@ import { MailIcon } from "@/components/icons";
 import type { RoleType } from "@/components/auth/role-card";
 import { useLogin, useRegisterRequest, useRegister, useSelectRole } from "@/hooks/queries/use-auth";
 import { authService, getDeviceInfo } from "@/services/auth.service";
-import type { SystemRoleOption } from "@/services/auth.service";
+import type { UnifiedRole, SystemRoleOption } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
-import type { UnifiedRole } from "@/stores/auth.store";
 import { AUTH_ROUTES, getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -42,11 +41,20 @@ interface AuthModalProps {
     initialMode?: "login" | "register";
 }
 
+/** Map backend role_name to RoleCard display type */
+function toRoleType(roleName: string): RoleType {
+    const name = roleName.toLowerCase();
+    if (name.includes("student")) return "student";
+    if (name.includes("teacher")) return "teacher";
+    if (name.includes("parent")) return "parent";
+    if (name.includes("admin") || name.includes("owner")) return "admin";
+    return "student";
+}
+
 // ─── Progress Bar ───────────────────────────────────────────────────────────
 
 const REGISTER_STEPS = [
     { label: "Phương thức", icon: Mail },
-    { label: "Vai trò", icon: UserCheck },
     { label: "Thông tin", icon: FileText },
     { label: "Xác thực", icon: ShieldCheck },
 ];
@@ -54,7 +62,7 @@ const REGISTER_STEPS = [
 function StepProgress({ currentStep }: { currentStep: number }) {
     return (
         <div className="mb-8">
-            <p className="text-center text-sm text-gray-500 mb-5">4 bước dễ dàng</p>
+            <p className="text-center text-sm text-gray-500 mb-5">3 bước dễ dàng</p>
             <div className="flex items-start">
                 {REGISTER_STEPS.map(({ label, icon: Icon }, i) => {
                     const isDone = i < currentStep;
@@ -247,13 +255,10 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                             onClose={handleActualClose}
                             onSwitchToRegister={() => setView("register")}
                             onLoginSuccess={(nextStep) => {
-                                // Defer to next tick to allow Zustand store updates to complete
                                 setTimeout(() => {
                                     if (nextStep === "needs-role") {
-                                        // User chưa có role → hiện cùng màn chọn role (sẽ fetch all roles)
                                         setView("login-role");
                                     } else if (nextStep === "direct") {
-                                        // Direct login complete - redirect based on latest active role in store
                                         handleActualClose();
                                         const currentRole = useAuthStore.getState().activeRole;
                                         window.location.href = getRoleHomeRoute(currentRole);
@@ -341,19 +346,19 @@ function LoginView({
                     }
 
                     // Direct login (1 role, có access_token) → vào app
-                    if (data.access_token) {
+                    if (data.access_token && !data.session_token) {
                         onLoginSuccess("direct");
                         return;
                     }
 
                     // Multi-role → có session_token + roles → chọn role
-                    if (data.roles && data.roles.length > 0) {
+                    if (data.session_token && data.roles && data.roles.length > 0) {
                         onLoginSuccess("select-role");
                         return;
                     }
 
                     // Fallback
-                    onLoginSuccess("select-role");
+                    onLoginSuccess("direct");
                 },
             }
         );
@@ -432,10 +437,9 @@ function LoginView({
 
 // ─── LOGIN ROLE VIEW ────────────────────────────────────────────────────────
 
-
 function LoginRoleView({ onNext: _onNext, onComplete }: { onNext: () => void; onComplete: () => void }) {
     const router = useRouter();
-    const { roles: unifiedRoles, sessionToken, token, setActiveRole } = useAuthStore();
+    const { roles: unifiedRoles, sessionToken, token } = useAuthStore();
     const selectRoleMutation = useSelectRole();
     const [selectedRole, setSelectedRole] = useState<UnifiedRole | null>(null);
     const [showAddRole, setShowAddRole] = useState(false);
@@ -479,7 +483,6 @@ function LoginRoleView({ onNext: _onNext, onComplete }: { onNext: () => void; on
 
     const handleContinue = async () => {
         if (selectedRole) {
-            // Chọn unified role đã có → gọi select-role
             selectRoleMutation.mutate(
                 { roleId: selectedRole.id, roleType: selectedRole.type, organizationId: selectedRole.organization_id },
                 {
@@ -489,7 +492,6 @@ function LoginRoleView({ onNext: _onNext, onComplete }: { onNext: () => void; on
                 }
             );
         } else if (selectedSystemRole) {
-            // User chưa có role hoặc thêm mới → gửi system role ID
             selectRoleMutation.mutate(
                 { roleId: selectedSystemRole.id, roleType: "system" },
                 {
@@ -519,7 +521,7 @@ function LoginRoleView({ onNext: _onNext, onComplete }: { onNext: () => void; on
                         availableNewRoles.map((role) => (
                             <RoleCard
                                 key={role.id}
-                                role={role.name.toLowerCase() as RoleType}
+                                role={toRoleType(role.name)}
                                 selected={selectedSystemRole?.id === role.id}
                                 onClick={() => { setSelectedSystemRole(role); setSelectedRole(null); }}
                             />
@@ -533,7 +535,7 @@ function LoginRoleView({ onNext: _onNext, onComplete }: { onNext: () => void; on
                     unifiedRoles.map((role) => (
                         <RoleCard
                             key={role.id}
-                            role={role.role_name.toLowerCase() as RoleType}
+                            role={toRoleType(role.role_name)}
                             selected={selectedRole?.id === role.id}
                             onClick={() => { setSelectedRole(role); setSelectedSystemRole(null); }}
                             label={role.display_name}
@@ -574,13 +576,11 @@ function LoginRoleView({ onNext: _onNext, onComplete }: { onNext: () => void; on
  * LoginOrgView - DEPRECATED
  * Org selection is now embedded in the unified role selection.
  * Org roles appear as "Role - OrgName" in LoginRoleView.
- * This view redirects back to role selection.
  */
 function LoginOrgView({ onClose }: { onClose: () => void }) {
     const router = useRouter();
 
     useEffect(() => {
-        // Org selection no longer needed as a separate step
         onClose();
         router.push(getRoleHomeRoute(useAuthStore.getState().activeRole));
     }, [onClose, router]);
@@ -625,8 +625,6 @@ function RegisterMethodView({
         </>
     );
 }
-
-// ─── REGISTER ROLE VIEW ─────────────────────────────────────────────────────
 
 // ─── REGISTER FORM VIEW ─────────────────────────────────────────────────────
 

@@ -1,88 +1,89 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Loader2 } from "lucide-react";
 import WeekCalendarGrid from "@/components/schedule/week-calendar-grid";
 import ScheduleEventTooltip from "@/components/schedule/schedule-event-tooltip";
 import ScheduleEventDetailDialog from "@/components/schedule/schedule-event-detail-dialog";
 import type { ScheduleEvent } from "@/components/schedule/week-calendar-grid";
+import { useMySchedules } from "@/hooks/queries/use-class-schedule";
+import type { ClassSchedule } from "@/types/class-schedule";
 
-const MOCK_STUDENT_EVENTS: ScheduleEvent[] = [
-  {
-    id: "1",
-    title: "Tự học: React Native & Expo",
-    courseId: "c1",
-    startTime: "2026-03-23T09:00:00",
-    endTime: "2026-03-23T11:00:00",
-    type: "video",
-    status: "upcoming",
-    teacher: "Tự học",
-    description: "Ôn tập React Native cơ bản",
-  },
-  {
-    id: "2",
-    title: "Bài tập lớn: Phát triển Web",
-    courseId: "c2",
-    startTime: "2026-03-25T19:00:00",
-    endTime: "2026-03-25T21:00:00",
-    type: "hybrid",
-    status: "upcoming",
-    tag: "GIAO VIỆC",
-    teacher: "Trợ giảng Linh",
-    participants: 12,
-    description: "Hoàn thành Bài tập lớn: Phát triển Ứng dụng Web",
-  },
-  {
-    id: "3",
-    title: "Code dự án: Game Mobile Candy Crush",
-    courseId: "c3",
-    startTime: "2026-03-28T14:00:00",
-    endTime: "2026-03-28T17:00:00",
-    type: "video",
-    status: "upcoming",
-    teacher: "Nhóm 5",
-    description: "Làm việc nhóm dự án game mobile",
-  },
-  {
-    id: "4",
-    title: "Toán Cao cấp A1",
-    courseId: "c4",
-    startTime: "2026-03-24T08:00:00",
-    endTime: "2026-03-24T09:30:00",
-    type: "video",
-    status: "completed",
-    teacher: "TS. Nguyễn Văn A",
-    location: "Phòng A101",
-  },
-  {
-    id: "5",
-    title: "Tiếng Anh Giao tiếp",
-    courseId: "c5",
-    startTime: "2026-03-26T10:00:00",
-    endTime: "2026-03-26T11:30:00",
-    type: "livestream",
-    status: "upcoming",
-    meetingUrl: "https://meet.google.com/abc",
-    teacher: "Cô Trần Thị B",
-    location: "Online - Google Meet",
-  },
-];
+/** Convert recurring class schedules to calendar events for current week */
+function toScheduleEvents(schedules: ClassSchedule[]): ScheduleEvent[] {
+  const today = new Date();
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay() + 1); // Monday
+
+  return schedules.flatMap((s) => {
+    // Generate event for this week based on day_of_week
+    const eventDate = new Date(startOfWeek);
+    eventDate.setDate(startOfWeek.getDate() + ((s.day_of_week + 6) % 7)); // Adjust: 0=Sun -> 6, 1=Mon -> 0
+
+    const [startH, startM] = s.start_time.split(":").map(Number);
+    const [endH, endM] = s.end_time.split(":").map(Number);
+
+    const startTime = new Date(eventDate);
+    startTime.setHours(startH, startM, 0, 0);
+    const endTime = new Date(eventDate);
+    endTime.setHours(endH, endM, 0, 0);
+
+    const now = new Date();
+    const status: ScheduleEvent["status"] =
+      endTime < now ? "completed" : startTime <= now && endTime >= now ? "ongoing" : "upcoming";
+
+    return {
+      id: s.id,
+      title: s.title || "Buổi học",
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      type: "livestream" as const,
+      status,
+      teacher: s.teacher_name,
+      location: s.room,
+    };
+  });
+}
 
 export default function StudentSchedulePage() {
   const [selectedEvent, setSelectedEvent] = useState<ScheduleEvent | null>(null);
+  const { data: schedules, isLoading } = useMySchedules();
+
+  const events = useMemo(() => toScheduleEvents(schedules || []), [schedules]);
+
+  // Calculate stats from events
+  const stats = useMemo(() => {
+    const completed = events.filter((e) => e.status === "completed");
+    const total = events.length;
+    const studyHours = events.reduce((acc, e) => {
+      const start = new Date(e.startTime);
+      const end = new Date(e.endTime);
+      return acc + (end.getTime() - start.getTime()) / 3600000;
+    }, 0);
+    return {
+      studyHours: Math.round(studyHours * 10) / 10,
+      tasksCompleted: completed.length,
+      tasksTotal: total,
+      focusPercent: total > 0 ? Math.round((completed.length / total) * 100) : 0,
+    };
+  }, [events]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
       <WeekCalendarGrid
-        events={MOCK_STUDENT_EVENTS}
+        events={events}
         renderEventTooltip={(event) => (
           <ScheduleEventTooltip event={event} onViewDetail={setSelectedEvent} />
         )}
-        stats={{
-          studyHours: 32.5,
-          tasksCompleted: 12,
-          tasksTotal: 15,
-          focusPercent: 88,
-        }}
+        stats={stats}
       />
 
       <ScheduleEventDetailDialog

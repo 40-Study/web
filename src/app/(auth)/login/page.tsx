@@ -71,7 +71,6 @@ export default function LoginPage() {
     );
   };
 
-
   return (
     <AuthCard>
       <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">Đăng nhập</h2>

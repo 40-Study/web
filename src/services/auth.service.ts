@@ -5,7 +5,6 @@
 
 import { api } from "@/lib/api-client";
 import { STORAGE_KEYS, APP_VERSION } from "@/lib/constants";
-import type { UnifiedRole } from "@/stores/auth.store";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
@@ -50,6 +49,7 @@ export interface UserResponseDto {
   bio?: string;
   is_active: boolean;
   created_at: string;
+  password_changed_at?: string;
 }
 
 // Backend DeviceSessionDto
@@ -66,6 +66,16 @@ export interface EntryContext {
   primary_role: string;
   requires_setup: boolean;
   setup_endpoint?: string;
+}
+
+/** Unified role from backend - can be system or organization role */
+export interface UnifiedRole {
+  id: string; // Role definition ID: SystemRole.ID (system) or Role.ID (organization)
+  type: "system" | "organization";
+  role_name: string;
+  organization_id?: string;
+  organization_name?: string;
+  display_name: string;
 }
 
 /**
@@ -102,23 +112,24 @@ export interface LoginResponse {
 
 /**
  * Backend SelectRoleRequestDto
- * Used for POST /auth/select-role (during login flow, with session_token)
+ * role_id = role definition ID (SystemRole.ID or OrgRole.ID)
+ * organization_id required when role_type="organization"
  */
 export interface SelectRoleDTO {
   session_token: string;
-  role_id: string; // Role definition ID: SystemRole.ID or OrgRole.ID
+  role_id: string;
   role_type: "system" | "organization";
-  organization_id?: string; // Required when role_type="organization"
+  organization_id?: string;
 }
 
 /**
  * Backend SwitchRoleRequestDto
- * Used for POST /auth/switch-role (already authenticated)
+ * role_id = role definition ID, organization_id required when role_type="organization"
  */
 export interface SwitchRoleDTO {
-  role_id: string; // Role definition ID: SystemRole.ID or OrgRole.ID
+  role_id: string;
   role_type: "system" | "organization";
-  organization_id?: string; // Required when role_type="organization"
+  organization_id?: string;
 }
 
 /**
@@ -159,6 +170,75 @@ export interface UpdateProfileDTO {
   avatar_url?: string;
 }
 
+export interface PublicProfileAchievement {
+  id: string;
+  name: string;
+  icon_url?: string;
+  badge_url?: string;
+  category: string;
+  earned_at: string;
+}
+
+export interface PublicProfileActivity {
+  date: string;
+  count: number;
+}
+
+export interface PublicProfileCompletedCourse {
+  id: string;
+  title: string;
+  thumbnail_url?: string;
+  completed_at: string;
+}
+
+export interface PublicProfileResponse {
+  user_id: string;
+  user_name: string;
+  full_name?: string;
+  avatar_url?: string;
+  bio?: string;
+  joined_at: string;
+  stats: {
+    total_points: number;
+    level: number;
+    level_progress: number;
+    current_streak: number;
+    longest_streak: number;
+    total_checkins: number;
+    achievement_count: number;
+    courses_completed: number;
+    lessons_completed: number;
+    total_study_time_minutes: number;
+  };
+  featured_achievements: PublicProfileAchievement[];
+  activity: PublicProfileActivity[];
+  completed_courses: PublicProfileCompletedCourse[];
+}
+
+export interface TokenResponse {
+  message: string;
+  data: {
+    access_token: string;
+    refresh_token?: string;
+    expires_in: number;
+  };
+}
+
+export interface Device {
+  device_id: string;
+  device_name: string;
+  logged_in_at: string;
+  ip_address?: string;
+  is_current?: boolean;
+}
+
+export interface DevicesResponse {
+  message: string;
+  data: {
+    devices: Device[];
+  };
+}
+
 export interface ResetPasswordRequestDTO {
   email: string;
 }
@@ -189,6 +269,12 @@ export interface Child {
   id: string;
   name: string;
   avatar?: string;
+}
+
+export interface LinkedAccount {
+  provider: string;
+  email?: string;
+  connected_at: string;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -284,17 +370,11 @@ export const authService = {
   /** POST /auth/login - Returns session_token + roles OR access_token directly */
   login: (data: LoginDTO) => api.post<LoginResponse>("/auth/login", data).then((r) => r.data),
 
-  /**
-   * POST /auth/select-role - Select a role during login flow (uses session_token)
-   * Returns tokens on success, completing the login.
-   */
+  /** POST /auth/select-role - Select a role during login flow (uses session_token) */
   selectRole: (data: SelectRoleDTO) =>
     api.post<SelectRoleResponse>("/auth/select-role", data).then((r) => r.data),
 
-  /**
-   * POST /auth/switch-role - Switch role while already logged in (uses JWT)
-   * Returns new tokens with the selected role.
-   */
+  /** POST /auth/switch-role - Switch role while already logged in (uses JWT) */
   switchRole: (data: SwitchRoleDTO) =>
     api.post<SelectRoleResponse>("/auth/switch-role", data).then((r) => r.data),
 
@@ -355,6 +435,10 @@ export const authService = {
   getMe: () =>
     api.get<{ message: string; data: UserResponseDto }>("/auth/me").then((r) => r.data.data),
 
+  /** Get public profile */
+  getPublicProfile: (userId: string) =>
+    api.get<{ data: PublicProfileResponse }>(`/users/${userId}/public-profile`).then((r) => r.data.data),
+
   /** PUT /auth/me - Update profile */
   updateProfile: (data: UpdateProfileDTO) =>
     api.put<{ message: string; data: UserResponseDto }>("/auth/me", data).then((r) => r.data.data),
@@ -384,4 +468,30 @@ export const authService = {
   /** PUT /auth/change-password - Change password (authenticated) */
   changePassword: (data: ChangePasswordDTO) =>
     api.put<{ message: string }>("/auth/change-password", data).then((r) => r.data),
+
+  // ─── Profile Data ───────────────────────────────────────────────────────
+
+  /** Get user's organizations */
+  getMyOrganizations: () =>
+    api.get<{ message: string; data: { organizations: Organization[] } }>("/me/organizations").then((r) => r.data.data),
+
+  /** Get children (for parent role) */
+  getChildren: () =>
+    api.get<{ message: string; data: { children: Child[] } }>("/me/children").then((r) => r.data.data),
+
+  // ─── Account Security ────────────────────────────────────────────────────
+
+  /** Soft-delete current account */
+  deleteAccount: (data: { password: string }) =>
+    api.delete<{ message: string }>("/auth/me", { data }).then((r) => r.data),
+
+  // ─── Linked Accounts ────────────────────────────────────────────────────
+
+  /** Get list of OAuth providers linked to the current user */
+  getLinkedAccounts: (): Promise<LinkedAccount[]> =>
+    api.get<{ message: string; data: LinkedAccount[] }>("/auth/linked-accounts").then((r) => r.data.data),
+
+  /** Disconnect an OAuth provider from the current user account */
+  disconnectProvider: (provider: string) =>
+    api.delete<{ message: string }>(`/auth/linked-accounts/${provider}`).then((r) => r.data),
 };

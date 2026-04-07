@@ -54,7 +54,7 @@ export function DashboardHeader() {
           </Button>
 
           {/* Profile */}
-          <Link href="/profile" className="flex items-center gap-2">
+          <Link href={user?.id ? `/profile/${user.id}` : "/"} className="flex items-center gap-2">
             <Avatar
               src={user?.avatar}
               fallback={user?.name || "U"}

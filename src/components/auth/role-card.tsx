@@ -6,7 +6,7 @@ import { SmallCheckIcon, GraduationCapIcon, UsersIcon, SettingsIcon } from "@/co
 export type RoleType = "student" | "parent" | "teacher" | "admin";
 
 interface RoleCardProps {
-  role: string;
+  role: RoleType;
   selected?: boolean;
   onClick?: () => void;
   className?: string;
@@ -39,14 +39,8 @@ const roleConfig: Record<RoleType, { label: string; description: string; icon: R
   },
 };
 
-const fallbackConfig = {
-  label: "Vai trò khác",
-  description: "",
-  icon: <SettingsIcon size={28} />,
-};
-
 export function RoleCard({ role, selected, onClick, className, label, subtitle }: RoleCardProps) {
-  const config = roleConfig[role as RoleType] || fallbackConfig;
+  const config = roleConfig[role];
   const displayLabel = label || config.label;
   const displayDesc = subtitle || config.description;
 

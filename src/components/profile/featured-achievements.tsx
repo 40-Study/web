@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,9 @@ import { cn } from "@/lib/utils";
 export interface FeaturedAchievement {
   id: string;
   name: string;
-  icon: string;
+  icon?: string;
+  iconUrl?: string;
+  badgeUrl?: string;
   rarity: "common" | "rare" | "epic" | "legendary";
   unlockedAt: Date | string;
 }
@@ -66,11 +69,21 @@ export function FeaturedAchievements({
           >
             <div
               className={cn(
-                "w-16 h-16 mx-auto rounded-xl flex items-center justify-center text-2xl mb-2 shadow-lg transition-transform group-hover:scale-110",
+                "w-16 h-16 mx-auto rounded-xl flex items-center justify-center text-2xl mb-2 shadow-lg transition-transform group-hover:scale-110 overflow-hidden",
                 rarityGradients[achievement.rarity]
               )}
             >
-              {achievement.icon}
+              {achievement.badgeUrl || achievement.iconUrl ? (
+                <Image
+                  src={achievement.badgeUrl || achievement.iconUrl || ""}
+                  alt={achievement.name}
+                  width={64}
+                  height={64}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                achievement.icon || achievement.name.slice(0, 1).toUpperCase()
+              )}
             </div>
             <p className="text-xs font-medium text-gray-700 dark:text-gray-300 line-clamp-2">
               {achievement.name}

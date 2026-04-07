@@ -3,4 +3,19 @@ export * from "./use-keyboard-shortcuts";
 export * from "./use-courses";
 export * from "./use-reduced-motion";
 export * from "./use-media-query";
-export * from "./queries";
+export {
+  useMe,
+  useMyProfile,
+  usePublicProfile,
+  useUpdateProfile,
+  useDevices,
+  useMyOrganizations,
+  useChildren,
+  useLogin,
+  useRegisterRequest,
+  useRegister,
+  useSelectRole,
+  useSelectOrg,
+  useLogout,
+  authKeys,
+} from "./queries/use-auth";

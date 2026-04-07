@@ -4,7 +4,7 @@ import { forwardRef, useImperativeHandle, useState } from "react";
 import { Star, Download, ExternalLink, FileText, Link as LinkIcon, Code2, HelpCircle, Lock } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { PlayerCourse, PlayerResource } from "@/lib/mock-data/course-player";
+import type { PlayerCourse, PlayerResource } from "@/types/course-player";
 
 interface PlayerTabsProps {
   course: PlayerCourse;

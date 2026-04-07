@@ -18,11 +18,14 @@ import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 export const authKeys = {
   all: ["auth"] as const,
   me: () => [...authKeys.all, "me"] as const,
+  profile: () => [...authKeys.all, "profile"] as const,
+  publicProfile: (userId: string) => [...authKeys.all, "public-profile", userId] as const,
   devices: () => [...authKeys.all, "devices"] as const,
   myRoles: () => [...authKeys.all, "my-roles"] as const,
   profiles: () => [...authKeys.all, "profiles"] as const,
   organizations: () => [...authKeys.all, "organizations"] as const,
   children: () => [...authKeys.all, "children"] as const,
+  linkedAccounts: () => [...authKeys.all, "linked-accounts"] as const,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -53,6 +56,16 @@ export function useMyProfiles() {
   });
 }
 
+/** Get public profile */
+export function usePublicProfile(userId: string) {
+  return useQuery({
+    queryKey: authKeys.publicProfile(userId),
+    queryFn: () => authService.getPublicProfile(userId),
+    enabled: Boolean(userId),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 /** PUT /auth/me - Update profile */
 export function useUpdateProfile() {
   const qc = useQueryClient();
@@ -61,6 +74,7 @@ export function useUpdateProfile() {
     mutationFn: authService.updateProfile,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: authKeys.me() });
+      qc.invalidateQueries({ queryKey: authKeys.profile() });
       toast.success("Cập nhật thành công");
     },
     onError: () => {
@@ -125,12 +139,15 @@ export function useLogin() {
 
       // Store user info if present
       if (data.user) {
-        login({
-          id: data.user.id || "",
-          email: data.user.email || "",
-          name: data.user.full_name || data.user.username || data.user.email || "",
-          avatar: data.user.avatar_url,
-        });
+        login(
+          {
+            id: data.user.id || "",
+            email: data.user.email || "",
+            name: data.user.full_name || data.user.username || data.user.email || "",
+            avatar: data.user.avatar_url,
+          },
+          data.roles || []
+        );
       }
 
       // Case 0: User chưa có role → cần chọn role để đăng ký
@@ -340,6 +357,49 @@ export function useChangePassword() {
     mutationFn: authService.changePassword,
     onSuccess: () => {
       toast.success("Đổi mật khẩu thành công");
+    },
+  });
+}
+
+/** Get OAuth providers linked to the current user */
+export function useLinkedAccounts() {
+  const { isAuthenticated } = useAuthStore();
+
+  return useQuery({
+    queryKey: authKeys.linkedAccounts(),
+    queryFn: authService.getLinkedAccounts,
+    enabled: isAuthenticated,
+  });
+}
+
+/** Disconnect an OAuth provider from the current user */
+export function useDisconnectProvider() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (provider: string) => authService.disconnectProvider(provider),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: authKeys.linkedAccounts() });
+      toast.success("Đã ngắt kết nối tài khoản");
+    },
+    onError: (error: unknown) => {
+      const msg = error instanceof Error ? error.message : "Không thể ngắt kết nối";
+      toast.error(msg);
+    },
+  });
+}
+
+/** Delete (soft) the current account */
+export function useDeleteAccount() {
+  const authStore = useAuthStore.getState();
+  return useMutation({
+    mutationFn: (data: { password: string }) => authService.deleteAccount(data),
+    onSuccess: () => {
+      authStore.logout();
+      window.location.href = "/login";
+    },
+    onError: () => {
+      toast.error("Xóa tài khoản thất bại, vui lòng kiểm tra lại mật khẩu");
     },
   });
 }

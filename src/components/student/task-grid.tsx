@@ -2,7 +2,7 @@
 
 import { DeadlineCard } from "./deadline-card";
 import { LiveClassCard } from "./live-class-card";
-import type { DeadlineTask, LiveClass } from "@/lib/mock-data/student-dashboard";
+import type { DeadlineTask, LiveClass } from "@/types/student-dashboard";
 
 interface TaskGridProps {
   deadline: DeadlineTask;

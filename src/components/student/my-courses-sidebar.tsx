@@ -5,11 +5,25 @@ import { usePathname } from "next/navigation";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { AchievementSidebar } from "./achievement-sidebar";
 import { MentorChatWidget } from "./mentor-chat-widget";
-import type { OtherLearningCourse, Achievement } from "@/lib/mock-data/my-courses";
+interface SidebarCourse {
+  id: string;
+  slug: string;
+  title: string;
+  progress: number;
+}
+
+interface SidebarAchievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  earnedAt: string;
+  color: string;
+}
 
 interface MyCourseSidebarProps {
-  otherCourses: OtherLearningCourse[];
-  achievements: Achievement[];
+  otherCourses: SidebarCourse[];
+  achievements: SidebarAchievement[];
 }
 
 export function MyCourseSidebar({ otherCourses, achievements }: MyCourseSidebarProps) {

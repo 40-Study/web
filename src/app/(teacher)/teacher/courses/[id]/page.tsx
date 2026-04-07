@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -11,6 +11,7 @@ import {
   FileText,
   GripVertical,
   HelpCircle,
+  Loader2,
   Play,
   Plus,
 } from "lucide-react";
@@ -31,127 +32,212 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import TeacherNotificationDialog from "@/components/teacher/teacher-notification-dialog";
 import { cn } from "@/lib/utils";
-import { getStudentsByCourseId } from "../../students/student-mock-data";
-import {
-  getTeacherCourseDetail,
-  LessonType,
-  loadTeacherCourseChapters,
-  saveTeacherCourseChapters,
-  TeacherCourseChapter,
-  TeacherCourseLesson,
-} from "../course-detail-data";
+import { useMyStudents } from "@/hooks/queries/use-classes";
+import { useCourse } from "@/hooks/queries/use-courses";
+import { useSections, useCreateSection } from "@/hooks/queries/use-sections";
+import { useLessons, useCreateLesson } from "@/hooks/queries/use-lessons";
+import type { Section } from "@/types/section";
+import type { Lesson } from "@/types/lesson";
+import type { LessonType } from "../course-detail-data";
 
-const LESSON_ICONS: Record<LessonType, { icon: JSX.Element; bg: string; color: string }> = {
+// ─── Icon mapping ─────────────────────────────────────────────────────────────
+
+const LESSON_ICONS: Record<string, { icon: JSX.Element; bg: string; color: string }> = {
   video: { icon: <Play className="h-4 w-4" />, bg: "bg-blue-100", color: "text-blue-600" },
   quiz: { icon: <HelpCircle className="h-4 w-4" />, bg: "bg-green-100", color: "text-green-600" },
+  article: { icon: <FileText className="h-4 w-4" />, bg: "bg-red-100", color: "text-red-600" },
   sandbox: { icon: <Code className="h-4 w-4" />, bg: "bg-orange-100", color: "text-orange-600" },
   document: { icon: <FileText className="h-4 w-4" />, bg: "bg-red-100", color: "text-red-600" },
 };
 
-const LESSON_LABELS: Record<LessonType, string> = {
+const LESSON_LABELS: Record<string, string> = {
   video: "Video bài giảng",
   quiz: "Quiz",
+  article: "Bài viết",
   sandbox: "Sandbox IDE Practice",
   document: "PDF Document",
 };
+
+function getLessonIcon(type: string) {
+  return LESSON_ICONS[type] ?? LESSON_ICONS.article;
+}
+
+// ─── Sub-component: section with its lessons ─────────────────────────────────
+
+function SectionCard({
+  section,
+  courseId,
+  onAddLesson,
+}: {
+  section: Section;
+  courseId: string;
+  onAddLesson: (sectionId: string) => void;
+}) {
+  const router = useRouter();
+  const { data: lessons = [], isLoading } = useLessons(courseId, section.id);
+
+  return (
+    <Card>
+      <CardContent className="space-y-4 p-4">
+        <div className="flex items-start gap-3">
+          <GripVertical className="mt-0.5 h-5 w-5 cursor-move text-muted-foreground" />
+          <div className="flex-1">
+            <h3 className="font-medium">{section.title}</h3>
+            {section.description && (
+              <p className="text-sm text-muted-foreground">{section.description}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="ml-8 space-y-2">
+          {isLoading ? (
+            <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Đang tải bài học...
+            </div>
+          ) : lessons.length === 0 ? (
+            <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+              Chưa có bài học nào trong chương này.
+            </p>
+          ) : (
+            lessons.map((lesson) => <LessonRow key={lesson.id} lesson={lesson} courseId={courseId} router={router} />)
+          )}
+        </div>
+
+        <Button
+          variant="ghost"
+          className="mt-2 w-full border border-dashed text-muted-foreground"
+          onClick={() => onAddLesson(section.id)}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Thêm bài học mới
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LessonRow({
+  lesson,
+  courseId,
+  router,
+}: {
+  lesson: Lesson;
+  courseId: string;
+  router: ReturnType<typeof useRouter>;
+}) {
+  const icon = getLessonIcon(lesson.type);
+  return (
+    <div className="space-y-2">
+      <button
+        type="button"
+        onClick={() => router.push(`/teacher/courses/${courseId}/lessons/${lesson.id}`)}
+        className="flex w-full items-center gap-3 rounded-lg bg-gray-50 p-3 text-left transition-colors hover:bg-gray-100"
+      >
+        <GripVertical className="h-4 w-4 cursor-move text-muted-foreground" />
+        <div className={cn("flex h-8 w-8 items-center justify-center rounded-full", icon.bg, icon.color)}>
+          {icon.icon}
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-medium">{lesson.title}</p>
+          <p className="text-xs text-muted-foreground">
+            {LESSON_LABELS[lesson.type] ?? lesson.type}
+            {lesson.duration && ` • ${lesson.duration}s`}
+          </p>
+        </div>
+        <Badge variant={lesson.is_preview ? "success" : "secondary"}>
+          {lesson.is_preview ? "Preview" : "Draft"}
+        </Badge>
+      </button>
+      <div className="flex justify-end">
+        <Button variant="outline" size="sm" asChild>
+          <Link href={`/teacher/assignments?courseId=${courseId}&lessonId=${lesson.id}`}>
+            Giao bài tập
+          </Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function CourseDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const courseId = params.id;
-  const course = useMemo(() => getTeacherCourseDetail(courseId), [courseId]);
 
-  const [chapters, setChapters] = useState<TeacherCourseChapter[]>(course.chapters);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const { data: sections = [], isLoading: sectionsLoading } = useSections(courseId);
+  const createSection = useCreateSection(courseId);
+
   const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false);
   const [isChapterDialogOpen, setIsChapterDialogOpen] = useState(false);
-  const [targetChapterId, setTargetChapterId] = useState<string | null>(null);
+  const [targetSectionId, setTargetSectionId] = useState<string | null>(null);
   const [isLessonDialogOpen, setIsLessonDialogOpen] = useState(false);
 
+  // Section form state
   const [chapterTitle, setChapterTitle] = useState("");
   const [chapterDescription, setChapterDescription] = useState("");
-  const [chapterGoal, setChapterGoal] = useState("");
 
+  // Lesson form state
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonType, setLessonType] = useState<LessonType>("video");
   const [lessonSummary, setLessonSummary] = useState("");
-  const [lessonContent, setLessonContent] = useState("");
-  const [lessonStatus, setLessonStatus] = useState<"published" | "draft">("draft");
   const [lessonDuration, setLessonDuration] = useState("");
-  const [lessonQuestionCount, setLessonQuestionCount] = useState("");
-  const [lessonFileSize, setLessonFileSize] = useState("");
 
-  const courseMembers = getStudentsByCourseId(courseId);
+  const { data: allStudents = [] } = useMyStudents();
+  const courseMembers = allStudents.filter((s) => s.course_id === courseId);
 
-  useEffect(() => {
-    setChapters(loadTeacherCourseChapters(courseId));
-    setIsHydrated(true);
-  }, [courseId]);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    saveTeacherCourseChapters(courseId, chapters);
-  }, [chapters, courseId, isHydrated]);
-
-  const openLessonDialog = (chapterId: string) => {
-    setTargetChapterId(chapterId);
+  const openLessonDialog = (sectionId: string) => {
+    setTargetSectionId(sectionId);
     setLessonTitle("");
     setLessonType("video");
     setLessonSummary("");
-    setLessonContent("");
-    setLessonStatus("draft");
     setLessonDuration("");
-    setLessonQuestionCount("");
-    setLessonFileSize("");
     setIsLessonDialogOpen(true);
   };
 
-  const handleCreateChapter = () => {
-    if (!chapterTitle.trim() || !chapterDescription.trim() || !chapterGoal.trim()) return;
-    setChapters((prev) => [
-      ...prev,
-      {
-        id: `c-${Date.now()}`,
-        title: chapterTitle.trim(),
-        description: chapterDescription.trim(),
-        learningGoal: chapterGoal.trim(),
-        lessons: [],
-      },
-    ]);
+  const handleCreateSection = async () => {
+    if (!chapterTitle.trim()) return;
+    await createSection.mutateAsync({
+      title: chapterTitle.trim(),
+      description: chapterDescription.trim() || undefined,
+      position: sections.length + 1,
+    });
     setChapterTitle("");
     setChapterDescription("");
-    setChapterGoal("");
     setIsChapterDialogOpen(false);
   };
 
-  const handleCreateLesson = () => {
-    if (!targetChapterId || !lessonTitle.trim() || !lessonSummary.trim() || !lessonContent.trim()) return;
+  const createLesson = useCreateLesson(courseId, targetSectionId ?? "");
 
-    const draftLesson: TeacherCourseLesson = {
-      id: `l-${Date.now()}`,
+  const handleCreateLesson = async () => {
+    if (!targetSectionId || !lessonTitle.trim()) return;
+    // Map teacher lesson type to backend supported type
+    const backendType = lessonType === "sandbox" || lessonType === "document" ? "article" : lessonType;
+    await createLesson.mutateAsync({
       title: lessonTitle.trim(),
-      type: lessonType,
-      summary: lessonSummary.trim(),
-      content: lessonContent.trim(),
-      status: lessonStatus,
-      duration: lessonType === "video" ? lessonDuration.trim() || undefined : undefined,
-      questionCount:
-        lessonType === "quiz" && lessonQuestionCount.trim()
-          ? Number(lessonQuestionCount.trim()) || undefined
-          : undefined,
-      fileSize: lessonType === "document" ? lessonFileSize.trim() || undefined : undefined,
-    };
-
-    setChapters((prev) =>
-      prev.map((chapter) =>
-        chapter.id === targetChapterId ? { ...chapter, lessons: [...chapter.lessons, draftLesson] } : chapter
-      )
-    );
-
+      description: lessonSummary.trim() || undefined,
+      type: backendType as "video" | "article" | "quiz",
+      duration: lessonType === "video" && lessonDuration.trim() ? Number(lessonDuration) || undefined : undefined,
+      position: 0,
+      is_preview: false,
+    });
     setIsLessonDialogOpen(false);
   };
 
-  if (!isHydrated) return null;
+  if (courseLoading || sectionsLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!course) return null;
+
+  const isPublished = course.status === "published";
 
   return (
     <div className="space-y-6">
@@ -164,8 +250,8 @@ export default function CourseDetailPage() {
           </Link>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold">{course.title}</h1>
-            <Badge className={course.status === "published" ? "border-green-200 bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>
-              {course.status === "published" ? "Đang xuất bản" : "Bản nháp"}
+            <Badge className={isPublished ? "border-green-200 bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>
+              {isPublished ? "Đang xuất bản" : "Bản nháp"}
             </Badge>
           </div>
         </div>
@@ -192,79 +278,25 @@ export default function CourseDetailPage() {
           <p className="text-sm text-muted-foreground">Nhấn vào từng bài học để mở trang chi tiết và xem bình luận học viên.</p>
         </div>
 
-        {chapters.map((chapter) => (
-          <Card key={chapter.id}>
-            <CardContent className="space-y-4 p-4">
-              <div className="flex items-start gap-3">
-                <GripVertical className="mt-0.5 h-5 w-5 cursor-move text-muted-foreground" />
-                <div className="flex-1">
-                  <h3 className="font-medium">{chapter.title}</h3>
-                  <p className="text-sm text-muted-foreground">{chapter.description}</p>
-                  <p className="mt-1 text-xs text-primary-700">Mục tiêu: {chapter.learningGoal}</p>
-                </div>
-              </div>
-
-              <div className="ml-8 space-y-2">
-                {chapter.lessons.length === 0 ? (
-                  <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
-                    Chưa có bài học nào trong chương này.
-                  </p>
-                ) : (
-                  chapter.lessons.map((lesson) => {
-                    const icon = LESSON_ICONS[lesson.type];
-                    return (
-                      <div key={lesson.id} className="space-y-2">
-                        <button
-                          type="button"
-                          onClick={() => router.push(`/teacher/courses/${courseId}/lessons/${lesson.id}`)}
-                          className="flex w-full items-center gap-3 rounded-lg bg-gray-50 p-3 text-left transition-colors hover:bg-gray-100"
-                        >
-                          <GripVertical className="h-4 w-4 cursor-move text-muted-foreground" />
-                          <div className={cn("flex h-8 w-8 items-center justify-center rounded-full", icon.bg, icon.color)}>
-                            {icon.icon}
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">{lesson.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {LESSON_LABELS[lesson.type]}
-                              {lesson.duration && ` • ${lesson.duration}`}
-                              {lesson.questionCount && ` • ${lesson.questionCount} câu hỏi`}
-                              {lesson.fileSize && ` • ${lesson.fileSize}`}
-                            </p>
-                          </div>
-                          <Badge variant={lesson.status === "published" ? "success" : "secondary"}>
-                            {lesson.status === "published" ? "Published" : "Draft"}
-                          </Badge>
-                        </button>
-                        <div className="flex justify-end">
-                          <Button variant="outline" size="sm" asChild>
-                            <Link href={`/teacher/assignments?courseId=${courseId}&lessonId=${lesson.id}`}>
-                              Giao bài tập
-                            </Link>
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              <Button variant="ghost" className="mt-2 w-full border border-dashed text-muted-foreground" onClick={() => openLessonDialog(chapter.id)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Thêm bài học mới
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+        {sections.length === 0 ? (
+          <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+            Khóa học chưa có chương nào. Nhấn &ldquo;Thêm chương&rdquo; để bắt đầu.
+          </p>
+        ) : (
+          sections.map((section) => (
+            <SectionCard key={section.id} section={section} courseId={courseId} onAddLesson={openLessonDialog} />
+          ))
+        )}
       </div>
 
       <TeacherNotificationDialog
         open={isNotifyDialogOpen}
         onOpenChange={setIsNotifyDialogOpen}
-        recipients={courseMembers.map((member) => ({ id: member.id, name: member.name, phone: member.parentPhone }))}
+        recipients={courseMembers.map((member) => ({ id: member.id, name: member.name, phone: member.parent_phone }))}
         contextLabel={`Chi tiết khóa học: ${course.title}`}
       />
 
+      {/* Add section dialog */}
       <Dialog open={isChapterDialogOpen} onOpenChange={setIsChapterDialogOpen}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
@@ -278,17 +310,13 @@ export default function CourseDetailPage() {
               <Input id="chapter-title" value={chapterTitle} onChange={(e) => setChapterTitle(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="chapter-description">Mô tả chương *</Label>
+              <Label htmlFor="chapter-description">Mô tả chương</Label>
               <Textarea
                 id="chapter-description"
                 rows={3}
                 value={chapterDescription}
                 onChange={(e) => setChapterDescription(e.target.value)}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="chapter-goal">Mục tiêu học tập *</Label>
-              <Textarea id="chapter-goal" rows={2} value={chapterGoal} onChange={(e) => setChapterGoal(e.target.value)} />
             </div>
           </div>
 
@@ -297,15 +325,17 @@ export default function CourseDetailPage() {
               Hủy
             </Button>
             <Button
-              onClick={handleCreateChapter}
-              disabled={!chapterTitle.trim() || !chapterDescription.trim() || !chapterGoal.trim()}
+              onClick={handleCreateSection}
+              disabled={!chapterTitle.trim() || createSection.isPending}
             >
+              {createSection.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Tạo chương
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Add lesson dialog */}
       <Dialog open={isLessonDialogOpen} onOpenChange={setIsLessonDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -332,52 +362,23 @@ export default function CourseDetailPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Trạng thái</Label>
-              <Select value={lessonStatus} onValueChange={(value) => setLessonStatus(value as "published" | "draft")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="published">Published</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
             {lessonType === "video" && (
               <div className="space-y-2">
-                <Label htmlFor="lesson-duration">Thời lượng</Label>
-                <Input id="lesson-duration" placeholder="VD: 15:30" value={lessonDuration} onChange={(e) => setLessonDuration(e.target.value)} />
-              </div>
-            )}
-            {lessonType === "quiz" && (
-              <div className="space-y-2">
-                <Label htmlFor="lesson-questions">Số câu hỏi</Label>
+                <Label htmlFor="lesson-duration">Thời lượng (giây)</Label>
                 <Input
-                  id="lesson-questions"
+                  id="lesson-duration"
                   type="number"
-                  min={1}
-                  placeholder="VD: 10"
-                  value={lessonQuestionCount}
-                  onChange={(e) => setLessonQuestionCount(e.target.value)}
+                  placeholder="VD: 750"
+                  value={lessonDuration}
+                  onChange={(e) => setLessonDuration(e.target.value)}
                 />
-              </div>
-            )}
-            {lessonType === "document" && (
-              <div className="space-y-2">
-                <Label htmlFor="lesson-file-size">Dung lượng file</Label>
-                <Input id="lesson-file-size" placeholder="VD: 2.1 MB" value={lessonFileSize} onChange={(e) => setLessonFileSize(e.target.value)} />
               </div>
             )}
 
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="lesson-summary">Tóm tắt *</Label>
-              <Textarea id="lesson-summary" rows={2} value={lessonSummary} onChange={(e) => setLessonSummary(e.target.value)} />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="lesson-content">Nội dung bài học *</Label>
-              <Textarea id="lesson-content" rows={4} value={lessonContent} onChange={(e) => setLessonContent(e.target.value)} />
+              <Label htmlFor="lesson-summary">Mô tả bài học</Label>
+              <Textarea id="lesson-summary" rows={3} value={lessonSummary} onChange={(e) => setLessonSummary(e.target.value)} />
             </div>
           </div>
 
@@ -385,7 +386,11 @@ export default function CourseDetailPage() {
             <Button variant="outline" onClick={() => setIsLessonDialogOpen(false)}>
               Hủy
             </Button>
-            <Button onClick={handleCreateLesson} disabled={!lessonTitle.trim() || !lessonSummary.trim() || !lessonContent.trim()}>
+            <Button
+              onClick={handleCreateLesson}
+              disabled={!lessonTitle.trim() || createLesson.isPending}
+            >
+              {createLesson.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Tạo bài học
             </Button>
           </DialogFooter>

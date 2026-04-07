@@ -1,334 +1,200 @@
 "use client";
 
+/**
+ * Discussion post detail page — full post content with nested comment thread
+ */
+
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { notFound, useParams } from "next/navigation";
-import { ChevronLeft, MessageSquare, Reply, Send, ThumbsUp } from "lucide-react";
-import { TiptapEditor } from "@/components/editor";
+import { ArrowLeft, Heart, MessageSquare } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
-  discussionPosts,
-  DiscussionComment,
-  DiscussionPost,
-  DISCUSSION_COMMENT_LIKED_STORAGE_KEY,
-  DISCUSSION_POST_LIKED_STORAGE_KEY,
-  loadDiscussionPosts,
-  saveDiscussionPosts,
-} from "../discussion-data";
+  useDiscussionPost,
+  useAddDiscussionComment,
+  useVoteDiscussion,
+  useRemoveVoteDiscussion,
+} from "@/hooks/queries/use-discussions";
+import { TiptapEditor } from "@/components/editor/tiptap-editor";
+import { DiscussionComment } from "./discussion-comment";
+import { useState } from "react";
 
-type LikedMap = Record<string, boolean>;
-
-function countComments(comments: DiscussionComment[]): number {
-  return comments.reduce((total, comment) => total + 1 + countComments(comment.replies), 0);
+interface PageProps {
+  params: { slug: string };
 }
 
-function updateCommentTree(
-  comments: DiscussionComment[],
-  commentId: string,
-  updater: (comment: DiscussionComment) => DiscussionComment
-): DiscussionComment[] {
-  return comments.map((comment) => {
-    if (comment.id === commentId) return updater(comment);
-    if (comment.replies.length === 0) return comment;
+const CATEGORY_COLORS: Record<string, string> = {
+  general: "bg-slate-100 text-slate-600",
+  question: "bg-blue-100 text-blue-600",
+  tips: "bg-green-100 text-green-600",
+  showcase: "bg-purple-100 text-purple-600",
+};
 
-    return {
-      ...comment,
-      replies: updateCommentTree(comment.replies, commentId, updater),
-    };
-  });
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "vừa xong";
+  if (mins < 60) return `${mins} phút trước`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} giờ trước`;
+  const days = Math.floor(hrs / 24);
+  return days < 30 ? `${days} ngày trước` : new Date(dateStr).toLocaleDateString("vi-VN");
 }
 
-function addReplyToComment(
-  comments: DiscussionComment[],
-  parentId: string,
-  nextReply: DiscussionComment
-): DiscussionComment[] {
-  return comments.map((comment) => {
-    if (comment.id === parentId) {
-      return {
-        ...comment,
-        replies: [...comment.replies, nextReply],
-      };
-    }
+export default function DiscussionDetailPage({ params }: PageProps) {
+  const { slug } = params;
+  const { data: post, isLoading } = useDiscussionPost(slug);
+  const addComment = useAddDiscussionComment(slug);
+  const votePost = useVoteDiscussion();
+  const removeVote = useRemoveVoteDiscussion();
 
-    if (comment.replies.length === 0) return comment;
+  const [commentContent, setCommentContent] = useState("");
 
-    return {
-      ...comment,
-      replies: addReplyToComment(comment.replies, parentId, nextReply),
-    };
-  });
-}
+  const hasVoted = post?.user_vote === "upvote";
+  const categoryColor = CATEGORY_COLORS[post?.category ?? ""] ?? "bg-slate-100 text-slate-600";
+  const initials = post?.author_name?.slice(0, 2).toUpperCase() ?? "??";
 
-export default function DiscussionDetailPage() {
-  const params = useParams<{ slug: string }>();
-  const slug = params?.slug;
-
-  const [posts, setPosts] = useState<DiscussionPost[]>(discussionPosts);
-  const [likedPosts, setLikedPosts] = useState<LikedMap>({});
-  const [likedComments, setLikedComments] = useState<LikedMap>({});
-  const [newComment, setNewComment] = useState("");
-  const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
-  const [openReplyBox, setOpenReplyBox] = useState<Record<string, boolean>>({});
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    setPosts(loadDiscussionPosts());
-
-    try {
-      const rawLikedPosts = localStorage.getItem(DISCUSSION_POST_LIKED_STORAGE_KEY);
-      const rawLikedComments = localStorage.getItem(DISCUSSION_COMMENT_LIKED_STORAGE_KEY);
-
-      if (rawLikedPosts) setLikedPosts(JSON.parse(rawLikedPosts));
-      if (rawLikedComments) setLikedComments(JSON.parse(rawLikedComments));
-    } catch {
-      // ignore parse errors
-    } finally {
-      setIsHydrated(true);
-    }
-  }, []);
-
-  const post = useMemo(() => posts.find((item) => item.slug === slug), [posts, slug]);
-
-  const updatePost = (updater: (target: DiscussionPost) => DiscussionPost) => {
-    setPosts((prev) => {
-      const nextPosts = prev.map((item) => (item.slug === slug ? updater(item) : item));
-      saveDiscussionPosts(nextPosts);
-      return nextPosts;
-    });
-  };
-
-  const handleTogglePostLike = () => {
+  const handlePostVote = () => {
     if (!post) return;
-
-    const key = `post:${post.slug}`;
-    const isLiked = likedPosts[key] === true;
-    const nextLiked = { ...likedPosts, [key]: !isLiked };
-    setLikedPosts(nextLiked);
-    localStorage.setItem(DISCUSSION_POST_LIKED_STORAGE_KEY, JSON.stringify(nextLiked));
-
-    updatePost((target) => ({
-      ...target,
-      likes: isLiked ? Math.max(0, target.likes - 1) : target.likes + 1,
-    }));
+    if (hasVoted) {
+      removeVote.mutate({ id: post.id });
+    } else {
+      votePost.mutate({ id: post.id, voteType: "upvote" });
+    }
   };
 
-  const handleToggleCommentLike = (commentId: string) => {
-    const key = `comment:${commentId}`;
-    const isLiked = likedComments[key] === true;
-    const nextLiked = { ...likedComments, [key]: !isLiked };
-    setLikedComments(nextLiked);
-    localStorage.setItem(DISCUSSION_COMMENT_LIKED_STORAGE_KEY, JSON.stringify(nextLiked));
-
-    updatePost((target) => ({
-      ...target,
-      comments: updateCommentTree(target.comments, commentId, (comment) => ({
-        ...comment,
-        likes: isLiked ? Math.max(0, comment.likes - 1) : comment.likes + 1,
-      })),
-    }));
+  const handleCommentVote = (id: string, voted: boolean) => {
+    if (voted) {
+      removeVote.mutate({ id });
+    } else {
+      votePost.mutate({ id, voteType: "upvote" });
+    }
   };
 
-  const handleAddComment = () => {
-    const content = newComment.trim();
-    if (!content || !post) return;
-
-    const created: DiscussionComment = {
-      id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      author: "Bạn",
-      content,
-      createdAt: new Date().toISOString(),
-      likes: 0,
-      replies: [],
-    };
-
-    updatePost((target) => {
-      const nextComments = [...target.comments, created];
-      return {
-        ...target,
-        comments: nextComments,
-        replies: countComments(nextComments),
-      };
-    });
-
-    setNewComment("");
+  const handleCommentSubmit = () => {
+    if (!commentContent.trim()) return;
+    addComment.mutate({ content: commentContent });
+    setCommentContent("");
   };
 
-  const handleAddReply = (parentId: string) => {
-    const content = (replyInputs[parentId] || "").trim();
-    if (!content || !post) return;
-
-    const created: DiscussionComment = {
-      id: `r-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      author: "Bạn",
-      content,
-      createdAt: new Date().toISOString(),
-      likes: 0,
-      replies: [],
-    };
-
-    updatePost((target) => {
-      const nextComments = addReplyToComment(target.comments, parentId, created);
-      return {
-        ...target,
-        comments: nextComments,
-        replies: countComments(nextComments),
-      };
-    });
-
-    setReplyInputs((prev) => ({ ...prev, [parentId]: "" }));
-    setOpenReplyBox((prev) => ({ ...prev, [parentId]: false }));
+  const handleReply = (parentId: string, content: string) => {
+    addComment.mutate({ content, parent_id: parentId });
   };
 
-  const renderComment = (comment: DiscussionComment, depth = 0) => {
-    const key = `comment:${comment.id}`;
-    const isLiked = likedComments[key] === true;
-    const isReplyOpen = openReplyBox[comment.id] === true;
-
+  if (isLoading) {
     return (
-      <div key={comment.id} className={`rounded-xl border bg-white p-4 ${depth > 0 ? "ml-6 mt-3" : "mt-4"}`}>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-slate-900">{comment.author}</p>
-            <p className="text-xs text-muted-foreground">{new Date(comment.createdAt).toLocaleString("vi-VN")}</p>
-          </div>
-        </div>
-
-        <div
-          className="mt-3 text-sm text-slate-700 prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: comment.content }}
-        />
-
-        <div className="mt-3 flex items-center gap-3 text-sm">
-          <button
-            onClick={() => handleToggleCommentLike(comment.id)}
-            className={`inline-flex items-center gap-1 ${isLiked ? "text-primary-600" : "text-muted-foreground"}`}
-          >
-            <ThumbsUp className="h-4 w-4" />
-            {comment.likes}
-          </button>
-          <button
-            onClick={() =>
-              setOpenReplyBox((prev) => ({
-                ...prev,
-                [comment.id]: !prev[comment.id],
-              }))
-            }
-            className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary-600"
-          >
-            <Reply className="h-4 w-4" />
-            Trả lời
-          </button>
-        </div>
-
-        {isReplyOpen && (
-          <div className="mt-3 space-y-2">
-            <TiptapEditor
-              value={replyInputs[comment.id] || ""}
-              onChange={(html) =>
-                setReplyInputs((prev) => ({
-                  ...prev,
-                  [comment.id]: html,
-                }))
-              }
-              placeholder="Viết trả lời..."
-              minHeight={100}
-            />
-            <button
-              onClick={() => handleAddReply(comment.id)}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
-            >
-              <Send className="h-4 w-4" />
-              Gửi trả lời
-            </button>
-          </div>
-        )}
-
-        {comment.replies.map((reply) => renderComment(reply, depth + 1))}
+      <div className="max-w-3xl mx-auto px-4 py-8 animate-pulse space-y-4">
+        <div className="h-4 w-24 bg-slate-200 rounded" />
+        <div className="h-8 w-2/3 bg-slate-200 rounded" />
+        <div className="h-4 w-full bg-slate-100 rounded" />
+        <div className="h-4 w-4/5 bg-slate-100 rounded" />
       </div>
     );
-  };
-
-  if (!post && isHydrated) {
-    notFound();
   }
 
   if (!post) {
-    return null;
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-16 text-center">
+        <p className="text-slate-500">Bài viết không tồn tại.</p>
+        <Link href="/discussions" className="text-primary-500 hover:underline text-sm mt-2 inline-block">
+          Quay lại diễn đàn
+        </Link>
+      </div>
+    );
   }
 
-  const postLikeKey = `post:${post.slug}`;
-  const isPostLiked = likedPosts[postLikeKey] === true;
-
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="max-w-3xl mx-auto px-4 py-8">
+      {/* Back link */}
       <Link
         href="/discussions"
-        className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700"
+        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary-500 transition-colors mb-6"
       >
-        <ChevronLeft className="h-4 w-4" />
-        Quay lại danh sách thảo luận
+        <ArrowLeft className="w-4 h-4" />
+        Diễn đàn
       </Link>
 
-      <article className="rounded-2xl border bg-white p-6 md:p-8">
-        <header className="mb-6 border-b pb-6">
-          <div className="mb-3 inline-flex rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700">
+      {/* Post card */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
+        {/* Category + meta */}
+        <div className="flex items-center gap-3 mb-4">
+          <span className={cn("text-xs font-medium px-2.5 py-1 rounded-full", categoryColor)}>
             {post.category}
-          </div>
-          <h1 className="mb-3 text-3xl font-bold text-slate-900">{post.title}</h1>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <span>Tác giả: {post.author}</span>
-            <span>{post.createdAt}</span>
-            <span className="inline-flex items-center gap-1">
-              <MessageSquare className="h-4 w-4" />
-              {post.replies} phản hồi
-            </span>
-            <button
-              onClick={handleTogglePostLike}
-              className={`inline-flex items-center gap-1 ${isPostLiked ? "text-primary-600" : "text-muted-foreground"}`}
-            >
-              <ThumbsUp className="h-4 w-4" />
-              {post.likes} lượt thích
-            </button>
-          </div>
-        </header>
+          </span>
+          <span className="text-xs text-slate-400">{timeAgo(post.created_at)}</span>
+        </div>
 
-        <div className="prose prose-slate max-w-none">
-          {post.content.map((paragraph, index) => (
-            <div
-              key={`${post.slug}-paragraph-${index}`}
-              dangerouslySetInnerHTML={{ __html: paragraph }}
+        <h1 className="text-xl font-bold text-slate-900 mb-4">{post.title}</h1>
+
+        {/* Author */}
+        <div className="flex items-center gap-3 mb-5">
+          {post.avatar_url ? (
+            <img src={post.avatar_url} alt={post.author_name} className="w-9 h-9 rounded-full object-cover" />
+          ) : (
+            <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-sm">
+              {initials}
+            </div>
+          )}
+          <span className="text-sm font-medium text-slate-700">{post.author_name}</span>
+        </div>
+
+        {/* Content */}
+        <div
+          className="prose prose-sm max-w-none text-slate-700 mb-6"
+          dangerouslySetInnerHTML={{ __html: post.content }}
+        />
+
+        {/* Actions */}
+        <div className="flex items-center gap-4 pt-4 border-t border-slate-100">
+          <button
+            onClick={handlePostVote}
+            className={cn(
+              "flex items-center gap-1.5 text-sm transition-colors",
+              hasVoted ? "text-rose-500" : "text-slate-400 hover:text-rose-400"
+            )}
+          >
+            <Heart className={cn("w-4 h-4", hasVoted && "fill-rose-500")} />
+            <span>{post.upvote_count}</span>
+          </button>
+          <div className="flex items-center gap-1.5 text-sm text-slate-400">
+            <MessageSquare className="w-4 h-4" />
+            <span>{post.reply_count} bình luận</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Comment composer */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
+        <p className="text-sm font-medium text-slate-700 mb-3">Viết bình luận</p>
+        <TiptapEditor
+          value={commentContent}
+          onChange={setCommentContent}
+          placeholder="Chia sẻ suy nghĩ của bạn..."
+          minHeight={100}
+        />
+        <div className="flex justify-end mt-3">
+          <button
+            onClick={handleCommentSubmit}
+            disabled={!commentContent.trim() || addComment.isPending}
+            className="text-sm font-medium px-4 py-2 rounded-xl bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-50 transition-colors"
+          >
+            {addComment.isPending ? "Đang gửi..." : "Gửi bình luận"}
+          </button>
+        </div>
+      </div>
+
+      {/* Comments thread */}
+      {post.comments?.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm px-5 divide-y divide-slate-50">
+          {post.comments.map((comment) => (
+            <DiscussionComment
+              key={comment.id}
+              comment={comment}
+              onVote={handleCommentVote}
+              onReply={handleReply}
+              isReplying={addComment.isPending}
             />
           ))}
         </div>
-      </article>
-
-      <section className="mt-8 rounded-2xl border bg-white p-6 md:p-8">
-        <h2 className="text-lg font-semibold text-slate-900">Bình luận ({post.replies})</h2>
-
-        <div className="mt-4 space-y-3">
-          <TiptapEditor
-            value={newComment}
-            onChange={setNewComment}
-            placeholder="Viết bình luận của bạn..."
-            minHeight={120}
-          />
-          <button
-            onClick={handleAddComment}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
-          >
-            <Send className="h-4 w-4" />
-            Gửi bình luận
-          </button>
-        </div>
-
-        <div className="mt-4">
-          {post.comments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Chưa có bình luận nào. Hãy mở đầu cuộc thảo luận.</p>
-          ) : (
-            post.comments.map((comment) => renderComment(comment))
-          )}
-        </div>
-      </section>
+      )}
     </div>
   );
 }

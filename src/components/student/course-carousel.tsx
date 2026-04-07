@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Users, Eye, Clock } from "lucide-react";
-import type { RecommendedCourse } from "@/lib/mock-data/student-dashboard";
+import type { RecommendedCourse } from "@/types/student-dashboard";
 
 interface CourseCarouselProps {
   title: string;

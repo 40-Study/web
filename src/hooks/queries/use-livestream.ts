@@ -4,7 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { livestreamService } from "@/services/livestream.service";
+import { livestreamClassroomService as livestreamService } from "@/services/livestream-classroom.service";
 
 export const livestreamKeys = {
   all: ["livestream"] as const,

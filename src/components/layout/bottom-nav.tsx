@@ -14,6 +14,7 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth.store";
 
 type UserRole = "student" | "teacher" | "parent";
 
@@ -53,7 +54,11 @@ interface BottomNavProps {
 
 export function BottomNav({ role = "student", className }: BottomNavProps) {
   const pathname = usePathname();
-  const tabs = navConfigs[role];
+  const { user } = useAuthStore();
+  const profileHref = user?.id ? `/profile/${user.id}` : "/login";
+  const tabs = navConfigs[role].map((tab) =>
+    tab.href === "/profile" ? { ...tab, href: profileHref } : tab
+  );
 
   return (
     <nav

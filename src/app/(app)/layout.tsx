@@ -22,7 +22,8 @@ export default function AppLayout({
     pathname === "/courses" ||
     pathname.startsWith("/courses/") ||
     pathname === "/discussions" ||
-    pathname.startsWith("/discussions/");
+    pathname.startsWith("/discussions/") ||
+    pathname.startsWith("/profile/");
 
   useEffect(() => {
     if (!hasHydrated || !isAuthenticated || !isAdminRole) return;

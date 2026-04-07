@@ -1,72 +1,72 @@
 "use client";
 
-import { useState } from "react";
 import { Bell, Mail, Smartphone } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { useNotificationSettings, useUpdateNotificationSettings } from "@/hooks/queries/use-notification-settings";
 
-export interface NotificationSetting {
+// ─── Field mapping ───────────────────────────────────────────────────────────
+// Maps UI items to backend field names for email + push channels
+
+interface NotificationItem {
   id: string;
   title: string;
   description: string;
-  email: boolean;
-  push: boolean;
+  emailField: string | null;
+  pushField: string | null;
 }
 
-const defaultSettings: NotificationSetting[] = [
+const ITEMS: NotificationItem[] = [
   {
     id: "streak",
     title: "Nhắc nhở chuỗi học",
     description: "Nhắc hàng ngày để duy trì chuỗi ngày học liên tiếp",
-    email: true,
-    push: true,
+    emailField: "email_recommendations",
+    pushField: "push_streak_reminders",
   },
   {
     id: "achievements",
     title: "Mở khóa thành tích",
     description: "Khi bạn đạt được thành tích mới",
-    email: false,
-    push: true,
+    emailField: null,
+    pushField: "push_achievements",
   },
   {
     id: "course-updates",
     title: "Cập nhật khóa học",
     description: "Nội dung mới trong các khóa học đã đăng ký",
-    email: true,
-    push: true,
+    emailField: "email_course_updates",
+    pushField: "push_course_updates",
   },
   {
     id: "leaderboard",
     title: "Thay đổi bảng xếp hạng",
     description: "Thay đổi vị trí trong giải đấu của bạn",
-    email: false,
-    push: true,
+    emailField: null,
+    pushField: "push_quiz_reminders",
   },
   {
     id: "marketing",
     title: "Khuyến mãi & Tin tức",
     description: "Ưu đãi đặc biệt và cập nhật nền tảng",
-    email: true,
-    push: false,
+    emailField: "email_promotions",
+    pushField: "push_promotions",
   },
 ];
 
-interface NotificationSettingsProps {
-  initialSettings?: NotificationSetting[];
-  onSettingsChange?: (settings: NotificationSetting[]) => void;
-}
+// ─── Component ───────────────────────────────────────────────────────────────
 
-export function NotificationSettings({
-  initialSettings = defaultSettings,
-  onSettingsChange,
-}: NotificationSettingsProps) {
-  const [settings, setSettings] = useState<NotificationSetting[]>(initialSettings);
+export function NotificationSettings() {
+  const { data: settings, isLoading } = useNotificationSettings();
+  const { mutate: updateSetting } = useUpdateNotificationSettings();
 
-  const updateSetting = (settingId: string, channel: "email" | "push", value: boolean) => {
-    const newSettings = settings.map((setting) =>
-      setting.id === settingId ? { ...setting, [channel]: value } : setting
-    );
-    setSettings(newSettings);
-    onSettingsChange?.(newSettings);
+  const getValue = (field: string | null): boolean => {
+    if (!field || !settings) return false;
+    return settings[field] ?? false;
+  };
+
+  const handleToggle = (field: string | null, value: boolean) => {
+    if (!field) return;
+    updateSetting({ [field]: value });
   };
 
   return (
@@ -91,39 +91,52 @@ export function NotificationSettings({
 
       {/* Settings list */}
       <div className="space-y-3">
-        {settings.map((setting) => (
+        {ITEMS.map((item) => (
           <div
-            key={setting.id}
+            key={item.id}
             className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex items-center gap-4"
           >
             <div className="p-2.5 bg-primary-50 rounded-xl shrink-0">
               <Bell className="h-4 w-4 text-primary-500" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-gray-900 text-sm">{setting.title}</p>
-              <p className="text-xs text-gray-500 truncate">{setting.description}</p>
+              <p className="font-medium text-gray-900 text-sm">{item.title}</p>
+              <p className="text-xs text-gray-500 truncate">{item.description}</p>
             </div>
+
+            {/* Email toggle */}
             <div className="w-16 flex justify-center shrink-0">
-              <Switch
-                checked={setting.email}
-                onCheckedChange={(v) => updateSetting(setting.id, "email", v)}
-                aria-label={`${setting.title} — email`}
-              />
+              {item.emailField ? (
+                <Switch
+                  checked={getValue(item.emailField)}
+                  onCheckedChange={(v) => handleToggle(item.emailField, v)}
+                  disabled={isLoading}
+                  aria-label={`${item.title} — email`}
+                />
+              ) : (
+                <span className="text-gray-200 text-lg">—</span>
+              )}
             </div>
+
+            {/* Push toggle */}
             <div className="w-16 flex justify-center shrink-0">
-              <Switch
-                checked={setting.push}
-                onCheckedChange={(v) => updateSetting(setting.id, "push", v)}
-                aria-label={`${setting.title} — push`}
-              />
+              {item.pushField ? (
+                <Switch
+                  checked={getValue(item.pushField)}
+                  onCheckedChange={(v) => handleToggle(item.pushField, v)}
+                  disabled={isLoading}
+                  aria-label={`${item.title} — push`}
+                />
+              ) : (
+                <span className="text-gray-200 text-lg">—</span>
+              )}
             </div>
           </div>
         ))}
       </div>
 
       <p className="text-xs text-gray-400 px-1">
-        Bạn có thể hủy đăng ký nhận email bất cứ lúc nào bằng cách nhấn vào liên kết hủy đăng ký
-        trong email.
+        Bạn có thể hủy đăng ký nhận email bất cứ lúc nào bằng cách nhấn vào liên kết hủy đăng ký trong email.
       </p>
     </div>
   );

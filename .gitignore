@@ -5,6 +5,10 @@ node_modules/
 *.log
 *.tsbuildinfo
 .DS_Store
+*.zip
+*.pdf
+repomix-output.*
+src/image.png
 
 # ClaudeKit
 .claude/
