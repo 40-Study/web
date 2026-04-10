@@ -14,11 +14,11 @@ export const notificationService = {
       .get<ApiResponse<NotificationListResponse>>("/notifications", { params })
       .then((r) => r.data.data),
 
-  /** GET /notifications/unread-count */
+  /** GET /notifications/unread-count — backend returns {unread_count} directly */
   getUnreadCount: () =>
     api
-      .get<ApiResponse<UnreadCountResponse>>("/notifications/unread-count")
-      .then((r) => r.data.data),
+      .get<UnreadCountResponse>("/notifications/unread-count")
+      .then((r) => r.data),
 
   /** PATCH /notifications/:id/read */
   markAsRead: (id: string) =>
