@@ -17,7 +17,20 @@ import {
   NotFoundError,
 } from "./errors";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+function resolveApiBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    return "/api";
+  }
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (process.env.NODE_ENV === "production") {
+    return "/api";
+  }
+  return "http://localhost:5000/api";
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 // ─── Axios instance ─────────────────────────────────────────────────────────
 

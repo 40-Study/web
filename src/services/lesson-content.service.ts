@@ -15,6 +15,8 @@ export interface LessonContent {
   type: ContentType;
   title: string;
   video_url?: string;
+  video_hls_url?: string;
+  thumbnail_url?: string;
   duration?: number;
   exercise_id?: string;
   is_mandatory?: boolean;

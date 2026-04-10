@@ -3,20 +3,32 @@
  * Endpoints: /hls/:uploadId/*
  */
 
-// Extract base URL for HLS endpoints
-const getBaseUrl = () => {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-  return apiUrl.replace(/\/api(\/v\d+)?$/, "");
-};
-const API_BASE_URL = `${getBaseUrl()}/api`;
+function resolveApiBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    return "/api";
+  }
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (process.env.NODE_ENV === "production") {
+    return "/api";
+  }
+  return "http://localhost:5000/api";
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export interface VideoInfo {
   upload_id: string;
   duration?: number;
-  qualities?: string[];
+  qualities?: { id: string; label: string; playlist: string }[];
   status: string;
+  hls_ready?: boolean;
+  fallback_url?: string; // URL video gốc khi HLS chưa sẵn sàng
+  master_url?: string;
+  message?: string;
 }
 
 // ─── Service ────────────────────────────────────────────────────────────────

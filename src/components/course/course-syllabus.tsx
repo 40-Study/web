@@ -151,7 +151,7 @@ function LessonContentsPanel({
         const ContentIcon = getContentIcon(content.type);
         const handleClick = () => {
           if (!canAccess) return;
-          if (content.type === "video" && content.video_url) {
+          if (content.type === "video" && (content.video_hls_url || content.video_url)) {
             onViewVideo(content);
           } else if (content.type === "exercise" && content.exercise_id) {
             window.open(`/exercises/${content.exercise_id}`, "_blank");
@@ -164,7 +164,7 @@ function LessonContentsPanel({
             onClick={handleClick}
             className={cn(
               "flex items-center justify-between border-t border-muted/50 py-2.5 pl-16 pr-4",
-              canAccess && content.type === "video" && content.video_url && "cursor-pointer hover:bg-muted/50"
+              canAccess && content.type === "video" && (content.video_hls_url || content.video_url) && "cursor-pointer hover:bg-muted/50"
             )}
           >
             <div className="flex items-center gap-3">
@@ -187,7 +187,7 @@ function LessonContentsPanel({
                   {formatSeconds(content.duration)}
                 </span>
               )}
-              {canAccess && content.type === "video" && content.video_url && showTrialLinks && (
+              {canAccess && content.type === "video" && (content.video_hls_url || content.video_url) && showTrialLinks && (
                 <Button
                   size="sm"
                   variant="ghost"
@@ -308,26 +308,79 @@ function VideoPreviewModal({
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<any>(null);
 
-  // Construct full video URL
-  const videoUrl = useMemo(() => {
-    if (!content?.video_url) return "";
-    let url = content.video_url;
-    if (url.startsWith("/api/")) {
-      // HLS URLs need to go to backend server (remove /api suffix, keep base URL)
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-      // Extract base URL: http://localhost:5000/api -> http://localhost:5000
-      const baseUrl = apiUrl.replace(/\/api(\/v\d+)?$/, "");
-      url = `${baseUrl}${url}`;
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [resolvedVideoUrl, setResolvedVideoUrl] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Extract upload ID from HLS URL pattern: /api/hls/{uploadId}/master.m3u8
+  const extractUploadId = (url: string): string | null => {
+    const match = url.match(/\/hls\/([a-f0-9-]+)\//i);
+    return match ? match[1] : null;
+  };
+
+  // Normalize URL
+  const normalizeUrl = (url: string): string => {
+    if (/^https?:\/\/localhost:5000\/api\//i.test(url)) {
+      return url.replace(/^https?:\/\/localhost:5000\/api/i, "/api");
+    }
+    if (/^https?:\/\/api\.fortex\.ai\.vn\/api\//i.test(url)) {
+      return url.replace(/^https?:\/\/api\.fortex\.ai\.vn\/api/i, "/api");
     }
     return url;
-  }, [content?.video_url]);
+  };
 
-  const isHls = videoUrl.includes(".m3u8");
+  // Resolve video URL - check HLS availability and use fallback if needed
+  useEffect(() => {
+    if (!open || !content) {
+      setResolvedVideoUrl("");
+      return;
+    }
 
-  const [videoError, setVideoError] = useState<string | null>(null);
+    const url = content.video_hls_url ?? content.video_url;
+    if (!url) {
+      setResolvedVideoUrl("");
+      return;
+    }
+
+    const normalizedUrl = normalizeUrl(url);
+    const uploadId = extractUploadId(normalizedUrl);
+
+    // If it's an HLS URL, check if HLS is ready
+    if (uploadId && normalizedUrl.includes(".m3u8")) {
+      setIsLoading(true);
+      fetch(`/api/hls/${uploadId}/info`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.hls_ready === true) {
+            // HLS ready - use HLS URL
+            setResolvedVideoUrl(normalizedUrl);
+          } else if (data.fallback_url) {
+            // HLS not ready - use fallback (original video)
+            setResolvedVideoUrl(data.fallback_url);
+          } else {
+            // No fallback available
+            setVideoError("Video đang được xử lý, vui lòng thử lại sau.");
+          }
+        })
+        .catch(() => {
+          // API error - try original video_url as fallback
+          if (content.video_url && content.video_url !== url) {
+            setResolvedVideoUrl(normalizeUrl(content.video_url));
+          } else {
+            setVideoError("Không thể tải thông tin video.");
+          }
+        })
+        .finally(() => setIsLoading(false));
+    } else {
+      // Not an HLS URL - use directly
+      setResolvedVideoUrl(normalizedUrl);
+    }
+  }, [open, content]);
+
+  const isHls = resolvedVideoUrl.includes(".m3u8");
 
   useEffect(() => {
-    if (!open || !videoUrl || !videoRef.current) return;
+    if (!open || !resolvedVideoUrl || !videoRef.current || isLoading) return;
 
     setVideoError(null);
     const video = videoRef.current;
@@ -337,15 +390,15 @@ function VideoPreviewModal({
       import("hls.js").then(({ default: Hls }) => {
         if (Hls.isSupported()) {
           const hls = new Hls({
-            maxBufferLength: 30,        // Max 30 giây buffer
-            maxMaxBufferLength: 60,     // Max 60 giây total
-            maxBufferSize: 10 * 1000 * 1000, // 10MB max buffer (giảm bandwidth)
-            startLevel: 0,              // Bắt đầu với quality thấp nhất
+            maxBufferLength: 30,
+            maxMaxBufferLength: 60,
+            maxBufferSize: 10 * 1000 * 1000,
+            startLevel: 0,
             abrMaxWithRealBitrate: true,
             abrBandWidthFactor: 0.7,
           });
           hlsRef.current = hls;
-          hls.loadSource(videoUrl);
+          hls.loadSource(resolvedVideoUrl);
           hls.attachMedia(video);
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
             video.play().catch(() => {});
@@ -353,22 +406,17 @@ function VideoPreviewModal({
           hls.on(Hls.Events.ERROR, (_, data) => {
             if (data.fatal) {
               console.error("HLS Error:", data);
-              if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                setVideoError("Không thể tải video. Video có thể đang được xử lý.");
-              } else {
-                setVideoError("Lỗi phát video: " + data.details);
-              }
+              setVideoError("Lỗi phát video HLS");
             }
           });
         } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-          // Safari native HLS support
-          video.src = videoUrl;
+          video.src = resolvedVideoUrl;
           video.play().catch(() => {});
         }
       });
     } else {
-      // Regular video
-      video.src = videoUrl;
+      // Regular video (mp4, etc.)
+      video.src = resolvedVideoUrl;
       video.onerror = () => setVideoError("Không thể tải video");
       video.play().catch(() => {});
     }
@@ -379,7 +427,7 @@ function VideoPreviewModal({
         hlsRef.current = null;
       }
     };
-  }, [open, videoUrl, isHls]);
+  }, [open, resolvedVideoUrl, isHls, isLoading]);
 
   if (!content) return null;
 
@@ -392,7 +440,14 @@ function VideoPreviewModal({
         </DialogHeader>
 
         <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
-          {videoUrl ? (
+          {isLoading ? (
+            <div className="absolute inset-0 flex items-center justify-center text-white">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                <p className="text-sm text-gray-400">Đang tải video...</p>
+              </div>
+            </div>
+          ) : resolvedVideoUrl ? (
             <>
               <video
                 ref={videoRef}
@@ -405,7 +460,6 @@ function VideoPreviewModal({
                 <div className="absolute inset-0 flex items-center justify-center bg-black/80 text-white text-center p-4">
                   <div>
                     <p className="text-red-400 mb-2">{videoError}</p>
-                    <p className="text-sm text-gray-400">URL: {videoUrl}</p>
                   </div>
                 </div>
               )}
@@ -421,8 +475,8 @@ function VideoPreviewModal({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Đóng
           </Button>
-          {videoUrl && (
-            <Button onClick={() => window.open(videoUrl, "_blank")}>
+          {resolvedVideoUrl && (
+            <Button onClick={() => window.open(resolvedVideoUrl, "_blank")}>
               <Eye className="w-4 h-4 mr-2" />
               Mở trong tab mới
             </Button>

@@ -1170,13 +1170,13 @@ function VideoPreviewModal({
   // Construct full video URL
   const videoUrl = useMemo(() => {
     if (!content?.video_url) return "";
-    let url = content.video_url;
-    if (url.startsWith("/api/")) {
-      // HLS URLs need to go to backend server (remove /api suffix, keep base URL)
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-      // Extract base URL: http://localhost:5000/api -> http://localhost:5000
-      const baseUrl = apiUrl.replace(/\/api(\/v\d+)?$/, "");
-      url = `${baseUrl}${url}`;
+    const url = content.video_url;
+    // Normalize legacy absolute API URLs to same-origin for stable cookies/CORS.
+    if (/^https?:\/\/localhost:5000\/api\//i.test(url)) {
+      return url.replace(/^https?:\/\/localhost:5000\/api/i, "/api");
+    }
+    if (/^https?:\/\/api\.fortex\.ai\.vn\/api\//i.test(url)) {
+      return url.replace(/^https?:\/\/api\.fortex\.ai\.vn\/api/i, "/api");
     }
     return url;
   }, [content?.video_url]);

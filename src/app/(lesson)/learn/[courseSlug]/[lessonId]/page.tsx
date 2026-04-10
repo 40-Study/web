@@ -167,7 +167,8 @@ export default function CourseLessonPage() {
   const currentLesson = getLessonById(course, lessonId);
   const next = getNextLesson(course, lessonId);
 
-  const videoSrc = lessonVideo?.video_url ?? "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+  // Ưu tiên HLS URL nếu có, fallback về video gốc
+  const videoSrc = lessonVideo?.video_hls_url ?? lessonVideo?.video_url ?? "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
 
   const exerciseCount = course.chapters
     .flatMap((ch) => ch.lessons)
