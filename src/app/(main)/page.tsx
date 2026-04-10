@@ -16,15 +16,9 @@ import {
   Target,
   Smartphone,
   CheckCircle2,
-  Mail,
-  Facebook,
-  Twitter,
-  Linkedin,
-  Instagram,
   ArrowRight,
   Sparkles,
 } from "lucide-react";
-import { siteConfig } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth.store";
 import { AnimatedShowcasePanel } from "@/components/landing/animated-showcase-panel";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
@@ -418,86 +412,6 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* 7. Footer */}
-          <footer className="bg-slate-950 text-slate-400 pt-20 pb-10 px-6 mt-10 border-t border-slate-900">
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-              {/* Brand Col */}
-              <ScrollReveal delay={0} className="space-y-6">
-                <Link href="/" className="flex items-center gap-2 text-white">
-                  <ForteXLogoIcon size={32} gradient={false} className="text-white" />
-                  <span className="text-xl font-bold tracking-tight">ForteX</span>
-                </Link>
-                <p className="text-sm leading-relaxed">
-                  {siteConfig.description}
-                </p>
-                <div className="flex items-center gap-4 pt-2">
-                  <a href={siteConfig.links.facebook} className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-primary-600 hover:text-white transition-colors">
-                    <Facebook className="w-4 h-4" />
-                  </a>
-                  <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-primary-600 hover:text-white transition-colors">
-                    <Twitter className="w-4 h-4" />
-                  </a>
-                  <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-primary-600 hover:text-white transition-colors">
-                    <Instagram className="w-4 h-4" />
-                  </a>
-                  <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-primary-600 hover:text-white transition-colors">
-                    <Linkedin className="w-4 h-4" />
-                  </a>
-                </div>
-              </ScrollReveal>
-
-              {/* Links Col 1 */}
-              <ScrollReveal delay={150}>
-                <h4 className="text-white font-semibold mb-6">Về chúng tôi</h4>
-                <ul className="space-y-4 text-sm">
-                  <li><a href="#" className="hover:text-primary-400 transition-colors">Giới thiệu ForteX</a></li>
-                  <li><a href="#" className="hover:text-primary-400 transition-colors">Tuyển dụng</a></li>
-                  <li><a href="#" className="hover:text-primary-400 transition-colors">Tin tức & Blog</a></li>
-                  <li><a href="#" className="hover:text-primary-400 transition-colors">Liên hệ</a></li>
-                </ul>
-              </ScrollReveal>
-
-              {/* Links Col 2 */}
-              <ScrollReveal delay={300}>
-                <h4 className="text-white font-semibold mb-6">Học tập</h4>
-                <ul className="space-y-4 text-sm">
-                  <li><a href="#" className="hover:text-primary-400 transition-colors">Khóa học Lập trình</a></li>
-                  <li><a href="#" className="hover:text-primary-400 transition-colors">Khóa học Thiết kế</a></li>
-                  <li><a href="#" className="hover:text-primary-400 transition-colors">Chương trình Bootcamp</a></li>
-                  <li><a href="#" className="hover:text-primary-400 transition-colors">Dự án Mẫu</a></li>
-                </ul>
-              </ScrollReveal>
-
-              {/* Newsletter Col */}
-              <ScrollReveal delay={450}>
-                <h4 className="text-white font-semibold mb-6">Đăng ký nhận tin</h4>
-                <p className="text-sm mb-4">Nhận thông báo về các khóa học mới và ưu đãi đặc biệt.</p>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                    <input 
-                      type="email" 
-                      placeholder="Email của bạn" 
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-primary-500"
-                    />
-                  </div>
-                  <Button className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg px-4">
-                    Gửi
-                  </Button>
-                </div>
-              </ScrollReveal>
-            </div>
-
-            <ScrollReveal direction="fade" delay={200}>
-              <div className="max-w-7xl mx-auto pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
-                <p>© {new Date().getFullYear()} ForteX. Đã đăng ký bản quyền.</p>
-                <div className="flex items-center gap-6">
-                  <a href="#" className="hover:text-white transition-colors">Điều khoản sử dụng</a>
-                  <a href="#" className="hover:text-white transition-colors">Chính sách bảo mật</a>
-                </div>
-              </div>
-            </ScrollReveal>
-          </footer>
     </div>
   );
 }
