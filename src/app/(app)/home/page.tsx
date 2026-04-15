@@ -50,12 +50,12 @@ export default function HomePage() {
     : 0;
 
   return (
-    <div className="p-8">
+    <div className="p-8 bg-white min-h-screen">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Khóa học của tôi</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-3xl font-light text-slate-900">Khóa học của tôi</h1>
+          <p className="text-slate-500 mt-2" style={{ letterSpacing: '0.16px' }}>
             Chào mừng trở lại {user?.name || ""}, hãy tập trung vào mục tiêu hôm nay.
           </p>
         </div>
@@ -64,14 +64,18 @@ export default function HomePage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center min-h-[300px]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+          <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
         </div>
       ) : enrolledCourses.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-gray-500 mb-4">Bạn chưa đăng ký khóa học nào.</p>
-          <Link href="/courses" className="text-primary-600 font-semibold hover:underline">
-            Khám phá khóa học →
-          </Link>
+        <div className="flex gap-6">
+          <div className="flex-1 text-center py-16">
+            <p className="text-slate-500 mb-4">Bạn chưa đăng ký khóa học nào.</p>
+            <Link href="/courses" className="text-slate-900 font-medium hover:underline">
+              Khám phá khóa học →
+            </Link>
+          </div>
+          {/* Sidebar vẫn hiển thị */}
+          <MyCourseSidebar otherCourses={[]} achievements={achievements} />
         </div>
       ) : (
         <div className="flex gap-6">
@@ -79,7 +83,7 @@ export default function HomePage() {
             {/* Featured / recently learning */}
             {featured && (
               <section>
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
+                <h2 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4">
                   Đang học gần đây
                 </h2>
                 <FeaturedCourseCard
@@ -87,6 +91,7 @@ export default function HomePage() {
                     id: String(featured.id),
                     slug: featured.slug,
                     title: featured.title,
+                    thumbnail: featured.thumbnail,
                     tags: [featured.category?.name?.toUpperCase() || "KHÓA HỌC"],
                     progress: featured.progress,
                     completedLessons: featured.completedLessons,
@@ -100,12 +105,12 @@ export default function HomePage() {
             {/* Enrolled courses grid */}
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                <h2 className="text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Khóa học của tôi
                 </h2>
                 <Link
                   href="/courses"
-                  className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors"
+                  className="text-xs font-medium text-slate-900 hover:text-neutral-600 transition-colors"
                 >
                   XEM TẤT CẢ
                 </Link>

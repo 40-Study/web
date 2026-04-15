@@ -58,10 +58,10 @@ function mapApiCourse(c: ApiCourse): Course {
     studentCount: c.total_students ?? 0,
     instructor: c.instructor
       ? mapApiInstructor(c.instructor)
-      : { id: c.instructor_id ?? "", name: "Unknown" },
+      : { id: c.instructor_id ?? "", name: "Chưa cập nhật" },
     category: c.category
       ? mapApiCategory(c.category)
-      : { id: c.category_id ?? "", name: "Unknown", slug: "unknown" },
+      : { id: c.category_id ?? "", name: "Chưa phân loại", slug: "uncategorized" },
     level: (c.level as Course["level"]) ?? "beginner",
     language: c.language === "vi" ? "Tiếng Việt" : (c.language ?? "Tiếng Việt"),
     duration: c.total_duration_minutes ?? 0,
@@ -240,7 +240,7 @@ export function useSearchSuggestions(query: string) {
           id: c.id,
           title: c.title,
           thumbnail: c.thumbnail_url ?? "",
-          instructor: c.instructor?.name ?? "Unknown",
+          instructor: c.instructor?.name ?? "Chưa cập nhật",
           slug: c.slug ?? c.id,
         })
       );
@@ -258,10 +258,11 @@ export function useEnrolledCourses() {
       const raw = await courseService.getEnrolledCourses();
       return raw.map((c): EnrolledCourse => ({
         ...mapApiCourse(c),
-        progress: 0,
+        progress: c.progress_percentage ? parseFloat(c.progress_percentage) : 0,
         completedLessons: 0,
         totalLessons: c.total_lessons ?? 0,
-        enrolledAt: c.created_at ?? "",
+        enrolledAt: c.enrolled_at ?? c.created_at ?? "",
+        lastAccessedAt: c.last_accessed_at,
       }));
     },
     staleTime: 60 * 1000,

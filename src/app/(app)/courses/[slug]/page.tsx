@@ -39,11 +39,13 @@ export default function CourseDetailPage() {
   const [justEnrolled, setJustEnrolled] = useState(false);
 
   const { data: course, isLoading, error } = useCourseBySlug(slug);
-  const { data: enrolledCourses = [] } = useEnrolledCourses();
+  const { data: enrolledCourses = [], isLoading: enrolledLoading } = useEnrolledCourses();
   const enrollMutation = useEnrollCourse();
 
   const enrolledCourse = useMemo(() => {
-    return enrolledCourses.find((c) => c.slug === slug || c.id === course?.id);
+    return enrolledCourses.find(
+      (c) => c.slug === slug || String(c.id) === String(course?.id)
+    );
   }, [enrolledCourses, slug, course?.id]);
 
   const isEnrolled = Boolean(enrolledCourse) || justEnrolled;

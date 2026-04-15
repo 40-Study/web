@@ -1,19 +1,18 @@
 /**
  * HLS streaming service
- * Endpoints: /hls/:uploadId/*
+ * Backend endpoints: /api/hls/:uploadId/*
  */
 
 function resolveApiBaseUrl(): string {
+  // Always use relative path for browser (proxied by Next.js)
   if (typeof window !== "undefined") {
     return "/api";
   }
+  // Server-side: use environment variable or default
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
-  if (process.env.NODE_ENV === "production") {
-    return "/api";
-  }
-  return "http://localhost:5000/api";
+  return "http://127.0.0.1:5000/api";
 }
 
 const API_BASE_URL = resolveApiBaseUrl();
@@ -34,13 +33,23 @@ export interface VideoInfo {
 // ─── Service ────────────────────────────────────────────────────────────────
 
 export const hlsService = {
-  /** GET /hls/:uploadId/info — video info */
-  getInfo: (uploadId: string) =>
-    fetch(`${API_BASE_URL}/hls/${uploadId}/info`).then((r) => r.json()),
+  /** GET /api/hls/:uploadId/info — video info */
+  getInfo: async (uploadId: string): Promise<VideoInfo> => {
+    const res = await fetch(`${API_BASE_URL}/hls/${uploadId}/info`);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch video info: ${res.status}`);
+    }
+    const data = await res.json();
+    return data.data || data;
+  },
 
   /** Build master playlist URL (for HLS player) */
   getMasterPlaylistUrl: (uploadId: string) =>
     `${API_BASE_URL}/hls/${uploadId}/master.m3u8`,
+
+  /** Build fallback video URL (original video when HLS not ready) */
+  getFallbackVideoUrl: (uploadId: string) =>
+    `${API_BASE_URL}/hls/${uploadId}/video.mp4`,
 
   /** Build quality playlist URL */
   getQualityPlaylistUrl: (uploadId: string, quality: string) =>
@@ -49,4 +58,14 @@ export const hlsService = {
   /** Build segment URL */
   getSegmentUrl: (uploadId: string, quality: string, segment: string) =>
     `${API_BASE_URL}/hls/${uploadId}/${quality}/${segment}`,
+
+  /** Check if video is ready for streaming */
+  isVideoReady: async (uploadId: string): Promise<boolean> => {
+    try {
+      const info = await hlsService.getInfo(uploadId);
+      return info.hls_ready === true || info.status === "ready";
+    } catch {
+      return false;
+    }
+  },
 };

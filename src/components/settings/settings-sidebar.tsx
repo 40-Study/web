@@ -11,6 +11,7 @@ import {
   Smartphone,
   HelpCircle,
   LogOut,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -97,6 +98,18 @@ export function SettingsSidebar({
         </div>
 
         <div className="mt-2 pt-2 border-t border-gray-100 space-y-1">
+          <Link
+            href="/settings/family"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-600 hover:bg-primary-50 hover:text-primary-700 transition-colors"
+          >
+            <div className="p-2 bg-primary-50 rounded-lg">
+              <Users className="h-4 w-4 text-primary-600" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium">Gia đình</p>
+              <p className="text-xs text-gray-400">Liên kết phụ huynh</p>
+            </div>
+          </Link>
           <Link
             href="/help"
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-500 hover:bg-gray-50 transition-colors"

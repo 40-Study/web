@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Camera } from "lucide-react";
+import { Camera, Loader2 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/stores/auth.store";
-import { useUpdateProfile } from "@/hooks/queries/use-auth";
+import { useMe, useUpdateProfile } from "@/hooks/queries/use-auth";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -34,6 +34,7 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 
 export function ProfileSettings() {
   const { user } = useAuthStore();
+  const { data: profileData, isLoading: isLoadingProfile } = useMe();
   const updateProfile = useUpdateProfile();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -44,16 +45,29 @@ export function ProfileSettings() {
     register,
     handleSubmit,
     watch,
+    reset,
     formState: { errors, isDirty },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      fullName: user?.name || "",
+      fullName: "",
       username: "",
       bio: "",
       phone: "",
     },
   });
+
+  // Update form when profile data is loaded
+  useEffect(() => {
+    if (profileData) {
+      reset({
+        fullName: profileData.full_name || "",
+        username: profileData.username || "",
+        bio: profileData.bio || "",
+        phone: profileData.phone || "",
+      });
+    }
+  }, [profileData, reset]);
 
   const bio = watch("bio") || "";
 
@@ -88,6 +102,25 @@ export function ProfileSettings() {
 
   const hasChanges = isDirty || avatarFile !== null;
 
+  // Display values - prefer profile data, fallback to auth store
+  const displayName = profileData?.full_name || user?.name || "Người dùng";
+  const displayEmail = profileData?.email || user?.email || "";
+  const displayAvatar = avatarPreview || profileData?.avatar_url || user?.avatar;
+
+  if (isLoadingProfile) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Hồ sơ</h2>
+          <p className="text-sm text-gray-500 mt-1">Cập nhật thông tin cá nhân của bạn</p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -102,8 +135,8 @@ export function ProfileSettings() {
             <div className="relative group">
               <Avatar
                 size="xl"
-                src={avatarPreview || user?.avatar}
-                fallback={user?.name || "U"}
+                src={displayAvatar}
+                fallback={displayName}
                 className="w-20 h-20 ring-4 ring-gray-50"
               />
               <button
@@ -122,8 +155,11 @@ export function ProfileSettings() {
               />
             </div>
             <div>
-              <p className="font-medium text-gray-900">{user?.name || "Người dùng"}</p>
-              <p className="text-sm text-gray-500">{user?.email}</p>
+              <p className="font-medium text-gray-900">{displayName}</p>
+              <p className="text-sm text-gray-500">{displayEmail}</p>
+              {profileData?.username && (
+                <p className="text-sm text-primary-600">@{profileData.username}</p>
+              )}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}

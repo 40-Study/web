@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { AuthModal } from "@/components/auth/auth-modal";
 import { GlobalSearch } from "@/components/layout/global-search";
+import { CartDropdown } from "@/components/layout/cart-dropdown";
 import { useLogout } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth.store";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { useNotifications, useUnreadCount, useMarkNotificationRead, useMarkAllNotificationsRead } from "@/hooks/queries/use-notifications";
+import { useNotificationSocket } from "@/hooks/use-notification-socket";
 
 interface MenuItem {
   label: string;
@@ -61,6 +63,9 @@ export function Header() {
   const markReadMutation = useMarkNotificationRead();
   const markAllReadMutation = useMarkAllNotificationsRead();
 
+  // Initialize WebSocket connection for real-time notifications
+  useNotificationSocket();
+
   const unreadCount = isAuthenticated ? (unreadData?.unread_count ?? 0) : 0;
   const notifications = isAuthenticated ? (notifData?.notifications ?? []) : [];
   const normalizedRole = normalizeRole(activeRole);
@@ -100,20 +105,27 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-100 dark:border-gray-800 z-50 flex items-center justify-between px-4 lg:px-8">
+      <header className="fixed top-0 left-0 right-0 h-16 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md z-50 flex items-center justify-between px-4 lg:px-8" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
         <div className="flex items-center gap-6 lg:gap-12">
           <Link href={homeHref} className="flex items-center gap-2">
-            <ForteXLogoIcon size={32} className="text-primary-600" />
-            <span className="text-xl font-bold text-slate-900 tracking-tight">ForteX</span>
+            <ForteXLogoIcon size={32} className="text-black" />
+            <span className="text-xl font-light text-black tracking-tight">ForteX</span>
           </Link>
 
           <GlobalSearch />
         </div>
 
         <div className="flex items-center gap-3 lg:gap-4">
+          {/* Cart - only show for students */}
+          {isAuthenticated && isStudent && (
+            <div className="hidden md:block">
+              <CartDropdown />
+            </div>
+          )}
+
           <div className="relative hidden md:block" ref={notificationRef}>
             <button
-              className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full"
+              className="relative p-2 text-neutral-500 hover:bg-neutral-100 rounded-full transition-colors"
               onClick={() => {
                 setIsDropdownOpen(false);
                 setIsNotificationOpen((v) => !v);
@@ -121,45 +133,79 @@ export function Header() {
             >
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                <span className="absolute top-1 right-1 min-w-[16px] h-4 px-0.5 bg-black text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
             </button>
 
             {isNotificationOpen && (
-              <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-lg border py-2 z-50">
-                <div className="px-4 py-3 border-b flex items-center justify-between">
-                  <p className="font-semibold text-gray-900">Thông báo</p>
+              <div className="absolute right-0 top-12 w-96 bg-white rounded-2xl overflow-hidden z-50" style={{ boxShadow: 'rgba(0,0,0,0.06) 0px 0px 0px 1px, rgba(0,0,0,0.08) 0px 8px 24px' }}>
+                <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-5 h-5 text-black" />
+                    <p className="font-medium text-black">Thông báo</p>
+                    {unreadCount > 0 && (
+                      <span className="px-2 py-0.5 bg-neutral-100 text-black text-xs font-medium rounded-full">
+                        {unreadCount} mới
+                      </span>
+                    )}
+                  </div>
                   {unreadCount > 0 && (
                     <button
-                      className="text-xs text-primary-600 hover:underline disabled:opacity-50"
+                      className="text-xs text-black hover:text-neutral-600 font-medium disabled:opacity-50"
                       onClick={() => markAllReadMutation.mutate()}
                       disabled={markAllReadMutation.isPending}
                     >
-                      Đánh dấu tất cả đã đọc
+                      Đọc tất cả
                     </button>
                   )}
                 </div>
-                <div className="py-1 max-h-80 overflow-y-auto">
+                <div className="max-h-96 overflow-y-auto">
                   {notifications.length === 0 ? (
-                    <p className="text-sm text-gray-500 text-center py-6">Không có thông báo</p>
+                    <div className="py-12 text-center">
+                      <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
+                        <Bell className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <p className="text-sm text-gray-500">Không có thông báo nào</p>
+                    </div>
                   ) : (
                     notifications.map((item) => (
                       <button
                         key={item.id}
-                        className={`w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors ${!item.is_read ? "bg-blue-50/60" : ""}`}
+                        className={`w-full text-left px-5 py-4 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0 ${!item.is_read ? "bg-primary-50/50" : ""}`}
                         onClick={() => {
                           if (!item.is_read) markReadMutation.mutate(item.id);
                           setIsNotificationOpen(false);
                         }}
                       >
-                        <p className="text-sm text-gray-800">{item.title}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{timeAgo(item.created_at)}</p>
+                        <div className="flex items-start gap-3">
+                          <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${!item.is_read ? "bg-primary-500" : "bg-transparent"}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm leading-snug ${!item.is_read ? "text-gray-900 font-medium" : "text-gray-700"}`}>
+                              {item.title}
+                            </p>
+                            {item.content && (
+                              <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.content}</p>
+                            )}
+                            <p className="text-xs text-gray-400 mt-1.5">{timeAgo(item.created_at)}</p>
+                          </div>
+                        </div>
                       </button>
                     ))
                   )}
                 </div>
+                {notifications.length > 0 && (
+                  <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
+                    <Link
+                      href="/notifications"
+                      className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                      onClick={() => setIsNotificationOpen(false)}
+                    >
+                      Xem tất cả thông báo
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -168,20 +214,20 @@ export function Header() {
             {isAuthenticated ? (
               <>
                 <Link href={homeHref}>
-                  <Button variant="outline" className="font-medium">
-                    Dashboard
+                  <Button variant="outline" className="font-medium text-sm">
+                    Trang quản lý
                   </Button>
                 </Link>
 
                 <button
                   onClick={() => setIsDropdownOpen((v) => !v)}
-                  className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-2 p-1 rounded-full hover:bg-neutral-100 transition-colors"
                 >
                   <Avatar fallback={user?.name || "TK"} size="sm" />
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute right-4 top-14 w-64 bg-white rounded-xl shadow-lg border py-2 z-50">
+                  <div className="absolute right-4 top-14 w-64 bg-white rounded-2xl py-2 z-50" style={{ boxShadow: 'rgba(0,0,0,0.06) 0px 0px 0px 1px, rgba(0,0,0,0.08) 0px 8px 24px' }}>
                     <div className="px-4 py-3 border-b">
                       <p className="font-semibold text-gray-900">{user?.name || "Tài khoản"}</p>
                       <p className="text-sm text-gray-500">{user?.email || ""}</p>
@@ -223,10 +269,10 @@ export function Header() {
               </>
             ) : (
               <>
-                <Button variant="ghost" className="text-slate-600 hover:text-slate-900 font-medium" onClick={openLogin}>
+                <Button variant="ghost" className="text-black hover:text-black font-medium" onClick={openLogin}>
                   Đăng nhập
                 </Button>
-                <Button className="bg-primary-600 hover:bg-primary-700 text-white font-medium shadow-sm" onClick={openRegister}>
+                <Button className="font-medium" onClick={openRegister}>
                   Đăng ký
                 </Button>
               </>
@@ -252,7 +298,7 @@ export function Header() {
                     <div className="px-3 pt-3">
                       <Link href={homeHref} onClick={() => setIsMobileMenuOpen(false)}>
                         <Button variant="outline" className="w-full justify-start font-medium">
-                          Dashboard
+                          Trang quản lý
                         </Button>
                       </Link>
                     </div>

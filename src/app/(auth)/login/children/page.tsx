@@ -24,7 +24,13 @@ export default function LoginChildrenPage() {
     if (!selectedChildId) return;
     const child = children.find((c) => c.id === selectedChildId);
     if (child) {
-      setSelectedChild({ id: child.id, name: child.name, avatar: child.avatar });
+      setSelectedChild({
+        id: child.id,
+        username: child.username,
+        full_name: child.full_name,
+        avatar_url: child.avatar_url,
+        relationship: child.relationship,
+      });
     }
     router.push(ROUTES.HOME);
   };
@@ -74,8 +80,8 @@ export default function LoginChildrenPage() {
               key={child.id}
               selected={selectedChildId === child.id}
               onClick={() => setSelectedChildId(child.id)}
-              avatar={child.avatar}
-              title={child.name}
+              avatar={child.avatar_url}
+              title={child.full_name || child.username}
               subtitle=""
               avatarClassName="rounded-full"
             />

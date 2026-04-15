@@ -4,8 +4,8 @@ import { Check, Link2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLinkedAccounts, useDisconnectProvider } from "@/hooks/queries/use-auth";
 
-// API base for OAuth redirect — strip trailing /api if present
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api").replace(/\/api$/, "");
+// Backend URL for OAuth redirect - must go directly to backend, not through Next.js proxy
+const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 interface ProviderMeta {
   id: string;
@@ -27,7 +27,7 @@ export function LinkedAccountsSettings() {
   const connectedSet = new Set(linked.map((a) => a.provider));
 
   const handleConnect = (providerId: string) => {
-    window.location.href = `${API_BASE}/api/auth/oauth/${providerId}`;
+    window.location.href = `${BACKEND_BASE}/auth/oauth/${providerId}`;
   };
 
   return (

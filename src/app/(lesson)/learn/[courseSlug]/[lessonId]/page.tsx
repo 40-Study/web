@@ -15,6 +15,7 @@ import {
 import { useCourseBySlug } from "@/hooks/queries/use-courses";
 import { useSections } from "@/hooks/queries/use-sections";
 import { useLessonContents } from "@/hooks/queries/use-lesson-content";
+import { useHlsInfo, getVideoUrl } from "@/hooks/use-hls";
 import type { PlayerCourse, PlayerChapter, PlayerLesson } from "@/types/course-player";
 import type { Section } from "@/types/section";
 import type { Lesson } from "@/types/lesson";
@@ -83,17 +84,29 @@ function VideoLessonContent({
   course,
   next,
   courseSlug,
+  isLoading,
 }: {
-  videoSrc: string;
+  videoSrc: string | null;
   currentLesson: PlayerLesson | undefined;
   course: PlayerCourse;
   next: PlayerLesson | undefined;
   courseSlug: string;
+  isLoading?: boolean;
 }) {
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-5 gap-4">
-      <div className="rounded-2xl overflow-hidden shadow-sm bg-black">
-        <VideoPlayer src={videoSrc} className="rounded-none" />
+      <div className="rounded-2xl overflow-hidden shadow-sm bg-black aspect-video">
+        {isLoading ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-white" />
+          </div>
+        ) : videoSrc ? (
+          <VideoPlayer src={videoSrc} className="rounded-none" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-white">
+            <p>Video không khả dụng</p>
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm px-6 pt-5 pb-4">
@@ -145,6 +158,10 @@ export default function CourseLessonPage() {
   const { data: lessonContents } = useLessonContents(lessonId);
   const lessonVideo = lessonContents?.find((c) => c.type === "video");
 
+  // Get video ID for HLS service (extract from video_hls_url)
+  const videoId = lessonVideo?.video_hls_url?.split("/hls/")?.[1]?.split("/")?.[0] ?? null;
+  const { data: hlsInfo, isLoading: hlsLoading } = useHlsInfo(videoId, true);
+
   const isLoading = courseLoading || sectionsLoading;
 
   if (isLoading) {
@@ -167,8 +184,13 @@ export default function CourseLessonPage() {
   const currentLesson = getLessonById(course, lessonId);
   const next = getNextLesson(course, lessonId);
 
-  // Ưu tiên HLS URL nếu có, fallback về video gốc
-  const videoSrc = lessonVideo?.video_hls_url ?? lessonVideo?.video_url ?? "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+  // Get video URL from HLS service (prioritizes HLS when ready, falls back to original)
+  const videoSrc = videoId && hlsInfo
+    ? getVideoUrl(hlsInfo, videoId)
+    : lessonVideo?.video_hls_url ?? lessonVideo?.video_url ?? null;
+
+  // Show loading state while HLS info is loading for video lessons
+  const isVideoLoading = !!(lessonVideo && videoId && hlsLoading);
 
   const exerciseCount = course.chapters
     .flatMap((ch) => ch.lessons)
@@ -220,6 +242,7 @@ export default function CourseLessonPage() {
         course={course}
         next={next}
         courseSlug={courseSlug}
+        isLoading={isVideoLoading}
       />
     );
   };

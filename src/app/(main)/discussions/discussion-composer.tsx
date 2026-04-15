@@ -10,10 +10,10 @@ import { TiptapEditor } from "@/components/editor/tiptap-editor";
 import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
-  { value: "general", label: "Chung" },
-  { value: "question", label: "Hỏi đáp" },
-  { value: "tips", label: "Mẹo hay" },
-  { value: "showcase", label: "Chia sẻ" },
+  { value: "programming", label: "Lập trình" },
+  { value: "design", label: "Thiết kế" },
+  { value: "learning-tips", label: "Mẹo học" },
+  { value: "project", label: "Dự án" },
 ];
 
 interface DiscussionComposerProps {
@@ -24,7 +24,7 @@ interface DiscussionComposerProps {
 export function DiscussionComposer({ onSubmit, isSubmitting }: DiscussionComposerProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [category, setCategory] = useState("general");
+  const [category, setCategory] = useState("programming");
   const [expanded, setExpanded] = useState(false);
 
   const handleSubmit = () => {
@@ -32,7 +32,7 @@ export function DiscussionComposer({ onSubmit, isSubmitting }: DiscussionCompose
     onSubmit({ title: title.trim(), content, category });
     setTitle("");
     setContent("");
-    setCategory("general");
+    setCategory("programming");
     setExpanded(false);
   };
 

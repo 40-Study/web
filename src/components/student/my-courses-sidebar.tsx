@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { AchievementSidebar } from "./achievement-sidebar";
 import { MentorChatWidget } from "./mentor-chat-widget";
+import { FamilyConnectionCard } from "@/components/parent";
 interface SidebarCourse {
   id: string;
   slug: string;
@@ -70,6 +71,9 @@ export function MyCourseSidebar({ otherCourses, achievements }: MyCourseSidebarP
           ))}
         </div>
       </div>
+
+      {/* Family Connection */}
+      <FamilyConnectionCard />
 
       {/* Achievements */}
       <AchievementSidebar achievements={achievements} />

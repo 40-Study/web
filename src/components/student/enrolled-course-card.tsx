@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import { BookOpen } from "lucide-react";
 import { ProgressBar } from "@/components/ui/progress-bar";
+
 interface EnrolledCourseCardCourse {
   id: string;
   slug: string;
@@ -34,12 +37,22 @@ export function EnrolledCourseCard({ course, href }: EnrolledCourseCardProps) {
       className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow block"
     >
       {/* Thumbnail */}
-      <div className="aspect-video bg-blue-700 relative overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center opacity-20">
-          <div className="w-16 h-16 border-4 border-white rounded-full" />
-        </div>
+      <div className="aspect-video bg-gradient-to-br from-primary-600 to-primary-800 relative overflow-hidden">
+        {course.thumbnail ? (
+          <Image
+            src={course.thumbnail}
+            alt={course.title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            sizes="(max-width: 768px) 100vw, 33vw"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <BookOpen className="w-12 h-12 text-white/30" />
+          </div>
+        )}
         {/* Progress overlay at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
           <div
             className="h-full bg-white transition-all duration-500"
             style={{ width: `${course.progress}%` }}

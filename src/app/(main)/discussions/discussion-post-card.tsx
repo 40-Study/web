@@ -17,10 +17,17 @@ interface DiscussionPostCardProps {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  general: "bg-slate-100 text-slate-600",
-  question: "bg-blue-100 text-blue-600",
-  tips: "bg-green-100 text-green-600",
-  showcase: "bg-purple-100 text-purple-600",
+  programming: "bg-slate-100 text-slate-600",
+  design: "bg-blue-100 text-blue-600",
+  "learning-tips": "bg-green-100 text-green-600",
+  project: "bg-purple-100 text-purple-600",
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  programming: "Lập trình",
+  design: "Thiết kế",
+  "learning-tips": "Mẹo học",
+  project: "Dự án",
 };
 
 function timeAgo(dateStr: string): string {
@@ -65,7 +72,7 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
             <p className="text-xs text-slate-400">{timeAgo(post.created_at)}</p>
           </div>
           <span className={cn("ml-auto text-xs font-medium px-2.5 py-1 rounded-full", categoryColor)}>
-            {post.category}
+            {CATEGORY_LABELS[post.category] ?? post.category}
           </span>
         </div>
 

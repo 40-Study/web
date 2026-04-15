@@ -10,10 +10,10 @@ import { useLeaderboard } from "@/hooks/queries/use-leaderboard";
 import type { ForumPost } from "@/types/discussion";
 
 const CATEGORIES = [
-  { value: "general", label: "Chung", emoji: "💬" },
-  { value: "question", label: "Hỏi đáp", emoji: "❓" },
-  { value: "tips", label: "Mẹo hay", emoji: "💡" },
-  { value: "showcase", label: "Chia sẻ", emoji: "🚀" },
+  { value: "programming", label: "Lập trình", emoji: "💻" },
+  { value: "design", label: "Thiết kế", emoji: "🎨" },
+  { value: "learning-tips", label: "Mẹo học", emoji: "💡" },
+  { value: "project", label: "Dự án", emoji: "🚀" },
 ];
 
 interface DiscussionSidebarProps {

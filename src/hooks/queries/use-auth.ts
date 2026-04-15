@@ -111,10 +111,7 @@ export function useChildren() {
 
   return useQuery({
     queryKey: authKeys.children(),
-    queryFn: async () => {
-      // TODO: confirm endpoint for children
-      return { children: [] as Array<{ id: string; name: string; avatar?: string }> };
-    },
+    queryFn: () => authService.getChildren(),
     enabled: isAuthenticated && normalizeRole(activeRole) === "PARENT",
   });
 }

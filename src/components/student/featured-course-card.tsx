@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronRight, BookOpen } from "lucide-react";
-import { ProgressBar } from "@/components/ui/progress-bar";
+
 interface FeaturedCourseCardCourse {
   id: string;
   slug: string;
   title: string;
+  thumbnail?: string;
   tags: string[];
   progress: number;
   completedLessons: number;
@@ -20,14 +22,29 @@ interface FeaturedCourseCardProps {
 
 export function FeaturedCourseCard({ course }: FeaturedCourseCardProps) {
   return (
-    <div className="relative rounded-2xl overflow-hidden bg-blue-900 text-white p-8 min-h-[220px] flex flex-col justify-between shadow-lg">
-      {/* Background decoration */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
-      </div>
+    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-primary-800 to-primary-950 text-white min-h-[220px] flex flex-col justify-between shadow-lg">
+      {/* Background image */}
+      {course.thumbnail && (
+        <div className="absolute inset-0">
+          <Image
+            src={course.thumbnail}
+            alt={course.title}
+            fill
+            className="object-cover opacity-30"
+            sizes="(max-width: 1024px) 100vw, 66vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-900/90 via-primary-900/70 to-transparent" />
+        </div>
+      )}
+      {/* Fallback decoration when no thumbnail */}
+      {!course.thumbnail && (
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
+        </div>
+      )}
 
-      <div className="relative z-10 flex gap-8 items-start">
+      <div className="relative z-10 flex gap-8 items-start p-8">
         {/* Left: Info */}
         <div className="flex-1">
           {/* Tags */}
@@ -59,7 +76,7 @@ export function FeaturedCourseCard({ course }: FeaturedCourseCardProps) {
             </div>
             <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
               <div
-                className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                className="h-full bg-primary-400 rounded-full transition-all duration-500"
                 style={{ width: `${course.progress}%` }}
               />
             </div>

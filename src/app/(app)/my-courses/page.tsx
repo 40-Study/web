@@ -59,18 +59,18 @@ export default function MyCoursesPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
       </div>
     );
   }
 
   return (
-    <div className="p-8">
+    <div className="p-8 bg-white min-h-screen">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Khóa học của tôi</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-3xl font-light text-black">Khóa học của tôi</h1>
+          <p className="text-neutral-500 mt-2" style={{ letterSpacing: '0.16px' }}>
             {enrolledCourses.length > 0
               ? `Bạn đang học ${enrolledCourses.length} khóa học.`
               : "Chưa đăng ký khóa học nào."}
@@ -81,8 +81,8 @@ export default function MyCoursesPage() {
 
       {enrolledCourses.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-gray-500 mb-4">Bạn chưa đăng ký khóa học nào.</p>
-          <Link href="/courses" className="text-primary-600 font-semibold hover:underline">
+          <p className="text-neutral-500 mb-4">Bạn chưa đăng ký khóa học nào.</p>
+          <Link href="/courses" className="text-black font-medium hover:underline">
             Khám phá khóa học →
           </Link>
         </div>
@@ -93,7 +93,7 @@ export default function MyCoursesPage() {
             {/* Featured / recently learning */}
             {featured && (
               <section>
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
+                <h2 className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-4">
                   Đang học gần đây
                 </h2>
                 <FeaturedCourseCard
@@ -101,6 +101,7 @@ export default function MyCoursesPage() {
                     id: String(featured.id),
                     slug: featured.slug,
                     title: featured.title,
+                    thumbnail: featured.thumbnail,
                     tags: [featured.category?.name?.toUpperCase() || "KHÓA HỌC"],
                     progress: featured.progress,
                     completedLessons: featured.completedLessons,
@@ -114,12 +115,12 @@ export default function MyCoursesPage() {
             {/* Enrolled courses grid */}
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                <h2 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
                   Khóa học của tôi
                 </h2>
                 <Link
                   href="/courses"
-                  className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors"
+                  className="text-xs font-medium text-black hover:text-neutral-600 transition-colors"
                 >
                   XEM TẤT CẢ
                 </Link>

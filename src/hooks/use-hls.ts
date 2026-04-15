@@ -36,14 +36,23 @@ export function getVideoUrl(info: VideoInfo | undefined, videoId: string): strin
   if (!info || !videoId) return null;
 
   // HLS ready - use master playlist
-  if (info.hls_ready === true) {
+  if (info.hls_ready === true || info.status === "ready") {
     return hlsService.getMasterPlaylistUrl(videoId);
   }
 
-  // HLS not ready - use fallback (original video)
+  // HLS not ready - use fallback (original video from server endpoint)
   if (info.fallback_url) {
     return info.fallback_url;
   }
 
-  return null;
+  // Use the standard fallback endpoint
+  return hlsService.getFallbackVideoUrl(videoId);
+}
+
+/**
+ * Check if video is using HLS streaming
+ */
+export function isHlsStream(info: VideoInfo | undefined): boolean {
+  if (!info) return false;
+  return info.hls_ready === true || info.status === "ready";
 }

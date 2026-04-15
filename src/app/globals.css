@@ -5,35 +5,50 @@
 :root {
   --radius: 0.5rem;
 
-  /* Design System Colors - Sky/Cyan (energetic, student-friendly) */
-  --background: 0 0% 100%; /* #FFFFFF white */
-  --foreground: 222 47% 11%; /* #0F172A slate-900 */
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%; /* #0F172A slate-900 */
+  /* Educational Platform Design System */
+  /* Clean white canvas with blue accents */
+  --background: 210 40% 98%; /* #f8fafc slate-50 */
+  --background-secondary: 214 32% 91%; /* #e2e8f0 slate-200 */
+  --foreground: 222 47% 11%; /* #1e293b slate-800 */
+  --card: 0 0% 100%; /* Pure white cards */
+  --card-foreground: 222 47% 11%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%; /* #0F172A slate-900 */
-  --primary: 199 89% 48%; /* #0EA5E9 sky-500 */
-  --primary-foreground: 0 0% 100%;
-  --secondary: 271 91% 65%;
-  --secondary-foreground: 222 47% 11%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 25% 35%; /* #475569 slate-600 */
-  --accent: 210 40% 96%;
-  --accent-foreground: 222 47% 11%;
-  --destructive: 0 84% 60%; /* #EF4444 red-500 */
-  --destructive-foreground: 210 40% 98%;
-  --border: 214 32% 91%; /* #E2E8F0 slate-200 */
-  --input: 214 32% 91%; /* #E2E8F0 slate-200 */
-  --ring: 199 89% 48%; /* #0EA5E9 sky-500 */
+  --popover-foreground: 222 47% 11%;
+
+  /* Primary - Educational Blue */
+  --primary: 217 91% 60%; /* #3b82f6 blue-500 */
+  --primary-foreground: 0 0% 100%; /* White text on blue */
+
+  /* Secondary - Light Blue */
+  --secondary: 214 95% 93%; /* #dbeafe blue-100 */
+  --secondary-foreground: 221 83% 53%; /* #2563eb blue-600 */
+
+  --muted: 210 40% 96%; /* #f1f5f9 slate-100 */
+  --muted-foreground: 215 16% 47%; /* #64748b slate-500 */
+
+  --accent: 199 89% 48%; /* #0ea5e9 sky-500 */
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 214 32% 91%; /* #e2e8f0 slate-200 */
+  --input: 214 32% 91%;
+  --ring: 217 91% 60%; /* Focus ring matches primary blue */
+
+  /* Educational Theme Colors */
+  --edu-blue: 217 91% 60%; /* Primary blue */
+  --edu-sky: 199 89% 48%; /* Sky blue accent */
+  --edu-slate: 215 16% 47%; /* Neutral text */
 
   /* Gamification Colors */
-  --xp-green: 142 71% 45%; /* #22c55e */
-  --streak-orange: 25 95% 53%; /* #f97316 */
-  --achievement-gold: 45 93% 47%; /* #fbbf24 */
-  --success: 160 84% 39%; /* #10B981 emerald-500 */
-  --warning: 38 92% 50%; /* #F59E0B amber-500 */
+  --xp-green: 142 71% 45%;
+  --streak-orange: 25 95% 53%;
+  --achievement-gold: 45 93% 47%;
+  --success: 142 71% 45%;
+  --warning: 38 92% 50%;
 
-  /* Spacing scale (4px base) */
+  /* Spacing scale (8px base) */
   --space-0: 0;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -48,11 +63,13 @@
   --space-20: 5rem;
   --space-24: 6rem;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  /* Shadow System - Clean & Modern */
+  --shadow-inset: rgba(0,0,0,0.05) 0px 0px 0px 1px inset;
+  --shadow-outline: rgba(0,0,0,0.05) 0px 0px 0px 1px;
+  --shadow-soft: rgba(0,0,0,0.05) 0px 4px 6px -1px;
+  --shadow-card: rgba(0,0,0,0.1) 0px 1px 3px, rgba(0,0,0,0.06) 0px 1px 2px;
+  --shadow-elevated: rgba(0,0,0,0.1) 0px 10px 15px -3px, rgba(0,0,0,0.05) 0px 4px 6px -2px;
+  --shadow-subtle: rgba(0,0,0,0.05) 0px 0px 0px 1px, rgba(0,0,0,0.05) 0px 1px 2px;
 
   /* Animation durations */
   --duration-fast: 150ms;
@@ -61,25 +78,26 @@
 }
 
 .dark {
-  --background: 222 47% 11%; /* #0F172A slate-900 */
-  --foreground: 210 40% 98%; /* #F8FAFC slate-50 */
+  --background: 222 47% 11%; /* #1e293b slate-800 */
+  --background-secondary: 217 33% 17%; /* #334155 slate-700 */
+  --foreground: 210 40% 98%; /* #f8fafc slate-50 */
   --card: 217 33% 17%;
   --card-foreground: 210 40% 98%;
   --popover: 217 33% 17%;
   --popover-foreground: 210 40% 98%;
-  --primary: 199 89% 48%; /* #0EA5E9 sky-500 */
-  --primary-foreground: 0 0% 100%;
-  --secondary: 271 91% 65%;
+  --primary: 213 94% 68%; /* #60a5fa blue-400 */
+  --primary-foreground: 222 47% 11%;
+  --secondary: 217 33% 25%;
   --secondary-foreground: 210 40% 98%;
-  --muted: 217 33% 17%;
+  --muted: 217 33% 20%;
   --muted-foreground: 215 20% 65%;
-  --accent: 217 33% 17%;
+  --accent: 199 89% 48%;
   --accent-foreground: 210 40% 98%;
-  --destructive: 0 63% 31%;
+  --destructive: 0 63% 50%;
   --destructive-foreground: 210 40% 98%;
-  --border: 217 33% 17%;
-  --input: 217 33% 17%;
-  --ring: 199 89% 48%;
+  --border: 217 33% 25%;
+  --input: 217 33% 25%;
+  --ring: 213 94% 68%;
 
   /* Gamification Colors (brighter for dark mode) */
   --xp-green: 142 71% 55%;
@@ -97,34 +115,107 @@ body {
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
-/* Typography utilities */
+/* Typography utilities - ElevenLabs inspired */
 @layer components {
+  /* Display headings - Light weight (300) for ethereal feel */
   .text-display {
-    @apply text-4xl md:text-5xl font-bold tracking-tight;
+    @apply text-5xl md:text-6xl font-light tracking-tight leading-[1.08];
+    letter-spacing: -0.96px;
+  }
+  .text-display-sm {
+    @apply text-4xl md:text-5xl font-light tracking-tight leading-[1.08];
+    letter-spacing: -0.5px;
   }
   .text-h1 {
-    @apply text-3xl md:text-4xl font-bold;
+    @apply text-3xl md:text-4xl font-light leading-tight;
   }
   .text-h2 {
-    @apply text-2xl md:text-3xl font-semibold;
+    @apply text-2xl md:text-3xl font-light leading-tight;
   }
   .text-h3 {
-    @apply text-xl md:text-2xl font-semibold;
+    @apply text-xl md:text-2xl font-light leading-tight;
   }
   .text-h4 {
-    @apply text-lg md:text-xl font-semibold;
+    @apply text-lg md:text-xl font-medium;
   }
+  /* Body text with positive letter-spacing */
   .text-body {
-    @apply text-base;
+    @apply text-base leading-relaxed;
+    letter-spacing: 0.16px;
+  }
+  .text-body-lg {
+    @apply text-lg leading-relaxed;
+    letter-spacing: 0.18px;
   }
   .text-body-sm {
-    @apply text-sm;
+    @apply text-sm leading-relaxed;
+    letter-spacing: 0.14px;
   }
   .text-caption {
-    @apply text-xs text-muted-foreground;
+    @apply text-xs;
+    color: hsl(var(--muted-foreground));
+    letter-spacing: 0.14px;
   }
   .text-label {
     @apply text-sm font-medium;
+    letter-spacing: 0.15px;
+  }
+  /* Button text styles */
+  .text-btn {
+    @apply text-[15px] font-medium leading-snug;
+  }
+  .text-btn-uppercase {
+    @apply text-sm font-bold uppercase tracking-wide;
+    letter-spacing: 0.7px;
+  }
+}
+
+/* Educational Button Styles */
+@layer components {
+  /* Primary blue button */
+  .btn-primary {
+    @apply bg-primary-600 text-white px-4 py-2 rounded-lg font-medium text-[15px];
+    @apply hover:bg-primary-700 transition-colors shadow-sm;
+  }
+
+  /* White button with border */
+  .btn-secondary {
+    @apply bg-white text-slate-700 px-4 py-2 rounded-lg font-medium text-[15px];
+    @apply border border-slate-200 hover:bg-slate-50 transition-colors;
+    box-shadow: var(--shadow-subtle);
+  }
+
+  /* Light blue accent button */
+  .btn-accent {
+    @apply bg-primary-50 text-primary-700 px-5 py-3 font-medium text-[15px];
+    @apply rounded-lg hover:bg-primary-100 transition-colors;
+  }
+
+  /* Ghost button */
+  .btn-ghost {
+    @apply text-slate-600 px-4 py-2 font-medium text-[15px];
+    @apply rounded-lg hover:bg-slate-100 transition-colors;
+  }
+}
+
+/* Educational Card Styles */
+@layer components {
+  .card-elevated {
+    @apply bg-white rounded-xl;
+    box-shadow: var(--shadow-card);
+  }
+
+  .card-subtle {
+    @apply bg-white rounded-xl border border-slate-200;
+  }
+
+  .card-interactive {
+    @apply bg-white rounded-xl border border-slate-200 transition-all;
+    @apply hover:border-primary-200 hover:shadow-md cursor-pointer;
+  }
+
+  .card-primary {
+    @apply bg-primary-50 rounded-xl border border-primary-100;
   }
 }
 

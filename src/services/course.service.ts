@@ -59,6 +59,10 @@ export interface ApiCourse {
   published_at?: string;
   created_at?: string;
   updated_at?: string;
+  // Enrollment-specific fields (when fetched via /enrollments)
+  progress_percentage?: string;
+  enrolled_at?: string;
+  last_accessed_at?: string;
 }
 
 export interface CourseListParams {
@@ -164,8 +168,41 @@ export const courseService = {
   /** GET /enrollments — enrolled courses for current user */
   getEnrolledCourses: () =>
     api
-      .get<{ message: string; data: ApiCourse[] }>("/enrollments")
-      .then((r) => r.data.data),
+      .get<{
+        message: string;
+        data: {
+          enrollments: Array<{
+            id: string;
+            user_id: string;
+            course_id: string;
+            course_title: string;
+            course_slug: string;
+            course_thumbnail?: string;
+            course_category?: string;
+            progress_percentage: string;
+            enrolled_at: string;
+            completed_at?: string;
+            last_accessed_at?: string;
+          }>;
+          total: number;
+        };
+      }>("/enrollments")
+      .then((r) =>
+        (r.data.data.enrollments ?? []).map((e): ApiCourse => ({
+          id: e.course_id,
+          title: e.course_title,
+          slug: e.course_slug,
+          thumbnail_url: e.course_thumbnail,
+          category: e.course_category ? { id: "", name: e.course_category } : undefined,
+          progress_percentage: e.progress_percentage,
+          enrolled_at: e.enrolled_at,
+          last_accessed_at: e.last_accessed_at,
+          // Defaults for required ApiCourse fields
+          price: "0",
+          level: "beginner",
+          status: "published",
+        }))
+      ),
 
   /** POST /courses/:courseId/enroll — enroll in a course */
   enroll: (courseId: string) =>

@@ -16,6 +16,15 @@ const nextConfig = {
     },
     output: "standalone",
     productionBrowserSourceMaps: true,
+    // Proxy API requests to backend in development
+    async rewrites() {
+        return [
+            {
+                source: '/api/:path*',
+                destination: 'http://localhost:5000/api/:path*',
+            },
+        ];
+    },
     webpack: (config, { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack }) => {
         // Handle source maps for LiveKit
         config.module.rules.push({

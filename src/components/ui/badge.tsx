@@ -2,21 +2,21 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors",
+  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors",
   {
     variants: {
       variant: {
         default:
-          "bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300",
+          "bg-neutral-100 text-black dark:bg-neutral-800 dark:text-white",
         secondary:
-          "bg-secondary-100 text-secondary-700 dark:bg-secondary-900 dark:text-secondary-300",
+          "bg-stone-warm text-black dark:bg-neutral-800 dark:text-white",
         success:
-          "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+          "bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300",
         warning:
-          "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
+          "bg-amber-50 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
         destructive:
-          "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
-        outline: "border border-current bg-transparent",
+          "bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-300",
+        outline: "border border-neutral-200 bg-transparent text-black dark:border-neutral-700 dark:text-white",
 
         // Gamification variants
         xp: "bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/50 dark:text-green-300",

@@ -62,6 +62,7 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^2.6.0",
     "tinykeys": "^3.0.0",
+    "uuid": "^13.0.0",
     "zod": "^4.3.6",
     "zustand": "^5.0.11"
   },
@@ -70,6 +71,7 @@
     "@types/node": "^22.10.5",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@types/uuid": "^10.0.0",
     "autoprefixer": "^10.4.24",
     "cross-env": "^10.1.0",
     "eslint": "^8.57.1",

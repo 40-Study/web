@@ -10,46 +10,61 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-        code: ["Consolas", "'Cascadia Code'", "Menlo", "Monaco", "'Courier New'", "monospace"],
+        sans: ["var(--font-inter)", "Inter", "system-ui", "sans-serif"],
+        display: ["var(--font-inter)", "Inter", "system-ui", "sans-serif"], // Light weight for display
+        code: ["'Geist Mono'", "ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
         ui: ["-apple-system", "BlinkMacSystemFont", "'SF Pro Text'", "system-ui", "sans-serif"],
       },
       colors: {
-        // Primary colors - Sky/Cyan (energetic, modern, student-friendly)
+        // Educational Platform - Clean Blue & White
         primary: {
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          300: "#93c5fd",
+          400: "#60a5fa",
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
+          900: "#1e3a8a",
+          950: "#172554",
+        },
+        secondary: {
           50: "#f0f9ff",
           100: "#e0f2fe",
           200: "#bae6fd",
           300: "#7dd3fc",
           400: "#38bdf8",
-          500: "#0EA5E9", // Sky-500: main primary
+          500: "#0ea5e9",
           600: "#0284c7",
           700: "#0369a1",
           800: "#075985",
           900: "#0c4a6e",
           950: "#082f49",
         },
-        secondary: {
-          50: "#faf5ff",
-          100: "#f3e8ff",
-          200: "#e9d5ff",
-          300: "#d8b4fe",
-          400: "#c084fc",
-          500: "#a855f7",
-          600: "#9333ea",
-          700: "#7c3aed",
-          800: "#6b21a8",
-          900: "#581c87",
-          950: "#3b0764",
+        // Cool slate for neutral tones
+        slate: {
+          50: "#f8fafc",
+          100: "#f1f5f9",
+          200: "#e2e8f0",
+          300: "#cbd5e1",
+          400: "#94a3b8",
+          500: "#64748b",
+          600: "#475569",
+          700: "#334155",
+          800: "#1e293b",
+          900: "#0f172a",
+          950: "#020617",
         },
         // Gamification colors
         xp: {
-          DEFAULT: "#22c55e", // Green for XP
+          DEFAULT: "#22c55e",
           light: "#86efac",
           dark: "#16a34a",
         },
         streak: {
-          DEFAULT: "#f97316", // Orange for streaks
+          DEFAULT: "#f97316",
           light: "#fdba74",
           dark: "#ea580c",
         },
@@ -65,21 +80,41 @@ const config: Config = {
           diamond: "#00d4ff",
           champion: "#9333ea",
         },
-        // Semantic colors from PDF
-        success: "#10B981", // PDF: emerald-500
-        warning: "#F59E0B", // PDF: amber-500
-        destructive: "#EF4444", // PDF: red-500
-        info: "#0EA5E9", // Sky-500
-        // Surface colors from PDF
-        surface: "#F8FAFC", // PDF: slate-50
-        foreground: "#0F172A", // PDF: slate-900
-        "muted-foreground": "#475569", // PDF: slate-600
-        border: "#E2E8F0", // PDF: slate-200
+        // Semantic colors
+        success: "#10B981",
+        warning: "#F59E0B",
+        destructive: "#EF4444",
+        info: "#000000",
+        // Surface colors - ElevenLabs style
+        surface: "#f5f5f5",
+        foreground: "#000000",
+        "muted-foreground": "#4e4e4e",
+        border: "#e5e5e5",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        // ElevenLabs style
+        pill: "9999px",
+        "warm-btn": "30px",
+        card: "16px",
+        "card-lg": "20px",
+        section: "24px",
+      },
+      boxShadow: {
+        // ElevenLabs multi-layer shadow system
+        "inset-border": "rgba(0,0,0,0.075) 0px 0px 0px 0.5px inset",
+        "outline-ring": "rgba(0,0,0,0.06) 0px 0px 0px 1px",
+        "soft-elevation": "rgba(0,0,0,0.04) 0px 4px 4px",
+        "card": "rgba(0,0,0,0.4) 0px 0px 1px, rgba(0,0,0,0.04) 0px 4px 4px",
+        "warm": "rgba(78,50,23,0.04) 0px 6px 16px",
+        "warm-lg": "rgba(78,50,23,0.06) 0px 8px 24px",
+        "subtle": "rgba(0,0,0,0.06) 0px 0px 0px 1px, rgba(0,0,0,0.04) 0px 1px 2px, rgba(0,0,0,0.04) 0px 2px 4px",
+      },
+      letterSpacing: {
+        "body": "0.16px",
+        "body-wide": "0.18px",
       },
       fontSize: {
         xs: ["0.75rem", { lineHeight: "1rem" }],

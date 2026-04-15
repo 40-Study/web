@@ -26,14 +26,15 @@ export function useNotifications(page?: number) {
   });
 }
 
-/** Unread count — polls every 30s, only when authenticated */
+/** Unread count — polls every 60s as fallback, WebSocket handles real-time updates */
 export function useUnreadCount() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: notificationKeys.unreadCount(),
     queryFn: () => notificationService.getUnreadCount(),
     enabled: isAuthenticated,
-    refetchInterval: 30_000,
+    refetchInterval: 60_000, // Fallback polling, WebSocket provides real-time
+    staleTime: 30_000,
   });
 }
 

@@ -1172,8 +1172,8 @@ function VideoPreviewModal({
     if (!content?.video_url) return "";
     const url = content.video_url;
     // Normalize legacy absolute API URLs to same-origin for stable cookies/CORS.
-    if (/^https?:\/\/localhost:5000\/api\//i.test(url)) {
-      return url.replace(/^https?:\/\/localhost:5000\/api/i, "/api");
+    if (/^https?:\/\/127.0.0.1:5000\/api\//i.test(url)) {
+      return url.replace(/^https?:\/\/127.0.0.1:5000\/api/i, "/api");
     }
     if (/^https?:\/\/api\.fortex\.ai\.vn\/api\//i.test(url)) {
       return url.replace(/^https?:\/\/api\.fortex\.ai\.vn\/api/i, "/api");

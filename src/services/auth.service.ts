@@ -268,8 +268,10 @@ export interface Organization {
 
 export interface Child {
   id: string;
-  name: string;
-  avatar?: string;
+  username: string;
+  full_name?: string;
+  avatar_url?: string;
+  relationship: string;
 }
 
 export interface LinkedAccount {
@@ -347,7 +349,24 @@ function resolveApiBaseUrl(): string {
   return "http://localhost:5000/api";
 }
 
+/**
+ * Get backend URL for OAuth redirects (browser must redirect directly to backend)
+ * This bypasses Next.js proxy because OAuth requires actual browser navigation
+ */
+function getBackendUrl(): string {
+  // In production, use env var or same origin
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  // In development, always use full backend URL
+  if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+    return "http://localhost:5000/api";
+  }
+  return "/api";
+}
+
 const API_BASE_URL = resolveApiBaseUrl();
+const BACKEND_URL = getBackendUrl();
 
 export interface MyOrgRolesResponse {
   roles: UnifiedRole[];
@@ -360,7 +379,8 @@ export function startOAuthFlow(provider: "google" | "github" | "facebook") {
     device_name: device.device_name,
     os: device.os,
   });
-  window.location.href = `${API_BASE_URL}/auth/oauth/${provider}?${params.toString()}`;
+  // Use BACKEND_URL for OAuth - browser must redirect directly to backend
+  window.location.href = `${BACKEND_URL}/auth/oauth/${provider}?${params.toString()}`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

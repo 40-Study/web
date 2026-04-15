@@ -59,23 +59,24 @@ export const useCartStore = create<CartState>()(
       item_count: 0,
 
       syncFromApi: (cart) =>
-        set({ items: cart.items, total: cart.total, item_count: cart.item_count }),
+        set({ items: cart.items ?? [], total: cart.total ?? 0, item_count: cart.item_count ?? 0 }),
 
       optimisticAdd: (item) => {
         if (get().isInCart(item.course_id)) return;
         set((s) => ({
-          items: [...s.items, item],
-          item_count: s.item_count + 1,
-          total: s.total + (item.course?.price ?? 0),
+          items: [...(s.items ?? []), item],
+          item_count: (s.item_count ?? 0) + 1,
+          total: (s.total ?? 0) + (item.course?.price ?? 0),
         }));
       },
 
       optimisticRemove: (courseId) => {
-        const existing = get().items.find((i) => i.course_id === courseId);
+        const items = get().items ?? [];
+        const existing = items.find((i) => i.course_id === courseId);
         set((s) => ({
-          items: s.items.filter((i) => i.course_id !== courseId),
-          item_count: Math.max(0, s.item_count - 1),
-          total: Math.max(0, s.total - (existing?.course?.price ?? 0)),
+          items: (s.items ?? []).filter((i) => i.course_id !== courseId),
+          item_count: Math.max(0, (s.item_count ?? 0) - 1),
+          total: Math.max(0, (s.total ?? 0) - (existing?.course?.price ?? 0)),
         }));
       },
 
@@ -93,9 +94,9 @@ export const useCartStore = create<CartState>()(
           added_at: new Date().toISOString(),
         };
         set((s) => ({
-          items: [...s.items, item],
-          item_count: s.item_count + 1,
-          total: s.total + legacy.price,
+          items: [...(s.items ?? []), item],
+          item_count: (s.item_count ?? 0) + 1,
+          total: (s.total ?? 0) + legacy.price,
         }));
       },
 
@@ -103,12 +104,18 @@ export const useCartStore = create<CartState>()(
 
       clearCache: () => set({ items: [], total: 0, item_count: 0 }),
 
-      isInCart: (courseId) => get().items.some((i) => i.course_id === courseId),
+      isInCart: (courseId) => (get().items ?? []).some((i) => i.course_id === courseId),
     }),
     {
       name: "cart-storage",
       // Only persist item list for instant hydration; totals recomputed on sync
-      partialize: (s) => ({ items: s.items, total: s.total, item_count: s.item_count }),
+      partialize: (s) => ({ items: s.items ?? [], total: s.total ?? 0, item_count: s.item_count ?? 0 }),
+      // Ensure items is always an array on hydration
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as Partial<CartState>),
+        items: (persisted as Partial<CartState>)?.items ?? [],
+      }),
     }
   )
 );

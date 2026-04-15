@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Home, BookOpen, MessageSquare, Calendar, Award } from "lucide-react";
+import { Home, BookOpen, MessageSquare, Calendar, Award, Users, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
@@ -17,6 +17,8 @@ export function Sidebar() {
   const homeHref = isAuthenticated ? getRoleHomeRoute(normalizedRole) : "/";
   const [achievementModalOpen, setAchievementModalOpen] = useState(false);
 
+  const isParent = normalizedRole === "PARENT";
+
   const navItems = [
     {
       label: "TRANG CHỦ",
@@ -26,6 +28,10 @@ export function Sidebar() {
     ...(isStudent ? [{ label: "LỊCH HỌC", href: "/schedule", icon: Calendar }] : []),
     { label: "KHÓA HỌC", href: "/courses", icon: BookOpen },
     { label: "THẢO LUẬN", href: "/discussions", icon: MessageSquare },
+    ...(isStudent ? [{ label: "AI CHAT", href: "/ai-chat", icon: Sparkles }] : []),
+    ...(isStudent || isParent
+      ? [{ label: "GIA ĐÌNH", href: "/settings/family", icon: Users }]
+      : []),
     ...(isStudent
       ? [
           {

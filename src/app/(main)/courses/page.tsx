@@ -44,14 +44,14 @@ export default function CoursesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 pt-6 pb-8">
         {/* Compact Header: Title + Search */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <ScrollReveal direction="fade">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Khám phá khóa học</h1>
-              <p className="text-slate-500 text-sm mt-1">
+              <h1 className="text-3xl md:text-4xl font-light text-black">Khám phá khóa học</h1>
+              <p className="text-neutral-500 text-sm mt-2" style={{ letterSpacing: '0.16px' }}>
                 {allCourses.length}+ khóa học &middot; Cập nhật liên tục
               </p>
             </div>
@@ -84,7 +84,7 @@ export default function CoursesPage() {
 
         {/* Results Count */}
         {!coursesLoading && (
-          <p className="mb-4 text-sm text-slate-500">
+          <p className="mb-4 text-sm text-neutral-500">
             {filteredCourses.length} khóa học
             {searchQuery && ` cho "${searchQuery}"`}
           </p>
@@ -96,8 +96,8 @@ export default function CoursesPage() {
             <ScrollReveal>
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-1 h-6 rounded-full bg-green-500" />
-                <h2 className="text-xl font-bold text-slate-900">Khóa học miễn phí</h2>
-                <span className="text-xs font-medium text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
+                <h2 className="text-xl font-light text-black">Khóa học miễn phí</h2>
+                <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-full">
                   {freeCourses.length} khóa học
                 </span>
               </div>
@@ -115,9 +115,9 @@ export default function CoursesPage() {
           <section className="mb-14">
             <ScrollReveal>
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-1 h-6 rounded-full bg-primary-500" />
-                <h2 className="text-xl font-bold text-slate-900">Khóa học trả phí</h2>
-                <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2.5 py-1 rounded-full">
+                <div className="w-1 h-6 rounded-full bg-black" />
+                <h2 className="text-xl font-light text-black">Khóa học trả phí</h2>
+                <span className="text-xs font-medium text-black bg-neutral-100 px-2.5 py-1 rounded-full">
                   {paidCourses.length} khóa học
                 </span>
               </div>
@@ -136,7 +136,8 @@ export default function CoursesPage() {
             <div className="mt-4 text-center">
               <button
                 onClick={() => toast.info("Đang tải thêm...")}
-                className="px-8 py-3 bg-white border border-slate-200 rounded-2xl hover:border-primary-300 hover:shadow-md hover:shadow-primary-100/50 transition-all duration-300 font-medium text-slate-700 hover:text-primary-700"
+                className="px-8 py-3 bg-white rounded-full font-medium text-black transition-all duration-200 hover:bg-neutral-50"
+                style={{ boxShadow: 'rgba(0,0,0,0.4) 0px 0px 1px, rgba(0,0,0,0.04) 0px 4px 4px' }}
               >
                 Xem thêm khóa học
               </button>

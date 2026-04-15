@@ -13,7 +13,7 @@ function resolveBackendUrl(request: NextRequest): string {
     request.headers.get("x-forwarded-host") || request.headers.get("host") || request.nextUrl.hostname;
   const host = (hostHeader || "").toLowerCase();
   if (host.includes("localhost") || host.includes("127.0.0.1")) {
-    return "http://localhost:5000";
+    return "http://127.0.0.1:5000";
   }
 
   return "https://api.fortex.ai.vn";
