@@ -27,20 +27,23 @@ import { AnimatedProgressBarOnScroll } from "@/components/landing/animated-progr
 import { AnimatedBarChartOnScroll } from "@/components/landing/animated-bar-chart-on-scroll";
 import { ParticleWaveBackground } from "@/components/landing/particle-wave-background";
 import { FloatingDecorativeShapes } from "@/components/landing/floating-decorative-shapes";
+import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 
 export default function LandingPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, hasHydrated, activeRole } = useAuthStore();
+  const normalizedRole = normalizeRole(activeRole);
 
-  // Redirect authenticated users to /home
+  // Redirect authenticated users to their home page
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push("/home");
+    if (!hasHydrated) return;
+    if (isAuthenticated && normalizedRole) {
+      router.push(getRoleHomeRoute(normalizedRole));
     }
-  }, [isAuthenticated, router]);
+  }, [hasHydrated, isAuthenticated, normalizedRole, router]);
 
-  // Show nothing while checking auth (avoid flash)
-  if (isAuthenticated) {
+  // Show nothing while redirecting (avoid flash)
+  if (hasHydrated && isAuthenticated && normalizedRole) {
     return null;
   }
 

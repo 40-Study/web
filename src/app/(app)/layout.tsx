@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { AppShellLayout } from "@/components/layout/app-shell-layout";
 import { RoleGuard } from "@/components/guards/role-guard";
 import { useAuthStore } from "@/stores/auth.store";
-import { normalizeRole } from "@/lib/routes";
+import { normalizeRole, AUTH_ROUTES } from "@/lib/routes";
 
 export default function AppLayout({
   children,
@@ -28,17 +28,33 @@ export default function AppLayout({
     pathname.startsWith("/contests/");
 
   useEffect(() => {
-    if (!hasHydrated || !isAuthenticated || !isAdminRole) return;
-    router.replace("/admin");
-  }, [hasHydrated, isAuthenticated, isAdminRole, router]);
+    if (!hasHydrated) return;
 
+    // Admin roles should go to admin dashboard
+    if (isAuthenticated && isAdminRole) {
+      router.replace("/admin");
+      return;
+    }
+
+    // Authenticated but no role → redirect to role selection
+    if (isAuthenticated && !normalizedRole && !isPublicRoute) {
+      router.replace(AUTH_ROUTES.LOGIN_ROLE);
+    }
+  }, [hasHydrated, isAuthenticated, isAdminRole, normalizedRole, isPublicRoute, router]);
+
+  // Show nothing while redirecting to admin
   if (hasHydrated && isAuthenticated && isAdminRole) return null;
 
+  // Public routes don't need auth
   if (isPublicRoute) {
     return <AppShellLayout>{children}</AppShellLayout>;
   }
 
+  // Wait for hydration
   if (!hasHydrated) return null;
+
+  // Not authenticated or no role → show nothing (redirect will happen in useEffect)
+  if (!isAuthenticated || !normalizedRole) return null;
 
   return (
     <RoleGuard roles={["STUDENT", "TEACHER", "PARENT"]}>

@@ -23,21 +23,30 @@ export function Sidebar() {
   const homeHref = isAuthenticated ? getRoleHomeRoute(normalizedRole) : "/";
   const [achievementModalOpen, setAchievementModalOpen] = useState(false);
 
-  const navItems = [
+  // Public items - visible to everyone
+  const publicItems = [
     { label: "Trang chủ", href: homeHref, icon: Home },
-    ...(isStudent ? [{ label: "Lịch học", href: "/schedule", icon: Calendar }] : []),
     { label: "Khóa học", href: "/courses", icon: BookOpen },
     { label: "Cuộc thi", href: "/contests", icon: Trophy },
-    { label: "Bạn bè", href: "/friends", icon: UserPlus },
-    { label: "Tin nhắn", href: "/messages", icon: MessageSquare },
-    { label: "Nhóm", href: "/groups", icon: UsersRound },
-    { label: "Xu", href: "/coins", icon: Coins },
-    ...(isStudent ? [{ label: "AI Chat", href: "/ai-chat", icon: Sparkles }] : []),
-    ...(isStudent || isParent ? [{ label: "Gia đình", href: "/settings/family", icon: Users }] : []),
-    ...(isStudent
-      ? [{ label: "Thành tích", href: "#", icon: Award, onClick: () => setAchievementModalOpen(true) }]
-      : []),
   ];
+
+  // Authenticated-only items
+  const authItems = isAuthenticated
+    ? [
+        ...(isStudent ? [{ label: "Lịch học", href: "/schedule", icon: Calendar }] : []),
+        { label: "Bạn bè", href: "/friends", icon: UserPlus },
+        { label: "Tin nhắn", href: "/messages", icon: MessageSquare },
+        { label: "Nhóm", href: "/groups", icon: UsersRound },
+        { label: "Xu", href: "/coins", icon: Coins },
+        ...(isStudent ? [{ label: "AI Chat", href: "/ai-chat", icon: Sparkles }] : []),
+        ...(isStudent || isParent ? [{ label: "Gia đình", href: "/settings/family", icon: Users }] : []),
+        ...(isStudent
+          ? [{ label: "Thành tích", href: "#", icon: Award, onClick: () => setAchievementModalOpen(true) }]
+          : []),
+      ]
+    : [];
+
+  const navItems = [...publicItems, ...authItems];
 
   return (
     <aside className={cn(

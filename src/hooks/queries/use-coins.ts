@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { coinService } from "@/services/coin.service";
+import { useAuthStore } from "@/stores/auth.store";
 
 export const coinKeys = {
   all: ["coins"] as const,
@@ -12,16 +13,20 @@ export const coinKeys = {
 };
 
 export function useCoinWallet() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: coinKeys.wallet(),
     queryFn: () => coinService.getWallet(),
+    enabled: isAuthenticated,
   });
 }
 
 export function useCoinTransactions(params?: { type?: string; page?: number; limit?: number }) {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: coinKeys.transactions(params),
     queryFn: () => coinService.getTransactions(params),
+    enabled: isAuthenticated,
   });
 }
 

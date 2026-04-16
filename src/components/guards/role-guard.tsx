@@ -9,7 +9,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth.store";
 import type { Permission } from "@/lib/permissions";
-import { normalizeRole } from "@/lib/routes";
+import { normalizeRole, AUTH_ROUTES } from "@/lib/routes";
 
 interface RoleGuardProps {
   roles?: string[];
@@ -45,15 +45,21 @@ export function RoleGuard({
       return;
     }
 
-    // Authenticated but unauthorized role -> 404
-    if (normalizedAllowedRoles && (!normalizedRole || !normalizedAllowedRoles.includes(normalizedRole))) {
-      router.replace("/404");
+    // Authenticated but no role selected → redirect to role selection
+    if (!normalizedRole) {
+      router.replace(AUTH_ROUTES.LOGIN_ROLE);
       return;
     }
 
-    // Authenticated but unauthorized permission -> 404
+    // Authenticated but unauthorized role -> redirect to 403 (forbidden)
+    if (normalizedAllowedRoles && !normalizedAllowedRoles.includes(normalizedRole)) {
+      router.replace("/403");
+      return;
+    }
+
+    // Authenticated but unauthorized permission -> redirect to 403
     if (!hasPermissionAccess) {
-      router.replace("/404");
+      router.replace("/403");
     }
   }, [
     hasHydrated,
@@ -69,7 +75,8 @@ export function RoleGuard({
   // Don't render until hydration + access checks
   if (!hasHydrated) return null;
   if (!isAuthenticated) return null;
-  if (normalizedAllowedRoles && (!normalizedRole || !normalizedAllowedRoles.includes(normalizedRole))) return null;
+  if (!normalizedRole) return null;
+  if (normalizedAllowedRoles && !normalizedAllowedRoles.includes(normalizedRole)) return null;
   if (!hasPermissionAccess) return null;
 
   return <>{children}</>;

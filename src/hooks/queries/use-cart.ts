@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { cartService } from "@/services/cart.service";
+import { useAuthStore } from "@/stores/auth.store";
 
 export const cartKeys = {
   all: ["cart"] as const,
@@ -14,18 +15,21 @@ export const cartKeys = {
 
 /** Fetch current user's cart */
 export function useCart() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: cartKeys.detail(),
     queryFn: () => cartService.getCart(),
+    enabled: isAuthenticated,
   });
 }
 
 /** Check if a course is in the cart */
 export function useIsInCart(courseId: string) {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: cartKeys.check(courseId),
     queryFn: () => cartService.isInCart(courseId),
-    enabled: !!courseId,
+    enabled: isAuthenticated && !!courseId,
   });
 }
 

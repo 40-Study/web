@@ -255,19 +255,26 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                             onClose={handleActualClose}
                             onSwitchToRegister={() => setView("register")}
                             onLoginSuccess={(nextStep) => {
-                                setTimeout(() => {
-                                    if (nextStep === "needs-role") {
-                                        setView("login-role");
-                                    } else if (nextStep === "direct") {
-                                        handleActualClose();
+                                if (nextStep === "needs-role") {
+                                    setView("login-role");
+                                } else if (nextStep === "direct") {
+                                    handleActualClose();
+                                    // Use setTimeout to ensure state is updated before navigation
+                                    setTimeout(() => {
                                         const currentRole = useAuthStore.getState().activeRole;
-                                        window.location.href = getRoleHomeRoute(currentRole);
-                                    } else if (nextStep === "select-org") {
-                                        setView("login-org");
-                                    } else {
-                                        setView("login-role");
-                                    }
-                                }, 0);
+                                        const normalizedRole = normalizeRole(currentRole);
+                                        if (normalizedRole) {
+                                            window.location.href = getRoleHomeRoute(normalizedRole);
+                                        } else {
+                                            // No role set, go to role selection
+                                            window.location.href = AUTH_ROUTES.LOGIN_ROLE;
+                                        }
+                                    }, 100);
+                                } else if (nextStep === "select-org") {
+                                    setView("login-org");
+                                } else {
+                                    setView("login-role");
+                                }
                             }}
                         />
                     )}

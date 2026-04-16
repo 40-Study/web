@@ -259,11 +259,12 @@ export function useSelectRole() {
 
 /**
  * POST /auth/switch-role - Switch role while already logged in
- * Returns new tokens.
+ * Returns new tokens and navigates to the appropriate home page.
  */
 export function useSwitchRole() {
   const { setToken, setActiveRole, setActiveUnifiedRole } = useAuthStore();
   const qc = useQueryClient();
+  const router = useRouter();
 
   return useMutation({
     mutationFn: authService.switchRole,
@@ -271,9 +272,13 @@ export function useSwitchRole() {
       const data = response.data;
       if (data.access_token) {
         setToken(data.access_token);
-        setActiveRole(normalizeRole(data.active_role.role_name));
+        const newRole = normalizeRole(data.active_role.role_name);
+        setActiveRole(newRole);
         setActiveUnifiedRole(data.active_role);
         qc.invalidateQueries({ queryKey: authKeys.all });
+
+        // Navigate to the appropriate home page for the new role
+        router.push(getRoleHomeRoute(newRole));
       }
     },
     onError: (error: unknown) => {

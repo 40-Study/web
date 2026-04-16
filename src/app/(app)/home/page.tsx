@@ -286,23 +286,11 @@ function StatCard({ icon: Icon, label, value, color }: { icon: typeof Flame; lab
 
 export default function HomePage() {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, hasHydrated, user } = useAuthStore();
   const { data: enrolledCourses = [], isLoading } = useEnrolledCourses();
   const { data: schedules = [] } = useMySchedules();
 
-  useEffect(() => { if (!isAuthenticated) router.push("/"); }, [isAuthenticated, router]);
-  if (!isAuthenticated) return null;
-
-  const sorted = [...enrolledCourses].sort((a, b) => {
-    const aT = a.lastAccessedAt ? new Date(a.lastAccessedAt).getTime() : 0;
-    const bT = b.lastAccessedAt ? new Date(b.lastAccessedAt).getTime() : 0;
-    return bT - aT;
-  });
-  const featured = sorted[0];
-  const avgProgress = enrolledCourses.length > 0
-    ? Math.round(enrolledCourses.reduce((s, c) => s + c.progress, 0) / enrolledCourses.length) : 0;
-
-  // Calculate total study hours this week from schedules
+  // Calculate total study hours this week from schedules (must be before early return)
   const weeklyHours = useMemo(() => {
     let total = 0;
     (schedules || []).forEach((s: ClassSchedule) => {
@@ -314,6 +302,24 @@ export default function HomePage() {
   }, [schedules]);
 
   const upcoming = useMemo(() => buildUpcoming(schedules || []), [schedules]);
+
+  useEffect(() => {
+    if (hasHydrated && !isAuthenticated) {
+      router.push("/");
+    }
+  }, [hasHydrated, isAuthenticated, router]);
+
+  // Wait for hydration and auth check
+  if (!hasHydrated || !isAuthenticated) return null;
+
+  const sorted = [...enrolledCourses].sort((a, b) => {
+    const aT = a.lastAccessedAt ? new Date(a.lastAccessedAt).getTime() : 0;
+    const bT = b.lastAccessedAt ? new Date(b.lastAccessedAt).getTime() : 0;
+    return bT - aT;
+  });
+  const featured = sorted[0];
+  const avgProgress = enrolledCourses.length > 0
+    ? Math.round(enrolledCourses.reduce((s, c) => s + c.progress, 0) / enrolledCourses.length) : 0;
 
   const greeting = (() => {
     const h = new Date().getHours();

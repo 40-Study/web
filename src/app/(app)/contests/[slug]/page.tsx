@@ -190,6 +190,10 @@ export default function ContestDetailPage() {
   const { data: mySubmissions } = useMyContestSubmissions(contest?.id ?? "");
   const joinMutation = useJoinContest();
 
+  // useState must be called before any early returns
+  const isParticipating = !!contest?.my_participation;
+  const [tab, setTab] = useState(isParticipating ? "problems" : "leaderboard");
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-20">
@@ -207,9 +211,7 @@ export default function ContestDetailPage() {
   }
 
   const isActive = contest.status === "ACTIVE";
-  const isParticipating = !!contest.my_participation;
   const canJoin = (isActive || contest.status === "UPCOMING") && !isParticipating;
-  const [tab, setTab] = useState(isParticipating ? "problems" : "leaderboard");
 
   return (
     <div className="container max-w-5xl mx-auto py-6 space-y-6">
