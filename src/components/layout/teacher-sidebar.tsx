@@ -15,7 +15,8 @@ import {
     BarChart3,
     Wallet,
     ChevronRight,
-    ChevronLeft
+    ChevronLeft,
+    Trophy,
 } from "lucide-react";
 
 interface TeacherSidebarProps {
@@ -27,6 +28,7 @@ const menuItems = [
     { label: "Quản lý khóa học", href: "/teacher/courses", icon: BookOpen },
     { label: "Quản lý học sinh", href: "/teacher/students", icon: Users },
     { label: "Quản lý bài tập", href: "/teacher/assignments", icon: ClipboardList },
+    { label: "Cuộc thi", href: "/teacher/contests", icon: Trophy },
     { label: "Thống kê", href: "/teacher/analytics", icon: BarChart3 },
     { label: "Ví", href: "/teacher/wallet", icon: Wallet },
 ];

@@ -1167,10 +1167,11 @@ function VideoPreviewModal({
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<any>(null);
 
-  // Construct full video URL
+  // Construct full video URL: prefer HLS URL, fallback to video_url (original)
   const videoUrl = useMemo(() => {
-    if (!content?.video_url) return "";
-    const url = content.video_url;
+    // Try HLS URL first (might still be processing, but we handle errors)
+    const url = content?.video_hls_url ?? content?.video_url;
+    if (!url) return "";
     // Normalize legacy absolute API URLs to same-origin for stable cookies/CORS.
     if (/^https?:\/\/127.0.0.1:5000\/api\//i.test(url)) {
       return url.replace(/^https?:\/\/127.0.0.1:5000\/api/i, "/api");
@@ -1179,6 +1180,12 @@ function VideoPreviewModal({
       return url.replace(/^https?:\/\/api\.fortex\.ai\.vn\/api/i, "/api");
     }
     return url;
+  }, [content?.video_hls_url, content?.video_url]);
+
+  // Fallback URL for when HLS fails (video still processing)
+  const fallbackUrl = useMemo(() => {
+    if (!content?.video_url) return "";
+    return content.video_url;
   }, [content?.video_url]);
 
   const isHls = videoUrl.includes(".m3u8");
@@ -1212,10 +1219,14 @@ function VideoPreviewModal({
           hls.on(Hls.Events.ERROR, (_, data) => {
             if (data.fatal) {
               console.error("HLS Error:", data);
-              if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                setVideoError("Không thể tải video. Video có thể đang được xử lý.");
+              hls.destroy();
+              hlsRef.current = null;
+              // Fallback to original video when HLS not ready
+              if (fallbackUrl && fallbackUrl !== videoUrl) {
+                video.src = fallbackUrl;
+                video.play().catch(() => {});
               } else {
-                setVideoError("Lỗi phát video: " + data.details);
+                setVideoError("Video đang được xử lý, vui lòng thử lại sau.");
               }
             }
           });

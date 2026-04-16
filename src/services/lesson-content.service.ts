@@ -16,6 +16,7 @@ export interface LessonContent {
   title: string;
   video_url?: string;
   video_hls_url?: string;
+  video_upload_id?: string;
   thumbnail_url?: string;
   duration?: number;
   exercise_id?: string;

@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { ForteXLogoIcon } from "@/components/landing/fortex-logo-icon";
 import { useState, useRef, useEffect } from "react";
-import { Bell, FileText, Settings, LogOut, Menu, X, Ticket } from "lucide-react";
+import { Bell, FileText, Settings, LogOut, Menu, X, Ticket, ChevronDown, Check, UserCircle, Coins, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { AuthModal } from "@/components/auth/auth-modal";
 import { GlobalSearch } from "@/components/layout/global-search";
 import { CartDropdown } from "@/components/layout/cart-dropdown";
-import { useLogout } from "@/hooks/queries/use-auth";
+import { useLogout, useSwitchRole, useMyRoles } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth.store";
+import { useCoinWallet } from "@/hooks/queries/use-coins";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { useNotifications, useUnreadCount, useMarkNotificationRead, useMarkAllNotificationsRead } from "@/hooks/queries/use-notifications";
 import { useNotificationSocket } from "@/hooks/use-notification-socket";
@@ -20,6 +21,20 @@ interface MenuItem {
   href: string;
   icon: typeof FileText;
   badge?: boolean;
+}
+
+// Role display config
+const ROLE_CONFIG: Record<string, { label: string; icon: string; color: string; bgColor: string }> = {
+  STUDENT: { label: "Học sinh", icon: "🎓", color: "text-blue-600", bgColor: "bg-blue-100" },
+  TEACHER: { label: "Giáo viên", icon: "👨‍🏫", color: "text-emerald-600", bgColor: "bg-emerald-100" },
+  PARENT: { label: "Phụ huynh", icon: "👨‍👩‍👧", color: "text-violet-600", bgColor: "bg-violet-100" },
+  ORG_OWNER: { label: "Quản lý", icon: "🏢", color: "text-amber-600", bgColor: "bg-amber-100" },
+  SYSTEM_ADMIN: { label: "Admin", icon: "⚙️", color: "text-red-600", bgColor: "bg-red-100" },
+  TEACHER_APPLICANT: { label: "Ứng viên GV", icon: "📝", color: "text-gray-600", bgColor: "bg-gray-100" },
+};
+
+function getRoleDisplay(roleName: string) {
+  return ROLE_CONFIG[roleName] || { label: roleName, icon: "👤", color: "text-gray-600", bgColor: "bg-gray-100" };
 }
 
 // Student-only menu items (shown before common items)
@@ -54,8 +69,12 @@ export function Header() {
   const notificationRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
-  const { isAuthenticated, user, activeRole } = useAuthStore();
+  const { isAuthenticated, user, activeRole, activeUnifiedRole, roles } = useAuthStore();
   const logoutMutation = useLogout();
+  const switchRoleMutation = useSwitchRole();
+  const { data: myRolesData } = useMyRoles();
+  const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
+  const availableRoles = myRolesData?.roles ?? roles ?? [];
 
   // Notification hooks — only fetch when authenticated
   const { data: unreadData } = useUnreadCount();
@@ -65,6 +84,9 @@ export function Header() {
 
   // Initialize WebSocket connection for real-time notifications
   useNotificationSocket();
+
+  const { data: coinWallet } = useCoinWallet();
+  const coinBalance = isAuthenticated ? (coinWallet?.balance ?? 0) : 0;
 
   const unreadCount = isAuthenticated ? (unreadData?.unread_count ?? 0) : 0;
   const notifications = isAuthenticated ? (notifData?.notifications ?? []) : [];
@@ -116,6 +138,14 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-3 lg:gap-4">
+          {/* Coin balance */}
+          {isAuthenticated && (
+            <Link href="/coins" className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 transition-colors">
+              <Coins className="h-4 w-4 text-amber-500" />
+              <span className="text-xs font-bold text-amber-700">{coinBalance.toLocaleString("vi-VN")}</span>
+            </Link>
+          )}
+
           {/* Cart - only show for students */}
           {isAuthenticated && isStudent && (
             <div className="hidden md:block">
@@ -227,11 +257,82 @@ export function Header() {
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute right-4 top-14 w-64 bg-white rounded-2xl py-2 z-50" style={{ boxShadow: 'rgba(0,0,0,0.06) 0px 0px 0px 1px, rgba(0,0,0,0.08) 0px 8px 24px' }}>
+                  <div className="absolute right-4 top-14 w-72 bg-white rounded-2xl py-2 z-50" style={{ boxShadow: 'rgba(0,0,0,0.06) 0px 0px 0px 1px, rgba(0,0,0,0.08) 0px 8px 24px' }}>
                     <div className="px-4 py-3 border-b">
                       <p className="font-semibold text-gray-900">{user?.name || "Tài khoản"}</p>
                       <p className="text-sm text-gray-500">{user?.email || ""}</p>
                     </div>
+
+                    {/* Role Switcher */}
+                    {availableRoles.length > 0 && (
+                      <div className="border-b">
+                        <button
+                          onClick={() => setShowRoleSwitcher((v) => !v)}
+                          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Users className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">Chuyển vai trò</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {activeUnifiedRole && normalizedRole && (
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${getRoleDisplay(normalizedRole).bgColor} ${getRoleDisplay(normalizedRole).color}`}>
+                                {getRoleDisplay(normalizedRole).label}
+                              </span>
+                            )}
+                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showRoleSwitcher ? "rotate-180" : ""}`} />
+                          </div>
+                        </button>
+                        {showRoleSwitcher && (
+                          <div className="px-2 pb-2 space-y-1">
+                            <p className="px-2 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
+                              Vai trò của bạn
+                            </p>
+                            {availableRoles.map((role) => {
+                              const isActive = activeUnifiedRole?.id === role.id;
+                              const config = getRoleDisplay(role.role_name);
+                              return (
+                                <button
+                                  key={role.id}
+                                  disabled={isActive || switchRoleMutation.isPending}
+                                  onClick={() => {
+                                    switchRoleMutation.mutate({
+                                      role_id: role.id,
+                                      role_type: role.type,
+                                      organization_id: role.organization_id || undefined,
+                                    });
+                                    setShowRoleSwitcher(false);
+                                    setIsDropdownOpen(false);
+                                  }}
+                                  className={`w-full flex items-center gap-3 px-2 py-2 rounded-xl text-left transition-all ${
+                                    isActive
+                                      ? "bg-primary-50 ring-1 ring-primary-200"
+                                      : "hover:bg-gray-50"
+                                  } disabled:opacity-60`}
+                                >
+                                  <span className={`w-9 h-9 rounded-full flex items-center justify-center text-base ${config.bgColor}`}>
+                                    {config.icon}
+                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`text-sm font-medium ${isActive ? "text-primary-700" : "text-gray-800"}`}>
+                                      {config.label}
+                                    </p>
+                                    {role.organization_name && (
+                                      <p className="text-xs text-gray-500 truncate">{role.organization_name}</p>
+                                    )}
+                                  </div>
+                                  {isActive && (
+                                    <div className="w-5 h-5 rounded-full bg-primary-500 flex items-center justify-center shrink-0">
+                                      <Check className="w-3 h-3 text-white" />
+                                    </div>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     <div className="py-2">
                       {userMenuItems.map((item) => {

@@ -3,102 +3,98 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Home, BookOpen, MessageSquare, Calendar, Award, Users, Sparkles } from "lucide-react";
+import {
+  Home, BookOpen, MessageSquare, Calendar, Award, Users, Sparkles,
+  Trophy, Coins, UsersRound, ChevronLeft, ChevronRight, UserPlus,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
+import { useSidebarStore } from "@/stores/sidebar.store";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { AchievementModal } from "@/components/student/achievement-modal";
 
 export function Sidebar() {
   const pathname = usePathname();
   const { isAuthenticated, activeRole } = useAuthStore();
+  const { isExpanded, toggleExpanded } = useSidebarStore();
   const normalizedRole = normalizeRole(activeRole);
   const isStudent = normalizedRole === "STUDENT";
+  const isParent = normalizedRole === "PARENT";
   const homeHref = isAuthenticated ? getRoleHomeRoute(normalizedRole) : "/";
   const [achievementModalOpen, setAchievementModalOpen] = useState(false);
 
-  const isParent = normalizedRole === "PARENT";
-
   const navItems = [
-    {
-      label: "TRANG CHỦ",
-      href: homeHref,
-      icon: Home,
-    },
-    ...(isStudent ? [{ label: "LỊCH HỌC", href: "/schedule", icon: Calendar }] : []),
-    { label: "KHÓA HỌC", href: "/courses", icon: BookOpen },
-    { label: "THẢO LUẬN", href: "/discussions", icon: MessageSquare },
-    ...(isStudent ? [{ label: "AI CHAT", href: "/ai-chat", icon: Sparkles }] : []),
-    ...(isStudent || isParent
-      ? [{ label: "GIA ĐÌNH", href: "/settings/family", icon: Users }]
-      : []),
+    { label: "Trang chủ", href: homeHref, icon: Home },
+    ...(isStudent ? [{ label: "Lịch học", href: "/schedule", icon: Calendar }] : []),
+    { label: "Khóa học", href: "/courses", icon: BookOpen },
+    { label: "Cuộc thi", href: "/contests", icon: Trophy },
+    { label: "Bạn bè", href: "/friends", icon: UserPlus },
+    { label: "Tin nhắn", href: "/messages", icon: MessageSquare },
+    { label: "Nhóm", href: "/groups", icon: UsersRound },
+    { label: "Xu", href: "/coins", icon: Coins },
+    ...(isStudent ? [{ label: "AI Chat", href: "/ai-chat", icon: Sparkles }] : []),
+    ...(isStudent || isParent ? [{ label: "Gia đình", href: "/settings/family", icon: Users }] : []),
     ...(isStudent
-      ? [
-          {
-            label: "THÀNH TÍCH",
-            href: "#",
-            icon: Award,
-            onClick: () => setAchievementModalOpen(true),
-          },
-        ]
+      ? [{ label: "Thành tích", href: "#", icon: Award, onClick: () => setAchievementModalOpen(true) }]
       : []),
   ];
 
   return (
-    <aside className="fixed left-0 top-16 bottom-0 w-20 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 z-40 hidden lg:flex flex-col items-center py-6">
-      <nav className="flex flex-col items-center gap-3 w-full px-2">
+    <aside className={cn(
+      "fixed left-0 top-16 bottom-0 bg-white border-r border-gray-100 z-40 hidden lg:flex flex-col transition-all duration-200",
+      isExpanded ? "w-48" : "w-[60px]",
+    )}>
+      {/* Nav items */}
+      <nav className="flex-1 flex flex-col gap-0.5 px-1.5 py-3 overflow-y-auto overflow-x-hidden">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isActive = item.href !== "#" && (pathname === item.href || pathname.startsWith(`${item.href}/`));
           const Icon = item.icon;
+          const isAction = "onClick" in item;
 
-          return "onClick" in item ? (
-            <button
-              key={item.label}
-              onClick={item.onClick}
-              title={item.label}
-              className={cn(
-                "flex flex-col items-center gap-1 py-2 px-1 rounded-lg transition-colors text-center w-full",
-                "hover:bg-gray-50"
-              )}
-            >
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-gray-100">
-                <Icon className="w-5 h-5 text-gray-600" />
+          const inner = (
+            <div className={cn(
+              "flex items-center gap-2.5 px-2 py-2 rounded-lg transition-colors w-full",
+              "hover:bg-gray-50",
+              isActive && "bg-blue-50 text-blue-600",
+              !isActive && "text-gray-600",
+            )}>
+              <div className={cn(
+                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                isActive ? "bg-blue-100" : "bg-gray-50",
+              )}>
+                <Icon className={cn("w-4 h-4", isActive ? "text-blue-600" : "text-gray-500")} />
               </div>
-              <span className="text-[10px] font-medium leading-tight text-gray-600">
-                {item.label}
-              </span>
-            </button>
+              {isExpanded && (
+                <span className={cn("text-xs font-medium truncate", isActive ? "text-blue-600" : "text-gray-600")}>
+                  {item.label}
+                </span>
+              )}
+            </div>
+          );
+
+          return isAction ? (
+            <button key={item.label} onClick={(item as any).onClick} title={item.label}>{inner}</button>
           ) : (
-            <Link
-              key={item.href}
-              href={item.href}
-              title={item.label}
-              className={cn(
-                "flex flex-col items-center gap-1 py-2 px-1 rounded-lg transition-colors text-center w-full",
-                "hover:bg-gray-50",
-                isActive && "bg-primary-50 text-primary-600"
-              )}
-            >
-              <div
-                className={cn(
-                  "w-11 h-11 rounded-xl flex items-center justify-center",
-                  isActive ? "bg-primary-100" : "bg-gray-100"
-                )}
-              >
-                <Icon className={cn("w-5 h-5", isActive ? "text-primary-600" : "text-gray-600")} />
-              </div>
-              <span
-                className={cn(
-                  "text-[10px] font-medium leading-tight",
-                  isActive ? "text-primary-600" : "text-gray-600"
-                )}
-              >
-                {item.label}
-              </span>
-            </Link>
+            <Link key={item.href} href={item.href} title={item.label}>{inner}</Link>
           );
         })}
       </nav>
+
+      {/* Toggle button - centered vertically on the right edge */}
+      <button
+        onClick={toggleExpanded}
+        className={cn(
+          "absolute top-1/2 -translate-y-1/2 -right-3 z-50",
+          "w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm",
+          "flex items-center justify-center",
+          "hover:bg-gray-50 hover:shadow transition-all",
+          "text-gray-400 hover:text-gray-600",
+        )}
+        title={isExpanded ? "Thu gọn" : "Mở rộng"}
+      >
+        {isExpanded ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+      </button>
+
       <AchievementModal open={achievementModalOpen} onOpenChange={setAchievementModalOpen} />
     </aside>
   );

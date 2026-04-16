@@ -23,7 +23,9 @@ export default function AppLayout({
     pathname.startsWith("/courses/") ||
     pathname === "/discussions" ||
     pathname.startsWith("/discussions/") ||
-    pathname.startsWith("/profile/");
+    pathname.startsWith("/profile/") ||
+    pathname === "/contests" ||
+    pathname.startsWith("/contests/");
 
   useEffect(() => {
     if (!hasHydrated || !isAuthenticated || !isAdminRole) return;

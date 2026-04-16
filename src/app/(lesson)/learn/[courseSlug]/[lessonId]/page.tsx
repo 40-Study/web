@@ -158,8 +158,10 @@ export default function CourseLessonPage() {
   const { data: lessonContents } = useLessonContents(lessonId);
   const lessonVideo = lessonContents?.find((c) => c.type === "video");
 
-  // Get video ID for HLS service (extract from video_hls_url)
-  const videoId = lessonVideo?.video_hls_url?.split("/hls/")?.[1]?.split("/")?.[0] ?? null;
+  // Get video upload ID - prefer direct field, fallback to parsing URL
+  const videoId = lessonVideo?.video_upload_id
+    ?? lessonVideo?.video_hls_url?.split("/hls/")?.[1]?.split("/")?.[0]
+    ?? null;
   const { data: hlsInfo, isLoading: hlsLoading } = useHlsInfo(videoId, true);
 
   const isLoading = courseLoading || sectionsLoading;
@@ -184,10 +186,12 @@ export default function CourseLessonPage() {
   const currentLesson = getLessonById(course, lessonId);
   const next = getNextLesson(course, lessonId);
 
-  // Get video URL from HLS service (prioritizes HLS when ready, falls back to original)
+  // Get video URL: HLS if ready, fallback to original video.mp4 endpoint
   const videoSrc = videoId && hlsInfo
     ? getVideoUrl(hlsInfo, videoId)
-    : lessonVideo?.video_hls_url ?? lessonVideo?.video_url ?? null;
+    : videoId
+      ? `/api/hls/${videoId}/video.mp4`
+      : lessonVideo?.video_url ?? null;
 
   // Show loading state while HLS info is loading for video lessons
   const isVideoLoading = !!(lessonVideo && videoId && hlsLoading);
