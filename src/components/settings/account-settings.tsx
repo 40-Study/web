@@ -262,7 +262,7 @@ export function AccountSettings({
                 <img src={user.avatar} alt="" className="w-14 h-14 rounded-full border-2 border-white/30" />
               ) : (
                 <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold">
-                  {user.name?.[0] || user.email[0].toUpperCase()}
+                  {user.name?.[0] || user.email?.[0]?.toUpperCase() || "?"}
                 </div>
               )}
               <div className="flex-1 min-w-0">

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import {
   Home, BookOpen, MessageSquare, Calendar, Award, Users, Sparkles,
   Trophy, Coins, UsersRound, ChevronLeft, ChevronRight, UserPlus,
@@ -11,7 +10,6 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
 import { useSidebarStore } from "@/stores/sidebar.store";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
-import { AchievementModal } from "@/components/student/achievement-modal";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -21,7 +19,6 @@ export function Sidebar() {
   const isStudent = normalizedRole === "STUDENT";
   const isParent = normalizedRole === "PARENT";
   const homeHref = isAuthenticated ? getRoleHomeRoute(normalizedRole) : "/";
-  const [achievementModalOpen, setAchievementModalOpen] = useState(false);
 
   // Public items - visible to everyone
   const publicItems = [
@@ -41,7 +38,7 @@ export function Sidebar() {
         ...(isStudent ? [{ label: "AI Chat", href: "/ai-chat", icon: Sparkles }] : []),
         ...(isStudent || isParent ? [{ label: "Gia đình", href: "/settings/family", icon: Users }] : []),
         ...(isStudent
-          ? [{ label: "Thành tích", href: "#", icon: Award, onClick: () => setAchievementModalOpen(true) }]
+          ? [{ label: "Thành tích", href: "/achievements", icon: Award }]
           : []),
       ]
     : [];
@@ -104,7 +101,6 @@ export function Sidebar() {
         {isExpanded ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
       </button>
 
-      <AchievementModal open={achievementModalOpen} onOpenChange={setAchievementModalOpen} />
     </aside>
   );
 }

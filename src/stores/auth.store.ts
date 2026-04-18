@@ -134,6 +134,7 @@ export const useAuthStore = create<AuthState>()(
       },
       partialize: (state) => ({
         user: state.user,
+        sessionToken: state.sessionToken, // Persist for multi-role login flow
         roles: state.roles,
         activeRole: state.activeRole,
         activeUnifiedRole: state.activeUnifiedRole,

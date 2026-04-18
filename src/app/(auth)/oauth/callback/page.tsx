@@ -4,11 +4,13 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, Suspense } from "react";
 import { AuthCard } from "@/components/auth/auth-card";
 import { useAuthStore } from "@/stores/auth.store";
+import { getRoleFromToken } from "@/lib/jwt";
+import { normalizeRole } from "@/lib/routes";
 
 function OAuthCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { setToken, setSessionToken, setRoles, login } = useAuthStore();
+  const { setToken, setSessionToken, setRoles, setActiveRole, login } = useAuthStore();
 
   const status = searchParams.get("status");
   const accessToken = searchParams.get("access_token");
@@ -26,6 +28,11 @@ function OAuthCallbackContent() {
         // Có token → lưu store → redirect home (trang home sẽ fetch user info)
         if (accessToken) {
           setToken(accessToken);
+          // Parse và set activeRole từ JWT token
+          const roleFromToken = getRoleFromToken(accessToken);
+          if (roleFromToken) {
+            setActiveRole(normalizeRole(roleFromToken));
+          }
           login({ id: "", email: "", name: "" }); // mark authenticated, getMe sẽ fill đúng sau
         }
         // Check pending redirect
