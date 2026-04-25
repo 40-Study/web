@@ -49,9 +49,9 @@ export type { Class, CreateClassDTO, UpdateClassDTO, Attendance } from "./class.
 
 // ─── Quiz & Exercise ────────────────────────────────────────────────────────
 export { quizService } from "./quiz.service";
-export type { Quiz, QuizQuestion, QuizAttempt, CreateQuizDTO } from "./quiz.service";
+export type { Quiz, QuizQuestion, QuizAttempt, CreateQuizDTO, StartQuizResponse, SubmitQuizDTO, QuizAttemptDetail, AttemptQuestion, AttemptAnswer } from "./quiz.service";
 export { exerciseService } from "./exercise.service";
-export type { Exercise, TestCase, CreateExerciseDTO } from "./exercise.service";
+export type { Exercise, TestCase, CreateExerciseDTO, ExerciseSubmission, ExerciseSubmissionDTO } from "./exercise.service";
 
 // ─── Assignment & Submission ────────────────────────────────────────────────
 export { assignmentService } from "./assignment.service";

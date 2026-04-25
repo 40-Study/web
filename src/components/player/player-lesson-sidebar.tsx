@@ -16,25 +16,50 @@ import {
 import { cn } from "@/lib/utils";
 import type { PlayerChapter, PlayerLesson } from "@/types/course-player";
 
+/** Lesson content section for table of contents */
+export interface LessonContentSection {
+  id: string;
+  title: string;
+  children?: LessonContentSection[];
+}
+
+/** Lesson content data */
+export interface LessonContentData {
+  title: string;
+  lastUpdated: string;
+  readingTime: string;
+  sections: LessonContentSection[];
+  content: string; // HTML or markdown content
+}
+
 interface PlayerLessonSidebarProps {
   chapters: PlayerChapter[];
   currentLessonId: string;
   courseSlug: string;
   className?: string;
+  /** Optional callback for demo/preview mode - when provided, clicks update state instead of navigating */
+  onSelectLesson?: (lessonId: string) => void;
+  /** Lesson content data for "Nội dung bài học" tab */
+  lessonContent?: LessonContentData;
 }
 
-/** Numbered circle icon for each lesson in the sidebar */
+/** Numbered circle icon for each lesson in the sidebar with micro-interactions */
 function LessonStatusIcon({ lesson, index, isCurrent }: { lesson: PlayerLesson; index: number; isCurrent: boolean }) {
   if (lesson.completed) {
     return (
-      <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+      <div
+        className={cn(
+          "w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shrink-0",
+          "animate-bounce-in" // Bounce animation on completion
+        )}
+      >
         <CheckCircle className="w-4 h-4 text-white" />
       </div>
     );
   }
   if (isCurrent) {
     return (
-      <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center shrink-0">
+      <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center shrink-0 animate-pulse">
         <PlayCircle className="w-4 h-4 text-white" />
       </div>
     );
@@ -47,7 +72,7 @@ function LessonStatusIcon({ lesson, index, isCurrent }: { lesson: PlayerLesson; 
     );
   }
   return (
-    <div className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center shrink-0">
+    <div className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center shrink-0 transition-all hover:border-primary-300 hover:scale-105">
       <span className="text-xs font-medium text-gray-500">{index + 1}</span>
     </div>
   );
@@ -80,13 +105,139 @@ function LessonSubItems({ chapter, currentLessonId }: { chapter: PlayerChapter; 
   );
 }
 
+type SidebarTab = "progress" | "content";
+
+/** Table of contents component */
+function TableOfContents({
+  sections,
+  activeSection,
+  onSectionClick,
+}: {
+  sections: LessonContentSection[];
+  activeSection: string;
+  onSectionClick: (sectionId: string) => void;
+}) {
+  return (
+    <div className="space-y-1">
+      {sections.map((section) => (
+        <div key={section.id}>
+          <button
+            onClick={() => onSectionClick(section.id)}
+            className={cn(
+              "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors",
+              activeSection === section.id
+                ? "bg-primary-50 text-primary-600 font-medium"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            )}
+          >
+            {section.title}
+          </button>
+          {section.children && section.children.length > 0 && (
+            <div className="ml-4 mt-1 space-y-1">
+              {section.children.map((child) => (
+                <button
+                  key={child.id}
+                  onClick={() => onSectionClick(child.id)}
+                  className={cn(
+                    "w-full text-left px-3 py-1.5 text-sm rounded-lg transition-colors",
+                    activeSection === child.id
+                      ? "text-primary-600 font-medium"
+                      : "text-gray-500 hover:text-gray-700"
+                  )}
+                >
+                  • {child.title}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Lesson content view */
+function LessonContentView({ content }: { content: LessonContentData }) {
+  const [activeSection, setActiveSection] = useState(content.sections[0]?.id || "");
+  const [isTocCollapsed, setIsTocCollapsed] = useState(false);
+
+  return (
+    <div className="flex h-full">
+      {/* Table of Contents */}
+      <div
+        className={cn(
+          "border-r border-gray-100 shrink-0 overflow-y-auto transition-all duration-300",
+          isTocCollapsed ? "w-10" : "w-[160px]"
+        )}
+      >
+        {isTocCollapsed ? (
+          // Collapsed state - just show expand button
+          <button
+            onClick={() => setIsTocCollapsed(false)}
+            className="w-full h-full flex items-start justify-center pt-4 hover:bg-gray-50 transition-colors"
+            title="Mở rộng mục lục"
+          >
+            <ChevronDown className="w-4 h-4 text-gray-400 rotate-[-90deg]" />
+          </button>
+        ) : (
+          // Expanded state
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                MỤC LỤC
+              </p>
+              <button
+                onClick={() => setIsTocCollapsed(true)}
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                title="Thu gọn mục lục"
+              >
+                <ChevronDown className="w-3.5 h-3.5 text-gray-400 rotate-90" />
+              </button>
+            </div>
+            <TableOfContents
+              sections={content.sections}
+              activeSection={activeSection}
+              onSectionClick={setActiveSection}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 p-5 overflow-y-auto">
+        <h2 className="text-lg font-bold text-gray-900 leading-tight">
+          {content.title}
+        </h2>
+        <p className="text-xs text-gray-500 mt-2">
+          Cập nhật lần cuối: {content.lastUpdated} • {content.readingTime} đọc
+        </p>
+
+        {/* Rendered content */}
+        <div
+          className="mt-5 prose prose-sm prose-gray max-w-none
+            prose-headings:text-gray-900 prose-headings:font-bold
+            prose-h2:text-base prose-h2:mt-6 prose-h2:mb-3
+            prose-p:text-gray-600 prose-p:leading-relaxed
+            prose-code:bg-gray-900 prose-code:text-gray-100 prose-code:px-3 prose-code:py-2 prose-code:rounded-lg prose-code:text-xs
+            prose-pre:bg-gray-900 prose-pre:rounded-lg prose-pre:overflow-x-auto"
+          dangerouslySetInnerHTML={{ __html: content.content }}
+        />
+      </div>
+    </div>
+  );
+}
+
 /** Right sidebar — light theme with progress and chapter accordion */
 export function PlayerLessonSidebar({
   chapters,
   currentLessonId,
   courseSlug,
   className,
+  onSelectLesson,
+  lessonContent,
 }: PlayerLessonSidebarProps) {
+  const [activeTab, setActiveTab] = useState<SidebarTab>("progress");
+
   const currentChapterId = chapters.find((ch) =>
     ch.lessons.some((l) => l.id === currentLessonId)
   )?.id;
@@ -113,29 +264,66 @@ export function PlayerLessonSidebar({
   return (
     <aside
       className={cn(
-        "w-[380px] bg-white border-l border-gray-200 overflow-y-auto shrink-0 flex flex-col",
+        "w-[380px] bg-white border-l border-gray-200 overflow-hidden shrink-0 flex flex-col",
         className
       )}
     >
-      {/* Progress header */}
-      <div className="p-5 border-b border-gray-100 shrink-0">
-        <h2 className="font-bold text-base text-gray-900">Lộ trình học tập</h2>
-        <div className="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary-500 rounded-full transition-all"
-            style={{ width: `${progressPct}%` }}
-          />
-        </div>
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-xs text-gray-500">Tiến độ: {progressPct}%</span>
-          <span className="text-xs text-gray-500">
-            {completedLessons}/{totalLessons} bài học
-          </span>
-        </div>
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 shrink-0">
+        <button
+          onClick={() => setActiveTab("progress")}
+          className={cn(
+            "flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 -mb-px",
+            activeTab === "progress"
+              ? "border-primary-500 text-primary-600"
+              : "border-transparent text-gray-500 hover:text-gray-700"
+          )}
+        >
+          Tiến trình bài học
+        </button>
+        <button
+          onClick={() => setActiveTab("content")}
+          className={cn(
+            "flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 -mb-px",
+            activeTab === "content"
+              ? "border-primary-500 text-primary-600"
+              : "border-transparent text-gray-500 hover:text-gray-700"
+          )}
+        >
+          Nội dung bài học
+        </button>
       </div>
 
-      {/* Chapter accordion list */}
-      <div className="flex-1">
+      {/* Tab Content */}
+      {activeTab === "content" && lessonContent ? (
+        <LessonContentView content={lessonContent} />
+      ) : activeTab === "content" ? (
+        <div className="flex-1 flex items-center justify-center p-5">
+          <p className="text-sm text-gray-500 text-center">
+            Chưa có nội dung bài học.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Progress header */}
+          <div className="p-5 border-b border-gray-100 shrink-0">
+            <h2 className="font-bold text-base text-gray-900">Lộ trình học tập</h2>
+            <div className="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary-500 rounded-full transition-all"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-xs text-gray-500">Tiến độ: {progressPct}%</span>
+              <span className="text-xs text-gray-500">
+                {completedLessons}/{totalLessons} bài học
+              </span>
+            </div>
+          </div>
+
+          {/* Chapter accordion list */}
+          <div className="flex-1 overflow-y-auto">
         {chapters.map((chapter, chIdx) => {
           const isExpanded = expandedChapters.includes(chapter.id);
           const allLocked = chapter.lessons.every((l) => l.locked);
@@ -199,6 +387,22 @@ export function PlayerLessonSidebar({
                       return <div key={lesson.id} className="cursor-not-allowed">{content}</div>;
                     }
 
+                    // Demo mode: use callback instead of navigation
+                    if (onSelectLesson) {
+                      return (
+                        <div key={lesson.id}>
+                          <button
+                            type="button"
+                            onClick={() => onSelectLesson(lesson.id)}
+                            className="block w-full text-left"
+                          >
+                            {content}
+                          </button>
+                          {isCurrent && <LessonSubItems chapter={chapter} currentLessonId={currentLessonId} />}
+                        </div>
+                      );
+                    }
+
                     return (
                       <div key={lesson.id}>
                         <Link href={`/learn/${courseSlug}/${lesson.id}`} className="block">
@@ -214,7 +418,9 @@ export function PlayerLessonSidebar({
             </div>
           );
         })}
-      </div>
+          </div>
+        </>
+      )}
     </aside>
   );
 }

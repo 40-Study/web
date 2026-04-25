@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useState, useCallback, useRef, useEffect, memo } from 'react';
+import type { editor } from 'monaco-editor';
 import { api } from '@/lib/meet/api';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
@@ -909,6 +910,25 @@ export default function SandboxTab({ sessionId, onClose }: Props) {
   const resizingRef = useRef(false);
   const resizeStartRef = useRef({ x: 0, y: 0, w: 0, h: 0 });
   const prevStateRef = useRef({ position: { x: 80, y: 40 }, size: { width: 1000, height: 700 } });
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+
+  // Cleanup Monaco editor on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (editorRef.current) {
+        const model = editorRef.current.getModel();
+        if (model) {
+          model.dispose();
+        }
+        editorRef.current.dispose();
+        editorRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleEditorMount = useCallback((editor: editor.IStandaloneCodeEditor) => {
+    editorRef.current = editor;
+  }, []);
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
   const lineCount = activeTab?.code.split('\n').length || 0;
@@ -1228,6 +1248,7 @@ export default function SandboxTab({ sessionId, onClose }: Props) {
                   language={activeTab.lang.monaco}
                   value={activeTab.code}
                   onChange={(val) => handleCodeChange(val ?? '')}
+                  onMount={handleEditorMount}
                   theme="vs-dark"
                   options={{
                     minimap: { enabled: true, maxColumn: 80 },

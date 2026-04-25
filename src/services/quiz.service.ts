@@ -86,15 +86,64 @@ export interface QuizAttempt {
   quiz_id: string;
   user_id: string;
   score?: number;
-  passed?: boolean;
+  total_points?: number;
+  percentage?: number;
+  is_passed?: boolean;
+  time_spent_seconds?: number;
   started_at: string;
   completed_at?: string;
 }
 
-export interface SubmitAttemptDTO {
+export interface StartQuizResponse {
+  attempt_id: string;
+  quiz_id: string;
+  title: string;
+  time_limit_minutes?: number;
+  questions: AttemptQuestion[];
+  started_at: string;
+}
+
+export interface AttemptQuestion {
+  id: string;
+  question_text: string;
+  question_type: QuestionType;
+  points: number;
+  display_order: number;
+  image_url?: string;
+  answers: AttemptAnswer[];
+}
+
+export interface AttemptAnswer {
+  id: string;
+  answer_text: string;
+  display_order: number;
+}
+
+export interface SubmitQuizDTO {
   answers: Array<{
     question_id: string;
+    selected_answer_ids?: string[];
+    text_answer?: string;
+  }>;
+}
+
+export interface SaveAnswerDTO {
+  question_id: string;
+  selected_answer_ids?: string[];
+  text_answer?: string;
+}
+
+export interface QuizAttemptDetail extends QuizAttempt {
+  answers: Array<{
+    id: string;
+    question_id: string;
+    question_text: string;
     selected_answer_ids: string[];
+    text_answer?: string;
+    is_correct?: boolean;
+    points_earned: number;
+    correct_answer_ids?: string[];
+    explanation?: string;
   }>;
 }
 
@@ -155,21 +204,45 @@ export const quizService = {
 
   // ── Attempts ──────────────────────────────────────────────────────────────
 
-  /** POST /quizzes/:quizId/attempts — start an attempt */
-  startAttempt: (quizId: string) =>
+  /** POST /quizzes/:quizId/start — start a quiz attempt */
+  startQuiz: (quizId: string) =>
     api
-      .post<R<QuizAttempt>>(`/quizzes/${quizId}/attempts`, {})
+      .post<R<StartQuizResponse>>(`/quizzes/${quizId}/start`, {})
       .then((r) => r.data.data),
 
-  /** POST /quizzes/:quizId/attempts/:attemptId/submit */
-  submitAttempt: (quizId: string, attemptId: string, data: SubmitAttemptDTO) =>
+  /** POST /quizzes/:quizId/submit — submit quiz answers */
+  submitQuiz: (quizId: string, data: SubmitQuizDTO) =>
     api
-      .post<R<QuizAttempt>>(`/quizzes/${quizId}/attempts/${attemptId}/submit`, data)
+      .post<R<QuizAttempt>>(`/quizzes/${quizId}/submit`, data)
       .then((r) => r.data.data),
 
-  /** GET /quizzes/:quizId/attempts */
-  getAttempts: (quizId: string) =>
+  /** POST /attempts/:attemptId/save-answer — save answer in progress */
+  saveAnswer: (attemptId: string, data: SaveAnswerDTO) =>
+    api
+      .post<R<null>>(`/attempts/${attemptId}/save-answer`, data)
+      .then((r) => r.data),
+
+  /** GET /attempts/:attemptId/progress — get attempt progress */
+  getAttemptProgress: (attemptId: string) =>
+    api
+      .get<R<{ answers: Record<string, string[]> }>>(`/attempts/${attemptId}/progress`)
+      .then((r) => r.data.data),
+
+  /** GET /quizzes/:quizId/attempts — get my attempts */
+  getMyAttempts: (quizId: string) =>
     api
       .get<R<QuizAttempt[]>>(`/quizzes/${quizId}/attempts`)
+      .then((r) => r.data.data),
+
+  /** GET /quizzes/:quizId/attempts/:attemptId — get attempt detail */
+  getAttemptDetail: (quizId: string, attemptId: string) =>
+    api
+      .get<R<QuizAttemptDetail>>(`/quizzes/${quizId}/attempts/${attemptId}`)
+      .then((r) => r.data.data),
+
+  /** GET /quizzes/:quizId/results — get quiz results (teacher) */
+  getQuizResults: (quizId: string) =>
+    api
+      .get<R<{ quiz_id: string; title: string; total_students: number; attempts: QuizAttempt[] }>>(`/quizzes/${quizId}/results`)
       .then((r) => r.data.data),
 };

@@ -7,6 +7,7 @@ import { SkipLink } from "@/components/ui";
 const inter = Inter({
     subsets: ["latin", "vietnamese"],
     variable: "--font-inter",
+    display: "swap", // Prevent FOIT - show fallback font immediately, swap when loaded
 });
 
 export const metadata: Metadata = {

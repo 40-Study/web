@@ -1,6 +1,14 @@
 export { PlayerHeader } from "./player-header";
 export { PlayerLessonSidebar } from "./player-lesson-sidebar";
+export type { LessonContentSection, LessonContentData } from "./player-lesson-sidebar";
 export { PlayerTabs } from "./player-tabs";
 export type { PlayerTabsHandle } from "./player-tabs";
 export { FloatingButtons } from "./floating-buttons";
 export { CodeEditorModal } from "./code-editor-modal";
+export { VideoQuizOverlay } from "./video-quiz-overlay";
+export { QuizLessonContent, DEMO_QUIZ } from "./quiz-lesson-content";
+export type { QuizData, QuizQuestion, ApiQuizData } from "./quiz-lesson-content";
+export { QuizResultContent, DEMO_QUIZ_RESULT } from "./quiz-result-content";
+export type { QuizResultData, QuizResultAnswer } from "./quiz-result-content";
+export { ExerciseLessonContent } from "./exercise-lesson-content";
+export type { ExerciseData, ExerciseExample, ExerciseTestCase, TestResult, SubmitResult } from "./exercise-lesson-content";

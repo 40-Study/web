@@ -1,6 +1,7 @@
 "use client";
-import { memo, useRef, useCallback } from "react";
-import Editor, { type BeforeMount } from "@monaco-editor/react";
+import { memo, useRef, useCallback, useEffect } from "react";
+import Editor, { type BeforeMount, type OnMount } from "@monaco-editor/react";
+import type { editor } from "monaco-editor";
 import type { Theme, Language } from "./types";
 
 interface Props {
@@ -54,8 +55,30 @@ const EditorPane = memo(({ T, dark, code, setCode, lang, onFocus }: Props) => {
   const setCodeRef = useRef(setCode);
   setCodeRef.current = setCode;
 
+  // Store editor instance for cleanup
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+
   const onChange = useCallback((v: string | undefined) => {
     setCodeRef.current(v ?? "");
+  }, []);
+
+  const handleMount: OnMount = useCallback((editor) => {
+    editorRef.current = editor;
+  }, []);
+
+  // Cleanup editor instance on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (editorRef.current) {
+        // Dispose the editor model to free up memory
+        const model = editorRef.current.getModel();
+        if (model) {
+          model.dispose();
+        }
+        editorRef.current.dispose();
+        editorRef.current = null;
+      }
+    };
   }, []);
 
   return (
@@ -69,6 +92,7 @@ const EditorPane = memo(({ T, dark, code, setCode, lang, onFocus }: Props) => {
         value={code}
         theme={dark ? "custom-dark" : "custom-light"}
         beforeMount={handleBeforeMount}
+        onMount={handleMount}
         onChange={onChange}
         options={{
           fontSize: 13,

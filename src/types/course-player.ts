@@ -56,6 +56,26 @@ export interface PlayerReview {
   createdAt: string;
 }
 
+/** In-video quiz that appears at a specific timestamp */
+export interface VideoQuiz {
+  id: string;
+  timestamp: number; // seconds into video
+  title: string;
+  question: string;
+  options: { key: string; text: string }[];
+  correctAnswer: string;
+  status: "pending" | "correct" | "incorrect" | "in_progress" | "locked";
+}
+
+/** Resource/attachment for a lesson */
+export interface LessonResource {
+  id: string;
+  title: string;
+  type: "pdf" | "zip" | "link" | "doc";
+  url: string;
+  size?: string;
+}
+
 /** Get lesson by ID from course chapters */
 export function getLessonById(course: PlayerCourse, lessonId: string): PlayerLesson | undefined {
   for (const chapter of course.chapters) {

@@ -243,9 +243,9 @@ export function Header() {
           <div className="hidden sm:flex items-center gap-2" ref={dropdownRef}>
             {isAuthenticated ? (
               <>
-                <Link href={homeHref}>
+                <Link href="/my-courses">
                   <Button variant="outline" className="font-medium text-sm">
-                    Trang quản lý
+                    Khóa học của tôi
                   </Button>
                 </Link>
 
@@ -397,9 +397,9 @@ export function Header() {
                 {isAuthenticated ? (
                   <>
                     <div className="px-3 pt-3">
-                      <Link href={homeHref} onClick={() => setIsMobileMenuOpen(false)}>
+                      <Link href="/my-courses" onClick={() => setIsMobileMenuOpen(false)}>
                         <Button variant="outline" className="w-full justify-start font-medium">
-                          Trang quản lý
+                          Khóa học của tôi
                         </Button>
                       </Link>
                     </div>

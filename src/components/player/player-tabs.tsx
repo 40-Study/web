@@ -1,18 +1,21 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useState } from "react";
-import { Star, Download, ExternalLink, FileText, Link as LinkIcon, Code2, HelpCircle, Lock } from "lucide-react";
+import { Star, Download, ExternalLink, FileText, Link as LinkIcon, Code2, HelpCircle, Lock, Clock, Check, X, Circle } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import type { PlayerCourse, PlayerResource } from "@/types/course-player";
+import type { PlayerCourse, PlayerResource, VideoQuiz } from "@/types/course-player";
 
 interface PlayerTabsProps {
   course: PlayerCourse;
   courseSlug: string;
   reviewCount?: number;
+  videoQuizzes?: VideoQuiz[];
+  currentVideoTime?: number;
+  onQuizClick?: (quiz: VideoQuiz) => void;
 }
 
-type TabKey = "overview" | "exercises" | "resources" | "reviews" | "qna";
+type TabKey = "overview" | "resources" | "quiz" | "reviews" | "qna";
 
 function ResourceIcon({ type }: { type: PlayerResource["type"] }) {
   switch (type) {
@@ -49,19 +52,41 @@ export interface PlayerTabsHandle {
 
 /** Light-themed tabs below the video */
 export const PlayerTabs = forwardRef<PlayerTabsHandle, PlayerTabsProps>(
-  function PlayerTabs({ course, courseSlug, reviewCount }, ref) {
+  function PlayerTabs({ course, courseSlug, reviewCount, videoQuizzes = [], currentVideoTime = 0, onQuizClick }, ref) {
     const [activeTab, setActiveTab] = useState<TabKey>("overview");
 
     useImperativeHandle(ref, () => ({
-      switchToExercises: () => setActiveTab("exercises"),
+      switchToExercises: () => setActiveTab("quiz"),
     }));
 
     const tabs: { key: TabKey; label: string }[] = [
       { key: "overview", label: "Tổng quan" },
       { key: "resources", label: "Tài liệu học tập" },
+      { key: "quiz", label: "Quiz" },
       { key: "reviews", label: `Đánh giá (${reviewCount ?? course.reviewCount})` },
       { key: "qna", label: "Hỏi & Đáp" },
     ];
+
+    const formatTimestamp = (seconds: number) => {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    };
+
+    const getQuizStatusIcon = (quiz: VideoQuiz) => {
+      switch (quiz.status) {
+        case "correct":
+          return <Check className="w-5 h-5 text-green-500" />;
+        case "incorrect":
+          return <X className="w-5 h-5 text-red-500" />;
+        case "in_progress":
+          return <Circle className="w-5 h-5 text-primary-500 fill-primary-500" />;
+        case "locked":
+          return <Lock className="w-4 h-4 text-gray-400" />;
+        default:
+          return <Circle className="w-5 h-5 text-gray-300" />;
+      }
+    };
 
     return (
       <div className="mt-4">
@@ -123,54 +148,59 @@ export const PlayerTabs = forwardRef<PlayerTabsHandle, PlayerTabsProps>(
             </div>
           )}
 
-          {activeTab === "exercises" && (
-            <div className="space-y-3">
-              {(() => {
-                const exercises = course.chapters.flatMap((ch) =>
-                  ch.lessons
-                    .filter((l) => l.type === "exercise" || l.type === "quiz")
-                    .map((l) => ({ ...l, chapterTitle: ch.title }))
-                );
-                if (exercises.length === 0) {
-                  return <p className="text-sm text-gray-500">Khóa học chưa có bài tập nào.</p>;
-                }
-                return exercises.map((ex) => (
-                  <div
-                    key={ex.id}
-                    className={cn(
-                      "flex items-center gap-3 p-3 border rounded-lg transition-colors",
-                      ex.locked
-                        ? "border-gray-200 bg-gray-50 opacity-60"
-                        : "border-gray-200 hover:border-primary-300 hover:bg-primary-50"
-                    )}
-                  >
-                    {ex.type === "exercise" ? (
-                      <Code2 className="w-5 h-5 text-blue-500 shrink-0" />
-                    ) : (
-                      <HelpCircle className="w-5 h-5 text-orange-500 shrink-0" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      {ex.locked ? (
-                        <p className="text-sm font-medium text-gray-500 truncate">{ex.title}</p>
-                      ) : (
-                        <Link
-                          href={`/learn/${courseSlug}/${ex.id}`}
-                          className="text-sm font-medium text-gray-900 hover:text-primary-600 truncate block"
-                        >
-                          {ex.title}
-                        </Link>
+          {activeTab === "quiz" && (
+            <div className="space-y-1">
+              {videoQuizzes.length === 0 ? (
+                <p className="text-sm text-gray-500 py-4">Bài học này chưa có câu hỏi quiz.</p>
+              ) : (
+                videoQuizzes.map((quiz) => {
+                  const isActive = quiz.status === "in_progress";
+                  const isLocked = quiz.status === "locked";
+                  const isClickable = !isLocked && quiz.status !== "in_progress";
+
+                  return (
+                    <button
+                      key={quiz.id}
+                      onClick={() => isClickable && onQuizClick?.(quiz)}
+                      disabled={isLocked}
+                      className={cn(
+                        "w-full flex items-center gap-4 px-4 py-3 rounded-lg text-left transition-colors",
+                        isActive && "bg-primary-50",
+                        isLocked ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-50"
                       )}
-                      <p className="text-xs text-gray-500">
-                        {ex.chapterTitle} · {ex.type === "quiz" ? "Trắc nghiệm" : "Thực hành"} · {ex.duration}
-                      </p>
-                    </div>
-                    {ex.locked && <Lock className="w-4 h-4 text-gray-400 shrink-0" />}
-                    {ex.completed && (
-                      <span className="text-xs text-green-600 font-medium shrink-0">Hoàn thành</span>
-                    )}
-                  </div>
-                ));
-              })()}
+                    >
+                      <div className={cn(
+                        "flex items-center gap-1.5 text-sm font-mono shrink-0",
+                        isActive ? "text-primary-600" : "text-gray-500"
+                      )}>
+                        <Clock className="w-4 h-4" />
+                        <span>{formatTimestamp(quiz.timestamp)}</span>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <p className={cn(
+                          "text-sm font-medium truncate",
+                          isActive ? "text-primary-600" : "text-gray-900"
+                        )}>
+                          {quiz.title}
+                          {isActive && (
+                            <span className="ml-2 text-primary-500 font-normal">(Đang trả lời...)</span>
+                          )}
+                        </p>
+                        {isActive && (
+                          <div className="mt-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-primary-500 rounded-full w-1/2 animate-pulse" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="shrink-0">
+                        {getQuizStatusIcon(quiz)}
+                      </div>
+                    </button>
+                  );
+                })
+              )}
             </div>
           )}
 
