@@ -71,6 +71,9 @@ export function DialogContent({
 }: DialogContentProps) {
   const { onOpenChange } = React.useContext(DialogContext);
 
+  // Check if flex layout is requested to pass it to inner wrapper
+  const hasFlex = className?.includes("flex");
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
@@ -95,13 +98,13 @@ export function DialogContent({
         {showCloseButton && (
           <button
             onClick={() => onOpenChange(false)}
-            className="absolute right-4 top-4 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="absolute right-4 top-4 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors z-10"
             aria-label="Close dialog"
           >
             <X className="h-4 w-4 text-gray-500" />
           </button>
         )}
-        <div className="p-6">{children}</div>
+        <div className={cn("p-6", hasFlex && "flex flex-col flex-1 min-h-0")}>{children}</div>
       </div>
     </div>
   );

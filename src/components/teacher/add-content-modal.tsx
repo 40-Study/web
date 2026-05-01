@@ -449,7 +449,7 @@ export function AddContentModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-1">
+        <div className="flex-1 min-h-0 overflow-y-auto px-1">
           {/* ════ Step 1: Choose content type ════ */}
           {!contentType && (
             <div className="grid grid-cols-3 gap-4 py-6">
