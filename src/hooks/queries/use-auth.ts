@@ -277,8 +277,10 @@ export function useSwitchRole() {
         setActiveUnifiedRole(data.active_role);
         qc.invalidateQueries({ queryKey: authKeys.all });
 
-        // Navigate to the appropriate home page for the new role
-        router.push(getRoleHomeRoute(newRole));
+        // Hard navigate to avoid RoleGuard redirect race condition.
+        // setActiveRole triggers re-render → old layout's RoleGuard sees
+        // new role doesn't match → redirects to /403 before router.push fires.
+        window.location.href = getRoleHomeRoute(newRole);
       }
     },
     onError: (error: unknown) => {
