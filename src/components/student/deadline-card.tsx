@@ -37,7 +37,7 @@ export function DeadlineCard({ task }: DeadlineCardProps) {
 
       {/* Action */}
       <Link
-        href="/my-courses"
+        href="/home"
         className="w-full h-12 mt-4 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-xl transition-colors flex items-center justify-center"
       >
         Nộp bài

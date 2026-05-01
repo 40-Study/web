@@ -370,10 +370,7 @@ export default function HomePage() {
             {/* Featured */}
             {featured && (
               <section>
-                <div className="flex items-center justify-between mb-2.5">
-                  <h2 className="text-sm font-semibold text-gray-800">Đang học gần đây</h2>
-                  <Link href="/my-courses" className="text-xs text-blue-600 font-medium hover:underline">Xem tất cả</Link>
-                </div>
+                <h2 className="text-sm font-semibold text-gray-800 mb-2.5">Đang học gần đây</h2>
                 <Link href={`/courses/${featured.slug}`} className="block">
                   <Card className="group overflow-hidden hover:shadow-md transition-all border border-gray-100 bg-white">
                     <div className="flex flex-col sm:flex-row">

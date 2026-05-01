@@ -17,7 +17,7 @@ export function PlayerHeader({ courseTitle, courseSlug, exerciseCount = 0 }: Pla
       {/* Left: Back arrow */}
       <div className="flex items-center">
         <Link
-          href="/my-courses"
+          href="/home"
           className="flex items-center text-gray-500 hover:text-gray-900 transition-colors"
         >
           <ChevronLeft className="w-6 h-6" />
@@ -27,7 +27,7 @@ export function PlayerHeader({ courseTitle, courseSlug, exerciseCount = 0 }: Pla
       {/* Right: My courses link + Exercises + avatar */}
       <div className="flex items-center gap-5">
         <Link
-          href="/my-courses"
+          href="/home"
           className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
         >
           Khóa học của tôi

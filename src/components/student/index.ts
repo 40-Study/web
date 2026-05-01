@@ -4,8 +4,5 @@ export * from "./live-class-card";
 export * from "./task-grid";
 export * from "./course-carousel";
 export * from "./stats-widgets";
-export * from "./featured-course-card";
-export * from "./enrolled-course-card";
 export * from "./achievement-sidebar";
 export * from "./mentor-chat-widget";
-export * from "./my-courses-sidebar";

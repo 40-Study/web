@@ -50,7 +50,7 @@ export default function CheckoutSuccessPage() {
 
           {/* Actions */}
           <div className="space-y-3">
-            <Link href="/my-courses" className="block">
+            <Link href="/home" className="block">
               <Button className="w-full" size="lg">
                 <BookOpen className="w-4 h-4 mr-2" />
                 Đi đến khóa học của tôi
