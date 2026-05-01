@@ -27,7 +27,7 @@ export function PlayerHeader({ courseTitle, courseSlug, exerciseCount = 0 }: Pla
       {/* Right: My courses link + Exercises + avatar */}
       <div className="flex items-center gap-5">
         <Link
-          href="/home"
+          href="/my-courses"
           className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
         >
           Khóa học của tôi

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home, BookOpen, MessageSquare, Calendar, Award, Users, Sparkles,
-  Trophy, Coins, UsersRound, ChevronLeft, ChevronRight, UserPlus,
+  Trophy, Coins, UsersRound, ChevronLeft, ChevronRight, UserPlus, GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
@@ -23,13 +23,14 @@ export function Sidebar() {
   // Public items - visible to everyone
   const publicItems = [
     { label: "Trang chủ", href: homeHref, icon: Home },
-    { label: "Khóa học", href: "/courses", icon: BookOpen },
+    { label: "Khám phá", href: "/courses", icon: BookOpen },
     { label: "Cuộc thi", href: "/contests", icon: Trophy },
   ];
 
   // Authenticated-only items
   const authItems = isAuthenticated
     ? [
+        ...(isStudent ? [{ label: "Khóa học của tôi", href: "/my-courses", icon: GraduationCap }] : []),
         ...(isStudent ? [{ label: "Lịch học", href: "/schedule", icon: Calendar }] : []),
         { label: "Bạn bè", href: "/friends", icon: UserPlus },
         { label: "Tin nhắn", href: "/messages", icon: MessageSquare },
