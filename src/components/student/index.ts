@@ -6,3 +6,7 @@ export * from "./course-carousel";
 export * from "./stats-widgets";
 export * from "./achievement-sidebar";
 export * from "./mentor-chat-widget";
+export * from "./current-course-hero";
+export * from "./other-courses-sidebar";
+export * from "./enrolled-course-card";
+export * from "./support-card";
