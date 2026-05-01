@@ -51,6 +51,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   hasHydrated: boolean;
+  isSwitchingRole: boolean;
 
   // Registration ephemeral
   registerRole: string | null;
@@ -69,6 +70,7 @@ interface AuthState {
   setSelectedChild: (child: Child | null) => void;
   setRegisterRole: (role: string | null) => void;
   setHasHydrated: (value: boolean) => void;
+  setIsSwitchingRole: (value: boolean) => void;
 
   /** @deprecated dùng setAuthenticated thay — token do cookies quản lý */
   setToken: (token: string | null) => void;
@@ -92,6 +94,7 @@ const initialState = {
   isAuthenticated: false,
   isLoading: false,
   hasHydrated: false,
+  isSwitchingRole: false,
   registerRole: null,
 };
 
@@ -113,6 +116,7 @@ export const useAuthStore = create<AuthState>()(
       setSelectedChild: (selectedChild) => set({ selectedChild }),
       setRegisterRole: (registerRole) => set({ registerRole }),
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
+      setIsSwitchingRole: (isSwitchingRole) => set({ isSwitchingRole }),
 
       // Compat: code cũ gọi setToken — giờ chỉ set isAuthenticated
       setToken: (token) => set({ isAuthenticated: !!token }),
