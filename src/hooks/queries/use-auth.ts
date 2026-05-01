@@ -262,25 +262,20 @@ export function useSelectRole() {
  * Returns new tokens and navigates to the appropriate home page.
  */
 export function useSwitchRole() {
-  const { setToken, setActiveRole, setActiveUnifiedRole, setIsSwitchingRole } = useAuthStore();
+  const { setToken, setActiveRole, setActiveUnifiedRole } = useAuthStore();
   const qc = useQueryClient();
-  const router = useRouter();
 
   return useMutation({
     mutationFn: authService.switchRole,
     onSuccess: (response) => {
       const data = response.data;
       if (data.access_token) {
-        // Set flag BEFORE changing role so RoleGuard skips redirect
-        setIsSwitchingRole(true);
         setToken(data.access_token);
         const newRole = normalizeRole(data.active_role.role_name);
         setActiveRole(newRole);
         setActiveUnifiedRole(data.active_role);
         qc.invalidateQueries({ queryKey: authKeys.all });
-        router.replace(getRoleHomeRoute(newRole));
-        // Clear flag after navigation is queued
-        setTimeout(() => setIsSwitchingRole(false), 500);
+        window.location.href = getRoleHomeRoute(newRole);
       }
     },
     onError: (error: unknown) => {

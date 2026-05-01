@@ -27,7 +27,7 @@ export function RoleGuard({
   children,
 }: RoleGuardProps) {
   const router = useRouter();
-  const { isAuthenticated, hasHydrated, activeRole, permissions, isSwitchingRole } = useAuthStore();
+  const { isAuthenticated, hasHydrated, activeRole, permissions } = useAuthStore();
   const normalizedRole = normalizeRole(activeRole);
   const normalizedAllowedRoles = roles?.map((role) => normalizeRole(role)).filter(Boolean) as string[] | undefined;
   const hasPermissionAccess = requiredPerms
@@ -37,7 +37,7 @@ export function RoleGuard({
     : true;
 
   useEffect(() => {
-    if (!hasHydrated || isSwitchingRole) return;
+    if (!hasHydrated) return;
 
     // Not authenticated → redirect to login
     if (!isAuthenticated) {
@@ -63,7 +63,6 @@ export function RoleGuard({
     }
   }, [
     hasHydrated,
-    isSwitchingRole,
     isAuthenticated,
     normalizedRole,
     normalizedAllowedRoles,
@@ -75,7 +74,6 @@ export function RoleGuard({
 
   // Don't render until hydration + access checks; skip checks while switching role
   if (!hasHydrated) return null;
-  if (isSwitchingRole) return null;
   if (!isAuthenticated) return null;
   if (!normalizedRole) return null;
   if (normalizedAllowedRoles && !normalizedAllowedRoles.includes(normalizedRole)) return null;
