@@ -5,6 +5,8 @@ export { PlayerTabs } from "./player-tabs";
 export type { PlayerTabsHandle } from "./player-tabs";
 export { FloatingButtons } from "./floating-buttons";
 export { CodeEditorModal } from "./code-editor-modal";
+export { AIAssistantPanel } from "./ai-assistant-panel";
+export { FloatingSandbox } from "./floating-sandbox";
 export { VideoQuizOverlay } from "./video-quiz-overlay";
 export { QuizLessonContent, DEMO_QUIZ } from "./quiz-lesson-content";
 export type { QuizData, QuizQuestion, ApiQuizData } from "./quiz-lesson-content";

@@ -670,7 +670,17 @@ export function PlayerClient({
       </div>
 
       {/* Floating buttons */}
-      <FloatingButtons />
+      <FloatingButtons
+        lessonContext={
+          currentLesson
+            ? {
+                title: currentLesson.title,
+                courseTitle: curriculum.course.title,
+                type: currentLesson.type as "video" | "quiz" | "exercise",
+              }
+            : undefined
+        }
+      />
     </>
   );
 }
