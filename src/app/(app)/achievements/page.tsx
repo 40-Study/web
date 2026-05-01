@@ -55,15 +55,33 @@ function getXpForNextLevel(currentXp: number): { current: number; needed: number
   return { current: currentXp - xpForCurrentLevel, needed: 300 };
 }
 
-// ─── Mock Data for skills (not available from API) ──────────────────────────
+// ─── Derive skill data from achievement categories ─────────────────────────
 
-const MOCK_SKILLS: SkillData[] = [
-  { name: "FRONTEND", value: 85 },
-  { name: "BACKEND", value: 70 },
-  { name: "SYSTEM", value: 60 },
-  { name: "DATABASE", value: 75 },
-  { name: "CLOUD", value: 98 },
-];
+const CATEGORY_LABELS: Record<string, string> = {
+  learning: "HỌC TẬP",
+  streak: "KIÊN TRÌ",
+  social: "CỘNG ĐỒNG",
+  milestone: "CỘT MỐC",
+  special: "ĐẶC BIỆT",
+};
+
+function deriveSkillsFromAchievements(achievements: AchievementWithStatusDTO[]): SkillData[] {
+  const categoryMap = new Map<string, { total: number; sum: number }>();
+  for (const a of achievements) {
+    const cat = a.category || "learning";
+    const entry = categoryMap.get(cat) || { total: 0, sum: 0 };
+    entry.total += 1;
+    entry.sum += a.progress ?? (a.unlocked ? 100 : 0);
+    categoryMap.set(cat, entry);
+  }
+
+  const categories = Object.keys(CATEGORY_LABELS);
+  return categories.map((cat) => {
+    const entry = categoryMap.get(cat);
+    const value = entry && entry.total > 0 ? Math.round(entry.sum / entry.total) : 0;
+    return { name: CATEGORY_LABELS[cat], value };
+  });
+}
 
 // ─── Helpers for heatmap ────────────────────────────────────────────────────
 
@@ -415,9 +433,14 @@ export default function AchievementsPage() {
     if (profileData?.activity && profileData.activity.length > 0) {
       return buildHeatmapFromActivity(profileData.activity);
     }
-    // Fallback empty data if no activity
     return Array.from({ length: 365 }, () => 0);
   }, [profileData?.activity]);
+
+  // Derive skills from achievement categories
+  const skills = useMemo(
+    () => deriveSkillsFromAchievements(rawAchievements),
+    [rawAchievements]
+  );
 
   // Get top 3 achievements for display
   const topAchievements = unlockedAchievements
@@ -425,7 +448,9 @@ export default function AchievementsPage() {
     .slice(0, 3);
 
   // Find top skill
-  const topSkill = MOCK_SKILLS.reduce((max, s) => s.value > max.value ? s : max, MOCK_SKILLS[0]);
+  const topSkill = skills.length > 0
+    ? skills.reduce((max, s) => s.value > max.value ? s : max, skills[0])
+    : null;
 
   const userData = {
     name: meData?.full_name || user?.name || "Learner",
@@ -540,15 +565,17 @@ export default function AchievementsPage() {
             </div>
 
             <div className="relative h-64">
-              <RadarChart skills={MOCK_SKILLS} />
+              <RadarChart skills={skills} />
             </div>
 
-            <div className="text-center mt-4">
-              <span className="text-sm text-gray-500">TOP STAT: </span>
-              <span className="text-sm font-bold text-indigo-600">
-                {topSkill.name} ({topSkill.value}%)
-              </span>
-            </div>
+            {topSkill && (
+              <div className="text-center mt-4">
+                <span className="text-sm text-gray-500">TOP STAT: </span>
+                <span className="text-sm font-bold text-indigo-600">
+                  {topSkill.name} ({topSkill.value}%)
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Quick Stats */}

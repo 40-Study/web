@@ -7,7 +7,7 @@ import { api } from "@/lib/api-client";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-export type SubmissionStatus =
+export type SubmissionVerdict =
   | "pending"
   | "running"
   | "accepted"
@@ -17,30 +17,33 @@ export type SubmissionStatus =
   | "runtime_error"
   | "compilation_error";
 
-export interface TestCaseResult {
-  test_case_id: string;
-  passed: boolean;
-  input?: string;
-  expected_output?: string;
-  actual_output?: string;
-  execution_time?: number;
-  memory_used?: number;
-  error?: string;
+export interface SubmissionUserDTO {
+  id: string;
+  username: string;
+  email?: string;
 }
 
 export interface SubmissionResponseDTO {
   id: string;
   assignment_id: string;
   user_id: string;
+  user?: SubmissionUserDTO;
   language: string;
   code: string;
-  status: SubmissionStatus;
-  score?: number;
-  execution_time?: number;
-  memory_used?: number;
-  test_results?: TestCaseResult[];
-  error_message?: string;
-  submitted_at: string;
+  verdict: SubmissionVerdict;
+  score: number;
+  execution_time: number;
+  memory_used: number;
+  test_cases_passed: number;
+  total_test_cases: number;
+  created_at: string;
+}
+
+export interface SubmissionListDTO {
+  data: SubmissionResponseDTO[];
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 export interface SubmitCodeDTO {
@@ -92,11 +95,13 @@ export const submissionService = {
   getById: (id: string) =>
     api.get<R<SubmissionResponseDTO>>(`/submissions/${id}`).then((r) => r.data.data),
 
-  /** GET /submissions/assignment/:assignmentId — all submissions for an assignment */
-  getByAssignment: (assignmentId: string) =>
+  /** GET /submissions/assignment/:assignmentId — all submissions (paginated) */
+  getByAssignment: (assignmentId: string, page = 1, pageSize = 100) =>
     api
-      .get<R<SubmissionResponseDTO[]>>(`/submissions/assignment/${assignmentId}`)
-      .then((r) => r.data.data),
+      .get<SubmissionListDTO>(`/submissions/assignment/${assignmentId}`, {
+        params: { page, page_size: pageSize },
+      })
+      .then((r) => r.data),
 
   /** GET /submissions/my/:assignmentId — current user's submissions */
   getMySubmissions: (assignmentId: string) =>

@@ -10,9 +10,13 @@ import { api } from "@/lib/api-client";
 export type DifficultyLevel = "easy" | "medium" | "hard";
 export type ProgrammingLanguage = string;
 
+export type AssignmentType = "live_coding" | "homework" | "project";
+
 export interface AssignmentResponseDTO {
   id: string;
-  session_id: string;
+  session_id?: string;
+  class_id?: string;
+  type: AssignmentType;
   title: string;
   description: string;
   difficulty: DifficultyLevel;
@@ -26,6 +30,10 @@ export interface AssignmentResponseDTO {
   start_time?: string;
   end_time?: string;
   show_in_recap: boolean;
+  allow_late_submission: boolean;
+  late_penalty_percent: number;
+  max_late_days: number;
+  grace_period_minutes: number;
   created_at: string;
 }
 

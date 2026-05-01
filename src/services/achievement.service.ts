@@ -6,7 +6,7 @@ import { api } from "@/lib/api-client";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type AchievementCategory = "learning" | "streak" | "social" | "coding" | "milestone";
+export type AchievementCategory = "learning" | "streak" | "social" | "milestone" | "special";
 
 export interface AchievementDTO {
   id: string;

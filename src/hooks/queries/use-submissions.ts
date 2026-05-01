@@ -9,6 +9,7 @@ import {
   type SubmitCodeDTO,
   type RunCodeDTO,
   type RunCustomInputDTO,
+  type SubmissionListDTO,
 } from "@/services/submission.service";
 
 export const submissionKeys = {
@@ -31,7 +32,7 @@ export function useSubmission(id: string) {
 
 /** All submissions for an assignment (teacher/admin view) */
 export function useSubmissionsByAssignment(assignmentId: string) {
-  return useQuery({
+  return useQuery<SubmissionListDTO>({
     queryKey: submissionKeys.byAssignment(assignmentId),
     queryFn: () => submissionService.getByAssignment(assignmentId),
     enabled: !!assignmentId,

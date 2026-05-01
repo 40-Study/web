@@ -42,73 +42,34 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useAssignment } from "@/hooks/queries/use-assignments";
+import { useSubmissionsByAssignment } from "@/hooks/queries/use-submissions";
+import type { SubmissionResponseDTO } from "@/services/submission.service";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
-type SubmissionStatus = "submitted" | "not_submitted" | "late" | "graded";
+type DisplayStatus = "submitted" | "graded" | "late";
 
-interface StudentSubmission {
+interface SubmissionRow {
   studentId: string;
   studentName: string;
-  studentAvatar?: string;
-  parentId?: string;
-  parentName?: string;
-  parentEmail?: string;
-  parentPhone?: string;
-  status: SubmissionStatus;
+  email?: string;
+  status: DisplayStatus;
   submittedAt?: string;
   score?: number;
-  maxScore?: number;
-}
-
-interface AssignmentDetails {
-  id: string;
-  title: string;
-  type: "quiz" | "code" | "essay";
-  dueDate?: string;
   maxScore: number;
-  totalStudents: number;
-  submissions: StudentSubmission[];
+  verdict: string;
+  testCasesPassed: number;
+  totalTestCases: number;
 }
 
-// ─── Mock Data ─────────────────────────────────────────────────────────────
+// ─── Helpers: map backend verdict to display status ───────────────────────
 
-function generateMockSubmissions(total: number, submitted: number): StudentSubmission[] {
-  const names = [
-    "Nguyen Van A", "Tran Thi B", "Le Van C", "Pham Thi D", "Hoang Van E",
-    "Vu Thi F", "Dang Van G", "Bui Thi H", "Do Van I", "Ngo Thi K",
-    "Truong Van L", "Ly Thi M", "Cao Van N", "Dinh Thi O", "Vo Van P",
-    "Ta Thi Q", "Mai Van R", "Duong Thi S", "Ho Van T", "Phan Thi U",
-    "Trinh Van V", "Tran Van W", "Nguyen Thi X", "Le Thi Y", "Pham Van Z",
-  ];
-
-  return names.slice(0, total).map((name, idx) => ({
-    studentId: `student-${idx + 1}`,
-    studentName: name,
-    parentId: `parent-${idx + 1}`,
-    parentName: `Phụ huynh của ${name.split(" ").pop()}`,
-    parentEmail: `parent${idx + 1}@email.com`,
-    parentPhone: `09${String(Math.random()).slice(2, 10)}`,
-    status: idx < submitted
-      ? (idx < submitted - 3 ? "graded" : (idx < submitted - 1 ? "submitted" : "late"))
-      : "not_submitted",
-    submittedAt: idx < submitted
-      ? new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
-      : undefined,
-    score: idx < submitted - 3 ? Math.floor(Math.random() * 30) + 70 : undefined,
-    maxScore: 100,
-  }));
+function deriveDisplayStatus(sub: SubmissionResponseDTO, endTime?: string): DisplayStatus {
+  if (sub.verdict === "accepted") return "graded";
+  if (endTime && sub.created_at > endTime) return "late";
+  return "submitted";
 }
-
-const MOCK_ASSIGNMENT: AssignmentDetails = {
-  id: "1",
-  title: "Kiểm tra kiến thức Go cơ bản",
-  type: "quiz",
-  dueDate: "2026-04-15T23:59:59",
-  maxScore: 100,
-  totalStudents: 25,
-  submissions: generateMockSubmissions(25, 18),
-};
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -124,7 +85,7 @@ function formatDate(dateStr: string | undefined): string {
   });
 }
 
-function getStatusConfig(status: SubmissionStatus) {
+function getStatusConfig(status: DisplayStatus) {
   switch (status) {
     case "submitted":
       return { label: "Đã nộp", color: "bg-blue-100 text-blue-700", icon: CheckCircle2 };
@@ -132,9 +93,6 @@ function getStatusConfig(status: SubmissionStatus) {
       return { label: "Đã chấm", color: "bg-green-100 text-green-700", icon: CheckCircle2 };
     case "late":
       return { label: "Nộp muộn", color: "bg-yellow-100 text-yellow-700", icon: Clock };
-    case "not_submitted":
-    default:
-      return { label: "Chưa nộp", color: "bg-red-100 text-red-700", icon: XCircle };
   }
 }
 
@@ -144,36 +102,52 @@ export default function AssignmentSubmissionsPage() {
   const params = useParams<{ id: string }>();
   const assignmentId = params.id;
 
-  // In real app, fetch from API
-  const assignment = MOCK_ASSIGNMENT;
+  const { data: assignment, isLoading: assignmentLoading } = useAssignment(assignmentId);
+  const { data: submissionData, isLoading: submissionsLoading } = useSubmissionsByAssignment(assignmentId);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<SubmissionStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<DisplayStatus | "all">("all");
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const [reminderModalOpen, setReminderModalOpen] = useState(false);
   const [reminderMessage, setReminderMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
+  // Map API submissions to display rows
+  const submissions: SubmissionRow[] = useMemo(() => {
+    if (!submissionData?.data) return [];
+    return submissionData.data.map((sub) => ({
+      studentId: sub.user_id,
+      studentName: sub.user?.username || sub.user_id,
+      email: sub.user?.email,
+      status: deriveDisplayStatus(sub, assignment?.end_time ?? undefined),
+      submittedAt: sub.created_at,
+      score: sub.score,
+      maxScore: 100,
+      verdict: sub.verdict,
+      testCasesPassed: sub.test_cases_passed,
+      totalTestCases: sub.total_test_cases,
+    }));
+  }, [submissionData, assignment?.end_time]);
+
+  const totalSubmissions = submissionData?.total ?? submissions.length;
+
   // Statistics
   const stats = useMemo(() => {
-    const submitted = assignment.submissions.filter(
-      (s) => s.status === "submitted" || s.status === "graded" || s.status === "late"
-    ).length;
-    const graded = assignment.submissions.filter((s) => s.status === "graded").length;
-    const notSubmitted = assignment.submissions.filter((s) => s.status === "not_submitted").length;
-    const late = assignment.submissions.filter((s) => s.status === "late").length;
-    return { submitted, graded, notSubmitted, late };
-  }, [assignment.submissions]);
+    const submitted = submissions.length;
+    const graded = submissions.filter((s) => s.status === "graded").length;
+    const late = submissions.filter((s) => s.status === "late").length;
+    return { submitted, graded, late };
+  }, [submissions]);
 
   // Filtered submissions
   const filteredSubmissions = useMemo(() => {
-    return assignment.submissions.filter((s) => {
+    return submissions.filter((s) => {
       const matchesSearch = s.studentName.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === "all" || s.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [assignment.submissions, searchQuery, statusFilter]);
+  }, [submissions, searchQuery, statusFilter]);
 
   const toggleSelectAll = useCallback(() => {
     if (selectedStudents.size === filteredSubmissions.length) {
@@ -202,15 +176,12 @@ export default function AssignmentSubmissionsPage() {
   }, []);
 
   const handleOpenReminderModal = useCallback(() => {
-    const notSubmittedIds = assignment.submissions
-      .filter((s) => s.status === "not_submitted")
-      .map((s) => s.studentId);
-    setSelectedStudents(new Set(notSubmittedIds));
+    setSelectedStudents(new Set(submissions.map((s) => s.studentId)));
     setReminderMessage(
-      `Kính gửi Phụ huynh,\n\nHọc sinh của quý phụ huynh chưa nộp bài tập "${assignment.title}". Vui lòng nhắc nhở em hoàn thành trước hạn.\n\nTrân trọng!`
+      `Kính gửi học sinh,\n\nNhắc nhở về bài tập "${assignment?.title || ""}". Vui lòng hoàn thành trước hạn.\n\nTrân trọng!`
     );
     setReminderModalOpen(true);
-  }, [assignment]);
+  }, [submissions, assignment?.title]);
 
   const handleSendReminder = useCallback(async () => {
     if (selectedStudents.size === 0) return;
@@ -225,8 +196,25 @@ export default function AssignmentSubmissionsPage() {
     }
   }, [selectedStudents]);
 
+  const assignmentType = assignment?.type || "homework";
   const TypeIcon =
-    assignment.type === "quiz" ? FileQuestion : assignment.type === "code" ? Code2 : FileText;
+    assignmentType === "live_coding" ? Code2 : assignmentType === "homework" ? FileQuestion : FileText;
+
+  if (assignmentLoading || submissionsLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!assignment) {
+    return (
+      <div className="container max-w-6xl py-6 text-center text-muted-foreground">
+        Không tìm thấy bài tập
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-6xl py-6 space-y-6">
@@ -242,9 +230,9 @@ export default function AssignmentSubmissionsPage() {
             <div
               className={cn(
                 "p-2 rounded-lg",
-                assignment.type === "quiz" && "bg-blue-100 text-blue-600",
-                assignment.type === "code" && "bg-purple-100 text-purple-600",
-                assignment.type === "essay" && "bg-orange-100 text-orange-600"
+                assignmentType === "live_coding" && "bg-purple-100 text-purple-600",
+                assignmentType === "homework" && "bg-blue-100 text-blue-600",
+                assignmentType === "project" && "bg-orange-100 text-orange-600"
               )}
             >
               <TypeIcon className="h-5 w-5" />
@@ -252,7 +240,7 @@ export default function AssignmentSubmissionsPage() {
             <div>
               <h1 className="text-xl font-semibold">{assignment.title}</h1>
               <p className="text-sm text-muted-foreground">
-                Hạn nộp: {formatDate(assignment.dueDate)}
+                Hạn nộp: {formatDate(assignment.end_time)}
               </p>
             </div>
           </div>
@@ -264,33 +252,25 @@ export default function AssignmentSubmissionsPage() {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-4 gap-4">
-        <StatCard
-          icon={<Users className="h-5 w-5" />}
-          label="Tổng học sinh"
-          value={assignment.totalStudents}
-          color="bg-gray-100 text-gray-700"
-        />
+      <div className="grid grid-cols-3 gap-4">
         <StatCard
           icon={<CheckCircle2 className="h-5 w-5" />}
-          label="Đã nộp"
-          value={stats.submitted}
-          subValue={`${Math.round((stats.submitted / assignment.totalStudents) * 100)}%`}
+          label="Tổng bài nộp"
+          value={totalSubmissions}
           color="bg-blue-100 text-blue-700"
-        />
-        <StatCard
-          icon={<XCircle className="h-5 w-5" />}
-          label="Chưa nộp"
-          value={stats.notSubmitted}
-          subValue={`${Math.round((stats.notSubmitted / assignment.totalStudents) * 100)}%`}
-          color="bg-red-100 text-red-700"
         />
         <StatCard
           icon={<CheckCircle2 className="h-5 w-5" />}
           label="Đã chấm điểm"
           value={stats.graded}
-          subValue={`${Math.round((stats.graded / assignment.totalStudents) * 100)}%`}
+          subValue={totalSubmissions > 0 ? `${Math.round((stats.graded / totalSubmissions) * 100)}%` : undefined}
           color="bg-green-100 text-green-700"
+        />
+        <StatCard
+          icon={<Clock className="h-5 w-5" />}
+          label="Nộp muộn"
+          value={stats.late}
+          color="bg-yellow-100 text-yellow-700"
         />
       </div>
 
@@ -307,7 +287,7 @@ export default function AssignmentSubmissionsPage() {
         </div>
         <Select
           value={statusFilter}
-          onValueChange={(v) => setStatusFilter(v as SubmissionStatus | "all")}
+          onValueChange={(v) => setStatusFilter(v as DisplayStatus | "all")}
         >
           <SelectTrigger className="w-40">
             <Filter className="h-4 w-4 mr-2" />
@@ -316,7 +296,6 @@ export default function AssignmentSubmissionsPage() {
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
             <SelectItem value="submitted">Đã nộp</SelectItem>
-            <SelectItem value="not_submitted">Chưa nộp</SelectItem>
             <SelectItem value="late">Nộp muộn</SelectItem>
             <SelectItem value="graded">Đã chấm</SelectItem>
           </SelectContent>
@@ -402,36 +381,16 @@ export default function AssignmentSubmissionsPage() {
                       {formatDate(submission.submittedAt)}
                     </td>
                     <td className="p-3">
-                      {submission.score !== undefined ? (
-                        <span className="font-medium">
-                          {submission.score}/{submission.maxScore || assignment.maxScore}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
+                      <span className="font-medium">
+                        {submission.score}/{submission.maxScore}
+                      </span>
                     </td>
                     <td className="p-3">
                       <div className="flex items-center justify-end gap-2">
-                        {(submission.status === "submitted" || submission.status === "late") && (
-                          <Button variant="ghost" size="sm" className="gap-1">
-                            <Eye className="h-4 w-4" />
-                            Xem bài
-                          </Button>
-                        )}
-                        {submission.status === "not_submitted" && submission.parentId && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedStudents(new Set([submission.studentId]));
-                              setReminderModalOpen(true);
-                            }}
-                            className="gap-1 text-yellow-600 hover:text-yellow-700"
-                          >
-                            <Bell className="h-4 w-4" />
-                            Nhắc nhở
-                          </Button>
-                        )}
+                        <Button variant="ghost" size="sm" className="gap-1">
+                          <Eye className="h-4 w-4" />
+                          Xem bài
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -440,23 +399,21 @@ export default function AssignmentSubmissionsPage() {
                       <td colSpan={6} className="p-4 pl-16">
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
-                            <span className="text-muted-foreground">Phụ huynh:</span>{" "}
-                            <span className="font-medium">
-                              {submission.parentName || "Chưa cập nhật"}
-                            </span>
-                          </div>
-                          <div>
                             <span className="text-muted-foreground">Email:</span>{" "}
-                            <span>{submission.parentEmail || "-"}</span>
+                            <span>{submission.email || "-"}</span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground">Số điện thoại:</span>{" "}
-                            <span>{submission.parentPhone || "-"}</span>
+                            <span className="text-muted-foreground">Verdict:</span>{" "}
+                            <span className="font-medium">{submission.verdict}</span>
                           </div>
-                          {submission.status === "not_submitted" && (
+                          <div>
+                            <span className="text-muted-foreground">Test cases:</span>{" "}
+                            <span>{submission.testCasesPassed}/{submission.totalTestCases}</span>
+                          </div>
+                          {submission.status === "late" && (
                             <div className="flex items-center gap-2 text-yellow-600">
                               <AlertTriangle className="h-4 w-4" />
-                              Học sinh chưa nộp bài
+                              Bài nộp muộn
                             </div>
                           )}
                         </div>
@@ -494,10 +451,10 @@ export default function AssignmentSubmissionsPage() {
               </label>
               <div className="flex flex-wrap gap-2 mt-2 max-h-24 overflow-y-auto">
                 {Array.from(selectedStudents).map((studentId) => {
-                  const student = assignment.submissions.find((s) => s.studentId === studentId);
+                  const student = submissions.find((s) => s.studentId === studentId);
                   return (
                     <Badge key={studentId} variant="secondary" className="gap-1">
-                      {student?.studentName}
+                      {student?.studentName || studentId}
                       <button
                         onClick={() => toggleSelectStudent(studentId)}
                         className="ml-1 hover:text-destructive"
