@@ -13,8 +13,8 @@ import {
   LinkedAccountsSettings,
 } from "@/components/settings";
 import type { SettingsSection } from "@/components/settings";
-import { useAuthStore } from "@/stores/auth.store";
-import { useMe, useChangePassword, useDeleteAccount } from "@/hooks/queries/use-auth";
+import { useAuthStore, type UnifiedRole } from "@/stores/auth.store";
+import { useMe, useChangePassword, useDeleteAccount, useSwitchRole } from "@/hooks/queries/use-auth";
 import { getDeviceInfo } from "@/services/auth.service";
 import { appearanceStorage } from "@/lib/appearance-storage";
 
@@ -24,6 +24,7 @@ export default function SettingsPage() {
   const { data: meData } = useMe();
   const changePassword = useChangePassword();
   const deleteAccount = useDeleteAccount();
+  const switchRole = useSwitchRole();
 
   const handlePasswordChange = async (currentPassword: string, newPassword: string) => {
     const deviceInfo = getDeviceInfo();
@@ -39,6 +40,14 @@ export default function SettingsPage() {
     await deleteAccount.mutateAsync({ password });
   };
 
+  const handleSwitchRole = async (role: UnifiedRole) => {
+    await switchRole.mutateAsync({
+      role_id: role.id,
+      role_type: role.type,
+      organization_id: role.organization_id || undefined,
+    });
+  };
+
   const renderContent = () => {
     switch (activeSection) {
       case "account":
@@ -47,6 +56,7 @@ export default function SettingsPage() {
             user={{ email: user?.email || "", has2FA: false, lastPasswordChange: meData?.password_changed_at }}
             onPasswordChange={handlePasswordChange}
             onDeleteAccount={handleDeleteAccount}
+            onSwitchRole={handleSwitchRole}
           />
         );
       case "profile":
@@ -76,6 +86,7 @@ export default function SettingsPage() {
             user={{ email: user?.email || "", has2FA: false, lastPasswordChange: meData?.password_changed_at }}
             onPasswordChange={handlePasswordChange}
             onDeleteAccount={handleDeleteAccount}
+            onSwitchRole={handleSwitchRole}
           />
         );
     }
