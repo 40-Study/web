@@ -259,7 +259,7 @@ export function useEnrolledCourses() {
       return raw.map((c): EnrolledCourse => ({
         ...mapApiCourse(c),
         progress: c.progress_percentage ? parseFloat(c.progress_percentage) : 0,
-        completedLessons: 0,
+        completedLessons: c.completed_lessons ?? 0,
         totalLessons: c.total_lessons ?? 0,
         enrolledAt: c.enrolled_at ?? c.created_at ?? "",
         lastAccessedAt: c.last_accessed_at,

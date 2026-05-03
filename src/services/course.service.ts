@@ -63,6 +63,7 @@ export interface ApiCourse {
   progress_percentage?: string;
   enrolled_at?: string;
   last_accessed_at?: string;
+  completed_lessons?: number;
 }
 
 export interface CourseListParams {
@@ -183,6 +184,8 @@ export const courseService = {
             enrolled_at: string;
             completed_at?: string;
             last_accessed_at?: string;
+            total_lessons: number;
+            completed_lessons: number;
           }>;
           total: number;
         };
@@ -197,6 +200,8 @@ export const courseService = {
           progress_percentage: e.progress_percentage,
           enrolled_at: e.enrolled_at,
           last_accessed_at: e.last_accessed_at,
+          total_lessons: e.total_lessons,
+          completed_lessons: e.completed_lessons,
           // Defaults for required ApiCourse fields
           price: "0",
           level: "beginner",
