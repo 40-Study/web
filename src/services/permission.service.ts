@@ -22,7 +22,7 @@ type R<T> = { message: string; data: T };
 export const permissionService = {
   /** GET /permissions */
   getAll: () =>
-    api.get<R<Permission[]>>("/permissions").then((r) => r.data.data),
+    api.get<R<{ permissions: Permission[] }>>("/permissions").then((r) => r.data.data.permissions),
 
   /** GET /permissions/:id */
   getById: (id: string) =>

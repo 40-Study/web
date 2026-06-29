@@ -47,7 +47,7 @@ export const organizationService = {
 
   /** GET /organizations */
   list: () =>
-    api.get<R<Organization[]>>("/organizations").then((r) => r.data.data),
+    api.get<R<{ organizations: Organization[] }>>("/organizations").then((r) => r.data.data.organizations),
 
   /** GET /organizations/:orgId */
   getById: (orgId: string) =>

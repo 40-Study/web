@@ -112,7 +112,7 @@ export const roleService = {
 
   /** GET /system-roles */
   listSystemRoles: () =>
-    api.get<R<SystemRole[]>>("/system-roles").then((r) => r.data.data),
+    api.get<R<{ roles: SystemRole[] }>>("/system-roles").then((r) => r.data.data.roles),
 
   /** GET /system-roles/:id */
   getSystemRole: (id: string) =>
