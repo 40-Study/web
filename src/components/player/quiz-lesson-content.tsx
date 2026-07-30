@@ -66,7 +66,7 @@ function renderQuestionText(text: string, codeSnippets?: string[]) {
     return <span>{text}</span>;
   }
 
-  let result = text;
+  const result = text;
   const parts: (string | { type: "code"; content: string })[] = [];
 
   // Simple approach: replace code snippets with markers then split

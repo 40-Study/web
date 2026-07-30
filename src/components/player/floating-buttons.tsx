@@ -13,6 +13,11 @@ interface FloatingButtonsProps {
     type: "video" | "quiz" | "exercise";
   };
   className?: string;
+  /**
+   * Cho phép trang cha tự xử lý nút Sandbox (vd. trang lesson mở
+   * CodeEditorModal riêng). Không truyền -> dùng FloatingSandbox nội bộ.
+   */
+  onSandboxOpen?: () => void;
 }
 
 /** 6-dot grid icon (3x2) */
@@ -30,7 +35,11 @@ function GridDotsIcon({ className }: { className?: string }) {
 }
 
 /** Fixed floating action buttons: AI Assistant + Sandbox + menu grid (bottom-right) */
-export function FloatingButtons({ lessonContext, className }: FloatingButtonsProps) {
+export function FloatingButtons({
+  lessonContext,
+  className,
+  onSandboxOpen,
+}: FloatingButtonsProps) {
   const [isAssistantOpen, setAssistantOpen] = useState(false);
   const [isSandboxOpen, setSandboxOpen] = useState(false);
   const [isMenuOpen, setMenuOpen] = useState(false);
@@ -74,7 +83,9 @@ export function FloatingButtons({ lessonContext, className }: FloatingButtonsPro
           {/* Sandbox button - blue background */}
           <button
             onClick={() => {
-              setSandboxOpen(true);
+              // Trang cha có handler riêng thì nhường; không thì mở sandbox nội bộ
+              if (onSandboxOpen) onSandboxOpen();
+              else setSandboxOpen(true);
               setMenuOpen(false);
             }}
             className="flex items-center gap-3 rounded-2xl bg-primary-600 py-3 pl-4 pr-5 text-white shadow-lg transition-all hover:bg-primary-700 hover:shadow-xl hover:scale-[1.02]"
