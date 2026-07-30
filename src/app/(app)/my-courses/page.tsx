@@ -103,10 +103,10 @@ export default function MyCoursesPage() {
 
   // Map certificates to achievement format
   const achievements = useMemo(() => {
-    const certs = certificatesData?.certificates ?? [];
+    const certs = certificatesData?.data ?? [];
     return certs.slice(0, 3).map((cert) => ({
       id: cert.id,
-      title: cert.course?.title ?? "Chứng chỉ",
+      title: cert.course_name || "Chứng chỉ",
       description: "",
       icon: "🏆",
       earnedAt: cert.issued_at
