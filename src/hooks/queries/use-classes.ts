@@ -14,6 +14,8 @@ export const classKeys = {
     [...classKeys.all, "detail", courseId, classId] as const,
   students: (courseId: string, classId: string) =>
     [...classKeys.all, "students", courseId, classId] as const,
+  studentsByClass: (classId: string) =>
+    [...classKeys.all, "students-by-class", classId] as const,
   teachers: (courseId: string, classId: string) =>
     [...classKeys.all, "teachers", courseId, classId] as const,
   attendances: (courseId: string, classId: string) =>
@@ -81,6 +83,15 @@ export function useClassStudents(courseId: string, classId: string) {
     queryKey: classKeys.students(courseId, classId),
     queryFn: () => classService.getStudents(courseId, classId),
     enabled: !!courseId && !!classId,
+  });
+}
+
+/** Get students in a class khi chỉ có classId (vd. trang điểm danh) */
+export function useClassStudentsByClassId(classId: string) {
+  return useQuery({
+    queryKey: classKeys.studentsByClass(classId),
+    queryFn: () => classService.getStudentsByClassId(classId),
+    enabled: !!classId,
   });
 }
 

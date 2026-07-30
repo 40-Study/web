@@ -1120,6 +1120,12 @@ function ClassManagementDialog({
                     {cls.status && ` · ${cls.status}`}
                   </p>
                 </div>
+                <Link
+                  href={`/teacher/classes/${cls.id}/attendance`}
+                  className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-primary-600 hover:border-primary-300 transition-colors"
+                >
+                  Điểm danh
+                </Link>
                 <Button
                   variant="ghost"
                   size="icon"

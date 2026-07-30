@@ -144,6 +144,17 @@ export const classService = {
       .get<R<ClassStudent[]>>(`/courses/${courseId}/classes/${classId}/students`)
       .then((r) => r.data.data),
 
+  /**
+   * GET /classes/:classId/students — cùng handler với getStudents nhưng KHÔNG
+   * cần courseId (backend đăng ký cả hai dạng: class_router.go:35 và
+   * course_router.go:55). Dùng cho màn hình chỉ có classId trong URL, vd.
+   * trang điểm danh — tránh phải fetch class chỉ để lấy course_id.
+   */
+  getStudentsByClassId: (classId: string) =>
+    api
+      .get<R<ClassStudent[]>>(`/classes/${classId}/students`)
+      .then((r) => r.data.data),
+
   // ── Content Schedule ──────────────────────────────────────────────────────
 
   /** GET /courses/:courseId/classes/:classId/contents */
