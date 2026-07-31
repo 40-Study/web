@@ -986,3 +986,31 @@ html {
 .fc-custom-wrap .fc-scroller::-webkit-scrollbar-thumb:hover {
   background: #bdc1c6;
 }
+
+/* ─── Certificate Print ────────────────────────────────────────────────────
+   Khi in trang có tấm chứng chỉ, chỉ in đúng tấm đó.
+   `body:has(.certificate-sheet)` là bắt buộc — nếu không, quy tắc ẩn sẽ áp
+   lên MỌI trang và phá chức năng in ở nơi khác.                             */
+@media print {
+  body:has(.certificate-sheet) * {
+    visibility: hidden;
+  }
+
+  body:has(.certificate-sheet) .certificate-sheet,
+  body:has(.certificate-sheet) .certificate-sheet * {
+    visibility: visible;
+  }
+
+  body:has(.certificate-sheet) .certificate-sheet {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    max-width: none;
+    border-color: #111 !important;
+    box-shadow: none !important;
+  }
+
+  @page {
+    margin: 14mm;
+  }
+}

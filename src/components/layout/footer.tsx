@@ -13,7 +13,9 @@ const learningLinks = [
   { label: "Lộ trình học", href: "/roadmap" },
   { label: "Khóa học AI", href: "/courses/ai" },
   { label: "Khóa học STEAM", href: "/courses/steam" },
-  { label: "Chứng chỉ", href: "/certificates" },
+  // Trỏ tới trang tra cứu công khai: footer hiện cả với khách chưa đăng nhập,
+  // còn /certificates nằm trong group (app) nên bị RoleGuard chặn.
+  { label: "Tra cứu chứng chỉ", href: "/certificates/verify" },
 ];
 
 export function Footer() {

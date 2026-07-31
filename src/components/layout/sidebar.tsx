@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Home, BookOpen, MessageSquare, Calendar, Award, Users, Sparkles,
   Trophy, Coins, UsersRound, ChevronLeft, ChevronRight, UserPlus, GraduationCap,
-  CalendarCheck,
+  CalendarCheck, ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
@@ -34,6 +34,7 @@ export function Sidebar() {
         ...(isStudent ? [{ label: "Khóa học của tôi", href: "/my-courses", icon: GraduationCap }] : []),
         ...(isStudent ? [{ label: "Lịch học", href: "/schedule", icon: Calendar }] : []),
         ...(isStudent ? [{ label: "Chuyên cần", href: "/my-attendance", icon: CalendarCheck }] : []),
+        ...(isStudent ? [{ label: "Chứng chỉ", href: "/certificates", icon: ScrollText }] : []),
         { label: "Bạn bè", href: "/friends", icon: UserPlus },
         { label: "Tin nhắn", href: "/messages", icon: MessageSquare },
         { label: "Nhóm", href: "/groups", icon: UsersRound },
