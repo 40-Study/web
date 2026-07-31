@@ -16,7 +16,10 @@ const PUBLIC_PATHS = ["/", "/courses", "/discussions"];
 
 for (const path of PUBLIC_PATHS) {
   test(`${path} xem được khi chưa đăng nhập`, async ({ page }) => {
-    await page.goto(path);
+    const response = await page.goto(path);
+
+    // HTTP phải OK — bắt được 500/404 mà "body không rỗng" bỏ lọt
+    expect(response?.status()).toBeLessThan(400);
 
     // Không bị đẩy về login/role-selection
     await expect(page).not.toHaveURL(/\/login/);
@@ -24,6 +27,15 @@ for (const path of PUBLIC_PATHS) {
 
     // Trang render thật, không phải màn trắng
     await expect(page.locator("body")).not.toBeEmpty();
+
+    // Không rơi vào màn lỗi của Next. Assertion này quan trọng: lần chạy đầu
+    // trang hỏng với "missing required error components" mà test vẫn pass, vì
+    // chuỗi đó CŨNG làm body khác rỗng.
+    const body = await page.locator("body").innerText();
+    expect(body).not.toContain("missing required error components");
+    expect(body).not.toContain("Application error");
+    expect(body).not.toContain("Unhandled Runtime Error");
+    expect(body).not.toContain("This page could not be found");
   });
 }
 

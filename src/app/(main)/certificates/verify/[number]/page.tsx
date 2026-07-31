@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CertificateVerifyResult } from "@/components/certificate/certificate-verify-result";
 import { verifyCertificateServer } from "@/lib/server-fetchers/certificate";
+import { SITE_URL } from "@/lib/seo";
 
 /**
  * Tra cứu chứng chỉ — TRANG CÔNG KHAI (không cần đăng nhập).
@@ -9,10 +10,6 @@ import { verifyCertificateServer } from "@/lib/server-fetchers/certificate";
  * lên LinkedIn/Facebook, cần OpenGraph đúng tên người học + khóa học.
  * Nằm trong group (main) — group này không có RoleGuard (khác với (app)).
  */
-
-function siteUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-}
 
 export async function generateMetadata({
   params,
@@ -32,7 +29,7 @@ export async function generateMetadata({
   const description = `Chứng chỉ hoàn thành khóa học${
     result.course_name ? ` "${result.course_name}"` : ""
   } do ForteX cấp. Mã: ${result.certificate_number}.`;
-  const url = `${siteUrl()}/certificates/verify/${encodeURIComponent(params.number)}`;
+  const url = `${SITE_URL}/certificates/verify/${encodeURIComponent(params.number)}`;
 
   return {
     title,
@@ -51,7 +48,7 @@ export default async function VerifyCertificatePage({
   params: { number: string };
 }) {
   const result = await verifyCertificateServer(params.number);
-  const verifyUrl = `${siteUrl()}/certificates/verify/${encodeURIComponent(params.number)}`;
+  const verifyUrl = `${SITE_URL}/certificates/verify/${encodeURIComponent(params.number)}`;
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">

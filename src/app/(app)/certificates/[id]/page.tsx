@@ -9,6 +9,7 @@ import {
   CertificateView,
 } from "@/components/certificate/certificate-view";
 import { useCertificate } from "@/hooks/queries/use-certificates";
+import { SITE_URL } from "@/lib/seo";
 
 export default function CertificateDetailPage() {
   const params = useParams();
@@ -16,8 +17,10 @@ export default function CertificateDetailPage() {
   const { data: certificate, isLoading, isError } = useCertificate(id);
   const [copied, setCopied] = useState(false);
 
+  // Dùng SITE_URL thay window.location.origin: trang này vẫn được SSR lần đầu,
+  // nên window chưa có -> URL sẽ thiếu domain rồi mới đổi sau hydrate.
   const verifyUrl = certificate
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/certificates/verify/${encodeURIComponent(certificate.certificate_number)}`
+    ? `${SITE_URL}/certificates/verify/${encodeURIComponent(certificate.certificate_number)}`
     : "";
 
   async function copyVerifyLink() {
