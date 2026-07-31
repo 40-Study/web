@@ -9,8 +9,7 @@
  * sẻ link) và sitemap.xml.
  */
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { getPublicApiBaseUrl } from "./base-url";
 
 export interface PublicCourseSummary {
   id: string;
@@ -29,7 +28,7 @@ export async function getCourseBySlugServer(
 ): Promise<PublicCourseSummary | null> {
   try {
     const res = await fetch(
-      `${API_BASE_URL}/courses/slug/${encodeURIComponent(slug)}`,
+      `${getPublicApiBaseUrl()}/courses/slug/${encodeURIComponent(slug)}`,
       { next: { revalidate: 300 } }
     );
     if (!res.ok) return null;
@@ -50,22 +49,38 @@ export async function getCourseBySlugServer(
 export async function listPublishedCoursesServer(): Promise<
   PublicCourseSummary[]
 > {
-  try {
-    const res = await fetch(`${API_BASE_URL}/courses?page_size=200`, {
-      next: { revalidate: 3600 },
-    });
-    if (!res.ok) return [];
+  const pageSize = 100; // CourseService reset mọi giá trị > 100 về mặc định 20.
+  const published: PublicCourseSummary[] = [];
 
-    const json = (await res.json()) as {
-      data?: { courses?: PublicCourseSummary[] };
-    };
-    const courses = json.data?.courses ?? [];
+  for (let page = 1; ; page += 1) {
+    try {
+      const res = await fetch(
+        `${getPublicApiBaseUrl()}/courses?status=published&page=${page}&page_size=${pageSize}`,
+        { next: { revalidate: 3600 } }
+      );
+      if (!res.ok) return published;
 
-    // Chỉ khóa học đã publish + có slug mới vào sitemap
-    return courses.filter(
-      (c) => !!c.slug && (c.status === undefined || c.status === "published")
-    );
-  } catch {
-    return [];
+      const json = (await res.json()) as {
+        data?: {
+          courses?: PublicCourseSummary[];
+          total?: number;
+        };
+      };
+      const courses = json.data?.courses ?? [];
+
+      published.push(
+        ...courses.filter(
+          (course) =>
+            !!course.slug &&
+            (course.status === undefined || course.status === "published")
+        )
+      );
+
+      const total = json.data?.total ?? courses.length;
+      if (courses.length === 0 || page * pageSize >= total) return published;
+    } catch {
+      // Giữ các page đã lấy được nếu backend lỗi giữa chừng.
+      return published;
+    }
   }
 }

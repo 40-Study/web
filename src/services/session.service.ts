@@ -56,6 +56,20 @@ export interface ClassSession {
   updated_at?: string;
 }
 
+export interface ClassSessionListResponse {
+  sessions: ClassSession[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+interface ClassSessionListApiResponse {
+  data: ClassSession[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 export interface CreateClassSessionDTO {
   date: string;
   start_time: string;
@@ -190,8 +204,17 @@ export const sessionService = {
   /** GET /classes/:classId/sessions */
   getSessions: (classId: string, params?: { page?: number; page_size?: number }) =>
     api
-      .get<R<{ sessions: ClassSession[]; total: number }>>(`/classes/${classId}/sessions`, { params })
-      .then((r) => r.data.data),
+      .get<R<ClassSessionListApiResponse>>(`/classes/${classId}/sessions`, {
+        params,
+      })
+      .then(
+        (r): ClassSessionListResponse => ({
+          sessions: r.data.data.data,
+          total: r.data.data.total,
+          page: r.data.data.page,
+          page_size: r.data.data.page_size,
+        })
+      ),
 
   /** GET /classes/:classId/sessions/:sessionId */
   getSession: (classId: string, sessionId: string) =>

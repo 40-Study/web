@@ -295,14 +295,22 @@ export function useFeaturedCourses() {
 
 /** Fetch course by slug — tries slug first, falls back to ID lookup */
 export function useCourseBySlug(slug: string) {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
   return useQuery({
-    queryKey: courseKeys.detail(slug),
+    queryKey: [...courseKeys.detail(slug), isAuthenticated] as const,
     queryFn: async (): Promise<CourseDetail> => {
       try {
         const raw = await courseService.getCourseBySlug(slug);
         return mapApiCourseDetail(raw);
-      } catch {
-        // Slug endpoint may not exist yet — try by ID as fallback
+      } catch (slugError) {
+        // Fallback tra theo ID CHI dùng được khi đã đăng nhập: GET /courses/:id
+        // có auth middleware (course_router.go), còn GET /courses/slug/:slug
+        // thì public. Khách chưa đăng nhập mà rơi vào fallback sẽ nhận 401 ->
+        // api-client ép window.location = "/login" -> bị đá khỏi trang công
+        // khai. Nên với khách, slug không tìm thấy = không tìm thấy.
+        if (!isAuthenticated) throw slugError;
+
         const byId = await courseService.getCourseById(slug);
         return mapApiCourseDetail(byId);
       }

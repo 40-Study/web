@@ -21,7 +21,8 @@ export default function ClassAttendancePage() {
 
   const { data: sessionsData, isLoading: sessionsLoading } = useClassSessions(
     classId,
-    { page: 1, page_size: 100 }
+    // Backend giới hạn page_size tối đa 50; giá trị lớn hơn bị reset về 20.
+    { page: 1, page_size: 50 }
   );
   const sessions = useMemo(
     () =>

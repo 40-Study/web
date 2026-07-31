@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
+const E2E_PORT = process.env.E2E_PORT ?? "3100";
+const BASE_URL =
+  process.env.E2E_BASE_URL ?? `http://127.0.0.1:${E2E_PORT}`;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -24,7 +26,9 @@ export default defineConfig({
   // Tự dựng dev server nếu chưa có cái nào đang chạy.
   // Dev server Next lần đầu compile khá lâu -> timeout rộng.
   webServer: {
-    command: "npm run dev",
+    // Ghim port để Next không tự nhảy sang 3001/3002 trong khi Playwright vẫn
+    // bắn request vào baseURL cũ khi máy đang có dev server khác.
+    command: `npm run dev -- --hostname 127.0.0.1 --port ${E2E_PORT}`,
     url: BASE_URL,
     reuseExistingServer: true,
     timeout: 180_000,

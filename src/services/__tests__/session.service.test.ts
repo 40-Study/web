@@ -101,6 +101,37 @@ describe("điểm danh — dùng hệ canonical /sessions/:sessionId", () => {
   });
 });
 
+describe("getSessions", () => {
+  it("unwrap danh sách theo ClassSessionListDTO của backend", async () => {
+    mockApi.get.mockResolvedValue(
+      envelope({
+        data: [
+          {
+            id: SESSION_ID,
+            class_id: "c1",
+            date: "2026-07-31",
+            start_time: "08:00",
+            end_time: "10:00",
+            status: "scheduled",
+          },
+        ],
+        total: 1,
+        page: 1,
+        page_size: 20,
+      })
+    );
+
+    const result = await sessionService.getSessions("c1", {
+      page: 1,
+      page_size: 20,
+    });
+
+    expect(result.sessions).toHaveLength(1);
+    expect(result.sessions[0]?.id).toBe(SESSION_ID);
+    expect(result.total).toBe(1);
+  });
+});
+
 describe("học sinh tự check-in / check-out", () => {
   it("checkIn -> POST /sessions/:sessionId/check-in", async () => {
     mockApi.post.mockResolvedValue(envelope({}));

@@ -8,9 +8,7 @@
  */
 
 import type { VerifyCertificateResponse } from "@/services/certificate.service";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { getPublicApiBaseUrl } from "./base-url";
 
 /**
  * Trả null khi số chứng chỉ không tồn tại (backend trả 404) hoặc backend lỗi
@@ -21,7 +19,7 @@ export async function verifyCertificateServer(
 ): Promise<VerifyCertificateResponse | null> {
   try {
     const res = await fetch(
-      `${API_BASE_URL}/certificates/verify/${encodeURIComponent(certificateNumber)}`,
+      `${getPublicApiBaseUrl()}/certificates/verify/${encodeURIComponent(certificateNumber)}`,
       { next: { revalidate: 300 } }
     );
 

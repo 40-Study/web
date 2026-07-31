@@ -49,6 +49,28 @@ export interface ClassStudent {
   email?: string;
 }
 
+interface ClassStudentApiResponse {
+  student_id: string;
+  user_name: string;
+  full_name?: string;
+  email?: string;
+}
+
+interface ClassStudentListApiResponse {
+  students: ClassStudentApiResponse[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+function mapClassStudents(response: ClassStudentListApiResponse): ClassStudent[] {
+  return response.students.map((student) => ({
+    student_id: student.student_id,
+    name: student.full_name?.trim() || student.user_name,
+    email: student.email,
+  }));
+}
+
 export interface Attendance {
   id: string;
   class_id: string;
@@ -141,8 +163,11 @@ export const classService = {
   /** GET /courses/:courseId/classes/:classId/students */
   getStudents: (courseId: string, classId: string) =>
     api
-      .get<R<ClassStudent[]>>(`/courses/${courseId}/classes/${classId}/students`)
-      .then((r) => r.data.data),
+      .get<R<ClassStudentListApiResponse>>(
+        `/courses/${courseId}/classes/${classId}/students`,
+        { params: { page: 1, page_size: 100 } }
+      )
+      .then((r) => mapClassStudents(r.data.data)),
 
   /**
    * GET /classes/:classId/students — cùng handler với getStudents nhưng KHÔNG
@@ -152,8 +177,10 @@ export const classService = {
    */
   getStudentsByClassId: (classId: string) =>
     api
-      .get<R<ClassStudent[]>>(`/classes/${classId}/students`)
-      .then((r) => r.data.data),
+      .get<R<ClassStudentListApiResponse>>(`/classes/${classId}/students`, {
+        params: { page: 1, page_size: 100 },
+      })
+      .then((r) => mapClassStudents(r.data.data)),
 
   // ── Content Schedule ──────────────────────────────────────────────────────
 
