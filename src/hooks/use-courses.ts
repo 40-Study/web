@@ -8,6 +8,7 @@ import {
   ApiCategory,
 } from "@/services/course.service";
 import { categoryService } from "@/services/category.service";
+import { useAuthStore } from "@/stores/auth.store";
 import {
   Course,
   CourseDetail,
@@ -250,9 +251,20 @@ export function useSearchSuggestions(query: string) {
   });
 }
 
-/** Fetch currently authenticated user's enrolled courses */
+/**
+ * Fetch currently authenticated user's enrolled courses.
+ *
+ * `enabled: isAuthenticated` là BẮT BUỘC: hook này được dùng cả trên trang chi
+ * tiết khóa học — trang công khai, khách chưa đăng nhập vẫn xem được. Nếu vẫn
+ * gọi /enrollments khi chưa đăng nhập thì API trả 401, api-client thử refresh
+ * token, thất bại, rồi `window.location.href = "/login"` — khách bị đá khỏi
+ * trang công khai.
+ */
 export function useEnrolledCourses() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
   return useQuery({
+    enabled: isAuthenticated,
     queryKey: courseKeys.enrolled(),
     queryFn: async (): Promise<EnrolledCourse[]> => {
       const raw = await courseService.getEnrolledCourses();

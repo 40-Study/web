@@ -1,27 +1,36 @@
 import type { MetadataRoute } from "next";
+import { listPublishedCoursesServer } from "@/lib/server-fetchers/course";
 import { SITE_URL, PUBLIC_INDEXABLE_PATHS } from "@/lib/seo";
 
 /**
- * Sitemap — CHỈ liệt kê trang thật sự xem được khi chưa đăng nhập.
+ * Sitemap — chỉ trang xem được khi CHƯA đăng nhập.
  *
- * ⚠️ Vì sao KHÔNG có /courses/[slug] (trang chi tiết khóa học):
- * trang đó nằm ở src/app/(app)/courses/[slug]/ — tức trong group (app), mà
- * (app)/layout.tsx bọc <RoleGuard>. Khách chưa đăng nhập không xem được nội
- * dung. Đưa URL bị chặn vào sitemap sẽ khiến Google thấy trang rỗng/redirect
- * và bị coi là soft-404 — hại SEO hơn là không khai báo.
- * Muốn index chi tiết khóa học thì phải chuyển trang đó ra group công khai
- * (vd. (main)) trước, rồi thêm nhánh fetch động vào đây.
+ * Trang chi tiết khóa học (/courses/[slug]) nằm ở group (main) nên công khai;
+ * URL sinh động từ danh sách khóa học đã publish. Backend chết -> fetcher trả
+ * mảng rỗng, sitemap vẫn build với route tĩnh thay vì làm vỡ `next build`.
  *
- * Trang tra cứu chứng chỉ theo mã (/certificates/verify/[number]) cũng KHÔNG
- * vào sitemap: chứa dữ liệu cá nhân của người học.
+ * KHÔNG đưa vào: mọi route trong group (app)/(teacher)/(admin) vì bị RoleGuard,
+ * và /certificates/verify/[number] vì chứa dữ liệu cá nhân người học.
  */
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
-  return PUBLIC_INDEXABLE_PATHS.map((path) => ({
-    url: `${SITE_URL}${path === "/" ? "" : path}`,
-    lastModified: now,
-    changeFrequency: path === "/" ? "daily" : "weekly",
-    priority: path === "/" ? 1 : 0.7,
+  const staticEntries: MetadataRoute.Sitemap = PUBLIC_INDEXABLE_PATHS.map(
+    (path) => ({
+      url: `${SITE_URL}${path === "/" ? "" : path}`,
+      lastModified: now,
+      changeFrequency: path === "/" ? "daily" : "weekly",
+      priority: path === "/" ? 1 : 0.7,
+    })
+  );
+
+  const courses = await listPublishedCoursesServer();
+  const courseEntries: MetadataRoute.Sitemap = courses.map((c) => ({
+    url: `${SITE_URL}/courses/${encodeURIComponent(c.slug!)}`,
+    lastModified: c.updated_at ? new Date(c.updated_at) : now,
+    changeFrequency: "weekly",
+    priority: 0.8,
   }));
+
+  return [...staticEntries, ...courseEntries];
 }

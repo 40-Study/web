@@ -6,50 +6,80 @@
  * báo URL chứa dữ liệu cá nhân (trang tra cứu theo mã chứng chỉ).
  */
 
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import manifest from "../manifest";
 import robots from "../robots";
 import sitemap from "../sitemap";
 import { DISALLOWED_PATH_PREFIXES, SITE_URL } from "@/lib/seo";
 
-describe("sitemap", () => {
-  const entries = sitemap();
-  const paths = entries.map((e) => e.url.replace(SITE_URL, "") || "/");
+// Không gọi backend thật trong unit test
+vi.mock("@/lib/server-fetchers/course", () => ({
+  listPublishedCoursesServer: vi.fn(),
+}));
 
-  it("mọi URL đều tuyệt đối, cùng domain", () => {
+import { listPublishedCoursesServer } from "@/lib/server-fetchers/course";
+
+const mockList = vi.mocked(listPublishedCoursesServer);
+
+async function paths() {
+  const entries = await sitemap();
+  return entries.map((e) => e.url.replace(SITE_URL, "") || "/");
+}
+
+beforeEach(() => {
+  mockList.mockReset();
+  mockList.mockResolvedValue([
+    { id: "1", slug: "lap-trinh-go", title: "Lập trình Go" },
+    { id: "2", slug: "react-co-ban", title: "React cơ bản" },
+  ]);
+});
+
+describe("sitemap", () => {
+  it("mọi URL đều tuyệt đối, cùng domain", async () => {
+    const entries = await sitemap();
     for (const e of entries) {
       expect(e.url.startsWith(SITE_URL)).toBe(true);
     }
   });
 
-  it("KHÔNG chứa route cần đăng nhập", () => {
-    for (const p of paths) {
+  it("KHÔNG chứa route cần đăng nhập", async () => {
+    for (const p of await paths()) {
       expect(p).not.toMatch(/^\/(admin|teacher|parent|settings|my-)/);
     }
   });
 
-  it("KHÔNG chứa trang auth", () => {
-    for (const p of paths) {
+  it("KHÔNG chứa trang auth", async () => {
+    for (const p of await paths()) {
       expect(p).not.toMatch(/^\/(login|register|otp|forgot-password|reset-password)/);
     }
   });
 
-  it("KHÔNG chứa trang chi tiết khóa học (đang nằm trong group (app) bị RoleGuard)", () => {
-    for (const p of paths) {
-      expect(p).not.toMatch(/^\/courses\/.+/);
-    }
-  });
-
-  it("KHÔNG chứa trang tra cứu theo mã — dữ liệu cá nhân", () => {
-    for (const p of paths) {
+  it("KHÔNG chứa trang tra cứu theo mã — dữ liệu cá nhân", async () => {
+    for (const p of await paths()) {
       expect(p).not.toMatch(/^\/certificates\/verify\/.+/);
     }
   });
 
-  it("có các trang public chính", () => {
-    expect(paths).toContain("/");
-    expect(paths).toContain("/courses");
-    expect(paths).toContain("/certificates/verify");
+  it("có các trang public chính", async () => {
+    const p = await paths();
+    expect(p).toContain("/");
+    expect(p).toContain("/courses");
+    expect(p).toContain("/certificates/verify");
+  });
+
+  it("có trang chi tiết từng khóa học (trang đã được mở công khai)", async () => {
+    const p = await paths();
+    expect(p).toContain("/courses/lap-trinh-go");
+    expect(p).toContain("/courses/react-co-ban");
+  });
+
+  it("backend chết -> vẫn build được sitemap với route tĩnh", async () => {
+    mockList.mockResolvedValue([]);
+    const p = await paths();
+
+    expect(p).toContain("/");
+    expect(p).toContain("/courses");
+    expect(p.some((x) => x.startsWith("/courses/"))).toBe(false);
   });
 });
 

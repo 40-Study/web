@@ -14,6 +14,7 @@ import { CourseDetailHeader } from "@/components/course/course-detail-header";
 import { CourseDetailContent } from "@/components/course/course-detail-content";
 import { CourseDetailSidebar } from "@/components/course/course-detail-sidebar";
 import { useCourseBySlug, useEnrolledCourses, useEnrollCourse } from "@/hooks/use-courses";
+import { useAuthStore } from "@/stores/auth.store";
 
 function LoadingSkeleton() {
   return (
@@ -38,7 +39,11 @@ export default function CourseDetailPage() {
 
   const [justEnrolled, setJustEnrolled] = useState(false);
 
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
   const { data: course, isLoading, error } = useCourseBySlug(slug);
+  // Hook tự bỏ qua khi chưa đăng nhập (enabled: isAuthenticated) — xem
+  // use-courses.ts; nếu vẫn gọi thì khách bị 401 rồi đá về /login.
   const { data: enrolledCourses = [], isLoading: enrolledLoading } = useEnrolledCourses();
   const enrollMutation = useEnrollCourse();
 
@@ -85,6 +90,12 @@ export default function CourseDetailPage() {
   };
 
   const handleEnroll = async () => {
+    // Trang này CÔNG KHAI — khách chưa đăng nhập vẫn xem được. Đăng ký thì
+    // cần tài khoản, nên đưa sang login kèm redirect quay lại đúng khóa học.
+    if (!isAuthenticated) {
+      router.push(`/login?redirect=${encodeURIComponent(`/courses/${courseSlug}`)}`);
+      return;
+    }
     if (isEnrolled) {
       handleStartLearning();
       return;

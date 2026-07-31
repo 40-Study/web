@@ -39,6 +39,19 @@ for (const path of PUBLIC_PATHS) {
   });
 }
 
+test("trang chi tiết khóa học xem được khi chưa đăng nhập (không bị đá về login)", async ({
+  page,
+}) => {
+  // Chỉ move file ra group (main) là CHƯA đủ: useEnrolledCourses từng gọi
+  // /enrollments vô điều kiện -> 401 -> api-client ép window.location = /login.
+  // Test này khoá hành vi đó lại.
+  const res = await page.goto("/courses/khoa-hoc-khong-ton-tai-abc");
+
+  expect(res?.status()).toBeLessThan(500);
+  await page.waitForTimeout(1500); // chờ query chạy xong, nếu có redirect sẽ xảy ra ở đây
+  await expect(page).not.toHaveURL(/\/login/);
+});
+
 test("trang được bảo vệ thì KHÔNG lộ nội dung khi chưa đăng nhập", async ({
   page,
 }) => {
