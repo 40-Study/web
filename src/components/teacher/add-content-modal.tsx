@@ -351,7 +351,7 @@ export function AddContentModal({
       });
     }
     handleClose();
-  }, [contentType, exerciseType, videoTitle, videoDesc, videoFile, videoUrl, videoDocs, videoQuiz, liveTitle, liveDesc, liveDate, liveTime, liveDuration, livePlatform, liveCustomLink, liveReminder, liveRecording, liveDocs, liveQuiz, exTitle, exDesc, exQuiz, exTimeLimit, exLanguage, exTestCases, exSolution, exMinWords, exMaxWords, onSubmit, handleClose]);
+  }, [contentType, exerciseType, videoTitle, videoDesc, videoUrl, uploadedVideoUrl, videoDocs, videoQuiz, liveTitle, liveDesc, liveDate, liveTime, liveDuration, livePlatform, liveCustomLink, liveReminder, liveRecording, liveDocs, liveQuiz, exTitle, exDesc, exQuiz, exTimeLimit, exLanguage, exTestCases, exSolution, exMinWords, exMaxWords, onSubmit, handleClose]);
 
   // Document handlers
   const addDocs = useCallback((files: FileList, target: "video" | "live") => {

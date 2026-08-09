@@ -502,7 +502,7 @@ function FullEventDialog({
 // ─── Page ───────────────────────────────────────────────────────────────────
 
 export default function SchedulePage() {
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const [baseDate, setBaseDate] = useState(new Date(today));
   const [notes, setNotes] = useState<PersonalNote[]>([]);
   const [quickAdd, setQuickAdd] = useState<{ x: number; y: number; date: Date; hour: number } | null>(null);
@@ -525,7 +525,7 @@ export default function SchedulePage() {
       const scrollTo = Math.max(0, (today.getHours() - 7) * 60 - 100);
       gridRef.current.scrollTop = scrollTo;
     }
-  }, []);
+  }, [today]);
 
   const prevWeek = useCallback(() => {
     setBaseDate(prev => {

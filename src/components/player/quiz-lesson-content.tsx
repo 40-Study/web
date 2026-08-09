@@ -183,12 +183,7 @@ export function QuizLessonContent({ quiz, apiQuiz, onSubmit, onSaveAnswer, onBac
     return () => clearInterval(timer);
   }, [isSubmitted, timeLeft]);
 
-  // Auto submit when time runs out
-  useEffect(() => {
-    if (timeLeft === 0 && !isSubmitted) {
-      handleSubmit();
-    }
-  }, [timeLeft, isSubmitted]);
+
 
   const handleSelectAnswer = (optionId: string, optionKey: string) => {
     if (isSubmitted || isSubmitting) return;
@@ -245,6 +240,13 @@ export function QuizLessonContent({ quiz, apiQuiz, onSubmit, onSaveAnswer, onBac
       onSubmit(answers, timeSpent);
     }
   }, [answers, timeLeft, timeLimitMins, onSubmit, isSubmitted, isSubmitting, isApiMode]);
+
+  // Auto submit when time runs out — placed after handleSubmit to satisfy TypeScript declaration order
+  useEffect(() => {
+    if (timeLeft === 0 && !isSubmitted) {
+      handleSubmit();
+    }
+  }, [timeLeft, isSubmitted, handleSubmit]);
 
   const selectedAnswer = answers[currentQuestion.id];
 

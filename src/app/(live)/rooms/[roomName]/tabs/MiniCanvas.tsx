@@ -31,6 +31,42 @@ export default function MiniCanvas({
   const [textValue, setTextValue] = useState('');
   const textInputRef = useRef<HTMLInputElement>(null);
 
+  // Redraw all elements
+  const redrawElements = useCallback(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = container.getBoundingClientRect();
+    ctx.clearRect(0, 0, rect.width, rect.height);
+
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    elements.forEach((el) => {
+      if (el.type === 'pen' && el.points && el.points.length >= 2) {
+        ctx.beginPath();
+        ctx.strokeStyle = el.color;
+        ctx.lineWidth = el.strokeWidth;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.moveTo(el.points[0], el.points[1]);
+        for (let i = 2; i < el.points.length; i += 2) {
+          ctx.lineTo(el.points[i], el.points[i + 1]);
+        }
+        ctx.stroke();
+      } else if (el.type === 'text' && el.text && el.x !== undefined && el.y !== undefined) {
+        ctx.fillStyle = el.color;
+        ctx.font = `${el.strokeWidth * 6}px sans-serif`;
+        ctx.fillText(el.text, el.x, el.y);
+      }
+    });
+  }, [elements]);
+
   // Resize canvas to fit container
   useEffect(() => {
     const container = containerRef.current;
@@ -57,45 +93,7 @@ export default function MiniCanvas({
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     return () => window.removeEventListener('resize', resizeCanvas);
-  }, []);
-
-  // Redraw all elements
-  const redrawElements = useCallback(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const rect = container.getBoundingClientRect();
-    ctx.clearRect(0, 0, rect.width, rect.height);
-
-    // Draw background
-    ctx.fillStyle = '#1a1a1a';
-    ctx.fillRect(0, 0, rect.width, rect.height);
-
-    // Draw elements
-    elements.forEach((el) => {
-      if (el.type === 'pen' && el.points && el.points.length >= 2) {
-        ctx.beginPath();
-        ctx.strokeStyle = el.color;
-        ctx.lineWidth = el.strokeWidth;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-
-        ctx.moveTo(el.points[0], el.points[1]);
-        for (let i = 2; i < el.points.length; i += 2) {
-          ctx.lineTo(el.points[i], el.points[i + 1]);
-        }
-        ctx.stroke();
-      } else if (el.type === 'text' && el.text && el.x !== undefined && el.y !== undefined) {
-        ctx.fillStyle = el.color;
-        ctx.font = `${el.strokeWidth * 6}px sans-serif`;
-        ctx.fillText(el.text, el.x, el.y);
-      }
-    });
-  }, [elements]);
+  }, [redrawElements]);
 
   // Redraw when elements change
   useEffect(() => {

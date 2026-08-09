@@ -1255,7 +1255,7 @@ function VideoPreviewModal({
         hlsRef.current = null;
       }
     };
-  }, [open, videoUrl, isHls]);
+  }, [open, videoUrl, isHls, fallbackUrl]);
 
   if (!content) return null;
 

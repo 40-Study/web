@@ -228,7 +228,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
     } finally {
       setRunning(false);
     }
-  }, [assignmentId, code, language, customInput]);
+  }, [assignmentId, userId, code, language, customInput]);
 
   const handleSubmit = useCallback(async () => {
     setSubmitting(true);

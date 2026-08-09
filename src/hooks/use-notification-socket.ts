@@ -167,7 +167,7 @@ export function useNotificationSocket() {
     }, 30000);
 
     return () => clearInterval(pingInterval);
-  }, [wsRef.current]);
+  }, []);
 
   // Connect when authenticated
   useEffect(() => {

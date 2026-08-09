@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   MessageSquare,
   Send,
@@ -27,6 +27,7 @@ import {
 } from "@/hooks/queries/use-conversations";
 import { useAuthStore } from "@/stores/auth.store";
 import type { Conversation, Message } from "@/services/conversation.service";
+import { useMarkConversationRead } from "./use-mark-conversation-read";
 
 function ConversationItem({
   conversation,
@@ -149,21 +150,17 @@ export default function MessagesPage() {
     limit: 100,
   });
   const sendMessage = useSendMessage(selectedConvId ?? "");
-  const markAsRead = useMarkAsRead();
+  const { mutate: markAsRead } = useMarkAsRead();
 
-  const conversations = convData?.conversations ?? [];
-  const messages = msgData?.messages ?? [];
+  const conversations = useMemo(() => convData?.conversations ?? [], [convData?.conversations]);
+  const messages = useMemo(() => msgData?.messages ?? [], [msgData?.messages]);
   const currentUserId = user?.id ?? "";
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  useEffect(() => {
-    if (selectedConvId) {
-      markAsRead.mutate(selectedConvId);
-    }
-  }, [selectedConvId]);
+  useMarkConversationRead(selectedConvId, markAsRead);
 
   const handleSend = () => {
     if (!messageInput.trim() || !selectedConvId) return;

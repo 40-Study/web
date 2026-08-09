@@ -51,15 +51,17 @@ export function FloatingSandbox({ isOpen, onClose }: FloatingSandboxProps) {
   const resizeStartRef = useRef<{ x: number; y: number; width: number; height: number; posX: number; posY: number }>({
     x: 0, y: 0, width: 0, height: 0, posX: 0, posY: 0
   });
+  const wasOpenRef = useRef(false);
 
   // Center the window on first open
   useEffect(() => {
-    if (isOpen && !isExpanded) {
+    if (isOpen && !wasOpenRef.current && !isExpanded) {
       const centerX = (window.innerWidth - size.width) / 2;
       const centerY = (window.innerHeight - size.height) / 2;
       setPosition({ x: Math.max(20, centerX), y: Math.max(20, centerY) });
     }
-  }, [isOpen]);
+    wasOpenRef.current = isOpen;
+  }, [isOpen, isExpanded, size.height, size.width]);
 
   // Handle keyboard shortcuts
   useEffect(() => {

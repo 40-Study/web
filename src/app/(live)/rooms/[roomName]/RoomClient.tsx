@@ -12,6 +12,7 @@ import { TimerModal, MinimizedTimer, RandomPickerModal, HandRaisedNotification, 
 import SharedBoardPanel, { StudentMiniBoard, BoardData } from './tabs/SharedBoardPanel';
 import { getMe } from '@/lib/meet/auth';
 import { api } from '@/lib/meet/api';
+import { resolveTimerRestartDuration } from './room-timer';
 
 interface AssignmentNotification {
   assignment_id: string;
@@ -323,7 +324,7 @@ export default function RoomClient({
         }, 1000);
       } else if (event.action === 'restart') {
         setTimerPaused(false);
-        setTimerLeft(event.duration || timerTotal);
+        setTimerLeft(resolveTimerRestartDuration(event.duration, timerTotal));
         if (timerRef.current) clearInterval(timerRef.current);
         timerRef.current = setInterval(() => {
           setTimerLeft(t => {
@@ -487,7 +488,7 @@ export default function RoomClient({
       }
       return;
     }
-  }, [isHost, currentUserId, currentUserName]);
+  }, [isHost, currentUserId, currentUserName, playNotificationSound, timerTotal]);
 
   const handleWhiteboardBroadcasterReady = useCallback((broadcast: (event: any) => void) => {
     whiteboardBroadcastRef.current = broadcast;

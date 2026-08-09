@@ -4,11 +4,13 @@ import toast from 'react-hot-toast';
 
 export function RecordingIndicator() {
   const isRecording = useIsRecording();
-  const [wasRecording, setWasRecording] = React.useState(false);
+  // Use a ref to track previous value — avoids a useState circular dependency
+  // while still correctly detecting transitions between recording states.
+  const wasRecordingRef = React.useRef(isRecording);
 
   React.useEffect(() => {
-    if (isRecording !== wasRecording) {
-      setWasRecording(isRecording);
+    if (isRecording !== wasRecordingRef.current) {
+      wasRecordingRef.current = isRecording;
       if (isRecording) {
         toast('This meeting is being recorded', {
           duration: 3000,
