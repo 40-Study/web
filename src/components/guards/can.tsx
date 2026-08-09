@@ -15,13 +15,11 @@ interface CanProps {
   children: React.ReactNode;
 }
 
-export function Can({
-  permission,
-  mode = "any",
-  fallback = null,
-  children,
-}: CanProps) {
+export function Can({ permission, mode = "any", fallback = null, children }: CanProps) {
   const permissions = useAuthStore((s) => s.permissions);
+  const sessionStatus = useAuthStore((s) => s.sessionStatus);
+
+  if (sessionStatus !== "authenticated") return <>{fallback}</>;
 
   const perms = Array.isArray(permission) ? permission : [permission];
 

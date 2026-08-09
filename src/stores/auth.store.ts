@@ -4,9 +4,10 @@ import type { Permission } from "@/lib/permissions";
 import type { UnifiedRole } from "@/services/auth.service";
 
 export type RoleType = "student" | "teacher" | "parent" | "admin";
+export type SessionStatus = "checking" | "authenticated" | "anonymous";
 export type { UnifiedRole };
 
-interface User {
+export interface AuthUser {
   id: string;
   email: string;
   name: string;
@@ -28,36 +29,42 @@ interface Child {
   relationship: string;
 }
 
-interface AuthState {
-  // User data (token do cookies quản lý, không lưu ở đây)
-  user: User | null;
-  sessionToken: string | null; // Tạm thời cho multi-role login flow
+interface ServerSessionState {
+  user: AuthUser;
+  roles: UnifiedRole[];
+  activeRole: string | null;
+  activeUnifiedRole: UnifiedRole | null;
+  permissions: Permission[];
+}
 
-  // Multi-role system
+interface AuthState {
+  user: AuthUser | null;
+  sessionToken: string | null;
+
   roles: UnifiedRole[];
   activeRole: string | null;
   activeUnifiedRole: UnifiedRole | null;
   permissions: Permission[];
 
-  // Organization context
   organizations: Organization[];
   activeOrg: Organization | null;
 
-  // Parent-child
   children: Child[];
   selectedChild: Child | null;
 
-  // Auth state
+  sessionStatus: SessionStatus;
   isAuthenticated: boolean;
   isLoading: boolean;
   hasHydrated: boolean;
-  // Registration ephemeral
   registerRole: string | null;
 
-  // Actions
-  setUser: (user: User | null) => void;
+  setUser: (user: AuthUser | null) => void;
   setAuthenticated: (value: boolean) => void;
+  setSessionStatus: (status: SessionStatus) => void;
   setSessionToken: (token: string | null) => void;
+  restoreSessionToken: () => string | null;
+  applyServerSession: (session: ServerSessionState) => void;
+  clearServerSession: () => void;
   setRoles: (roles: UnifiedRole[]) => void;
   setActiveRole: (role: string | null) => void;
   setActiveUnifiedRole: (role: UnifiedRole | null) => void;
@@ -69,12 +76,36 @@ interface AuthState {
   setRegisterRole: (role: string | null) => void;
   setHasHydrated: (value: boolean) => void;
 
-  /** @deprecated dùng setAuthenticated thay — token do cookies quản lý */
+  /** @deprecated Tokens are managed by HTTP-only cookies. */
   setToken: (token: string | null) => void;
 
-  login: (user: User, roles?: UnifiedRole[]) => void;
+  login: (user: AuthUser, roles?: UnifiedRole[]) => void;
   logout: () => void;
   reset: () => void;
+}
+
+export const ROLE_SELECTION_TOKEN_KEY = "fortex-role-selection-token";
+
+function readRoleSelectionToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(ROLE_SELECTION_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeRoleSelectionToken(token: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (token) {
+      window.sessionStorage.setItem(ROLE_SELECTION_TOKEN_KEY, token);
+    } else {
+      window.sessionStorage.removeItem(ROLE_SELECTION_TOKEN_KEY);
+    }
+  } catch {
+    // Storage can be unavailable in hardened/private browser modes.
+  }
 }
 
 const initialState = {
@@ -88,6 +119,7 @@ const initialState = {
   activeOrg: null,
   children: [] as Child[],
   selectedChild: null,
+  sessionStatus: "checking" as SessionStatus,
   isAuthenticated: false,
   isLoading: false,
   hasHydrated: false,
@@ -96,12 +128,63 @@ const initialState = {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...initialState,
 
       setUser: (user) => set({ user }),
-      setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
-      setSessionToken: (sessionToken) => set({ sessionToken }),
+      setAuthenticated: (isAuthenticated) =>
+        set({
+          isAuthenticated,
+          sessionStatus: isAuthenticated ? "authenticated" : "anonymous",
+        }),
+      setSessionStatus: (sessionStatus) =>
+        set({
+          sessionStatus,
+          isAuthenticated: sessionStatus === "authenticated",
+        }),
+      setSessionToken: (sessionToken) => {
+        writeRoleSelectionToken(sessionToken);
+        set(
+          sessionToken
+            ? {
+                sessionToken,
+                sessionStatus: "anonymous",
+                isAuthenticated: false,
+                permissions: [],
+              }
+            : { sessionToken }
+        );
+      },
+      restoreSessionToken: () => {
+        const sessionToken = readRoleSelectionToken();
+        set({ sessionToken });
+        return sessionToken;
+      },
+      applyServerSession: (session) => {
+        const activeOrg = session.activeUnifiedRole?.organization_id
+          ? {
+              id: session.activeUnifiedRole.organization_id,
+              name:
+                session.activeUnifiedRole.organization_name ??
+                session.activeUnifiedRole.organization_id,
+            }
+          : null;
+
+        set({
+          ...session,
+          activeOrg,
+          sessionStatus: "authenticated",
+          isAuthenticated: true,
+        });
+      },
+      clearServerSession: () => {
+        writeRoleSelectionToken(null);
+        set((state) => ({
+          ...initialState,
+          hasHydrated: state.hasHydrated,
+          sessionStatus: "anonymous",
+        }));
+      },
       setRoles: (roles) => set({ roles }),
       setActiveRole: (activeRole) => set({ activeRole }),
       setActiveUnifiedRole: (activeUnifiedRole) => set({ activeUnifiedRole }),
@@ -113,36 +196,44 @@ export const useAuthStore = create<AuthState>()(
       setRegisterRole: (registerRole) => set({ registerRole }),
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
 
-      // Compat: code cũ gọi setToken — giờ chỉ set isAuthenticated
-      setToken: (token) => set({ isAuthenticated: !!token }),
+      setToken: (token) => get().setSessionStatus(token ? "authenticated" : "anonymous"),
 
-      login: (user, roles) =>
-        set({
-          user,
-          roles: roles || [],
-          isAuthenticated: true,
-        }),
+      // Login responses can still require role selection. Server bootstrap is what marks
+      // the cookie-backed session authenticated.
+      login: (user, roles) => set({ user, roles: roles || get().roles }),
 
-      logout: () => set({ ...initialState }),
-      reset: () => set({ ...initialState }),
+      logout: () => get().clearServerSession(),
+      reset: () => get().clearServerSession(),
     }),
     {
       name: "auth-storage",
+      version: 2,
+      migrate: (persistedState) => {
+        const state = (persistedState ?? {}) as Partial<AuthState>;
+        return {
+          user: state.user ?? null,
+          roles: state.roles ?? [],
+          activeRole: state.activeRole ?? null,
+          activeUnifiedRole: state.activeUnifiedRole ?? null,
+          organizations: state.organizations ?? [],
+          activeOrg: state.activeOrg ?? null,
+          children: state.children ?? [],
+          selectedChild: state.selectedChild ?? null,
+        };
+      },
       onRehydrateStorage: () => (state) => {
+        state?.restoreSessionToken();
         state?.setHasHydrated(true);
       },
       partialize: (state) => ({
         user: state.user,
-        sessionToken: state.sessionToken, // Persist for multi-role login flow
         roles: state.roles,
         activeRole: state.activeRole,
         activeUnifiedRole: state.activeUnifiedRole,
-        permissions: state.permissions,
         organizations: state.organizations,
         activeOrg: state.activeOrg,
         children: state.children,
         selectedChild: state.selectedChild,
-        isAuthenticated: state.isAuthenticated,
       }),
     }
   )

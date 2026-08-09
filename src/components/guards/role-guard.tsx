@@ -5,7 +5,7 @@
  * Usage: <RoleGuard roles={["SYSTEM_ADMIN"]}><AdminPage /></RoleGuard>
  */
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth.store";
 import type { Permission } from "@/lib/permissions";
@@ -27,9 +27,12 @@ export function RoleGuard({
   children,
 }: RoleGuardProps) {
   const router = useRouter();
-  const { isAuthenticated, hasHydrated, activeRole, permissions } = useAuthStore();
+  const { sessionStatus, activeRole, permissions } = useAuthStore();
   const normalizedRole = normalizeRole(activeRole);
-  const normalizedAllowedRoles = roles?.map((role) => normalizeRole(role)).filter(Boolean) as string[] | undefined;
+  const normalizedAllowedRoles = useMemo(
+    () => roles?.map((role) => normalizeRole(role)).filter(Boolean) as string[] | undefined,
+    [roles]
+  );
   const hasPermissionAccess = requiredPerms
     ? permissionMode === "any"
       ? requiredPerms.some((p) => permissions.includes(p))
@@ -37,10 +40,10 @@ export function RoleGuard({
     : true;
 
   useEffect(() => {
-    if (!hasHydrated) return;
+    if (sessionStatus === "checking") return;
 
-    // Not authenticated → redirect to login
-    if (!isAuthenticated) {
+    // Redirect only when this protected surface knows the session is anonymous.
+    if (sessionStatus === "anonymous") {
       router.replace(redirectTo);
       return;
     }
@@ -62,8 +65,7 @@ export function RoleGuard({
       router.replace("/403");
     }
   }, [
-    hasHydrated,
-    isAuthenticated,
+    sessionStatus,
     normalizedRole,
     normalizedAllowedRoles,
     permissions,
@@ -72,9 +74,8 @@ export function RoleGuard({
     redirectTo,
   ]);
 
-  // Don't render until hydration + access checks; skip checks while switching role
-  if (!hasHydrated) return null;
-  if (!isAuthenticated) return null;
+  // Never reveal protected children until cookie-backed bootstrap is complete.
+  if (sessionStatus !== "authenticated") return null;
   if (!normalizedRole) return null;
   if (normalizedAllowedRoles && !normalizedAllowedRoles.includes(normalizedRole)) return null;
   if (!hasPermissionAccess) return null;

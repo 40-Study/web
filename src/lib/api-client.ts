@@ -59,7 +59,9 @@ async function doRefresh(): Promise<void> {
 
 api.interceptors.response.use(
   (res) => res,
-  async (error: AxiosError<{ code?: string; message?: string; details?: Record<string, string[]> }>) => {
+  async (
+    error: AxiosError<{ code?: string; message?: string; details?: Record<string, string[]> }>
+  ) => {
     if (!error.response) throw new NetworkError();
 
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
@@ -84,11 +86,15 @@ api.interceptors.response.use(
         // Refresh thành công — retry request gốc (cookies mới đã được set)
         return api(original);
       } catch {
-        // Refresh thất bại — session hết hạn, về login
+        // Refresh thất bại — phát tín hiệu để bootstrap xóa session authority. Không tự
+        // chuyển public route sang login; RoleGuard sẽ điều hướng khi surface cần bảo vệ.
         if (typeof window !== "undefined") {
-          // Clear UI state
-          try { localStorage.removeItem("auth-storage"); } catch { /* ignore */ }
-          window.location.href = "/login";
+          try {
+            localStorage.removeItem("auth-storage");
+          } catch {
+            /* ignore */
+          }
+          window.dispatchEvent(new Event("fortex:auth-session-expired"));
         }
         throw new AuthError(data?.message);
       }
@@ -120,8 +126,11 @@ api.interceptors.response.use(
 
 export const apiClient = {
   get: <T>(url: string, config?: object) => api.get<T>(url, config).then((r) => r.data),
-  post: <T>(url: string, data?: unknown, config?: object) => api.post<T>(url, data, config).then((r) => r.data),
-  put: <T>(url: string, data?: unknown, config?: object) => api.put<T>(url, data, config).then((r) => r.data),
-  patch: <T>(url: string, data?: unknown, config?: object) => api.patch<T>(url, data, config).then((r) => r.data),
+  post: <T>(url: string, data?: unknown, config?: object) =>
+    api.post<T>(url, data, config).then((r) => r.data),
+  put: <T>(url: string, data?: unknown, config?: object) =>
+    api.put<T>(url, data, config).then((r) => r.data),
+  patch: <T>(url: string, data?: unknown, config?: object) =>
+    api.patch<T>(url, data, config).then((r) => r.data),
   delete: <T>(url: string, config?: object) => api.delete<T>(url, config).then((r) => r.data),
 };

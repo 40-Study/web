@@ -10,6 +10,7 @@ import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { getRoleFromToken } from "@/lib/jwt";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
+import { bootstrapAuthSession } from "@/components/providers/auth-session";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Query Keys
@@ -126,8 +127,7 @@ export function useChildren() {
  * Does NOT navigate — callers handle navigation.
  */
 export function useLogin() {
-  const { login, setRoles, setSessionToken, setToken, setActiveRole, setActiveUnifiedRole } =
-    useAuthStore();
+  const { login, setRoles, setSessionToken, setActiveRole, setActiveUnifiedRole } = useAuthStore();
 
   return useMutation({
     mutationFn: authService.login,
@@ -156,7 +156,6 @@ export function useLogin() {
 
       // Case 1: Direct login (1 role, có access_token) → hoàn tất
       if (data.access_token && !data.session_token) {
-        setToken(data.access_token);
         setSessionToken(null);
         if (data.active_role) {
           setActiveRole(normalizeRole(data.active_role.role_name));
@@ -164,6 +163,7 @@ export function useLogin() {
         } else {
           setActiveRole(normalizeRole(getRoleFromToken(data.access_token)));
         }
+        await bootstrapAuthSession(true);
         return;
       }
 
@@ -207,8 +207,7 @@ export function useRegister() {
  * Completes login: returns tokens, sets auth state, navigates to home.
  */
 export function useSelectRole() {
-  const { sessionToken, setToken, setSessionToken, setActiveRole, setActiveUnifiedRole } =
-    useAuthStore();
+  const { sessionToken, setSessionToken, setActiveRole, setActiveUnifiedRole } = useAuthStore();
   const qc = useQueryClient();
   const router = useRouter();
 
@@ -226,15 +225,15 @@ export function useSelectRole() {
         organization_id: params.organizationId,
       });
     },
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       const data = response.data;
 
       if (data.completed && data.access_token) {
         // Login hoàn tất
-        setToken(data.access_token);
         setSessionToken(null);
         setActiveRole(normalizeRole(data.active_role.role_name));
         setActiveUnifiedRole(data.active_role);
+        await bootstrapAuthSession(true);
 
         qc.invalidateQueries({ queryKey: authKeys.all });
 
@@ -262,18 +261,18 @@ export function useSelectRole() {
  * Returns new tokens and navigates to the appropriate home page.
  */
 export function useSwitchRole() {
-  const { setToken, setActiveRole, setActiveUnifiedRole } = useAuthStore();
+  const { setActiveRole, setActiveUnifiedRole } = useAuthStore();
   const qc = useQueryClient();
 
   return useMutation({
     mutationFn: authService.switchRole,
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       const data = response.data;
       if (data.access_token) {
-        setToken(data.access_token);
         const newRole = normalizeRole(data.active_role.role_name);
         setActiveRole(newRole);
         setActiveUnifiedRole(data.active_role);
+        await bootstrapAuthSession(true);
         qc.invalidateQueries({ queryKey: authKeys.all });
         window.location.href = getRoleHomeRoute(newRole);
       }
