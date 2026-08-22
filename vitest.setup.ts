@@ -45,3 +45,44 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: vi.fn(),
   }),
 });
+
+/**
+ * Node >= 24 expose sẵn global `localStorage` / `sessionStorage` (Web Storage API).
+ * Khi chạy không kèm `--localstorage-file` hợp lệ, Node trả về một object rỗng
+ * KHÔNG có getItem/setItem/clear, và object đó che mất Storage thật của jsdom
+ * -> test đụng storage ném "window.localStorage.clear is not a function".
+ *
+ * Cài đè một Storage in-memory hợp chuẩn. Chỉ can thiệp khi phát hiện stub hỏng,
+ * nên trên Node cũ (jsdom Storage còn nguyên) setup này là no-op.
+ */
+function createMemoryStorage(): Storage {
+  const entries = new Map<string, string>();
+  return {
+    get length() {
+      return entries.size;
+    },
+    key: (index: number) => Array.from(entries.keys())[index] ?? null,
+    getItem: (key: string) => entries.get(String(key)) ?? null,
+    setItem: (key: string, value: string) => {
+      entries.set(String(key), String(value));
+    },
+    removeItem: (key: string) => {
+      entries.delete(String(key));
+    },
+    clear: () => {
+      entries.clear();
+    },
+  } satisfies Storage;
+}
+
+for (const name of ["localStorage", "sessionStorage"] as const) {
+  const current = (globalThis as Record<string, unknown>)[name] as Partial<Storage> | undefined;
+  const isUsable = typeof current?.clear === "function" && typeof current?.getItem === "function";
+  if (isUsable) continue;
+
+  const storage = createMemoryStorage();
+  Object.defineProperty(globalThis, name, { configurable: true, writable: true, value: storage });
+  if (typeof window !== "undefined") {
+    Object.defineProperty(window, name, { configurable: true, writable: true, value: storage });
+  }
+}
