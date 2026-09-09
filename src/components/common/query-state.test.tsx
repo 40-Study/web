@@ -25,6 +25,16 @@ describe("QueryState", () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
+  it("falls back to a generic message for raw backend errors without Vietnamese diacritics (M-05)", () => {
+    render(
+      <QueryState isError error={new Error("pq: duplicate key value violates unique constraint")}>
+        <p>nội dung</p>
+      </QueryState>
+    );
+    expect(screen.queryByText("pq: duplicate key value violates unique constraint")).toBeNull();
+    expect(screen.getByText("Đã có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại.")).toBeDefined();
+  });
+
   it("renders empty state when isEmpty is true", () => {
     render(
       <QueryState isEmpty emptyTitle="Trống trơn">

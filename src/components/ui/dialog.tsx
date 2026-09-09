@@ -28,12 +28,20 @@ const DialogContext = React.createContext<{
   open: boolean;
   onOpenChange: (open: boolean) => void;
   titleId: string;
-}>({ open: false, onOpenChange: () => {}, titleId: "" });
+  hasTitle: boolean;
+  registerTitle: () => void;
+}>({ open: false, onOpenChange: () => {}, titleId: "", hasTitle: false, registerTitle: () => {} });
 
 export function Dialog({ open, onOpenChange, children }: DialogProps) {
   // Id ổn định cho mỗi instance Dialog — DialogContent gắn aria-labelledby trỏ
   // tới id này, DialogTitle gắn id này lên chính nó (M-11).
   const titleId = React.useId();
+  // aria-labelledby chỉ nên trỏ tới id thật sự tồn tại trong DOM — Dialog
+  // không phải lúc nào cũng có DialogTitle (L-03), nên theo dõi xem có hay không.
+  const [hasTitle, setHasTitle] = React.useState(false);
+  const registerTitle = React.useCallback(() => setHasTitle(true), []);
+  // Phần tử đang focus trước khi mở dialog — trả focus lại đó khi đóng (L-03).
+  const triggerRef = React.useRef<HTMLElement | null>(null);
 
   // Handle escape key
   React.useEffect(() => {
@@ -59,10 +67,20 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
     };
   }, [open]);
 
+  // Ghi nhớ trigger lúc mở, trả focus lại lúc đóng (L-03).
+  React.useEffect(() => {
+    if (open) {
+      triggerRef.current = document.activeElement as HTMLElement | null;
+    } else if (triggerRef.current) {
+      triggerRef.current.focus();
+      triggerRef.current = null;
+    }
+  }, [open]);
+
   if (!open) return null;
 
   return (
-    <DialogContext.Provider value={{ open, onOpenChange, titleId }}>
+    <DialogContext.Provider value={{ open, onOpenChange, titleId, hasTitle, registerTitle }}>
       {children}
     </DialogContext.Provider>
   );
@@ -77,7 +95,7 @@ export function DialogContent({
   showCloseButton = true,
   ...props
 }: DialogContentProps) {
-  const { onOpenChange, titleId } = React.useContext(DialogContext);
+  const { onOpenChange, titleId, hasTitle } = React.useContext(DialogContext);
   const contentRef = React.useRef<HTMLDivElement>(null);
 
   // Focus trap (M-11 / WCAG 2.4.3): đưa focus vào dialog khi mở, giữ Tab luôn
@@ -131,7 +149,7 @@ export function DialogContent({
         ref={contentRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={titleId || undefined}
+        aria-labelledby={hasTitle ? titleId : undefined}
         tabIndex={-1}
         className={cn(
           "relative z-50 w-full max-w-lg mx-4 bg-white dark:bg-gray-900 rounded-2xl shadow-xl",
@@ -157,7 +175,12 @@ export function DialogContent({
 }
 
 export function DialogTitle({ children, className, ...props }: DialogTitleProps) {
-  const { titleId } = React.useContext(DialogContext);
+  const { titleId, registerTitle } = React.useContext(DialogContext);
+  // Báo cho Dialog biết đã có tiêu đề thật trong DOM (L-03) — chạy trong effect
+  // vì đây là side-effect ghi vào context của component cha, không phải render.
+  React.useEffect(() => {
+    registerTitle();
+  }, [registerTitle]);
   return (
     <h2
       id={titleId}

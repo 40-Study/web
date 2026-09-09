@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ChevronUp,
@@ -242,6 +242,16 @@ export function PlayerLessonSidebar({
   // Sidebar 380px cố định chiếm gần hết viewport <1024px (H-10) — trên mobile
   // ẩn mặc định, mở dạng overlay toàn màn hình qua nút nổi bên dưới.
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  // Đóng overlay mobile bằng phím Esc, không chỉ nút X (L-05).
+  useEffect(() => {
+    if (!isMobileOpen) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsMobileOpen(false);
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isMobileOpen]);
 
   const currentChapterId = chapters.find((ch) =>
     ch.lessons.some((l) => l.id === currentLessonId)

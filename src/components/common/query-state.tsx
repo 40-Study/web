@@ -25,10 +25,22 @@ export interface QueryStateProps {
   className?: string;
 }
 
+// M-05: nhiều handler Go ở backend trả thẳng `err.Error()` làm `message` (lỗi
+// SQL/GORM nội bộ) thay vì thông điệp đã Việt hoá cho người dùng — hiển thị
+// nguyên `error.message` sẽ lộ chi tiết hệ thống. Không có field nào phân biệt
+// "đã Việt hoá" hay "raw" trong response, nên dùng heuristic: lỗi nội bộ hầu
+// như luôn thuần ASCII (không dấu tiếng Việt); chỉ tin message có dấu.
+const HAS_VIETNAMESE_DIACRITICS = /[à-ỹÀ-Ỹ]/;
+
 function getErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message) return error.message;
-  if (typeof error === "string" && error) return error;
-  return "Đã có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại.";
+  const fallback = "Đã có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại.";
+  const message =
+    error instanceof Error && error.message
+      ? error.message
+      : typeof error === "string"
+      ? error
+      : "";
+  return message && HAS_VIETNAMESE_DIACRITICS.test(message) ? message : fallback;
 }
 
 /**
