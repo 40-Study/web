@@ -107,6 +107,9 @@ export function useCheckPayment() {
   return useMutation({
     mutationFn: (id: string) => orderService.checkPayment(id),
     onSuccess: (data, id) => {
+      // Làm mới ngay trạng thái thanh toán để dialog chuyển màn thành công
+      // mà không phải chờ nhịp poll kế tiếp.
+      qc.invalidateQueries({ queryKey: orderKeys.paymentStatus(id) });
       if (data.status === "completed" || data.status === "paid") {
         qc.invalidateQueries({ queryKey: orderKeys.detail(id) });
         qc.invalidateQueries({ queryKey: orderKeys.mine() });

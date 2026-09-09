@@ -49,6 +49,9 @@ export function OrderPaymentDialog({
   onRetryExpired,
 }: OrderPaymentDialogProps) {
   const [intent, setIntent] = useState<PaymentIntent | null>(null);
+  // Lỗi tạo payment-intent (vd đơn đã "processing") → hiện trạng thái lỗi
+  // và mở khóa ref để đóng/mở lại dialog có thể thử lại.
+  const [intentError, setIntentError] = useState(false);
   const requestedForOrderId = useRef<string | null>(null);
 
   const createIntent = useCreatePaymentIntent();
@@ -63,7 +66,16 @@ export function OrderPaymentDialog({
 
     createIntent.mutate(
       { id: orderId, data: { payment_method: "bank_transfer", idempotency_key: uuidv4() } },
-      { onSuccess: (result) => setIntent(result) }
+      {
+        onSuccess: (result) => {
+          setIntentError(false);
+          setIntent(result);
+        },
+        onError: () => {
+          setIntentError(true);
+          requestedForOrderId.current = null;
+        },
+      }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, orderId]);
@@ -81,6 +93,7 @@ export function OrderPaymentDialog({
   const handleOpenChange = (next: boolean) => {
     if (!next) {
       setIntent(null);
+      setIntentError(false);
       requestedForOrderId.current = null;
     }
     onOpenChange(next);
@@ -88,7 +101,7 @@ export function OrderPaymentDialog({
 
   const dialogStatus: BankTransferDialogStatus = isCompleted
     ? "success"
-    : status === "cancelled" || status === "refunded"
+    : intentError || status === "cancelled" || status === "refunded"
       ? "error"
       : "pending";
 
