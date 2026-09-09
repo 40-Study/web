@@ -2,7 +2,7 @@
  * React Query hooks for voucher operations
  */
 
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { voucherService, type Voucher, type UserSavedVoucher } from "@/services/voucher.service";
 
@@ -36,32 +36,25 @@ export interface MyVoucherWithDetails extends UserSavedVoucher {
 
 /**
  * Fetch current user's saved vouchers KÈM chi tiết voucher (code, discount…).
- * GET /vouchers/me chỉ trả {id, voucher_id, saved_at,...} — model.UserVoucher
- * ẩn quan hệ Voucher (`json:"-"`) — nên phải join thêm GET /vouchers/:id cho
- * từng voucher_id ở client.
+ * H-02 (plans/reports/code-reviewer-260909-1412-web-review.md): trước đây
+ * join client-side qua GET /vouchers/:id — route đó yêu cầu quyền admin
+ * (SYSTEM_SETTINGS_MANAGE), luôn 403 với user thường → trang không chạy
+ * được. Backend giờ preload quan hệ Voucher trong GET /vouchers/me, đọc
+ * thẳng field nested `sv.voucher`.
  */
 export function useMyVouchersWithDetails() {
   const savedQuery = useMyVouchers();
   const saved = savedQuery.data ?? [];
 
-  const detailQueries = useQueries({
-    queries: saved.map((sv) => ({
-      queryKey: ["vouchers", "detail", sv.voucher_id],
-      queryFn: () => voucherService.getVoucherById(sv.voucher_id),
-      enabled: !!sv.voucher_id,
-      staleTime: 5 * 60 * 1000,
-    })),
-  });
-
-  const data: MyVoucherWithDetails[] = saved.map((sv, idx) => ({
+  const data: MyVoucherWithDetails[] = saved.map((sv) => ({
     ...sv,
-    voucher: detailQueries[idx]?.data ?? null,
+    voucher: sv.voucher ?? null,
   }));
 
   return {
     data,
-    isLoading: savedQuery.isLoading || detailQueries.some((q) => q.isLoading),
-    isError: savedQuery.isError || detailQueries.some((q) => q.isError),
+    isLoading: savedQuery.isLoading,
+    isError: savedQuery.isError,
   };
 }
 

@@ -96,6 +96,11 @@ export interface UserSavedVoucher {
   saved_at: string;
   source: string;
   notes?: string;
+  // H-02: backend giờ preload quan hệ Voucher trong GET /vouchers/me (trước
+  // đây field này mang tag json:"-" nên FE phải join qua GET /vouchers/:id
+  // — route đó yêu cầu quyền admin SYSTEM_SETTINGS_MANAGE, luôn 403 với user
+  // thường). null khi voucher gốc đã bị xóa.
+  voucher?: Voucher | null;
 }
 
 interface VoucherListResponse {

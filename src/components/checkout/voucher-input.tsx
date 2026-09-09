@@ -7,7 +7,7 @@
  * rồi báo kết quả cho parent qua onApplied callback.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Tag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,10 +27,22 @@ interface VoucherInputProps {
    * PERCENT/có mức tối thiểu sẽ báo không áp dụng được).
    */
   subtotal?: number;
+  /**
+   * Mã voucher tiền-điền sẵn (vd từ `?voucher=` khi chuyển từ /cart sang
+   * /checkout — M-01, giỏ hàng cho áp voucher nhưng checkout trước đây không
+   * đọc lại param nên user phải nhập lại). Tự động áp dụng 1 lần khi mount.
+   */
+  initialCode?: string;
 }
 
-export function VoucherInput({ courseIds, onApplied, className, subtotal = 0 }: VoucherInputProps) {
-  const [code, setCode] = useState("");
+export function VoucherInput({
+  courseIds,
+  onApplied,
+  className,
+  subtotal = 0,
+  initialCode,
+}: VoucherInputProps) {
+  const [code, setCode] = useState(initialCode ? initialCode.toUpperCase() : "");
   const [applied, setApplied] = useState<VoucherValidateResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -72,6 +84,13 @@ export function VoucherInput({ courseIds, onApplied, className, subtotal = 0 }: 
     setErrorMessage(null);
     onApplied(null);
   }
+
+  // M-01: chỉ tự áp dụng 1 lần lúc mount (không phụ thuộc `subtotal` đổi theo
+  // mỗi lần tick chọn khóa — người dùng vẫn bấm "Áp dụng" lại nếu muốn).
+  useEffect(() => {
+    if (initialCode) handleApply();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (applied?.valid) {
     return (

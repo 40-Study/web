@@ -38,6 +38,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedItemsParam = searchParams.get("items");
+  const voucherParam = searchParams.get("voucher"); // M-01: /cart truyền qua nhưng trước đây không đọc
 
   const [voucherResult, setVoucherResult] = useState<VoucherValidateResponse | null>(null);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
@@ -231,6 +232,7 @@ export default function CheckoutPage() {
                   courseIds={items.map((item) => item.course_id)}
                   subtotal={subtotal}
                   onApplied={setVoucherResult}
+                  initialCode={voucherParam || undefined}
                 />
               </div>
 

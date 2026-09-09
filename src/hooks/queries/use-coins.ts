@@ -106,6 +106,10 @@ export function usePurchaseVerificationPolling(purchaseId: string, enabled: bool
     refetchInterval: (query) => {
       const status = query.state.data?.status;
       if (status === "COMPLETED" || status === "FAILED" || status === "REFUNDED") return false;
+      // M-02: lỗi thật (vd "payment amount mismatch") khiến data luôn undefined
+      // — trước đây interval không dừng, poll vô ích suốt 10 phút và dialog
+      // không bao giờ hiện lỗi cho user.
+      if (query.state.status === "error") return false;
       const startedAt = startedAtRef.current ?? Date.now();
       if (Date.now() - startedAt > VERIFY_POLL_TIMEOUT_MS) return false;
       return VERIFY_POLL_INTERVAL_MS;
