@@ -15,9 +15,10 @@ const PUBLIC_ROUTES = [
   "/about",
 ];
 
-// Routes that require specific roles (checked client-side)
-const ADMIN_ROUTES = ["/admin"];
-const TEACHER_ROUTES = ["/classes", "/classroom"];
+// Tên cookie httpOnly do backend set — khớp internal/handler/auth_handler.go
+// (Login/RefreshToken: "accessToken" 15 phút, "rfToken" 24h).
+const ACCESS_TOKEN_COOKIE = "accessToken";
+const REFRESH_TOKEN_COOKIE = "rfToken";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -40,8 +41,20 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Note: Auth protection is handled client-side by RoleGuard in layouts
-  // Middleware cannot access localStorage, so we don't check auth state here
+  // H4: middleware trước đây là no-op hoàn toàn — token nằm ở cookie httpOnly
+  // nên middleware ĐỌC ĐƯỢC qua request.cookies (không cần localStorage).
+  // Chỉ kiểm tra SỰ TỒN TẠI của cookie, không verify chữ ký JWT — việc verify
+  // và refresh vẫn do backend + api-client.ts (401 → /auth/refresh-token) xử lý.
+  // Vai trò cụ thể (admin/teacher/parent...) vẫn do RoleGuard ở client kiểm tra.
+  const hasAccessToken = request.cookies.has(ACCESS_TOKEN_COOKIE);
+  const hasRefreshToken = request.cookies.has(REFRESH_TOKEN_COOKIE);
+
+  if (!hasAccessToken && !hasRefreshToken) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
   return NextResponse.next();
 }
 

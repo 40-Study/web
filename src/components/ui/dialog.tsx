@@ -27,9 +27,14 @@ interface DialogDescriptionProps
 const DialogContext = React.createContext<{
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}>({ open: false, onOpenChange: () => {} });
+  titleId: string;
+}>({ open: false, onOpenChange: () => {}, titleId: "" });
 
 export function Dialog({ open, onOpenChange, children }: DialogProps) {
+  // Id ổn định cho mỗi instance Dialog — DialogContent gắn aria-labelledby trỏ
+  // tới id này, DialogTitle gắn id này lên chính nó (M-11).
+  const titleId = React.useId();
+
   // Handle escape key
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -57,11 +62,14 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   if (!open) return null;
 
   return (
-    <DialogContext.Provider value={{ open, onOpenChange }}>
+    <DialogContext.Provider value={{ open, onOpenChange, titleId }}>
       {children}
     </DialogContext.Provider>
   );
 }
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export function DialogContent({
   children,
@@ -69,7 +77,42 @@ export function DialogContent({
   showCloseButton = true,
   ...props
 }: DialogContentProps) {
-  const { onOpenChange } = React.useContext(DialogContext);
+  const { onOpenChange, titleId } = React.useContext(DialogContext);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+
+  // Focus trap (M-11 / WCAG 2.4.3): đưa focus vào dialog khi mở, giữ Tab luôn
+  // xoay vòng bên trong dialog thay vì thoát ra nội dung phía sau.
+  React.useEffect(() => {
+    const node = contentRef.current;
+    if (!node) return;
+
+    const focusables = node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+    (focusables[0] ?? node).focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+
+      const items = Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+      if (items.length === 0) {
+        e.preventDefault();
+        return;
+      }
+
+      const first = items[0];
+      const last = items[items.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    node.addEventListener("keydown", handleKeyDown);
+    return () => node.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Check if flex layout is requested to pass it to inner wrapper
   const hasFlex = className?.includes("flex");
@@ -85,8 +128,11 @@ export function DialogContent({
 
       {/* Content */}
       <div
+        ref={contentRef}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={titleId || undefined}
+        tabIndex={-1}
         className={cn(
           "relative z-50 w-full max-w-lg mx-4 bg-white dark:bg-gray-900 rounded-2xl shadow-xl",
           "animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4",
@@ -99,9 +145,9 @@ export function DialogContent({
           <button
             onClick={() => onOpenChange(false)}
             className="absolute right-4 top-4 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors z-10"
-            aria-label="Close dialog"
+            aria-label="Đóng hộp thoại"
           >
-            <X className="h-4 w-4 text-gray-500" />
+            <X className="h-4 w-4 text-gray-500" aria-hidden="true" />
           </button>
         )}
         <div className={cn("p-6", hasFlex && "flex flex-col flex-1 min-h-0")}>{children}</div>
@@ -111,8 +157,10 @@ export function DialogContent({
 }
 
 export function DialogTitle({ children, className, ...props }: DialogTitleProps) {
+  const { titleId } = React.useContext(DialogContext);
   return (
     <h2
+      id={titleId}
       className={cn("text-lg font-semibold text-gray-900 dark:text-white", className)}
       {...props}
     >

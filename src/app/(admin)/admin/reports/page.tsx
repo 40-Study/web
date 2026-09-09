@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useWalletTransactions } from "@/hooks/queries/use-wallet";
 import type { WalletTransaction, TransactionStatus } from "@/services/wallet.service";
+import { QueryState } from "@/components/common/query-state";
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
@@ -47,7 +48,7 @@ export default function AdminReportsPage() {
   const [period, setPeriod] = useState<ReportFilter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const { data: txResponse, isLoading } = useWalletTransactions();
+  const { data: txResponse, isLoading, isError, error, refetch } = useWalletTransactions();
 
   const filteredRecords = useMemo(() => {
     // Unwrap paginated response — API returns { transactions[], total, page, limit }
@@ -100,11 +101,21 @@ export default function AdminReportsPage() {
     };
   }, [filteredRecords]);
 
-  if (isLoading) {
+  if (isLoading || isError) {
     return (
-      <div className="flex justify-center items-center p-12">
-        <Loader2 className="animate-spin h-8 w-8 text-gray-400" />
-      </div>
+      <QueryState
+        isLoading={isLoading}
+        isError={isError}
+        error={error}
+        onRetry={() => refetch()}
+        loadingFallback={
+          <div className="flex justify-center items-center p-12">
+            <Loader2 className="animate-spin h-8 w-8 text-gray-400" />
+          </div>
+        }
+      >
+        {null}
+      </QueryState>
     );
   }
 
@@ -173,7 +184,7 @@ export default function AdminReportsPage() {
                   <th className="px-4 py-3 text-left">Phương thức</th>
                   <th className="px-4 py-3 text-left">Số tiền</th>
                   <th className="px-4 py-3 text-left">Trạng thái</th>
-                  <th className="px-4 py-3 text-left">Action</th>
+                  <th className="px-4 py-3 text-left">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">

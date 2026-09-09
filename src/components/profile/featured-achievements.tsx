@@ -37,14 +37,14 @@ export function FeaturedAchievements({
       <Card className={cn("p-6", className)}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-gray-900 dark:text-white">
-            Featured Achievements
+            Thành tích nổi bật
           </h2>
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/achievements">View All</Link>
+            <Link href="/achievements">Xem tất cả</Link>
           </Button>
         </div>
         <p className="text-muted-foreground text-center py-8">
-          No achievements unlocked yet. Start learning to earn badges!
+          Chưa mở khóa thành tích nào. Học tiếp để nhận huy hiệu!
         </p>
       </Card>
     );
@@ -54,10 +54,10 @@ export function FeaturedAchievements({
     <Card className={cn("p-6", className)}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-semibold text-gray-900 dark:text-white">
-          Featured Achievements
+          Thành tích nổi bật
         </h2>
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/achievements">View All</Link>
+          <Link href="/achievements">Xem tất cả</Link>
         </Button>
       </div>
 

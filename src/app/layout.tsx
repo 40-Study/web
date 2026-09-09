@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SkipLink } from "@/components/ui";
 import { SITE_URL } from "@/lib/seo";
+import { THEME_STORAGE_KEY } from "@/lib/appearance-storage";
 
 const inter = Inter({
     subsets: ["latin", "vietnamese"],
@@ -46,6 +48,19 @@ export default function RootLayout({
     return (
         <html lang="vi" suppressHydrationWarning>
             <body className={`${inter.variable} font-sans antialiased`}>
+                {/*
+                  Chống nháy màn hình (FOUC) dark mode (H-01): script chạy TRƯỚC khi
+                  React hydrate, đọc theme đã lưu (hoặc prefers-color-scheme hệ điều
+                  hành khi "system") và gắn class .dark lên <html> ngay lập tức.
+                */}
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `(function(){try{var t=localStorage.getItem(${JSON.stringify(
+                            THEME_STORAGE_KEY
+                        )})||"system";var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);}catch(e){}})();`,
+                    }}
+                />
+                <ThemeProvider />
                 <SkipLink targetId="main-content">
                     Bỏ qua điều hướng
                 </SkipLink>

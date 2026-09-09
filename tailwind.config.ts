@@ -83,13 +83,35 @@ const config: Config = {
         // Semantic colors
         success: "#10B981",
         warning: "#F59E0B",
-        destructive: "#EF4444",
-        info: "#000000",
+        destructive: "hsl(var(--destructive))",
+        "destructive-foreground": "hsl(var(--destructive-foreground))",
+        info: "#0EA5E9",
         // Surface colors - ElevenLabs style
         surface: "#f5f5f5",
-        foreground: "#000000",
-        "muted-foreground": "#4e4e4e",
-        border: "#e5e5e5",
+
+        // Design-system tokens — đọc từ biến CSS trong globals.css (:root / .dark)
+        // để mọi class bg-*/text-*/border-* đổi màu đúng theo dark mode (H-01/H-02/H-03).
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        border: "hsl(var(--border))",
       },
       borderRadius: {
         lg: "var(--radius)",

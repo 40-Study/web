@@ -366,7 +366,7 @@ export function VideoPlayer({
         <button
           onClick={togglePlay}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-          aria-label={isPlaying ? "Pause" : "Play"}
+          aria-label={isPlaying ? "Tạm dừng" : "Phát"}
         >
           <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center hover:bg-white transition-colors shadow-lg">
             {isPlaying ? (
@@ -404,7 +404,7 @@ export function VideoPlayer({
               <button
                 onClick={togglePlay}
                 className="hover:bg-white/20 p-1.5 rounded"
-                aria-label={isPlaying ? "Pause" : "Play"}
+                aria-label={isPlaying ? "Tạm dừng" : "Phát"}
               >
                 {isPlaying ? (
                   <Pause className="h-5 w-5" />
@@ -416,7 +416,7 @@ export function VideoPlayer({
               <button
                 onClick={skipBack}
                 className="hover:bg-white/20 p-1.5 rounded"
-                aria-label="Skip back 10 seconds"
+                aria-label="Tua lùi 10 giây"
               >
                 <SkipBack className="h-5 w-5" />
               </button>
@@ -424,7 +424,7 @@ export function VideoPlayer({
               <button
                 onClick={skipForward}
                 className="hover:bg-white/20 p-1.5 rounded"
-                aria-label="Skip forward 10 seconds"
+                aria-label="Tua tới 10 giây"
               >
                 <SkipForward className="h-5 w-5" />
               </button>
@@ -434,7 +434,7 @@ export function VideoPlayer({
                 <button
                   onClick={toggleMute}
                   className="hover:bg-white/20 p-1.5 rounded"
-                  aria-label={isMuted ? "Unmute" : "Mute"}
+                  aria-label={isMuted ? "Bật âm thanh" : "Tắt âm thanh"}
                 >
                   {isMuted || volume === 0 ? (
                     <VolumeX className="h-5 w-5" />
@@ -450,7 +450,7 @@ export function VideoPlayer({
                   value={isMuted ? 0 : volume}
                   onChange={(e) => changeVolume(parseFloat(e.target.value))}
                   className="w-20 h-1 accent-white cursor-pointer"
-                  aria-label="Volume"
+                  aria-label="Âm lượng"
                 />
               </div>
 
@@ -473,7 +473,7 @@ export function VideoPlayer({
                       "hover:bg-white/20 p-1.5 rounded",
                       activeCaption && "text-primary-400"
                     )}
-                    aria-label="Captions"
+                    aria-label="Phụ đề"
                   >
                     <Subtitles className="h-5 w-5" />
                   </button>
@@ -520,7 +520,7 @@ export function VideoPlayer({
                     setShowCaptionMenu(false);
                   }}
                   className="hover:bg-white/20 px-2 py-1 rounded text-sm"
-                  aria-label="Playback speed"
+                  aria-label="Tốc độ phát"
                 >
                   {playbackRate}x
                 </button>
@@ -551,7 +551,7 @@ export function VideoPlayer({
                     setShowCaptionMenu(false);
                   }}
                   className="hover:bg-white/20 p-1.5 rounded"
-                  aria-label="Quality settings"
+                  aria-label="Cài đặt chất lượng"
                 >
                   <Settings className="h-5 w-5" />
                 </button>
@@ -580,7 +580,7 @@ export function VideoPlayer({
               <button
                 onClick={togglePiP}
                 className="hover:bg-white/20 p-1.5 rounded"
-                aria-label="Picture in Picture"
+                aria-label="Thu nhỏ màn hình (Picture in Picture)"
               >
                 <PictureInPicture2 className="h-5 w-5" />
               </button>
@@ -589,7 +589,7 @@ export function VideoPlayer({
               <button
                 onClick={toggleFullscreen}
                 className="hover:bg-white/20 p-1.5 rounded"
-                aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+                aria-label={isFullscreen ? "Thoát toàn màn hình" : "Toàn màn hình"}
               >
                 {isFullscreen ? (
                   <Minimize className="h-5 w-5" />

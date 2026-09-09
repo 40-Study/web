@@ -11,6 +11,8 @@ import {
 import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
 import type { SystemRole } from "@/services/role.service";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 
 type RoleFormState = {
   id?: string;
@@ -62,6 +64,9 @@ export default function RolesPage() {
   const [roleUsersMap, setRoleUsersMap] = useState<Record<string, RoleUser[]>>({});
   const [userForm, setUserForm] = useState<UserFormState>(emptyUserForm);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  // Xác nhận trước khi xóa (H-09) — xóa role/user không còn kích hoạt mutation ngay khi click.
+  const [confirmDeleteRole, setConfirmDeleteRole] = useState<SystemRole | null>(null);
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState<RoleUser | null>(null);
 
   useEffect(() => {
     if (rolesData.length === 0) return;
@@ -203,7 +208,7 @@ export default function RolesPage() {
                   <Can permission={PERMISSIONS.MANAGE_ROLES}>
                     <div className="mt-3 flex gap-2">
                       <button onClick={() => startEditRole(role)} className="rounded bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700">Sửa role</button>
-                      <button onClick={() => removeRole(role.id)} className="rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-700">Xóa role</button>
+                      <button onClick={() => setConfirmDeleteRole(role)} className="rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-700">Xóa role</button>
                     </div>
                   </Can>
                 </div>
@@ -248,7 +253,7 @@ export default function RolesPage() {
                       </button>
                       <div className="mt-2 flex gap-2">
                         <button onClick={() => startEditUser(user)} className="rounded bg-primary-100 px-2 py-1 text-xs text-primary-700">Sửa</button>
-                        <button onClick={() => removeUser(user.id)} className="rounded bg-red-100 px-2 py-1 text-xs text-red-700">Xóa</button>
+                        <button onClick={() => setConfirmDeleteUser(user)} className="rounded bg-red-100 px-2 py-1 text-xs text-red-700">Xóa</button>
                       </div>
                     </div>
                   ))}
@@ -287,6 +292,52 @@ export default function RolesPage() {
           </div>
         </div>
       </div>
+
+      {/* Xác nhận xóa role (H-09) */}
+      <Dialog open={!!confirmDeleteRole} onOpenChange={(open) => !open && setConfirmDeleteRole(null)}>
+        <DialogContent>
+          <DialogTitle>Xóa vai trò &quot;{confirmDeleteRole?.name}&quot;?</DialogTitle>
+          <DialogDescription>
+            Hành động này không thể hoàn tác. Toàn bộ user đang gán cho vai trò này sẽ mất liên kết.
+          </DialogDescription>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteRole(null)}>
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (confirmDeleteRole) removeRole(confirmDeleteRole.id);
+                setConfirmDeleteRole(null);
+              }}
+            >
+              Xóa vai trò
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Xác nhận xóa user (H-09) */}
+      <Dialog open={!!confirmDeleteUser} onOpenChange={(open) => !open && setConfirmDeleteUser(null)}>
+        <DialogContent>
+          <DialogTitle>Xóa user &quot;{confirmDeleteUser?.name}&quot;?</DialogTitle>
+          <DialogDescription>Hành động này không thể hoàn tác.</DialogDescription>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteUser(null)}>
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (confirmDeleteUser) removeUser(confirmDeleteUser.id);
+                setConfirmDeleteUser(null);
+              }}
+            >
+              Xóa user
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

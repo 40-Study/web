@@ -81,7 +81,7 @@ export function ProfileHeader({
               <button
                 className="absolute bottom-0 right-0 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors"
                 onClick={onAvatarUpload}
-                aria-label="Upload avatar"
+                aria-label="Tải ảnh đại diện"
               >
                 <Camera className="h-4 w-4 text-gray-600" />
               </button>
@@ -99,7 +99,7 @@ export function ProfileHeader({
             <div className="flex items-center justify-center md:justify-start gap-4 text-sm opacity-80">
               <span>{formatNumber(user.totalXP)} XP</span>
               <span>•</span>
-              <span>Joined {formatDate(user.createdAt)}</span>
+              <span>Tham gia {formatDate(user.createdAt)}</span>
             </div>
           </div>
 
@@ -111,7 +111,7 @@ export function ProfileHeader({
               onClick={onEditProfile}
             >
               <Pencil className="h-4 w-4 mr-2" />
-              Edit Profile
+              Chỉnh sửa hồ sơ
             </Button>
           ) : (
             <Button
@@ -119,7 +119,7 @@ export function ProfileHeader({
               className="text-white border-white hover:bg-white/20"
             >
               <UserPlus className="h-4 w-4 mr-2" />
-              Follow
+              Theo dõi
             </Button>
           )}
         </div>
@@ -128,19 +128,19 @@ export function ProfileHeader({
         <div className="flex justify-center md:justify-start gap-8 mt-8">
           <div className="text-center">
             <p className="text-3xl font-bold">{stats.streak}</p>
-            <p className="text-sm opacity-80">Day Streak</p>
+            <p className="text-sm opacity-80">Ngày streak</p>
           </div>
           <div className="text-center">
             <p className="text-3xl font-bold">{stats.coursesCompleted}</p>
-            <p className="text-sm opacity-80">Courses</p>
+            <p className="text-sm opacity-80">Khóa học</p>
           </div>
           <div className="text-center">
             <p className="text-3xl font-bold">{stats.achievements}</p>
-            <p className="text-sm opacity-80">Achievements</p>
+            <p className="text-sm opacity-80">Thành tích</p>
           </div>
           <div className="text-center hidden sm:block">
             <p className="text-3xl font-bold">{stats.lessonsCompleted}</p>
-            <p className="text-sm opacity-80">Lessons</p>
+            <p className="text-sm opacity-80">Bài học</p>
           </div>
         </div>
       </div>

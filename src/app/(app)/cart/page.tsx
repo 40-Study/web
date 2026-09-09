@@ -3,40 +3,49 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingCart, Trash2, Loader2, ArrowLeft, Tag } from "lucide-react";
+import { ShoppingCart, Trash2, Loader2, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCart, useRemoveFromCart, useClearCart } from "@/hooks/queries/use-cart";
+import { VoucherInput } from "@/components/checkout/voucher-input";
+import type { VoucherValidateResponse } from "@/types/voucher";
 import { cn } from "@/lib/utils";
 
-function formatPrice(price: number): string {
+function formatPrice(price: number | string | null | undefined): string {
+  // Phòng thủ: backend decimal có thể serialize thành number hoặc chuỗi tùy phiên bản.
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
-  }).format(price);
+  }).format(Number(price ?? 0));
 }
 
 export default function CartPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [voucherCode, setVoucherCode] = useState("");
+  const [voucherResult, setVoucherResult] = useState<VoucherValidateResponse | null>(null);
 
   const { data: cartData, isLoading } = useCart();
   const removeFromCart = useRemoveFromCart();
   const clearCart = useClearCart();
 
   const items = cartData?.items ?? [];
-  const total = cartData?.total ?? 0;
+  // Number() phòng thủ: backend đã đổi decimal sang JSON number, nhưng vẫn cast
+  // để chịu được trường hợp API cũ trả chuỗi.
+  const total = Number(cartData?.total ?? 0);
 
   // Calculate selected total
   const selectedTotal = items
     .filter((item) => selectedIds.includes(item.course_id))
-    .reduce((sum, item) => sum + (item.course?.price ?? 0), 0);
+    .reduce((sum, item) => sum + Number(item.course?.price ?? 0), 0);
+
+  const effectiveSubtotal = selectedIds.length > 0 ? selectedTotal : total;
+  const discount = voucherResult?.discount_amount ?? 0;
+  const finalTotal = Math.max(0, effectiveSubtotal - discount);
 
   const allSelected = items.length > 0 && selectedIds.length === items.length;
 
   const toggleSelectAll = () => {
+    setVoucherResult(null);
     if (allSelected) {
       setSelectedIds([]);
     } else {
@@ -45,6 +54,7 @@ export default function CartPage() {
   };
 
   const toggleSelect = (courseId: string) => {
+    setVoucherResult(null);
     setSelectedIds((prev) =>
       prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]
     );
@@ -185,43 +195,33 @@ export default function CartPage() {
                   <label className="text-sm font-medium text-neutral-700 mb-2 block">
                     Mã giảm giá
                   </label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                      <Input
-                        placeholder="Nhập mã voucher"
-                        value={voucherCode}
-                        onChange={(e) => setVoucherCode(e.target.value)}
-                        className="pl-9"
-                      />
-                    </div>
-                    <Button variant="outline" disabled={!voucherCode}>
-                      Áp dụng
-                    </Button>
-                  </div>
+                  <VoucherInput
+                    courseIds={selectedIds.length > 0 ? selectedIds : items.map((i) => i.course_id)}
+                    subtotal={effectiveSubtotal}
+                    onApplied={setVoucherResult}
+                  />
                 </div>
 
                 <div className="pt-4 space-y-3" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-neutral-600">Tạm tính</span>
-                    <span className="font-medium">
-                      {formatPrice(selectedIds.length > 0 ? selectedTotal : total)}
-                    </span>
+                    <span className="font-medium">{formatPrice(effectiveSubtotal)}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-neutral-600">Giảm giá</span>
-                    <span className="font-medium text-green-600">-{formatPrice(0)}</span>
+                    <span className="font-medium text-green-600">-{formatPrice(discount)}</span>
                   </div>
                   <div className="pt-3 flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
                     <span className="font-medium text-black">Tổng cộng</span>
-                    <span className="text-xl font-medium text-black">
-                      {formatPrice(selectedIds.length > 0 ? selectedTotal : total)}
-                    </span>
+                    <span className="text-xl font-medium text-black">{formatPrice(finalTotal)}</span>
                   </div>
                 </div>
 
                 <Link
-                  href={`/checkout${selectedIds.length > 0 ? `?items=${selectedIds.join(",")}` : ""}`}
+                  href={`/checkout?${new URLSearchParams({
+                    ...(selectedIds.length > 0 ? { items: selectedIds.join(",") } : {}),
+                    ...(voucherResult?.voucher?.code ? { voucher: voucherResult.voucher.code } : {}),
+                  }).toString()}`}
                 >
                   <Button
                     className="w-full mt-6"

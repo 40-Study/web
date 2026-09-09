@@ -9,6 +9,9 @@ import {
 } from "@/hooks/queries/use-admin";
 import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
+import { QueryState } from "@/components/common/query-state";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 
 type OrgFormState = {
   id?: string;
@@ -18,17 +21,23 @@ type OrgFormState = {
 const emptyForm: OrgFormState = { name: "" };
 
 export default function OrganizationsPage() {
-  const { data = [], isLoading } = useOrganizations();
+  const { data = [], isLoading, isError, refetch } = useOrganizations();
   const createOrg = useCreateOrganization();
   const updateOrg = useUpdateOrganization();
   const deleteOrg = useDeleteOrganization();
 
   const [form, setForm] = useState<OrgFormState>(emptyForm);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Xác nhận trước khi xóa tổ chức (đồng nhất với H-09 ở admin/roles)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const selected = useMemo(
     () => data.find((org) => org.id === selectedId) || null,
     [data, selectedId]
+  );
+  const confirmDeleteOrg = useMemo(
+    () => data.find((org) => org.id === confirmDeleteId) || null,
+    [data, confirmDeleteId]
   );
 
   const onSubmit = (e: React.FormEvent) => {
@@ -57,14 +66,14 @@ export default function OrganizationsPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
         <div className="space-y-3">
-          {isLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-20 animate-pulse rounded-xl bg-gray-200" />
-              ))}
-            </div>
-          ) : (
-            data.map((org) => (
+          <QueryState
+            isLoading={isLoading}
+            isError={isError}
+            isEmpty={data.length === 0}
+            emptyTitle="Chưa có tổ chức nào"
+            onRetry={() => refetch()}
+          >
+            {data.map((org) => (
               <div
                 key={org.id}
                 className={`rounded-xl bg-white p-4 shadow-sm ${selected?.id === org.id ? "ring-2 ring-primary-200" : ""}`}
@@ -82,7 +91,7 @@ export default function OrganizationsPage() {
                       Sửa
                     </button>
                     <button
-                      onClick={() => deleteOrg.mutate(org.id)}
+                      onClick={() => setConfirmDeleteId(org.id)}
                       className="rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-700"
                     >
                       Xóa
@@ -90,13 +99,8 @@ export default function OrganizationsPage() {
                   </div>
                 </Can>
               </div>
-            ))
-          )}
-          {data.length === 0 && !isLoading && (
-            <div className="rounded-xl bg-white p-8 text-center shadow-sm">
-              <p className="text-gray-500">Chưa có tổ chức nào</p>
-            </div>
-          )}
+            ))}
+          </QueryState>
         </div>
 
         <div className="space-y-4">
@@ -143,6 +147,27 @@ export default function OrganizationsPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
+        <DialogContent>
+          <DialogTitle>Xóa tổ chức &quot;{confirmDeleteOrg?.name}&quot;?</DialogTitle>
+          <DialogDescription>Hành động này không thể hoàn tác.</DialogDescription>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (confirmDeleteId) deleteOrg.mutate(confirmDeleteId);
+                setConfirmDeleteId(null);
+              }}
+            >
+              Xóa tổ chức
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

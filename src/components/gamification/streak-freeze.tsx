@@ -147,7 +147,7 @@ export function StreakAtRiskWarning({
           <button
             onClick={onDismiss}
             className="text-orange-400 hover:text-orange-600 dark:hover:text-orange-200 transition-colors"
-            aria-label="Dismiss warning"
+            aria-label="Đóng cảnh báo"
           >
             <X className="h-4 w-4" />
           </button>

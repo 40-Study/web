@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LearnRouteGuard } from "./learn-route-guard";
 
 interface CourseLearnLayoutProps {
   children: React.ReactNode;
@@ -31,12 +32,16 @@ function LessonContentSkeleton() {
   );
 }
 
-export default function CourseLearnLayout({ children }: CourseLearnLayoutProps) {
+export default async function CourseLearnLayout({ children, params }: CourseLearnLayoutProps) {
+  const { slug } = await params;
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Suspense fallback={<LessonContentSkeleton />}>
-        {children}
-      </Suspense>
+      <LearnRouteGuard slug={slug}>
+        <Suspense fallback={<LessonContentSkeleton />}>
+          {children}
+        </Suspense>
+      </LearnRouteGuard>
     </div>
   );
 }

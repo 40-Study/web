@@ -1,29 +1,11 @@
 /**
- * Voucher type definitions — snake_case matches backend API responses
+ * Voucher type definitions — SSOT là internal/model/payment.go#Voucher,
+ * mirror trong src/services/voucher.service.ts. File này chỉ giữ các type
+ * UI-only (kết quả áp dụng voucher tại chỗ) để tránh trùng lặp định nghĩa.
  */
 
-import type { ID } from "./common";
-
-export type VoucherStatus = "active" | "inactive" | "expired";
-export type VoucherDiscountType = "percentage" | "fixed";
-
-export interface Voucher {
-  id: ID;
-  code: string;
-  discount_type: VoucherDiscountType;
-  discount_value: number;
-  /** Maximum discount cap for percentage-type vouchers */
-  max_discount?: number;
-  /** Minimum order value required */
-  min_order_value?: number;
-  max_uses?: number;
-  used_count?: number;
-  expires_at?: string;
-  status: VoucherStatus;
-  description?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+export type { Voucher, VoucherDiscountUnit, VoucherDiscountMethod } from "@/services/voucher.service";
+import type { Voucher } from "@/services/voucher.service";
 
 export interface VoucherValidateRequest {
   code: string;
@@ -32,9 +14,8 @@ export interface VoucherValidateRequest {
 
 export interface VoucherValidateResponse {
   valid: boolean;
-  voucher?: Voucher;
-  /** Calculated discount amount in VND */
+  voucher?: Pick<Voucher, "id" | "code">;
+  /** Số tiền được giảm (VND), tính tại client từ dữ liệu voucher công khai */
   discount_amount: number;
-  final_total: number;
   message?: string;
 }

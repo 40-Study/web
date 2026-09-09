@@ -155,9 +155,9 @@ export default function PublicProfilePage() {
       <div className="container max-w-6xl mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="achievements">Achievements</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="overview">Tổng quan</TabsTrigger>
+            <TabsTrigger value="achievements">Thành tích</TabsTrigger>
+            <TabsTrigger value="activity">Hoạt động</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -168,19 +168,19 @@ export default function PublicProfilePage() {
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="font-semibold text-gray-900 dark:text-white">
-                      Learning Activity
+                      Hoạt động học tập
                     </h2>
-                    <span className="text-sm text-muted-foreground">Last 20 weeks</span>
+                    <span className="text-sm text-muted-foreground">20 tuần gần nhất</span>
                   </div>
                   <ActivityHeatmap data={data.activity} weeks={20} />
                 </Card>
 
                 <Card className="p-6">
                   <h2 className="font-semibold mb-4 text-gray-900 dark:text-white">
-                    Completed Courses
+                    Khóa học đã hoàn thành
                   </h2>
                   {completedCourses.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No completed courses yet.</p>
+                    <p className="text-sm text-muted-foreground">Chưa hoàn thành khóa học nào.</p>
                   ) : (
                     <div className="space-y-3">
                       {completedCourses.map((course) => (
@@ -197,15 +197,16 @@ export default function PublicProfilePage() {
                                 {course.title}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                Completed {course.completedAt.toLocaleDateString("en-US", {
-                                  month: "short",
+                                Hoàn thành{" "}
+                                {course.completedAt.toLocaleDateString("vi-VN", {
                                   day: "numeric",
+                                  month: "short",
                                   year: "numeric",
                                 })}
                               </p>
                             </div>
                           </div>
-                          <Badge variant="success">Completed</Badge>
+                          <Badge variant="success">Đã hoàn thành</Badge>
                         </div>
                       ))}
                     </div>
@@ -216,44 +217,44 @@ export default function PublicProfilePage() {
               <div className="space-y-6">
                 <Card className="p-6">
                   <h3 className="font-semibold mb-4 text-gray-900 dark:text-white">
-                    Stats
+                    Thống kê
                   </h3>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Total XP</span>
-                      <Badge variant="xp">{user.totalXP.toLocaleString()} XP</Badge>
+                      <span className="text-muted-foreground">Tổng XP</span>
+                      <Badge variant="xp">{user.totalXP.toLocaleString("vi-VN")} XP</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Level</span>
-                      <Badge variant="level">Level {user.level}</Badge>
+                      <span className="text-muted-foreground">Cấp độ</span>
+                      <Badge variant="level">Cấp {user.level}</Badge>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Streak</span>
-                      <Badge variant="streak">{stats.streak} days</Badge>
+                      <Badge variant="streak">{stats.streak} ngày</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Courses</span>
+                      <span className="text-muted-foreground">Khóa học</span>
                       <span className="text-sm font-medium">{stats.coursesCompleted}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Achievements</span>
+                      <span className="text-muted-foreground">Thành tích</span>
                       <span className="text-sm font-medium">{stats.achievements}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Study time</span>
-                      <span className="text-sm font-medium">{stats.totalStudyTime} min</span>
+                      <span className="text-muted-foreground">Thời gian học</span>
+                      <span className="text-sm font-medium">{stats.totalStudyTime} phút</span>
                     </div>
                   </div>
                 </Card>
 
                 <Card className="p-6">
                   <h3 className="font-semibold mb-4 text-gray-900 dark:text-white">
-                    Top Badges
+                    Huy hiệu nổi bật
                   </h3>
                   {achievements.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No badges unlocked yet.</p>
+                    <p className="text-sm text-muted-foreground">Chưa mở khóa huy hiệu nào.</p>
                   ) : (
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {achievements.slice(0, 6).map((achievement) => (
                         <div
                           key={achievement.id}
@@ -273,10 +274,10 @@ export default function PublicProfilePage() {
           <TabsContent value="achievements">
             <Card className="p-6">
               <h2 className="font-semibold mb-6 text-gray-900 dark:text-white">
-                All Achievements ({stats.achievements})
+                Toàn bộ thành tích ({stats.achievements})
               </h2>
               {achievements.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No achievements unlocked yet.</p>
+                <p className="text-sm text-muted-foreground">Chưa mở khóa thành tích nào.</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {achievements.map((achievement) => (
@@ -303,7 +304,7 @@ export default function PublicProfilePage() {
           <TabsContent value="activity">
             <Card className="p-6">
               <h2 className="font-semibold mb-4 text-gray-900 dark:text-white">
-                Activity History
+                Lịch sử hoạt động
               </h2>
               <ActivityHeatmap data={data.activity} weeks={52} />
             </Card>

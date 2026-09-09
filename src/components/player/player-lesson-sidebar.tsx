@@ -12,6 +12,8 @@ import {
   Code,
   FileText,
   Lock,
+  List,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PlayerChapter, PlayerLesson } from "@/types/course-player";
@@ -237,6 +239,9 @@ export function PlayerLessonSidebar({
   lessonContent,
 }: PlayerLessonSidebarProps) {
   const [activeTab, setActiveTab] = useState<SidebarTab>("progress");
+  // Sidebar 380px cố định chiếm gần hết viewport <1024px (H-10) — trên mobile
+  // ẩn mặc định, mở dạng overlay toàn màn hình qua nút nổi bên dưới.
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const currentChapterId = chapters.find((ch) =>
     ch.lessons.some((l) => l.id === currentLessonId)
@@ -262,12 +267,38 @@ export function PlayerLessonSidebar({
   const progressPct = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
   return (
-    <aside
-      className={cn(
-        "w-[380px] bg-white border-l border-gray-200 overflow-hidden shrink-0 flex flex-col",
-        className
-      )}
-    >
+    <>
+      {/* Nút mở nội dung bài học trên mobile (H-10) — sidebar ẩn mặc định dưới lg */}
+      <button
+        type="button"
+        onClick={() => setIsMobileOpen(true)}
+        // left-4 (không phải right) để không đè lên FloatingButtons (AI/Sandbox FAB) ở góc phải.
+        className="lg:hidden fixed bottom-24 left-4 z-30 flex items-center gap-2 rounded-full bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg"
+        aria-label="Mở nội dung bài học"
+      >
+        <List className="h-4 w-4" aria-hidden="true" />
+        Bài học
+      </button>
+
+      <aside
+        className={cn(
+          "bg-white border-l border-gray-200 overflow-hidden flex flex-col",
+          // Desktop (≥lg): sidebar cố định 380px trong layout.
+          "lg:static lg:flex lg:w-[380px] lg:shrink-0",
+          // Mobile (<lg): ẩn mặc định, mở thành overlay toàn màn hình.
+          isMobileOpen ? "fixed inset-0 z-40 flex w-full" : "hidden lg:flex",
+          className
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => setIsMobileOpen(false)}
+          className="lg:hidden absolute right-3 top-3 z-10 rounded-full bg-gray-100 p-2 hover:bg-gray-200"
+          aria-label="Đóng nội dung bài học"
+        >
+          <X className="h-4 w-4 text-gray-600" aria-hidden="true" />
+        </button>
+
       {/* Tabs */}
       <div className="flex border-b border-gray-200 shrink-0">
         <button
@@ -421,6 +452,7 @@ export function PlayerLessonSidebar({
           </div>
         </>
       )}
-    </aside>
+      </aside>
+    </>
   );
 }

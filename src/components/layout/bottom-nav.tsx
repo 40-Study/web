@@ -24,13 +24,15 @@ interface NavItem {
   href: string;
 }
 
+// Nhãn thống nhất tiếng Việt cho mọi vai trò (M-03); /children và /reports trỏ tới
+// route thật (/settings/family) hoặc bị bỏ khi chưa có trang tương ứng (H-06).
 const navConfigs: Record<UserRole, NavItem[]> = {
   student: [
-    { icon: <Home className="w-5 h-5" />, label: "Home", href: "/home" },
+    { icon: <Home className="w-5 h-5" />, label: "Trang chủ", href: "/home" },
     { icon: <Calendar className="w-5 h-5" />, label: "Lịch học", href: "/schedule" },
-    { icon: <BookOpen className="w-5 h-5" />, label: "Courses", href: "/courses" },
-    { icon: <Trophy className="w-5 h-5" />, label: "Leaderboard", href: "/leaderboard" },
-    { icon: <User className="w-5 h-5" />, label: "Profile", href: "/profile" },
+    { icon: <BookOpen className="w-5 h-5" />, label: "Khóa học", href: "/courses" },
+    { icon: <Trophy className="w-5 h-5" />, label: "Xếp hạng", href: "/leaderboard" },
+    { icon: <User className="w-5 h-5" />, label: "Cá nhân", href: "/profile" },
   ],
   teacher: [
     { icon: <Calendar className="w-5 h-5" />, label: "Lịch", href: "/teacher/schedule" },
@@ -40,10 +42,9 @@ const navConfigs: Record<UserRole, NavItem[]> = {
     { icon: <Wallet className="w-5 h-5" />, label: "Ví", href: "/teacher/wallet" },
   ],
   parent: [
-    { icon: <Home className="w-5 h-5" />, label: "Home", href: "/home" },
-    { icon: <Users className="w-5 h-5" />, label: "Children", href: "/children" },
-    { icon: <BarChart3 className="w-5 h-5" />, label: "Reports", href: "/reports" },
-    { icon: <User className="w-5 h-5" />, label: "Profile", href: "/profile" },
+    { icon: <Home className="w-5 h-5" />, label: "Trang chủ", href: "/home" },
+    { icon: <Users className="w-5 h-5" />, label: "Gia đình", href: "/settings/family" },
+    { icon: <User className="w-5 h-5" />, label: "Cá nhân", href: "/profile" },
   ],
 };
 

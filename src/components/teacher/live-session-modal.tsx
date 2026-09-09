@@ -56,11 +56,11 @@ interface LiveSessionModalProps {
 // ─── Constants ─────────────────────────────────────────────────────────────
 
 const DURATION_OPTIONS = [
-  { value: 30, label: "30 Phut" },
-  { value: 45, label: "45 Phut" },
-  { value: 60, label: "60 Phut" },
-  { value: 90, label: "90 Phut" },
-  { value: 120, label: "120 Phut" },
+  { value: 30, label: "30 phút" },
+  { value: 45, label: "45 phút" },
+  { value: 60, label: "60 phút" },
+  { value: 90, label: "90 phút" },
+  { value: 120, label: "120 phút" },
 ];
 
 const DEFAULT_FORM_DATA: LiveSessionFormData = {
@@ -178,7 +178,7 @@ export function LiveSessionModal({
                 Tieu de buoi live
               </label>
               <Input
-                placeholder="VD: Q&A: Giai dap loi cai dat Go Compiler & VS Code"
+                placeholder="VD: Q&A: Giải đáp lỗi cài đặt Go Compiler & VS Code"
                 value={form.title}
                 onChange={(e) => updateForm("title", e.target.value)}
                 className="mt-2"
@@ -203,7 +203,7 @@ export function LiveSessionModal({
                 </label>
               </div>
               <Textarea
-                placeholder="Trong buoi nay chung ta se cai dat cac cong cu can thiet de bat dau lap trinh voi Go va framework bao gom: Go Compiler, VS Code, va Postman."
+                placeholder="Trong buổi này chúng ta sẽ cài đặt các công cụ cần thiết để bắt đầu lập trình với Go và framework bao gồm: Go Compiler, VS Code, và Postman."
                 value={form.description}
                 onChange={(e) => updateForm("description", e.target.value)}
                 rows={4}
@@ -306,13 +306,13 @@ export function LiveSessionModal({
             {/* Platform selection */}
             <div>
               <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Nen tang phat song
+                Nền tảng phát sóng
               </label>
               <div className="grid grid-cols-3 gap-3 mt-3">
                 <PlatformCard
                   icon={<Video className="h-6 w-6" />}
                   label="40Study Native"
-                  sublabel="Khuyen dung"
+                  sublabel="Khuyến dùng"
                   selected={form.platform === "40study"}
                   onClick={() => updateForm("platform", "40study")}
                 />
@@ -324,14 +324,14 @@ export function LiveSessionModal({
                 />
                 <PlatformCard
                   icon={<Link2 className="h-6 w-6" />}
-                  label="Link tu chon"
+                  label="Link tùy chọn"
                   selected={form.platform === "custom"}
                   onClick={() => updateForm("platform", "custom")}
                 />
               </div>
               {form.platform === "custom" && (
                 <Input
-                  placeholder="Nhap link phong hop..."
+                  placeholder="Nhập link phòng họp..."
                   value={form.customLink}
                   onChange={(e) => updateForm("customLink", e.target.value)}
                   className="mt-3"
@@ -347,9 +347,9 @@ export function LiveSessionModal({
 
               <div className="flex items-center justify-between p-3 border rounded-xl">
                 <div>
-                  <p className="font-medium">Thong bao nhac nho</p>
+                  <p className="font-medium">Thông báo nhắc nhở</p>
                   <p className="text-sm text-muted-foreground">
-                    Gui thong bao tu dong toi hoc sinh va phu huynh truoc 30 phut
+                    Gửi thông báo tự động tới học sinh và phụ huynh trước 30 phút
                   </p>
                 </div>
                 <Switch
@@ -360,9 +360,9 @@ export function LiveSessionModal({
 
               <div className="flex items-center justify-between p-3 border rounded-xl">
                 <div>
-                  <p className="font-medium">Tu dong ghi lai (Recording)</p>
+                  <p className="font-medium">Tự động ghi lại (Recording)</p>
                   <p className="text-sm text-muted-foreground">
-                    Luu tru ban Record sau khi ket thuc
+                    Lưu trữ bản ghi sau khi kết thúc
                   </p>
                 </div>
                 <Switch
@@ -376,19 +376,19 @@ export function LiveSessionModal({
 
         <DialogFooter className="flex items-center justify-between sm:justify-between">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Huy bo
+            Hủy bỏ
           </Button>
           <div className="flex gap-2">
             {onSaveDraft && (
               <Button variant="outline" onClick={handleSaveDraft} disabled={isLoading}>
-                Luu nhap
+                Lưu nháp
               </Button>
             )}
             {activeTab !== "settings" ? (
-              <Button onClick={handleNext}>Tiep theo</Button>
+              <Button onClick={handleNext}>Tiếp theo</Button>
             ) : (
               <Button onClick={handleSubmit} isLoading={isLoading}>
-                Tao buoi live
+                Tạo buổi live
               </Button>
             )}
           </div>

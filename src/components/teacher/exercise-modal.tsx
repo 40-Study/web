@@ -273,15 +273,15 @@ export function ExerciseModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Them bai tap</DialogTitle>
+          <DialogTitle>Thêm bài tập</DialogTitle>
           <DialogDescription>
             {!exerciseType
-              ? "Chon loai bai tap ban muon tao"
+              ? "Chọn loại bài tập bạn muốn tạo"
               : exerciseType === "quiz"
-              ? "Tao bai trac nghiem"
+              ? "Tạo bài trắc nghiệm"
               : exerciseType === "code"
-              ? "Tao bai thuc hanh Code"
-              : "Tao bai tu luan"}
+              ? "Tạo bài thực hành Code"
+              : "Tạo bài tự luận"}
           </DialogDescription>
         </DialogHeader>
 
@@ -290,19 +290,19 @@ export function ExerciseModal({
           <div className="grid grid-cols-3 gap-4 py-4">
             <TypeCard
               icon={<FileQuestion className="h-8 w-8" />}
-              label="Trac nghiem (Quiz)"
+              label="Trắc nghiệm (Quiz)"
               selected={false}
               onClick={() => setExerciseType("quiz")}
             />
             <TypeCard
               icon={<Code2 className="h-8 w-8" />}
-              label="Thuc hanh Code"
+              label="Thực hành Code"
               selected={false}
               onClick={() => setExerciseType("code")}
             />
             <TypeCard
               icon={<FileText className="h-8 w-8" />}
-              label="Tu luan"
+              label="Tự luận"
               selected={false}
               onClick={() => setExerciseType("essay")}
             />
@@ -313,8 +313,8 @@ export function ExerciseModal({
         {exerciseType === "quiz" && (
           <div className="space-y-6 py-4">
             <Input
-              label="Tieu de bai kiem tra"
-              placeholder="VD: Kiem tra kien thuc Go co ban"
+              label="Tiêu đề bài kiểm tra"
+              placeholder="VD: Kiểm tra kiến thức Go cơ bản"
               value={quizForm.title}
               onChange={(e) => setQuizForm((prev) => ({ ...prev, title: e.target.value }))}
             />
@@ -349,7 +349,7 @@ export function ExerciseModal({
                         )}
                       </div>
                       <Input
-                        placeholder="Nhap cau hoi..."
+                        placeholder="Nhập câu hỏi..."
                         value={q.question}
                         onChange={(e) => updateQuestion(q.id, "question", e.target.value)}
                       />
@@ -373,7 +373,7 @@ export function ExerciseModal({
                               )}
                             </button>
                             <Input
-                              placeholder="Nhap phuong an..."
+                              placeholder="Nhập phương án..."
                               value={opt.text}
                               onChange={(e) => updateOption(q.id, opt.id, e.target.value)}
                               className="flex-1"
@@ -434,13 +434,13 @@ export function ExerciseModal({
                     setCodeForm((prev) => ({ ...prev, autoGrade: v }))
                   }
                 />
-                <span className="text-sm">Cham diem tu dong</span>
+                <span className="text-sm">Chấm điểm tự động</span>
               </div>
             </div>
 
             <Textarea
-              label="De bai"
-              placeholder="Hay viet mot function tinh tong cac so chan trong mang..."
+              label="Đề bài"
+              placeholder="Hãy viết một function tính tổng các số chẵn trong mảng..."
               value={codeForm.description}
               onChange={(e) =>
                 setCodeForm((prev) => ({ ...prev, description: e.target.value }))
@@ -485,15 +485,15 @@ export function ExerciseModal({
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <Textarea
-                      label="Test Case Input"
-                      placeholder="Nhap dau vao (e.g., [1, 2, 3, 4, 5, 6])"
+                      label="Dữ liệu đầu vào"
+                      placeholder="Nhập đầu vào (ví dụ: [1, 2, 3, 4, 5, 6])"
                       value={tc.input}
                       onChange={(e) => updateTestCase(tc.id, "input", e.target.value)}
                       rows={2}
                     />
                     <Textarea
-                      label="Expected Test Output"
-                      placeholder="Nhap dau ra mong doi (e.g., 12)"
+                      label="Kết quả đầu ra mong đợi"
+                      placeholder="Nhập đầu ra mong đợi (ví dụ: 12)"
                       value={tc.expectedOutput}
                       onChange={(e) =>
                         updateTestCase(tc.id, "expectedOutput", e.target.value)
@@ -539,8 +539,8 @@ export function ExerciseModal({
         {exerciseType === "essay" && (
           <div className="space-y-6 py-4">
             <Input
-              label="Tieu de bai tu luan"
-              placeholder="VD: Phan tich uu va nhuoc diem cua Go"
+              label="Tiêu đề bài tự luận"
+              placeholder="VD: Phân tích ưu và nhược điểm của Go"
               value={essayForm.title}
               onChange={(e) =>
                 setEssayForm((prev) => ({ ...prev, title: e.target.value }))
@@ -548,8 +548,8 @@ export function ExerciseModal({
             />
 
             <Textarea
-              label="De bai"
-              placeholder="Hay trinh bay chi tiet ve cac uu diem va nhuoc diem cua ngon ngu Go..."
+              label="Đề bài"
+              placeholder="Hãy trình bày chi tiết về các ưu điểm và nhược điểm của ngôn ngữ Go..."
               value={essayForm.question}
               onChange={(e) =>
                 setEssayForm((prev) => ({ ...prev, question: e.target.value }))
@@ -560,7 +560,7 @@ export function ExerciseModal({
             <div className="grid grid-cols-2 gap-4">
               <Input
                 type="number"
-                label="So tu toi thieu"
+                label="Số từ tối thiểu"
                 placeholder="50"
                 value={essayForm.minWords || ""}
                 onChange={(e) =>
@@ -572,7 +572,7 @@ export function ExerciseModal({
               />
               <Input
                 type="number"
-                label="So tu toi da"
+                label="Số từ tối đa"
                 placeholder="500"
                 value={essayForm.maxWords || ""}
                 onChange={(e) =>
@@ -598,13 +598,13 @@ export function ExerciseModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="5">5 phut</SelectItem>
-                  <SelectItem value="10">10 phut</SelectItem>
-                  <SelectItem value="15">15 phut</SelectItem>
-                  <SelectItem value="20">20 phut</SelectItem>
-                  <SelectItem value="30">30 phut</SelectItem>
-                  <SelectItem value="45">45 phut</SelectItem>
-                  <SelectItem value="60">60 phut</SelectItem>
+                  <SelectItem value="5">5 phút</SelectItem>
+                  <SelectItem value="10">10 phút</SelectItem>
+                  <SelectItem value="15">15 phút</SelectItem>
+                  <SelectItem value="20">20 phút</SelectItem>
+                  <SelectItem value="30">30 phút</SelectItem>
+                  <SelectItem value="45">45 phút</SelectItem>
+                  <SelectItem value="60">60 phút</SelectItem>
                 </SelectContent>
               </Select>
             </div>

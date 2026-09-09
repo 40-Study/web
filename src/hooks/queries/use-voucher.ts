@@ -2,9 +2,9 @@
  * React Query hooks for voucher operations
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { voucherService, type Voucher } from "@/services/voucher.service";
+import { voucherService, type Voucher, type UserSavedVoucher } from "@/services/voucher.service";
 
 export const voucherKeys = {
   all: ["vouchers"] as const,
@@ -22,12 +22,47 @@ export function usePublicVouchers() {
   });
 }
 
-/** Fetch current user's saved vouchers */
+/** Fetch current user's saved vouchers (chỉ id/voucher_id — chưa có chi tiết) */
 export function useMyVouchers() {
   return useQuery({
     queryKey: voucherKeys.mine(),
     queryFn: () => voucherService.getMyVouchers(),
   });
+}
+
+export interface MyVoucherWithDetails extends UserSavedVoucher {
+  voucher: Voucher | null;
+}
+
+/**
+ * Fetch current user's saved vouchers KÈM chi tiết voucher (code, discount…).
+ * GET /vouchers/me chỉ trả {id, voucher_id, saved_at,...} — model.UserVoucher
+ * ẩn quan hệ Voucher (`json:"-"`) — nên phải join thêm GET /vouchers/:id cho
+ * từng voucher_id ở client.
+ */
+export function useMyVouchersWithDetails() {
+  const savedQuery = useMyVouchers();
+  const saved = savedQuery.data ?? [];
+
+  const detailQueries = useQueries({
+    queries: saved.map((sv) => ({
+      queryKey: ["vouchers", "detail", sv.voucher_id],
+      queryFn: () => voucherService.getVoucherById(sv.voucher_id),
+      enabled: !!sv.voucher_id,
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  const data: MyVoucherWithDetails[] = saved.map((sv, idx) => ({
+    ...sv,
+    voucher: detailQueries[idx]?.data ?? null,
+  }));
+
+  return {
+    data,
+    isLoading: savedQuery.isLoading || detailQueries.some((q) => q.isLoading),
+    isError: savedQuery.isError || detailQueries.some((q) => q.isError),
+  };
 }
 
 /** Fetch a voucher by code */

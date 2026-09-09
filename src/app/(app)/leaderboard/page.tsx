@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Trophy, Clock, ChevronDown, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Trophy, Clock, ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { QueryState } from "@/components/common/query-state";
 import {
   LeaderboardList,
   LeagueBadge,
@@ -16,13 +18,13 @@ import { useLeaderboard, useMyRank } from "@/hooks/queries/use-leaderboard";
 import type { PeriodType } from "@/services/leaderboard.service";
 
 /**
- * Map backend period type to UI period selector options
+ * Map period của backend sang lựa chọn hiển thị trên UI
  */
 const PERIOD_OPTIONS: { label: string; value: PeriodType }[] = [
-  { label: "Weekly", value: "weekly" },
-  { label: "Monthly", value: "monthly" },
-  { label: "All Time", value: "all_time" },
-  { label: "Daily", value: "daily" },
+  { label: "Tuần", value: "weekly" },
+  { label: "Tháng", value: "monthly" },
+  { label: "Toàn thời gian", value: "all_time" },
+  { label: "Ngày", value: "daily" },
 ];
 
 /**
@@ -50,15 +52,15 @@ function mapToUiEntry(dto: {
 }
 
 /**
- * Format time remaining until weekly reset (Sunday midnight)
+ * Định dạng thời gian còn lại tới lúc reset hàng tuần (nửa đêm Chủ nhật)
  */
 function formatTimeRemaining(seconds: number): string {
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
+  if (days > 0) return `${days} ngày ${hours} giờ`;
+  if (hours > 0) return `${hours} giờ ${minutes} phút`;
+  return `${minutes} phút`;
 }
 
 /**
@@ -80,9 +82,17 @@ export default function LeaderboardPage() {
   const {
     data: leaderboardData,
     isLoading: isLeaderboardLoading,
+    isError: isLeaderboardError,
+    error: leaderboardError,
+    refetch: refetchLeaderboard,
   } = useLeaderboard({ period_type: periodType, limit: 10 });
 
-  const { data: myRankData, isLoading: isMyRankLoading } = useMyRank({
+  const {
+    data: myRankData,
+    isLoading: isMyRankLoading,
+    isError: isMyRankError,
+    refetch: refetchMyRank,
+  } = useMyRank({
     period_type: periodType,
   });
 
@@ -100,6 +110,7 @@ export default function LeaderboardPage() {
   const myUserId = myEntry?.userId ?? "";
 
   const isLoading = isLeaderboardLoading || isMyRankLoading;
+  const isError = isLeaderboardError || isMyRankError;
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8">
@@ -109,8 +120,8 @@ export default function LeaderboardPage() {
           <Trophy className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Leaderboard</h1>
-          <p className="text-muted-foreground">Compete with others and climb the ranks</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Bảng xếp hạng</h1>
+          <p className="text-muted-foreground">Thi đua cùng bạn bè và leo hạng mỗi ngày</p>
         </div>
       </div>
 
@@ -134,18 +145,20 @@ export default function LeaderboardPage() {
         <div className="relative flex-1">
           <button
             onClick={() => setIsLeagueDropdownOpen(!isLeagueDropdownOpen)}
+            aria-expanded={isLeagueDropdownOpen}
+            aria-haspopup="listbox"
             className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl hover:border-gray-200 dark:hover:border-gray-600 transition-colors"
           >
             <div className="flex items-center gap-3">
               <span className="text-3xl">{currentLeague.icon}</span>
               <div className="text-left">
                 <p className="font-semibold text-gray-900 dark:text-white">
-                  {currentLeague.name} League
+                  Giải {currentLeague.name}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {nextLeague
-                    ? `Top 10 advance to ${nextLeague.name}`
-                    : "You're at the top!"}
+                    ? `Top 10 sẽ lên giải ${nextLeague.name}`
+                    : "Bạn đang ở giải cao nhất!"}
                 </p>
               </div>
             </div>
@@ -185,7 +198,7 @@ export default function LeaderboardPage() {
         <Card className="p-4 flex items-center gap-3 sm:w-auto">
           <Clock className="h-5 w-5 text-muted-foreground" />
           <div>
-            <p className="text-sm text-muted-foreground">Resets in</p>
+            <p className="text-sm text-muted-foreground">Làm mới sau</p>
             <p className="font-mono font-bold text-lg text-gray-900 dark:text-white">
               {formatTimeRemaining(timeRemaining)}
             </p>
@@ -200,16 +213,16 @@ export default function LeaderboardPage() {
             <div className="flex items-center gap-4">
               <span className="text-5xl">{currentLeague.icon}</span>
               <div>
-                <h2 className="text-2xl font-bold">{currentLeague.name} League</h2>
+                <h2 className="text-2xl font-bold">Giải {currentLeague.name}</h2>
                 <p className="opacity-90">
                   {nextLeague
-                    ? `Top 10 advance to ${nextLeague.name}`
-                    : "Maximum league achieved!"}
+                    ? `Top 10 sẽ lên giải ${nextLeague.name}`
+                    : "Đã đạt giải cao nhất!"}
                 </p>
               </div>
             </div>
             <div className="hidden sm:block text-right">
-              <p className="text-sm opacity-80">Weekly reset</p>
+              <p className="text-sm opacity-80">Làm mới hàng tuần</p>
               <p className="font-mono text-xl">{formatTimeRemaining(timeRemaining)}</p>
             </div>
           </div>
@@ -227,9 +240,9 @@ export default function LeaderboardPage() {
                 </span>
               </div>
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">Your Position</p>
+                <p className="font-semibold text-gray-900 dark:text-white">Vị trí của bạn</p>
                 <p className="text-sm text-muted-foreground">
-                  +{myEntry.weeklyXP.toLocaleString()} XP this period
+                  +{myEntry.weeklyXP.toLocaleString("vi-VN")} XP trong kỳ này
                 </p>
               </div>
             </div>
@@ -242,7 +255,7 @@ export default function LeaderboardPage() {
 
       {/* League progress */}
       <Card className="p-4 mb-6">
-        <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">League Progress</h3>
+        <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Tiến độ giải đấu</h3>
         <LeagueProgress
           currentXP={myEntry?.weeklyXP ?? 0}
           currentLeague={selectedLeague}
@@ -250,24 +263,33 @@ export default function LeaderboardPage() {
       </Card>
 
       {/* Leaderboard list */}
-      {isLoading ? (
-        <div className="flex justify-center p-8">
-          <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
-        </div>
-      ) : (
+      <QueryState
+        isLoading={isLoading}
+        isError={isError}
+        error={leaderboardError}
+        isEmpty={entries.length === 0}
+        emptyTitle="Chưa có ai trên bảng xếp hạng"
+        emptyDescription="Hãy là người đầu tiên hoàn thành bài học trong kỳ này."
+        onRetry={() => {
+          refetchLeaderboard();
+          refetchMyRank();
+        }}
+      >
         <LeaderboardList
           entries={entries}
           currentUserId={myUserId}
           currentUserEntry={myEntry ?? undefined}
         />
-      )}
+      </QueryState>
 
       {/* Bottom CTA */}
       <div className="mt-8 text-center">
         <p className="text-muted-foreground mb-4">
-          Complete more lessons to climb the leaderboard!
+          Hoàn thành thêm bài học để leo hạng trên bảng xếp hạng!
         </p>
-        <Button size="lg">Start Learning</Button>
+        <Link href="/courses">
+          <Button size="lg">Bắt đầu học</Button>
+        </Link>
       </div>
     </div>
   );

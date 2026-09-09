@@ -829,7 +829,7 @@ export function AddContentModal({
 
               {/* Test Cases */}
               <div className="space-y-3">
-                <label className="text-sm font-medium">Test Cases</label>
+                <label className="text-sm font-medium">Bộ kiểm thử</label>
                 {exTestCases.map((tc, idx) => (
                   <div key={tc.id} className="border rounded-xl p-3 space-y-2">
                     <div className="flex items-center justify-between">
@@ -842,13 +842,13 @@ export function AddContentModal({
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <Textarea
-                        placeholder="Input"
+                        placeholder="Đầu vào"
                         value={tc.input}
                         onChange={(e) => updateTestCase(tc.id, "input", e.target.value)}
                         rows={2}
                       />
                       <Textarea
-                        placeholder="Expected Output"
+                        placeholder="Đầu ra mong đợi"
                         value={tc.output}
                         onChange={(e) => updateTestCase(tc.id, "output", e.target.value)}
                         rows={2}
