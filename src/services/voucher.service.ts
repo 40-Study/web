@@ -39,7 +39,9 @@ export interface Voucher {
   payment_methods_accepted?: string[];
 
   used_count?: number;
+  /** Tổng số lượt toàn hệ thống. `VOUCHER_UNLIMITED_USAGE` (0) = không giới hạn. */
   usage_limit?: number;
+  /** Số lượt cho từng user. `VOUCHER_UNLIMITED_USAGE` (0) = không giới hạn. */
   usage_per_user?: number;
   can_stack?: boolean;
 
@@ -196,6 +198,24 @@ export interface VoucherApplyResult {
 }
 
 /**
+ * Giá trị "không giới hạn" cho `usage_limit` / `usage_per_user` — khớp backend
+ * (`model.VoucherUnlimitedUsage`): 0 hoặc âm = không giới hạn, chỉ > 0 mới là giới hạn thật.
+ */
+export const VOUCHER_UNLIMITED_USAGE = 0;
+
+/** Voucher có giới hạn tổng số lượt toàn hệ thống hay không. */
+export function hasVoucherUsageLimit(voucher: Pick<Voucher, "usage_limit">): boolean {
+  return typeof voucher.usage_limit === "number" && voucher.usage_limit > VOUCHER_UNLIMITED_USAGE;
+}
+
+/** Đã dùng hết tổng số lượt (luôn false khi không giới hạn). */
+export function isVoucherUsageLimitReached(
+  voucher: Pick<Voucher, "usage_limit" | "used_count">,
+): boolean {
+  return hasVoucherUsageLimit(voucher) && (voucher.used_count ?? 0) >= (voucher.usage_limit as number);
+}
+
+/**
  * Tính số tiền giảm cho một voucher MONEY áp dụng lên subtotal (VND).
  * Voucher loại POINT (đổi bằng điểm) không áp dụng cho thanh toán tiền mặt.
  */
@@ -211,11 +231,7 @@ export function calculateVoucherDiscount(voucher: Voucher, subtotal: number): Vo
   if (voucher.end_date && now > new Date(voucher.end_date).getTime()) {
     return { ok: false, discountAmount: 0, errorMessage: "Voucher đã hết hạn" };
   }
-  if (
-    typeof voucher.usage_limit === "number" &&
-    voucher.usage_limit > 0 &&
-    (voucher.used_count ?? 0) >= voucher.usage_limit
-  ) {
+  if (isVoucherUsageLimitReached(voucher)) {
     return { ok: false, discountAmount: 0, errorMessage: "Voucher đã hết lượt sử dụng" };
   }
 
