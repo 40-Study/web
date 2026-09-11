@@ -15,7 +15,8 @@ import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 export function Sidebar() {
   const pathname = usePathname();
   const { isAuthenticated, activeRole } = useAuthStore();
-  const { isExpanded, toggleExpanded } = useSidebarStore();
+  const { isCollapsed, toggle } = useSidebarStore();
+  const isExpanded = !isCollapsed; // sidebar.store.ts dùng chung 1 API isCollapsed (mục 14)
   const normalizedRole = normalizeRole(activeRole);
   const isStudent = normalizedRole === "STUDENT";
   const isParent = normalizedRole === "PARENT";
@@ -92,7 +93,7 @@ export function Sidebar() {
 
       {/* Toggle button - centered vertically on the right edge */}
       <button
-        onClick={toggleExpanded}
+        onClick={toggle}
         className={cn(
           "absolute top-1/2 -translate-y-1/2 -right-3 z-50",
           "w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm",
@@ -101,6 +102,7 @@ export function Sidebar() {
           "text-gray-400 hover:text-gray-600",
         )}
         title={isExpanded ? "Thu gọn" : "Mở rộng"}
+        aria-label={isExpanded ? "Thu gọn menu" : "Mở rộng menu"}
       >
         {isExpanded ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
       </button>

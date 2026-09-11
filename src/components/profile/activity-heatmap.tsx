@@ -61,7 +61,7 @@ export function ActivityHeatmap({
       // Track month labels
       const currentMonth = currentDate.getMonth();
       if (currentMonth !== lastMonth) {
-        const monthName = currentDate.toLocaleDateString("en-US", { month: "short" });
+        const monthName = currentDate.toLocaleDateString("vi-VN", { month: "short" });
         months.push({ label: monthName, weekIndex });
         lastMonth = currentMonth;
       }
@@ -144,7 +144,7 @@ export function ActivityHeatmap({
                       "w-3 h-3 rounded-sm transition-colors cursor-pointer hover:ring-1 hover:ring-gray-400",
                       getActivityLevel(day.count)
                     )}
-                    title={`${day.date}: ${day.count} ${day.count === 1 ? "lesson" : "lessons"}`}
+                    title={`${day.date}: ${day.count} bài học`}
                   />
                 );
               })}
@@ -155,12 +155,12 @@ export function ActivityHeatmap({
 
       {/* Legend */}
       <div className="flex items-center justify-end gap-2 mt-3 text-xs text-muted-foreground">
-        <span>Less</span>
+        <span>Ít</span>
         <div className="w-3 h-3 rounded-sm bg-gray-100 dark:bg-gray-800" />
         <div className="w-3 h-3 rounded-sm bg-green-200 dark:bg-green-900" />
         <div className="w-3 h-3 rounded-sm bg-green-400 dark:bg-green-700" />
         <div className="w-3 h-3 rounded-sm bg-green-600 dark:bg-green-500" />
-        <span>More</span>
+        <span>Nhiều</span>
       </div>
     </div>
   );

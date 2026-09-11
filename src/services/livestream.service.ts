@@ -12,14 +12,26 @@ export interface LivestreamSession {
   title: string;
   description?: string;
   host_id: string;
+  class_id?: string;
+  course_id?: string;
+  lesson_content_id?: string;
   max_viewers?: number;
   is_recorded?: boolean;
   room_name?: string;
   status?: string;
   started_at?: string;
   ended_at?: string;
+  scheduled_at?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+/** Envelope thật của GET /livestream — không bọc {message,data} */
+export interface LivestreamListResponse {
+  data: LivestreamSession[];
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 export interface CreateLivestreamDTO {
@@ -61,7 +73,24 @@ export const livestreamService = {
   create: (data: CreateLivestreamDTO) =>
     api.post<R<LivestreamSession>>("/livestream", data).then((r) => r.data.data),
 
-  /** GET /livestream */
+  /**
+   * GET /livestream — trả raw {data,total,page,page_size}, KHÔNG bọc {message,data}
+   * như phần lớn API khác. Lọc theo host_id/status ở query; không hỗ trợ lọc
+   * theo class_id/course_id trên backend nên phải lọc thêm ở client nếu cần.
+   */
+  list: (params?: { hostId?: string; status?: string; page?: number; pageSize?: number }) =>
+    api
+      .get<LivestreamListResponse>("/livestream", {
+        params: {
+          host_id: params?.hostId,
+          status: params?.status,
+          page: params?.page,
+          page_size: params?.pageSize,
+        },
+      })
+      .then((r) => r.data),
+
+  /** @deprecated dùng {@link list} — giữ lại vì có thể còn nơi khác import, KHÔNG khớp response thật */
   getAll: () =>
     api.get<R<LivestreamSession[]>>("/livestream").then((r) => r.data.data),
 

@@ -160,8 +160,11 @@ export function Header() {
                 setIsDropdownOpen(false);
                 setIsNotificationOpen((v) => !v);
               }}
+              aria-label={unreadCount > 0 ? `Thông báo (${unreadCount} chưa đọc)` : "Thông báo"}
+              aria-expanded={isNotificationOpen}
+              aria-haspopup="dialog"
             >
-              <Bell className="w-5 h-5" />
+              <Bell className="w-5 h-5" aria-hidden="true" />
               {unreadCount > 0 && (
                 <span className="absolute top-1 right-1 min-w-[16px] h-4 px-0.5 bg-black text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
                   {unreadCount > 99 ? "99+" : unreadCount}
@@ -170,7 +173,7 @@ export function Header() {
             </button>
 
             {isNotificationOpen && (
-              <div className="absolute right-0 top-12 w-96 bg-white rounded-2xl overflow-hidden z-50" style={{ boxShadow: 'rgba(0,0,0,0.06) 0px 0px 0px 1px, rgba(0,0,0,0.08) 0px 8px 24px' }}>
+              <div className="absolute right-0 top-12 w-96 bg-white rounded-2xl overflow-hidden z-50 shadow-subtle">
                 <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                   <div className="flex items-center gap-2">
                     <Bell className="w-5 h-5 text-black" />
@@ -252,12 +255,15 @@ export function Header() {
                 <button
                   onClick={() => setIsDropdownOpen((v) => !v)}
                   className="flex items-center gap-2 p-1 rounded-full hover:bg-neutral-100 transition-colors"
+                  aria-label={`Menu tài khoản của ${user?.name || "bạn"}`}
+                  aria-expanded={isDropdownOpen}
+                  aria-haspopup="menu"
                 >
                   <Avatar fallback={user?.name || "TK"} size="sm" />
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute right-4 top-14 w-72 bg-white rounded-2xl py-2 z-50" style={{ boxShadow: 'rgba(0,0,0,0.06) 0px 0px 0px 1px, rgba(0,0,0,0.08) 0px 8px 24px' }}>
+                  <div className="absolute right-4 top-14 w-72 bg-white rounded-2xl py-2 z-50 shadow-subtle">
                     <div className="px-4 py-3 border-b">
                       <p className="font-semibold text-gray-900">{user?.name || "Tài khoản"}</p>
                       <p className="text-sm text-gray-500">{user?.email || ""}</p>

@@ -10,10 +10,21 @@ import { AUTH_ROUTES } from "@/lib/routes";
 import { AUTH_CONFIG, STORAGE_KEYS } from "@/lib/constants";
 import { useRegisterRequest } from "@/hooks/queries/use-auth";
 
+interface FormData {
+  username: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+type FieldErrors = Partial<Record<keyof FormData, string>>;
+
 export default function RegisterFormPage() {
   const router = useRouter();
   const registerRequest = useRegisterRequest();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     username: "",
     firstName: "",
     lastName: "",
@@ -21,23 +32,38 @@ export default function RegisterFormPage() {
     password: "",
     confirmPassword: "",
   });
-  const [error, setError] = useState("");
+  // Lỗi theo TỪNG field thay vì gộp thành 1 chuỗi chung (mục 14) — form
+  // không dùng react-hook-form/zod nên validate bằng object errors thủ công.
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState("");
 
-  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
-    setError("");
+    setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    setFormError("");
+  };
+
+  const validate = (): FieldErrors => {
+    const errors: FieldErrors = {};
+    if (!formData.username.trim()) errors.username = "Vui lòng nhập tên đăng nhập";
+    if (!formData.lastName.trim()) errors.lastName = "Vui lòng nhập họ";
+    if (!formData.firstName.trim()) errors.firstName = "Vui lòng nhập tên";
+    if (!formData.email.trim()) errors.email = "Vui lòng nhập email";
+    if (formData.password.length < AUTH_CONFIG.PASSWORD_MIN_LENGTH) {
+      errors.password = `Mật khẩu phải có ít nhất ${AUTH_CONFIG.PASSWORD_MIN_LENGTH} ký tự`;
+    }
+    if (formData.confirmPassword !== formData.password) {
+      errors.confirmPassword = "Mật khẩu không khớp";
+    }
+    return errors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (formData.password !== formData.confirmPassword) {
-      setError("Mật khẩu không khớp");
-      return;
-    }
 
-    if (formData.password.length < AUTH_CONFIG.PASSWORD_MIN_LENGTH) {
-      setError(`Mật khẩu phải có ít nhất ${AUTH_CONFIG.PASSWORD_MIN_LENGTH} ký tự`);
+    const errors = validate();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
@@ -53,7 +79,7 @@ export default function RegisterFormPage() {
       router.push(AUTH_ROUTES.OTP);
     } catch (err) {
       console.error("Failed to request OTP:", err);
-      setError("Đăng ký thất bại. Vui lòng thử lại.");
+      setFormError("Đăng ký thất bại. Vui lòng thử lại.");
     }
   };
 
@@ -70,6 +96,7 @@ export default function RegisterFormPage() {
           placeholder="username"
           value={formData.username}
           onChange={handleChange("username")}
+          error={fieldErrors.username}
           className="h-12"
           required
         />
@@ -79,6 +106,7 @@ export default function RegisterFormPage() {
             placeholder="Nguyễn"
             value={formData.lastName}
             onChange={handleChange("lastName")}
+            error={fieldErrors.lastName}
             className="h-12"
             required
           />
@@ -87,6 +115,7 @@ export default function RegisterFormPage() {
             placeholder="Văn A"
             value={formData.firstName}
             onChange={handleChange("firstName")}
+            error={fieldErrors.firstName}
             className="h-12"
             required
           />
@@ -97,6 +126,7 @@ export default function RegisterFormPage() {
           placeholder="example@email.com"
           value={formData.email}
           onChange={handleChange("email")}
+          error={fieldErrors.email}
           className="h-12"
           required
         />
@@ -106,6 +136,7 @@ export default function RegisterFormPage() {
           placeholder="Tạo mật khẩu (ít nhất 8 ký tự)"
           value={formData.password}
           onChange={handleChange("password")}
+          error={fieldErrors.password}
           className="h-12"
           required
         />
@@ -115,13 +146,12 @@ export default function RegisterFormPage() {
           placeholder="Nhập lại mật khẩu"
           value={formData.confirmPassword}
           onChange={handleChange("confirmPassword")}
+          error={fieldErrors.confirmPassword}
           className="h-12"
           required
         />
 
-        {error && (
-          <p className="text-sm text-red-500">{error}</p>
-        )}
+        {formError && <p className="text-sm text-red-500">{formError}</p>}
 
         <Button
           type="submit"

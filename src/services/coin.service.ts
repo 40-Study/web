@@ -37,6 +37,8 @@ export interface CoinPackage {
   sort_order: number;
 }
 
+export type CoinPurchaseStatus = "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
+
 export interface CoinPurchase {
   id: string;
   user_id: string;
@@ -45,8 +47,10 @@ export interface CoinPurchase {
   bonus_amount: number;
   price: number;
   currency: string;
-  status: string;
+  status: CoinPurchaseStatus;
   payment_method?: string;
+  /** Mã nội dung chuyển khoản — user phải ghi đúng mã này khi chuyển tiền. */
+  payment_reference?: string;
   completed_at?: string;
   created_at: string;
 }

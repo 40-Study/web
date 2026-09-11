@@ -15,6 +15,7 @@ import {
 import { Track, RoomEvent, ConnectionState, VideoPresets, DataPacket_Kind } from 'livekit-client';
 import { useParticipants } from '@livekit/components-react';
 import React, { useEffect, useState, useRef } from 'react';
+import { useIsMobile } from '@/lib/meet/use-is-mobile';
 
 interface AssignmentPublishedEvent {
   type: 'assignment_published';
@@ -506,6 +507,10 @@ function VideoGrid({
   remoteParticipants?: any[];
   localParticipant?: any;
 }) {
+  // Layout dựng bằng inline style nên không dùng được breakpoint Tailwind —
+  // dùng hook riêng để quyết định grid 1 cột / sidebar mỏng trên mobile (H-07).
+  const isMobile = useIsMobile();
+
   // Separate screen share tracks from camera tracks
   const screenShareTracks = tracks.filter(t => t.source === Track.Source.ScreenShare);
   const cameraTracks = tracks.filter(t => t.source !== Track.Source.ScreenShare);
@@ -553,7 +558,7 @@ function VideoGrid({
         {showSidebar && (
           <div
             style={{
-              width: '180px',
+              width: isMobile ? '84px' : '180px',
               flexShrink: 0,
               display: 'flex',
               flexDirection: 'column',
@@ -602,6 +607,19 @@ function VideoGrid({
   const getGridStyle = (count: number): React.CSSProperties => {
     if (count <= 1) {
       return { position: 'absolute', inset: 0 };
+    }
+    // Mobile (H-07): luôn xếp 1 cột cuộn dọc thay vì lưới nhiều cột co nhỏ —
+    // nhiều participant trên màn hẹp thì mỗi ô vẫn đủ lớn để nhìn rõ mặt.
+    if (isMobile) {
+      return {
+        position: 'absolute',
+        inset: 0,
+        display: 'grid',
+        gridTemplateColumns: '1fr',
+        gridAutoRows: 'minmax(160px, 1fr)',
+        gap: '2px',
+        overflowY: 'auto',
+      };
     }
     if (count === 2) {
       return { position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px' };
@@ -678,6 +696,7 @@ function ParticipantPlaceholder({ participant }: { participant: any }) {
 function ParticipantListPanel({ onClose, hostId }: { onClose: () => void; hostId?: string }) {
   const participants = useParticipants();
   const { localParticipant } = useLocalParticipant();
+  const isMobile = useIsMobile();
 
   // Build unique list - useParticipants() includes remote only, add local manually
   const allParticipants = [
@@ -717,18 +736,37 @@ function ParticipantListPanel({ onClose, hostId }: { onClose: () => void; hostId
 
   return (
     <div
-      style={{
-        position: 'absolute',
-        top: '12px',
-        right: '12px',
-        width: '260px',
-        background: '#161616',
-        border: '1px solid rgba(255,255,255,0.1)',
-        borderRadius: '12px',
-        zIndex: 100,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-        overflow: 'hidden',
-      }}
+      style={
+        isMobile
+          ? {
+              // Mobile (H-07): panel danh sách participant chiếm gần full màn
+              // hình thay vì popover 260px cố định — tránh tràn viewport hẹp.
+              position: 'absolute',
+              top: '12px',
+              left: '12px',
+              right: '12px',
+              width: 'auto',
+              maxHeight: 'calc(100% - 24px)',
+              background: '#161616',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '12px',
+              zIndex: 100,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+              overflow: 'hidden',
+            }
+          : {
+              position: 'absolute',
+              top: '12px',
+              right: '12px',
+              width: '260px',
+              background: '#161616',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '12px',
+              zIndex: 100,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+              overflow: 'hidden',
+            }
+      }
     >
       <div
         style={{
@@ -963,6 +1001,9 @@ function BottomBar({
         gap: '0.375rem',
         flexShrink: 0,
         zIndex: 20,
+        // H-07: nhiều nút icon-only trên màn hẹp có thể vượt viewport — cho cuộn
+        // ngang thay vì bị cắt/đè lên nhau khi không đủ chỗ.
+        overflowX: 'auto',
       }}
     >
       <TrackToggle source={Track.Source.Microphone} className="lk-toggle" />

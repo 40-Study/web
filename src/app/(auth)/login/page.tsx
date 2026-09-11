@@ -130,7 +130,7 @@ export default function LoginPage() {
         <div className="h-px flex-1 bg-gray-200" />
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <SocialLoginButton provider="google" onClick={() => startOAuthFlow("google")} />
         <SocialLoginButton provider="facebook" onClick={() => startOAuthFlow("facebook")} />
         <SocialLoginButton provider="apple" onClick={showComingSoon} />

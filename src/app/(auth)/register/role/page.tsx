@@ -1,46 +1,34 @@
 "use client";
 
-import { useState } from "react";
+/**
+ * Bước "chọn vai trò" trước đây không nối vào luồng đăng ký nào cả (dead
+ * code — không nơi nào redirect tới đây, C-x trong plans/reports/
+ * code-reviewer-260909-1340-web-logic-integration.md).
+ *
+ * Sau khi đối chiếu backend (internal/service/auth_service.go#Register —
+ * comment "Không gán role ở đây — role được tạo khi user gọi SelectRole
+ * lần đầu"), việc chọn vai trò KHÔNG diễn ra lúc đăng ký: `POST
+ * /auth/register` chỉ tạo user, không nhận field role nào cả.
+ * `POST /auth/select-role` cũng không phải API "trở thành STUDENT/PARENT"
+ * — nó chọn một `role_id` có sẵn trong `session_token` của LUỒNG ĐĂNG NHẬP
+ * (system_roles trả về từ GET /auth/system-roles), và role tự-phục-vụ
+ * (STUDENT/PARENT) chỉ được tạo ở lần đăng nhập đầu tiên, ở trang
+ * /login/role (đã hoạt động đúng — không đụng tới).
+ *
+ * Vì vậy trang này không có việc gì để làm trước khi đăng ký; chuyển
+ * thẳng sang bước điền form để không còn là dead-end.
+ */
+
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { AuthCard } from "@/components/auth/auth-card";
-import { RoleCard } from "@/components/auth/role-card";
-import type { RoleType } from "@/components/auth/role-card";
-import { Button } from "@/components/ui/button";
 import { AUTH_ROUTES } from "@/lib/routes";
-import { useAuthStore } from "@/stores";
 
 export default function RegisterRolePage() {
   const router = useRouter();
-  const setRegisterRole = useAuthStore((s) => s.setRegisterRole);
-  const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
 
-  const handleContinue = () => {
-    if (!selectedRole) return;
-    setRegisterRole(selectedRole);
-    router.push(AUTH_ROUTES.REGISTER_FORM);
-  };
+  useEffect(() => {
+    router.replace(AUTH_ROUTES.REGISTER_FORM);
+  }, [router]);
 
-  return (
-    <AuthCard>
-      <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">
-        Bạn sử dụng hệ thống với vai trò
-      </h2>
-      <p className="mb-6 text-center text-sm text-gray-500">Chọn vai trò phù hợp với bạn</p>
-
-      <div className="space-y-3" role="radiogroup" aria-label="Chọn vai trò">
-        {(["student", "parent", "teacher", "admin"] as RoleType[]).map((role) => (
-          <RoleCard
-            key={role}
-            role={role}
-            selected={selectedRole === role}
-            onClick={() => setSelectedRole(role)}
-          />
-        ))}
-      </div>
-
-      <Button onClick={handleContinue} disabled={!selectedRole} className="mt-6 h-12 w-full">
-        Tiếp tục
-      </Button>
-    </AuthCard>
-  );
+  return null;
 }

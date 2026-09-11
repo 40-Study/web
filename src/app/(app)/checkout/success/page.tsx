@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useOrder } from "@/hooks/queries/use-orders";
 
-function formatPrice(price: number): string {
+function formatPrice(price: number | string | null | undefined): string {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
-  }).format(price);
+  }).format(Number(price ?? 0));
 }
 
 export default function CheckoutSuccessPage() {
@@ -44,7 +44,7 @@ export default function CheckoutSuccessPage() {
               <p className="text-sm text-neutral-500 mb-2">Mã đơn hàng</p>
               <p className="font-mono text-sm text-black mb-3">{order.id}</p>
               <p className="text-sm text-neutral-500 mb-2">Tổng thanh toán</p>
-              <p className="text-lg font-medium text-black">{formatPrice(order.final_total)}</p>
+              <p className="text-lg font-medium text-black">{formatPrice(order.total_amount)}</p>
             </div>
           ) : null}
 

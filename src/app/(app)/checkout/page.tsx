@@ -6,71 +6,48 @@ import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
 import {
-  CreditCard,
-  Wallet,
   Building2,
   ShieldCheck,
   ArrowLeft,
   Loader2,
   CheckCircle2,
-  Tag,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useCart, useClearCart } from "@/hooks/queries/use-cart";
-import { useCreateOrder } from "@/hooks/queries/use-orders";
-import { cn } from "@/lib/utils";
+import { useCreateOrder, useCancelOrder } from "@/hooks/queries/use-orders";
+import { VoucherInput } from "@/components/checkout/voucher-input";
+import { OrderPaymentDialog } from "@/components/checkout/order-payment-dialog";
+import type { VoucherValidateResponse } from "@/types/voucher";
+import type { Order } from "@/services/order.service";
 import { v4 as uuidv4 } from "uuid";
 
-function formatPrice(price: number): string {
+function formatPrice(price: number | string | null | undefined): string {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
-  }).format(price);
+  }).format(Number(price ?? 0));
 }
 
-type PaymentMethod = "card" | "momo" | "banking";
-
-interface PaymentOption {
-  id: PaymentMethod;
-  label: string;
-  description: string;
-  icon: React.ReactNode;
-}
-
-const PAYMENT_OPTIONS: PaymentOption[] = [
-  {
-    id: "card",
-    label: "Thẻ tín dụng / Ghi nợ",
-    description: "Visa, Mastercard, JCB",
-    icon: <CreditCard className="h-5 w-5" />,
-  },
-  {
-    id: "momo",
-    label: "Ví MoMo",
-    description: "Thanh toán qua ứng dụng MoMo",
-    icon: <Wallet className="h-5 w-5" />,
-  },
-  {
-    id: "banking",
-    label: "Chuyển khoản ngân hàng",
-    description: "Chuyển khoản trực tiếp",
-    icon: <Building2 className="h-5 w-5" />,
-  },
-];
+// Backend chỉ hỗ trợ payment_method="bank_transfer"|"qr_transfer" (xem
+// dto.CreatePaymentIntentRequest) — thẻ/MoMo trước đây chỉ là UI chọn cho
+// vui, không có gateway nào đứng sau. Bỏ để không hứa hẹn sai; chỉ còn
+// chuyển khoản ngân hàng (mục 13).
 
 export default function CheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedItemsParam = searchParams.get("items");
+  const voucherParam = searchParams.get("voucher"); // M-01: /cart truyền qua nhưng trước đây không đọc
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("banking");
-  const [voucherCode, setVoucherCode] = useState("");
+  const [voucherResult, setVoucherResult] = useState<VoucherValidateResponse | null>(null);
+  const [activeOrder, setActiveOrder] = useState<Order | null>(null);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
 
   const { data: cartData, isLoading } = useCart();
   const createOrderMutation = useCreateOrder();
   const clearCartMutation = useClearCart();
+  const cancelOrderMutation = useCancelOrder();
 
   // Filter items based on URL params
   const items = useMemo(() => {
@@ -80,9 +57,21 @@ export default function CheckoutPage() {
     return allItems.filter((item) => ids.includes(item.course_id));
   }, [cartData?.items, selectedItemsParam]);
 
-  const subtotal = items.reduce((sum, item) => sum + (item.course?.price ?? 0), 0);
-  const discount = 0; // TODO: Apply voucher
-  const total = subtotal - discount;
+  const subtotal = items.reduce((sum, item) => sum + Number(item.course?.price ?? 0), 0);
+  const discount = voucherResult?.discount_amount ?? 0;
+  const total = Math.max(0, subtotal - discount);
+
+  const goToSuccess = async (orderId: string) => {
+    // Dọn giỏ hàng chỉ sau khi ĐÃ thanh toán xong (hoặc đơn 0đ) — không dọn
+    // ngay sau khi tạo order nữa, vì trước đó order có thể chưa được trả tiền.
+    try {
+      await clearCartMutation.mutateAsync();
+    } catch {
+      // Không chặn điều hướng nếu dọn giỏ hàng lỗi — đơn đã thanh toán xong.
+    }
+    toast.success("Thanh toán thành công!");
+    router.push(`/checkout/success?order_id=${orderId}`);
+  };
 
   const handleCheckout = async () => {
     try {
@@ -90,19 +79,40 @@ export default function CheckoutPage() {
       const order = await createOrderMutation.mutateAsync({
         source: "cart",
         course_ids: courseIds,
-        coupon_code: voucherCode || undefined,
+        coupon_code: voucherResult?.voucher?.code || undefined,
         idempotency_key: uuidv4(),
       });
 
-      // Clear cart after successful order
-      await clearCartMutation.mutateAsync();
+      if (Number(order.total_amount) <= 0) {
+        // Đơn 0đ (voucher giảm 100%): backend KHÔNG tự hoàn tất đơn 0đ (đã
+        // đọc order_service.go#CreateOrder — status luôn "pending", không có
+        // nhánh auto-complete cho total=0). Enrollment thật ra sẽ KHÔNG được
+        // tạo cho tới khi có thanh toán — đây là khoảng trống backend cần xử
+        // lý, ghi rõ trong báo cáo. Web tạm điều hướng thẳng theo yêu cầu.
+        await goToSuccess(order.id);
+        return;
+      }
 
-      toast.success("Đặt hàng thành công!");
-      router.push(`/checkout/success?order_id=${order.id}`);
+      setActiveOrder(order);
+      setPaymentDialogOpen(true);
     } catch (error) {
-      // Error is handled in mutation onError
+      // Lỗi tạo đơn đã có toast riêng trong useCreateOrder.onError (kể cả 402
+      // "khóa học cần thanh toán" từ backend); ở đây chỉ log để debug.
       console.error("Checkout error:", error);
     }
+  };
+
+  const handleRetryExpiredOrder = async () => {
+    if (!activeOrder) return;
+    setPaymentDialogOpen(false);
+    try {
+      await cancelOrderMutation.mutateAsync(activeOrder.id);
+    } catch {
+      // Đơn có thể đã ở trạng thái không hủy được — vẫn tiếp tục tạo đơn mới,
+      // đơn cũ (nếu còn "processing") không ảnh hưởng vì không cộng tiền/enroll.
+    }
+    setActiveOrder(null);
+    await handleCheckout();
   };
 
   const isProcessing = createOrderMutation.isPending || clearCartMutation.isPending;
@@ -145,51 +155,25 @@ export default function CheckoutPage() {
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Left column - Payment method & courses */}
         <div className="flex-1 space-y-6">
-          {/* Payment method */}
+          {/* Payment method — hiện chỉ hỗ trợ chuyển khoản ngân hàng (backend
+              chưa có gateway thẻ/MoMo, xem ghi chú ở trên) */}
           <Card>
             <CardContent className="p-6">
               <h2 className="text-lg font-light text-black mb-4">Phương thức thanh toán</h2>
-              <div className="space-y-3">
-                {PAYMENT_OPTIONS.map((option) => (
-                  <button
-                    key={option.id}
-                    onClick={() => setPaymentMethod(option.id)}
-                    className={cn(
-                      "w-full flex items-center gap-4 rounded-xl px-4 py-3 text-left transition-all",
-                      paymentMethod === option.id
-                        ? "bg-neutral-50"
-                        : "bg-white hover:bg-neutral-50"
-                    )}
-                    style={{ boxShadow: paymentMethod === option.id ? 'rgba(0,0,0,0.1) 0px 0px 0px 1px inset' : 'rgba(0,0,0,0.06) 0px 0px 0px 1px inset' }}
-                  >
-                    <div
-                      className={cn(
-                        "p-2 rounded-lg",
-                        paymentMethod === option.id
-                          ? "bg-black text-white"
-                          : "bg-neutral-100 text-neutral-500"
-                      )}
-                    >
-                      {option.icon}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-black">{option.label}</p>
-                      <p className="text-sm text-neutral-500">{option.description}</p>
-                    </div>
-                    <div
-                      className={cn(
-                        "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                        paymentMethod === option.id
-                          ? "border-black bg-black"
-                          : "border-neutral-300"
-                      )}
-                    >
-                      {paymentMethod === option.id && (
-                        <CheckCircle2 className="w-4 h-4 text-white" />
-                      )}
-                    </div>
-                  </button>
-                ))}
+              <div
+                className="w-full flex items-center gap-4 rounded-xl px-4 py-3 bg-neutral-50"
+                style={{ boxShadow: "rgba(0,0,0,0.1) 0px 0px 0px 1px inset" }}
+              >
+                <div className="p-2 rounded-lg bg-black text-white">
+                  <Building2 className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-black">Chuyển khoản ngân hàng</p>
+                  <p className="text-sm text-neutral-500">
+                    Sau khi đặt hàng, bạn sẽ nhận thông tin chuyển khoản và mã đơn hàng
+                  </p>
+                </div>
+                <CheckCircle2 className="w-5 h-5 text-black" />
               </div>
             </CardContent>
           </Card>
@@ -244,20 +228,12 @@ export default function CheckoutPage() {
               {/* Voucher */}
               <div className="mb-4">
                 <label className="text-sm font-medium text-neutral-700 mb-2 block">Mã giảm giá</label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                    <Input
-                      placeholder="Nhập mã"
-                      value={voucherCode}
-                      onChange={(e) => setVoucherCode(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
-                  <Button variant="outline" size="sm" disabled={!voucherCode}>
-                    Áp dụng
-                  </Button>
-                </div>
+                <VoucherInput
+                  courseIds={items.map((item) => item.course_id)}
+                  subtotal={subtotal}
+                  onApplied={setVoucherResult}
+                  initialCode={voucherParam || undefined}
+                />
               </div>
 
               {/* Price breakdown */}
@@ -310,6 +286,18 @@ export default function CheckoutPage() {
           </Card>
         </div>
       </div>
+
+      <OrderPaymentDialog
+        orderId={activeOrder?.id ?? null}
+        amount={activeOrder ? Number(activeOrder.total_amount) : total}
+        open={paymentDialogOpen}
+        onOpenChange={setPaymentDialogOpen}
+        onPaid={() => {
+          setPaymentDialogOpen(false);
+          if (activeOrder) goToSuccess(activeOrder.id);
+        }}
+        onRetryExpired={handleRetryExpiredOrder}
+      />
     </div>
   );
 }

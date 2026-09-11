@@ -137,7 +137,8 @@ export default function AdminLayout({
             </nav>
           </header>
 
-          <main className="mx-auto w-full max-w-7xl flex-1 p-4 md:p-6">{children}</main>
+          {/* id="main-content": đích của skip link trong app/layout.tsx (H-04) */}
+          <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 p-4 md:p-6">{children}</main>
         </div>
       </div>
     </RoleGuard>

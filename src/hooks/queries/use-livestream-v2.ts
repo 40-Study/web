@@ -20,7 +20,20 @@ export const livestreamV2Keys = {
 export function useLivestreams() {
   return useQuery({
     queryKey: livestreamV2Keys.list(),
-    queryFn: () => livestreamService.getAll(),
+    queryFn: () => livestreamService.list().then((r) => r.data),
+  });
+}
+
+/**
+ * Buổi livestream do giáo viên hiện tại host, lọc theo course ở client
+ * (backend GET /livestream không hỗ trợ filter theo course_id/class_id).
+ */
+export function useTeacherLivestreamsForCourse(hostId: string, courseId: string) {
+  return useQuery({
+    queryKey: [...livestreamV2Keys.all, "teacher", hostId, "course", courseId],
+    queryFn: () => livestreamService.list({ hostId, pageSize: 100 }),
+    enabled: !!hostId && !!courseId,
+    select: (res) => res.data.filter((s) => s.course_id === courseId),
   });
 }
 

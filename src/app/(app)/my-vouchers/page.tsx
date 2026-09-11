@@ -6,8 +6,8 @@
 
 import { Ticket, Clock, CheckCircle, XCircle } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
-import { useMyVouchers } from "@/hooks/queries/use-voucher";
-import type { Voucher } from "@/services/voucher.service";
+import { useMyVouchersWithDetails, type MyVoucherWithDetails } from "@/hooks/queries/use-voucher";
+import { formatVoucherDiscountLabel, type Voucher } from "@/services/voucher.service";
 
 // ─── Status config ──────────────────────────────────────────────────────────
 
@@ -37,7 +37,7 @@ const STATUS_CONFIG: Record<VoucherStatus, StatusConfig> = {
   },
 };
 
-/** Derive a display status from service Voucher fields */
+/** Derive a display status from voucher fields */
 function getVoucherStatus(v: Voucher): VoucherStatus {
   if (!v.is_active) return "inactive";
   if (v.end_date && new Date(v.end_date) < new Date()) return "expired";
@@ -46,14 +46,22 @@ function getVoucherStatus(v: Voucher): VoucherStatus {
 
 // ─── Voucher card ────────────────────────────────────────────────────────────
 
-function VoucherCard({ voucher }: { voucher: Voucher }) {
+function VoucherCard({ entry }: { entry: MyVoucherWithDetails }) {
+  const voucher = entry.voucher;
+
+  if (!voucher) {
+    return (
+      <div className="rounded-xl border border-dashed p-4 text-sm text-gray-400">
+        Không tải được chi tiết voucher (đã lưu lúc{" "}
+        {new Date(entry.saved_at).toLocaleDateString("vi-VN")})
+      </div>
+    );
+  }
+
   const derivedStatus = getVoucherStatus(voucher);
   const effectiveStatus = STATUS_CONFIG[derivedStatus];
-
-  const discountLabel =
-    voucher.discount_type === "percentage"
-      ? `Giảm ${voucher.discount_value}%${voucher.max_discount_amount ? ` (tối đa ${formatCurrency(voucher.max_discount_amount)})` : ""}`
-      : `Giảm ${formatCurrency(voucher.discount_value)}`;
+  const discountLabel = formatVoucherDiscountLabel(voucher);
+  const minPurchase = Number(voucher.min_purchase_money ?? 0);
 
   const expiryDate = voucher.end_date
     ? new Date(voucher.end_date).toLocaleDateString("vi-VN", {
@@ -101,8 +109,8 @@ function VoucherCard({ voucher }: { voucher: Voucher }) {
 
       {/* Footer: min order + expiry */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400 border-t pt-2 mt-2">
-        {voucher.min_order_amount ? (
-          <span>Đơn tối thiểu {formatCurrency(voucher.min_order_amount)}</span>
+        {minPurchase > 0 ? (
+          <span>Đơn tối thiểu {formatCurrency(minPurchase)}</span>
         ) : (
           <span>Không yêu cầu đơn tối thiểu</span>
         )}
@@ -120,10 +128,10 @@ function VoucherCard({ voucher }: { voucher: Voucher }) {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function MyVouchersPage() {
-  const { data: vouchers = [], isLoading, isError } = useMyVouchers();
+  const { data: entries = [], isLoading, isError } = useMyVouchersWithDetails();
 
-  const activeVouchers = vouchers.filter((v) => getVoucherStatus(v) === "active");
-  const inactiveVouchers = vouchers.filter((v) => getVoucherStatus(v) !== "active");
+  const activeEntries = entries.filter((e) => e.voucher && getVoucherStatus(e.voucher) === "active");
+  const inactiveEntries = entries.filter((e) => !e.voucher || getVoucherStatus(e.voucher) !== "active");
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
@@ -148,34 +156,34 @@ export default function MyVouchersPage() {
         </div>
       )}
 
-      {!isLoading && !isError && vouchers.length === 0 && (
+      {!isLoading && !isError && entries.length === 0 && (
         <div className="rounded-xl border border-dashed p-10 text-center text-gray-400">
           <Ticket className="h-10 w-10 mx-auto mb-3 opacity-40" />
           <p className="font-medium">Bạn chưa có voucher nào</p>
         </div>
       )}
 
-      {activeVouchers.length > 0 && (
+      {activeEntries.length > 0 && (
         <section className="mb-6">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-            Có thể sử dụng ({activeVouchers.length})
+            Có thể sử dụng ({activeEntries.length})
           </h2>
           <div className="space-y-3">
-            {activeVouchers.map((v) => (
-              <VoucherCard key={v.id} voucher={v} />
+            {activeEntries.map((e) => (
+              <VoucherCard key={e.id} entry={e} />
             ))}
           </div>
         </section>
       )}
 
-      {inactiveVouchers.length > 0 && (
+      {inactiveEntries.length > 0 && (
         <section>
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-            Đã dùng / Hết hạn ({inactiveVouchers.length})
+            Đã dùng / Hết hạn ({inactiveEntries.length})
           </h2>
           <div className="space-y-3">
-            {inactiveVouchers.map((v) => (
-              <VoucherCard key={v.id} voucher={v} />
+            {inactiveEntries.map((e) => (
+              <VoucherCard key={e.id} entry={e} />
             ))}
           </div>
         </section>

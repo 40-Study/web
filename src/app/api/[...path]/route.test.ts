@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { NextRequest } from "next/server";
 import axios from "axios";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PROXY_FAILURE, proxyRequest } from "./route";
+import { PROXY_FAILURE, proxyRequest } from "@/lib/proxy-headers";
 
 vi.mock("axios", () => ({
   default: {

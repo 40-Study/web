@@ -166,48 +166,62 @@ export const courseService = {
       })
       .then((r) => r.data.data.courses),
 
-  /** GET /enrollments — enrolled courses for current user */
-  getEnrolledCourses: () =>
-    api
-      .get<{
+  /**
+   * GET /enrollments — enrolled courses for current user.
+   * H-04 (plans/reports/code-reviewer-260909-1412-web-review.md): backend
+   * mặc định page_size=20 nếu không truyền tham số, tối đa page_size=100
+   * (enrollment_service.go#GetMyEnrollments) — không có endpoint kiểm tra
+   * enrollment theo 1 khóa cụ thể. learn-route-guard.tsx cần TOÀN BỘ danh
+   * sách để không đá nhầm học viên có >20 khóa khỏi khóa đã mua — lặp trang
+   * tới khi đủ `total` (chặn tối đa 50 trang ~5000 khóa để tránh vòng lặp vô hạn).
+   */
+  getEnrolledCourses: async () => {
+    type RawEnrollment = {
+      id: string;
+      user_id: string;
+      course_id: string;
+      course_title: string;
+      course_slug: string;
+      course_thumbnail?: string;
+      course_category?: string;
+      progress_percentage: string;
+      enrolled_at: string;
+      completed_at?: string;
+      last_accessed_at?: string;
+      total_lessons: number;
+      completed_lessons: number;
+    };
+
+    const pageSize = 100;
+    const maxPages = 50;
+    let all: RawEnrollment[] = [];
+    for (let page = 1; page <= maxPages; page++) {
+      const r = await api.get<{
         message: string;
-        data: {
-          enrollments: Array<{
-            id: string;
-            user_id: string;
-            course_id: string;
-            course_title: string;
-            course_slug: string;
-            course_thumbnail?: string;
-            course_category?: string;
-            progress_percentage: string;
-            enrolled_at: string;
-            completed_at?: string;
-            last_accessed_at?: string;
-            total_lessons: number;
-            completed_lessons: number;
-          }>;
-          total: number;
-        };
-      }>("/enrollments")
-      .then((r) =>
-        (r.data.data.enrollments ?? []).map((e): ApiCourse => ({
-          id: e.course_id,
-          title: e.course_title,
-          slug: e.course_slug,
-          thumbnail_url: e.course_thumbnail,
-          category: e.course_category ? { id: "", name: e.course_category } : undefined,
-          progress_percentage: e.progress_percentage,
-          enrolled_at: e.enrolled_at,
-          last_accessed_at: e.last_accessed_at,
-          total_lessons: e.total_lessons,
-          completed_lessons: e.completed_lessons,
-          // Defaults for required ApiCourse fields
-          price: "0",
-          level: "beginner",
-          status: "published",
-        }))
-      ),
+        data: { enrollments: RawEnrollment[]; total: number };
+      }>("/enrollments", { params: { page, page_size: pageSize } });
+      const batch = r.data.data.enrollments ?? [];
+      all = all.concat(batch);
+      if (batch.length === 0 || all.length >= r.data.data.total) break;
+    }
+
+    return all.map((e): ApiCourse => ({
+      id: e.course_id,
+      title: e.course_title,
+      slug: e.course_slug,
+      thumbnail_url: e.course_thumbnail,
+      category: e.course_category ? { id: "", name: e.course_category } : undefined,
+      progress_percentage: e.progress_percentage,
+      enrolled_at: e.enrolled_at,
+      last_accessed_at: e.last_accessed_at,
+      total_lessons: e.total_lessons,
+      completed_lessons: e.completed_lessons,
+      // Defaults for required ApiCourse fields
+      price: "0",
+      level: "beginner",
+      status: "published",
+    }));
+  },
 
   /** POST /courses/:courseId/enroll — enroll in a course */
   enroll: (courseId: string) =>

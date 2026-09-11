@@ -124,6 +124,5 @@ export * from "./user-preference.service";
 export * from "./video.service";
 export * from "./schedule.service";
 export * from "./invitation.service";
-export * from "./livekit.service";
 export * from "./livestream-classroom.service";
 export * from "./class-schedule.service";

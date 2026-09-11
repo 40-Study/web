@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePermissions } from "@/hooks/queries/use-admin";
+import { QueryState } from "@/components/common/query-state";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 
 type PermissionState = {
   id: string;
@@ -20,10 +23,12 @@ type PermissionForm = {
 const emptyForm: PermissionForm = { name: "", description: "", category: "general" };
 
 export default function AdminPermissionsPage() {
-  const { data: permissions = [], isLoading } = usePermissions();
+  const { data: permissions = [], isLoading, isError, refetch } = usePermissions();
   const [permissionState, setPermissionState] = useState<PermissionState[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [form, setForm] = useState<PermissionForm>(emptyForm);
+  // Xác nhận trước khi xóa quyền (đồng nhất với H-09 ở admin/roles)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     if (permissions.length > 0 && permissionState.length === 0) {
@@ -93,6 +98,8 @@ export default function AdminPermissionsPage() {
     if (form.id === id) setForm(emptyForm);
   };
 
+  const confirmDeleteItem = permissionState.find((item) => item.id === confirmDeleteId) || null;
+
   return (
     <div className="space-y-6">
       <div>
@@ -104,16 +111,14 @@ export default function AdminPermissionsPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
         <div className="space-y-4">
-          {isLoading ? (
-            <div className="rounded-xl border bg-white p-6 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-              Đang tải dữ liệu quyền...
-            </div>
-          ) : Object.keys(grouped).length === 0 ? (
-            <div className="rounded-xl border bg-white p-6 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-              Chưa có quyền nào.
-            </div>
-          ) : (
-            Object.entries(grouped).map(([category, items]) => (
+          <QueryState
+            isLoading={isLoading}
+            isError={isError}
+            isEmpty={Object.keys(grouped).length === 0}
+            emptyTitle="Chưa có quyền nào"
+            onRetry={() => refetch()}
+          >
+            {Object.entries(grouped).map(([category, items]) => (
               <section key={category} className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
                 <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{category}</h2>
                 <div className="mt-3 space-y-2">
@@ -134,7 +139,7 @@ export default function AdminPermissionsPage() {
                           Sửa
                         </button>
                         <button
-                          onClick={() => onDelete(perm.id)}
+                          onClick={() => setConfirmDeleteId(perm.id)}
                           className="rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-700"
                         >
                           Xóa
@@ -144,8 +149,8 @@ export default function AdminPermissionsPage() {
                   ))}
                 </div>
               </section>
-            ))
-          )}
+            ))}
+          </QueryState>
         </div>
 
         <div className="space-y-4">
@@ -167,7 +172,7 @@ export default function AdminPermissionsPage() {
                 className="h-10 w-full rounded border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
               />
               <input
-                placeholder="Category"
+                placeholder="Danh mục"
                 value={form.category}
                 onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
                 className="h-10 w-full rounded border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
@@ -194,7 +199,7 @@ export default function AdminPermissionsPage() {
                 <p><span className="text-gray-500">ID:</span> {selected.id}</p>
                 <p><span className="text-gray-500">Tên:</span> {selected.name}</p>
                 <p><span className="text-gray-500">Mô tả:</span> {selected.description || "-"}</p>
-                <p><span className="text-gray-500">Category:</span> {selected.category}</p>
+                <p><span className="text-gray-500">Danh mục:</span> {selected.category}</p>
               </div>
             ) : (
               <p className="mt-2 text-sm text-gray-500">Chọn một quyền để xem chi tiết.</p>
@@ -202,6 +207,27 @@ export default function AdminPermissionsPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
+        <DialogContent>
+          <DialogTitle>Xóa quyền &quot;{confirmDeleteItem?.name}&quot;?</DialogTitle>
+          <DialogDescription>Hành động này không thể hoàn tác.</DialogDescription>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (confirmDeleteId) onDelete(confirmDeleteId);
+                setConfirmDeleteId(null);
+              }}
+            >
+              Xóa quyền
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

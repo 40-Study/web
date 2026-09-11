@@ -8,7 +8,6 @@ export * from "./use-livestream";
 export * from "./use-livestream-v2";
 export * from "./use-chat";
 export * from "./use-whiteboard";
-export * from "./use-livekit";
 export * from "./use-cart";
 export * from "./use-orders";
 export * from "./use-voucher";

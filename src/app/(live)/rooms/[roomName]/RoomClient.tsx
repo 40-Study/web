@@ -13,6 +13,7 @@ import SharedBoardPanel, { StudentMiniBoard, BoardData } from './tabs/SharedBoar
 import { getMe } from '@/lib/meet/auth';
 import { api } from '@/lib/meet/api';
 import { resolveTimerRestartDuration } from './room-timer';
+import { useIsMobile } from '@/lib/meet/use-is-mobile';
 
 interface AssignmentNotification {
   assignment_id: string;
@@ -40,6 +41,9 @@ export default function RoomClient({
   livekitRoomName: string;
 }) {
   const router = useRouter();
+  // Layout dựng bằng inline style nên không dùng được breakpoint Tailwind — panel
+  // Chat/Whiteboard/Sandbox chuyển sang gần full màn hình trên mobile (H-07).
+  const isMobile = useIsMobile();
   const [showChat, setShowChat] = useState(false);
   const [showSandbox, setShowSandbox] = useState(false);
   const [showWhiteboard, setShowWhiteboard] = useState(false);
@@ -812,24 +816,41 @@ export default function RoomClient({
               <SandboxTab sessionId={sessionId} onClose={() => setShowSandbox(false)} />
             )}
 
-            {/* Chat panel - right side */}
+            {/* Chat panel - full-screen bottom sheet trên mobile, sidebar bên phải trên desktop (H-07) */}
             {showChat && (
               <div
-                style={{
-                  position: 'absolute',
-                  top: '8px',
-                  right: '56px',
-                  bottom: '60px',
-                  width: '360px',
-                  zIndex: 20,
-                  background: '#0e0e0e',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  overflow: 'hidden',
-                  borderRadius: '16px',
-                  border: '1px solid rgba(72,72,71,0.3)',
-                  boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
-                }}
+                style={
+                  isMobile
+                    ? {
+                        position: 'absolute',
+                        inset: '8px',
+                        bottom: '60px',
+                        width: 'auto',
+                        zIndex: 20,
+                        background: '#0e0e0e',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        borderRadius: '16px',
+                        border: '1px solid rgba(72,72,71,0.3)',
+                        boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
+                      }
+                    : {
+                        position: 'absolute',
+                        top: '8px',
+                        right: '56px',
+                        bottom: '60px',
+                        width: '360px',
+                        zIndex: 20,
+                        background: '#0e0e0e',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        borderRadius: '16px',
+                        border: '1px solid rgba(72,72,71,0.3)',
+                        boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
+                      }
+                }
               >
                 <ChatTab
                   sessionId={sessionId}
@@ -840,22 +861,36 @@ export default function RoomClient({
               </div>
             )}
 
-            {/* Whiteboard - centered modal, doesn't cover video toolbar */}
+            {/* Whiteboard - full-screen trên mobile, chừa chỗ cho toolbar/chat trên desktop (H-07) */}
             {showWhiteboard && (
               <div
-                style={{
-                  position: 'absolute',
-                  top: '8px',
-                  left: '8px',
-                  right: showChat ? '404px' : '56px',
-                  bottom: '60px',
-                  zIndex: 15,
-                  background: '#000',
-                  overflow: 'hidden',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
-                }}
+                style={
+                  isMobile
+                    ? {
+                        position: 'absolute',
+                        inset: '8px',
+                        bottom: '60px',
+                        zIndex: 15,
+                        background: '#000',
+                        overflow: 'hidden',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
+                      }
+                    : {
+                        position: 'absolute',
+                        top: '8px',
+                        left: '8px',
+                        right: showChat ? '404px' : '56px',
+                        bottom: '60px',
+                        zIndex: 15,
+                        background: '#000',
+                        overflow: 'hidden',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
+                      }
+                }
               >
                 <WhiteboardTab
                   sessionId={sessionId}

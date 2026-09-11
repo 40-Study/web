@@ -50,7 +50,7 @@ export function LevelUpModal({
           <div className="absolute inset-0 bg-primary-500 rounded-full animate-pulse-glow" />
           <div className="absolute inset-2 bg-white dark:bg-gray-900 rounded-full flex items-center justify-center">
             <div className="text-center">
-              <p className="text-xs text-muted-foreground font-medium">LEVEL</p>
+              <p className="text-xs text-muted-foreground font-medium">CẤP ĐỘ</p>
               <p className="text-4xl font-bold text-primary-500">
                 {newLevel}
               </p>

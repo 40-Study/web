@@ -2,27 +2,47 @@
 
 /**
  * VoucherInput - inline voucher code field with Apply button
- * Calls validateVoucher and surfaces result to parent via onApplied callback
+ * Calls voucherService.getVoucherByCode, tính discount tại client (backend
+ * chưa có endpoint validate tiền cho voucher — xem calculateVoucherDiscount),
+ * rồi báo kết quả cho parent qua onApplied callback.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Tag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useVoucherLookup } from "@/hooks/queries/use-voucher";
-import type { Voucher as ServiceVoucher } from "@/services/voucher.service";
+import { calculateVoucherDiscount, type Voucher as ServiceVoucher } from "@/services/voucher.service";
 import type { VoucherValidateResponse } from "@/types/voucher";
 
 interface VoucherInputProps {
-  /** Course ID(s) to validate the voucher against */
+  /** Course ID(s) áp dụng voucher — dùng để hiển thị ngữ cảnh, chưa gửi lên backend */
   courseIds: string[];
   onApplied: (result: VoucherValidateResponse | null) => void;
   className?: string;
+  /**
+   * Tổng tiền trước giảm giá (VND) — bắt buộc để tính đúng voucher PERCENT
+   * và kiểm tra min_purchase_money. Nếu không truyền, mặc định 0 (voucher
+   * PERCENT/có mức tối thiểu sẽ báo không áp dụng được).
+   */
+  subtotal?: number;
+  /**
+   * Mã voucher tiền-điền sẵn (vd từ `?voucher=` khi chuyển từ /cart sang
+   * /checkout — M-01, giỏ hàng cho áp voucher nhưng checkout trước đây không
+   * đọc lại param nên user phải nhập lại). Tự động áp dụng 1 lần khi mount.
+   */
+  initialCode?: string;
 }
 
-export function VoucherInput({ courseIds, onApplied, className }: VoucherInputProps) {
-  const [code, setCode] = useState("");
+export function VoucherInput({
+  courseIds,
+  onApplied,
+  className,
+  subtotal = 0,
+  initialCode,
+}: VoucherInputProps) {
+  const [code, setCode] = useState(initialCode ? initialCode.toUpperCase() : "");
   const [applied, setApplied] = useState<VoucherValidateResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -35,33 +55,25 @@ export function VoucherInput({ courseIds, onApplied, className }: VoucherInputPr
     setErrorMessage(null);
     lookupMutation.mutate(trimmed, {
       onSuccess(voucher: ServiceVoucher) {
-        const discountAmount =
-          voucher.discount_type === "percentage"
-            ? voucher.discount_value // parent will compute actual amount
-            : voucher.discount_value;
-        const result: VoucherValidateResponse = {
-          valid: !!voucher.is_active,
-          voucher: {
-            id: voucher.id,
-            code: voucher.code,
-            discount_type: voucher.discount_type,
-            discount_value: voucher.discount_value,
-            status: voucher.is_active ? "active" : "inactive",
-          },
-          discount_amount: discountAmount,
-          final_total: 0,
-        };
-        if (result.valid) {
-          setApplied(result);
-          onApplied(result);
-        } else {
-          setErrorMessage("Mã voucher không còn hoạt động");
+        const calc = calculateVoucherDiscount(voucher, subtotal);
+        if (!calc.ok) {
+          setErrorMessage(calc.errorMessage ?? "Mã voucher không hợp lệ");
           setApplied(null);
           onApplied(null);
+          return;
         }
+        const result: VoucherValidateResponse = {
+          valid: true,
+          voucher: { id: voucher.id, code: voucher.code },
+          discount_amount: calc.discountAmount,
+        };
+        setApplied(result);
+        onApplied(result);
       },
       onError() {
-        setErrorMessage("Không thể kiểm tra voucher, thử lại sau");
+        setErrorMessage("Không tìm thấy voucher hoặc mã không hợp lệ");
+        setApplied(null);
+        onApplied(null);
       },
     });
   }
@@ -72,6 +84,13 @@ export function VoucherInput({ courseIds, onApplied, className }: VoucherInputPr
     setErrorMessage(null);
     onApplied(null);
   }
+
+  // M-01: chỉ tự áp dụng 1 lần lúc mount (không phụ thuộc `subtotal` đổi theo
+  // mỗi lần tick chọn khóa — người dùng vẫn bấm "Áp dụng" lại nếu muốn).
+  useEffect(() => {
+    if (initialCode) handleApply();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (applied?.valid) {
     return (
@@ -113,6 +132,9 @@ export function VoucherInput({ courseIds, onApplied, className }: VoucherInputPr
       </div>
       {errorMessage && (
         <p className="text-sm text-red-500">{errorMessage}</p>
+      )}
+      {courseIds.length === 0 && (
+        <p className="sr-only">Không có khóa học nào để áp dụng voucher</p>
       )}
     </div>
   );

@@ -38,3 +38,22 @@ export interface ClassScheduleFilters {
   start_date?: string;
   end_date?: string;
 }
+
+/**
+ * Khớp internal/dto/scheduleDTO.go#TimetableEntryDTO — dữ liệu thật từ
+ * GET /me/timetable. Không có "title"/"teacher_name" như ClassSchedule
+ * (bản cũ gọi endpoint /class-schedules/my không tồn tại — xem H1).
+ */
+export interface TimetableEntry {
+  session_id?: string;
+  schedule_id?: string;
+  class_name: string;
+  class_id: string;
+  day_of_week: number;
+  date?: string;
+  start_time: string;
+  end_time: string;
+  room?: string;
+  topic?: string;
+  status: string;
+}

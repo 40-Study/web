@@ -97,6 +97,9 @@ export default function ExercisePanel({
   const [user, setUser] = useState<User | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
+  // Xác nhận trước khi xóa bài tập (M-12) — thay confirm() gốc của trình duyệt
+  // bằng overlay theo đúng theme tối của phòng học, không lệch design system.
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   // Screen flow: 'list' -> 'select-type' -> 'create'
   const [screen, setScreen] = useState<'list' | 'select-type' | 'create'>('list');
   const [exerciseType, setExerciseType] = useState<ExerciseType>('code');
@@ -433,12 +436,13 @@ export default function ExercisePanel({
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Xóa bài tập này?')) return;
     try {
       await api.delete(`/assignments/${id}`);
       fetchAssignments();
     } catch (err: any) {
       alert(err.message ?? 'Xóa thất bại');
+    } finally {
+      setConfirmDeleteId(null);
     }
   };
 
@@ -1729,7 +1733,7 @@ export default function ExercisePanel({
                     Sửa
                   </button>
                   <button
-                    onClick={() => handleDelete(a.id)}
+                    onClick={() => setConfirmDeleteId(a.id)}
                     title="Xóa"
                     style={{
                       background: 'transparent',
@@ -2188,6 +2192,76 @@ export default function ExercisePanel({
         }
       `}</style>
     </DraggableExercisePanel>
+
+    {/* Xác nhận xóa bài tập (M-12) — overlay dark theo màu COLORS của phòng học */}
+    {confirmDeleteId && (
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.6)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: (zIndex ?? 200) + 100,
+        }}
+        onClick={() => setConfirmDeleteId(null)}
+      >
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Xác nhận xóa bài tập"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            background: COLORS.surface,
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: '12px',
+            padding: '20px',
+            width: '320px',
+            maxWidth: 'calc(100vw - 32px)',
+            boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+          }}
+        >
+          <p style={{ color: COLORS.text, fontSize: '14px', fontWeight: 600, marginBottom: '6px' }}>
+            Xóa bài tập này?
+          </p>
+          <p style={{ color: COLORS.textMuted, fontSize: '12px', marginBottom: '16px' }}>
+            Hành động này không thể hoàn tác.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <button
+              onClick={() => setConfirmDeleteId(null)}
+              style={{
+                background: 'transparent',
+                border: `1px solid ${COLORS.border}`,
+                color: COLORS.textMuted,
+                borderRadius: '8px',
+                padding: '6px 14px',
+                fontSize: '12px',
+                cursor: 'pointer',
+              }}
+            >
+              Hủy
+            </button>
+            <button
+              onClick={() => confirmDeleteId && handleDelete(confirmDeleteId)}
+              style={{
+                background: COLORS.danger,
+                border: 'none',
+                color: '#fff',
+                borderRadius: '8px',
+                padding: '6px 14px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Xóa bài tập
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 }

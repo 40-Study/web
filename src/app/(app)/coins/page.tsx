@@ -32,7 +32,8 @@ import {
   usePurchaseCoins,
   useSendCoinGift,
 } from "@/hooks/queries/use-coins";
-import type { CoinPackage, CoinTransaction } from "@/services/coin.service";
+import type { CoinPackage, CoinPurchase, CoinTransaction } from "@/services/coin.service";
+import { CoinPaymentDialog } from "@/components/coins/coin-payment-dialog";
 
 function formatNumber(n: number) {
   return new Intl.NumberFormat("vi-VN").format(n);
@@ -196,6 +197,7 @@ export default function CoinsPage() {
   const { data: txData, isLoading: txLoading } = useCoinTransactions({ limit: 50 });
   const { data: packages } = useCoinPackages();
   const purchaseCoins = usePurchaseCoins();
+  const [paymentPurchase, setPaymentPurchase] = useState<CoinPurchase | null>(null);
 
   const transactions = txData?.transactions ?? [];
 
@@ -262,7 +264,10 @@ export default function CoinsPage() {
                 key={pkg.id}
                 pkg={pkg}
                 onPurchase={(id) =>
-                  purchaseCoins.mutate({ packageId: id, paymentMethod: "bank_transfer" })
+                  purchaseCoins.mutate(
+                    { packageId: id, paymentMethod: "bank_transfer" },
+                    { onSuccess: (purchase) => setPaymentPurchase(purchase) }
+                  )
                 }
               />
             ))}
@@ -295,6 +300,14 @@ export default function CoinsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <CoinPaymentDialog
+        purchase={paymentPurchase}
+        open={!!paymentPurchase}
+        onOpenChange={(open) => {
+          if (!open) setPaymentPurchase(null);
+        }}
+      />
     </div>
   );
 }

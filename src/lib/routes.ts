@@ -43,7 +43,16 @@ export function getRoleHomeRoute(role?: string | null): string {
   return ROLE_HOME_ROUTES[normalizedRole] || ROLE_HOME_ROUTES.STUDENT;
 }
 
+// Route công khai/dùng chung, không thuộc luồng auth (H-06 — footer/checkout cần
+// đích thật thay vì href="#" hoặc route chưa tồn tại).
+export const COMMON_ROUTES = {
+  TERMS: "/terms",
+  PRIVACY: "/privacy",
+  NOTIFICATIONS: "/notifications",
+} as const;
+
 export const ROUTES = {
   HOME: "/",
   ...AUTH_ROUTES,
+  ...COMMON_ROUTES,
 } as const;

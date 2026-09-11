@@ -37,9 +37,12 @@ export interface AssignmentResponseDTO {
   created_at: string;
 }
 
+/** Envelope thật của GET /assignments?session_id= — không bọc thêm {message,data} */
 export interface AssignmentListDTO {
-  assignments: AssignmentResponseDTO[];
+  data: AssignmentResponseDTO[];
   total: number;
+  page: number;
+  page_size: number;
 }
 
 export interface SandboxResponseDTO {
@@ -58,7 +61,11 @@ export interface TestCaseResponseDTO {
 }
 
 export interface CreateAssignmentDTO {
-  session_id: string;
+  /** Bắt buộc cho type="live_coding" (gắn vào 1 buổi livestream cụ thể) */
+  session_id?: string;
+  /** Bắt buộc cho type="homework"/"project" (giao theo lớp, không cần buổi live) */
+  class_id?: string;
+  type?: AssignmentType;
   title: string;
   description: string;
   difficulty: DifficultyLevel;
@@ -66,11 +73,28 @@ export interface CreateAssignmentDTO {
   starter_code?: string;
   time_limit?: number;
   memory_limit?: number;
-  duration_minutes?: number;
-  show_in_recap?: boolean;
+  start_time?: string;
+  end_time?: string;
+  allow_late_submission?: boolean;
+  late_penalty_percent?: number;
+  max_late_days?: number;
+  grace_period_minutes?: number;
 }
 
-export type UpdateAssignmentDTO = Partial<Omit<CreateAssignmentDTO, "session_id">>;
+export type UpdateAssignmentDTO = Partial<
+  Pick<
+    CreateAssignmentDTO,
+    | "title"
+    | "description"
+    | "difficulty"
+    | "language"
+    | "starter_code"
+    | "time_limit"
+    | "memory_limit"
+    | "start_time"
+    | "end_time"
+  >
+>;
 
 export interface CreateTestCaseDTO {
   input: string;
@@ -84,6 +108,12 @@ type R<T> = { message: string; data: T };
 // ─── Service ────────────────────────────────────────────────────────────────
 
 export const assignmentService = {
+  /** GET /assignments?session_id=&page=&page_size= — trả raw {data,total,page,page_size} */
+  getBySession: (sessionId: string, page = 1, pageSize = 50) =>
+    api
+      .get<AssignmentListDTO>("/assignments", { params: { session_id: sessionId, page, page_size: pageSize } })
+      .then((r) => r.data),
+
   /** POST /assignments — create */
   create: (dto: CreateAssignmentDTO) =>
     api.post<R<AssignmentResponseDTO>>("/assignments", dto).then((r) => r.data.data),
