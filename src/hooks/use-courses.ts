@@ -275,6 +275,7 @@ export function useEnrolledCourses() {
         totalLessons: c.total_lessons ?? 0,
         enrolledAt: c.enrolled_at ?? c.created_at ?? "",
         lastAccessedAt: c.last_accessed_at,
+        watchedSeconds: c.watched_seconds ?? 0,
       }));
     },
     staleTime: 60 * 1000,

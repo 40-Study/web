@@ -10,6 +10,7 @@ import { quizService, StartQuizResponse, QuizAttemptDetail, SubmitQuizDTO } from
 import { exerciseService, Exercise, TestCase, ExerciseSubmission } from "@/services/exercise.service";
 import { enrollmentService } from "@/services/enrollment.service";
 import { videoService, VideoInfo } from "@/services/video.service";
+import { NotFoundError } from "@/lib/errors";
 import type { PlayerCourse, PlayerChapter, PlayerLesson } from "@/types/course-player";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -109,13 +110,18 @@ export function useCourseCurriculum(courseSlug: string) {
             }))
           )
         ),
-        // Fetch all quizzes in parallel (with error handling)
+        // Bài học không có quiz là chuyện bình thường (API trả 404) — coi như danh sách rỗng.
+        // Mọi lỗi KHÁC (mất mạng, 500, hết phiên) được ném lên để <QueryState> báo cho người
+        // dùng; trước đây catch trống nuốt hết, quiz biến mất im lặng trông như bài không có quiz.
         Promise.all(
           allLessonIds.map((lessonId) =>
             quizService
               .getByLesson(lessonId)
               .then((quizzes) => ({ lessonId, quizzes }))
-              .catch(() => ({ lessonId, quizzes: [] }))
+              .catch((err: unknown) => {
+                if (err instanceof NotFoundError) return { lessonId, quizzes: [] };
+                throw err;
+              })
           )
         ),
       ]);

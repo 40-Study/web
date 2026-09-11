@@ -89,6 +89,8 @@ export interface EnrolledCourse extends Course {
   totalLessons: number;
   lastAccessedAt?: string;
   enrolledAt: string;
+  /** Tổng số giây video đã xem trong khóa này — nguồn dữ liệu thật cho chỉ số "thời gian học". */
+  watchedSeconds: number;
 }
 
 export interface CourseFilters {

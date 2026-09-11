@@ -64,6 +64,8 @@ export interface ApiCourse {
   enrolled_at?: string;
   last_accessed_at?: string;
   completed_lessons?: number;
+  /** Tổng số giây video đã xem của ghi danh này (backend cộng từ lesson_progress). */
+  watched_seconds?: number;
 }
 
 export interface CourseListParams {
@@ -190,6 +192,7 @@ export const courseService = {
       last_accessed_at?: string;
       total_lessons: number;
       completed_lessons: number;
+      watched_seconds?: number;
     };
 
     const pageSize = 100;
@@ -216,6 +219,7 @@ export const courseService = {
       last_accessed_at: e.last_accessed_at,
       total_lessons: e.total_lessons,
       completed_lessons: e.completed_lessons,
+      watched_seconds: e.watched_seconds,
       // Defaults for required ApiCourse fields
       price: "0",
       level: "beginner",

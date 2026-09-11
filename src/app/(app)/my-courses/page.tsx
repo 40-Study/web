@@ -18,6 +18,15 @@ import { EnrolledCourseCard } from "@/components/student/enrolled-course-card";
 import { AchievementSidebar } from "@/components/student/achievement-sidebar";
 import { SupportCard } from "@/components/student/support-card";
 
+/** Định dạng tổng thời gian học từ số giây thật (0 giây → "0m"). */
+function formatStudyTime(totalSeconds: number): string {
+  const safeSeconds = Number.isFinite(totalSeconds) && totalSeconds > 0 ? Math.floor(totalSeconds) : 0;
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  if (hours === 0) return `${minutes}m`;
+  return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
+}
+
 function LoadingSkeleton() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -95,8 +104,12 @@ export default function MyCoursesPage() {
     const totalProgress = enrolledCourses.length
       ? Math.round(enrolledCourses.reduce((sum, c) => sum + c.progress, 0) / enrolledCourses.length)
       : 0;
+    // Thời gian học THẬT: cộng video_watched_seconds của mọi bài trong mọi khóa đã ghi danh
+    // (backend trả về ở trường watched_seconds của /enrollments). Trước đây ô này hiển thị
+    // chuỗi cứng "1h 45m" cho mọi người học.
+    const totalSeconds = enrolledCourses.reduce((sum, c) => sum + (c.watchedSeconds ?? 0), 0);
     return {
-      timeSpent: "1h 45m", // TODO: Get from API
+      timeSpent: formatStudyTime(totalSeconds),
       progress: totalProgress,
     };
   }, [enrolledCourses]);

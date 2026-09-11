@@ -4,14 +4,6 @@ import { useMemo } from "react";
 import { useOrganizations, usePermissions, useSystemRoles } from "@/hooks/queries/use-admin";
 import { QueryState } from "@/components/common/query-state";
 
-// TODO: mảng tĩnh — chưa có API "hoạt động gần đây". Khi có endpoint audit-log thật
-// (xem TODO ở admin/audit-logs/page.tsx), thay bằng dữ liệu server thay vì mock cứng.
-const recentActivities = [
-  { id: "ACT-2401", action: "Cập nhật vai trò SYSTEM_ADMIN", target: "role.system_admin", time: "2 phút trước", status: "Thành công" },
-  { id: "ACT-2402", action: "Tạo tổ chức mới", target: "org.fortex-hcm", time: "12 phút trước", status: "Thành công" },
-  { id: "ACT-2403", action: "Gán quyền manage_permissions", target: "role.org_owner", time: "26 phút trước", status: "Đang xử lý" },
-  { id: "ACT-2404", action: "Xóa tổ chức không hoạt động", target: "org.legacy-2023", time: "1 giờ trước", status: "Thành công" },
-];
 
 export default function AdminIndexPage() {
   const {
@@ -108,19 +100,16 @@ export default function AdminIndexPage() {
 
           <div className="rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Hoạt động gần đây</h3>
-            <div className="mt-4 space-y-2">
-              {recentActivities.map((item) => (
-                <div key={item.id} className="rounded-lg border border-gray-100 p-3 dark:border-gray-800">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.action}</p>
-                      <p className="text-xs text-gray-500">{item.target}</p>
-                    </div>
-                    <span className="text-xs text-gray-500">{item.time}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-primary-600 dark:text-primary-300">{item.status}</p>
-                </div>
-              ))}
+            {/* Backend chưa có API nhật ký hoạt động (xem admin/audit-logs). Trước đây khối này
+                render một mảng tĩnh 4 dòng trông như dữ liệu thật — đã bỏ hẳn. Khi có endpoint,
+                thay khối rỗng bên dưới bằng useQuery + <QueryState> như các trang admin khác. */}
+            <div className="mt-4 rounded-lg border border-dashed border-gray-200 p-6 text-center dark:border-gray-800">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Chưa có dữ liệu nhật ký hoạt động
+              </p>
+              <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                Tính năng đang được phát triển
+              </p>
             </div>
           </div>
         </section>
