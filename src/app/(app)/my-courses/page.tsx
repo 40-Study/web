@@ -8,6 +8,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { Loader2, BookOpen, Award, ChevronRight } from "lucide-react";
+import { formatStudyTime } from "@/lib/format-study-time";
 import { useAuthStore } from "@/stores/auth.store";
 import { useEnrolledCourses } from "@/hooks/use-courses";
 import { useMyCertificates } from "@/hooks/queries/use-certificates";
@@ -17,15 +18,6 @@ import { OtherCoursesSidebar } from "@/components/student/other-courses-sidebar"
 import { EnrolledCourseCard } from "@/components/student/enrolled-course-card";
 import { AchievementSidebar } from "@/components/student/achievement-sidebar";
 import { SupportCard } from "@/components/student/support-card";
-
-/** Định dạng tổng thời gian học từ số giây thật (0 giây → "0m"). */
-function formatStudyTime(totalSeconds: number): string {
-  const safeSeconds = Number.isFinite(totalSeconds) && totalSeconds > 0 ? Math.floor(totalSeconds) : 0;
-  const hours = Math.floor(safeSeconds / 3600);
-  const minutes = Math.floor((safeSeconds % 3600) / 60);
-  if (hours === 0) return `${minutes}m`;
-  return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
-}
 
 function LoadingSkeleton() {
   return (
