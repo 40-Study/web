@@ -50,14 +50,15 @@ export default function RootLayout({
             <body className={`${inter.variable} font-sans antialiased`}>
                 {/*
                   Chống nháy màn hình (FOUC) dark mode (H-01): script chạy TRƯỚC khi
-                  React hydrate, đọc theme đã lưu (hoặc prefers-color-scheme hệ điều
-                  hành khi "system") và gắn class .dark lên <html> ngay lập tức.
+                  React hydrate, đọc theme đã lưu và gắn class .dark lên <html> ngay
+                  lập tức. Phải cùng quy tắc với applyTheme (appearance-storage.ts):
+                  chỉ "dark" chọn tay mới bật, "system" chưa theo OS (xem ghi chú ở đó).
                 */}
                 <script
                     dangerouslySetInnerHTML={{
                         __html: `(function(){try{var t=localStorage.getItem(${JSON.stringify(
                             THEME_STORAGE_KEY
-                        )})||"system";var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);}catch(e){}})();`,
+                        )});document.documentElement.classList.toggle("dark",t==="dark");}catch(e){}})();`,
                     }}
                 />
                 <ThemeProvider />

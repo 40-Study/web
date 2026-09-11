@@ -19,14 +19,16 @@ function safeGet(key: string): string | null {
 /**
  * Gắn/gỡ class `.dark` trên thẻ `<html>` theo theme đã chọn (light | dark | system).
  * Dùng chung ở ThemeProvider (client) và script chống FOUC (layout.tsx, chạy trước hydrate).
+ *
+ * "system" hiện được coi là SÁNG, KHÔNG theo prefers-color-scheme của hệ điều hành: bộ giao
+ * diện tối mới chỉ có token màu nền/chữ, phần lớn component vẫn dùng màu sáng cố định
+ * (bg-white, text-slate-*), nên theo OS tối sẽ ra màn hình nửa xám nửa trắng (báo cáo
+ * 11/09/2026, trang chủ). Chỉ bật khi người dùng chủ động chọn "Tối" trong Cài đặt. Khi
+ * giao diện tối được hoàn thiện, đổi lại thành `theme === "system" && prefersDark`.
  */
 export function applyTheme(theme: string): void {
   if (typeof document === "undefined") return;
-  const prefersDark =
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const isDark = theme === "dark" || (theme === "system" && prefersDark);
-  document.documentElement.classList.toggle("dark", isDark);
+  document.documentElement.classList.toggle("dark", theme === "dark");
 }
 
 export const appearanceStorage = {
