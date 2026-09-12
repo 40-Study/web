@@ -13,7 +13,6 @@ import {
   CodeEditorModal,
   QuizLessonContent,
   QuizResultContent,
-  DEMO_QUIZ,
 } from "@/components/player";
 import type { QuizResultData } from "@/components/player";
 import { useCourseBySlug } from "@/hooks/queries/use-courses";

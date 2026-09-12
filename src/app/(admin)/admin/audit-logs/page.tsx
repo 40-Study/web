@@ -2,15 +2,20 @@
 
 import { Info } from "lucide-react";
 
-// TODO(M-14): chưa có endpoint audit-log ở backend — dữ liệu dưới đây là DỮ LIỆU MẪU,
-// không phải nhật ký thật. Khi backend có API, thay bằng useQuery gọi service thật và
-// nối isLoading/isError qua <QueryState> như các trang admin khác.
-const auditLogs = [
-  { id: "LOG-8001", actor: "admin@fortex.vn", action: "CREATE_ORGANIZATION", target: "org.fortex-hcm", time: "2026-03-27 01:10", level: "INFO" },
-  { id: "LOG-8002", actor: "owner@fortex.vn", action: "UPDATE_ROLE", target: "role.system_admin", time: "2026-03-27 00:55", level: "WARN" },
-  { id: "LOG-8003", actor: "admin@fortex.vn", action: "ASSIGN_PERMISSION", target: "permission.manage_permissions", time: "2026-03-26 23:44", level: "INFO" },
-  { id: "LOG-8004", actor: "security@fortex.vn", action: "REVOKE_SYSTEM_ROLE", target: "user.7821", time: "2026-03-26 22:16", level: "CRITICAL" },
-];
+// TODO(M-14): chưa có endpoint audit-log ở backend. Trang này CỐ Ý không có dữ liệu —
+// 4 dòng mẫu trước đây (LOG-8001..8004) đã bị bỏ vì trông y hệt nhật ký thật. Khi backend
+// có API, thay bằng useQuery gọi service thật và nối isLoading/isError qua <QueryState>
+// như các trang admin khác.
+type AuditLogRow = {
+  id: string;
+  actor: string;
+  action: string;
+  target: string;
+  time: string;
+  level: string;
+};
+
+const auditLogs: AuditLogRow[] = [];
 
 export default function AdminAuditLogsPage() {
   return (
@@ -25,8 +30,8 @@ export default function AdminAuditLogsPage() {
       <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
         <Info className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
         <p>
-          Đây là <strong>dữ liệu mẫu</strong> — backend chưa có API nhật ký hoạt động. Bảng sẽ tự
-          động dùng dữ liệu thật khi endpoint tương ứng sẵn sàng.
+          Backend <strong>chưa có API nhật ký hoạt động</strong>, nên bảng dưới đây đang trống.
+          Bảng sẽ tự động dùng dữ liệu thật khi endpoint tương ứng sẵn sàng.
         </p>
       </div>
 
@@ -44,6 +49,13 @@ export default function AdminAuditLogsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            {auditLogs.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                  Chưa có dữ liệu nhật ký — tính năng đang được phát triển
+                </td>
+              </tr>
+            )}
             {auditLogs.map((log) => (
               <tr key={log.id}>
                 <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{log.id}</td>

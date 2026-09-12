@@ -83,17 +83,30 @@ function VideoLessonContent({
     }
   }, []);
 
+  // `useMutation` trả về object MỚI mỗi lần render (node_modules/@tanstack/react-query/
+  // build/modern/useMutation.js: `return { ...result, mutate, mutateAsync }`), nên
+  // `[updateProgress]` làm effect bên dưới chạy lại mỗi render. Cùng lúc `timeupdate`
+  // bắn ~4 lần/giây (:78-79) → mỗi tick một lần mutate; kèm invalidate
+  // `courseKeys.enrolled()` trong `useUpdateProgress.onSettled` thì mỗi tick là một
+  // `GET /enrollments` thật. Giữ mutate trong ref, đồng bộ sau mỗi render, và để
+  // deps rỗng → effect chỉ chạy cleanup đúng 1 lần lúc unmount mà vẫn gọi bản mutate
+  // mới nhất.
+  const updateProgressRef = useRef(updateProgress.mutate);
+  useEffect(() => {
+    updateProgressRef.current = updateProgress.mutate;
+  }, [updateProgress.mutate]);
+
   useEffect(() => {
     return () => {
       if (currentTimeRef.current > 0) {
-        updateProgress.mutate({
+        updateProgressRef.current({
           lessonId: lessonIdRef.current,
           status: "in_progress",
           videoWatchedSeconds: Math.floor(currentTimeRef.current),
         });
       }
     };
-  }, [updateProgress]);
+  }, []);
 
   useEffect(() => {
     const handleBeforeUnload = () => {

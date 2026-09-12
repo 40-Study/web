@@ -15,7 +15,6 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useCreateDirectConversation } from "@/hooks/queries/use-conversations";
 import { useRouter } from "next/navigation";
 
-// Demo data - in production these come from API
 interface FriendUser {
   id: string;
   name: string;
@@ -26,8 +25,11 @@ interface FriendUser {
   status: "friend" | "pending_sent" | "pending_received" | "none";
 }
 
-const DEMO_FRIENDS: FriendUser[] = [];
-const DEMO_SUGGESTIONS: FriendUser[] = [];
+// Backend chưa có API bạn bè (không có router nào cho friends/friend-requests), nên hai danh
+// sách này CỐ Ý rỗng và trang luôn hiển thị trạng thái trống. Khi có endpoint, thay bằng
+// useQuery + <QueryState> thay vì hằng số.
+const friends: FriendUser[] = [];
+const suggestions: FriendUser[] = [];
 
 function UserCard({
   user,
@@ -125,8 +127,8 @@ export default function FriendsPage() {
         <TabsList>
           <TabsTrigger value="friends">
             Bạn bè
-            {DEMO_FRIENDS.length > 0 && (
-              <Badge className="ml-1.5 bg-blue-600 text-white text-[10px] px-1.5 h-4">{DEMO_FRIENDS.length}</Badge>
+            {friends.length > 0 && (
+              <Badge className="ml-1.5 bg-blue-600 text-white text-[10px] px-1.5 h-4">{friends.length}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="requests">Lời mời</TabsTrigger>
@@ -134,7 +136,7 @@ export default function FriendsPage() {
         </TabsList>
 
         <TabsContent value="friends" className="mt-4">
-          {DEMO_FRIENDS.length === 0 ? (
+          {friends.length === 0 ? (
             <Card className="p-12 text-center border-dashed">
               <Users className="h-12 w-12 mx-auto mb-3 text-gray-200" />
               <h3 className="font-semibold text-gray-700 mb-1">Chưa có bạn bè</h3>
@@ -145,7 +147,7 @@ export default function FriendsPage() {
             </Card>
           ) : (
             <div className="space-y-2">
-              {DEMO_FRIENDS
+              {friends
                 .filter(u => !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()))
                 .map(u => (
                   <UserCard key={u.id} user={u} onMessage={() => handleMessage(u.id)} />
@@ -163,7 +165,7 @@ export default function FriendsPage() {
         </TabsContent>
 
         <TabsContent value="discover" className="mt-4">
-          {DEMO_SUGGESTIONS.length === 0 ? (
+          {suggestions.length === 0 ? (
             <Card className="p-12 text-center border-dashed">
               <Search className="h-12 w-12 mx-auto mb-3 text-gray-200" />
               <h3 className="font-semibold text-gray-700 mb-1">Tìm bạn bè</h3>
@@ -171,7 +173,7 @@ export default function FriendsPage() {
             </Card>
           ) : (
             <div className="space-y-2">
-              {DEMO_SUGGESTIONS.map(u => (
+              {suggestions.map(u => (
                 <UserCard key={u.id} user={u} onAdd={() => {}} />
               ))}
             </div>

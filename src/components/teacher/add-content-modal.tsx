@@ -12,7 +12,6 @@ import {
   File,
   Image,
   X,
-  Loader2,
   Clock,
   Calendar,
   Settings,
@@ -209,7 +208,6 @@ export function AddContentModal({
   const [videoUrl, setVideoUrl] = useState("");
   const [videoDocs, setVideoDocs] = useState<File[]>([]);
   const [videoQuiz, setVideoQuiz] = useState<QuizQuestion[]>([]);
-  const [generatingQuiz, setGeneratingQuiz] = useState(false);
 
   // Livestream state
   const [liveTitle, setLiveTitle] = useState("");
@@ -268,44 +266,10 @@ export function AddContentModal({
     }
   }, [contentType, exerciseType]);
 
-  // AI Quiz generation (mock)
-  const handleGenerateQuiz = useCallback(async (docs: File[]) => {
-    if (docs.length === 0) return;
-    setGeneratingQuiz(true);
-    // Simulate API call
-    await new Promise((r) => setTimeout(r, 2000));
-    const mockQuestions: QuizQuestion[] = [
-      {
-        id: genId(),
-        question: "Câu hỏi được tạo tự động từ tài liệu #1?",
-        options: [
-          { id: genId(), text: "Đáp án A" },
-          { id: genId(), text: "Đáp án B" },
-          { id: genId(), text: "Đáp án C" },
-          { id: genId(), text: "Đáp án D" },
-        ],
-        correctId: "",
-      },
-      {
-        id: genId(),
-        question: "Câu hỏi được tạo tự động từ tài liệu #2?",
-        options: [
-          { id: genId(), text: "Đáp án A" },
-          { id: genId(), text: "Đáp án B" },
-          { id: genId(), text: "Đáp án C" },
-          { id: genId(), text: "Đáp án D" },
-        ],
-        correctId: "",
-      },
-    ];
-    // Set correct answer to first option
-    mockQuestions.forEach((q) => { q.correctId = q.options[0].id; });
-
-    if (contentType === "video") setVideoQuiz(mockQuestions);
-    else if (contentType === "livestream") setLiveQuiz(mockQuestions);
-    setGeneratingQuiz(false);
-  }, [contentType]);
-
+  // Sinh quiz bằng AI: backend CHƯA có endpoint nào (không có tích hợp Qwen trong repo).
+  // Bản trước đây chờ setTimeout 2 giây rồi chèn 2 câu hỏi cứng và tự chọn đáp án đúng là
+  // phương án A — giáo viên tưởng đang dùng AI thật và có thể lưu quiz rác vào khóa học.
+  // Đã bỏ hẳn; nút được vô hiệu hóa cho tới khi có API thật.
   // Submit
   const handleSubmit = useCallback(() => {
     if (contentType === "video") {
@@ -592,13 +556,10 @@ export function AddContentModal({
               <TabsContent value="quiz" className="space-y-4 mt-4">
                 <QuizPanel
                   questions={videoQuiz}
-                  documents={videoDocs}
                   onUpdateQuestion={(qId, field, val) => updateQuestion(qId, field, val, "video")}
                   onUpdateOption={(qId, optId, text) => updateOption(qId, optId, text, "video")}
                   onAddQuestion={() => addQuestion("video")}
                   onRemoveQuestion={(qId) => removeQuestion(qId, "video")}
-                  onGenerateAI={() => handleGenerateQuiz(videoDocs)}
-                  isGenerating={generatingQuiz}
                 />
               </TabsContent>
             </Tabs>
@@ -733,13 +694,10 @@ export function AddContentModal({
               <TabsContent value="quiz" className="space-y-4 mt-4">
                 <QuizPanel
                   questions={liveQuiz}
-                  documents={liveDocs}
                   onUpdateQuestion={(qId, field, val) => updateQuestion(qId, field, val, "live")}
                   onUpdateOption={(qId, optId, text) => updateOption(qId, optId, text, "live")}
                   onAddQuestion={() => addQuestion("live")}
                   onRemoveQuestion={(qId) => removeQuestion(qId, "live")}
-                  onGenerateAI={() => handleGenerateQuiz(liveDocs)}
-                  isGenerating={generatingQuiz}
                 />
               </TabsContent>
             </Tabs>
@@ -975,52 +933,38 @@ function DocumentsPanel({
 
 function QuizPanel({
   questions,
-  documents,
   onUpdateQuestion,
   onUpdateOption,
   onAddQuestion,
   onRemoveQuestion,
-  onGenerateAI,
-  isGenerating,
 }: {
   questions: QuizQuestion[];
-  documents: File[];
   onUpdateQuestion: (qId: string, field: "question" | "correctId", value: string) => void;
   onUpdateOption: (qId: string, optId: string, text: string) => void;
   onAddQuestion: () => void;
   onRemoveQuestion: (qId: string) => void;
-  onGenerateAI: () => void;
-  isGenerating: boolean;
 }) {
   return (
     <div className="space-y-4">
-      {/* AI Generate */}
-      <div className="p-4 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200">
+      {/* Tạo Quiz bằng AI — chưa có backend, xem ghi chú ở handleGenerateQuiz cũ */}
+      <div className="p-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
         <div className="flex items-start gap-3">
-          <Sparkles className="w-5 h-5 text-purple-600 mt-0.5" />
+          <Sparkles className="w-5 h-5 text-gray-400 mt-0.5" />
           <div className="flex-1">
-            <p className="font-medium text-purple-900">Tạo Quiz bằng AI</p>
-            <p className="text-sm text-purple-700 mt-1">
-              {documents.length > 0
-                ? `Upload ${documents.length} tài liệu. AI sẽ tạo quiz từ nội dung.`
-                : "Hãy upload tài liệu ở tab 'Tài liệu' để AI tạo quiz tự động."}
+            <p className="font-medium text-gray-700 dark:text-gray-300">Tạo Quiz bằng AI</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Tính năng đang được phát triển. Hiện tại hãy soạn câu hỏi thủ công bên dưới.
             </p>
           </div>
-          <Button
-            size="sm"
-            onClick={onGenerateAI}
-            disabled={documents.length === 0 || isGenerating}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Sparkles className="w-4 h-4 mr-1" />}
-            Tạo Quiz
+          <Button size="sm" variant="outline" disabled>
+            Sắp có
           </Button>
         </div>
       </div>
 
       <div className="relative flex items-center">
         <div className="flex-1 border-t" />
-        <span className="px-3 text-sm text-muted-foreground">hoặc tạo thủ công</span>
+        <span className="px-3 text-sm text-muted-foreground">soạn thủ công</span>
         <div className="flex-1 border-t" />
       </div>
 

@@ -2,7 +2,7 @@
  * Server-side curriculum fetcher for course player
  */
 
-import { serverApi } from "@/lib/server-api";
+import { serverApi, HttpError } from "@/lib/server-api";
 import type { PlayerCurriculum } from "@/hooks/use-course-player";
 
 interface ApiCourse {
@@ -52,20 +52,26 @@ export async function fetchCurriculum(courseSlug: string): Promise<PlayerCurricu
     const course = await serverApi.get<ApiCourse>(`/courses/slug/${courseSlug}`);
 
     // 2. Get all sections
-    const sectionsResponse = await serverApi.get<{ sections: ApiSection[] }>(
+    // Backend trả envelope `{message, data: <array>}` (section_handler.go:102-105)
+    // và `serverFetch` (server-api.ts:66) đã unwrap `data.data ?? data` — nên giá
+    // trị ở đây CHÍNH LÀ mảng, không phải object có field `sections`.
+    const sectionsResponse = await serverApi.get<ApiSection[]>(
       `/courses/${course.id}/sections`
     );
-    const sections = sectionsResponse.sections || [];
+    const sections = sectionsResponse || [];
 
-    // 3. Fetch all lessons for ALL sections in parallel
+    // 3. Fetch all lessons for ALL sections in parallel.
+    // KHÔNG bắt lỗi ở đây: trước đây một section lỗi bị thay bằng `lessons: []`,
+    // nên người học thấy curriculum thiếu hẳn chương đó mà không có thông báo
+    // nào — đúng kiểu "nuốt lỗi im lặng" mà trang này phải tránh. Lỗi sẽ ném
+    // lên và được xử lý ở catch ngoài cùng bên dưới.
     const allLessonsPromises = sections.map((section) =>
       serverApi
-        .get<{ lessons: ApiLesson[] }>(`/sections/${section.id}/lessons`)
+        .get<ApiLesson[]>(`/sections/${section.id}/lessons`)
         .then((res) => ({
           sectionId: section.id,
-          lessons: res.lessons || [],
+          lessons: res || [],
         }))
-        .catch(() => ({ sectionId: section.id, lessons: [] }))
     );
     const allLessonsResults = await Promise.all(allLessonsPromises);
 
@@ -80,22 +86,46 @@ export async function fetchCurriculum(courseSlug: string): Promise<PlayerCurricu
 
     // Fetch all contents and quizzes in parallel
     const [allContentsResults, allQuizzesResults] = await Promise.all([
-      // Fetch all lesson contents in parallel
+      // Fetch all lesson contents in parallel.
+      // 404 = bài học chưa có nội dung, coi như danh sách rỗng. Mọi lỗi khác
+      // (mất mạng, 401, 500) được ném lên: im lặng trả `[]` sẽ biến một bài
+      // giảng CÓ video thành bài "reading" trắng, không cách nào nhận ra.
       Promise.all(
         allLessonIds.map((lessonId) =>
           serverApi
-            .get<{ contents: ApiLessonContent[] }>(`/lessons/${lessonId}/contents`)
-            .then((res) => ({ lessonId, contents: res.contents || [] }))
-            .catch(() => ({ lessonId, contents: [] }))
+            .get<ApiLessonContent[]>(`/lessons/${lessonId}/contents`)
+            .then((res) => ({ lessonId, contents: res || [] }))
+            .catch((err: unknown) => {
+              if (err instanceof HttpError && err.status === 404) {
+                return { lessonId, contents: [] };
+              }
+              throw err;
+            })
         )
       ),
-      // Fetch all quizzes in parallel
+      // Fetch all quizzes in parallel.
+      //
+      // CẢNH BÁO — backend CHƯA có route `GET /lessons/:lessonId/quizzes`:
+      // `backend/internal/router/quiz_router.go` chỉ mount `/quizzes/*`,
+      // `/attempts/*`, `/me/quizzes`; `course_router.go` dưới `/lessons` chỉ có
+      // `/:id` và `/:lesson_id/contents`. Nên hôm nay MỌI bài học đều nhận 404
+      // ("route không tồn tại"), và quiz luôn rỗng — không phải vì bài không có
+      // quiz. Hệ quả: mỗi lần mở curriculum bắn N request 404 (N = số bài).
+      //
+      // Cần một task backend bổ sung route này (nên trả `200 []` khi bài không
+      // có quiz, thay vì để 404) rồi nối lại phần đọc `quizzes` bên dưới. Khi đó
+      // nhánh `quizzes.length > 0` mới thực sự chạy.
       Promise.all(
         allLessonIds.map((lessonId) =>
           serverApi
-            .get<{ quizzes: ApiQuiz[] }>(`/lessons/${lessonId}/quizzes`)
-            .then((res) => ({ lessonId, quizzes: res.quizzes || [] }))
-            .catch(() => ({ lessonId, quizzes: [] }))
+            .get<ApiQuiz[]>(`/lessons/${lessonId}/quizzes`)
+            .then((res) => ({ lessonId, quizzes: res || [] }))
+            .catch((err: unknown) => {
+              if (err instanceof HttpError && err.status === 404) {
+                return { lessonId, quizzes: [] };
+              }
+              throw err;
+            })
         )
       ),
     ]);
@@ -164,7 +194,28 @@ export async function fetchCurriculum(courseSlug: string): Promise<PlayerCurricu
       sections: sectionsWithLessons,
     };
   } catch (error) {
+    // 404 = khóa học không tồn tại (sai slug, đã xoá) → trang not-found, đúng
+    // như trước.
+    //
+    // 401/403 = chưa đăng nhập, hoặc access token đã hết hạn (TTL 15 phút — và
+    // `serverFetch` KHÔNG refresh token). Cũng trả `null` như 404, vì đường đi
+    // đó mới giữ được redirect `/login`: `notFound()` render
+    // `learn/not-found.tsx` NGAY TRONG `learn/layout.tsx`, nên `LearnRouteGuard`
+    // vẫn mount và tự `router.replace('/login?next=...')`. Ném lên
+    // `src/app/error.tsx` thì boundary đó nằm NGOÀI layout, guard không bao giờ
+    // chạy, và người dùng chỉ còn thấy "Đã xảy ra lỗi!" — mất hẳn đường về
+    // `/login`.
+    //
+    // Mọi lỗi còn lại (backend 500, mất mạng) vẫn được ném tiếp lên error
+    // boundary của Next: biến chúng thành `null` sẽ hiển thị trang "không tìm
+    // thấy khóa học" cho một sự cố hạ tầng — người học tưởng khóa học đã bị xoá.
+    if (
+      error instanceof HttpError &&
+      (error.status === 404 || error.status === 401 || error.status === 403)
+    ) {
+      return null;
+    }
     console.error("Failed to fetch curriculum:", error);
-    return null;
+    throw error;
   }
 }

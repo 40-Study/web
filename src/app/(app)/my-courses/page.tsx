@@ -8,9 +8,11 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { Loader2, BookOpen, Award, ChevronRight } from "lucide-react";
+import { formatStudyTime } from "@/lib/format-study-time";
 import { useAuthStore } from "@/stores/auth.store";
 import { useEnrolledCourses } from "@/hooks/use-courses";
 import { useMyCertificates } from "@/hooks/queries/use-certificates";
+import { QueryState } from "@/components/common/query-state";
 import { StatsWidgets } from "@/components/student/stats-widgets";
 import { CurrentCourseHero } from "@/components/student/current-course-hero";
 import { OtherCoursesSidebar } from "@/components/student/other-courses-sidebar";
@@ -62,7 +64,13 @@ function EmptyState() {
 
 export default function MyCoursesPage() {
   const { user } = useAuthStore();
-  const { data: enrolledCourses = [], isLoading: coursesLoading } = useEnrolledCourses();
+  const {
+    data: enrolledCourses = [],
+    isLoading: coursesLoading,
+    isError: coursesError,
+    error: coursesErrorObj,
+    refetch: refetchCourses,
+  } = useEnrolledCourses();
   const { data: certificatesData } = useMyCertificates({ page_size: 5 });
 
   // Sort courses by last accessed, most recent first
@@ -95,8 +103,12 @@ export default function MyCoursesPage() {
     const totalProgress = enrolledCourses.length
       ? Math.round(enrolledCourses.reduce((sum, c) => sum + c.progress, 0) / enrolledCourses.length)
       : 0;
+    // Thời gian học THẬT: cộng video_watched_seconds của mọi bài trong mọi khóa đã ghi danh
+    // (backend trả về ở trường watched_seconds của /enrollments). Trước đây ô này hiển thị
+    // chuỗi cứng "1h 45m" cho mọi người học.
+    const totalSeconds = enrolledCourses.reduce((sum, c) => sum + (c.watchedSeconds ?? 0), 0);
     return {
-      timeSpent: "1h 45m", // TODO: Get from API
+      timeSpent: formatStudyTime(totalSeconds),
       progress: totalProgress,
     };
   }, [enrolledCourses]);
@@ -121,6 +133,30 @@ export default function MyCoursesPage() {
 
   if (coursesLoading) {
     return <LoadingSkeleton />;
+  }
+
+  // Lỗi API phải hiển thị là LỖI, không được rơi vào empty-state "Chưa có khóa học nào".
+  // Trước đây `data = []` mặc định khiến /enrollments trả 500 trông y hệt "bạn chưa đăng ký
+  // khóa học nào" — học viên tưởng mất hết ghi danh. PR này còn khiến ô "Thời gian học" suy
+  // ra từ cùng query đó, nên hậu quả rộng hơn (0m trông như chưa từng học).
+  // Đặt trước `currentCourse`/`stats` vì cả hai đều đọc từ `enrolledCourses` rỗng.
+  if (coursesError) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">Khóa học của tôi</h1>
+          <QueryState
+            isError
+            error={coursesErrorObj}
+            onRetry={() => {
+              void refetchCourses();
+            }}
+          >
+            {null}
+          </QueryState>
+        </div>
+      </div>
+    );
   }
 
   const firstName = user?.name?.split(" ").pop() || "bạn";

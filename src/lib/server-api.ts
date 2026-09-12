@@ -15,6 +15,26 @@ interface FetchOptions {
 }
 
 /**
+ * Lỗi HTTP phía server, có mang theo status code.
+ *
+ * Trước đây `serverFetch` ném `Error` trần, nên tầng gọi KHÔNG thể phân biệt
+ * "404 — tài nguyên không tồn tại" với "500 — backend hỏng" hay "mất kết nối".
+ * Vì không phân biệt được nên các catch trong `server-fetchers/` phải nuốt mọi
+ * lỗi, và lỗi hạ tầng bị hiển thị thành dữ liệu rỗng (xem I1 của
+ * plans/reports/t1k-code-reviewer-260912-1056-web-pr15-remove-mockdata.md).
+ * Có status rồi thì chỉ xử lý riêng đúng trường hợp 404, còn lại ném lên.
+ */
+export class HttpError extends Error {
+  constructor(
+    public status: number,
+    message: string
+  ) {
+    super(message);
+    this.name = "HttpError";
+  }
+}
+
+/**
  * Server-side fetch with cookie forwarding
  */
 export async function serverFetch<T>(
@@ -39,7 +59,7 @@ export async function serverFetch<T>(
   });
 
   if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    throw new HttpError(response.status, `API Error: ${response.status} ${response.statusText}`);
   }
 
   const data = await response.json();

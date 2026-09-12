@@ -10,6 +10,8 @@ import { quizService, StartQuizResponse, QuizAttemptDetail, SubmitQuizDTO } from
 import { exerciseService, Exercise, TestCase, ExerciseSubmission } from "@/services/exercise.service";
 import { enrollmentService } from "@/services/enrollment.service";
 import { videoService, VideoInfo } from "@/services/video.service";
+import { NotFoundError } from "@/lib/errors";
+import { courseKeys } from "@/hooks/use-courses";
 import type { PlayerCourse, PlayerChapter, PlayerLesson } from "@/types/course-player";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -109,13 +111,28 @@ export function useCourseCurriculum(courseSlug: string) {
             }))
           )
         ),
-        // Fetch all quizzes in parallel (with error handling)
+        // CẢNH BÁO — comment cũ ở đây nói "bài học không có quiz thì API trả 404", SAI sự thật:
+        // backend CHƯA có route `GET /lessons/:lessonId/quizzes`. `quiz_router.go` chỉ mount
+        // `/quizzes/*`, `/attempts/*`, `/me/quizzes`; `course_router.go` dưới `/lessons` chỉ có
+        // `/:id` và `/:lesson_id/contents`. Nên 404 ở đây là "route không tồn tại", không phải
+        // "bài không có quiz" — và vì thế MỌI bài học hôm nay đều bị coi là không có quiz.
+        // (Cần một task backend bổ sung route này, tốt nhất trả `200 []`.)
+        //
+        // Nhánh NotFoundError bên dưới vì vậy chỉ là lưới an toàn cho tương lai, không phải
+        // bằng chứng rằng endpoint đã tồn tại. Mọi lỗi KHÁC (mất mạng, 500, hết phiên) được ném
+        // lên để <QueryState> báo cho người dùng; trước đây catch trống nuốt hết.
+        //
+        // LƯU Ý: hook này hiện KHÔNG có consumer nào — trang learn thật chạy qua
+        // `src/lib/server-fetchers/curriculum.ts` (server component). Sửa ở đó mới có tác dụng.
         Promise.all(
           allLessonIds.map((lessonId) =>
             quizService
               .getByLesson(lessonId)
               .then((quizzes) => ({ lessonId, quizzes }))
-              .catch(() => ({ lessonId, quizzes: [] }))
+              .catch((err: unknown) => {
+                if (err instanceof NotFoundError) return { lessonId, quizzes: [] };
+                throw err;
+              })
           )
         ),
       ]);
@@ -425,6 +442,12 @@ export function useUpdateProgress(courseSlug?: string) {
       if (courseSlug) {
         qc.invalidateQueries({ queryKey: ["player", "curriculum", courseSlug] });
       }
+      // Đây là hook THẬT đang chạy trong player (`player-client.tsx` gọi nó). Tiến độ vừa
+      // đổi làm `watched_seconds` / `progress` của trang "Khóa học của tôi" thay đổi, nhưng
+      // trang đó đọc key `courseKeys.enrolled()` (["enrolled-courses"]) — không nằm dưới key
+      // curriculum vừa invalidate ở trên. Không invalidate thì quay lại trang trong vòng
+      // staleTime 60s sẽ thấy số phút học đứng yên.
+      qc.invalidateQueries({ queryKey: courseKeys.enrolled() });
     },
   });
 }
