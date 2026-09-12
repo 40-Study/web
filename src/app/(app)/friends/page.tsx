@@ -15,7 +15,6 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useCreateDirectConversation } from "@/hooks/queries/use-conversations";
 import { useRouter } from "next/navigation";
 
-// Demo data - in production these come from API
 interface FriendUser {
   id: string;
   name: string;

@@ -2,7 +2,7 @@
  * Server-side curriculum fetcher for course player
  */
 
-import { serverApi } from "@/lib/server-api";
+import { serverApi, HttpError } from "@/lib/server-api";
 import type { PlayerCurriculum } from "@/hooks/use-course-player";
 
 interface ApiCourse {
@@ -57,7 +57,11 @@ export async function fetchCurriculum(courseSlug: string): Promise<PlayerCurricu
     );
     const sections = sectionsResponse.sections || [];
 
-    // 3. Fetch all lessons for ALL sections in parallel
+    // 3. Fetch all lessons for ALL sections in parallel.
+    // KHÔNG bắt lỗi ở đây: trước đây một section lỗi bị thay bằng `lessons: []`,
+    // nên người học thấy curriculum thiếu hẳn chương đó mà không có thông báo
+    // nào — đúng kiểu "nuốt lỗi im lặng" mà trang này phải tránh. Lỗi sẽ ném
+    // lên và được xử lý ở catch ngoài cùng bên dưới.
     const allLessonsPromises = sections.map((section) =>
       serverApi
         .get<{ lessons: ApiLesson[] }>(`/sections/${section.id}/lessons`)
@@ -65,7 +69,6 @@ export async function fetchCurriculum(courseSlug: string): Promise<PlayerCurricu
           sectionId: section.id,
           lessons: res.lessons || [],
         }))
-        .catch(() => ({ sectionId: section.id, lessons: [] }))
     );
     const allLessonsResults = await Promise.all(allLessonsPromises);
 
@@ -80,22 +83,46 @@ export async function fetchCurriculum(courseSlug: string): Promise<PlayerCurricu
 
     // Fetch all contents and quizzes in parallel
     const [allContentsResults, allQuizzesResults] = await Promise.all([
-      // Fetch all lesson contents in parallel
+      // Fetch all lesson contents in parallel.
+      // 404 = bài học chưa có nội dung, coi như danh sách rỗng. Mọi lỗi khác
+      // (mất mạng, 401, 500) được ném lên: im lặng trả `[]` sẽ biến một bài
+      // giảng CÓ video thành bài "reading" trắng, không cách nào nhận ra.
       Promise.all(
         allLessonIds.map((lessonId) =>
           serverApi
             .get<{ contents: ApiLessonContent[] }>(`/lessons/${lessonId}/contents`)
             .then((res) => ({ lessonId, contents: res.contents || [] }))
-            .catch(() => ({ lessonId, contents: [] }))
+            .catch((err: unknown) => {
+              if (err instanceof HttpError && err.status === 404) {
+                return { lessonId, contents: [] };
+              }
+              throw err;
+            })
         )
       ),
-      // Fetch all quizzes in parallel
+      // Fetch all quizzes in parallel.
+      //
+      // CẢNH BÁO — backend CHƯA có route `GET /lessons/:lessonId/quizzes`:
+      // `backend/internal/router/quiz_router.go` chỉ mount `/quizzes/*`,
+      // `/attempts/*`, `/me/quizzes`; `course_router.go` dưới `/lessons` chỉ có
+      // `/:id` và `/:lesson_id/contents`. Nên hôm nay MỌI bài học đều nhận 404
+      // ("route không tồn tại"), và quiz luôn rỗng — không phải vì bài không có
+      // quiz. Hệ quả: mỗi lần mở curriculum bắn N request 404 (N = số bài).
+      //
+      // Cần một task backend bổ sung route này (nên trả `200 []` khi bài không
+      // có quiz, thay vì để 404) rồi nối lại phần đọc `quizzes` bên dưới. Khi đó
+      // nhánh `quizzes.length > 0` mới thực sự chạy.
       Promise.all(
         allLessonIds.map((lessonId) =>
           serverApi
             .get<{ quizzes: ApiQuiz[] }>(`/lessons/${lessonId}/quizzes`)
             .then((res) => ({ lessonId, quizzes: res.quizzes || [] }))
-            .catch(() => ({ lessonId, quizzes: [] }))
+            .catch((err: unknown) => {
+              if (err instanceof HttpError && err.status === 404) {
+                return { lessonId, quizzes: [] };
+              }
+              throw err;
+            })
         )
       ),
     ]);
@@ -164,7 +191,15 @@ export async function fetchCurriculum(courseSlug: string): Promise<PlayerCurricu
       sections: sectionsWithLessons,
     };
   } catch (error) {
+    // 404 = khóa học không tồn tại (sai slug, đã xoá) → trang not-found, đúng
+    // như trước. Mọi lỗi khác (backend 500, 401, mất mạng) được ném tiếp lên
+    // error boundary của Next: biến chúng thành `null` sẽ hiển thị trang
+    // "không tìm thấy khóa học" cho một sự cố hạ tầng — người học tưởng khóa
+    // học đã bị xoá.
+    if (error instanceof HttpError && error.status === 404) {
+      return null;
+    }
     console.error("Failed to fetch curriculum:", error);
-    return null;
+    throw error;
   }
 }

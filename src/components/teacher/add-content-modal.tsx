@@ -556,7 +556,6 @@ export function AddContentModal({
               <TabsContent value="quiz" className="space-y-4 mt-4">
                 <QuizPanel
                   questions={videoQuiz}
-                  documents={videoDocs}
                   onUpdateQuestion={(qId, field, val) => updateQuestion(qId, field, val, "video")}
                   onUpdateOption={(qId, optId, text) => updateOption(qId, optId, text, "video")}
                   onAddQuestion={() => addQuestion("video")}
@@ -695,7 +694,6 @@ export function AddContentModal({
               <TabsContent value="quiz" className="space-y-4 mt-4">
                 <QuizPanel
                   questions={liveQuiz}
-                  documents={liveDocs}
                   onUpdateQuestion={(qId, field, val) => updateQuestion(qId, field, val, "live")}
                   onUpdateOption={(qId, optId, text) => updateOption(qId, optId, text, "live")}
                   onAddQuestion={() => addQuestion("live")}
@@ -935,14 +933,12 @@ function DocumentsPanel({
 
 function QuizPanel({
   questions,
-  documents,
   onUpdateQuestion,
   onUpdateOption,
   onAddQuestion,
   onRemoveQuestion,
 }: {
   questions: QuizQuestion[];
-  documents: File[];
   onUpdateQuestion: (qId: string, field: "question" | "correctId", value: string) => void;
   onUpdateOption: (qId: string, optId: string, text: string) => void;
   onAddQuestion: () => void;
