@@ -73,14 +73,30 @@ describe("shortcutTable", () => {
 
   it("có phím tốc độ phát (< và >)", () => {
     const labels = shortcutTable("other").flatMap((row) => row.keys);
-    expect(labels).toContain(",");
-    expect(labels).toContain(".");
+    expect(labels).toContain("<");
+    expect(labels).toContain(">");
+  });
+});
+
+describe("shortcutTable — tổ hợp phím", () => {
+  it("phím cần Shift hiển thị đủ 'Shift + <', không rút gọn", () => {
+    const row = shortcutTable("other").find((r) => r.description === "Giảm tốc độ phát");
+    expect(row?.keys).toEqual(["Shift", "<"]);
+  });
+
+  it("nhãn theo OS: macOS hiện ⌘ cho tổ hợp Ctrl", () => {
+    const row = shortcutTable("mac").find((r) => r.description === "Tăng tốc độ phát");
+    expect(row?.keys).toEqual(["Shift", ">"]);
   });
 });
 
 describe("shortcutHint", () => {
   it("trả nhãn phím theo mã phím", () => {
     expect(shortcutHint("KeyB", "other")).toBe("B");
+  });
+
+  it("tổ hợp có Shift trả đủ chuỗi", () => {
+    expect(shortcutHint("Comma", "other")).toBe("Shift + <");
   });
 
   it("mã phím lạ → chuỗi rỗng, không ném lỗi", () => {

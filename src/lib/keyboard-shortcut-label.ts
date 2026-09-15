@@ -17,6 +17,8 @@ export interface ShortcutDefinition {
   description: string;
   /** Có phải tổ hợp giữ phím bổ trợ không (Ctrl/⌘). */
   modifier?: boolean;
+  /** Phải giữ Shift — hiển thị `Shift + <` để người học không bấm thiếu. */
+  shift?: boolean;
 }
 
 /** Nhãn phím bổ trợ theo nền tảng. */
@@ -59,8 +61,8 @@ export function shortcutDefinitions(platform: ShortcutPlatform): ShortcutDefinit
     { code: "KeyL", labelKey: "L", description: "Tua tới 10 giây" },
     { code: "ArrowUp", labelKey: "↑", description: "Tăng âm lượng" },
     { code: "ArrowDown", labelKey: "↓", description: "Giảm âm lượng" },
-    { code: "Comma", labelKey: ",", description: "Giảm tốc độ phát" },
-    { code: "Period", labelKey: ".", description: "Tăng tốc độ phát" },
+    { code: "Comma", labelKey: "<", shift: true, description: "Giảm tốc độ phát" },
+    { code: "Period", labelKey: ">", shift: true, description: "Tăng tốc độ phát" },
     { code: "KeyB", labelKey: "B", description: "Thêm ghi chú tại giây hiện tại" },
     { code: "KeyN", labelKey: "N", description: "Mở / đóng panel ghi chú" },
     { code: "KeyC", labelKey: "C", description: "Bật / tắt phụ đề" },
@@ -82,18 +84,26 @@ export interface ShortcutRow {
 /** Bảng phím tắt dạng hàng để render (`?`). */
 export function shortcutTable(platform: ShortcutPlatform): ShortcutRow[] {
   return shortcutDefinitions(platform).map((definition) => ({
-    keys: definition.modifier
-      ? [modifierLabel(platform), definition.label]
-      : [definition.label],
+    keys: buildKeys(definition, platform),
     description: definition.description,
   }));
+}
+
+/**
+ * Phím hiển thị của một hàng. Tổ hợp có `shift` được viết đủ (`Shift + <`) vì
+ * bấm thiếu Shift là bấm sai phím — nhãn rút gọn sẽ khiến người học tưởng hỏng.
+ */
+function buildKeys(definition: ShortcutDefinition, platform: ShortcutPlatform): string[] {
+  const keys: string[] = [];
+  if (definition.modifier) keys.push(modifierLabel(platform));
+  if (definition.shift) keys.push("Shift");
+  keys.push(definition.label);
+  return keys;
 }
 
 /** Nhãn đầy đủ cho tooltip nút, ví dụ `Ctrl + B`. */
 export function shortcutHint(code: string, platform: ShortcutPlatform): string {
   const definition = shortcutDefinitions(platform).find((d) => d.code === code);
   if (!definition) return "";
-  return definition.modifier
-    ? `${modifierLabel(platform)} + ${definition.label}`
-    : definition.label;
+  return buildKeys(definition, platform).join(" + ");
 }
