@@ -407,8 +407,8 @@ export default function CourseLessonPage() {
       setQuizError(null);
       const response = await startQuizMutation.mutateAsync({ quizId: lessonQuiz.id });
       setActiveQuiz(response);
-    } catch (err: any) {
-      setQuizError(err?.message || "Khong the bat dau quiz");
+    } catch (err: unknown) {
+      setQuizError(err instanceof Error ? err.message : "Khong the bat dau quiz");
     }
   };
 
@@ -440,8 +440,8 @@ export default function CourseLessonPage() {
         data: { answers },
       });
       setSubmittedAttemptId(result.id || activeQuiz.attempt_id);
-    } catch (err: any) {
-      setQuizError(err?.message || "Không nộp được bài. Câu trả lời vẫn được lưu tạm, hãy thử nộp lại.");
+    } catch (err: unknown) {
+      setQuizError(err instanceof Error ? err.message : "Không nộp được bài. Câu trả lời vẫn được lưu tạm, hãy thử nộp lại.");
     }
   };
 

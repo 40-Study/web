@@ -45,8 +45,8 @@ export default function StandaloneQuizPage() {
     try {
       const response = await startQuizMutation.mutateAsync({ quizId, mode });
       setActiveQuiz(response);
-    } catch (err: any) {
-      setActionError(err?.message || "Không thể bắt đầu bài làm. Vui lòng thử lại.");
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Không thể bắt đầu bài làm. Vui lòng thử lại.");
     }
   };
 
@@ -80,8 +80,8 @@ export default function StandaloneQuizPage() {
         data: { answers: apiAnswers },
       });
       router.push(`/quizzes/${quizId}/result?attempt=${result.id || activeQuiz.attempt_id}`);
-    } catch (err: any) {
-      setActionError(err?.message || "Không nộp được bài. Câu trả lời vẫn được lưu tạm, hãy thử nộp lại.");
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Không nộp được bài. Câu trả lời vẫn được lưu tạm, hãy thử nộp lại.");
     }
   };
 

@@ -229,7 +229,10 @@ describe("buildHeartbeatPayload", () => {
       lesson_id: "lesson-1",
       position_seconds: 754,
       duration_seconds: 1200,
-      played_ranges: [[0, 754]],
+      // Làm tròn RA NGOÀI (review vòng 1, #19): start floor, end ceil.
+      // 0.2→0 (floor), 120.9→121 (ceil); 118.4→118 (floor), 754.1→755 (ceil);
+      // 118<=121 nên gộp thành [0,755].
+      played_ranges: [[0, 755]],
     });
   });
 
@@ -253,13 +256,18 @@ describe("buildHeartbeatPayload", () => {
     expect(payload.played_ranges).toEqual([[0, 600]]);
   });
 
-  it("khoảng co lại thành rỗng sau khi làm tròn thì bị bỏ", () => {
+  // Review vòng 1 (#19): làm tròn RA NGOÀI (floor start, ceil end) — nhất
+  // quán, không tuỳ vị trí lẻ. Trước đây `Math.round` cả hai đầu có thể làm
+  // một khoảng ngắn co về `[end, end]` rồi bị lọc mất (mất tiến độ thật);
+  // với floor/ceil, `floor(start) < ceil(end)` LUÔN đúng khi `start < end`,
+  // nên một khoảng hợp lệ không bao giờ biến mất chỉ vì làm tròn.
+  it("khoảng ngắn dưới 1 giây làm tròn ra ngoài, không bị mất", () => {
     const payload = buildHeartbeatPayload({
       positionSeconds: 1,
       durationSeconds: 600,
       ranges: [[10.1, 10.4]],
     });
-    expect(payload.played_ranges).toEqual([]);
+    expect(payload.played_ranges).toEqual([[10, 11]]);
   });
 });
 

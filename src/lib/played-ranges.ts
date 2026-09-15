@@ -158,10 +158,19 @@ export function buildHeartbeatPayload(
 ): HeartbeatPayload {
   const duration = Math.max(0, Math.round(input.durationSeconds));
   const position = clamp(Math.round(input.positionSeconds), 0, duration);
+  // Làm tròn RA NGOÀI (start xuống, end lên) — review vòng 1 (#19): làm tròn
+  // cả hai đầu bằng `Math.round` không nhất quán: [10.2, 10.7] nở thành
+  // [10, 11] (thêm 0.5s không phát thật), còn [10.6, 10.9] co thành [11, 11]
+  // rồi bị lọc mất hẳn — "vừa thổi phồng vừa làm mất, tuỳ vị trí lẻ".
+  // Chọn hướng RỘNG TAY (nhất quán, không tuỳ vị trí lẻ) thay vì chặt tay:
+  // heartbeat gộp mỗi 10 giây nên khoảng NGẮN (< 1s) là bình thường — ví dụ
+  // vài mẫu đầu trước nhịp gửi đầu tiên; làm tròn chặt sẽ xoá sạch những
+  // khoảng ngắn đó (`ceil(start) > floor(end)` khi khoảng < 1s), mất tiến độ
+  // thật nhiều hơn phần "thừa" tối đa 2s/khoảng mà cách này chấp nhận đổi lấy.
   const ranges = mergeRanges(input.ranges)
     .map(([start, end]): PlayedRange => [
-      clamp(Math.round(start), 0, duration),
-      clamp(Math.round(end), 0, duration),
+      clamp(Math.floor(start), 0, duration),
+      clamp(Math.ceil(end), 0, duration),
     ])
     .filter(([start, end]) => end > start);
 
