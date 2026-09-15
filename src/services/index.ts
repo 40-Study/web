@@ -121,7 +121,8 @@ export * from "./wallet.service";
 export * from "./notification.service";
 export * from "./user-stats.service";
 export * from "./user-preference.service";
-export * from "./schedule.service";
+// Phase 0: đã xoá `schedule.service.ts` — gọi các endpoint `/schedule/events/*`
+// không tồn tại ở backend và không còn consumer nào.
 export * from "./invitation.service";
 export * from "./livestream-classroom.service";
 export * from "./class-schedule.service";

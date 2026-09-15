@@ -166,9 +166,9 @@ export const quizService = {
   getByLesson: (lessonId: string) =>
     api.get<R<Quiz[]>>(`/lessons/${lessonId}/quizzes`).then((r) => r.data.data),
 
-  /** GET /sessions/:sessionId/quizzes */
-  getBySession: (sessionId: string) =>
-    api.get<R<Quiz[]>>(`/sessions/${sessionId}/quizzes`).then((r) => r.data.data),
+  // Phase 0: đã xoá `getBySession` (GET /sessions/:sessionId/quizzes) và
+  // `trigger` (POST /quizzes/:quizId/trigger) — backend không có 2 route này
+  // và grep cho thấy không còn consumer nào.
 
   /** PUT /quizzes/:quizId */
   update: (quizId: string, data: UpdateQuizDTO) =>
@@ -177,10 +177,6 @@ export const quizService = {
   /** DELETE /quizzes/:quizId */
   delete: (quizId: string) =>
     api.delete<R<null>>(`/quizzes/${quizId}`).then((r) => r.data),
-
-  /** POST /quizzes/:quizId/trigger — trigger a quiz in live session */
-  trigger: (quizId: string, sessionId: string) =>
-    api.post<R<null>>(`/quizzes/${quizId}/trigger`, { session_id: sessionId }).then((r) => r.data),
 
   // ── Questions ─────────────────────────────────────────────────────────────
 
