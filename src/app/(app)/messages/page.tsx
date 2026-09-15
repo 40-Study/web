@@ -246,13 +246,20 @@ export default function MessagesPage() {
             ) : (
               <>
                 {showConvBanner && (
-                  <button
-                    onClick={() => refetchConversations()}
+                  /*
+                    L-5: `role="alert"` phải nằm trên thẻ BAO NGOÀI, không đặt
+                    thẳng lên `<button>` — đặt lên nút sẽ thay thế role ngầm định
+                    `button` và trình đọc màn hình không còn đọc nó là nút bấm
+                    (cart làm đúng như vậy).
+                  */
+                  <div
                     role="alert"
-                    className="mb-1 w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-left text-xs text-amber-800"
+                    className="mb-1 w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
                   >
-                    Không làm mới được danh sách — bấm để thử lại.
-                  </button>
+                    <button onClick={() => refetchConversations()} className="w-full text-left">
+                      Không làm mới được danh sách — bấm để thử lại.
+                    </button>
+                  </div>
                 )}
                 {conversations
                   .filter(
@@ -326,13 +333,15 @@ export default function MessagesPage() {
                 ) : (
                   <>
                     {showMsgBanner && (
-                      <button
-                        onClick={() => refetchMessages()}
+                      /* L-5: xem comment ở banner danh sách hội thoại phía trên. */
+                      <div
                         role="alert"
-                        className="mb-3 w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-left text-xs text-amber-800"
+                        className="mb-3 w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
                       >
-                        Không làm mới được tin nhắn — bấm để thử lại.
-                      </button>
+                        <button onClick={() => refetchMessages()} className="w-full text-left">
+                          Không làm mới được tin nhắn — bấm để thử lại.
+                        </button>
+                      </div>
                     )}
                     {[...messages].reverse().map((msg) => (
                       <MessageBubble
