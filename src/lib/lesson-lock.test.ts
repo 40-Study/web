@@ -117,6 +117,20 @@ describe("resolveResumeSeconds", () => {
     expect(resolveResumeSeconds(595, 600)).toBe(0);
   });
 
+  // Ca biên cho ngưỡng 0.95 (review vòng 1, #13): test rỗng ở ngưỡng resume —
+  // đổi 0.95 thành 0.5 mà cả bộ test vẫn xanh vì không có ca nào quanh 95%.
+  it("94% — dưới ngưỡng, giữ nguyên vị trí đã lưu", () => {
+    expect(resolveResumeSeconds(564, 600)).toBe(564);
+  });
+
+  it("đúng ngưỡng 95% — quay về đầu (bao gồm biên)", () => {
+    expect(resolveResumeSeconds(570, 600)).toBe(0);
+  });
+
+  it("96% — trên ngưỡng, quay về đầu", () => {
+    expect(resolveResumeSeconds(576, 600)).toBe(0);
+  });
+
   it("kẹp vị trí vào thời lượng video", () => {
     expect(resolveResumeSeconds(5000, 600)).toBe(600);
   });

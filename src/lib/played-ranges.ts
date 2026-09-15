@@ -19,21 +19,22 @@ export type PlayedRange = [number, number];
 export const HEARTBEAT_INTERVAL_MS = 10_000;
 
 /**
- * Sai số cho phép giữa "thời gian thực trôi qua" và "thời gian video nhảy".
- * Tick `timeupdate` không đều (thường 250ms, có thể 1s khi mạng chậm), nên cần
- * một biên độ. 1.5s đủ rộng cho tick chậm và đủ hẹp để một cú seek 5s bị chặn.
+ * Sàn tuyệt đối cho dung sai liên tục (giây) — bao dung tick rất ngắn/jitter
+ * khi `expected` (xem `isContinuousSample`) gần 0.
  */
-export const CONTINUITY_TOLERANCE_SECONDS = 1.5;
+export const CONTINUITY_TOLERANCE_FLOOR_SECONDS = 0.75;
+
+/**
+ * Tỉ lệ dung sai TƯƠNG ĐỐI theo `expected` — review PR #17 đo được: một hằng
+ * số tuyệt đối (1.5s cũ) cho một cú kéo tua chậm 1.5s/tick 40/40 mẫu bị chấm
+ * "liên tục" (2x tín dụng gian lận), trong khi tick chậm 1s hoặc phát 2x lại
+ * bị coi là gián đoạn dù là xem thật. Dung sai phải co giãn theo `expected`
+ * (tốc độ phát × thời gian thực trôi qua), không phải một hằng số cố định.
+ */
+export const CONTINUITY_TOLERANCE_RATIO = 0.25;
 
 /** Khoảng ngắn hơn ngưỡng này bị coi là nhiễu, không ghi vào khoảng đã phát. */
 export const MIN_RANGE_SECONDS = 0.5;
-
-/**
- * Bước tiến tối thiểu giữa hai mẫu để được coi là "đang phát".
- * Tick `timeupdate` là 250ms ở điều kiện tốt, nên ngưỡng phải nhỏ hơn thế nhiều;
- * đây chỉ để chặn trường hợp video đứng yên mà thời gian thực vẫn trôi.
- */
-export const MIN_TICK_SECONDS = 0.05;
 
 /** Chuẩn hoá về mảng khoảng hợp lệ, đã sắp xếp, đã gộp. */
 export function mergeRanges(ranges: readonly PlayedRange[]): PlayedRange[] {
@@ -79,10 +80,14 @@ export function openRange(
 }
 
 /**
- * Nối thêm một mẫu vào danh sách khoảng, trả về danh sách mới.
+ * Nối thêm một mẫu vào khoảng ĐANG MỞ.
  *
- * Mẫu đơn lẻ được biểu diễn bằng khoảng dài tối thiểu — `mergeRanges` bỏ qua
- * khoảng có `end <= start`, nên `[t, t]` sẽ biến mất nếu không nới ra.
+ * Gọi hàm này nghĩa là người gọi (`isContinuousSample`) ĐÃ xác nhận mẫu này nối
+ * tiếp — hàm KHÔNG tự kiểm tra khoảng cách lần nữa. BLOCKER PR #17: bản trước
+ * có ngưỡng tuyệt đối `sample <= last[1] + 0.5` độc lập với verdict liên tục,
+ * nên một tick chậm (máy yếu, timeupdate 1s/lần) hoặc phát ở 2x bị cắt vụn
+ * thành nhiều đoạn dưới 0.5s mỗi lần — mất tới 50% `watched_pct` dù xem thật
+ * 100%. Muốn mở khoảng mới (mẫu KHÔNG liên tục), gọi `openRange`.
  */
 export function appendSample(
   ranges: readonly PlayedRange[],
@@ -90,11 +95,8 @@ export function appendSample(
   minLength = MIN_RANGE_SECONDS
 ): PlayedRange[] {
   const last = ranges[ranges.length - 1];
-  // Mẫu nằm trong (hoặc sát) khoảng đang mở → nối dài, không đẻ khoảng mới.
-  if (last && sample >= last[0] && sample <= last[1] + minLength) {
-    return mergeRanges([...ranges.slice(0, -1), [last[0], Math.max(last[1], sample)] as PlayedRange]);
-  }
-  return openRange(ranges, sample, minLength);
+  if (!last) return openRange(ranges, sample, minLength);
+  return mergeRanges([...ranges.slice(0, -1), [last[0], Math.max(last[1], sample)] as PlayedRange]);
 }
 
 /** Tổng thời lượng đã phát thật (giây) sau khi gộp. */
@@ -118,15 +120,19 @@ export function isContinuousSample(
 ): boolean {
   if (!Number.isFinite(previousTime) || !Number.isFinite(currentTime)) return false;
 
-  const delta = currentTime - previousTime;
+  const dtMedia = currentTime - previousTime;
   // Tua lùi hoặc đứng yên: không phải phát liên tục.
-  if (delta <= 0) return false;
+  if (dtMedia <= 0) return false;
 
   const rate = playbackRate > 0 ? playbackRate : 1;
-  const expected = (elapsedMs / 1000) * rate;
-  const lower = Math.max(MIN_TICK_SECONDS, expected - CONTINUITY_TOLERANCE_SECONDS);
-  const upper = expected + CONTINUITY_TOLERANCE_SECONDS;
-  return delta >= lower && delta <= upper;
+  const dtWall = elapsedMs / 1000;
+  const expected = rate * dtWall;
+  // Dung sai TƯƠNG ĐỐI, không phải hằng số tuyệt đối (BLOCKER PR #17 — xem
+  // hằng số ở trên): sàn cho tick ngắn/jitter, phần co giãn theo `expected` để
+  // một cú kéo tua chậm (delta lớn hơn hẳn thời gian thực trôi qua) luôn bị
+  // từ chối dù tick nhanh hay chậm.
+  const tolerance = Math.max(CONTINUITY_TOLERANCE_FLOOR_SECONDS, CONTINUITY_TOLERANCE_RATIO * expected);
+  return Math.abs(dtMedia - expected) <= tolerance;
 }
 
 /** Payload heartbeat đúng shape contract §1. */
