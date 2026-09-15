@@ -22,7 +22,6 @@ import {
   Check,
   ChevronLeft,
   Paperclip,
-  Loader2,
   AlertCircle,
   RefreshCw,
 } from "lucide-react";
