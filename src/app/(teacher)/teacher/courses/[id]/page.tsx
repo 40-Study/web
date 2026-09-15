@@ -73,6 +73,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useClasses } from "@/hooks/queries/use-classes";
 import { lessonContentKeys } from "@/hooks/queries/use-lesson-content";
 import { submitLivestreamContent } from "@/lib/livestream";
+import { LIVESTREAM_NOT_READY_HINT, resolveLivestreamRoomHref } from "@/lib/lesson-content-link";
 
 // ─── Content type config ────────────────────────────────────────────────────
 
@@ -337,6 +338,12 @@ function LessonContentsPanel({
               {contents.map((c) => {
                 const cfg = getContentConfig(c.type);
                 const Icon = cfg.icon;
+                // M-6: hàng livestream mở theo `livestream_session_id` (id PHIÊN),
+                // không phải `c.id` (id lesson_content) — hai id khác nhau nên
+                // `/rooms/${c.id}` luôn join hỏng. `null` = phiên chưa sẵn sàng
+                // → hàng không bấm được, xem `resolveLivestreamRoomHref`.
+                const livestreamHref =
+                  c.type === "livestream" ? resolveLivestreamRoomHref(c) : null;
                 const handleViewContent = () => {
                   if (c.type === "video") {
                     // Open video in preview modal or new tab
@@ -357,7 +364,9 @@ function LessonContentsPanel({
                       toast.info("Video chưa được upload hoặc đang xử lý");
                     }
                   } else if (c.type === "livestream") {
-                    window.open(`/rooms/${c.id}`, "_blank");
+                    if (livestreamHref) {
+                      window.open(livestreamHref, "_blank");
+                    }
                   } else if (c.type === "exercise" && c.exercise_id) {
                     window.open(`/exercises/${c.exercise_id}`, "_blank");
                   }
@@ -367,9 +376,19 @@ function LessonContentsPanel({
                     <div className={cn("w-5 h-5 rounded flex items-center justify-center shrink-0", cfg.bg, cfg.color)}>
                       <Icon className="w-3 h-3" />
                     </div>
+                    {/*
+                      M-6: phiên live chưa sẵn sàng (`livestream_session_id` null)
+                      → vô hiệu hoá hàng thay vì mở sai phòng. Không dùng `c.id`.
+                    */}
                     <button
                       onClick={handleViewContent}
-                      className="flex-1 min-w-0 text-left"
+                      disabled={c.type === "livestream" && !livestreamHref}
+                      title={
+                        c.type === "livestream" && !livestreamHref
+                          ? LIVESTREAM_NOT_READY_HINT
+                          : undefined
+                      }
+                      className="flex-1 min-w-0 text-left disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <p className="text-xs font-medium truncate hover:text-primary-600">{c.title}</p>
                       <p className="text-[10px] text-muted-foreground">
