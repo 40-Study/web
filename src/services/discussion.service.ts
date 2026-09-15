@@ -3,9 +3,15 @@
  */
 
 import { api } from "@/lib/api-client";
+import { NetworkError, NotFoundError } from "@/lib/errors";
 import type { ForumPost, ForumPostListResponse, ForumPostDetail, ForumComment } from "@/types/discussion";
 
 type ApiResponse<T> = { message: string; data: T };
+
+/** Backend chưa có route ⇒ coi như "chưa có dữ liệu", không phải lỗi của người học. */
+function isMissingEndpoint(error: unknown): boolean {
+  return error instanceof NotFoundError || error instanceof NetworkError;
+}
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
@@ -23,10 +29,28 @@ export const discussionService = {
       .then((r) => r.data.data),
 
   /** POST /discussions — create new post (auth required) */
-  createPost: (data: { title: string; content: string; category: string }) =>
+  createPost: (data: { title: string; content: string; category: string; lesson_id?: string }) =>
     api
       .post<ApiResponse<ForumPost>>("/discussions", data)
       .then((r) => r.data.data),
+
+  /**
+   * GET /lessons/:lessonId/discussions — hỏi đáp theo bài (contract §5).
+   *
+   * Endpoint này chưa có trên backend đang chạy: 404/network được coi là "chưa có
+   * câu hỏi nào" và trả danh sách rỗng, vì panel hỏi đáp phải ẩn sạch chứ không
+   * được đỏ lỗi cho người học. Lỗi khác (401/403/5xx) vẫn ném ra bình thường.
+   */
+  listByLesson: async (lessonId: string, params?: { page?: number; limit?: number }) => {
+    try {
+      return await api
+        .get<ApiResponse<ForumPostListResponse>>(`/lessons/${lessonId}/discussions`, { params })
+        .then((r) => r.data.data);
+    } catch (error) {
+      if (isMissingEndpoint(error)) return { posts: [], total: 0, page: 1, page_size: 0 };
+      throw error;
+    }
+  },
 
   /** POST /discussions/:slug/comments — add comment (auth required) */
   addComment: (slug: string, data: { content: string; parent_id?: string }) =>
