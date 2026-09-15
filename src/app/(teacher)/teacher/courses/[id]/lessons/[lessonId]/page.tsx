@@ -7,8 +7,9 @@ import { ArrowLeft, Loader2, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { SubtitleUploadField } from "@/components/teacher/subtitle-upload-field";
 import { useSections } from "@/hooks/queries/use-sections";
-import { useLessons } from "@/hooks/queries/use-lessons";
+import { useLessons, useUpdateLesson } from "@/hooks/queries/use-lessons";
 import type { Section } from "@/types/section";
 import type { Lesson } from "@/types/lesson";
 
@@ -47,6 +48,7 @@ function LessonDetailContent({
   lessonId: string;
   sections: Section[];
 }) {
+  const updateLesson = useUpdateLesson(courseId, sections[0]?.id ?? "");
   // Load lessons for each section in parallel via individual hooks.
   // This is safe because hooks run in a stable order (sections order is stable).
   const s0 = useLessons(courseId, sections[0]?.id ?? "");
@@ -134,6 +136,25 @@ function LessonDetailContent({
           </div>
         </CardContent>
       </Card>
+
+      {/* Phụ đề bài giảng (contract §4) — upload ngay cạnh thông tin video */}
+      {lesson.type === "video" && (
+        <Card>
+          <CardContent className="p-6">
+            <SubtitleUploadField
+              courseId={courseId}
+              lessonId={lesson.id}
+              currentUrl={lesson.subtitle_url}
+              onUploaded={(subtitleUrl) =>
+                updateLesson.mutate({ id: lesson.id, data: { subtitle_url: subtitleUrl } })
+              }
+              onCleared={() =>
+                updateLesson.mutate({ id: lesson.id, data: { subtitle_url: null } })
+              }
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Comments — no backend endpoint yet, show empty state */}
       <Card>

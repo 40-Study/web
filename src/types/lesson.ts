@@ -28,6 +28,8 @@ export interface Lesson {
   lock_reason?: string | null;
   /** Tiến độ của CHÍNH người đang xem, gắn kèm curriculum (contract §2). */
   progress?: LessonProgressSummary | null;
+  /** Phụ đề WebVTT của bài (contract §4); rỗng ⇒ player ẩn panel transcript. */
+  subtitle_url?: string | null;
 }
 
 /** Tiến độ tóm tắt gắn trong curriculum (contract §2). */
@@ -51,4 +53,6 @@ export interface UpdateLessonDTO {
   duration_minutes?: number;
   is_preview?: boolean;
   is_mandatory?: boolean;
+  /** URL phụ đề `.vtt` sau khi upload xong (contract §4); `null` để gỡ. */
+  subtitle_url?: string | null;
 }
