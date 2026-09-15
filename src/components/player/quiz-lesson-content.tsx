@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Flag, Clock, Send, CheckCircle, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Send, CheckCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UnsureToggle, UnsureSummary, toggleUnsure, countUnsure } from "@/components/quiz/unsure-toggle";
 import type { StartQuizResponse, AttemptQuestion } from "@/services/quiz.service";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -200,15 +201,7 @@ export function QuizLessonContent({ quiz, apiQuiz, onSubmit, onSaveAnswer, onBac
   };
 
   const handleToggleFlag = () => {
-    setFlagged((prev) => {
-      const next = new Set(prev);
-      if (next.has(currentQuestion.id)) {
-        next.delete(currentQuestion.id);
-      } else {
-        next.add(currentQuestion.id);
-      }
-      return next;
-    });
+    setFlagged((prev) => toggleUnsure(prev, currentQuestion.id));
   };
 
   const handlePrev = () => {
@@ -336,18 +329,11 @@ export function QuizLessonContent({ quiz, apiQuiz, onSubmit, onSaveAnswer, onBac
               <ChevronLeft className="w-4 h-4" />
               Câu trước
             </button>
-            <button
-              onClick={handleToggleFlag}
-              className={cn(
-                "p-2.5 rounded-lg border transition-colors",
-                flagged.has(currentQuestion.id)
-                  ? "border-orange-300 bg-orange-50 text-orange-500"
-                  : "border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-600"
-              )}
-              title="Đánh dấu câu hỏi"
-            >
-              <Flag className="w-4 h-4" />
-            </button>
+            <UnsureToggle
+              isUnsure={flagged.has(currentQuestion.id)}
+              onToggle={handleToggleFlag}
+              compact
+            />
           </div>
 
           <button
@@ -440,6 +426,9 @@ export function QuizLessonContent({ quiz, apiQuiz, onSubmit, onSaveAnswer, onBac
               <span>Chưa trả lời</span>
             </div>
           </div>
+
+          {/* Nhắc soi lại các câu tự thấy chưa chắc — cờ chỉ sống ở client */}
+          <UnsureSummary count={countUnsure(flagged)} />
 
           {/* Submit Button */}
           <button

@@ -3,7 +3,14 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { quizService, type StartQuizResponse, type SubmitQuizDTO, type QuizAttempt } from "@/services/quiz.service";
+import {
+  quizService,
+  type StartQuizResponse,
+  type SubmitQuizDTO,
+  type QuizAttempt,
+  type QuizMode,
+  type QuizAttemptDetail,
+} from "@/services/quiz.service";
 
 // ─── Query Keys ──────────────────────────────────────────────────────────────
 
@@ -13,6 +20,8 @@ export const quizKeys = {
   byLesson: (lessonId: string) => [...quizKeys.all, "lesson", lessonId] as const,
   questions: (quizId: string) => [...quizKeys.all, quizId, "questions"] as const,
   attempts: (quizId: string) => [...quizKeys.all, quizId, "attempts"] as const,
+  attemptDetail: (quizId: string, attemptId: string) =>
+    [...quizKeys.all, quizId, "attempt", attemptId] as const,
   attemptProgress: (attemptId: string) => ["attempt", attemptId, "progress"] as const,
 };
 
@@ -54,15 +63,28 @@ export function useMyQuizAttempts(quizId: string | undefined) {
   });
 }
 
+/**
+ * Kết quả một lần làm bài (contract §6) — nguồn của `explanation` sau khi nộp.
+ * Chỉ bật khi có đủ attemptId; trang kết quả cần cả hai id.
+ */
+export function useQuizAttemptDetail(quizId: string | undefined, attemptId: string | undefined) {
+  return useQuery<QuizAttemptDetail>({
+    queryKey: quizKeys.attemptDetail(quizId!, attemptId!),
+    queryFn: () => quizService.getAttemptDetail(quizId!, attemptId!),
+    enabled: !!quizId && !!attemptId,
+  });
+}
+
 // ─── Mutations ───────────────────────────────────────────────────────────────
 
-/** Start a quiz attempt */
+/** Start a quiz attempt (contract §6 — `mode` mặc định `official`) */
 export function useStartQuiz() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (quizId: string) => quizService.startQuiz(quizId),
-    onSuccess: (data, quizId) => {
+    mutationFn: ({ quizId, mode }: { quizId: string; mode?: QuizMode }) =>
+      quizService.startQuiz(quizId, mode),
+    onSuccess: (data, { quizId }) => {
       // Invalidate attempts list
       queryClient.invalidateQueries({ queryKey: quizKeys.attempts(quizId) });
     },
@@ -118,10 +140,10 @@ export function useQuizLesson({ lessonId, onQuizStarted, onQuizSubmitted, onErro
   const startQuizMutation = useStartQuiz();
   const submitQuizMutation = useSubmitQuiz();
 
-  const startQuiz = async () => {
+  const startQuiz = async (mode?: QuizMode) => {
     if (!quiz?.id) return null;
     try {
-      const response = await startQuizMutation.mutateAsync(quiz.id);
+      const response = await startQuizMutation.mutateAsync({ quizId: quiz.id, mode });
       onQuizStarted?.(response);
       return response;
     } catch (error) {
