@@ -70,18 +70,11 @@ import type { Lesson } from "@/types/lesson";
 import { AddContentModal, type ContentData } from "@/components/teacher/add-content-modal";
 import { useCreateLiveSession } from "@/hooks/queries/use-live-sessions";
 import { useAuthStore } from "@/stores/auth.store";
-import { classService } from "@/services/class.service";
-
-/**
- * Ghép `date` (yyyy-mm-dd) + `time` (HH:mm) từ form thành chuỗi thời gian cho
- * `scheduled_at` của `POST /livestream`. Trả `undefined` khi thiếu dữ liệu để
- * backend tự xử lý như buổi live không hẹn giờ, thay vì gửi chuỗi rác.
- */
-function buildScheduledAt(date?: string, time?: string): string | undefined {
-  if (!date || !time) return undefined;
-  const parsed = new Date(`${date}T${time}:00`);
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
-}
+import { useClasses } from "@/hooks/queries/use-classes";
+import {
+  buildLivestreamCreatePayload,
+  resolveLivestreamClassId,
+} from "@/lib/livestream";
 
 // ─── Content type config ────────────────────────────────────────────────────
 
@@ -474,6 +467,10 @@ export default function CourseDetailPage() {
   const createLiveSession = useCreateLiveSession();
   const teacherId = useAuthStore((s) => s.user?.id);
 
+  // Danh sách lớp của khoá — chỉ tải khi modal thêm nội dung đang mở (ô chọn lớp
+  // của buổi live cần), tránh thêm request cho mọi lần vào trang.
+  const { data: courseClasses = [] } = useClasses(courseId, { enabled: addContentModal });
+
   // Section form
   const [sectionTitle, setSectionTitle] = useState("");
   const [sectionDesc, setSectionDesc] = useState("");
@@ -693,31 +690,22 @@ export default function CourseDetailPage() {
       } else if (data.type === "livestream") {
         // Phase 0 fix: `/livestream` (backend thật) yêu cầu `host_id` + `class_id`
         // là UUID bắt buộc — DTO cũ `/live-sessions` không có 2 field này.
-        // host_id lấy từ phiên đăng nhập; class_id lấy từ lớp đầu tiên của
-        // khoá học (backend gắn buổi live vào một lớp cụ thể).
+        // host_id lấy từ phiên đăng nhập; class_id lấy từ lớp giáo viên đã chọn
+        // (khoá 1 lớp thì modal tự chọn, khoá ≥2 lớp thì giáo viên phải chọn).
         if (!teacherId) {
           toast.error("Không xác định được giáo viên đang đăng nhập");
-          throw new Error("missing current user");
+          return;
         }
-        const courseClasses = await classService.list(courseId);
-        if (!courseClasses?.length) {
+        const classId = resolveLivestreamClassId(courseClasses, data.classId);
+        if (!classId) {
           toast.error("Khoá học chưa có lớp nào", {
             description: "Tạo lớp cho khoá học trước khi lên lịch buổi live.",
           });
-          throw new Error("course has no class");
+          return;
         }
-        await createLiveSession.mutateAsync({
-          title: data.title,
-          description: data.description,
-          host_id: teacherId,
-          class_id: courseClasses[0].id,
-          course_id: courseId,
-          // Backend nhận `scheduled_at` dạng chuỗi thời gian; form cũ tách
-          // riêng ngày + giờ nên phải ghép lại thành ISO.
-          scheduled_at: buildScheduledAt(data.date, data.startTime),
-          is_recorded: data.enableRecording,
-        });
-        toast.success("Đã tạo buổi live");
+        await createLiveSession.mutateAsync(
+          buildLivestreamCreatePayload(data, { hostId: teacherId, courseId, classId })
+        );
       } else if (data.type === "exercise") {
         if (data.exerciseType === "quiz" && data.quizQuestions) {
           const { quizService } = await import("@/services/quiz.service");
@@ -973,6 +961,7 @@ export default function CourseDetailPage() {
         onOpenChange={setAddContentModal}
         onSubmit={handleAddContent}
         lessonId={currentLessonId || ""}
+        courseClasses={courseClasses}
         isLoading={isUploading}
         uploadProgress={uploadProgress}
         uploadStatus={uploadStatus}

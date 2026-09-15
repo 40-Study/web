@@ -44,12 +44,13 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { requiresClassSelection } from "@/lib/livestream";
+import type { Class } from "@/services/class.service";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 export type ContentType = "video" | "livestream" | "exercise";
 export type ExerciseType = "quiz" | "code" | "essay";
-export type LivePlatform = "40study" | "zoom" | "custom";
 
 interface UploadedFile {
   id: string;
@@ -90,10 +91,14 @@ export interface LivestreamContentData {
   description: string;
   date: string;
   startTime: string;
-  duration: number;
-  platform: LivePlatform;
-  customLink?: string;
-  enableReminder: boolean;
+  /**
+   * Lớp mà buổi live sẽ gắn vào (`class_id` của `CreateLivestreamDTO`).
+   *
+   * `null` khi khoá chưa có lớp nào — trang giáo viên chặn trước khi tới đây.
+   * Khoá có 1 lớp thì modal tự chọn; có ≥2 lớp thì giáo viên phải chọn, nút gửi
+   * bị vô hiệu hoá cho tới khi chọn xong.
+   */
+  classId: string | null;
   enableRecording: boolean;
   documents: File[];
   quizQuestions: QuizQuestion[];
@@ -124,6 +129,8 @@ interface AddContentModalProps {
   onSubmit: (data: ContentData) => void;
   isLoading?: boolean;
   lessonId: string;
+  /** Danh sách lớp của khoá — nguồn cho ô chọn lớp của buổi live. */
+  courseClasses?: Class[];
   uploadProgress?: number; // 0-100, undefined = not uploading
   uploadStatus?: string; // status message
   onVideoFileSelect?: (file: File) => void; // Called immediately when video file is selected
@@ -150,14 +157,6 @@ const LANGUAGES = [
   { value: "go", label: "Go" },
   { value: "java", label: "Java" },
   { value: "cpp", label: "C++" },
-];
-
-const DURATIONS = [
-  { value: 30, label: "30 phút" },
-  { value: 45, label: "45 phút" },
-  { value: 60, label: "60 phút" },
-  { value: 90, label: "90 phút" },
-  { value: 120, label: "120 phút" },
 ];
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -192,6 +191,7 @@ export function AddContentModal({
   onSubmit,
   isLoading = false,
   lessonId,
+  courseClasses = [],
   uploadProgress,
   uploadStatus,
   onVideoFileSelect,
@@ -214,13 +214,14 @@ export function AddContentModal({
   const [liveDesc, setLiveDesc] = useState("");
   const [liveDate, setLiveDate] = useState("");
   const [liveTime, setLiveTime] = useState("20:00");
-  const [liveDuration, setLiveDuration] = useState(60);
-  const [livePlatform, setLivePlatform] = useState<LivePlatform>("40study");
-  const [liveCustomLink, setLiveCustomLink] = useState("");
-  const [liveReminder, setLiveReminder] = useState(true);
+  const [liveClassId, setLiveClassId] = useState("");
   const [liveRecording, setLiveRecording] = useState(true);
   const [liveDocs, setLiveDocs] = useState<File[]>([]);
   const [liveQuiz, setLiveQuiz] = useState<QuizQuestion[]>([]);
+
+  const hasMultipleClasses = requiresClassSelection(courseClasses.length);
+  // Khoá 1 lớp: không cần hỏi, backend vẫn phải nhận đúng class_id đó.
+  const effectiveClassId = hasMultipleClasses ? liveClassId : (courseClasses[0]?.id ?? "");
 
   // Exercise state
   const [exerciseType, setExerciseType] = useState<ExerciseType | null>(null);
@@ -244,8 +245,7 @@ export function AddContentModal({
     setVideoTitle(""); setVideoDesc(""); setVideoFile(null); setVideoUrl("");
     setVideoDocs([]); setVideoQuiz([]);
     setLiveTitle(""); setLiveDesc(""); setLiveDate(""); setLiveTime("20:00");
-    setLiveDuration(60); setLivePlatform("40study"); setLiveCustomLink("");
-    setLiveReminder(true); setLiveRecording(true); setLiveDocs([]); setLiveQuiz([]);
+    setLiveClassId(""); setLiveRecording(true); setLiveDocs([]); setLiveQuiz([]);
     setExerciseType(null); setExTitle(""); setExDesc("");
     setExQuiz([emptyQuestion()]); setExTimeLimit(300);
     setExLanguage("javascript"); setExTestCases([emptyTestCase()]); setExSolution("");
@@ -285,16 +285,14 @@ export function AddContentModal({
         quizQuestions: videoQuiz,
       });
     } else if (contentType === "livestream") {
+      if (!effectiveClassId) return; // khoá chưa có lớp — nút gửi đã bị vô hiệu hoá
       onSubmit({
         type: "livestream",
         title: liveTitle,
         description: liveDesc,
         date: liveDate,
         startTime: liveTime,
-        duration: liveDuration,
-        platform: livePlatform,
-        customLink: liveCustomLink || undefined,
-        enableReminder: liveReminder,
+        classId: effectiveClassId,
         enableRecording: liveRecording,
         documents: liveDocs,
         quizQuestions: liveQuiz,
@@ -315,7 +313,7 @@ export function AddContentModal({
       });
     }
     handleClose();
-  }, [contentType, exerciseType, videoTitle, videoDesc, videoUrl, uploadedVideoUrl, videoDocs, videoQuiz, liveTitle, liveDesc, liveDate, liveTime, liveDuration, livePlatform, liveCustomLink, liveReminder, liveRecording, liveDocs, liveQuiz, exTitle, exDesc, exQuiz, exTimeLimit, exLanguage, exTestCases, exSolution, exMinWords, exMaxWords, onSubmit, handleClose]);
+  }, [contentType, exerciseType, videoTitle, videoDesc, videoUrl, uploadedVideoUrl, videoDocs, videoQuiz, liveTitle, liveDesc, liveDate, liveTime, effectiveClassId, liveRecording, liveDocs, liveQuiz, exTitle, exDesc, exQuiz, exTimeLimit, exLanguage, exTestCases, exSolution, exMinWords, exMaxWords, onSubmit, handleClose]);
 
   // Document handlers
   const addDocs = useCallback((files: FileList, target: "video" | "live") => {
@@ -619,67 +617,41 @@ export function AddContentModal({
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Thời lượng</label>
-                  <Select value={String(liveDuration)} onValueChange={(v) => setLiveDuration(Number(v))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {DURATIONS.map((d) => (
-                        <SelectItem key={d.value} value={String(d.value)}>{d.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/*
+                  Ô chọn lớp: bắt buộc khi khoá có từ 2 lớp trở lên.
+                  Backend gắn buổi live vào MỘT lớp (`CreateLivestreamDTO.ClassID`)
+                  — tự lấy lớp đầu tiên sẽ khiến học viên các lớp khác không bao
+                  giờ thấy buổi live, và lỗi này im lặng (finding #1).
+                */}
+                {hasMultipleClasses && (
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Lớp học <span className="text-destructive">*</span>
+                    </label>
+                    <Select value={liveClassId} onValueChange={setLiveClassId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn lớp cho buổi live" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courseClasses.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Buổi live chỉ hiển thị cho học viên thuộc lớp được chọn.
+                    </p>
+                  </div>
+                )}
 
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Nền tảng</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { val: "40study" as const, label: "40Study", sub: "Khuyên dùng" },
-                      { val: "zoom" as const, label: "Zoom" },
-                      { val: "custom" as const, label: "Link tự chọn" },
-                    ].map((p) => (
-                      <button
-                        key={p.val}
-                        onClick={() => setLivePlatform(p.val)}
-                        className={cn(
-                          "p-3 rounded-xl border-2 text-center transition-all",
-                          livePlatform === p.val
-                            ? "border-primary-600 bg-primary-50"
-                            : "border-input hover:border-primary-300"
-                        )}
-                      >
-                        <Video className="w-5 h-5 mx-auto mb-1" />
-                        <span className="text-sm font-medium">{p.label}</span>
-                        {p.sub && <span className="block text-xs text-primary-600">{p.sub}</span>}
-                      </button>
-                    ))}
+                <div className="flex items-center justify-between p-3 border rounded-xl">
+                  <div>
+                    <p className="font-medium text-sm">Tự động ghi lại</p>
+                    <p className="text-xs text-muted-foreground">Lưu bản ghi sau khi kết thúc</p>
                   </div>
-                  {livePlatform === "custom" && (
-                    <Input
-                      placeholder="Nhập link phòng họp..."
-                      value={liveCustomLink}
-                      onChange={(e) => setLiveCustomLink(e.target.value)}
-                      className="mt-3"
-                    />
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 border rounded-xl">
-                    <div>
-                      <p className="font-medium text-sm">Thông báo nhắc nhở</p>
-                      <p className="text-xs text-muted-foreground">Gửi thông báo trước 30 phút</p>
-                    </div>
-                    <Switch checked={liveReminder} onCheckedChange={setLiveReminder} />
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-xl">
-                    <div>
-                      <p className="font-medium text-sm">Tự động ghi lại</p>
-                      <p className="text-xs text-muted-foreground">Lưu bản ghi sau khi kết thúc</p>
-                    </div>
-                    <Switch checked={liveRecording} onCheckedChange={setLiveRecording} />
-                  </div>
+                  <Switch checked={liveRecording} onCheckedChange={setLiveRecording} />
                 </div>
               </TabsContent>
 
@@ -868,7 +840,11 @@ export function AddContentModal({
         {(contentType === "video" || contentType === "livestream" || (contentType === "exercise" && exerciseType)) && (
           <DialogFooter className="border-t pt-4 mt-4">
             <Button variant="outline" onClick={handleClose}>Hủy</Button>
-            <Button onClick={handleSubmit} isLoading={isLoading}>
+            <Button
+              onClick={handleSubmit}
+              isLoading={isLoading}
+              disabled={contentType === "livestream" && !effectiveClassId}
+            >
               {contentType === "video" ? "Thêm video" : contentType === "livestream" ? "Tạo buổi live" : "Lưu bài tập"}
             </Button>
           </DialogFooter>

@@ -22,12 +22,19 @@ export const classKeys = {
     [...classKeys.all, "attendances", courseId, classId] as const,
 };
 
-/** List classes for a course */
-export function useClasses(courseId: string) {
+/**
+ * List classes for a course.
+ *
+ * `options.enabled` cho phép hoãn gọi API cho tới khi thật sự cần — trang giáo
+ * viên chỉ tải danh sách lớp khi mở modal thêm nội dung (cần cho ô chọn lớp
+ * của buổi live), không tải ngay khi vào trang.
+ */
+export function useClasses(courseId: string, options: { enabled?: boolean } = {}) {
+  const { enabled = true } = options;
   return useQuery({
     queryKey: classKeys.list(courseId),
     queryFn: () => classService.list(courseId),
-    enabled: !!courseId,
+    enabled: enabled && !!courseId,
   });
 }
 
