@@ -19,7 +19,20 @@ export type LiveSessionStatus = "scheduled" | "live" | "ended";
 /** Vai trò người tham gia — khớp `JoinLivestreamDTO.role` (oneof) ở backend. */
 export type LiveParticipantRole = "teacher" | "assistant" | "student" | "viewer";
 
-/** Response của `GET /livestream/:id` và `GET /livestream` — `dto.LivestreamResponseDTO`. */
+/** Cấu hình phòng live — khớp `model.LivestreamSettings` (backend). */
+export interface LiveSessionSettings {
+  is_chat_enabled: boolean;
+  is_qa_enabled: boolean;
+  is_whiteboard_enabled: boolean;
+  is_screen_share_enabled: boolean;
+  is_polls_enabled: boolean;
+  whiteboard_locked: boolean;
+}
+
+/**
+ * Response của `GET /livestream/:id` và `GET /livestream` — `dto.LivestreamResponseDTO`,
+ * trong đó `settings` là **chuỗi JSON** (service Go marshal struct thành string).
+ */
 export interface LiveSession {
   id: string;
   title: string;
@@ -37,6 +50,21 @@ export interface LiveSession {
   is_recorded: boolean;
   settings: string;
   created_at: string;
+}
+
+/**
+ * Response của `POST /livestream` và `PUT /livestream/:id` — service Go trả thẳng
+ * `*model.LivestreamSession`, KHÔNG qua `dto.LivestreamResponseDTO`
+ * (backend/internal/service/livestream_service.go:20-27). Khác biệt so với
+ * `LiveSession`: `settings` là **object** (`model.LivestreamSettings`) và
+ * `description` là `*string` có `omitempty` nên có thể vắng mặt.
+ *
+ * Trước đây hai shape bị gộp làm một và `settings` khai là `string` — kiểu nói
+ * dối, `tsc` không bắt được vì không nơi nào đọc field đó (Phase 0 review #8).
+ */
+export interface LiveSessionModel extends Omit<LiveSession, "settings" | "description"> {
+  description?: string;
+  settings: LiveSessionSettings;
 }
 
 /** `GET /livestream/:id` trả thêm số liệu realtime từ LiveKit. */
@@ -104,7 +132,7 @@ type R<T> = { message: string; data: T };
 export const liveSessionService = {
   /** POST /livestream — tạo phiên live mới */
   create: (dto: CreateLiveSessionDTO) =>
-    api.post<R<LiveSession>>("/livestream", dto).then((r) => r.data.data),
+    api.post<R<LiveSessionModel>>("/livestream", dto).then((r) => r.data.data),
 
   /**
    * GET /livestream — danh sách phiên live.
@@ -125,7 +153,7 @@ export const liveSessionService = {
 
   /** PUT /livestream/:id — cập nhật tiêu đề / mô tả / số người xem tối đa */
   update: (id: string, dto: UpdateLiveSessionDTO) =>
-    api.put<R<LiveSession>>(`/livestream/${id}`, dto).then((r) => r.data.data),
+    api.put<R<LiveSessionModel>>(`/livestream/${id}`, dto).then((r) => r.data.data),
 
   /** DELETE /livestream/:id — xoá/huỷ phiên live */
   delete: (id: string) =>
@@ -133,11 +161,11 @@ export const liveSessionService = {
 
   /** POST /livestream/:id/start — bắt đầu phiên */
   start: (id: string) =>
-    api.post<R<LiveSession>>(`/livestream/${id}/start`, {}).then((r) => r.data.data),
+    api.post<R<LiveSessionModel>>(`/livestream/${id}/start`, {}).then((r) => r.data.data),
 
   /** POST /livestream/:id/end — kết thúc phiên */
   end: (id: string) =>
-    api.post<R<LiveSession>>(`/livestream/${id}/end`, {}).then((r) => r.data.data),
+    api.post<R<LiveSessionModel>>(`/livestream/${id}/end`, {}).then((r) => r.data.data),
 
   /**
    * POST /livestream/:id/join — lấy token LiveKit cho người tham gia.
