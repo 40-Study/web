@@ -8,6 +8,7 @@
 import { describe, expect, it } from "vitest";
 import {
   appendSample,
+  openRange,
   buildHeartbeatPayload,
   isContinuousSample,
   mergeRanges,
@@ -111,6 +112,21 @@ describe("appendSample", () => {
 
   it("mẫu nhảy xa tạo khoảng mới", () => {
     expect(appendSample([[0, 10]], 500)).toEqual([[0, 10], [500, 500.5]]);
+  });
+});
+
+describe("openRange", () => {
+  it("luôn đẻ khoảng mới, giữ nguyên khoảng cũ", () => {
+    expect(openRange([[0, 10]], 11)).toEqual([
+      [0, 10],
+      [11, 11.5],
+    ]);
+  });
+
+  it("mẫu nằm trong khoảng cũ vẫn là khoảng mới — đây là mẫu seek", () => {
+    // Seek lùi về giữa đoạn vừa phát: KHÔNG được coi là nối tiếp, nhưng đoạn cũ
+    // phải còn nguyên.
+    expect(openRange([[0, 10]], 4)).toEqual([[0, 10]]);
   });
 });
 

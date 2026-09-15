@@ -14,3 +14,5 @@ export { QuizResultContent } from "./quiz-result-content";
 export type { QuizResultData, QuizResultAnswer } from "./quiz-result-content";
 export { ExerciseLessonContent } from "./exercise-lesson-content";
 export type { ExerciseData, ExerciseExample, ExerciseTestCase, TestResult, SubmitResult } from "./exercise-lesson-content";
+export { HeartbeatVideo } from "./heartbeat-video";
+export { LessonLockedNotice } from "./lesson-locked-notice";

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { ChevronRight, Loader2, Star } from "lucide-react";
 import Link from "next/link";
-import { VideoPlayer } from "@/components/lesson/video-player";
 import {
   PlayerHeader,
   PlayerLessonSidebar,
@@ -13,6 +12,8 @@ import {
   CodeEditorModal,
   QuizLessonContent,
   QuizResultContent,
+  HeartbeatVideo,
+  LessonLockedNotice,
 } from "@/components/player";
 import type { QuizResultData } from "@/components/player";
 import { useCourseBySlug } from "@/hooks/queries/use-courses";
@@ -20,6 +21,7 @@ import { useSections } from "@/hooks/queries/use-sections";
 import { useLessonContents } from "@/hooks/queries/use-lesson-content";
 import { useHlsInfo, getVideoUrl } from "@/hooks/use-hls";
 import { useStartQuiz, useSubmitQuiz, useQuizzesByLesson, useSaveQuizAnswer } from "@/hooks/queries/use-quiz";
+import { resolveResumeSeconds, findPreviousLesson } from "@/lib/lesson-lock";
 import type { StartQuizResponse } from "@/services/quiz.service";
 import type { PlayerCourse, PlayerChapter, PlayerLesson } from "@/types/course-player";
 import type { Section } from "@/types/section";
@@ -28,6 +30,13 @@ import type { ApiCourse } from "@/services/course.service";
 
 // ─── Backend → PlayerCourse mapping ────────────────────────────────────────
 
+/**
+ * Backend → PlayerCourse mapping.
+ *
+ * `locked` / `lock_reason` / `progress` đến TỪ SERVER (contract §2) — KHÔNG suy ra
+ * ở client. Trước đây chỗ này gán `locked: !lesson.is_preview`, tức mọi bài không
+ * phải preview đều bị khoá, kể cả bài đã học xong. Server là nguồn duy nhất.
+ */
 function mapSectionsToChapters(sections: Section[]): PlayerChapter[] {
   return sections.map((section) => ({
     id: section.id,
@@ -37,8 +46,11 @@ function mapSectionsToChapters(sections: Section[]): PlayerChapter[] {
       title: lesson.title,
       duration: lesson.duration ? `${Math.floor(lesson.duration / 60)}:${String(lesson.duration % 60).padStart(2, "0")}` : "00:00",
       type: lesson.type === "article" ? "reading" : (lesson.type as PlayerLesson["type"]),
-      completed: false,
-      locked: !lesson.is_preview,
+      completed: lesson.progress?.status === "completed",
+      locked: lesson.locked ?? false,
+      lockReason: lesson.lock_reason ?? null,
+      lastPositionSeconds: lesson.progress?.last_position_seconds ?? 0,
+      durationSeconds: lesson.duration ?? undefined,
     })),
   }));
 }
@@ -98,6 +110,8 @@ function VideoLessonContent({
   courseSlug: string;
   isLoading?: boolean;
 }) {
+  const lessonId = currentLesson?.id ?? "";
+
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-5 gap-4">
       <div className="rounded-2xl overflow-hidden shadow-sm bg-black aspect-video">
@@ -105,8 +119,16 @@ function VideoLessonContent({
           <div className="w-full h-full flex items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-white" />
           </div>
-        ) : videoSrc ? (
-          <VideoPlayer src={videoSrc} className="rounded-none" />
+        ) : videoSrc && lessonId ? (
+          <HeartbeatVideo
+            src={videoSrc}
+            lessonId={lessonId}
+            courseId={course.id}
+            resumeSeconds={resolveResumeSeconds(
+              currentLesson?.lastPositionSeconds,
+              currentLesson?.durationSeconds
+            )}
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white">
             <p>Video không khả dụng</p>
@@ -200,6 +222,25 @@ export default function CourseLessonPage() {
   const course = mapApiCourseToPlayerCourse(apiCourse, sections);
   const currentLesson = getLessonById(course, lessonId);
   const next = getNextLesson(course, lessonId);
+  const previous = findPreviousLesson(course, lessonId);
+
+  /**
+   * Bài chưa mở (contract §2): chặn ngay ở đây, KHÔNG tải video/quiz.
+   * Backend cũng trả 403 LESSON_LOCKED cho nội dung bài khoá — chặn ở client chỉ
+   * để người học thấy lý do thay vì một khung video trắng.
+   */
+  const isLocked = currentLesson?.locked === true;
+  const lockNotice = isLocked && currentLesson ? (
+    <div className="flex-1 flex items-center justify-center p-5">
+      <div className="aspect-video w-full max-w-3xl overflow-hidden rounded-2xl">
+        <LessonLockedNotice
+          lesson={currentLesson}
+          courseSlug={courseSlug}
+          previousLesson={previous}
+        />
+      </div>
+    </div>
+  ) : null;
 
   // Get video URL: HLS if ready, fallback to original video.mp4 endpoint
   const videoSrc = videoId && hlsInfo
@@ -328,6 +369,8 @@ export default function CourseLessonPage() {
   };
 
   const renderContent = () => {
+    if (lockNotice) return lockNotice;
+
     // Quiz lesson
     if (currentLesson?.type === "quiz") {
       // Quiz completed - show result

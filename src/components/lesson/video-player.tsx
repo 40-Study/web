@@ -29,7 +29,18 @@ interface VideoPlayerProps {
   captions?: CaptionTrack[];
   onProgress?: (progress: number) => void;
   onComplete?: () => void;
-  onTimeUpdate?: (currentTime: number) => void;
+  /**
+   * Mỗi tick `timeupdate`. Truyền kèm `playbackRate` và `duration` để hook
+   * heartbeat chống tua (contract §1) tự đánh giá mẫu này có nối tiếp khoảng
+   * đang phát hay không — player không phán xét thay.
+   */
+  onTimeUpdate?: (currentTime: number, playbackRate: number, durationSeconds: number) => void;
+  /** Bắt đầu phát — hook heartbeat dùng để biết phiên xem thật sự bắt đầu. */
+  onPlay?: () => void;
+  /** Tạm dừng — hook heartbeat gửi ngay thay vì đợi nhịp 10 giây. */
+  onPause?: () => void;
+  /** Đổi tốc độ phát — heartbeat cần biết để không tính đoạn phát nhanh là tua. */
+  onRateChange?: (rate: number) => void;
   initialTime?: number;
   className?: string;
 }
@@ -50,6 +61,9 @@ export function VideoPlayer({
   onProgress,
   onComplete,
   onTimeUpdate,
+  onPlay,
+  onPause,
+  onRateChange,
   initialTime = 0,
   className,
 }: VideoPlayerProps) {
@@ -231,7 +245,7 @@ export function VideoPlayer({
     const video = videoRef.current;
     if (video) {
       setCurrentTime(video.currentTime);
-      onTimeUpdate?.(video.currentTime);
+      onTimeUpdate?.(video.currentTime, video.playbackRate || 1, video.duration || duration);
 
       // Update buffered
       if (video.buffered.length > 0) {
@@ -341,6 +355,15 @@ export function VideoPlayer({
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
+        onPlay={() => {
+          setIsPlaying(true);
+          onPlay?.();
+        }}
+        onPause={() => {
+          setIsPlaying(false);
+          onPause?.();
+        }}
+        onRateChange={(e) => onRateChange?.(e.currentTarget.playbackRate)}
         playsInline
       >
         {captions.map((track) => (

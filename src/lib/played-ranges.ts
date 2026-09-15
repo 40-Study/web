@@ -64,6 +64,21 @@ export function mergeRanges(ranges: readonly PlayedRange[]): PlayedRange[] {
 }
 
 /**
+ * Mở một khoảng MỚI, không đụng tới khoảng đang có.
+ *
+ * Dùng khi phát hiện gián đoạn (seek/buffering): mẫu này là điểm bắt đầu của một
+ * khoảng mới, không phải bằng chứng nối dài khoảng trước. Khác `appendSample` ở
+ * chỗ LUÔN đẻ khoảng mới thay vì nối vào khoảng cuối.
+ */
+export function openRange(
+  ranges: readonly PlayedRange[],
+  sample: number,
+  minLength = MIN_RANGE_SECONDS
+): PlayedRange[] {
+  return mergeRanges([...ranges, [sample, sample + minLength] as PlayedRange]);
+}
+
+/**
  * Nối thêm một mẫu vào danh sách khoảng, trả về danh sách mới.
  *
  * Mẫu đơn lẻ được biểu diễn bằng khoảng dài tối thiểu — `mergeRanges` bỏ qua
@@ -79,7 +94,7 @@ export function appendSample(
   if (last && sample >= last[0] && sample <= last[1] + minLength) {
     return mergeRanges([...ranges.slice(0, -1), [last[0], Math.max(last[1], sample)] as PlayedRange]);
   }
-  return mergeRanges([...ranges, [sample, sample + minLength] as PlayedRange]);
+  return openRange(ranges, sample, minLength);
 }
 
 /** Tổng thời lượng đã phát thật (giây) sau khi gộp. */
