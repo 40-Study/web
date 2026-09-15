@@ -1,12 +1,17 @@
 /**
- * React Query hooks for live sessions
+ * React Query hooks for live sessions (buổi học trực tiếp).
+ *
+ * Phase 0 fix: service bên dưới nay gọi `/livestream` (livestream_router.go).
+ * Các hook gắn với endpoint KHÔNG tồn tại ở backend đã bị xoá — không còn
+ * `getUpcoming` (`/live-sessions/upcoming`), `sendReminder`
+ * (`/live-sessions/:id/send-reminder`), `uploadAttachments`
+ * (`/live-sessions/:id/attachments`).
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   liveSessionService,
-  type LiveSession,
   type CreateLiveSessionDTO,
   type UpdateLiveSessionDTO,
   type LiveSessionListParams,
@@ -20,7 +25,6 @@ export const liveSessionKeys = {
   list: (params?: LiveSessionListParams) => [...liveSessionKeys.lists(), params] as const,
   details: () => [...liveSessionKeys.all, "detail"] as const,
   detail: (id: string) => [...liveSessionKeys.details(), id] as const,
-  upcoming: () => [...liveSessionKeys.all, "upcoming"] as const,
 };
 
 // ─── Queries ────────────────────────────────────────────────────────────────
@@ -37,13 +41,6 @@ export function useLiveSession(id: string, enabled = true) {
     queryKey: liveSessionKeys.detail(id),
     queryFn: () => liveSessionService.getById(id),
     enabled: !!id && enabled,
-  });
-}
-
-export function useUpcomingLiveSessions() {
-  return useQuery({
-    queryKey: liveSessionKeys.upcoming(),
-    queryFn: () => liveSessionService.getUpcoming(),
   });
 }
 
@@ -124,18 +121,6 @@ export function useEndLiveSession() {
     },
     onError: (error: Error) => {
       toast.error("Không thể kết thúc", { description: error.message });
-    },
-  });
-}
-
-export function useSendLiveSessionReminder() {
-  return useMutation({
-    mutationFn: (id: string) => liveSessionService.sendReminder(id),
-    onSuccess: () => {
-      toast.success("Đã gửi nhắc nhở thành công");
-    },
-    onError: (error: Error) => {
-      toast.error("Không thể gửi nhắc nhở", { description: error.message });
     },
   });
 }

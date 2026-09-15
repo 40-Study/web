@@ -69,6 +69,19 @@ import type { Section } from "@/types/section";
 import type { Lesson } from "@/types/lesson";
 import { AddContentModal, type ContentData } from "@/components/teacher/add-content-modal";
 import { useCreateLiveSession } from "@/hooks/queries/use-live-sessions";
+import { useAuthStore } from "@/stores/auth.store";
+import { classService } from "@/services/class.service";
+
+/**
+ * Ghép `date` (yyyy-mm-dd) + `time` (HH:mm) từ form thành chuỗi thời gian cho
+ * `scheduled_at` của `POST /livestream`. Trả `undefined` khi thiếu dữ liệu để
+ * backend tự xử lý như buổi live không hẹn giờ, thay vì gửi chuỗi rác.
+ */
+function buildScheduledAt(date?: string, time?: string): string | undefined {
+  if (!date || !time) return undefined;
+  const parsed = new Date(`${date}T${time}:00`);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+}
 
 // ─── Content type config ────────────────────────────────────────────────────
 
@@ -459,6 +472,7 @@ export default function CourseDetailPage() {
 
   // Live session mutation
   const createLiveSession = useCreateLiveSession();
+  const teacherId = useAuthStore((s) => s.user?.id);
 
   // Section form
   const [sectionTitle, setSectionTitle] = useState("");
@@ -677,18 +691,31 @@ export default function CourseDetailPage() {
         }
         toast.success("Đã thêm video");
       } else if (data.type === "livestream") {
+        // Phase 0 fix: `/livestream` (backend thật) yêu cầu `host_id` + `class_id`
+        // là UUID bắt buộc — DTO cũ `/live-sessions` không có 2 field này.
+        // host_id lấy từ phiên đăng nhập; class_id lấy từ lớp đầu tiên của
+        // khoá học (backend gắn buổi live vào một lớp cụ thể).
+        if (!teacherId) {
+          toast.error("Không xác định được giáo viên đang đăng nhập");
+          throw new Error("missing current user");
+        }
+        const courseClasses = await classService.list(courseId);
+        if (!courseClasses?.length) {
+          toast.error("Khoá học chưa có lớp nào", {
+            description: "Tạo lớp cho khoá học trước khi lên lịch buổi live.",
+          });
+          throw new Error("course has no class");
+        }
         await createLiveSession.mutateAsync({
-          course_id: courseId,
-          lesson_id: currentLessonId || undefined,
           title: data.title,
           description: data.description,
-          scheduled_date: data.date,
-          start_time: data.startTime,
-          duration_minutes: data.duration,
-          platform: data.platform,
-          custom_link: data.customLink,
-          enable_reminder: data.enableReminder,
-          enable_recording: data.enableRecording,
+          host_id: teacherId,
+          class_id: courseClasses[0].id,
+          course_id: courseId,
+          // Backend nhận `scheduled_at` dạng chuỗi thời gian; form cũ tách
+          // riêng ngày + giờ nên phải ghép lại thành ISO.
+          scheduled_at: buildScheduledAt(data.date, data.startTime),
+          is_recorded: data.enableRecording,
         });
         toast.success("Đã tạo buổi live");
       } else if (data.type === "exercise") {

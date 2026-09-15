@@ -9,7 +9,6 @@ import { lessonContentService, LessonContent } from "@/services/lesson-content.s
 import { quizService, StartQuizResponse, QuizAttemptDetail, SubmitQuizDTO } from "@/services/quiz.service";
 import { exerciseService, Exercise, TestCase, ExerciseSubmission } from "@/services/exercise.service";
 import { enrollmentService } from "@/services/enrollment.service";
-import { videoService, VideoInfo } from "@/services/video.service";
 import { NotFoundError } from "@/lib/errors";
 import { courseKeys } from "@/hooks/use-courses";
 import type { PlayerCourse, PlayerChapter, PlayerLesson } from "@/types/course-player";
@@ -66,7 +65,6 @@ export const playerKeys = {
   quiz: (quizId: string) => ["player", "quiz", quizId] as const,
   quizAttempt: (quizId: string, attemptId: string) => ["player", "quiz-attempt", quizId, attemptId] as const,
   exercise: (exerciseId: string) => ["player", "exercise", exerciseId] as const,
-  video: (videoId: string) => ["player", "video", videoId] as const,
 };
 
 // ─── Curriculum Hook ────────────────────────────────────────────────────────
@@ -340,17 +338,12 @@ export function useSubmitExercise() {
   });
 }
 
-// ─── Video & Progress Hooks ─────────────────────────────────────────────────
-
-/** Get video info */
-export function useVideo(videoId: string) {
-  return useQuery({
-    queryKey: playerKeys.video(videoId),
-    queryFn: () => videoService.getVideo(videoId),
-    enabled: !!videoId,
-    staleTime: 10 * 60 * 1000,
-  });
-}
+// ─── Progress Hooks ────────────────────────────────────────────────────────
+//
+// Phase 0: `useVideo` cũ gọi `GET /videos/:id` từ `video.service.ts` — contract
+// đã chết, backend không có route đó và không còn nơi nào dùng hook này. Thông
+// tin video/stream nay lấy qua `hlsService` (`GET /hls/:uploadId/info`) ở
+// `src/hooks/use-hls.ts`.
 
 /** Update lesson progress with optimistic UI */
 export function useUpdateProgress(courseSlug?: string) {

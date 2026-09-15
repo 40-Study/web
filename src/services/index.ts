@@ -121,7 +121,6 @@ export * from "./wallet.service";
 export * from "./notification.service";
 export * from "./user-stats.service";
 export * from "./user-preference.service";
-export * from "./video.service";
 export * from "./schedule.service";
 export * from "./invitation.service";
 export * from "./livestream-classroom.service";

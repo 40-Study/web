@@ -116,9 +116,21 @@ export const livestreamClassroomService = {
       .then((r) => r.data.data),
 
   // Room token
-  getRoomToken: (roomName: string) =>
+  //
+  // Phase 0 fix: trước đây gọi `POST /live/rooms/:roomName/token` — prefix
+  // `/live/rooms` KHÔNG tồn tại ở backend, nên mọi lời gọi đều 404 và phòng
+  // học không lấy được token. Backend thật là `POST /livestream/:id/join`
+  // (livestream_router.go), nhận `dto.JoinLivestreamDTO` và trả token trong
+  // BODY (`dto.ParticipantResponseDTO.token`) — token không bao giờ lên URL.
+  //
+  // `sessionId` ở đây chính là `room_name`: livestream_service.go đặt
+  // `roomName = sessionID` khi tạo phiên, nên room name trùng id phiên.
+  getRoomToken: (sessionId: string, dto: { user_id: string; name: string; role?: string }) =>
     api
-      .post<{ message: string; data: { token: string } }>(`/live/rooms/${roomName}/token`, {})
+      .post<{ message: string; data: { token: string; server_url?: string; room_name?: string } }>(
+        `/livestream/${sessionId}/join`,
+        dto
+      )
       .then((r) => r.data.data),
 
   // Participants
