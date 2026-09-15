@@ -25,6 +25,7 @@ import { enrollmentService, type LessonProgressResponse } from "@/services/enrol
 import {
   HEARTBEAT_INTERVAL_MS,
   appendSample,
+  boundedOpenCredit,
   buildHeartbeatPayload,
   isContinuousSample,
   openRange,
@@ -170,7 +171,16 @@ export function useVideoProgress({
       }
       // Seek / buffering / mẫu đầu: đoạn nhảy qua KHÔNG được tính, nhưng những
       // khoảng đã gom trước đó thì vẫn giữ — `openRange` chứ không phải reset.
-      rangesRef.current = openRange(rangesRef.current, currentTime);
+      // BLOCKER PR #17 vòng 2b: khoảng mới không được tín dụng nhiều hơn thời
+      // gian thực đã trôi qua kể từ mẫu trước × playbackRate — nếu không, một
+      // mẫu KHÔNG liên tục lặp lại liên tục (kéo tua chậm, spam phím tua) vẫn
+      // seed đều 0.5s mỗi lần dù chẳng có giây thực nào trôi qua tương ứng.
+      const elapsedMs = previous ? now - previous.at : null;
+      rangesRef.current = openRange(
+        rangesRef.current,
+        currentTime,
+        boundedOpenCredit(elapsedMs, playbackRate)
+      );
     },
     []
   );

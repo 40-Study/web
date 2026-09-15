@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 import {
   appendSample,
   openRange,
+  boundedOpenCredit,
   buildHeartbeatPayload,
   isContinuousSample,
   mergeRanges,
@@ -157,7 +158,11 @@ describe("kịch bản đo tốc độ xem thật (BLOCKER PR #17, #2 + #3)", ()
         ranges = appendSample(ranges, mediaTime);
         continuousCount += 1;
       } else {
-        ranges = openRange(ranges, mediaTime);
+        // BLOCKER PR #17 vòng 2b: khoảng mới bị chặn trên bởi thời gian thực
+        // đã trôi qua kể từ mẫu trước × playbackRate — khớp đúng cách
+        // `handleTimeUpdate` (use-video-progress.ts) tính `elapsedMs`.
+        const elapsedMs = previous !== null ? tickMs : null;
+        ranges = openRange(ranges, mediaTime, boundedOpenCredit(elapsedMs, playbackRate));
       }
       previous = mediaTime;
     }
@@ -178,26 +183,79 @@ describe("kịch bản đo tốc độ xem thật (BLOCKER PR #17, #2 + #3)", ()
     expect(totalWatched).toBeGreaterThanOrEqual(18);
   });
 
-  it("kéo thanh tua chậm 1.5s mỗi tick 250ms → KHÔNG mẫu nào được chấm liên tục", () => {
-    // Trước fix (dung sai tuyệt đối 1.5s): 40/40 mẫu bị chấm liên tục, nối
-    // thành một khoảng gian lận 2x tín dụng. Sau fix: 0/40 — đúng yêu cầu
-    // "không được tính là phát liên tục". Tổng giây vẫn > 0 vì mỗi khoảng MỚI
-    // (kể cả khoảng do gián đoạn) được `openRange` seed tối thiểu 0.5s — đây
-    // là MIN_RANGE_SECONDS, một cơ chế KHÁC, nằm ngoài phạm vi 2 hàm bị sửa ở
-    // đây (không đổi vì mọi lần tua/đổi bài hợp lệ cũng cần một khoảng khởi
-    // đầu khác 0); số đo trước/sau fix giống hệt nhau cho kịch bản này.
+  it("kéo thanh tua chậm 1.5s mỗi tick 250ms → KHÔNG mẫu nào được chấm liên tục, tổng tín dụng ≤10% so với 10s thực (BLOCKER PR #17 vòng 2b)", () => {
+    // Vòng 2a: 0/40 mẫu được chấm liên tục — đúng, nhưng MỖI mẫu bị từ chối
+    // vẫn được `openRange` seed CỐ ĐỊNH 0.5s (MIN_RANGE_SECONDS) bất kể có
+    // bao nhiêu thời gian thực trôi qua → 40 × 0.5s = 20s tín dụng trên 10s
+    // thực (sai số 100%, đo được trong review vòng 2).
+    //
+    // Vòng 2b: khoảng mới bị chặn trên bởi elapsedMs thực × playbackRate
+    // (0.25s ở kịch bản này — nhỏ hơn sàn 0.5s) — chỉ mẫu ĐẦU TIÊN (không có
+    // mốc thời gian trước để so) còn seed theo sàn 0.5s, 39 mẫu còn lại chỉ
+    // được 0.25s/mẫu. Tổng = 0.5 + 39×0.25 = 10.25s trên 10s thực (sai số
+    // 2.5%, đã xác nhận bằng Node script trước khi viết assertion này).
     const { continuousCount, totalWatched } = simulate(250, 1, 10_000, (t) => t + 1.5);
     expect(continuousCount).toBe(0);
-    expect(totalWatched).toBeLessThan(25);
+    expect(totalWatched).toBeCloseTo(10.25, 5);
+    expect(totalWatched).toBeLessThanOrEqual(11); // ≤10% sai số so với 10s thực
   });
 
-  it("spam phím tua +5s mỗi 200ms → KHÔNG mẫu nào được chấm liên tục", () => {
-    // Đã đúng 0/50 cả trước lẫn sau fix (dung sai tuyệt đối 1.5s cũ cũng đủ
-    // hẹp để chặn bước nhảy 5s) — giữ lại test này để khẳng định fix không
-    // làm YẾU đi trường hợp đã đúng.
+  it("spam phím tua +5s mỗi 200ms → KHÔNG mẫu nào được chấm liên tục, tổng tín dụng ≤10% so với 10s thực (BLOCKER PR #17 vòng 2b)", () => {
+    // Vòng 2a: 0/50 mẫu liên tục đúng, nhưng 50 × 0.5s = 25s tín dụng trên
+    // 10s thực (sai số 150%). Vòng 2b: elapsedMs thực = 200ms → chặn trên
+    // 0.2s/mẫu (< sàn 0.5s); chỉ mẫu đầu seed 0.5s. Tổng = 0.5 + 49×0.2 =
+    // 10.3s trên 10s thực (sai số 3%, xác nhận bằng Node script).
     const { continuousCount, totalWatched } = simulate(200, 1, 10_000, (t) => t + 5);
     expect(continuousCount).toBe(0);
-    expect(totalWatched).toBeLessThan(30);
+    expect(totalWatched).toBeCloseTo(10.3, 5);
+    expect(totalWatched).toBeLessThanOrEqual(11); // ≤10% sai số so với 10s thực
+  });
+});
+
+describe("boundedOpenCredit (BLOCKER PR #17 vòng 2b)", () => {
+  it("không có mốc thời gian trước (mẫu đầu tiên) → dùng sàn mặc định", () => {
+    expect(boundedOpenCredit(null, 1)).toBe(0.5);
+  });
+
+  it("elapsedMs không hữu hạn (NaN/Infinity) → coi như không có mốc, dùng sàn", () => {
+    expect(boundedOpenCredit(Number.NaN, 1)).toBe(0.5);
+    expect(boundedOpenCredit(Number.POSITIVE_INFINITY, 1)).toBe(0.5);
+  });
+
+  it("thời gian thực trôi qua ít hơn sàn → chặn trên theo wall-clock, KHÔNG dùng sàn", () => {
+    // 200ms thực × 1x = 0.2s — nhỏ hơn sàn 0.5s, phải trả đúng 0.2s.
+    expect(boundedOpenCredit(200, 1)).toBe(0.2);
+  });
+
+  it("thời gian thực trôi qua nhiều hơn sàn → vẫn chặn ở sàn (không tín dụng vượt sàn)", () => {
+    // 5000ms thực × 1x = 5s — lớn hơn sàn 0.5s, kết quả vẫn bị chặn ở 0.5s.
+    expect(boundedOpenCredit(5000, 1)).toBe(0.5);
+  });
+
+  it("nhân đúng playbackRate vào chặn trên", () => {
+    // 200ms thực × 2x = 0.4s.
+    expect(boundedOpenCredit(200, 2)).toBeCloseTo(0.4, 10);
+  });
+
+  it("playbackRate 0 hoặc âm được coi như 1x", () => {
+    expect(boundedOpenCredit(200, 0)).toBe(0.2);
+    expect(boundedOpenCredit(200, -1)).toBe(0.2);
+  });
+
+  it("elapsedMs âm (không nên xảy ra) được kẹp về 0 → tín dụng bằng sàn giữ vị trí tối thiểu", () => {
+    expect(boundedOpenCredit(-100, 1)).toBe(0.001);
+  });
+
+  it("elapsedMs xấp xỉ 0 (hai mẫu tới gần như cùng lúc) → vẫn tín dụng sàn giữ vị trí, KHÔNG phải 0", () => {
+    // Nếu trả đúng 0, `openRange` tạo khoảng RỖNG bị `mergeRanges` lọc mất —
+    // mất luôn vị trí cuối, khiến mẫu liên tục kế tiếp nối dài nhầm khoảng CŨ
+    // xuyên suốt đoạn vừa tua qua (xem test hồi quy trong use-video-progress.test.ts).
+    expect(boundedOpenCredit(0, 1)).toBe(0.001);
+  });
+
+  it("chấp nhận sàn tuỳ chỉnh khác MIN_RANGE_SECONDS", () => {
+    expect(boundedOpenCredit(200, 1, 1)).toBe(0.2);
+    expect(boundedOpenCredit(5000, 1, 1)).toBe(1);
   });
 });
 

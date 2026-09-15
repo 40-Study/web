@@ -36,6 +36,52 @@ export const CONTINUITY_TOLERANCE_RATIO = 0.25;
 /** Khoảng ngắn hơn ngưỡng này bị coi là nhiễu, không ghi vào khoảng đã phát. */
 export const MIN_RANGE_SECONDS = 0.5;
 
+/**
+ * Chiều dài tối thiểu tuyệt đối cho MỌI khoảng do `openRange` tạo (xem giải
+ * thích trong `boundedOpenCredit` ngay dưới đây) — chỉ để giữ khoảng hợp lệ
+ * (không rỗng, không bị `mergeRanges` lọc mất), không phải một ngưỡng tín
+ * dụng có ý nghĩa chống tua.
+ */
+export const MIN_OPEN_MARKER_SECONDS = 0.001;
+
+/**
+ * BLOCKER PR #17 vòng 2b: sàn `MIN_RANGE_SECONDS` áp dụng KHÔNG điều kiện cho
+ * mọi khoảng mới — kể cả khoảng mở ra bởi một mẫu KHÔNG liên tục (kéo tua
+ * chậm, spam phím tua). Review đo được: kéo 1.5s/tick 250ms hay spam +5s/tick
+ * 200ms đều bị `isContinuousSample` từ chối đúng (0/40, 0/50 mẫu liên tục),
+ * nhưng MỖI mẫu bị từ chối vẫn seed đúng 0.5s qua `openRange` — 40 mẫu × 0.5s
+ * = 20s tín dụng trên 10s thực, không hề liên quan tới bao nhiêu thời gian
+ * thực đã trôi qua.
+ *
+ * Tính lại: khoảng mở bởi một mẫu KHÔNG liên tục không được tín dụng nhiều
+ * hơn `playbackRate × thời gian thực đã trôi qua kể từ mẫu trước` (chặn trên
+ * theo wall-clock — không thể "xem" nhiều hơn thời gian thực tường đã trôi
+ * qua, bất kể video nhảy bao xa). Sàn `MIN_RANGE_SECONDS` chỉ còn áp dụng khi
+ * KHÔNG có mốc thời gian trước để so (mẫu đầu tiên của một lượt phát/đổi
+ * bài) — đây là chi phí một lần, không lặp lại theo tick nên không gộp thành
+ * gian lận đáng kể.
+ */
+export function boundedOpenCredit(
+  elapsedMs: number | null,
+  playbackRate: number,
+  floor = MIN_RANGE_SECONDS
+): number {
+  if (elapsedMs === null || !Number.isFinite(elapsedMs)) return floor;
+  const rate = playbackRate > 0 ? playbackRate : 1;
+  const wallClockBound = (rate * Math.max(0, elapsedMs)) / 1000;
+  // MIN_OPEN_MARKER_SECONDS: khi elapsedMs đo được xấp xỉ 0 (hai mẫu tới gần
+  // như cùng lúc — có thể xảy ra thật khi `timeupdate` bắn dồn), chặn trên
+  // wall-clock ra đúng 0 → `openRange` tạo khoảng RỖNG `[sample, sample]`, bị
+  // `mergeRanges` LỌC MẤT hoàn toàn (đúng hợp đồng của nó — xem
+  // `mergeRanges`). Mất khoảng này không chỉ mất 0 giây tín dụng (vô hại) mà
+  // còn mất luôn "vị trí cuối" mà `appendSample` cần so — mẫu liên tục KẾ
+  // TIẾP sẽ vô tình nối dài khoảng CŨ trước đó (còn sống sót trong mảng) xuyên
+  // suốt đoạn vừa tua qua, mở lại đúng lỗ hổng hệ thống này tồn tại để chặn.
+  // Giữ một sàn cực nhỏ (1ms — không đáng kể so với chặn trên wall-clock hay
+  // sàn bootstrap) để khoảng luôn hợp lệ và giữ đúng vị trí.
+  return Math.max(MIN_OPEN_MARKER_SECONDS, Math.min(floor, wallClockBound));
+}
+
 /** Chuẩn hoá về mảng khoảng hợp lệ, đã sắp xếp, đã gộp. */
 export function mergeRanges(ranges: readonly PlayedRange[]): PlayedRange[] {
   const valid = ranges
