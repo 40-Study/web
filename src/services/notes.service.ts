@@ -9,6 +9,13 @@
 
 import { api } from "@/lib/api-client";
 
+/**
+ * Trần độ dài nội dung ghi chú (contract §3: `content text (<= 2000)`).
+ * Review vòng 1 (#7): không textarea nào chặn trước khi gửi, người học gõ dài
+ * rồi mới ăn lỗi 400 từ server sau khi đã mất công viết.
+ */
+export const MAX_NOTE_CONTENT_LENGTH = 2000;
+
 export interface Note {
   id: string;
   lesson_id: string;

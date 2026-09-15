@@ -25,7 +25,7 @@ import {
   useLessonNotes,
   useUpdateNote,
 } from "@/hooks/queries/use-notes";
-import type { NoteSort } from "@/services/notes.service";
+import { MAX_NOTE_CONTENT_LENGTH, type NoteSort } from "@/services/notes.service";
 
 /** Câu empty state theo yêu cầu — không đổi thành câu khác. */
 export const NOTES_EMPTY_MESSAGE = "Hãy ghi chép để nhớ những gì bạn đã học!";
@@ -81,18 +81,21 @@ export function LessonNotesPanel({
     setIsAdding(true);
   }, [prefill]);
 
-  // "Trong chương hiện tại" không có section_id thì rơi về ghi chú của bài —
-  // thà hiện đúng bài còn hơn hiện toàn khoá mà gắn nhãn sai.
-  const useSectionScope = scope === "section" && !!sectionId;
-
-  const lessonQuery = useLessonNotes(useSectionScope ? undefined : lessonId);
-  const courseQuery = useCourseNotes(useSectionScope ? courseId : undefined, {
-    sectionId: useSectionScope ? sectionId : undefined,
+  // BLOCKER review vòng 1 (#6): bộ lọc bị đảo — "Tất cả" từng gọi
+  // `useLessonNotes(lessonId)`, chỉ trả ghi chú của MỘT bài, còn
+  // `GET /courses/:id/notes` không `section_id` (đúng nghĩa "Tất cả các
+  // chương" theo §3) không bao giờ được gọi. Đúng phải là: cả hai chế độ lọc
+  // ("Trong chương hiện tại" / "Tất cả") đều dùng CÙNG MỘT endpoint
+  // `GET /courses/:id/notes`, khác nhau ở có/không `section_id`.
+  // `useLessonNotes` chỉ còn là phương án dự phòng khi thiếu `courseId`.
+  const courseQuery = useCourseNotes(courseId || undefined, {
+    sectionId: scope === "section" ? sectionId : undefined,
     sort,
   });
+  const lessonQuery = useLessonNotes(courseId ? undefined : lessonId);
 
-  const notes = useSectionScope ? courseQuery.data : lessonQuery.data;
-  const isLoading = useSectionScope ? courseQuery.isLoading : lessonQuery.isLoading;
+  const notes = courseId ? courseQuery.data : lessonQuery.data;
+  const isLoading = courseId ? courseQuery.isLoading : lessonQuery.isLoading;
 
   const createNote = useCreateNote(lessonId);
   const updateNote = useUpdateNote();
@@ -106,9 +109,11 @@ export function LessonNotesPanel({
     return list.sort((a, b) => a.created_at.localeCompare(b.created_at));
   }, [notes, sort]);
 
+  const isDraftTooLong = draft.length > MAX_NOTE_CONTENT_LENGTH;
+
   const handleCreate = () => {
     const content = draft.trim();
-    if (!content) return;
+    if (!content || content.length > MAX_NOTE_CONTENT_LENGTH) return;
     createNote.mutate(
       {
         // Mốc của ghi chú ghép từ transcript ưu tiên hơn giây đang phát — ghi chú
@@ -152,8 +157,22 @@ export function LessonNotesPanel({
               rows={3}
               autoFocus
               placeholder="Bạn vừa học được điều gì?"
-              className="w-full rounded-lg border border-gray-200 px-2.5 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none"
+              // `maxLength` chỉ chặn gõ thêm bằng phím — vẫn kiểm tra `isDraftTooLong`
+              // riêng vì dán (paste) một đoạn dài bỏ qua `maxLength` của DOM.
+              maxLength={MAX_NOTE_CONTENT_LENGTH + 200}
+              className={cn(
+                "w-full rounded-lg border px-2.5 py-2 text-sm text-gray-700 focus:outline-none",
+                isDraftTooLong
+                  ? "border-red-300 focus:border-red-400"
+                  : "border-gray-200 focus:border-primary-400"
+              )}
             />
+            <div className="mt-1 flex items-center justify-between">
+              <p className={cn("text-xs", isDraftTooLong ? "text-red-600" : "text-gray-400")}>
+                {draft.length}/{MAX_NOTE_CONTENT_LENGTH}
+                {isDraftTooLong && " — vượt quá giới hạn, hãy rút gọn lại"}
+              </p>
+            </div>
             <div className="mt-2 flex justify-end gap-2">
               <button
                 type="button"
@@ -169,7 +188,7 @@ export function LessonNotesPanel({
               <button
                 type="button"
                 onClick={handleCreate}
-                disabled={createNote.isPending || !draft.trim()}
+                disabled={createNote.isPending || !draft.trim() || isDraftTooLong}
                 className="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700 disabled:opacity-50"
               >
                 {createNote.isPending ? "Đang lưu..." : "Lưu ghi chú"}
@@ -218,7 +237,10 @@ export function LessonNotesPanel({
                 note={note}
                 showLesson={scope === "all"}
                 onSeek={onSeek}
-                isSaving={updateNote.isPending}
+                // Review vòng 1 (#26 nhỏ): `updateNote` dùng chung một mutation
+                // cho mọi ghi chú — so `variables?.noteId` để chỉ nút Lưu của
+                // ĐÚNG ghi chú đang sửa bị mờ, không phải tất cả.
+                isSaving={updateNote.isPending && updateNote.variables?.noteId === note.id}
                 onSave={(content) => updateNote.mutate({ noteId: note.id, data: { content } })}
                 onDelete={() => deleteNote.mutate(note.id)}
               />

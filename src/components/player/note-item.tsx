@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCueTime } from "@/lib/vtt-parser";
-import type { Note } from "@/services/notes.service";
+import { MAX_NOTE_CONTENT_LENGTH, type Note } from "@/services/notes.service";
 
 interface NoteItemProps {
   note: Note;
@@ -41,9 +41,11 @@ export function NoteItem({
     setDraft(note.content);
   }, [note.content]);
 
+  const isDraftTooLong = draft.length > MAX_NOTE_CONTENT_LENGTH;
+
   const handleSave = () => {
     const content = draft.trim();
-    if (!content || content === note.content) {
+    if (!content || content === note.content || content.length > MAX_NOTE_CONTENT_LENGTH) {
       setIsEditing(false);
       return;
     }
@@ -95,9 +97,17 @@ export function NoteItem({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             rows={3}
-            className="w-full rounded-lg border border-gray-200 px-2.5 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none"
+            maxLength={MAX_NOTE_CONTENT_LENGTH + 200}
+            className={cn(
+              "w-full rounded-lg border px-2.5 py-2 text-sm text-gray-700 focus:outline-none",
+              isDraftTooLong ? "border-red-300 focus:border-red-400" : "border-gray-200 focus:border-primary-400"
+            )}
             placeholder="Nội dung ghi chú"
           />
+          <p className={cn("mt-1 text-xs", isDraftTooLong ? "text-red-600" : "text-gray-400")}>
+            {draft.length}/{MAX_NOTE_CONTENT_LENGTH}
+            {isDraftTooLong && " — vượt quá giới hạn, hãy rút gọn lại"}
+          </p>
           <div className="mt-2 flex justify-end gap-2">
             <button
               type="button"
@@ -112,10 +122,10 @@ export function NoteItem({
             <button
               type="button"
               onClick={handleSave}
-              disabled={isSaving}
+              disabled={isSaving || isDraftTooLong}
               className={cn(
                 "rounded-lg bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700",
-                isSaving && "opacity-60"
+                (isSaving || isDraftTooLong) && "opacity-60"
               )}
             >
               Lưu
