@@ -102,11 +102,16 @@ export interface UpdateLiveSessionDTO {
   max_viewers?: number;
 }
 
-/** Body của `POST /livestream/:id/join` — `dto.JoinLivestreamDTO`. */
+/**
+ * Body của `POST /livestream/:id/join` — `dto.JoinLivestreamDTO`.
+ *
+ * KHÔNG có `user_id`/`role`: backend lấy danh tính từ access token và tự suy
+ * vai trò qua `resolveJoinRole` (host/GV lớp/instructor = teacher, học sinh
+ * lớp/khoá = student) — gửi 2 field này cho phép mạo danh người khác hoặc tự
+ * xưng vai trò tuỳ ý (issue #58 review vòng 2, §7.1).
+ */
 export interface JoinLiveSessionDTO {
-  user_id: string;
   name: string;
-  role?: LiveParticipantRole;
 }
 
 /** `dto.ParticipantResponseDTO` — token LiveKit trả về, không bao giờ lên URL. */
@@ -182,9 +187,11 @@ export const liveSessionService = {
   join: (id: string, dto: JoinLiveSessionDTO) =>
     api.post<R<LiveParticipant>>(`/livestream/${id}/join`, dto).then((r) => r.data.data),
 
-  /** POST /livestream/:id/leave — rời phiên */
-  leave: (id: string, userId: string) =>
-    api
-      .post<R<null>>(`/livestream/${id}/leave`, { user_id: userId })
-      .then((r) => r.data),
+  /**
+   * POST /livestream/:id/leave — tự rời phiên.
+   *
+   * Không tham số `userId`/body: handler đọc danh tính người rời từ access
+   * token, không phải body (issue #58 review vòng 2, §7.1).
+   */
+  leave: (id: string) => api.post<R<null>>(`/livestream/${id}/leave`, {}).then((r) => r.data),
 };

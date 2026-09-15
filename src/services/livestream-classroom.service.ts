@@ -123,14 +123,28 @@ export const livestreamClassroomService = {
       )
       .then((r) => r.data.data.participants),
 
-  muteParticipant: (sessionId: string, participantId: string) =>
+  /**
+   * POST /livestream/:sessionId/mute — backend nhận `dto.ModerationActionDTO`
+   * (`{user_id, action, reason?, duration?}`), không phải `{participant_id}`.
+   * Lời gọi cũ gửi sai shape nên luôn 400 từ trước PR #59, không phải hồi quy
+   * (issue #58 review vòng 2, §7.3) — chưa component nào gọi hàm này nên
+   * không lộ lỗi ở runtime.
+   */
+  muteParticipant: (sessionId: string, userId: string) =>
     api
-      .post<{ message: string }>(`/livestream/${sessionId}/mute`, { participant_id: participantId })
+      .post<{ message: string }>(`/livestream/${sessionId}/mute`, {
+        user_id: userId,
+        action: "mute",
+      })
       .then((r) => r.data),
 
-  kickParticipant: (sessionId: string, participantId: string) =>
+  /** POST /livestream/:sessionId/kick — cùng lý do sửa shape như muteParticipant ở trên. */
+  kickParticipant: (sessionId: string, userId: string) =>
     api
-      .post<{ message: string }>(`/livestream/${sessionId}/kick`, { participant_id: participantId })
+      .post<{ message: string }>(`/livestream/${sessionId}/kick`, {
+        user_id: userId,
+        action: "kick",
+      })
       .then((r) => r.data),
 
   // Chat

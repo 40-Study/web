@@ -160,21 +160,21 @@ export const livestreamService = {
 
   // ── Screen Share ──────────────────────────────────────────────────────────
 
-  /** POST /livestream/:sessionId/screenshare/start */
-  startScreenShare: (sessionId: string, userId: string) =>
+  /**
+   * POST /livestream/:sessionId/screenshare/start
+   *
+   * Không có `user_id`: chỉ người quản trị phiên (`canManageSession`) được
+   * gọi, đối tượng suy từ token gọi, không phải body (issue #58 review vòng
+   * 2, §7.1).
+   */
+  startScreenShare: (sessionId: string) =>
     api
-      .post<R<null>>(`/livestream/${sessionId}/screenshare/start`, {
-        user_id: userId,
-        action: "start",
-      })
+      .post<R<null>>(`/livestream/${sessionId}/screenshare/start`, { action: "start" })
       .then((r) => r.data),
 
   /** POST /livestream/:sessionId/screenshare/stop */
-  stopScreenShare: (sessionId: string, userId: string) =>
+  stopScreenShare: (sessionId: string) =>
     api
-      .post<R<null>>(`/livestream/${sessionId}/screenshare/stop`, {
-        user_id: userId,
-        action: "stop",
-      })
+      .post<R<null>>(`/livestream/${sessionId}/screenshare/stop`, { action: "stop" })
       .then((r) => r.data),
 };

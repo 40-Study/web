@@ -39,6 +39,14 @@ interface VideoTabProps {
   isHost?: boolean;
   hostId?: string;
   currentUserName?: string;
+  /**
+   * Bảng vẽ đang khoá quyền chỉnh sửa (issue #58 review vòng 2) — khi true,
+   * `WhiteboardReceiver` bỏ qua event `whiteboard_event`/`whiteboard_control`
+   * đến từ người gửi KHÔNG phải host, để một participant giả mạo không thể
+   * publishData thẳng qua LiveKit data channel (bỏ qua UI gate của
+   * `WhiteboardTab`, vốn chỉ chặn phía client).
+   */
+  whiteboardLocked?: boolean;
 }
 
 export default function VideoTab({
@@ -54,6 +62,7 @@ export default function VideoTab({
   isHost = false,
   hostId,
   currentUserName = 'User',
+  whiteboardLocked = false,
 }: VideoTabProps) {
   const [showParticipants, setShowParticipants] = useState(false);
   const [handRaised, setHandRaised] = useState(false);
@@ -179,6 +188,8 @@ export default function VideoTab({
           onBroadcasterReady={handleBroadcasterReady}
           currentUserName={currentUserName}
           isHost={isHost}
+          hostId={hostId}
+          whiteboardLocked={whiteboardLocked}
           onShareResponse={handleShareResponse}
           onLeaveResponse={handleLeaveResponse}
         />
@@ -216,6 +227,8 @@ function WhiteboardReceiver({
   onBroadcasterReady,
   currentUserName,
   isHost,
+  hostId,
+  whiteboardLocked,
   onShareResponse,
   onLeaveResponse,
 }: {
@@ -223,6 +236,8 @@ function WhiteboardReceiver({
   onBroadcasterReady?: (broadcast: (event: any) => void) => void;
   currentUserName?: string;
   isHost?: boolean;
+  hostId?: string;
+  whiteboardLocked?: boolean;
   onShareResponse?: (approved: boolean) => void;
   onLeaveResponse?: (approved: boolean) => void;
 }) {
@@ -253,15 +268,34 @@ function WhiteboardReceiver({
       try {
         const text = new TextDecoder().decode(payload);
         const data = JSON.parse(text);
+        // Danh tính THẬT của người gửi (LiveKit `participant.identity`, không
+        // thể giả mạo từ payload) — so với `hostId` để xác nhận sự kiện có
+        // thực sự đến từ host hay không (issue #58 review vòng 2, §7 "Web
+        // phải đổi"). Trước đây chỉ so `data.name` (một field client tự khai
+        // trong payload) nên bất kỳ participant nào cũng tự phê duyệt được
+        // yêu cầu share/leave của chính mình.
+        const senderIsHost = !!hostId && participant?.identity === hostId;
 
-        // Handle share_response for students
-        if (data.type === 'share_response' && !isHost && data.name === currentUserName) {
+        // Handle share_response for students — chỉ nhận khi đúng là host gửi.
+        if (data.type === 'share_response' && !isHost && data.name === currentUserName && senderIsHost) {
           onShareResponseRef.current?.(data.approved);
         }
 
-        // Handle leave_response for students
-        if (data.type === 'leave_response' && !isHost && data.name === currentUserName) {
+        // Handle leave_response for students — chỉ nhận khi đúng là host gửi.
+        if (data.type === 'leave_response' && !isHost && data.name === currentUserName && senderIsHost) {
           onLeaveResponseRef.current?.(data.approved);
+        }
+
+        // Bảng đang khoá (`whiteboardLocked`): bỏ qua event vẽ/điều khiển từ
+        // người gửi không phải host — chặn một participant publishData thẳng
+        // qua LiveKit để giả mạo nét vẽ hoặc tự mở khoá, bỏ qua UI gate của
+        // WhiteboardTab (vốn chỉ chặn ở phía client của chính họ).
+        if (
+          (data.type === 'whiteboard_event' || data.type === 'whiteboard_control') &&
+          whiteboardLocked &&
+          !senderIsHost
+        ) {
+          return;
         }
 
         // Forward to whiteboard
@@ -273,7 +307,7 @@ function WhiteboardReceiver({
     return () => {
       room.off(RoomEvent.DataReceived, handleDataReceived);
     };
-  }, [room, isHost, currentUserName]);
+  }, [room, isHost, currentUserName, hostId, whiteboardLocked]);
 
   // Register broadcast function
   useEffect(() => {

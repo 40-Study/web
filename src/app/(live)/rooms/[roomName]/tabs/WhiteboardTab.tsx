@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, memo, useCallback, useState } from 'react';
-import { api } from '@/lib/meet/api';
+import { api, MeetApiError } from '@/lib/meet/api';
 import { CursorManager, CursorData, ViewportState } from '@/lib/meet/realtime-cursors';
 import '@excalidraw/excalidraw/index.css';
 
@@ -44,6 +44,10 @@ function WhiteboardTabInner({
   const [isShared, setIsShared] = useState(initialShared);
   const [isPublished, setIsPublished] = useState(initialPublished);
   const canEdit = isHost || isPublished;
+  // Lỗi khi lưu snapshot lên backend (issue #58 review vòng 2, §7.4) — trước
+  // đây `.catch(() => {})` nuốt trọn 403, học sinh mất bảng mà không biết vì
+  // sao.
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Ref to track latest isPublished for cursor callback
   const isPublishedRef = useRef(isPublished);
@@ -95,7 +99,21 @@ function WhiteboardTabInner({
     });
 
     // Save to backend
-    api.post(`/whiteboard/${sessionId}/snapshot`, { elements }).catch(() => {});
+    api.post(`/whiteboard/${sessionId}/snapshot`, { elements }).then(
+      () => setSaveError(null),
+      (err) => {
+        if (err instanceof MeetApiError && err.status === 403) {
+          setSaveError(
+            err.code === 'WHITEBOARD_LOCKED'
+              ? 'Giáo viên đã khoá bảng vẽ. Thay đổi của bạn không được lưu.'
+              : 'Bạn không thuộc phiên này nên bảng vẽ không được lưu.'
+          );
+          // Khoá lại UI vẽ ngay — đừng đợi sự kiện LiveKit "unpublish" tới
+          // (có thể chưa gửi hoặc bị mất gói).
+          if (err.code === 'WHITEBOARD_LOCKED') setIsPublished(false);
+        }
+      }
+    );
   }, [onBroadcast, isHost, isPublished, currentUserId, sessionId]);
 
   // ===== EXCALIDRAW ONCHANGE =====
@@ -319,6 +337,19 @@ function WhiteboardTabInner({
           </button>
         </div>
       </div>
+
+      {saveError && (
+        <div style={{
+          background: 'rgba(248,113,113,0.12)',
+          borderBottom: '1px solid rgba(248,113,113,0.25)',
+          padding: '0.4rem 0.75rem',
+          fontSize: '0.7rem',
+          color: '#f87171',
+          fontWeight: 500,
+        }}>
+          {saveError}
+        </div>
+      )}
 
       {/* Canvas - rely on Excalidraw's built-in dark theme */}
       <div ref={containerRef} style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>

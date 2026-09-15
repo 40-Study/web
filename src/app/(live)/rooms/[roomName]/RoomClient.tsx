@@ -808,6 +808,7 @@ export default function RoomClient({
                 isHost={isHost}
                 hostId={hostId || undefined}
                 currentUserName={currentUserName}
+                whiteboardLocked={!whiteboardPublished}
               />
             </div>
 

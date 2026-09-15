@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { api } from '@/lib/meet/api';
+import { api, MeetApiError } from '@/lib/meet/api';
 import { getMe } from '@/lib/meet/auth';
 
 interface ChatMessage {
@@ -42,6 +42,10 @@ export default function ChatTab({ sessionId, onClose, broadcast, onChatMessage }
   const [userId, setUserId] = useState('');
   const [userName, setUserName] = useState('');
   const [loading, setLoading] = useState(true);
+  // Lỗi 403 uy quyền khi tải danh sách chat (issue #58 review vòng 2, §7.4) —
+  // trước đây `catch { // ignore }` nuốt trọn, học sinh không thuộc lớp thấy
+  // khung chat trống mà không biết vì sao.
+  const [loadError, setLoadError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -59,8 +63,15 @@ export default function ChatTab({ sessionId, onClose, broadcast, onChatMessage }
         (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
       setMessages(sorted);
-    } catch {
-      // ignore
+      setLoadError(null);
+    } catch (err) {
+      if (err instanceof MeetApiError && err.status === 403) {
+        setLoadError(
+          err.code === 'NOT_SESSION_MEMBER'
+            ? 'Bạn không thuộc lớp này nên không xem được trò chuyện.'
+            : 'Bạn không có quyền xem trò chuyện trong buổi live này.'
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -92,7 +103,7 @@ export default function ChatTab({ sessionId, onClose, broadcast, onChatMessage }
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || sending || !userId) return;
+    if (!input.trim() || sending || !userId || loadError) return;
     setSending(true);
 
     const messageText = input.trim();
@@ -113,10 +124,10 @@ export default function ChatTab({ sessionId, onClose, broadcast, onChatMessage }
     setInput('');
 
     try {
-      // Save to backend
+      // Save to backend — không gửi user_id: handler dùng danh tính từ access
+      // token (issue #58 review vòng 2, §7.1).
       const res = await api.post<{ data: ChatMessage }>(`/chat/send`, {
         session_id: sessionId,
-        user_id: userId,
         message: messageText,
       });
 
@@ -132,10 +143,18 @@ export default function ChatTab({ sessionId, onClose, broadcast, onChatMessage }
           message: savedMsg,
         });
       }
-    } catch (err: any) {
+    } catch (err) {
       // Remove optimistic message on error
       setMessages(prev => prev.filter(m => m.id !== tempId));
-      alert(err.message ?? 'Failed to send message');
+      if (err instanceof MeetApiError && err.status === 403) {
+        alert(
+          err.code === 'NOT_SESSION_MEMBER'
+            ? 'Bạn không thuộc lớp này nên không gửi được tin nhắn.'
+            : 'Bạn không có quyền gửi tin nhắn trong buổi live này.'
+        );
+      } else {
+        alert(err instanceof Error ? err.message : 'Failed to send message');
+      }
     } finally {
       setSending(false);
     }
@@ -266,6 +285,19 @@ export default function ChatTab({ sessionId, onClose, broadcast, onChatMessage }
               animation: 'spin 1s linear infinite',
             }} />
             <span style={{ fontSize: '12px', color: COLORS.textMuted }}>Đang tải...</span>
+          </div>
+        ) : loadError ? (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            gap: '12px',
+            textAlign: 'center',
+            padding: '0 16px',
+          }}>
+            <span style={{ fontSize: '13px', color: '#f87171', fontWeight: 600 }}>{loadError}</span>
           </div>
         ) : messages.length === 0 ? (
           <div style={{
@@ -461,23 +493,23 @@ export default function ChatTab({ sessionId, onClose, broadcast, onChatMessage }
           </div>
           <button
             type="submit"
-            disabled={sending || !input.trim() || !userId}
+            disabled={sending || !input.trim() || !userId || !!loadError}
             style={{
               width: '48px',
               height: '48px',
               borderRadius: '14px',
               border: 'none',
-              background: sending || !input.trim() || !userId
+              background: sending || !input.trim() || !userId || !!loadError
                 ? COLORS.surfaceHigh
                 : `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.primaryDim} 100%)`,
-              color: sending || !input.trim() || !userId ? COLORS.textDim : '#000',
+              color: sending || !input.trim() || !userId || !!loadError ? COLORS.textDim : '#000',
               cursor: sending || !input.trim() ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
               transition: 'all 0.2s',
-              boxShadow: sending || !input.trim() || !userId
+              boxShadow: sending || !input.trim() || !userId || !!loadError
                 ? 'none'
                 : '0 4px 12px rgba(255,142,128,0.3)',
             }}
