@@ -160,7 +160,15 @@ export function SubtitleUploadField({
           <p className="text-xs text-muted-foreground">
             File đã tải lên. Dán URL phụ đề do backend trả về để lưu vào bài học.
           </p>
-          <SubtitleUrlInput onSubmit={(url) => setState({ kind: "saved", url })} />
+          <SubtitleUrlInput
+            onSubmit={(url) => {
+              // BLOCKER review vòng 1 (#4): thiếu dòng gọi `onUploaded` này nên
+              // URL không bao giờ được lưu — chỉ đổi state cục bộ rồi mất khi
+              // rời trang. `onUploaded` là nơi trang cha gọi `PUT /lessons/:id`.
+              setState({ kind: "saved", url });
+              onUploaded(url);
+            }}
+          />
         </div>
       )}
       {state.kind === "error" && <p className="text-xs text-destructive">{state.message}</p>}

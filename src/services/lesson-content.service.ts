@@ -17,6 +17,14 @@ export interface LessonContent {
   video_url?: string;
   video_hls_url?: string;
   video_upload_id?: string;
+  /**
+   * Phụ đề `.vtt` của bài (contract §4). Field vật lý sống trên `lesson_videos`
+   * ở backend — quyết định lane (Phase 1, review vòng 1 #4): web GHI qua
+   * `PUT /lessons/:lessonId` (`subtitle_url` optional), backend PERSIST vào
+   * `lesson_videos` và trả lại field này ở lesson content, không phải ở
+   * curriculum/sections. `null`/`undefined` = bài không có phụ đề → ẩn panel.
+   */
+  subtitle_url?: string | null;
   thumbnail_url?: string;
   duration?: number;
   exercise_id?: string;

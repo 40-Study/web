@@ -11,19 +11,25 @@ import {
   FloatingButtons,
   CodeEditorModal,
   QuizLessonContent,
-  QuizResultContent,
   HeartbeatVideo,
   LessonLockedNotice,
   LessonStudyTools,
   KeyboardShortcutsDialog,
   LessonLoadError,
 } from "@/components/player";
-import type { QuizResultData, StudyToolKey } from "@/components/player";
+import type { StudyToolKey } from "@/components/player";
+import { QuizAttemptReview } from "@/components/quiz";
 import { useCourseBySlug } from "@/hooks/queries/use-courses";
 import { useSections } from "@/hooks/queries/use-sections";
 import { useLessonContents } from "@/hooks/queries/use-lesson-content";
 import { useHlsInfo, getVideoUrl } from "@/hooks/use-hls";
-import { useStartQuiz, useSubmitQuiz, useQuizzesByLesson, useSaveQuizAnswer } from "@/hooks/queries/use-quiz";
+import {
+  useStartQuiz,
+  useSubmitQuiz,
+  useQuizzesByLesson,
+  useSaveQuizAnswer,
+  useQuizAttemptDetail,
+} from "@/hooks/queries/use-quiz";
 import { resolveResumeSeconds, findPreviousLesson } from "@/lib/lesson-lock";
 import { detectPlatform } from "@/lib/keyboard-shortcut-label";
 import type { VideoPlayerHandle } from "@/components/lesson/video-player";
@@ -56,6 +62,12 @@ function mapSectionsToChapters(sections: Section[]): PlayerChapter[] {
       lockReason: lesson.lock_reason ?? null,
       lastPositionSeconds: lesson.progress?.last_position_seconds ?? 0,
       durationSeconds: lesson.duration ?? undefined,
+      // BLOCKER review vòng 1 (#4): trước đây không gán field này nên
+      // `currentLesson?.subtitleUrl` luôn `undefined`. Nguồn AUTHORITATIVE là
+      // lesson content (`lessonVideo?.subtitle_url`, quyết định Q1) vì đó là
+      // nơi backend Phase 1 trả lại sau khi ghi qua `PUT /lessons/:id`; giữ
+      // field này ở đây làm dự phòng nếu curriculum cũng trả kèm.
+      subtitleUrl: lesson.subtitle_url ?? null,
     })),
   }));
 }
@@ -84,6 +96,11 @@ function mapApiCourseToPlayerCourse(course: ApiCourse, sections: Section[]): Pla
   };
 }
 
+/** Bài này có bị khoá trong curriculum THÔ không (trước khi map sang PlayerLesson). */
+function isLessonLockedInSections(sections: Section[], lessonId: string): boolean {
+  return sections.some((s) => s.lessons?.some((l) => l.id === lessonId && l.locked === true));
+}
+
 function getLessonById(course: PlayerCourse, lessonId: string): PlayerLesson | undefined {
   for (const chapter of course.chapters) {
     const lesson = chapter.lessons.find((l) => l.id === lessonId);
@@ -107,6 +124,7 @@ function VideoLessonContent({
   next,
   courseSlug,
   isLoading,
+  subtitleUrl,
 }: {
   videoSrc: string | null;
   currentLesson: PlayerLesson | undefined;
@@ -114,6 +132,8 @@ function VideoLessonContent({
   next: PlayerLesson | undefined;
   courseSlug: string;
   isLoading?: boolean;
+  /** Contract §4 — nguồn authoritative là lesson content (quyết định Q1). */
+  subtitleUrl?: string | null;
 }) {
   const lessonId = currentLesson?.id ?? "";
   const sectionId = course.chapters.find((ch) =>
@@ -179,7 +199,7 @@ function VideoLessonContent({
               currentLesson?.lastPositionSeconds,
               currentLesson?.durationSeconds
             )}
-            subtitleUrl={currentLesson?.subtitleUrl}
+            subtitleUrl={subtitleUrl ?? currentLesson?.subtitleUrl}
             controlRef={playerControl}
             onClockTick={setCurrentTime}
             onToggleShortcutsHelp={() => setShortcutsOpen(true)}
@@ -197,7 +217,7 @@ function VideoLessonContent({
           courseId={course.id}
           lessonTitle={currentLesson?.title}
           sectionId={sectionId}
-          subtitleUrl={currentLesson?.subtitleUrl}
+          subtitleUrl={subtitleUrl ?? currentLesson?.subtitleUrl}
           currentTime={currentTime}
           onSeek={seekTo}
           activeTool={activeTool}
@@ -258,10 +278,11 @@ export default function CourseLessonPage() {
   const { courseSlug, lessonId } = params;
 
   const [isCodeEditorOpen, setCodeEditorOpen] = useState(false);
-  const [quizAnswers, setQuizAnswers] = useState<Record<string, string> | null>(null);
-  const [quizTimeSpent, setQuizTimeSpent] = useState(0);
   const [activeQuiz, setActiveQuiz] = useState<StartQuizResponse | null>(null);
-  const [quizResult, setQuizResult] = useState<QuizResultData | null>(null);
+  // BLOCKER review vòng 1 (#5, quyết định Q5): KHÔNG dựng lại đúng/sai ở
+  // client. Sau khi nộp chỉ giữ `attempt_id`, kết quả thật đọc qua
+  // `useQuizAttemptDetail` (GET /quizzes/:id/attempts/:attemptId, contract §6).
+  const [submittedAttemptId, setSubmittedAttemptId] = useState<string | null>(null);
   const [quizError, setQuizError] = useState<string | null>(null);
 
   const {
@@ -271,15 +292,28 @@ export default function CourseLessonPage() {
     refetch: refetchCourse,
   } = useCourseBySlug(courseSlug);
   const { data: sections = [], isLoading: sectionsLoading } = useSections(apiCourse?.id ?? "");
-  const { data: lessonContents } = useLessonContents(lessonId);
+
+  // Bài khoá (contract §2): không fetch content/quiz/HLS trước khi biết mở
+  // khoá — review vòng 1 (#9). Tính trực tiếp từ `sections` THÔ (chưa qua
+  // `mapApiCourseToPlayerCourse`) vì các hook dưới đây bắt buộc gọi trước mọi
+  // early-return (Rules of Hooks), tức trước khi `course`/`currentLesson`
+  // dựng xong. Truyền lessonId rỗng để mỗi hook tự vô hiệu hoá qua `enabled`
+  // sẵn có của nó — không cần thêm tham số `enabled` mới.
+  const isLessonLocked = isLessonLockedInSections(sections, lessonId);
+  const { data: lessonContents } = useLessonContents(isLessonLocked ? "" : lessonId);
   const lessonVideo = lessonContents?.find((c) => c.type === "video");
 
   // Quiz hooks
-  const { data: quizzes } = useQuizzesByLesson(lessonId);
+  const { data: quizzes } = useQuizzesByLesson(isLessonLocked ? "" : lessonId);
   const lessonQuiz = quizzes?.[0]; // Assume one quiz per lesson
   const startQuizMutation = useStartQuiz();
   const submitQuizMutation = useSubmitQuiz();
   const saveAnswerMutation = useSaveQuizAnswer();
+  const {
+    data: submittedAttempt,
+    isLoading: isLoadingAttemptDetail,
+    isError: isAttemptDetailError,
+  } = useQuizAttemptDetail(lessonQuiz?.id, submittedAttemptId ?? undefined);
 
   // Get video upload ID - prefer direct field, fallback to parsing URL
   const videoId = lessonVideo?.video_upload_id
@@ -365,84 +399,43 @@ export default function CourseLessonPage() {
     }
   };
 
-  // Submit quiz answers (API format)
+  /**
+   * Nộp bài quiz nhúng trong bài học (API format).
+   *
+   * BLOCKER review vòng 1 (#5): bản trước dựng lại đúng/sai ở CLIENT bằng
+   * `ans.is_correct` qua `as any` — field đó không tồn tại trên
+   * `AttemptAnswer` (`quiz.service.ts`), nên `correctIds` luôn rỗng và mọi câu
+   * bị chấm sai. Giờ chỉ lưu `attempt_id`; `useQuizAttemptDetail` đọc đúng/sai
+   * + giải thích thật từ server, đúng contract §6 ("kết quả đọc từ server").
+   */
   const handleQuizSubmitApi = async (
-    answers: Record<string, string> | Array<{ question_id: string; selected_answer_ids: string[] }>,
-    timeSpent: number
+    answers: Record<string, string> | Array<{ question_id: string; selected_answer_ids?: string[] }>
   ) => {
     if (!lessonQuiz?.id || !activeQuiz) return;
 
-    // Convert to API format if needed
-    const apiAnswers = Array.isArray(answers)
-      ? answers
-      : Object.entries(answers).map(([qId, aId]) => ({
-          question_id: qId,
-          selected_answer_ids: [aId],
-        }));
+    if (!Array.isArray(answers)) {
+      // `apiQuiz` (StartQuizResponse) luôn gọi onSubmit với mảng — nhánh
+      // Record chỉ tồn tại cho định dạng demo cũ của QuizLessonContent. Nộp
+      // mảng rỗng trong im lặng ở đây sẽ mất trắng lần làm của học viên.
+      setQuizError("Không đọc được câu trả lời. Vui lòng thử lại, đừng đóng trang.");
+      return;
+    }
 
     try {
       const result = await submitQuizMutation.mutateAsync({
         quizId: lessonQuiz.id,
-        data: { answers: apiAnswers },
+        data: { answers },
       });
-
-      // Build quiz result data from response and active quiz
-      // Note: In real implementation, the API should return full result data
-      // For now, we construct it from available data
-      const correctCount = apiAnswers.filter((a, idx) => {
-        const question = activeQuiz.questions[idx];
-        if (!question) return false;
-        const correctIds = question.answers.filter((ans: any) => ans.is_correct).map((ans: any) => ans.id);
-        return a.selected_answer_ids.some(id => correctIds.includes(id));
-      }).length;
-
-      const resultData: QuizResultData = {
-        quiz_id: lessonQuiz.id,
-        attempt_id: activeQuiz.attempt_id,
-        title: activeQuiz.title,
-        score: result.percentage ? Number(result.percentage) : (correctCount / activeQuiz.questions.length) * 100,
-        total_points: activeQuiz.questions.length,
-        earned_points: result.score ? Number(result.score) : correctCount,
-        correct_count: correctCount,
-        incorrect_count: apiAnswers.length - correctCount,
-        skipped_count: activeQuiz.questions.length - apiAnswers.length,
-        total_questions: activeQuiz.questions.length,
-        time_spent_seconds: timeSpent,
-        is_passed: result.is_passed ?? (correctCount / activeQuiz.questions.length >= 0.7),
-        pass_percentage: lessonQuiz.pass_percentage ?? 70,
-        answers: activeQuiz.questions.map((q, idx) => {
-          const submitted = apiAnswers[idx];
-          const selectedIds = submitted?.selected_answer_ids || [];
-          const correctIds = q.answers.filter((a: any) => a.is_correct).map((a: any) => a.id);
-          const isCorrect = selectedIds.some(id => correctIds.includes(id));
-
-          return {
-            id: `answer-${idx}`,
-            question_id: q.id,
-            question_text: q.question_text,
-            question_type: q.question_type,
-            options: q.answers.map((a: any, aIdx: number) => ({
-              id: a.id,
-              key: String.fromCharCode(65 + aIdx),
-              text: a.answer_text,
-              is_correct: correctIds.includes(a.id),
-            })),
-            selected_answer_ids: selectedIds,
-            correct_answer_ids: correctIds,
-            is_correct: isCorrect,
-            points_earned: isCorrect ? 1 : 0,
-            explanation: undefined, // API should provide this
-          };
-        }),
-      };
-
-      setQuizResult(resultData);
-      setQuizTimeSpent(timeSpent);
-      setQuizAnswers(Array.isArray(answers) ? {} : answers);
+      setSubmittedAttemptId(result.id || activeQuiz.attempt_id);
     } catch (err: any) {
-      console.error("Submit quiz error:", err);
+      setQuizError(err?.message || "Không nộp được bài. Câu trả lời vẫn được lưu tạm, hãy thử nộp lại.");
     }
   };
+
+  /** id → chữ đáp án, lấy từ đề đã tải (không lộ đáp án đúng — chỉ có chữ). */
+  const quizAnswerText = new Map(
+    (activeQuiz?.questions ?? []).flatMap((q) => q.answers.map((a) => [a.id, a.answer_text] as const))
+  );
 
   // Save answer in progress (auto-save)
   const handleSaveAnswer = (questionId: string, answerIds: string[]) => {
@@ -456,9 +449,8 @@ export default function CourseLessonPage() {
 
   // Reset quiz to try again
   const handleRetryQuiz = () => {
-    setQuizAnswers(null);
     setActiveQuiz(null);
-    setQuizResult(null);
+    setSubmittedAttemptId(null);
     setQuizError(null);
   };
 
@@ -467,13 +459,41 @@ export default function CourseLessonPage() {
 
     // Quiz lesson
     if (currentLesson?.type === "quiz") {
-      // Quiz completed - show result
-      if (quizResult) {
+      // Đã nộp — đọc kết quả THẬT từ server, không dựng lại ở client (§6).
+      if (submittedAttemptId) {
+        if (isLoadingAttemptDetail) {
+          return (
+            <div className="flex-1 flex items-center justify-center p-5">
+              <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
+            </div>
+          );
+        }
+        if (isAttemptDetailError || !submittedAttempt) {
+          return (
+            <div className="flex-1 flex items-center justify-center p-5">
+              <LessonLoadError onRetry={handleRetryQuiz} />
+            </div>
+          );
+        }
+        const percentage = submittedAttempt.percentage ?? 0;
         return (
-          <QuizResultContent
-            result={quizResult}
-            onRetry={handleRetryQuiz}
-          />
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            <div className="bg-white rounded-2xl shadow-sm p-6 space-y-1">
+              <h2 className="text-xl font-bold text-gray-900">
+                {submittedAttempt.is_passed ? "Bạn đã đạt bài kiểm tra này" : "Bạn chưa đạt bài kiểm tra này"}
+              </h2>
+              <p className="text-sm text-gray-500">
+                Điểm: {Math.round(percentage)}% · Đúng {submittedAttempt.answers.filter((a) => a.is_correct === true).length}/{submittedAttempt.answers.length} câu
+              </p>
+              <button
+                onClick={handleRetryQuiz}
+                className="mt-3 px-4 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50"
+              >
+                Làm lại
+              </button>
+            </div>
+            <QuizAttemptReview answers={submittedAttempt.answers} answerText={quizAnswerText} />
+          </div>
         );
       }
 
@@ -558,6 +578,7 @@ export default function CourseLessonPage() {
         next={next}
         courseSlug={courseSlug}
         isLoading={isVideoLoading}
+        subtitleUrl={lessonVideo?.subtitle_url}
       />
     );
   };

@@ -48,7 +48,6 @@ function LessonDetailContent({
   lessonId: string;
   sections: Section[];
 }) {
-  const updateLesson = useUpdateLesson(courseId, sections[0]?.id ?? "");
   // Load lessons for each section in parallel via individual hooks.
   // This is safe because hooks run in a stable order (sections order is stable).
   const s0 = useLessons(courseId, sections[0]?.id ?? "");
@@ -75,6 +74,12 @@ function LessonDetailContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sections, s0.data, s1.data, s2.data, s3.data, s4.data, s5.data, s6.data, s7.data, s8.data, s9.data]);
 
+  // Section THẬT của bài này — review vòng 1 (#14): trước đây `useUpdateLesson`
+  // luôn nhận `sections[0]`, nên sửa bài ở chương khác invalidate sai key
+  // (`lessonKeys.bySection`), danh sách bài của chương thật không refresh.
+  const found = isLoading ? null : findLessonInSections(sections, lessonsMap, lessonId);
+  const updateLesson = useUpdateLesson(courseId, found?.section.id ?? sections[0]?.id ?? "");
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -82,8 +87,6 @@ function LessonDetailContent({
       </div>
     );
   }
-
-  const found = findLessonInSections(sections, lessonsMap, lessonId);
 
   if (!found) {
     notFound();
