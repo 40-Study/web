@@ -55,13 +55,23 @@ function mapSectionsToChapters(sections: Section[]): PlayerChapter[] {
     lessons: (section.lessons ?? []).map((lesson: Lesson) => ({
       id: lesson.id,
       title: lesson.title,
-      duration: lesson.duration ? `${Math.floor(lesson.duration / 60)}:${String(lesson.duration % 60).padStart(2, "0")}` : "00:00",
+      // Review vòng 1 (#12, quyết định Q3): `lesson.duration` (@deprecated) là
+      // ĐƠN VỊ PHÚT (alias của `duration_minutes`), KHÔNG phải giây — dòng cũ
+      // chia nó cho 60 để lấy phút, tức coi nhầm phút thành giây. Nguồn đúng
+      // là `duration_minutes` (phút, chỉ dùng hiển thị); giây thật lấy từ
+      // lesson content (`lessonVideo.duration`, xem `durationSeconds` dưới).
+      duration: lesson.duration_minutes
+        ? `${lesson.duration_minutes}:00`
+        : "00:00",
       type: lesson.type === "article" ? "reading" : (lesson.type as PlayerLesson["type"]),
       completed: lesson.progress?.status === "completed",
       locked: lesson.locked ?? false,
       lockReason: lesson.lock_reason ?? null,
       lastPositionSeconds: lesson.progress?.last_position_seconds ?? 0,
-      durationSeconds: lesson.duration ?? undefined,
+      // KHÔNG dùng `lesson.duration` cho bất kỳ phép tính nào (Q3) — dự phòng
+      // thô từ phút (kém chính xác tối đa 59s); bài ĐANG XEM ưu tiên giây thật
+      // từ lesson content (threaded qua prop `durationSeconds` ở VideoLessonContent).
+      durationSeconds: lesson.duration_minutes ? lesson.duration_minutes * 60 : undefined,
       // BLOCKER review vòng 1 (#4): trước đây không gán field này nên
       // `currentLesson?.subtitleUrl` luôn `undefined`. Nguồn AUTHORITATIVE là
       // lesson content (`lessonVideo?.subtitle_url`, quyết định Q1) vì đó là
@@ -125,6 +135,7 @@ function VideoLessonContent({
   courseSlug,
   isLoading,
   subtitleUrl,
+  durationSeconds,
 }: {
   videoSrc: string | null;
   currentLesson: PlayerLesson | undefined;
@@ -132,6 +143,8 @@ function VideoLessonContent({
   next: PlayerLesson | undefined;
   courseSlug: string;
   isLoading?: boolean;
+  /** Giây thật từ lesson content (Q3) — ưu tiên hơn ước lượng từ `duration_minutes`. */
+  durationSeconds?: number;
   /** Contract §4 — nguồn authoritative là lesson content (quyết định Q1). */
   subtitleUrl?: string | null;
 }) {
@@ -197,7 +210,7 @@ function VideoLessonContent({
             courseId={course.id}
             resumeSeconds={resolveResumeSeconds(
               currentLesson?.lastPositionSeconds,
-              currentLesson?.durationSeconds
+              durationSeconds ?? currentLesson?.durationSeconds
             )}
             subtitleUrl={subtitleUrl ?? currentLesson?.subtitleUrl}
             controlRef={playerControl}
@@ -579,6 +592,7 @@ export default function CourseLessonPage() {
         courseSlug={courseSlug}
         isLoading={isVideoLoading}
         subtitleUrl={lessonVideo?.subtitle_url}
+        durationSeconds={lessonVideo?.duration}
       />
     );
   };

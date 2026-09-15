@@ -65,8 +65,15 @@ export default function StandaloneQuizPage() {
     answers: Record<string, string> | Array<{ question_id: string; selected_answer_ids?: string[] }>
   ) => {
     if (!activeQuiz) return;
-    // `apiQuiz` luôn gọi onSubmit với mảng {question_id, selected_answer_ids}.
-    const apiAnswers = Array.isArray(answers) ? answers : [];
+    if (!Array.isArray(answers)) {
+      // Review vòng 1 (#15): nhánh Record chỉ tồn tại cho định dạng demo cũ
+      // của `QuizLessonContent` — `apiQuiz` LUÔN gọi `onSubmit` với mảng. Nộp
+      // mảng rỗng trong im lặng ở đây sẽ mất trắng lần làm chính thức của
+      // học viên; dừng lại và báo lỗi thay vì đoán.
+      setActionError("Không đọc được câu trả lời. Vui lòng thử lại, đừng đóng trang.");
+      return;
+    }
+    const apiAnswers = answers;
     try {
       const result = await submitQuizMutation.mutateAsync({
         quizId,

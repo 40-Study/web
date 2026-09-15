@@ -3,14 +3,22 @@
  */
 
 import { api } from "@/lib/api-client";
-import { NetworkError, NotFoundError } from "@/lib/errors";
+import { NotFoundError } from "@/lib/errors";
 import type { ForumPost, ForumPostListResponse, ForumPostDetail, ForumComment } from "@/types/discussion";
 
 type ApiResponse<T> = { message: string; data: T };
 
-/** Backend chưa có route ⇒ coi như "chưa có dữ liệu", không phải lỗi của người học. */
+/**
+ * Backend trả 404 (route không tồn tại) ⇒ coi như "chưa có dữ liệu", không
+ * phải lỗi của người học.
+ *
+ * Review vòng 1 (#16): trước đây gộp CẢ `NetworkError` vào đây — mất mạng bị
+ * hiển thị y hệt "chưa có câu hỏi nào", nuốt mất tín hiệu lỗi thật. `NetworkError`
+ * KHÔNG được coi là thiếu endpoint; nó phải ném ra để UI hiện "Không tải được,
+ * thử lại" thay vì một empty-state trông giống hệt trạng thái bình thường.
+ */
 function isMissingEndpoint(error: unknown): boolean {
-  return error instanceof NotFoundError || error instanceof NetworkError;
+  return error instanceof NotFoundError;
 }
 
 // ─── Service ─────────────────────────────────────────────────────────────────
@@ -37,9 +45,10 @@ export const discussionService = {
   /**
    * GET /lessons/:lessonId/discussions — hỏi đáp theo bài (contract §5).
    *
-   * Endpoint này chưa có trên backend đang chạy: 404/network được coi là "chưa có
-   * câu hỏi nào" và trả danh sách rỗng, vì panel hỏi đáp phải ẩn sạch chứ không
-   * được đỏ lỗi cho người học. Lỗi khác (401/403/5xx) vẫn ném ra bình thường.
+   * 404 (route chưa triển khai ở môi trường đang chạy) ⇒ trả danh sách rỗng,
+   * panel hiện empty state chứ không đỏ lỗi cho người học. Mọi lỗi KHÁC —
+   * kể cả mất mạng — vẫn ném ra để UI phân biệt được "chưa có câu hỏi" với
+   * "không tải được" (review vòng 1, #16).
    */
   listByLesson: async (lessonId: string, params?: { page?: number; limit?: number }) => {
     try {

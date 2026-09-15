@@ -35,7 +35,7 @@ export function LessonQnA({ lessonId, lessonTitle }: LessonQnAProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: lessonQnaKeys.byLesson(lessonId),
     queryFn: () => discussionService.listByLesson(lessonId),
     enabled: !!lessonId,
@@ -102,6 +102,19 @@ export function LessonQnA({ lessonId, lessonTitle }: LessonQnAProps) {
         {isLoading ? (
           <div className="flex justify-center py-6">
             <Loader2 className="h-5 w-5 animate-spin text-gray-300" />
+          </div>
+        ) : isError ? (
+          // Review vòng 1 (#16): mất mạng/lỗi thật KHÔNG còn bị nuốt thành
+          // "chưa có câu hỏi nào" — hiện đúng trạng thái + nút thử lại.
+          <div className="flex flex-col items-center gap-2 py-10 text-center">
+            <p className="text-sm text-gray-500">Không tải được câu hỏi. Vui lòng thử lại.</p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+            >
+              Thử lại
+            </button>
           </div>
         ) : posts.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
