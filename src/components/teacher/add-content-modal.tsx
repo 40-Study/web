@@ -22,6 +22,9 @@ import {
   Check,
   ChevronLeft,
   Paperclip,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import {
   Dialog,
@@ -131,6 +134,12 @@ interface AddContentModalProps {
   lessonId: string;
   /** Danh sách lớp của khoá — nguồn cho ô chọn lớp của buổi live. */
   courseClasses?: Class[];
+  /** `useClasses` đang tải lần đầu (chưa có cache) — hiện skeleton thay vì ô chọn. */
+  classesLoading?: boolean;
+  /** `useClasses` lỗi — hiện thông báo + nút thử lại thay vì ô chọn. */
+  classesError?: boolean;
+  /** Gọi `refetch()` của `useClasses` khi giáo viên bấm thử lại. */
+  onRetryClasses?: () => void;
   uploadProgress?: number; // 0-100, undefined = not uploading
   uploadStatus?: string; // status message
   onVideoFileSelect?: (file: File) => void; // Called immediately when video file is selected
@@ -192,6 +201,9 @@ export function AddContentModal({
   isLoading = false,
   lessonId,
   courseClasses = [],
+  classesLoading = false,
+  classesError = false,
+  onRetryClasses,
   uploadProgress,
   uploadStatus,
   onVideoFileSelect,
@@ -222,6 +234,23 @@ export function AddContentModal({
   const hasMultipleClasses = requiresClassSelection(courseClasses.length);
   // Khoá 1 lớp: không cần hỏi, backend vẫn phải nhận đúng class_id đó.
   const effectiveClassId = hasMultipleClasses ? liveClassId : (courseClasses[0]?.id ?? "");
+
+  /**
+   * Lý do chưa xác định được lớp cho buổi live — `null` khi đã xác định xong.
+   *
+   * M-2: ba trạng thái trước đây đều cho ra `[]` nên nút gửi xám **im lặng**,
+   * không chữ nào giải thích. Mỗi trạng thái giờ có một câu riêng, và trạng thái
+   * lỗi còn có nút thử lại (không có nó thì đóng/mở lại modal chỉ đọc cache lỗi).
+   */
+  const classBlockReason: string | null = classesError
+    ? "Không tải được danh sách lớp của khoá học."
+    : classesLoading
+      ? "Đang tải danh sách lớp…"
+      : courseClasses.length === 0
+        ? "Khoá học chưa có lớp nào — tạo lớp trước khi lên lịch buổi live."
+        : hasMultipleClasses && !liveClassId
+          ? "Chọn lớp cho buổi live ở trên để tiếp tục."
+          : null;
 
   // Exercise state
   const [exerciseType, setExerciseType] = useState<ExerciseType | null>(null);
@@ -285,7 +314,7 @@ export function AddContentModal({
         quizQuestions: videoQuiz,
       });
     } else if (contentType === "livestream") {
-      if (!effectiveClassId) return; // khoá chưa có lớp — nút gửi đã bị vô hiệu hoá
+      if (!effectiveClassId) return; // chưa xác định được lớp — nút gửi đã bị vô hiệu hoá kèm lý do
       onSubmit({
         type: "livestream",
         title: liveTitle,
@@ -622,8 +651,61 @@ export function AddContentModal({
                   Backend gắn buổi live vào MỘT lớp (`CreateLivestreamDTO.ClassID`)
                   — tự lấy lớp đầu tiên sẽ khiến học viên các lớp khác không bao
                   giờ thấy buổi live, và lỗi này im lặng (finding #1).
+
+                  Ba trạng thái "chưa có lớp để chọn" được tách bạch (M-2): đang
+                  tải → skeleton, tải lỗi → thông báo + thử lại, khoá chưa có lớp
+                  → câu hướng dẫn. Trước đây cả ba đều im lặng.
                 */}
-                {hasMultipleClasses && (
+                {contentType === "livestream" && classesLoading && (
+                  // Skeleton thuần thị giác — lý do ("Đang tải danh sách lớp…") nằm ở
+                  // footer cạnh nút gửi và đã có `role="status"` để trình đọc màn
+                  // hình đọc; không lặp lại lần hai trong cùng một dialog.
+                  <div className="space-y-2" aria-hidden="true">
+                    <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+                    <div className="h-10 w-full animate-pulse rounded-xl bg-muted" />
+                  </div>
+                )}
+
+                {contentType === "livestream" && !classesLoading && classesError && (
+                  <div
+                    role="alert"
+                    className="flex items-start justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5"
+                  >
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                      <div>
+                        <p className="text-sm font-medium">Không tải được danh sách lớp</p>
+                        <p className="text-xs text-muted-foreground">
+                          Chưa xác định được lớp để gắn buổi live vào.
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => onRetryClasses?.()}>
+                      <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                      Thử lại
+                    </Button>
+                  </div>
+                )}
+
+                {contentType === "livestream" &&
+                  !classesLoading &&
+                  !classesError &&
+                  courseClasses.length === 0 && (
+                    <div
+                      role="alert"
+                      className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800"
+                    >
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium">Khoá học chưa có lớp nào</p>
+                        <p className="text-xs">
+                          Tạo lớp cho khoá học trước khi lên lịch buổi live.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                {hasMultipleClasses && !classesError && (
                   <div>
                     <label className="text-sm font-medium mb-2 block">
                       Lớp học <span className="text-destructive">*</span>
@@ -838,15 +920,27 @@ export function AddContentModal({
 
         {/* Footer */}
         {(contentType === "video" || contentType === "livestream" || (contentType === "exercise" && exerciseType)) && (
-          <DialogFooter className="border-t pt-4 mt-4">
-            <Button variant="outline" onClick={handleClose}>Hủy</Button>
-            <Button
-              onClick={handleSubmit}
-              isLoading={isLoading}
-              disabled={contentType === "livestream" && !effectiveClassId}
-            >
-              {contentType === "video" ? "Thêm video" : contentType === "livestream" ? "Tạo buổi live" : "Lưu bài tập"}
-            </Button>
+          <DialogFooter className="border-t pt-4 mt-4 sm:items-center sm:justify-between">
+            {/*
+              M-2: nút "Tạo buổi live" từng bị vô hiệu hoá không một lời giải thích
+              (đang tải / tải lỗi / khoá chưa có lớp đều ra `[]`). Lý do giờ nằm
+              ngay cạnh nút, để trạng thái xám luôn đọc được.
+            */}
+            {contentType === "livestream" && !effectiveClassId && classBlockReason && (
+              <p role="status" className="text-xs text-muted-foreground sm:mr-auto sm:text-left">
+                {classBlockReason}
+              </p>
+            )}
+            <div className="flex flex-col-reverse gap-2 sm:ml-auto sm:flex-row">
+              <Button variant="outline" onClick={handleClose}>Hủy</Button>
+              <Button
+                onClick={handleSubmit}
+                isLoading={isLoading}
+                disabled={contentType === "livestream" && !effectiveClassId}
+              >
+                {contentType === "video" ? "Thêm video" : contentType === "livestream" ? "Tạo buổi live" : "Lưu bài tập"}
+              </Button>
+            </div>
           </DialogFooter>
         )}
       </DialogContent>

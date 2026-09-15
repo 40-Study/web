@@ -1,5 +1,6 @@
 /**
  * Phase 0 review — finding #1: ô chọn lớp bắt buộc trong modal tạo buổi live.
+ * Vòng 3 — M-2: nút bị vô hiệu hoá phải NÓI RÕ lý do (đang tải / lỗi / 0 lớp).
  *
  * Kiểm phần UI: khoá 1 lớp thì modal tự chọn, khoá ≥2 lớp thì nút "Tạo buổi live"
  * bị vô hiệu hoá cho tới khi giáo viên chọn lớp.
@@ -105,11 +106,51 @@ describe("AddContentModal — chọn lớp cho buổi live (finding #1)", () => 
     expect(submitted.classId).toBe("class-b");
   });
 
-  it("khoá 0 lớp: nút gửi bị vô hiệu hoá (trang đã chặn bằng toast hướng dẫn trước đó)", async () => {
+  it("khoá 0 lớp: nút gửi bị vô hiệu hoá VÀ nói rõ khoá chưa có lớp", async () => {
     renderModal({ courseClasses: [] });
     await openLivestreamForm();
 
     expect(isSubmitDisabled(getSubmitButton())).toBe(true);
+    // M-2: trạng thái xám phải đọc được — không còn im lặng.
+    expect(screen.getByText("Khoá học chưa có lớp nào")).toBeTruthy();
+    expect(screen.getByText(/tạo lớp trước khi lên lịch buổi live/i)).toBeTruthy();
+  });
+
+  it("đang tải danh sách lớp: nút chặn kèm lý do, KHÔNG hiện câu 'chưa có lớp'", async () => {
+    renderModal({ courseClasses: [], classesLoading: true });
+    await openLivestreamForm();
+
+    expect(isSubmitDisabled(getSubmitButton())).toBe(true);
+    // Hiện skeleton thuần thị giác + lý do ở footer (M-2).
+    expect(screen.getByText("Đang tải danh sách lớp…")).toBeTruthy();
+    // Phân biệt được với trạng thái 0 lớp thật.
+    expect(screen.queryByText("Khoá học chưa có lớp nào")).toBeNull();
+    expect(screen.queryByText("Không tải được danh sách lớp")).toBeNull();
+  });
+
+  it("tải lớp lỗi: hiện thông báo + nút thử lại, gọi đúng onRetryClasses", async () => {
+    const onRetryClasses = vi.fn();
+    renderModal({ courseClasses: [], classesError: true, onRetryClasses });
+    await openLivestreamForm();
+
+    expect(isSubmitDisabled(getSubmitButton())).toBe(true);
+    expect(screen.getByText("Không tải được danh sách lớp")).toBeTruthy();
+    // Không được nhầm với "khoá chưa có lớp" — hai sự thật khác nhau.
+    expect(screen.queryByText("Khoá học chưa có lớp nào")).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /thử lại/i }));
+    });
+    expect(onRetryClasses).toHaveBeenCalledTimes(1);
+  });
+
+  it("khoá ≥2 lớp chưa chọn: lý do là 'chọn lớp', KHÔNG phải 'chưa có lớp' (L-1)", async () => {
+    renderModal({ courseClasses: TWO_CLASSES });
+    await openLivestreamForm();
+
+    expect(isSubmitDisabled(getSubmitButton())).toBe(true);
+    expect(screen.getByText(/chọn lớp cho buổi live ở trên/i)).toBeTruthy();
+    expect(screen.queryByText("Khoá học chưa có lớp nào")).toBeNull();
   });
 
   it("không còn thu các field backend không nhận (duration / platform / enableReminder)", async () => {
