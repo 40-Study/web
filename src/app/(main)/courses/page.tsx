@@ -9,6 +9,7 @@ import { CourseSearch } from "@/components/course/course-search";
 import { CourseBannerCarousel } from "@/components/course/course-banner-carousel";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { useCourses, useCategories, useSearchSuggestions } from "@/hooks/use-courses";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { CourseFilters } from "@/types/course";
 
 export default function CoursesPage() {
@@ -17,10 +18,12 @@ export default function CoursesPage() {
 
   const [filters, setFilters] = useState<CourseFilters>({});
   const [searchQuery, setSearchQuery] = useState(initialQuery);
+  // Debounce 300ms: `useSearchSuggestions` gọi API gợi ý theo từng ký tự.
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
   const { data: allCourses = [], isLoading: coursesLoading } = useCourses(filters);
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
-  const { data: suggestions = [] } = useSearchSuggestions(searchQuery);
+  const { data: suggestions = [] } = useSearchSuggestions(debouncedSearchQuery);
 
   // Filter courses by search query (API filters handled by useCourses)
   const filteredCourses = searchQuery

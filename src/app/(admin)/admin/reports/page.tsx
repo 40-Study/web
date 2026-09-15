@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { useWalletTransactions } from "@/hooks/queries/use-wallet";
 import type { WalletTransaction, TransactionStatus } from "@/services/wallet.service";
 import { QueryState } from "@/components/common/query-state";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
@@ -44,6 +45,8 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 
 export default function AdminReportsPage() {
   const [search, setSearch] = useState("");
+  // Debounce 300ms: `search` lọc lại toàn bộ giao dịch theo từng ký tự.
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [period, setPeriod] = useState<ReportFilter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -56,9 +59,9 @@ export default function AdminReportsPage() {
     const now = Date.now();
     return transactions.filter((tx) => {
       const textMatched =
-        (tx.order_number ?? "").toLowerCase().includes(search.toLowerCase()) ||
-        (tx.description ?? "").toLowerCase().includes(search.toLowerCase()) ||
-        (tx.payment_method ?? "").toLowerCase().includes(search.toLowerCase());
+        (tx.order_number ?? "").toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        (tx.description ?? "").toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        (tx.payment_method ?? "").toLowerCase().includes(debouncedSearch.toLowerCase());
 
       const statusMatched = statusFilter === "ALL" || tx.status === statusFilter;
 
@@ -72,7 +75,7 @@ export default function AdminReportsPage() {
 
       return textMatched && statusMatched && periodMatched;
     });
-  }, [txResponse, search, statusFilter, period]);
+  }, [txResponse, debouncedSearch, statusFilter, period]);
 
   // Auto-select first record once data loads
   const firstId = filteredRecords[0]?.id ?? null;
