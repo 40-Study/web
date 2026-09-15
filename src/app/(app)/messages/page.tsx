@@ -26,6 +26,8 @@ import {
   useMarkAsRead,
 } from "@/hooks/queries/use-conversations";
 import { useAuthStore } from "@/stores/auth.store";
+import { QueryState } from "@/components/common/query-state";
+import { AuthError } from "@/lib/errors";
 import type { Conversation, Message } from "@/services/conversation.service";
 import { useMarkConversationRead } from "./use-mark-conversation-read";
 
@@ -144,8 +146,20 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { data: convData, isLoading: convLoading } = useConversations();
-  const { data: msgData, isLoading: msgLoading } = useMessages(selectedConvId ?? "", {
+  const {
+    data: convData,
+    isLoading: convLoading,
+    isError: convError,
+    error: convErr,
+    refetch: refetchConversations,
+  } = useConversations();
+  const {
+    data: msgData,
+    isLoading: msgLoading,
+    isError: msgError,
+    error: msgErr,
+    refetch: refetchMessages,
+  } = useMessages(selectedConvId ?? "", {
     page: 1,
     limit: 100,
   });
@@ -155,6 +169,23 @@ export default function MessagesPage() {
   const conversations = useMemo(() => convData?.conversations ?? [], [convData?.conversations]);
   const messages = useMemo(() => msgData?.messages ?? [], [msgData?.messages]);
   const currentUserId = user?.id ?? "";
+
+  // MEDIUM (Phase 0 review #5): React Query v5 vẫn bật `isError` khi refetch nền
+  // thất bại trong khi `data` cũ còn trong cache — lấy `isError` trần sẽ xoá sạch
+  // danh sách đang hiển thị. Chỉ hiện màn lỗi khi không còn gì để hiển thị.
+  // MEDIUM #10: 401 (AuthError) là nhịp đăng xuất — bỏ qua để không nháy khung đỏ
+  // trước khi app điều hướng.
+  const showConvError = convError && conversations.length === 0 && !(convErr instanceof AuthError);
+  const showMsgError = msgError && messages.length === 0 && !(msgErr instanceof AuthError);
+  const showConvBanner = convError && conversations.length > 0 && !(convErr instanceof AuthError);
+  const showMsgBanner = msgError && messages.length > 0 && !(msgErr instanceof AuthError);
+
+  // L-2: 401 khi chưa có cache. Nhánh lỗi bị loại ở trên nên trước đây hộp thư rơi
+  // xuống "Chưa có cuộc trò chuyện" / khung chat trống trong nhịp chờ điều hướng —
+  // đọc thành "không có ai nhắn" thay vì "phiên đã hết hạn". Giữ spinner, để
+  // RoleGuard/redirect xử lý điều hướng.
+  const awaitingConvAuth = convError && conversations.length === 0 && convErr instanceof AuthError;
+  const awaitingMsgAuth = msgError && messages.length === 0 && msgErr instanceof AuthError;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -193,33 +224,62 @@ export default function MessagesPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {convLoading ? (
+            {convLoading || awaitingConvAuth ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
+            ) : showConvError ? (
+              // Phase 0: trước đây lỗi API rơi vào nhánh "Chưa có cuộc trò chuyện",
+              // khiến người dùng tưởng hộp thư rỗng thay vì lỗi tải.
+              <QueryState
+                isError
+                error={convErr}
+                onRetry={() => refetchConversations()}
+                className="border-none bg-transparent py-6"
+              >
+                {null}
+              </QueryState>
             ) : conversations.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground py-8">
                 Chưa có cuộc trò chuyện
               </p>
             ) : (
-              conversations
-                .filter(
-                  (c) =>
-                    !searchQuery ||
-                    c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    c.participants?.some((p) =>
-                      p.user_name.toLowerCase().includes(searchQuery.toLowerCase())
-                    )
-                )
-                .map((conv) => (
-                  <ConversationItem
-                    key={conv.id}
-                    conversation={conv}
-                    isSelected={conv.id === selectedConvId}
-                    onClick={() => setSelectedConvId(conv.id)}
-                    currentUserId={currentUserId}
-                  />
-                ))
+              <>
+                {showConvBanner && (
+                  /*
+                    L-5: `role="alert"` phải nằm trên thẻ BAO NGOÀI, không đặt
+                    thẳng lên `<button>` — đặt lên nút sẽ thay thế role ngầm định
+                    `button` và trình đọc màn hình không còn đọc nó là nút bấm
+                    (cart làm đúng như vậy).
+                  */
+                  <div
+                    role="alert"
+                    className="mb-1 w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+                  >
+                    <button onClick={() => refetchConversations()} className="w-full text-left">
+                      Không làm mới được danh sách — bấm để thử lại.
+                    </button>
+                  </div>
+                )}
+                {conversations
+                  .filter(
+                    (c) =>
+                      !searchQuery ||
+                      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      c.participants?.some((p) =>
+                        p.user_name.toLowerCase().includes(searchQuery.toLowerCase())
+                      )
+                  )
+                  .map((conv) => (
+                    <ConversationItem
+                      key={conv.id}
+                      conversation={conv}
+                      isSelected={conv.id === selectedConvId}
+                      onClick={() => setSelectedConvId(conv.id)}
+                      currentUserId={currentUserId}
+                    />
+                  ))}
+              </>
             )}
           </div>
         </div>
@@ -256,18 +316,41 @@ export default function MessagesPage() {
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4">
-                {msgLoading ? (
+                {msgLoading || awaitingMsgAuth ? (
                   <div className="flex justify-center py-8">
                     <Loader2 className="h-5 w-5 animate-spin" />
                   </div>
+                ) : showMsgError ? (
+                  // Phase 0: lỗi tải tin nhắn trước đây hiển thị như khung chat trống.
+                  <QueryState
+                    isError
+                    error={msgErr}
+                    onRetry={() => refetchMessages()}
+                    className="border-none bg-transparent py-6"
+                  >
+                    {null}
+                  </QueryState>
                 ) : (
-                  [...messages].reverse().map((msg) => (
-                    <MessageBubble
-                      key={msg.id}
-                      message={msg}
-                      isOwn={msg.sender_id === currentUserId}
-                    />
-                  ))
+                  <>
+                    {showMsgBanner && (
+                      /* L-5: xem comment ở banner danh sách hội thoại phía trên. */
+                      <div
+                        role="alert"
+                        className="mb-3 w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+                      >
+                        <button onClick={() => refetchMessages()} className="w-full text-left">
+                          Không làm mới được tin nhắn — bấm để thử lại.
+                        </button>
+                      </div>
+                    )}
+                    {[...messages].reverse().map((msg) => (
+                      <MessageBubble
+                        key={msg.id}
+                        message={msg}
+                        isOwn={msg.sender_id === currentUserId}
+                      />
+                    ))}
+                  </>
                 )}
                 <div ref={messagesEndRef} />
               </div>

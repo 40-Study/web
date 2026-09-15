@@ -14,6 +14,11 @@ export interface LessonContent {
   thumbnail_url?: string;
   duration?: number;
   exercise_id?: string;
+  /**
+   * id PHIÊN livestream (M-6) — KHÁC `id` của lesson_content. Optional vì
+   * response cũ chưa có trường; `null` = phiên chưa sẵn sàng.
+   */
+  livestream_session_id?: string | null;
   is_mandatory?: boolean;
   display_order: number;
   created_at?: string;

@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useContests } from "@/hooks/queries/use-contests";
 import type { Contest, ContestStatus, ContestType } from "@/services/contest.service";
 import { useAuthStore } from "@/stores/auth.store";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 // ─── Filter Config ──────────────────────────────────────────────────────────
 
@@ -247,6 +248,8 @@ function ContestCard({ contest }: { contest: Contest }) {
 
 export default function ContestsPage() {
   const [keyword, setKeyword] = useState("");
+  // Debounce 300ms: lọc lại toàn bộ danh sách theo từng ký tự gây giật khi gõ.
+  const debouncedKeyword = useDebouncedValue(keyword, 300);
   const [showFilter, setShowFilter] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -269,7 +272,7 @@ export default function ContestsPage() {
     if (typeFilter && c.type !== typeFilter) return false;
     if (dateFrom && new Date(c.start_time) < new Date(dateFrom)) return false;
     if (dateTo && new Date(c.start_time) > new Date(dateTo + "T23:59:59")) return false;
-    if (keyword && !c.title.toLowerCase().includes(keyword.toLowerCase())) return false;
+    if (debouncedKeyword && !c.title.toLowerCase().includes(debouncedKeyword.toLowerCase())) return false;
     return true;
   });
 

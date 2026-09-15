@@ -20,6 +20,16 @@ export interface LessonContent {
   thumbnail_url?: string;
   duration?: number;
   exercise_id?: string;
+  /**
+   * id PHIÊN livestream của hàng nội dung type `livestream` (M-6).
+   *
+   * Backend thêm trường này vào `LessonContentResponseDTO` cùng đợt. `id` của
+   * lesson_content KHÔNG phải id phiên — mở `/rooms/${id}` sẽ join hỏng.
+   *
+   * Optional vì response cũ chưa có trường; `null`/`undefined` = phiên chưa
+   * sẵn sàng → hàng không bấm được (`resolveLivestreamRoomHref`).
+   */
+  livestream_session_id?: string | null;
   is_mandatory?: boolean;
   display_order: number;
   created_at?: string;

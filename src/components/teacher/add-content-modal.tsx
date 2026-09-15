@@ -22,6 +22,8 @@ import {
   Check,
   ChevronLeft,
   Paperclip,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import {
   Dialog,
@@ -44,12 +46,13 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { requiresClassSelection } from "@/lib/livestream";
+import type { Class } from "@/services/class.service";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 export type ContentType = "video" | "livestream" | "exercise";
 export type ExerciseType = "quiz" | "code" | "essay";
-export type LivePlatform = "40study" | "zoom" | "custom";
 
 interface UploadedFile {
   id: string;
@@ -90,10 +93,14 @@ export interface LivestreamContentData {
   description: string;
   date: string;
   startTime: string;
-  duration: number;
-  platform: LivePlatform;
-  customLink?: string;
-  enableReminder: boolean;
+  /**
+   * Lớp mà buổi live sẽ gắn vào (`class_id` của `CreateLivestreamDTO`).
+   *
+   * `null` khi khoá chưa có lớp nào — trang giáo viên chặn trước khi tới đây.
+   * Khoá có 1 lớp thì modal tự chọn; có ≥2 lớp thì giáo viên phải chọn, nút gửi
+   * bị vô hiệu hoá cho tới khi chọn xong.
+   */
+  classId: string | null;
   enableRecording: boolean;
   documents: File[];
   quizQuestions: QuizQuestion[];
@@ -124,6 +131,14 @@ interface AddContentModalProps {
   onSubmit: (data: ContentData) => void;
   isLoading?: boolean;
   lessonId: string;
+  /** Danh sách lớp của khoá — nguồn cho ô chọn lớp của buổi live. */
+  courseClasses?: Class[];
+  /** `useClasses` đang tải lần đầu (chưa có cache) — hiện skeleton thay vì ô chọn. */
+  classesLoading?: boolean;
+  /** `useClasses` lỗi — hiện thông báo + nút thử lại thay vì ô chọn. */
+  classesError?: boolean;
+  /** Gọi `refetch()` của `useClasses` khi giáo viên bấm thử lại. */
+  onRetryClasses?: () => void;
   uploadProgress?: number; // 0-100, undefined = not uploading
   uploadStatus?: string; // status message
   onVideoFileSelect?: (file: File) => void; // Called immediately when video file is selected
@@ -150,14 +165,6 @@ const LANGUAGES = [
   { value: "go", label: "Go" },
   { value: "java", label: "Java" },
   { value: "cpp", label: "C++" },
-];
-
-const DURATIONS = [
-  { value: 30, label: "30 phút" },
-  { value: 45, label: "45 phút" },
-  { value: 60, label: "60 phút" },
-  { value: 90, label: "90 phút" },
-  { value: 120, label: "120 phút" },
 ];
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -192,6 +199,10 @@ export function AddContentModal({
   onSubmit,
   isLoading = false,
   lessonId,
+  courseClasses = [],
+  classesLoading = false,
+  classesError = false,
+  onRetryClasses,
   uploadProgress,
   uploadStatus,
   onVideoFileSelect,
@@ -214,13 +225,45 @@ export function AddContentModal({
   const [liveDesc, setLiveDesc] = useState("");
   const [liveDate, setLiveDate] = useState("");
   const [liveTime, setLiveTime] = useState("20:00");
-  const [liveDuration, setLiveDuration] = useState(60);
-  const [livePlatform, setLivePlatform] = useState<LivePlatform>("40study");
-  const [liveCustomLink, setLiveCustomLink] = useState("");
-  const [liveReminder, setLiveReminder] = useState(true);
+  const [liveClassId, setLiveClassId] = useState("");
   const [liveRecording, setLiveRecording] = useState(true);
   const [liveDocs, setLiveDocs] = useState<File[]>([]);
   const [liveQuiz, setLiveQuiz] = useState<QuizQuestion[]>([]);
+
+  const hasMultipleClasses = requiresClassSelection(courseClasses.length);
+  // Khoá 1 lớp: không cần hỏi, backend vẫn phải nhận đúng class_id đó.
+  const effectiveClassId = hasMultipleClasses ? liveClassId : (courseClasses[0]?.id ?? "");
+
+  /**
+   * Cache còn lớp hay không — ranh giới quyết định giữa "lỗi chặn" và "lỗi hạ cấp".
+   *
+   * M-7: `staleTime` 30 s nên mở lại modal là refetch; refetch hỏng đặt
+   * `classesError` **trong khi `courseClasses` vẫn còn nguyên**. Lấy `classesError`
+   * làm chân lý sẽ xoá ô chọn lớp và nói sai rằng "chưa xác định được lớp" —
+   * cùng khuôn lỗi đã sửa cho cart/messages ở vòng 1 (finding #5).
+   */
+  const hasCachedClasses = courseClasses.length > 0;
+
+  /**
+   * Lý do chưa xác định được lớp cho buổi live — `null` khi đã xác định xong.
+   *
+   * M-2: ba trạng thái trước đây đều cho ra `[]` nên nút gửi xám **im lặng**,
+   * không chữ nào giải thích. Mỗi trạng thái giờ có một câu riêng, và trạng thái
+   * lỗi còn có nút thử lại (không có nó thì đóng/mở lại modal chỉ đọc cache lỗi).
+   *
+   * M-7: câu "chưa xác định được lớp" chỉ được nói khi **cache rỗng thật** —
+   * còn lớp trong cache thì lớp đó vẫn dùng được, nói ngược lại là banner nói sai
+   * sự thật (khoá 1 lớp: nút gửi bật, banner lại bảo chưa có lớp).
+   */
+  const classBlockReason: string | null = hasCachedClasses
+    ? hasMultipleClasses && !liveClassId
+      ? "Chọn lớp cho buổi live ở trên để tiếp tục."
+      : null
+    : classesError
+      ? "Không tải được danh sách lớp của khoá học."
+      : classesLoading
+        ? "Đang tải danh sách lớp…"
+        : "Khoá học chưa có lớp nào — tạo lớp trước khi lên lịch buổi live.";
 
   // Exercise state
   const [exerciseType, setExerciseType] = useState<ExerciseType | null>(null);
@@ -244,8 +287,7 @@ export function AddContentModal({
     setVideoTitle(""); setVideoDesc(""); setVideoFile(null); setVideoUrl("");
     setVideoDocs([]); setVideoQuiz([]);
     setLiveTitle(""); setLiveDesc(""); setLiveDate(""); setLiveTime("20:00");
-    setLiveDuration(60); setLivePlatform("40study"); setLiveCustomLink("");
-    setLiveReminder(true); setLiveRecording(true); setLiveDocs([]); setLiveQuiz([]);
+    setLiveClassId(""); setLiveRecording(true); setLiveDocs([]); setLiveQuiz([]);
     setExerciseType(null); setExTitle(""); setExDesc("");
     setExQuiz([emptyQuestion()]); setExTimeLimit(300);
     setExLanguage("javascript"); setExTestCases([emptyTestCase()]); setExSolution("");
@@ -285,16 +327,14 @@ export function AddContentModal({
         quizQuestions: videoQuiz,
       });
     } else if (contentType === "livestream") {
+      if (!effectiveClassId) return; // chưa xác định được lớp — nút gửi đã bị vô hiệu hoá kèm lý do
       onSubmit({
         type: "livestream",
         title: liveTitle,
         description: liveDesc,
         date: liveDate,
         startTime: liveTime,
-        duration: liveDuration,
-        platform: livePlatform,
-        customLink: liveCustomLink || undefined,
-        enableReminder: liveReminder,
+        classId: effectiveClassId,
         enableRecording: liveRecording,
         documents: liveDocs,
         quizQuestions: liveQuiz,
@@ -315,7 +355,7 @@ export function AddContentModal({
       });
     }
     handleClose();
-  }, [contentType, exerciseType, videoTitle, videoDesc, videoUrl, uploadedVideoUrl, videoDocs, videoQuiz, liveTitle, liveDesc, liveDate, liveTime, liveDuration, livePlatform, liveCustomLink, liveReminder, liveRecording, liveDocs, liveQuiz, exTitle, exDesc, exQuiz, exTimeLimit, exLanguage, exTestCases, exSolution, exMinWords, exMaxWords, onSubmit, handleClose]);
+  }, [contentType, exerciseType, videoTitle, videoDesc, videoUrl, uploadedVideoUrl, videoDocs, videoQuiz, liveTitle, liveDesc, liveDate, liveTime, effectiveClassId, liveRecording, liveDocs, liveQuiz, exTitle, exDesc, exQuiz, exTimeLimit, exLanguage, exTestCases, exSolution, exMinWords, exMaxWords, onSubmit, handleClose]);
 
   // Document handlers
   const addDocs = useCallback((files: FileList, target: "video" | "live") => {
@@ -619,67 +659,122 @@ export function AddContentModal({
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Thời lượng</label>
-                  <Select value={String(liveDuration)} onValueChange={(v) => setLiveDuration(Number(v))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {DURATIONS.map((d) => (
-                        <SelectItem key={d.value} value={String(d.value)}>{d.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/*
+                  Ô chọn lớp: bắt buộc khi khoá có từ 2 lớp trở lên.
+                  Backend gắn buổi live vào MỘT lớp (`CreateLivestreamDTO.ClassID`)
+                  — tự lấy lớp đầu tiên sẽ khiến học viên các lớp khác không bao
+                  giờ thấy buổi live, và lỗi này im lặng (finding #1).
 
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Nền tảng</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { val: "40study" as const, label: "40Study", sub: "Khuyên dùng" },
-                      { val: "zoom" as const, label: "Zoom" },
-                      { val: "custom" as const, label: "Link tự chọn" },
-                    ].map((p) => (
-                      <button
-                        key={p.val}
-                        onClick={() => setLivePlatform(p.val)}
-                        className={cn(
-                          "p-3 rounded-xl border-2 text-center transition-all",
-                          livePlatform === p.val
-                            ? "border-primary-600 bg-primary-50"
-                            : "border-input hover:border-primary-300"
-                        )}
-                      >
-                        <Video className="w-5 h-5 mx-auto mb-1" />
-                        <span className="text-sm font-medium">{p.label}</span>
-                        {p.sub && <span className="block text-xs text-primary-600">{p.sub}</span>}
-                      </button>
-                    ))}
+                  Ba trạng thái "chưa có lớp để chọn" được tách bạch (M-2): đang
+                  tải → skeleton, tải lỗi → thông báo + thử lại, khoá chưa có lớp
+                  → câu hướng dẫn. Trước đây cả ba đều im lặng.
+
+                  M-7: cả ba trạng thái đó chỉ đúng khi cache RỖNG. Refetch hỏng
+                  mà cache còn lớp thì hạ xuống banner nhỏ phía trên, giữ nguyên ô
+                  chọn lớp — không xoá thứ đang dùng được.
+                */}
+                {contentType === "livestream" && classesLoading && !hasCachedClasses && (
+                  // Skeleton thuần thị giác — lý do ("Đang tải danh sách lớp…") nằm ở
+                  // footer cạnh nút gửi và đã có `role="status"` để trình đọc màn
+                  // hình đọc; không lặp lại lần hai trong cùng một dialog.
+                  <div className="space-y-2" aria-hidden="true">
+                    <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+                    <div className="h-10 w-full animate-pulse rounded-xl bg-muted" />
                   </div>
-                  {livePlatform === "custom" && (
-                    <Input
-                      placeholder="Nhập link phòng họp..."
-                      value={liveCustomLink}
-                      onChange={(e) => setLiveCustomLink(e.target.value)}
-                      className="mt-3"
-                    />
+                )}
+
+                {contentType === "livestream" &&
+                  !classesLoading &&
+                  classesError &&
+                  !hasCachedClasses && (
+                    <div
+                      role="alert"
+                      className="flex items-start justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5"
+                    >
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                        <div>
+                          <p className="text-sm font-medium">Không tải được danh sách lớp</p>
+                          <p className="text-xs text-muted-foreground">
+                            Chưa xác định được lớp để gắn buổi live vào.
+                          </p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => onRetryClasses?.()}>
+                        <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                        Thử lại
+                      </Button>
+                    </div>
                   )}
-                </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 border rounded-xl">
-                    <div>
-                      <p className="font-medium text-sm">Thông báo nhắc nhở</p>
-                      <p className="text-xs text-muted-foreground">Gửi thông báo trước 30 phút</p>
+                {contentType === "livestream" && classesError && hasCachedClasses && (
+                  // M-7: refetch hỏng nhưng cache còn lớp → hạ cấp, KHÔNG chặn.
+                  // Câu chữ nói đúng chuyện đang xảy ra: danh sách đang hiển thị là
+                  // bản cũ, không phải "chưa xác định được lớp".
+                  <div
+                    role="alert"
+                    className="flex items-start justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800"
+                  >
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <p className="text-xs">
+                        Không làm mới được danh sách lớp — đang hiển thị dữ liệu lần trước.
+                      </p>
                     </div>
-                    <Switch checked={liveReminder} onCheckedChange={setLiveReminder} />
+                    <Button variant="outline" size="sm" onClick={() => onRetryClasses?.()}>
+                      <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                      Thử lại
+                    </Button>
                   </div>
-                  <div className="flex items-center justify-between p-3 border rounded-xl">
-                    <div>
-                      <p className="font-medium text-sm">Tự động ghi lại</p>
-                      <p className="text-xs text-muted-foreground">Lưu bản ghi sau khi kết thúc</p>
+                )}
+
+                {contentType === "livestream" &&
+                  !classesLoading &&
+                  !classesError &&
+                  !hasCachedClasses && (
+                    <div
+                      role="alert"
+                      className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800"
+                    >
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium">Khoá học chưa có lớp nào</p>
+                        <p className="text-xs">
+                          Tạo lớp cho khoá học trước khi lên lịch buổi live.
+                        </p>
+                      </div>
                     </div>
-                    <Switch checked={liveRecording} onCheckedChange={setLiveRecording} />
+                  )}
+
+                {hasMultipleClasses && (
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Lớp học <span className="text-destructive">*</span>
+                    </label>
+                    <Select value={liveClassId} onValueChange={setLiveClassId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn lớp cho buổi live" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courseClasses.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Buổi live chỉ hiển thị cho học viên thuộc lớp được chọn.
+                    </p>
                   </div>
+                )}
+
+                <div className="flex items-center justify-between p-3 border rounded-xl">
+                  <div>
+                    <p className="font-medium text-sm">Tự động ghi lại</p>
+                    <p className="text-xs text-muted-foreground">Lưu bản ghi sau khi kết thúc</p>
+                  </div>
+                  <Switch checked={liveRecording} onCheckedChange={setLiveRecording} />
                 </div>
               </TabsContent>
 
@@ -866,11 +961,27 @@ export function AddContentModal({
 
         {/* Footer */}
         {(contentType === "video" || contentType === "livestream" || (contentType === "exercise" && exerciseType)) && (
-          <DialogFooter className="border-t pt-4 mt-4">
-            <Button variant="outline" onClick={handleClose}>Hủy</Button>
-            <Button onClick={handleSubmit} isLoading={isLoading}>
-              {contentType === "video" ? "Thêm video" : contentType === "livestream" ? "Tạo buổi live" : "Lưu bài tập"}
-            </Button>
+          <DialogFooter className="border-t pt-4 mt-4 sm:items-center sm:justify-between">
+            {/*
+              M-2: nút "Tạo buổi live" từng bị vô hiệu hoá không một lời giải thích
+              (đang tải / tải lỗi / khoá chưa có lớp đều ra `[]`). Lý do giờ nằm
+              ngay cạnh nút, để trạng thái xám luôn đọc được.
+            */}
+            {contentType === "livestream" && !effectiveClassId && classBlockReason && (
+              <p role="status" className="text-xs text-muted-foreground sm:mr-auto sm:text-left">
+                {classBlockReason}
+              </p>
+            )}
+            <div className="flex flex-col-reverse gap-2 sm:ml-auto sm:flex-row">
+              <Button variant="outline" onClick={handleClose}>Hủy</Button>
+              <Button
+                onClick={handleSubmit}
+                isLoading={isLoading}
+                disabled={contentType === "livestream" && !effectiveClassId}
+              >
+                {contentType === "video" ? "Thêm video" : contentType === "livestream" ? "Tạo buổi live" : "Lưu bài tập"}
+              </Button>
+            </div>
           </DialogFooter>
         )}
       </DialogContent>

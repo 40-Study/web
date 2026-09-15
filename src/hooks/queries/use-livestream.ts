@@ -64,15 +64,6 @@ export function useEndSession() {
   });
 }
 
-export function useRoomToken(roomName: string) {
-  return useQuery({
-    queryKey: ["room-token", roomName],
-    queryFn: () => livestreamService.getRoomToken(roomName),
-    enabled: !!roomName,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-}
-
 export function useParticipants(sessionId: string) {
   return useQuery({
     queryKey: livestreamKeys.participants(sessionId),

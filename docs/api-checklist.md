@@ -825,90 +825,110 @@
 
 # PHẦN B — Web gọi endpoint KHÔNG có trong backend router (🆕/⚠️ rủi ro 404)
 
-> Các module này nằm trong `API_DOCUMENTATION.md` (mô tả trước) và web đã viết service gọi, **NHƯNG chưa có route nào được register trong `backend/internal/router/`** → nếu gọi sẽ bị 404. Cần backend implement (hoặc xác nhận đường dẫn khác).
+> Các module này nằm trong `API_DOCUMENTATION.md` (mô tả trước) và web đã viết service gọi, **NHƯNG chưa có route nào được register trong `backend/internal/router/`** → nếu gọi sẽ bị 404.
+>
+> **Cập nhật Phase 0 (2026-09-15):** đã rà lại toàn bộ Phần B và xử lý theo hướng **ưu tiên chuyển web sang path backend ĐÃ CÓ**. Kết quả: 4 module dead code đã xoá, 5 endpoint đã map sang path thật, 3 endpoint còn lại chờ backend (2 trong đó backend đang thêm song song — không đụng ở vòng này).
 
-### B.1 Live Sessions `/live-sessions/*`
+### B.1 Live Sessions — ✅ ĐÃ SỬA (map sang `/livestream/*`)
 | Method | Endpoint | Status | Web Service |
 |--------|----------|--------|-------------|
-| POST | `/live-sessions` | 🆕 | liveSessionService.create |
-| GET | `/live-sessions` | 🆕 | liveSessionService.list |
-| GET | `/live-sessions/:id` | 🆕 | liveSessionService.getById |
-| PUT | `/live-sessions/:id` | 🆕 | liveSessionService.update |
-| DELETE | `/live-sessions/:id` | 🆕 | liveSessionService.delete |
-| POST | `/live-sessions/:id/start` | 🆕 | liveSessionService.start |
-| POST | `/live-sessions/:id/end` | 🆕 | liveSessionService.end |
-| POST | `/live-sessions/:id/send-reminder` | 🆕 | liveSessionService.sendReminder |
-| GET | `/live-sessions/upcoming` | 🆕 | liveSessionService.getUpcoming |
-| POST | `/live-sessions/:id/attachments` | 🆕 | liveSessionService.uploadAttachments |
+| POST | `/live-sessions` | ✅ đã map → `POST /livestream` | liveSessionService.create |
+| GET | `/live-sessions` | ✅ đã map → `GET /livestream` | liveSessionService.list |
+| GET | `/live-sessions/:id` | ✅ đã map → `GET /livestream/:id` | liveSessionService.getById |
+| PUT | `/live-sessions/:id` | ✅ đã map → `PUT /livestream/:id` | liveSessionService.update |
+| DELETE | `/live-sessions/:id` | ✅ đã map → `DELETE /livestream/:id` | liveSessionService.delete |
+| POST | `/live-sessions/:id/start` | ✅ đã map → `POST /livestream/:id/start` | liveSessionService.start |
+| POST | `/live-sessions/:id/end` | ✅ đã map → `POST /livestream/:id/end` | liveSessionService.end |
+| POST | `/live-sessions/:id/send-reminder` | 🗑️ đã xoá method | backend không có route tương ứng |
+| GET | `/live-sessions/upcoming` | 🗑️ đã xoá method | backend không có route tương ứng |
+| POST | `/live-sessions/:id/attachments` | 🗑️ đã xoá method | backend không có route tương ứng |
 
-### B.2 LiveKit `/livekit/*`
+> `live-session.service.ts` + `use-live-sessions.ts` nay khớp DTO backend (`livestreamDTO.go`): `host_id` + `class_id` là **bắt buộc** khi tạo. `(teacher)/teacher/courses/[id]/page.tsx` đã bổ sung `host_id` (user đang đăng nhập) và `class_id` (lấy lớp đầu tiên của khoá qua `classService.list`), báo lỗi rõ nếu khoá học chưa có lớp.
+>
+> ⚠️ Lưu ý envelope: `GET /livestream` trả `LivestreamListDTO` **trực tiếp** (`{data, total, page, page_size}`), KHÔNG bọc trong `{message, data}` như các route khác — service đã đọc đúng.
+
+### B.2 LiveKit `/livekit/*` — 🗑️ DEAD CODE
 | Method | Endpoint | Status | Web Service |
 |--------|----------|--------|-------------|
-| GET | `/livekit/token` | 🆕 | livekitService.getToken |
-| POST | `/livekit/rooms` | 🆕 | livekitService.createRoom |
-| GET | `/livekit/rooms/:name` | 🆕 | livekitService.getRoomInfo |
+| GET | `/livekit/token` | 🗑️ đã xoá | livekitService.getToken |
+| POST | `/livekit/rooms` | 🗑️ đã xoá | livekitService.createRoom |
+| GET | `/livekit/rooms/:name` | 🗑️ đã xoá | livekitService.getRoomInfo |
 
-> Ghi chú: Phòng live thực tế nhận `token` + `serverUrl` qua query params (xem `src/app/(live)/rooms/[roomName]/page.tsx`), không nhất thiết qua `/livekit/token`.
+> Grep `grep -rn "/livekit" src/` → **0 kết quả** (không còn call site nào gọi các path này). File `src/lib/meet/*` chỉ import SDK LiveKit client, không gọi REST `/livekit/*`.
+>
+> Phòng live thật nhận `token` + `serverUrl` trong **response body** của `POST /livestream/:id/join` (`ParticipantResponseDTO.Token/ServerURL`) — **không** đưa token lên query URL.
 
-### B.3 Schedule Events `/schedule/events/*`
+### B.3 Schedule Events `/schedule/events/*` — 🗑️ DEAD CODE
 | Method | Endpoint | Status | Web Service |
 |--------|----------|--------|-------------|
-| GET | `/schedule/events` | 🆕 | ScheduleService.getAll (BaseService) |
-| POST | `/schedule/events` | 🆕 | ScheduleService.create |
-| GET | `/schedule/events/:id` | 🆕 | ScheduleService.getById |
-| PUT | `/schedule/events/:id` | 🆕 | ScheduleService.update |
-| DELETE | `/schedule/events/:id` | 🆕 | ScheduleService.delete |
-| PATCH | `/schedule/events/:id/reschedule` | 🆕 | ScheduleService.reschedule |
+| GET | `/schedule/events` | 🗑️ file đã xoá | `schedule.service.ts` |
+| POST | `/schedule/events` | 🗑️ file đã xoá | `schedule.service.ts` |
+| GET | `/schedule/events/:id` | 🗑️ file đã xoá | `schedule.service.ts` |
+| PUT | `/schedule/events/:id` | 🗑️ file đã xoá | `schedule.service.ts` |
+| DELETE | `/schedule/events/:id` | 🗑️ file đã xoá | `schedule.service.ts` |
+| PATCH | `/schedule/events/:id/reschedule` | 🗑️ file đã xoá | `schedule.service.ts` |
 
-### B.4 Parent Notifications `/parent-notifications/*`
+> `git rm src/services/schedule.service.ts` — consumer duy nhất trước đó là dòng re-export ở `services/index.ts` (đã bỏ). Lịch học thật dùng `class-schedule.service.ts` (xem B.5).
+
+### B.4 Parent Notifications `/parent-notifications/*` — 🗑️ DEAD CODE
 | Method | Endpoint | Status | Web Service |
 |--------|----------|--------|-------------|
-| POST | `/parent-notifications/send` | 🆕 | parentNotificationService.send |
-| POST | `/parent-notifications/assignment-reminder` | 🆕 | parentNotificationService.sendAssignmentReminder |
-| POST | `/parent-notifications/live-session-reminder` | 🆕 | parentNotificationService.sendLiveSessionReminder |
-| GET | `/parent-notifications/history` | 🆕 | parentNotificationService.getHistory |
-| GET | `/parent-notifications/stats` | 🆕 | parentNotificationService.getStats |
+| POST | `/parent-notifications/send` | 🗑️ file đã xoá | parentNotificationService |
+| POST | `/parent-notifications/assignment-reminder` | 🗑️ file đã xoá | parentNotificationService |
+| POST | `/parent-notifications/live-session-reminder` | 🗑️ file đã xoá | parentNotificationService |
+| GET | `/parent-notifications/history` | 🗑️ file đã xoá | parentNotificationService |
+| GET | `/parent-notifications/stats` | 🗑️ file đã xoá | parentNotificationService |
 
-### B.5 Class Schedules `/class-schedules/*`
+> `git rm src/services/parent-notification.service.ts src/hooks/queries/use-parent-notifications.ts` — grep cho thấy **0 consumer** ngoài chính 2 file đó.
+
+### B.5 Class Schedules `/class-schedules/*` — ⚠️ GIỮ LẠI (còn consumer thật)
 | Method | Endpoint | Status | Web Service |
 |--------|----------|--------|-------------|
-| GET | `/class-schedules` | 🆕 | classScheduleService.getSchedules |
-| GET | `/class-schedules/:id` | 🆕 | classScheduleService.getSchedule |
-| POST | `/class-schedules` | 🆕 | classScheduleService.createSchedule |
-| PUT | `/class-schedules/:id` | 🆕 | classScheduleService.updateSchedule |
-| DELETE | `/class-schedules/:id` | 🆕 | classScheduleService.deleteSchedule |
-| GET | `/class-schedules/my` | 🆕 | classScheduleService.getMySchedules |
-| GET | `/class-schedules/teacher` | 🆕 | classScheduleService.getTeacherSchedules |
+| GET | `/class-schedules` | ⚠️ chưa xác minh | classScheduleService.getSchedules |
+| GET | `/class-schedules/:id` | ⚠️ chưa xác minh | classScheduleService.getSchedule |
+| POST | `/class-schedules` | ⚠️ chưa xác minh | classScheduleService.createSchedule |
+| PUT | `/class-schedules/:id` | ⚠️ chưa xác minh | classScheduleService.updateSchedule |
+| DELETE | `/class-schedules/:id` | ⚠️ chưa xác minh | classScheduleService.deleteSchedule |
+| GET | `/class-schedules/my` | ⚠️ chưa xác minh | classScheduleService.getMySchedules |
+| GET | `/class-schedules/teacher` | ⚠️ chưa xác minh | classScheduleService.getTeacherSchedules |
 
-> Backend implement dưới path khác: `/classes/:classId/schedules` (sessionService). Web có 2 service trùng chức năng.
+> **KHÔNG xoá ở Phase 0**: `useMySchedules` (từ `hooks/queries/use-class-schedule.ts`) đang được dùng thật ở `src/app/(app)/home/page.tsx:17` và `src/app/(app)/schedule/page.tsx:14`. Backend implement dưới path khác (`/classes/:classId/schedules` — `sessionService`). **Cần thống nhất một contract ở vòng sau** — đây là nợ kỹ thuật đã ghi nhận, không phải dead code.
 
-### B.6 Teacher Dashboard `/teacher/*`
+### B.6 Teacher Dashboard `/teacher/*` — 🗑️ DEAD CODE
 | Method | Endpoint | Status | Web Service |
 |--------|----------|--------|-------------|
-| GET | `/teacher/stats` | 🆕 | useTeacherStats |
-| GET | `/teacher/courses` | 🆕 | useTeacherCourses |
-| GET | `/teacher/activity` | 🆕 | useTeacherRecentActivity |
-| GET | `/teacher/analytics` | 🆕 | useTeacherAnalytics |
-| GET | `/teacher/assignments` | 🆕 | useTeacherAssignments |
-| GET | `/teacher/exams` | 🆕 | useTeacherExams |
+| GET | `/teacher/stats` | 🗑️ file đã xoá | useTeacherStats |
+| GET | `/teacher/courses` | 🗑️ file đã xoá | useTeacherCourses |
+| GET | `/teacher/activity` | 🗑️ file đã xoá | useTeacherRecentActivity |
+| GET | `/teacher/analytics` | 🗑️ file đã xoá | useTeacherAnalytics |
+| GET | `/teacher/assignments` | 🗑️ file đã xoá | useTeacherAssignments |
+| GET | `/teacher/exams` | 🗑️ file đã xoá | useTeacherExams |
 
-### B.7 Các endpoint web-only khác
+> `git rm src/hooks/queries/use-teacher.ts` — `grep -rn "use-teacher" src/` → **0 kết quả** (không file nào import, cũng không re-export ở `hooks/queries/index.ts`).
+
+### B.7 Các endpoint web-only khác — sau Phase 0
 | Method | Endpoint | Status | Web Service |
 |--------|----------|--------|-------------|
-| GET | `/live/rooms/:roomName/token` | 🆕 | livestreamClassroomService.getRoomToken |
-| POST | `/auth/select-org` | 🆕 | meet/auth.ts login() |
-| GET | `/lessons/:lessonId/quizzes` | 🆕 | quizService.getByLesson |
-| GET | `/sessions/:sessionId/quizzes` | 🆕 | quizService.getBySession |
-| POST | `/quizzes/:quizId/trigger` | 🆕 | quizService.trigger |
-| GET | `/videos/:id` | 🆕 | videoService.getVideo (dùng trong use-course-player) |
-| GET | `/videos` | 🆕 | videoService.listVideos |
-| GET | `/videos/processing` | 🆕 | videoService.getProcessingQueue |
-| GET | `/videos/upload/:uploadId/presigned-url` | 🆕 | videoService.getPresignedUrl (contract cũ) |
-| POST | `/videos/upload/:uploadId/chunks/:chunkIndex` | 🆕 | videoService.completeChunk (contract cũ) |
-| POST | `/videos/upload/:uploadId/complete` | 🆕 | videoService.completeUpload (contract cũ) |
-| GET | `/hls/:videoId/master.m3u8` | 🆕 | videoService.getMasterPlaylist |
+| GET | `/live/rooms/:roomName/token` | ✅ đã map → `POST /livestream/:id/join` | livestreamClassroomService.getRoomToken |
+| GET | `/lessons/:lessonId/quizzes` | ⏸️ KHÔNG ĐỤNG — backend đang thêm song song | quizService.getByLesson |
+| POST | `/auth/select-org` | ⏸️ KHÔNG ĐỤNG — backend đang thêm song song | `src/lib/meet/auth.ts` |
+| GET | `/sessions/:sessionId/quizzes` | 🗑️ đã xoá method | quizService.getBySession |
+| POST | `/quizzes/:quizId/trigger` | 🗑️ đã xoá method | quizService.trigger |
+| GET | `/videos/:id` | 🗑️ file đã xoá | `video.service.ts` |
+| GET | `/videos` | 🗑️ file đã xoá | `video.service.ts` |
+| GET | `/videos/processing` | 🗑️ file đã xoá | `video.service.ts` |
+| GET | `/videos/upload/:uploadId/presigned-url` | 🗑️ file đã xoá | `video.service.ts` |
+| POST | `/videos/upload/:uploadId/chunks/:chunkIndex` | 🗑️ file đã xoá | `video.service.ts` |
+| POST | `/videos/upload/:uploadId/complete` | 🗑️ file đã xoá | `video.service.ts` |
+| GET | `/hls/:videoId/master.m3u8` | 🗑️ file đã xoá | `video.service.ts` |
 
-> ⚠️ `video.service.ts` dùng contract upload cũ khác với `video-upload.service.ts` (backend chỉ hỗ trợ `/videos/upload/presigned-urls` + `/chunk-complete`). `GET /videos/:id` + `GET /videos` cũng không có trong router — cần kiểm tra có gây lỗi trên Course Player không.
+> `git rm src/services/video.service.ts` — contract cũ (`GET /videos/:id`, `/videos`, `/videos/processing`, `/videos/upload/:uploadId/*`) **không tồn tại route nào** trong `backend/internal/router/video_upload_router.go` (router thật dùng `/videos/upload/{init,presigned-urls,chunk-complete,complete}` + `/videos/upload/:upload_id/{status,resume,reprocess}`).
+>
+> Consumer duy nhất là `src/hooks/use-course-player.ts` (hook `useVideo` — grep cho thấy nó **không có consumer nào**) và dòng re-export ở `services/index.ts`. Đã xoá cả 3.
+>
+> **Đường phát video thật của Course Player** là `hlsService` → `GET /hls/:upload_id/info` (qua `video-upload.service.ts`), không phải `video.service.ts`.
+>
+> ⏸️ **`GET /lessons/:lessonId/quizzes` và `POST /auth/select-org`**: chỉ thị Phase 0 yêu cầu **không đụng** 2 endpoint này vì backend đang thêm song song; sẽ bàn giao ở vòng sau.
 
 ---
 
@@ -954,26 +974,49 @@
 | Health Check | 1 | 0 | 1 (web không cần) |
 | **Tổng Phần A** | **447** | **~409** | **~38** |
 
-### Web-only endpoints (Phần B)
+### Web-only endpoints (Phần B) — sau Phase 0
 
-| Nhóm | Số endpoint | Mô tả |
-|------|-------------|-------|
-| Live Sessions | 10 | Backend chưa register |
-| LiveKit | 3 | Backend chưa register |
-| Schedule Events | 6 | Backend chưa register |
-| Parent Notifications | 5 | Backend chưa register |
-| Class Schedules | 7 | Backend có path khác |
-| Teacher Dashboard | 6 | Backend chưa register |
-| Quiz lesson/session/trigger | 3 | Backend chưa register |
-| Live room token | 1 | Backend chưa register |
-| Auth select-org | 1 | Backend chưa register |
-| Video contract cũ | 7 | Backend không hỗ trợ path này |
-| **Tổng Phần B** | **~49** | **Rủi ro 404** |
+| Nhóm | Trước | Sau | Trạng thái |
+|------|-------|-----|-----------|
+| Live Sessions | 10 | 7 | ✅ map sang `/livestream/*` (7), 🗑️ xoá 3 method |
+| LiveKit | 3 | 0 | 🗑️ dead code (grep 0 call site) |
+| Schedule Events | 6 | 0 | 🗑️ xoá `schedule.service.ts` |
+| Parent Notifications | 5 | 0 | 🗑️ xoá service + hook |
+| Teacher Dashboard | 6 | 0 | 🗑️ xoá `use-teacher.ts` |
+| Class Schedules | 7 | 7 | ⚠️ **giữ** — còn consumer thật (`useMySchedules`), cần thống nhất contract |
+| Quiz session/trigger | 2 | 0 | 🗑️ xoá 2 method khỏi `quiz.service.ts` |
+| Quiz lesson | 1 | 1 | ⏸️ không đụng (backend đang thêm) |
+| Live room token | 1 | 1 | ✅ map sang `POST /livestream/:id/join` |
+| Auth select-org | 1 | 1 | ⏸️ không đụng (backend đang thêm) |
+| Video contract cũ | 7 | 0 | 🗑️ xoá `video.service.ts` |
+| **Tổng Phần B** | **49** | **17** | **32 endpoint đã xử lý** |
+
+> Trong 17 endpoint còn lại: **8 đã map sang path backend có thật** (không còn rủi ro 404), 7 là nợ contract (`/class-schedules/*`), 2 chờ backend (`/lessons/:id/quizzes`, `/auth/select-org`).
 
 ### Ghi chú quan trọng
-1. **4 module trong API_DOCUMENTATION.md không được register trong router** (`/live-sessions`, `/livekit`, `/schedule/events`, `/parent-notifications`) → web gọi sẽ 404 trừ khi backend implement. Cần đối chiếu lại.
+1. **Phase 0 (2026-09-15) đã dọn Phần B**: 4 module dead code đã xoá hẳn (`/livekit`, `/schedule/events`, `/parent-notifications`, `/teacher/*`), cùng `video.service.ts` (contract cũ). Các file đã xoá: xem mục "File đã xoá ở Phase 0" bên dưới.
 2. **Exercises & Contests** là module mới register trong router nhưng **chưa có trong API_DOCUMENTATION.md** — nên bổ sung doc backend.
 3. **Coins admin** (`/coins/admin/*`), **quiz duplicate/statistics/bulk**, **notification send** — backend có, web chưa dùng.
-4. `classScheduleService` (`/class-schedules/*`) trùng chức năng với `sessionService` (`/classes/:classId/schedules`) — nên thống nhất một contract.
-5. `video.service.ts` dùng contract upload/HLS cũ — nên thay bằng `video-upload.service.ts` + `hls.service.ts`.
+4. `classScheduleService` (`/class-schedules/*`) trùng chức năng với `sessionService` (`/classes/:classId/schedules`) — **nợ kỹ thuật đã ghi nhận**, cần thống nhất một contract ở vòng sau.
+5. ✅ `video.service.ts` (contract upload/HLS cũ) **đã xoá** ở Phase 0 — Course Player dùng `hlsService` (`GET /hls/:upload_id/info`) qua `video-upload.service.ts`.
 6. `DELETE /teachers/:id` đang **public (không auth)** trong `teacher_router.go` — cảnh báo bảo mật.
+
+### File đã xoá ở Phase 0
+| File | Lý do |
+|------|-------|
+| `src/services/video.service.ts` | Contract cũ, backend không có route nào khớp; 0 consumer |
+| `src/services/schedule.service.ts` | `/schedule/events/*` không tồn tại; 0 consumer |
+| `src/services/parent-notification.service.ts` | `/parent-notifications/*` không tồn tại; 0 consumer |
+| `src/hooks/queries/use-parent-notifications.ts` | Hook của service trên; 0 consumer |
+| `src/hooks/queries/use-teacher.ts` | `/teacher/*` không tồn tại; 0 consumer |
+
+> Method đã xoá (không xoá file): `quizService.getBySession`, `quizService.trigger`, `liveSessionService.sendReminder`, `liveSessionService.getUpcoming`, `liveSessionService.uploadAttachments`, `useVideo`, `useUpcomingLiveSessions`, `useSendLiveSessionReminder`.
+
+### Verify gates Phase 0 (đã chạy)
+```
+npm run typecheck          → exit 0
+npm run lint               → 0 error, 18 warning (toàn bộ là <img>/alt-text có sẵn)
+npx vitest run             → 19 files / 95 tests passed
+next build                 → BỎ QUA: dev server đang chiếm cổng 3000 (node.exe PID 32020)
+```
+

@@ -115,12 +115,6 @@ export const livestreamClassroomService = {
       .post<{ message: string; data: LivestreamSession }>(`/livestream/${id}/end`, {})
       .then((r) => r.data.data),
 
-  // Room token
-  getRoomToken: (roomName: string) =>
-    api
-      .post<{ message: string; data: { token: string } }>(`/live/rooms/${roomName}/token`, {})
-      .then((r) => r.data.data),
-
   // Participants
   getParticipants: (sessionId: string) =>
     api

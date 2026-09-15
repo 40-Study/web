@@ -7,6 +7,16 @@ interface LoadingScreenProps {
   text?: string;
   className?: string;
   fullScreen?: boolean;
+  /**
+   * Nền tối cho route group `(live)` (phòng học dùng `bg-gray-950`).
+   *
+   * Phải là prop chứ không thể truyền class từ ngoài: `cn` là `twMerge`, và
+   * `bg-gradient-to-br` (nhóm `bg-image`) với `bg-gray-950` (nhóm `bg-color`)
+   * khác nhóm nên **cả hai cùng sống sót** — gradient vẫn vẽ đè lên nền tối.
+   * Chữ cũng vậy: `<p>` con tự mang `text-muted-foreground`, class truyền từ
+   * cha không thắng được (Phase 0 vòng 3, M-3).
+   */
+  tone?: "default" | "dark";
 }
 
 export function LoadingScreen({
@@ -14,11 +24,19 @@ export function LoadingScreen({
   text = "Đang tải...",
   className,
   fullScreen = true,
+  tone = "default",
 }: LoadingScreenProps) {
+  const isDark = tone === "dark";
+
   return (
     <div
       className={cn(
-        "flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5",
+        "flex items-center justify-center",
+        isDark
+          ? // `bg-none` đứng trước `bg-gray-950` để xoá hẳn `background-image` của
+            // gradient — `background-image` luôn vẽ đè lên `background-color`.
+            "bg-none bg-gray-950"
+          : "bg-gradient-to-br from-background via-background to-primary/5",
         fullScreen && "min-h-screen",
         className
       )}
@@ -30,7 +48,12 @@ export function LoadingScreen({
         {variant === "pulse" && <PulseLoader />}
 
         {text && (
-          <p className="text-sm font-medium text-muted-foreground animate-pulse">
+          <p
+            className={cn(
+              "text-sm font-medium animate-pulse",
+              isDark ? "text-gray-300" : "text-muted-foreground"
+            )}
+          >
             {text}
           </p>
         )}

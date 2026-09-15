@@ -13,8 +13,6 @@ interface LoginData {
   completed: boolean;
   session_token?: string;
   roles?: { id: string; type: string; role_name: string; display_name: string }[];
-  requires_org_selection?: boolean;
-  organizations?: { id: string; name: string }[];
   access_token?: string;
   refresh_token?: string;
   user?: User;
@@ -64,13 +62,25 @@ export async function login(email: string, password: string): Promise<void> {
   const data = loginRes.data;
 
   if (!data.completed) {
-    // Step 2: Select first role
+    // Step 2: Select first role.
+    //
+    // `select-role` LUÔN trả `completed: true` (`completeLoginUnified` phía
+    // backend), nên đăng nhập kết thúc ở đây.
+    //
+    // Vòng 4: bước gọi `select-org` đã bị XOÁ — nó là code chết (điều kiện
+    // `!profileData.completed` không bao giờ đúng), gửi `session_token` mà
+    // backend đã bỏ khỏi DTO, và nhánh `else if` gọi `select-org` KHÔNG kèm
+    // `organization_id` — tức yêu cầu chuyển về "Độc lập". Chỉ cần một thay đổi
+    // khiến `completed` có lúc bằng `false` là nhánh đó âm thầm xoá `active_org`
+    // của người vừa đăng nhập. Đổi tổ chức, nếu cần, phải là một hành động SAU
+    // đăng nhập (gọi khi đã có cookie, kèm `organization_id`), không phải một
+    // bước trong luồng login.
     if (!data.session_token || !data.roles?.length) {
       throw new Error('No session token or roles available');
     }
 
     const firstRole = data.roles[0];
-    const profileRes = await request<LoginResponse>('/auth/select-role', {
+    await request<LoginResponse>('/auth/select-role', {
       method: 'POST',
       body: JSON.stringify({
         session_token: data.session_token,
@@ -78,28 +88,6 @@ export async function login(email: string, password: string): Promise<void> {
         role_type: firstRole.type,
       }),
     });
-
-    const profileData = profileRes.data;
-
-    if (!profileData.completed) {
-      // Step 3: Select first org (or none)
-      if (profileData.requires_org_selection && profileData.organizations?.length) {
-        await request<LoginResponse>('/auth/select-org', {
-          method: 'POST',
-          body: JSON.stringify({
-            session_token: profileData.session_token,
-            organization_id: profileData.organizations[0].id,
-          }),
-        });
-      } else if (profileData.session_token) {
-        await request<LoginResponse>('/auth/select-org', {
-          method: 'POST',
-          body: JSON.stringify({
-            session_token: profileData.session_token,
-          }),
-        });
-      }
-    }
   }
 
   // Cookies are set by the backend via Set-Cookie headers automatically

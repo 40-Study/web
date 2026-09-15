@@ -69,6 +69,11 @@ import type { Section } from "@/types/section";
 import type { Lesson } from "@/types/lesson";
 import { AddContentModal, type ContentData } from "@/components/teacher/add-content-modal";
 import { useCreateLiveSession } from "@/hooks/queries/use-live-sessions";
+import { useAuthStore } from "@/stores/auth.store";
+import { useClasses } from "@/hooks/queries/use-classes";
+import { lessonContentKeys } from "@/hooks/queries/use-lesson-content";
+import { submitLivestreamContent } from "@/lib/livestream";
+import { LIVESTREAM_NOT_READY_HINT, resolveLivestreamRoomHref } from "@/lib/lesson-content-link";
 
 // ─── Content type config ────────────────────────────────────────────────────
 
@@ -333,6 +338,12 @@ function LessonContentsPanel({
               {contents.map((c) => {
                 const cfg = getContentConfig(c.type);
                 const Icon = cfg.icon;
+                // M-6: hàng livestream mở theo `livestream_session_id` (id PHIÊN),
+                // không phải `c.id` (id lesson_content) — hai id khác nhau nên
+                // `/rooms/${c.id}` luôn join hỏng. `null` = phiên chưa sẵn sàng
+                // → hàng không bấm được, xem `resolveLivestreamRoomHref`.
+                const livestreamHref =
+                  c.type === "livestream" ? resolveLivestreamRoomHref(c) : null;
                 const handleViewContent = () => {
                   if (c.type === "video") {
                     // Open video in preview modal or new tab
@@ -353,7 +364,9 @@ function LessonContentsPanel({
                       toast.info("Video chưa được upload hoặc đang xử lý");
                     }
                   } else if (c.type === "livestream") {
-                    window.open(`/rooms/${c.id}`, "_blank");
+                    if (livestreamHref) {
+                      window.open(livestreamHref, "_blank");
+                    }
                   } else if (c.type === "exercise" && c.exercise_id) {
                     window.open(`/exercises/${c.exercise_id}`, "_blank");
                   }
@@ -363,9 +376,19 @@ function LessonContentsPanel({
                     <div className={cn("w-5 h-5 rounded flex items-center justify-center shrink-0", cfg.bg, cfg.color)}>
                       <Icon className="w-3 h-3" />
                     </div>
+                    {/*
+                      M-6: phiên live chưa sẵn sàng (`livestream_session_id` null)
+                      → vô hiệu hoá hàng thay vì mở sai phòng. Không dùng `c.id`.
+                    */}
                     <button
                       onClick={handleViewContent}
-                      className="flex-1 min-w-0 text-left"
+                      disabled={c.type === "livestream" && !livestreamHref}
+                      title={
+                        c.type === "livestream" && !livestreamHref
+                          ? LIVESTREAM_NOT_READY_HINT
+                          : undefined
+                      }
+                      className="flex-1 min-w-0 text-left disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <p className="text-xs font-medium truncate hover:text-primary-600">{c.title}</p>
                       <p className="text-[10px] text-muted-foreground">
@@ -427,6 +450,7 @@ export default function CourseDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const courseId = params.id;
+  const queryClient = useQueryClient();
 
   const { data: course, isLoading: courseLoading } = useCourse(courseId);
   const { data: sectionsRaw = [], isLoading: sectionsLoading } = useSections(courseId);
@@ -459,6 +483,25 @@ export default function CourseDetailPage() {
 
   // Live session mutation
   const createLiveSession = useCreateLiveSession();
+
+  // Chặn sớm khi chưa đăng nhập. KHÔNG còn dùng để gửi `host_id`: backend tự lấy
+  // host từ access token (`LivestreamHandler.Create`), `CreateLivestreamDTO` đã
+  // bỏ hẳn field đó (M-5). Nếu token thiếu, API trả 401 và `onError` của mutation
+  // đã báo lỗi thật; guard này chỉ để khỏi gọi API chắc chắn hỏng.
+  const teacherId = useAuthStore((s) => s.user?.id);
+
+  // Danh sách lớp của khoá — chỉ tải khi modal thêm nội dung đang mở (ô chọn lớp
+  // của buổi live cần), tránh thêm request cho mọi lần vào trang.
+  //
+  // M-2: phải truyền cả `isLoading`/`isError` xuống modal. Trước đây chỉ lấy
+  // `data`, nên 3 trạng thái khác hẳn nhau (đang tải / lỗi / khoá chưa có lớp)
+  // đều ra `[]` → nút gửi xám im lặng, không một chữ giải thích.
+  const {
+    data: courseClasses = [],
+    isLoading: classesLoading,
+    isError: classesError,
+    refetch: refetchClasses,
+  } = useClasses(courseId, { enabled: addContentModal });
 
   // Section form
   const [sectionTitle, setSectionTitle] = useState("");
@@ -677,20 +720,45 @@ export default function CourseDetailPage() {
         }
         toast.success("Đã thêm video");
       } else if (data.type === "livestream") {
-        await createLiveSession.mutateAsync({
-          course_id: courseId,
-          lesson_id: currentLessonId || undefined,
-          title: data.title,
-          description: data.description,
-          scheduled_date: data.date,
-          start_time: data.startTime,
-          duration_minutes: data.duration,
-          platform: data.platform,
-          custom_link: data.customLink,
-          enable_reminder: data.enableReminder,
-          enable_recording: data.enableRecording,
-        });
-        toast.success("Đã tạo buổi live");
+        // Phase 0 vòng 3 (M-1): buổi live tạo từ TRONG một bài học phải xuất hiện
+        // trong danh sách nội dung của bài học đó — đi đúng đường nhánh video
+        // đang dùng: tạo `lesson_content` type `livestream` trước, lấy id rồi
+        // truyền vào `lesson_content_id` của `POST /livestream`.
+        //
+        // `class_id` là bắt buộc ở backend; modal đã chặn khi không xác định được
+        // lớp (`data.classId === null`) và nói rõ lý do, nên ở đây chỉ cần thoát.
+        if (!teacherId) {
+          toast.error("Không xác định được giáo viên đang đăng nhập");
+          return;
+        }
+        if (!data.classId) return;
+
+        const result = await submitLivestreamContent(
+          data,
+          {
+            courseId,
+            classId: data.classId,
+            // `currentLessonId` là id **lesson** — chỉ dùng để tạo lesson_content,
+            // không bao giờ truyền thẳng vào `lesson_content_id`.
+            lessonId: currentLessonId,
+          },
+          {
+            createLessonContent: (dto) =>
+              lessonContentService.createContent(currentLessonId || "", dto),
+            createSession: (dto) => createLiveSession.mutateAsync(dto),
+            deleteLessonContent: (contentId) =>
+              lessonContentService.deleteContent(currentLessonId || "", contentId),
+          }
+        );
+
+        // M-4: lỗi API thật đã được `useCreateLiveSession.onError` toast kèm
+        // message; ở đây không báo thêm toast chung chung nữa.
+        if (!result.created) return;
+
+        // Buổi live nằm trong bài học thì danh sách nội dung phải thấy nó ngay.
+        if (result.lessonContentId && currentLessonId) {
+          queryClient.invalidateQueries({ queryKey: lessonContentKeys.contents(currentLessonId) });
+        }
       } else if (data.type === "exercise") {
         if (data.exerciseType === "quiz" && data.quizQuestions) {
           const { quizService } = await import("@/services/quiz.service");
@@ -946,6 +1014,12 @@ export default function CourseDetailPage() {
         onOpenChange={setAddContentModal}
         onSubmit={handleAddContent}
         lessonId={currentLessonId || ""}
+        courseClasses={courseClasses}
+        classesLoading={classesLoading}
+        classesError={classesError}
+        onRetryClasses={() => {
+          void refetchClasses();
+        }}
         isLoading={isUploading}
         uploadProgress={uploadProgress}
         uploadStatus={uploadStatus}
