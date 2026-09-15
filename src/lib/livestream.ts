@@ -17,6 +17,7 @@
  */
 
 import type { CreateLiveSessionDTO } from "@/services/live-session.service";
+import { ApiError } from "@/lib/errors";
 
 /** Số lớp của khoá từ mức này trở lên thì giáo viên BẮT BUỘC chọn lớp. */
 export const CLASS_SELECTION_THRESHOLD = 2;
@@ -134,6 +135,13 @@ export interface LivestreamSubmitDeps {
  * `useCreateLiveSession.onError` đã toast lỗi thật kèm message, ném tiếp sẽ
  * khiến `catch` ở trang bắn thêm toast chung chung (M-4). Thay vào đó
  * `lesson_content` vừa tạo được gỡ để bài học không còn mục live mồ côi.
+ *
+ * **Giới hạn đã biết (L-4):** hai lời gọi API không nằm trong một giao dịch, nên
+ * việc gỡ chỉ đúng khi `createSession` **trả lỗi HTTP rõ ràng** — khi đó chắc chắn
+ * phiên chưa tồn tại. Timeout/mất phản hồi SAU khi server đã tạo phiên thì web
+ * không thể phân biệt được, và lúc đó cố tình KHÔNG gỡ (xem comment trong
+ * `catch`). Chiều ngược lại cũng hở: xoá hàng nội dung trong bài học không xoá
+ * phiên live tương ứng.
  */
 export async function submitLivestreamContent(
   input: LivestreamFormInput,
@@ -157,8 +165,22 @@ export async function submitLivestreamContent(
       })
     );
     return { created: true, lessonContentId };
-  } catch {
-    if (lessonId && lessonContentId) {
+  } catch (error) {
+    /*
+      L-4: CHỈ dọn khi server trả lỗi HTTP rõ ràng (4xx/5xx) — lúc đó chắc chắn
+      phiên chưa được tạo.
+
+      `NetworkError` (không có response: timeout, mạng đứt) rơi vào vùng mù:
+      server có thể ĐÃ tạo phiên xong rồi phản hồi mất. Hai lời gọi API không có
+      giao dịch chung nên web không thể biết phiên có tồn tại hay không; xoá
+      `lesson_content` lúc này để lại một phiên live còn sống trỏ vào bản ghi đã
+      bị xoá. Thà giữ một mục nội dung mồ côi (giáo viên xoá tay được) hơn là âm
+      thầm phá dữ liệu. Dứt điểm phải là backend nhận cả hai trong một
+      endpoint/giao dịch, hoặc dọn định kỳ phiên có `lesson_content_id` mồ côi.
+    */
+    const clearlyFailed = error instanceof ApiError;
+
+    if (clearlyFailed && lessonId && lessonContentId) {
       // Best-effort: mục mồ côi không nên chặn luồng báo lỗi chính.
       try {
         await deps.deleteLessonContent(lessonContentId);
@@ -167,6 +189,7 @@ export async function submitLivestreamContent(
         console.warn("[livestream] Không gỡ được lesson_content mồ côi:", lessonContentId);
       }
     }
+
     return { created: false, lessonContentId };
   }
 }

@@ -1,7 +1,7 @@
 /**
  * Phase 0 review — finding #1 (không tự lấy lớp đầu tiên) và #2 (không mất
  * field im lặng); vòng 3 — M-1 (gắn buổi live vào lesson_content) và M-5
- * (bỏ `host_id` đã chết ở backend).
+ * (bỏ `host_id` đã chết ở backend); vòng 4 — L-4 (chỉ rollback khi lỗi rõ ràng).
  *
  * Test thuần logic, không render: nguồn sự thật cho luật chọn lớp, cho payload
  * gửi lên `POST /livestream` (`dto.CreateLivestreamDTO`), và cho thứ tự gọi API
@@ -17,6 +17,7 @@ import {
   submitLivestreamContent,
 } from "./livestream";
 import type { LivestreamSubmitDeps } from "./livestream";
+import { NetworkError, NotFoundError, AuthError } from "./errors";
 
 const CLASSES = [
   { id: "class-a", name: "Lớp A" },
@@ -244,9 +245,9 @@ describe("submitLivestreamContent — buổi live phải vào đúng bài học"
     expect(result).toEqual({ created: true, lessonContentId: undefined });
   });
 
-  it("POST /livestream lỗi → KHÔNG ném (tránh toast thứ hai, M-4) và gỡ mục mồ côi", async () => {
+  it("POST /livestream lỗi 5xx rõ ràng → KHÔNG ném (tránh toast thứ hai, M-4) và gỡ mục mồ côi", async () => {
     const deps = makeDeps({
-      createSession: vi.fn().mockRejectedValue(new Error("boom")),
+      createSession: vi.fn().mockRejectedValue(new NotFoundError("boom")),
     });
 
     await expect(submitLivestreamContent(INPUT, LESSON_CTX, deps)).resolves.toEqual({
@@ -254,6 +255,40 @@ describe("submitLivestreamContent — buổi live phải vào đúng bài học"
       lessonContentId: "content-1",
     });
     expect(deps.deleteLessonContent).toHaveBeenCalledWith("content-1");
+  });
+
+  it("lỗi 4xx (401) cũng là lỗi rõ ràng → gỡ mục mồ côi", async () => {
+    const deps = makeDeps({
+      createSession: vi.fn().mockRejectedValue(new AuthError()),
+    });
+
+    await submitLivestreamContent(INPUT, LESSON_CTX, deps);
+    expect(deps.deleteLessonContent).toHaveBeenCalledWith("content-1");
+  });
+
+  // ── L-4: mất phản hồi KHÔNG phải lỗi rõ ràng ─────────────────────────────
+  // Timeout/mạng đứt: server có thể đã tạo phiên rồi phản hồi mất. Xoá
+  // lesson_content lúc này để lại phiên live còn sống trỏ vào bản ghi đã xoá.
+
+  it("NetworkError (timeout/mất phản hồi) → KHÔNG gỡ lesson_content", async () => {
+    const deps = makeDeps({
+      createSession: vi.fn().mockRejectedValue(new NetworkError()),
+    });
+
+    const result = await submitLivestreamContent(INPUT, LESSON_CTX, deps);
+
+    expect(deps.deleteLessonContent).not.toHaveBeenCalled();
+    // Vẫn báo "không tạo được" để trang không hiện trạng thái thành công.
+    expect(result).toEqual({ created: false, lessonContentId: "content-1" });
+  });
+
+  it("lỗi không phải ApiError (lỗi lập trình) → cũng không gỡ, không đoán", async () => {
+    const deps = makeDeps({
+      createSession: vi.fn().mockRejectedValue(new TypeError("unexpected")),
+    });
+
+    await submitLivestreamContent(INPUT, LESSON_CTX, deps);
+    expect(deps.deleteLessonContent).not.toHaveBeenCalled();
   });
 
   it("tạo lesson_content lỗi → NÉM ra ngoài (chưa có gì để dọn)", async () => {
@@ -269,7 +304,7 @@ describe("submitLivestreamContent — buổi live phải vào đúng bài học"
 
   it("dọn mục mồ côi lỗi cũng không ném tiếp (không dội toast thứ ba)", async () => {
     const deps = makeDeps({
-      createSession: vi.fn().mockRejectedValue(new Error("boom")),
+      createSession: vi.fn().mockRejectedValue(new NotFoundError("boom")),
       deleteLessonContent: vi.fn().mockRejectedValue(new Error("dọn hỏng")),
     });
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
