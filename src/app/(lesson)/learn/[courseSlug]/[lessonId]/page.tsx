@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { ChevronRight, Loader2, Star } from "lucide-react";
 import Link from "next/link";
@@ -14,14 +14,18 @@ import {
   QuizResultContent,
   HeartbeatVideo,
   LessonLockedNotice,
+  LessonStudyTools,
+  KeyboardShortcutsDialog,
 } from "@/components/player";
-import type { QuizResultData } from "@/components/player";
+import type { QuizResultData, StudyToolKey } from "@/components/player";
 import { useCourseBySlug } from "@/hooks/queries/use-courses";
 import { useSections } from "@/hooks/queries/use-sections";
 import { useLessonContents } from "@/hooks/queries/use-lesson-content";
 import { useHlsInfo, getVideoUrl } from "@/hooks/use-hls";
 import { useStartQuiz, useSubmitQuiz, useQuizzesByLesson, useSaveQuizAnswer } from "@/hooks/queries/use-quiz";
 import { resolveResumeSeconds, findPreviousLesson } from "@/lib/lesson-lock";
+import { detectPlatform } from "@/lib/keyboard-shortcut-label";
+import type { VideoPlayerHandle } from "@/components/lesson/video-player";
 import type { StartQuizResponse } from "@/services/quiz.service";
 import type { PlayerCourse, PlayerChapter, PlayerLesson } from "@/types/course-player";
 import type { Section } from "@/types/section";
@@ -111,6 +115,52 @@ function VideoLessonContent({
   isLoading?: boolean;
 }) {
   const lessonId = currentLesson?.id ?? "";
+  const sectionId = course.chapters.find((ch) =>
+    ch.lessons.some((l) => l.id === lessonId)
+  )?.id;
+
+  /**
+   * Giây hiện tại được giữ trong một state nhỏ ở đây thay vì trong player: player
+   * tự quản `currentTime` cho UI của nó, còn panel ghi chú/transcript cần đọc để
+   * chọn mốc và cuộn theo cue. `onClockTick` bắn mỗi `timeupdate` nên đây là state
+   * nóng — chỉ những component con thật sự đọc nó mới render lại.
+   */
+  const [currentTime, setCurrentTime] = useState(0);
+  const [activeTool, setActiveTool] = useState<StudyToolKey | null>(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [composeToken, setComposeToken] = useState(0);
+  const [prefill, setPrefill] = useState<{ text: string; timestampSeconds: number } | null>(null);
+  const playerControl = useRef<VideoPlayerHandle | null>(null);
+
+  const seekTo = (seconds: number) => playerControl.current?.seekTo(seconds);
+
+  /**
+   * Phím tắt thuộc về trang (contract §7): `B` mở ô ghi chú tại giây hiện tại,
+   * `N` đóng/mở panel ghi chú. Player đã lo Space/←/→/J/L/↑/↓/</>/C; ở đây chỉ
+   * nhận hai phím mà player không biết vì chúng mở UI của trang.
+   */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || e.metaKey || e.ctrlKey || e.altKey) {
+        return;
+      }
+
+      if (e.code === "KeyB") {
+        e.preventDefault();
+        setActiveTool("notes");
+        setComposeToken((n) => n + 1);
+      } else if (e.code === "KeyN") {
+        e.preventDefault();
+        setActiveTool((tool) => (tool === "notes" ? null : "notes"));
+      } else if (e.code === "Escape") {
+        setActiveTool(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-5 gap-4">
@@ -128,6 +178,10 @@ function VideoLessonContent({
               currentLesson?.lastPositionSeconds,
               currentLesson?.durationSeconds
             )}
+            subtitleUrl={currentLesson?.subtitleUrl}
+            controlRef={playerControl}
+            onClockTick={setCurrentTime}
+            onToggleShortcutsHelp={() => setShortcutsOpen(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white">
@@ -135,6 +189,26 @@ function VideoLessonContent({
           </div>
         )}
       </div>
+
+      {lessonId && (
+        <LessonStudyTools
+          lessonId={lessonId}
+          courseId={course.id}
+          lessonTitle={currentLesson?.title}
+          sectionId={sectionId}
+          subtitleUrl={currentLesson?.subtitleUrl}
+          currentTime={currentTime}
+          onSeek={seekTo}
+          activeTool={activeTool}
+          onToolChange={setActiveTool}
+          composeToken={composeToken}
+          prefill={prefill}
+          onPrefillFromTranscript={(next) => {
+            setPrefill(next);
+            setActiveTool("notes");
+          }}
+        />
+      )}
 
       <div className="bg-white rounded-2xl shadow-sm px-6 pt-5 pb-4">
         <div className="flex items-start justify-between gap-4">
@@ -166,6 +240,12 @@ function VideoLessonContent({
           <PlayerTabs course={course} courseSlug={courseSlug} />
         </div>
       </div>
+
+      <KeyboardShortcutsDialog
+        open={shortcutsOpen}
+        onOpenChange={setShortcutsOpen}
+        platform={detectPlatform()}
+      />
     </div>
   );
 }

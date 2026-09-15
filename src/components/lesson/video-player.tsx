@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback, type MutableRefObject } from "react";
 import Hls from "hls.js";
 import {
   Play,
@@ -37,12 +37,27 @@ interface VideoPlayerProps {
   onTimeUpdate?: (currentTime: number, playbackRate: number, durationSeconds: number) => void;
   /** Bắt đầu phát — hook heartbeat dùng để biết phiên xem thật sự bắt đầu. */
   onPlay?: () => void;
+  /** `?` — mở bảng phím tắt (contract §7). */
+  onToggleShortcutsHelp?: () => void;
   /** Tạm dừng — hook heartbeat gửi ngay thay vì đợi nhịp 10 giây. */
   onPause?: () => void;
   /** Đổi tốc độ phát — heartbeat cần biết để không tính đoạn phát nhanh là tua. */
   onRateChange?: (rate: number) => void;
+  /**
+   * Điều khiển player từ ngoài (panel ghi chú/transcript cần seek tới mốc).
+   * Hook này KHÔNG bắt buộc: player vẫn chạy đủ nếu không truyền.
+   */
+  controlRef?: MutableRefObject<VideoPlayerHandle | null>;
   initialTime?: number;
   className?: string;
+}
+
+/** Lệnh điều khiển từ ngoài — chỉ những gì panel cần, không mở toàn bộ player. */
+export interface VideoPlayerHandle {
+  /** Nhảy tới giây cụ thể (đã clamp theo thời lượng). */
+  seekTo: (seconds: number) => void;
+  /** Phát nếu đang dừng, dừng nếu đang phát. */
+  togglePlay: () => void;
 }
 
 const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
@@ -64,6 +79,8 @@ export function VideoPlayer({
   onPlay,
   onPause,
   onRateChange,
+  onToggleShortcutsHelp,
+  controlRef,
   initialTime = 0,
   className,
 }: VideoPlayerProps) {
@@ -180,6 +197,35 @@ export function VideoPlayer({
     if (video) video.currentTime = Math.max(0, video.currentTime - 10);
   }, []);
 
+  /**
+   * Nhảy tới giây cụ thể theo yêu cầu từ panel ngoài (ghi chú/transcript).
+   * Clamp theo thời lượng thật để một mốc ghi chú cũ hơn bản video đang phát
+   * không đẩy player ra ngoài cuối file.
+   */
+  const seekTo = useCallback(
+    (seconds: number) => {
+      const video = videoRef.current;
+      if (!video) return;
+      const max = video.duration || duration || seconds;
+      video.currentTime = Math.min(Math.max(0, seconds), max);
+      setCurrentTime(video.currentTime);
+    },
+    [duration]
+  );
+
+  /**
+   * Cầu điều khiển cho panel ngoài. Gán bằng effect (không gán lúc render) để
+   * không mutate ref của người khác trong thân render — React StrictMode gọi
+   * render hai lần và sẽ thấy ref bị ghi khi chưa commit.
+   */
+  useEffect(() => {
+    if (!controlRef) return;
+    controlRef.current = { seekTo, togglePlay };
+    return () => {
+      controlRef.current = null;
+    };
+  }, [controlRef, seekTo, togglePlay]);
+
   const skipForward = useCallback(() => {
     const video = videoRef.current;
     if (video)
@@ -275,9 +321,37 @@ export function VideoPlayer({
     if (video) {
       video.playbackRate = rate;
       setPlaybackRate(rate);
+      onRateChange?.(rate);
     }
     setShowSpeedMenu(false);
-  }, []);
+  }, [onRateChange]);
+
+  /**
+   * Nhảy tương đối theo số giây (âm = lùi). Dùng cho ← → (5s) và J L (10s) —
+   * contract §7. Tua ở đây KHÔNG được tính là đã học: hook heartbeat nhận ra
+   * bước nhảy lớn hơn thời gian thực trôi qua nên mở khoảng mới (contract §1).
+   */
+  const seekBy = useCallback(
+    (offsetSeconds: number) => {
+      const video = videoRef.current;
+      if (!video) return;
+      video.currentTime = Math.min(
+        Math.max(0, video.currentTime + offsetSeconds),
+        video.duration || video.currentTime + offsetSeconds
+      );
+    },
+    []
+  );
+
+  /** Bước tới tốc độ kế tiếp trong PLAYBACK_RATES (contract §7: `,` và `.`). */
+  const stepPlaybackRate = useCallback(
+    (direction: 1 | -1) => {
+      const index = PLAYBACK_RATES.indexOf(playbackRate);
+      const next = index >= 0 ? index + direction : 0;
+      changePlaybackRate(PLAYBACK_RATES[Math.min(Math.max(next, 0), PLAYBACK_RATES.length - 1)]);
+    },
+    [playbackRate, changePlaybackRate]
+  );
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -291,6 +365,7 @@ export function VideoPlayer({
 
       switch (e.code) {
         case "Space":
+        case "KeyK":
           e.preventDefault();
           togglePlay();
           break;
@@ -301,6 +376,26 @@ export function VideoPlayer({
         case "ArrowRight":
           e.preventDefault();
           skipForward();
+          break;
+        case "KeyJ":
+          // Contract §7: J lùi 10 giây.
+          e.preventDefault();
+          seekBy(-10);
+          break;
+        case "KeyL":
+          // Contract §7: L tới 10 giây.
+          e.preventDefault();
+          seekBy(10);
+          break;
+        case "Comma":
+          // Contract §7: `,` giảm tốc độ phát một bậc.
+          e.preventDefault();
+          stepPlaybackRate(-1);
+          break;
+        case "Period":
+          // Contract §7: `.` tăng tốc độ phát một bậc.
+          e.preventDefault();
+          stepPlaybackRate(1);
           break;
         case "ArrowUp":
           e.preventDefault();
@@ -315,6 +410,14 @@ export function VideoPlayer({
           break;
         case "KeyF":
           toggleFullscreen();
+          break;
+        case "Slash":
+          // Contract §7: `?` (Shift + /) mở bảng phím tắt. Trên layout US `?` là
+          // Slash+Shift; chấp nhận cả khi không giữ Shift để bàn phím khác cũng mở được.
+          if (e.shiftKey || e.key === "?") {
+            e.preventDefault();
+            onToggleShortcutsHelp?.();
+          }
           break;
         case "KeyC":
           // Toggle captions
@@ -334,9 +437,12 @@ export function VideoPlayer({
     togglePlay,
     skipBack,
     skipForward,
+    seekBy,
+    stepPlaybackRate,
     changeVolume,
     toggleMute,
     toggleFullscreen,
+    onToggleShortcutsHelp,
   ]);
 
   return (
