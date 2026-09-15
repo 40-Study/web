@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCart, useRemoveFromCart, useClearCart } from "@/hooks/queries/use-cart";
+import { QueryState } from "@/components/common/query-state";
 import { VoucherInput } from "@/components/checkout/voucher-input";
 import type { VoucherValidateResponse } from "@/types/voucher";
 import { cn } from "@/lib/utils";
@@ -24,7 +25,7 @@ export default function CartPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [voucherResult, setVoucherResult] = useState<VoucherValidateResponse | null>(null);
 
-  const { data: cartData, isLoading } = useCart();
+  const { data: cartData, isLoading, isError, error, refetch } = useCart();
   const removeFromCart = useRemoveFromCart();
   const clearCart = useClearCart();
 
@@ -65,6 +66,21 @@ export default function CartPage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
       </div>
+    );
+  }
+
+  // Phase 0: trước đây chỉ có `isLoading`, nên lỗi mạng/API 500 rơi xuống nhánh
+  // "giỏ hàng trống" — người dùng tưởng mất hàng đã thêm. Nay báo lỗi kèm nút thử lại.
+  if (isError) {
+    return (
+      <QueryState
+        isError
+        error={error}
+        onRetry={() => refetch()}
+        className="container max-w-5xl mx-auto px-4 py-16"
+      >
+        {null}
+      </QueryState>
     );
   }
 

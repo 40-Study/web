@@ -26,6 +26,7 @@ import {
   useMarkAsRead,
 } from "@/hooks/queries/use-conversations";
 import { useAuthStore } from "@/stores/auth.store";
+import { QueryState } from "@/components/common/query-state";
 import type { Conversation, Message } from "@/services/conversation.service";
 import { useMarkConversationRead } from "./use-mark-conversation-read";
 
@@ -144,8 +145,20 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { data: convData, isLoading: convLoading } = useConversations();
-  const { data: msgData, isLoading: msgLoading } = useMessages(selectedConvId ?? "", {
+  const {
+    data: convData,
+    isLoading: convLoading,
+    isError: convError,
+    error: convErr,
+    refetch: refetchConversations,
+  } = useConversations();
+  const {
+    data: msgData,
+    isLoading: msgLoading,
+    isError: msgError,
+    error: msgErr,
+    refetch: refetchMessages,
+  } = useMessages(selectedConvId ?? "", {
     page: 1,
     limit: 100,
   });
@@ -197,6 +210,17 @@ export default function MessagesPage() {
               <div className="flex justify-center py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
+            ) : convError ? (
+              // Phase 0: trước đây lỗi API rơi vào nhánh "Chưa có cuộc trò chuyện",
+              // khiến người dùng tưởng hộp thư rỗng thay vì lỗi tải.
+              <QueryState
+                isError
+                error={convErr}
+                onRetry={() => refetchConversations()}
+                className="border-none bg-transparent py-6"
+              >
+                {null}
+              </QueryState>
             ) : conversations.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground py-8">
                 Chưa có cuộc trò chuyện
@@ -260,6 +284,16 @@ export default function MessagesPage() {
                   <div className="flex justify-center py-8">
                     <Loader2 className="h-5 w-5 animate-spin" />
                   </div>
+                ) : msgError ? (
+                  // Phase 0: lỗi tải tin nhắn trước đây hiển thị như khung chat trống.
+                  <QueryState
+                    isError
+                    error={msgErr}
+                    onRetry={() => refetchMessages()}
+                    className="border-none bg-transparent py-6"
+                  >
+                    {null}
+                  </QueryState>
                 ) : (
                   [...messages].reverse().map((msg) => (
                     <MessageBubble
