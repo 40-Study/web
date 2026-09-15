@@ -23,3 +23,4 @@ export { LessonNotesPanel, NOTES_EMPTY_MESSAGE } from "./lesson-notes-panel";
 export { TranscriptPanel } from "./transcript-panel";
 export { LessonQnA, LESSON_QNA_EMPTY_MESSAGE } from "./lesson-qna";
 export { NoteItem } from "./note-item";
+export { LessonLoadError } from "./lesson-load-error";
