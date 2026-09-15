@@ -21,7 +21,15 @@ export interface Enrollment {
 }
 
 export interface UpdateProgressDTO {
-  status: string;
+  /**
+   * KHÔNG gửi field này từ heartbeat (contract §1 — body không có field lạ).
+   * Review vòng 1 (#8, quyết định Q4): server tự tính `status` từ
+   * `watched_pct` và áp luật sticky; client gửi `status` mỗi 10 giây tạo rủi
+   * ro thừa nếu backend lỡ dùng field này thay vì tính lại — dù đúng ý định
+   * hiện tại là bỏ qua giá trị client gửi. Optional để chỉ còn dùng cho
+   * đường cập nhật khác (không phải heartbeat), nếu có.
+   */
+  status?: string;
   progress_percentage?: number;
   video_watched_seconds?: number;
   /** Vị trí hiện tại (giây) — contract §1. */

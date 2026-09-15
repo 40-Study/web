@@ -59,7 +59,6 @@ export function useVideoProgress({
   const [progress, setProgress] = useState<LessonProgressResponse | null>(null);
 
   const rangesRef = useRef<PlayedRange[]>([]);
-  const pendingRef = useRef<PlayedRange[]>([]);
   const lastSampleRef = useRef<{ time: number; at: number } | null>(null);
   const positionRef = useRef(0);
   const durationRef = useRef(0);
@@ -67,18 +66,8 @@ export function useVideoProgress({
   const lessonIdRef = useRef(lessonId);
   const onProgressChangeRef = useRef(onProgressChange);
   const inFlightRef = useRef(false);
-
-  useEffect(() => {
-    lessonIdRef.current = lessonId;
-    // Đổi bài = reset toàn bộ bộ gom, nếu không khoảng của bài cũ sẽ được gửi
-    // lên cho bài mới.
-    rangesRef.current = [];
-    pendingRef.current = [];
-    lastSampleRef.current = null;
-    positionRef.current = 0;
-    durationRef.current = 0;
-    setProgress(null);
-  }, [lessonId]);
+  /** Chặn spam toast mất mạng — mỗi lần heartbeat lỗi (10s/lần) không cần báo lại. */
+  const lastOfflineToastAtRef = useRef(0);
 
   useEffect(() => {
     onProgressChangeRef.current = onProgressChange;
@@ -109,8 +98,11 @@ export function useVideoProgress({
 
     inFlightRef.current = true;
     try {
+      // BLOCKER review vòng 1 (#8, Q4): heartbeat chỉ gửi đúng 3 field contract
+      // §1 — `status` KHÔNG có trong body. Trước đây gửi `status: "in_progress"`
+      // mỗi 10s; nếu backend lỡ áp field này thay vì tự tính lại từ
+      // `watched_pct`, một bài đã `completed` có thể bị đẩy ngược `in_progress`.
       const response = await enrollmentService.updateProgress(lessonIdRef.current, {
-        status: "in_progress",
         position_seconds: payload.position_seconds,
         duration_seconds: payload.duration_seconds,
         played_ranges: payload.played_ranges,
@@ -119,15 +111,45 @@ export function useVideoProgress({
       onProgressChangeRef.current?.(response);
     } catch {
       // Mất mạng: giữ khoảng lại để gửi kèm lần sau, không mất tiến độ.
-      // `justSent` đã bị rút khỏi `rangesRef` trước khi gửi, nên phải cộng cả hai
-      // nguồn — chỉ cộng `rangesRef` là mất đúng khoảng vừa gửi hỏng.
-      const justSent = payload.played_ranges;
-      pendingRef.current = pendingAfterFailure(pendingRef.current, justSent);
-      rangesRef.current = pendingAfterFailure(rangesRef.current, justSent);
+      // `justSent` đã bị rút khỏi `rangesRef` trước khi gửi, nên phải cộng lại
+      // đúng khoảng vừa gửi hỏng — SSOT là `rangesRef`, không có bộ giữ thứ hai
+      // (review vòng 1, #11: `pendingRef` cũ bị ghi nhưng không nơi nào đọc).
+      rangesRef.current = pendingAfterFailure(rangesRef.current, payload.played_ranges);
+
+      // Báo người học biết tiến độ chưa gửi được (review vòng 1, #11:
+      // `notifyProgressOffline` từng được export nhưng không ai gọi). Debounce
+      // 30s để không spam toast mỗi lần heartbeat lỗi (10s/lần).
+      const now = Date.now();
+      if (now - lastOfflineToastAtRef.current > 30_000) {
+        lastOfflineToastAtRef.current = now;
+        notifyProgressOffline();
+      }
     } finally {
       inFlightRef.current = false;
     }
   }, []);
+
+  /**
+   * Đổi bài (BLOCKER review vòng 1, #10): flush khoảng còn lại của bài CŨ
+   * TRƯỚC khi state bị reset cho bài mới. Cleanup của effect này chạy đúng lúc
+   * `lessonId` đổi — trước khi effect setup cho giá trị mới thực thi — nên
+   * `lessonIdRef`/`rangesRef` lúc đó vẫn còn giữ dữ liệu của bài CŨ. Không
+   * flush ở đây thì tối đa 10 giây tiến độ thật (một nhịp heartbeat) mất mỗi
+   * lần bấm "Bài tiếp theo" liên tục.
+   */
+  useEffect(() => {
+    lessonIdRef.current = lessonId;
+    rangesRef.current = [];
+    lastSampleRef.current = null;
+    positionRef.current = 0;
+    durationRef.current = 0;
+    setProgress(null);
+
+    return () => {
+      void send(true);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lessonId]);
 
   const handleTimeUpdate = useCallback(
     (currentTime: number, playbackRate: number, durationSeconds?: number) => {

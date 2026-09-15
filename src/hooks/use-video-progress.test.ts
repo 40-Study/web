@@ -66,7 +66,9 @@ describe("useVideoProgress", () => {
     await waitFor(() => expect(updateProgress).toHaveBeenCalled());
     const [lessonId, payload] = updateProgress.mock.calls[0] as [string, Record<string, unknown>];
     expect(lessonId).toBe("l1");
-    expect(payload.status).toBe("in_progress");
+    // BLOCKER review vòng 1 (#8, Q4): heartbeat chỉ gửi đúng 3 field contract
+    // §1 — không có `status`, server tự tính từ `watched_pct`.
+    expect(payload).not.toHaveProperty("status");
     expect(payload.duration_seconds).toBe(600);
     expect(payload.played_ranges).toEqual([[0, 1]]);
   });
@@ -142,6 +144,31 @@ describe("useVideoProgress", () => {
     expect(ranges.some(([start]) => start >= 119)).toBe(true);
   });
 
+  // Review vòng 1 (#11): `notifyProgressOffline` từng được export nhưng
+  // không nơi nào gọi — mất mạng, người học không nhận được cảnh báo nào.
+  it("gửi thất bại: báo người học qua toast (đã nối notifyProgressOffline)", async () => {
+    const { toast } = await import("sonner");
+    // Test khác trong file này cũng có thể đã gọi toast (mock dùng chung cấp
+    // module) — xoá đếm cũ để chỉ xét lần gọi của chính test này.
+    vi.mocked(toast.warning).mockClear();
+    updateProgress.mockRejectedValueOnce(new Error("offline"));
+
+    const { result } = renderHook(() =>
+      useVideoProgress({ lessonId: "l1", initialPositionSeconds: 0 })
+    );
+
+    act(() => {
+      result.current.handleTimeUpdate(0.25, 1, 600);
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(10_000);
+      await Promise.resolve();
+    });
+
+    expect(toast.warning).toHaveBeenCalledTimes(1);
+  });
+
   it("đọc watched_pct / status từ response của server, không tự đặt completed", async () => {
     const onProgressChange = vi.fn();
     const { result } = renderHook(() =>
@@ -162,7 +189,7 @@ describe("useVideoProgress", () => {
     expect(result.current.progress?.status).toBe("in_progress");
 
     const [, payload] = updateProgress.mock.calls[0] as [string, Record<string, unknown>];
-    expect(payload.status).toBe("in_progress");
+    expect(payload).not.toHaveProperty("status");
     expect(payload).not.toHaveProperty("completed");
   });
 
@@ -194,7 +221,7 @@ describe("useVideoProgress", () => {
     expect(updateProgress).not.toHaveBeenCalled();
   });
 
-  it("đổi bài thì bộ gom được reset — khoảng bài cũ không gửi cho bài mới", async () => {
+  it("đổi bài thì bộ gom được reset cho bài mới — khoảng bài cũ không lẫn vào bài mới", async () => {
     const { result, rerender } = renderHook(
       ({ lessonId }: { lessonId: string }) => useVideoProgress({ lessonId }),
       { initialProps: { lessonId: "l1" } }
@@ -212,6 +239,20 @@ describe("useVideoProgress", () => {
       await Promise.resolve();
     });
 
+    // BLOCKER review vòng 1 (#10): đổi bài giờ FLUSH khoảng còn lại của bài
+    // CŨ ngay lúc đổi, thay vì âm thầm bỏ (mất tối đa 10s tiến độ thật mỗi
+    // lần chuyển bài). Lần gửi này phải là của "l1", không phải "l2".
+    expect(updateProgress).toHaveBeenCalledTimes(1);
+    const [flushedLessonId] = updateProgress.mock.calls[0] as [string, unknown];
+    expect(flushedLessonId).toBe("l1");
+
+    // Sau khi flush, bộ gom của "l2" phải sạch — không tự gửi gì thêm chỉ vì
+    // đổi bài, cho tới khi có mẫu `timeupdate` mới của bài "l2".
+    updateProgress.mockClear();
+    await act(async () => {
+      vi.advanceTimersByTime(10_000);
+      await Promise.resolve();
+    });
     expect(updateProgress).not.toHaveBeenCalled();
   });
 });
