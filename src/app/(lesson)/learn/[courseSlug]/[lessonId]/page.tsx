@@ -16,6 +16,7 @@ import {
   LessonLockedNotice,
   LessonStudyTools,
   KeyboardShortcutsDialog,
+  LessonLoadError,
 } from "@/components/player";
 import type { QuizResultData, StudyToolKey } from "@/components/player";
 import { useCourseBySlug } from "@/hooks/queries/use-courses";
@@ -263,7 +264,12 @@ export default function CourseLessonPage() {
   const [quizResult, setQuizResult] = useState<QuizResultData | null>(null);
   const [quizError, setQuizError] = useState<string | null>(null);
 
-  const { data: apiCourse, isLoading: courseLoading } = useCourseBySlug(courseSlug);
+  const {
+    data: apiCourse,
+    isLoading: courseLoading,
+    isError: courseError,
+    refetch: refetchCourse,
+  } = useCourseBySlug(courseSlug);
   const { data: sections = [], isLoading: sectionsLoading } = useSections(apiCourse?.id ?? "");
   const { data: lessonContents } = useLessonContents(lessonId);
   const lessonVideo = lessonContents?.find((c) => c.type === "video");
@@ -287,6 +293,14 @@ export default function CourseLessonPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+      </div>
+    );
+  }
+
+  if (courseError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <LessonLoadError onRetry={() => refetchCourse()} />
       </div>
     );
   }
@@ -344,7 +358,7 @@ export default function CourseLessonPage() {
     }
     try {
       setQuizError(null);
-      const response = await startQuizMutation.mutateAsync(lessonQuiz.id);
+      const response = await startQuizMutation.mutateAsync({ quizId: lessonQuiz.id });
       setActiveQuiz(response);
     } catch (err: any) {
       setQuizError(err?.message || "Khong the bat dau quiz");
@@ -508,6 +522,17 @@ export default function CourseLessonPage() {
             >
               {startQuizMutation.isPending ? "Dang tai..." : "Bat dau lam bai"}
             </button>
+            {/* Trang riêng (contract §6): cùng bài quiz, thêm chế độ luyện tập
+                không tính điểm — link từ curriculum qua GET /lessons/:id/quizzes
+                đã fetch ở trên (`lessonQuiz`). */}
+            {lessonQuiz?.id && (
+              <Link
+                href={`/quizzes/${lessonQuiz.id}`}
+                className="mt-3 block text-sm text-blue-600 hover:underline"
+              >
+                Mở trang làm bài riêng (có chế độ luyện tập)
+              </Link>
+            )}
           </div>
         </div>
       );
