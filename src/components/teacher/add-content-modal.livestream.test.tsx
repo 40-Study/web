@@ -165,3 +165,69 @@ describe("AddContentModal — chọn lớp cho buổi live (finding #1)", () => 
     expect(screen.getByText("Tự động ghi lại")).toBeTruthy();
   });
 });
+
+/**
+ * M-7: `staleTime` 30 s nên mở lại modal là refetch; refetch hỏng đặt
+ * `classesError` **trong khi cache lớp vẫn còn nguyên**. Trước đây `classesError`
+ * được coi là chân lý nên lỗi refetch xoá mất ô chọn lớp (khoá ≥2 lớp) và banner
+ * nói sai "chưa xác định được lớp" (khoá 1 lớp, nút gửi vẫn bật).
+ */
+describe("AddContentModal — refetch lớp hỏng nhưng cache còn lớp (M-7)", () => {
+  const STALE_PROPS = { classesError: true } as const;
+
+  it("khoá ≥2 lớp: ô chọn lớp VẪN hiện, không hiện banner chặn", async () => {
+    renderModal({ courseClasses: TWO_CLASSES, ...STALE_PROPS });
+    await openLivestreamForm();
+
+    // Ô chọn lớp không bị lỗi refetch xoá mất.
+    expect(screen.getByText("Chọn lớp cho buổi live")).toBeTruthy();
+    // Banner chặn + câu nói sai sự thật đều không được xuất hiện.
+    expect(screen.queryByText("Không tải được danh sách lớp")).toBeNull();
+    expect(screen.queryByText(/chưa xác định được lớp/i)).toBeNull();
+    // Hạ cấp thành banner nhỏ, nói đúng chuyện đang xảy ra.
+    expect(screen.getByText(/đang hiển thị dữ liệu lần trước/i)).toBeTruthy();
+  });
+
+  it("khoá ≥2 lớp: chọn được lớp từ cache rồi gửi bình thường", async () => {
+    const onSubmit = vi.fn();
+    renderModal({ courseClasses: TWO_CLASSES, onSubmit, ...STALE_PROPS });
+    await openLivestreamForm();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Chọn lớp cho buổi live"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText("Lớp B"));
+    });
+
+    expect(isSubmitDisabled(getSubmitButton())).toBe(false);
+    await act(async () => {
+      fireEvent.click(getSubmitButton());
+    });
+
+    const [submitted] = onSubmit.mock.calls[0] as [{ classId?: string | null }];
+    expect(submitted.classId).toBe("class-b");
+  });
+
+  it("khoá 1 lớp: nút gửi vẫn bật, KHÔNG có banner nói 'chưa xác định được lớp'", async () => {
+    renderModal({ courseClasses: ONE_CLASS, ...STALE_PROPS });
+    await openLivestreamForm();
+
+    expect(isSubmitDisabled(getSubmitButton())).toBe(false);
+    // Banner cũ nói sai: lớp nằm sẵn trong cache và đã được tự chọn.
+    expect(screen.queryByText(/chưa xác định được lớp/i)).toBeNull();
+    expect(screen.queryByText(/chọn lớp cho buổi live ở trên/i)).toBeNull();
+  });
+
+  it("banner hạ cấp vẫn có nút thử lại gọi onRetryClasses", async () => {
+    const onRetryClasses = vi.fn();
+    renderModal({ courseClasses: TWO_CLASSES, onRetryClasses, ...STALE_PROPS });
+    await openLivestreamForm();
+
+    // Hai nút "Thử lại" không cùng tồn tại — banner chặn đã biến mất ở nhánh này.
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /thử lại/i }));
+    });
+    expect(onRetryClasses).toHaveBeenCalledTimes(1);
+  });
+});

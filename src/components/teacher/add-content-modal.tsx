@@ -236,21 +236,35 @@ export function AddContentModal({
   const effectiveClassId = hasMultipleClasses ? liveClassId : (courseClasses[0]?.id ?? "");
 
   /**
+   * Cache còn lớp hay không — ranh giới quyết định giữa "lỗi chặn" và "lỗi hạ cấp".
+   *
+   * M-7: `staleTime` 30 s nên mở lại modal là refetch; refetch hỏng đặt
+   * `classesError` **trong khi `courseClasses` vẫn còn nguyên**. Lấy `classesError`
+   * làm chân lý sẽ xoá ô chọn lớp và nói sai rằng "chưa xác định được lớp" —
+   * cùng khuôn lỗi đã sửa cho cart/messages ở vòng 1 (finding #5).
+   */
+  const hasCachedClasses = courseClasses.length > 0;
+
+  /**
    * Lý do chưa xác định được lớp cho buổi live — `null` khi đã xác định xong.
    *
    * M-2: ba trạng thái trước đây đều cho ra `[]` nên nút gửi xám **im lặng**,
    * không chữ nào giải thích. Mỗi trạng thái giờ có một câu riêng, và trạng thái
    * lỗi còn có nút thử lại (không có nó thì đóng/mở lại modal chỉ đọc cache lỗi).
+   *
+   * M-7: câu "chưa xác định được lớp" chỉ được nói khi **cache rỗng thật** —
+   * còn lớp trong cache thì lớp đó vẫn dùng được, nói ngược lại là banner nói sai
+   * sự thật (khoá 1 lớp: nút gửi bật, banner lại bảo chưa có lớp).
    */
-  const classBlockReason: string | null = classesError
-    ? "Không tải được danh sách lớp của khoá học."
-    : classesLoading
-      ? "Đang tải danh sách lớp…"
-      : courseClasses.length === 0
-        ? "Khoá học chưa có lớp nào — tạo lớp trước khi lên lịch buổi live."
-        : hasMultipleClasses && !liveClassId
-          ? "Chọn lớp cho buổi live ở trên để tiếp tục."
-          : null;
+  const classBlockReason: string | null = hasCachedClasses
+    ? hasMultipleClasses && !liveClassId
+      ? "Chọn lớp cho buổi live ở trên để tiếp tục."
+      : null
+    : classesError
+      ? "Không tải được danh sách lớp của khoá học."
+      : classesLoading
+        ? "Đang tải danh sách lớp…"
+        : "Khoá học chưa có lớp nào — tạo lớp trước khi lên lịch buổi live.";
 
   // Exercise state
   const [exerciseType, setExerciseType] = useState<ExerciseType | null>(null);
@@ -655,8 +669,12 @@ export function AddContentModal({
                   Ba trạng thái "chưa có lớp để chọn" được tách bạch (M-2): đang
                   tải → skeleton, tải lỗi → thông báo + thử lại, khoá chưa có lớp
                   → câu hướng dẫn. Trước đây cả ba đều im lặng.
+
+                  M-7: cả ba trạng thái đó chỉ đúng khi cache RỖNG. Refetch hỏng
+                  mà cache còn lớp thì hạ xuống banner nhỏ phía trên, giữ nguyên ô
+                  chọn lớp — không xoá thứ đang dùng được.
                 */}
-                {contentType === "livestream" && classesLoading && (
+                {contentType === "livestream" && classesLoading && !hasCachedClasses && (
                   // Skeleton thuần thị giác — lý do ("Đang tải danh sách lớp…") nằm ở
                   // footer cạnh nút gửi và đã có `role="status"` để trình đọc màn
                   // hình đọc; không lặp lại lần hai trong cùng một dialog.
@@ -666,19 +684,43 @@ export function AddContentModal({
                   </div>
                 )}
 
-                {contentType === "livestream" && !classesLoading && classesError && (
+                {contentType === "livestream" &&
+                  !classesLoading &&
+                  classesError &&
+                  !hasCachedClasses && (
+                    <div
+                      role="alert"
+                      className="flex items-start justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5"
+                    >
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                        <div>
+                          <p className="text-sm font-medium">Không tải được danh sách lớp</p>
+                          <p className="text-xs text-muted-foreground">
+                            Chưa xác định được lớp để gắn buổi live vào.
+                          </p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => onRetryClasses?.()}>
+                        <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                        Thử lại
+                      </Button>
+                    </div>
+                  )}
+
+                {contentType === "livestream" && classesError && hasCachedClasses && (
+                  // M-7: refetch hỏng nhưng cache còn lớp → hạ cấp, KHÔNG chặn.
+                  // Câu chữ nói đúng chuyện đang xảy ra: danh sách đang hiển thị là
+                  // bản cũ, không phải "chưa xác định được lớp".
                   <div
                     role="alert"
-                    className="flex items-start justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5"
+                    className="flex items-start justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800"
                   >
                     <div className="flex items-start gap-2">
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                      <div>
-                        <p className="text-sm font-medium">Không tải được danh sách lớp</p>
-                        <p className="text-xs text-muted-foreground">
-                          Chưa xác định được lớp để gắn buổi live vào.
-                        </p>
-                      </div>
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <p className="text-xs">
+                        Không làm mới được danh sách lớp — đang hiển thị dữ liệu lần trước.
+                      </p>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => onRetryClasses?.()}>
                       <RefreshCw className="mr-1 h-3.5 w-3.5" />
@@ -690,7 +732,7 @@ export function AddContentModal({
                 {contentType === "livestream" &&
                   !classesLoading &&
                   !classesError &&
-                  courseClasses.length === 0 && (
+                  !hasCachedClasses && (
                     <div
                       role="alert"
                       className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800"
@@ -705,7 +747,7 @@ export function AddContentModal({
                     </div>
                   )}
 
-                {hasMultipleClasses && !classesError && (
+                {hasMultipleClasses && (
                   <div>
                     <label className="text-sm font-medium mb-2 block">
                       Lớp học <span className="text-destructive">*</span>
