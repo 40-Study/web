@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCart, useRemoveFromCart, useClearCart } from "@/hooks/queries/use-cart";
 import { QueryState } from "@/components/common/query-state";
+import { AuthError } from "@/lib/errors";
 import { VoucherInput } from "@/components/checkout/voucher-input";
 import type { VoucherValidateResponse } from "@/types/voucher";
 import { cn } from "@/lib/utils";
@@ -61,6 +62,19 @@ export default function CartPage() {
     );
   };
 
+  // Phase 0 fix: trước đây chỉ có `isLoading`, nên lỗi mạng/API 500 rơi xuống nhánh
+  // "giỏ hàng trống" — người dùng tưởng mất hàng đã thêm.
+  //
+  // React Query v5 vẫn bật `isError` khi một refetch nền thất bại TRONG KHI `data`
+  // cũ còn nguyên trong cache — nếu lấy `isError` trần thì cả giỏ hàng biến mất,
+  // biến một lỗi hiển thị thành lỗi nặng hơn. Chỉ hiện màn lỗi khi thật sự không
+  // có gì để hiển thị; có dữ liệu thì giữ danh sách + banner lỗi nhỏ.
+  //
+  // 401 (AuthError) là nhịp đăng xuất: interceptor bắn `fortex:auth-session-expired`
+  // và app điều hướng đi — hiện khung đỏ lúc đó chỉ là một nhịp lỗi giả.
+  const showErrorScreen = isError && !cartData && !(error instanceof AuthError);
+  const showRefetchBanner = isError && !!cartData && !(error instanceof AuthError);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -69,9 +83,7 @@ export default function CartPage() {
     );
   }
 
-  // Phase 0: trước đây chỉ có `isLoading`, nên lỗi mạng/API 500 rơi xuống nhánh
-  // "giỏ hàng trống" — người dùng tưởng mất hàng đã thêm. Nay báo lỗi kèm nút thử lại.
-  if (isError) {
+  if (showErrorScreen) {
     return (
       <QueryState
         isError
@@ -86,6 +98,17 @@ export default function CartPage() {
 
   return (
     <div className="container max-w-5xl mx-auto px-4 py-8">
+      {showRefetchBanner && (
+        <div
+          role="alert"
+          className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+        >
+          <span>Không làm mới được giỏ hàng — đang hiển thị dữ liệu lần trước.</span>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            Thử lại
+          </Button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <Link href="/courses" className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
