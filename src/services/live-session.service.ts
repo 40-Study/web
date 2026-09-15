@@ -74,12 +74,17 @@ export interface LiveSessionDetail extends LiveSession {
   active_recording: boolean;
 }
 
-/** Body của `POST /livestream` — `dto.CreateLivestreamDTO`. */
+/**
+ * Body của `POST /livestream` — `dto.CreateLivestreamDTO`.
+ *
+ * KHÔNG có `host_id`: backend lấy host từ access token
+ * (`LivestreamHandler.Create` → `extractUserID(c)`) và đã bỏ hẳn field này khỏi
+ * DTO, vì nhận `host_id` từ body cho phép bất kỳ user đăng nhập nào tạo phiên
+ * mang tên người khác (Phase 0 vòng 3, M-5).
+ */
 export interface CreateLiveSessionDTO {
   title: string;
   description?: string;
-  /** Bắt buộc: backend parse UUID, thiếu sẽ lỗi "invalid host_id". */
-  host_id: string;
   /** Bắt buộc: backend parse UUID, thiếu sẽ lỗi "invalid class_id". */
   class_id: string;
   course_id?: string;
