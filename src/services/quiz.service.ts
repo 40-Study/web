@@ -37,9 +37,17 @@ export interface Quiz {
   updated_at?: string;
 }
 
+/**
+ * `is_correct` optional (review web #60, ghi chú contract cho PR #17): backend
+ * sẽ bỏ `is_correct`/`explanation` khỏi `GET /quizzes/:id` và
+ * `/quizzes/:id/questions` khi người gọi là học viên — chỉ trả trong attempt
+ * detail SAU KHI nộp (`QuizAttemptDetail`, đã optional sẵn ở đó). Đánh dấu
+ * optional ở đây để không có chỗ nào lỡ coi field này luôn có mặt trước khi
+ * nộp bài.
+ */
 export interface QuizAnswer {
   answer_text: string;
-  is_correct: boolean;
+  is_correct?: boolean;
   display_order: number;
 }
 
