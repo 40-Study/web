@@ -11,7 +11,7 @@ import AssignmentWorkOverlay from './tabs/AssignmentWorkOverlay';
 import { TimerModal, MinimizedTimer, RandomPickerModal, HandRaisedNotification, LeaveRequestNotification, ShareRequestNotification, ResponseNotification } from './tabs/HostTools';
 import SharedBoardPanel, { StudentMiniBoard, BoardData } from './tabs/SharedBoardPanel';
 import { getMe } from '@/lib/meet/auth';
-import { api } from '@/lib/meet/api';
+import { api, MeetApiError } from '@/lib/meet/api';
 import { resolveTimerRestartDuration } from './room-timer';
 import { useIsMobile } from '@/lib/meet/use-is-mobile';
 
@@ -99,6 +99,12 @@ export default function RoomClient({
   const [handRaisedName, setHandRaisedName] = useState<string | null>(null);
   const [leaveRequestName, setLeaveRequestName] = useState<string | null>(null);
   const [shareRequestName, setShareRequestName] = useState<string | null>(null);
+  // `user_id` THẬT của học sinh đang xin chia sẻ (từ payload `share_request`,
+  // PR #18) — cần để gọi đúng `POST screenshare/start` với target đúng người
+  // khi host duyệt; tên hiển thị (`shareRequestName`) không đủ để xác định.
+  const [shareRequestUserId, setShareRequestUserId] = useState<string | null>(null);
+  // Duyệt chia sẻ màn hình đang gọi backend — chặn double-click trong lúc chờ.
+  const [approvingShare, setApprovingShare] = useState(false);
   const [responseMessage, setResponseMessage] = useState<{ type: 'leave' | 'share'; approved: boolean } | null>(null);
   const [participants, setParticipants] = useState<{identity: string; name: string}[]>([]);
   const [participantLeftName, setParticipantLeftName] = useState<string | null>(null);
@@ -405,6 +411,7 @@ export default function RoomClient({
     if (event?.type === 'share_request') {
       if (isHost && event.name) {
         setShareRequestName(event.name);
+        setShareRequestUserId(typeof event.userId === 'string' ? event.userId : null);
         playNotificationSound();
       }
       return;
@@ -807,6 +814,8 @@ export default function RoomClient({
                 pip={isOverlay}
                 isHost={isHost}
                 hostId={hostId || undefined}
+                sessionId={sessionId}
+                currentUserId={currentUserId || undefined}
                 currentUserName={currentUserName}
                 whiteboardLocked={!whiteboardPublished}
               />
@@ -1607,18 +1616,58 @@ export default function RoomClient({
       {shareRequestName && isHost && (
         <ShareRequestNotification
           name={shareRequestName}
+          approving={approvingShare}
           onClose={() => {
-            // Closing notification = rejection
+            // Closing notification = rejection — chưa từng gọi screenshare/start
+            // nên không cần thu quyền, chỉ cần báo học sinh bị từ chối.
             whiteboardBroadcastRef.current?.({ type: 'share_response', name: shareRequestName, approved: false });
             setShareRequestName(null);
+            setShareRequestUserId(null);
           }}
-          onApprove={() => {
-            whiteboardBroadcastRef.current?.({ type: 'share_response', name: shareRequestName, approved: true });
-            setShareRequestName(null);
+          onApprove={async () => {
+            // PR #18 (re-review backend #59): trước đây web CHỈ gửi
+            // share_response qua data channel — không hề gọi
+            // POST /livestream/:id/screenshare/start. Từ #59, học sinh có
+            // CanPublish=false mặc định nên "duyệt" xong vẫn bị LiveKit từ
+            // chối publish. Phải gọi API cấp quyền THẬT trước, đợi 200 rồi
+            // mới báo học sinh — nếu không, chỉ dàn xếp lại UX trên một
+            // luồng vẫn còn 403 ở tầng thật.
+            if (!shareRequestUserId) {
+              // Không có user_id thật (client cũ chưa gửi kèm, hoặc payload
+              // hỏng) — không thể gọi đúng target, từ chối an toàn thay vì
+              // gọi API với target rỗng (sẽ tự cấp cho actor = host, sai đối
+              // tượng).
+              whiteboardBroadcastRef.current?.({ type: 'share_response', name: shareRequestName, approved: false });
+              setShareRequestName(null);
+              setShareRequestUserId(null);
+              window.alert('Không xác định được người xin chia sẻ (thiếu user_id) — đã từ chối. Học sinh nên tắt/mở lại yêu cầu.');
+              return;
+            }
+
+            setApprovingShare(true);
+            try {
+              await api.post(`/livestream/${sessionId}/screenshare/start`, {
+                action: 'start',
+                user_id: shareRequestUserId,
+              });
+              whiteboardBroadcastRef.current?.({ type: 'share_response', name: shareRequestName, approved: true });
+            } catch (err) {
+              whiteboardBroadcastRef.current?.({ type: 'share_response', name: shareRequestName, approved: false });
+              if (err instanceof MeetApiError && err.status === 403) {
+                window.alert('Bạn không có quyền duyệt chia sẻ màn hình trong phiên này.');
+              } else {
+                window.alert('Không cấp được quyền chia sẻ màn hình. Vui lòng thử lại.');
+              }
+            } finally {
+              setApprovingShare(false);
+              setShareRequestName(null);
+              setShareRequestUserId(null);
+            }
           }}
           onReject={() => {
             whiteboardBroadcastRef.current?.({ type: 'share_response', name: shareRequestName, approved: false });
             setShareRequestName(null);
+            setShareRequestUserId(null);
           }}
         />
       )}

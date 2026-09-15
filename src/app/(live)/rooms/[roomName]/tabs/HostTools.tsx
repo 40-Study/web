@@ -1189,11 +1189,13 @@ export function LeaveRequestNotification({ name, onClose, onApprove, onReject }:
 }
 
 // ===== SHARE REQUEST NOTIFICATION =====
-export function ShareRequestNotification({ name, onClose, onApprove, onReject }: {
+export function ShareRequestNotification({ name, onClose, onApprove, onReject, approving }: {
   name: string;
   onClose: () => void;
   onApprove?: () => void;
   onReject?: () => void;
+  /** Đang chờ backend duyệt `screenshare/start` (PR #18) — khoá nút "Cho phép". */
+  approving?: boolean;
 }) {
   // Play notification sound on mount
   useEffect(() => {
@@ -1260,7 +1262,7 @@ export function ShareRequestNotification({ name, onClose, onApprove, onReject }:
       {/* Buttons */}
       <div style={{ display: 'flex', gap: '10px' }}>
         <button
-          onClick={() => { onReject?.(); onClose(); }}
+          onClick={() => onReject?.()}
           style={{
             flex: 1,
             background: 'rgba(239,68,68,0.15)',
@@ -1279,23 +1281,24 @@ export function ShareRequestNotification({ name, onClose, onApprove, onReject }:
           Từ chối
         </button>
         <button
-          onClick={() => { onApprove?.(); onClose(); }}
+          onClick={() => onApprove?.()}
+          disabled={approving}
           style={{
             flex: 1,
-            background: '#3b82f6',
+            background: approving ? 'rgba(59,130,246,0.5)' : '#3b82f6',
             border: 'none',
             borderRadius: '8px',
             padding: '0.6rem',
             color: '#fff',
             fontSize: '0.85rem',
             fontWeight: 600,
-            cursor: 'pointer',
+            cursor: approving ? 'wait' : 'pointer',
             transition: 'all 0.15s',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = '#2563eb'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = '#3b82f6'; }}
+          onMouseEnter={(e) => { if (!approving) e.currentTarget.style.background = '#2563eb'; }}
+          onMouseLeave={(e) => { if (!approving) e.currentTarget.style.background = '#3b82f6'; }}
         >
-          Cho phép
+          {approving ? 'Đang duyệt...' : 'Cho phép'}
         </button>
       </div>
     </div>

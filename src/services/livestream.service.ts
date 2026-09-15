@@ -163,18 +163,29 @@ export const livestreamService = {
   /**
    * POST /livestream/:sessionId/screenshare/start
    *
-   * Không có `user_id`: chỉ người quản trị phiên (`canManageSession`) được
-   * gọi, đối tượng suy từ token gọi, không phải body (issue #58 review vòng
-   * 2, §7.1).
+   * Sửa lại đúng (PR #18, re-review backend #59 — bản sửa §7.1 ban đầu ĐÃ
+   * XOÁ NHẦM `user_id`): `dto.ScreenShareDTO.UserID` là ĐỐI TƯỢNG được
+   * host/GV DUYỆT chia sẻ — rỗng = actor tự chia sẻ (host bật màn hình của
+   * chính mình), có giá trị = actor (đã được `canManageSession` xác nhận là
+   * host/GV/instructor/admin) cấp quyền publish cho một học sinh cụ thể.
+   * Không phải danh tính người gọi (actor luôn lấy từ access token) — cùng
+   * kiểu tham số với `ModerationActionDTO.user_id` (mute/kick), không phải
+   * kiểu bị xoá ở §7.1 (JoinLiveSessionDTO.user_id — danh tính tự khai).
    */
-  startScreenShare: (sessionId: string) =>
+  startScreenShare: (sessionId: string, targetUserId?: string) =>
     api
-      .post<R<null>>(`/livestream/${sessionId}/screenshare/start`, { action: "start" })
+      .post<R<null>>(`/livestream/${sessionId}/screenshare/start`, {
+        action: "start",
+        ...(targetUserId ? { user_id: targetUserId } : {}),
+      })
       .then((r) => r.data),
 
-  /** POST /livestream/:sessionId/screenshare/stop */
-  stopScreenShare: (sessionId: string) =>
+  /** POST /livestream/:sessionId/screenshare/stop — cùng ý nghĩa `targetUserId` như trên. */
+  stopScreenShare: (sessionId: string, targetUserId?: string) =>
     api
-      .post<R<null>>(`/livestream/${sessionId}/screenshare/stop`, { action: "stop" })
+      .post<R<null>>(`/livestream/${sessionId}/screenshare/stop`, {
+        action: "stop",
+        ...(targetUserId ? { user_id: targetUserId } : {}),
+      })
       .then((r) => r.data),
 };

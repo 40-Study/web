@@ -12,10 +12,56 @@ import {
   useConnectionState,
   useRoomContext,
 } from '@livekit/components-react';
-import { Track, RoomEvent, ConnectionState, VideoPresets, DataPacket_Kind } from 'livekit-client';
+import {
+  Track,
+  RoomEvent,
+  ConnectionState,
+  VideoPresets,
+  DataPacket_Kind,
+  ParticipantEvent,
+  type LocalParticipant,
+} from 'livekit-client';
 import { useParticipants } from '@livekit/components-react';
 import React, { useEffect, useState, useRef } from 'react';
 import { useIsMobile } from '@/lib/meet/use-is-mobile';
+import { api, MeetApiError } from '@/lib/meet/api';
+
+/**
+ * Đợi quyền publish màn hình được LiveKit ÁP DỤNG THẬT trên client cục bộ
+ * trước khi gọi `setScreenShareEnabled(true)` (issue #58 review vòng 2 —
+ * PR #18 bổ sung).
+ *
+ * Vì sao cần đợi: khi host duyệt, backend cập nhật quyền `CanPublish` cho học
+ * sinh đó trên LiveKit SERVER (`UpdateParticipant`), nhưng client LiveKit của
+ * học sinh chỉ biết quyền mới khi tín hiệu đó truyền tới qua kết nối realtime
+ * — có độ trễ, không đồng bộ với thời điểm `share_response` (đi qua data
+ * channel riêng, nhanh hơn) tới nơi. Gọi `setScreenShareEnabled(true)` ngay
+ * khi nhận `share_response approved` có thể chạy TRƯỚC khi quyền thật sự áp
+ * dụng, khiến LiveKit từ chối publish dù đã được duyệt.
+ */
+function waitForScreenSharePermission(
+  localParticipant: LocalParticipant,
+  timeoutMs = 3000
+): Promise<boolean> {
+  const hasPermission = () => !!localParticipant.permissions?.canPublish;
+  if (hasPermission()) return Promise.resolve(true);
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (result: boolean) => {
+      if (settled) return;
+      settled = true;
+      localParticipant.off(ParticipantEvent.ParticipantPermissionsChanged, onChanged);
+      clearTimeout(timer);
+      resolve(result);
+    };
+    const onChanged = () => {
+      if (hasPermission()) finish(true);
+    };
+    localParticipant.on(ParticipantEvent.ParticipantPermissionsChanged, onChanged);
+    const timer = setTimeout(() => finish(hasPermission()), timeoutMs);
+  });
+}
 
 interface AssignmentPublishedEvent {
   type: 'assignment_published';
@@ -39,6 +85,14 @@ interface VideoTabProps {
   isHost?: boolean;
   hostId?: string;
   currentUserName?: string;
+  /** ID phiên live — cần cho lời gọi REST `screenshare/start|stop` (PR #18). */
+  sessionId?: string;
+  /**
+   * ID người dùng THẬT của người đang xem (từ `getMe()`, không phải LiveKit
+   * identity tự khai) — gửi kèm `share_request` để host biết chính xác
+   * `user_id` cần truyền cho `POST screenshare/start` khi duyệt (PR #18).
+   */
+  currentUserId?: string;
   /**
    * Bảng vẽ đang khoá quyền chỉnh sửa (issue #58 review vòng 2) — khi true,
    * `WhiteboardReceiver` bỏ qua event `whiteboard_event`/`whiteboard_control`
@@ -62,6 +116,8 @@ export default function VideoTab({
   isHost = false,
   hostId,
   currentUserName = 'User',
+  sessionId,
+  currentUserId,
   whiteboardLocked = false,
 }: VideoTabProps) {
   const [showParticipants, setShowParticipants] = useState(false);
@@ -81,10 +137,11 @@ export default function VideoTab({
     }
   };
 
-  // Request to share screen
+  // Request to share screen — kèm `userId` (PR #18) để host biết đúng
+  // `user_id` cần truyền cho `POST screenshare/start` khi duyệt.
   const handleRequestShare = () => {
     if (broadcastRef.current) {
-      broadcastRef.current({ type: 'share_request', name: currentUserName });
+      broadcastRef.current({ type: 'share_request', name: currentUserName, userId: currentUserId });
       setPendingShareRequest(true);
     }
   };
@@ -166,6 +223,7 @@ export default function VideoTab({
               showParticipants={showParticipants}
               isHost={isHost}
               hostId={hostId}
+              sessionId={sessionId}
               handRaised={handRaised}
               onToggleHand={handleToggleHand}
               onLeave={handleRequestLeave}
@@ -925,6 +983,7 @@ function BottomBar({
   showParticipants,
   isHost,
   hostId,
+  sessionId,
   handRaised,
   onToggleHand,
   onLeave,
@@ -940,6 +999,7 @@ function BottomBar({
   showParticipants?: boolean;
   isHost?: boolean;
   hostId?: string;
+  sessionId?: string;
   handRaised?: boolean;
   onToggleHand?: () => void;
   onLeave?: () => void;
@@ -955,6 +1015,9 @@ function BottomBar({
   const { localParticipant } = useLocalParticipant();
   const totalCount = participants.length + 1;
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  // Lỗi chia sẻ màn hình (PR #18) — hiện rõ cho học sinh khi quyền publish
+  // không kịp áp dụng sau khi được duyệt, thay vì fail âm thầm.
+  const [shareError, setShareError] = useState<string | null>(null);
 
   // Check if host is in the room
   const hostInRoom = hostId ? participants.some(p => p.identity === hostId) : false;
@@ -981,26 +1044,61 @@ function BottomBar({
     };
   }, [localParticipant]);
 
-  // Auto-enable screen share when approved
+  // Auto-enable screen share when approved — PR #18: đợi quyền publish LiveKit
+  // thật sự áp dụng trước khi gọi setScreenShareEnabled (xem
+  // waitForScreenSharePermission ở đầu file), thay vì gọi ngay khi nhận
+  // share_response (có thể chạy trước khi quyền server-side kịp tới client).
   useEffect(() => {
-    if (shareApproved && localParticipant && !isScreenSharing) {
-      localParticipant.setScreenShareEnabled(true).then(() => {
+    if (!shareApproved || !localParticipant || isScreenSharing) return;
+    let cancelled = false;
+
+    (async () => {
+      const granted = await waitForScreenSharePermission(localParticipant);
+      if (cancelled) return;
+
+      if (!granted) {
+        setShareError('Giáo viên đã duyệt nhưng quyền chia sẻ màn hình chưa được cấp kịp thời. Vui lòng thử lại.');
         onShareStarted?.();
-      }).catch(() => {
-        onShareStarted?.(); // Reset state even on error
-      });
-    }
+        return;
+      }
+
+      try {
+        await localParticipant.setScreenShareEnabled(true);
+        setShareError(null);
+      } catch {
+        setShareError('Không thể bật chia sẻ màn hình. Vui lòng thử lại.');
+      } finally {
+        onShareStarted?.();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [shareApproved, localParticipant, isScreenSharing, onShareStarted]);
+
+  // Tự xoá lỗi sau vài giây, tránh dính mãi trên thanh công cụ.
+  useEffect(() => {
+    if (!shareError) return;
+    const t = setTimeout(() => setShareError(null), 6000);
+    return () => clearTimeout(t);
+  }, [shareError]);
 
   // Handle screen share button click for students
   const handleScreenShareClick = async () => {
     if (isHost) {
-      // Host can toggle directly
+      // Host can toggle directly — baseline CanPublish của host luôn đầy đủ
+      // từ lúc join (backend D3), không cần gọi screenshare/start.
       await localParticipant?.setScreenShareEnabled(!isScreenSharing);
     } else {
       if (isScreenSharing) {
-        // Student can stop sharing anytime
+        // Student can stop sharing anytime — thu lại quyền publish đã cấp
+        // riêng ở backend (PR #18). Best-effort: không chặn UI nếu lỗi, vì
+        // hành động chính (ngừng phát) đã hoàn tất ở phía LiveKit.
         await localParticipant?.setScreenShareEnabled(false);
+        if (sessionId) {
+          api.post(`/livestream/${sessionId}/screenshare/stop`, { action: 'stop' }).catch(() => {});
+        }
       } else if (!hostInRoom) {
         // No host in room - student can share directly
         onDirectShare?.();
@@ -1023,6 +1121,23 @@ function BottomBar({
   };
 
   return (
+    <>
+      {shareError && (
+        <div
+          style={{
+            background: 'rgba(248,113,113,0.15)',
+            borderTop: '1px solid rgba(248,113,113,0.3)',
+            padding: '0.4rem 1rem',
+            fontSize: '0.72rem',
+            color: '#f87171',
+            fontWeight: 500,
+            textAlign: 'center',
+            flexShrink: 0,
+          }}
+        >
+          {shareError}
+        </div>
+      )}
     <div
       style={{
         background: 'rgba(20,20,20,0.95)',
@@ -1040,8 +1155,21 @@ function BottomBar({
         overflowX: 'auto',
       }}
     >
-      <TrackToggle source={Track.Source.Microphone} className="lk-toggle" />
-      <TrackToggle source={Track.Source.Camera} className="lk-toggle" />
+      {/*
+        PR #18: học sinh KHÔNG được bật cam/mic (quyết định đã chốt với
+        user) — chỉ được chia sẻ MÀN HÌNH sau khi host duyệt. `isHost` lấy từ
+        vai trò server-verify (so `currentUserId` với `hostId`, cả hai đều
+        đến từ response REST — `getMe()` và `GET /livestream/:id` — không
+        suy từ bất kỳ tín hiệu data-channel nào có thể bị giả mạo). Ẩn hẳn
+        thay vì chỉ disable — học sinh baseline CanPublish=false ở backend
+        nên nút bật cũng sẽ luôn thất bại, hiện nút chỉ gây nhầm lẫn.
+      */}
+      {isHost && (
+        <>
+          <TrackToggle source={Track.Source.Microphone} className="lk-toggle" />
+          <TrackToggle source={Track.Source.Camera} className="lk-toggle" />
+        </>
+      )}
       {/* Custom Screen Share button for permission flow */}
       <button
         onClick={handleScreenShareClick}
@@ -1191,5 +1319,6 @@ function BottomBar({
         </svg>
       </button>
     </div>
+    </>
   );
 }
