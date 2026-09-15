@@ -17,9 +17,12 @@ const adminMenu = [
   { label: "Quản lý tổ chức", href: "/admin/organizations", icon: Building2 },
   { label: "Phân quyền", href: "/admin/permissions", icon: Settings },
   { label: "Báo cáo hệ thống", href: "/admin/reports", icon: BarChart3 },
-  // TODO (Phase 3): "Nhật ký hoạt động" (/admin/audit-logs) tạm ẩn khỏi nav vì
-  // backend chưa có endpoint audit-log nên trang luôn trắng. Route và page vẫn
-  // giữ nguyên — bật lại mục này khi backend có API nhật ký hoạt động.
+  // TODO (Phase 3): "Nhật ký hoạt động" (/admin/audit-logs) tạm ẩn khỏi nav.
+  // Trang KHÔNG trắng — nó đã có banner amber nói rõ backend chưa có endpoint
+  // audit-log và hiển thị mảng rỗng có chủ đích. Lý do ẩn là mặt mục này chưa
+  // có dữ liệu thật để điều hướng tới. Route + page vẫn giữ nguyên (vào được
+  // bằng URL trực tiếp, vẫn qua RoleGuard của layout); bật lại mục nav khi
+  // backend có API nhật ký hoạt động.
 ];
 
 export default function AdminLayout({
