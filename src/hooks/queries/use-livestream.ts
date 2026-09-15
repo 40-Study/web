@@ -5,7 +5,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { livestreamClassroomService as livestreamService } from "@/services/livestream-classroom.service";
-import { useAuthStore } from "@/stores/auth.store";
 
 export const livestreamKeys = {
   all: ["livestream"] as const,
@@ -62,24 +61,6 @@ export function useEndSession() {
       qc.invalidateQueries({ queryKey: livestreamKeys.session(id) });
       toast.success("Kết thúc phiên học");
     },
-  });
-}
-
-export function useRoomToken(roomName: string, role: string = "student") {
-  const user = useAuthStore((s) => s.user);
-
-  return useQuery({
-    queryKey: ["room-token", roomName, user?.id, role],
-    // `/livestream/:id/join` yêu cầu `user_id` + `name` (dto.JoinLivestreamDTO);
-    // token trả về trong body, không đưa lên query URL.
-    queryFn: () =>
-      livestreamService.getRoomToken(roomName, {
-        user_id: user!.id,
-        name: user!.name,
-        role,
-      }),
-    enabled: !!roomName && !!user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
