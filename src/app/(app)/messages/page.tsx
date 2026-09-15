@@ -180,6 +180,13 @@ export default function MessagesPage() {
   const showConvBanner = convError && conversations.length > 0 && !(convErr instanceof AuthError);
   const showMsgBanner = msgError && messages.length > 0 && !(msgErr instanceof AuthError);
 
+  // L-2: 401 khi chưa có cache. Nhánh lỗi bị loại ở trên nên trước đây hộp thư rơi
+  // xuống "Chưa có cuộc trò chuyện" / khung chat trống trong nhịp chờ điều hướng —
+  // đọc thành "không có ai nhắn" thay vì "phiên đã hết hạn". Giữ spinner, để
+  // RoleGuard/redirect xử lý điều hướng.
+  const awaitingConvAuth = convError && conversations.length === 0 && convErr instanceof AuthError;
+  const awaitingMsgAuth = msgError && messages.length === 0 && msgErr instanceof AuthError;
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -217,7 +224,7 @@ export default function MessagesPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {convLoading ? (
+            {convLoading || awaitingConvAuth ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
@@ -241,6 +248,7 @@ export default function MessagesPage() {
                 {showConvBanner && (
                   <button
                     onClick={() => refetchConversations()}
+                    role="alert"
                     className="mb-1 w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-left text-xs text-amber-800"
                   >
                     Không làm mới được danh sách — bấm để thử lại.
@@ -301,7 +309,7 @@ export default function MessagesPage() {
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4">
-                {msgLoading ? (
+                {msgLoading || awaitingMsgAuth ? (
                   <div className="flex justify-center py-8">
                     <Loader2 className="h-5 w-5 animate-spin" />
                   </div>
@@ -320,6 +328,7 @@ export default function MessagesPage() {
                     {showMsgBanner && (
                       <button
                         onClick={() => refetchMessages()}
+                        role="alert"
                         className="mb-3 w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-left text-xs text-amber-800"
                       >
                         Không làm mới được tin nhắn — bấm để thử lại.

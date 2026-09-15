@@ -75,7 +75,13 @@ export default function CartPage() {
   const showErrorScreen = isError && !cartData && !(error instanceof AuthError);
   const showRefetchBanner = isError && !!cartData && !(error instanceof AuthError);
 
-  if (isLoading) {
+  // L-2: 401 khi CHƯA có dữ liệu trong cache. Nhánh lỗi bị loại ở trên, nên trước
+  // đây trang rơi xuống "giỏ hàng trống" trong nhịp chờ điều hướng — người dùng
+  // đọc thành "mất hàng đã thêm". Không render empty-state; để RoleGuard/redirect
+  // lo phần điều hướng.
+  const awaitingAuthRedirect = isError && !cartData && error instanceof AuthError;
+
+  if (isLoading || awaitingAuthRedirect) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
