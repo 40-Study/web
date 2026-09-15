@@ -19,12 +19,14 @@ import {
   VideoPresets,
   DataPacket_Kind,
   ParticipantEvent,
+  DisconnectReason,
   type LocalParticipant,
 } from 'livekit-client';
 import { useParticipants } from '@livekit/components-react';
 import React, { useEffect, useState, useRef } from 'react';
 import { useIsMobile } from '@/lib/meet/use-is-mobile';
 import { api, MeetApiError } from '@/lib/meet/api';
+import { shouldDiscardWhiteboardEvent } from './whiteboard-gate';
 
 /**
  * Đợi quyền publish màn hình được LiveKit ÁP DỤNG THẬT trên client cục bộ
@@ -94,13 +96,23 @@ interface VideoTabProps {
    */
   currentUserId?: string;
   /**
-   * Bảng vẽ đang khoá quyền chỉnh sửa (issue #58 review vòng 2) — khi true,
+   * Bảng vẽ đang khoá quyền chỉnh sửa — nguồn PHẢI là trạng thái server
+   * (`settings.whiteboard_locked` qua GET/lock/unlock, C1 review vòng 2 web PR
+   * #18), không phải suy từ việc đã nhận gói LiveKit nào đó. Khi true,
    * `WhiteboardReceiver` bỏ qua event `whiteboard_event`/`whiteboard_control`
-   * đến từ người gửi KHÔNG phải host, để một participant giả mạo không thể
-   * publishData thẳng qua LiveKit data channel (bỏ qua UI gate của
-   * `WhiteboardTab`, vốn chỉ chặn phía client).
+   * đến từ người gửi không phải host — đây là bộ lọc bảo vệ CLIENT TRUNG
+   * THỰC ở phía người nhận (xem `shouldDiscardWhiteboardEvent`), KHÔNG phải
+   * kiểm soát an ninh: một client độc hại vẫn publishData thẳng qua LiveKit
+   * được nếu bỏ qua UI gate ở máy của chính nó. An ninh thật nằm ở backend
+   * (`SaveSnapshot` từ chối 403 `WHITEBOARD_LOCKED`).
    */
   whiteboardLocked?: boolean;
+  /**
+   * Gọi khi phiên LiveKit bị ngắt do host kick (`DisconnectReason.PARTICIPANT_REMOVED`,
+   * I2 review vòng 2 web PR #18) — trước đây không có nhánh nào, người bị đuổi
+   * giữa buổi chỉ thấy phòng đứng im.
+   */
+  onKicked?: () => void;
 }
 
 export default function VideoTab({
@@ -119,6 +131,7 @@ export default function VideoTab({
   sessionId,
   currentUserId,
   whiteboardLocked = false,
+  onKicked,
 }: VideoTabProps) {
   const [showParticipants, setShowParticipants] = useState(false);
   const [handRaised, setHandRaised] = useState(false);
@@ -193,6 +206,16 @@ export default function VideoTab({
       token={token}
       connect={true}
       style={{ height: '100%', background: '#0a0a0a' }}
+      onDisconnected={(reason) => {
+        // I2 (review vòng 2 web PR #18): backend đã ngắt kết nối LiveKit khi
+        // kick (`RemoveParticipant`, livestream_service.go:803) — nhưng trước
+        // đây không có nhánh UI nào, người bị đuổi giữa buổi chỉ thấy phòng
+        // đứng im. Chỉ xử lý riêng lý do bị kick; các lý do khác (tự rời,
+        // server tắt, mất mạng...) giữ nguyên hành vi cũ.
+        if (reason === DisconnectReason.PARTICIPANT_REMOVED) {
+          onKicked?.();
+        }
+      }}
       options={{
         // Camera: lower quality to save bandwidth
         videoCaptureDefaults: {
@@ -344,14 +367,16 @@ function WhiteboardReceiver({
           onLeaveResponseRef.current?.(data.approved);
         }
 
-        // Bảng đang khoá (`whiteboardLocked`): bỏ qua event vẽ/điều khiển từ
-        // người gửi không phải host — chặn một participant publishData thẳng
-        // qua LiveKit để giả mạo nét vẽ hoặc tự mở khoá, bỏ qua UI gate của
-        // WhiteboardTab (vốn chỉ chặn ở phía client của chính họ).
+        // Bảng đang khoá: bỏ qua event vẽ/điều khiển từ người gửi không phải
+        // host — bảo vệ client trung thực, không phải kiểm soát an ninh
+        // (xem JSDoc `whiteboardLocked` ở trên và `shouldDiscardWhiteboardEvent`).
         if (
           (data.type === 'whiteboard_event' || data.type === 'whiteboard_control') &&
-          whiteboardLocked &&
-          !senderIsHost
+          shouldDiscardWhiteboardEvent({
+            senderIdentity: participant?.identity,
+            hostId,
+            whiteboardLocked,
+          })
         ) {
           return;
         }

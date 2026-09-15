@@ -21,6 +21,14 @@ interface WhiteboardTabProps {
   onBroadcast?: (event: any) => void;
   currentUserName?: string;
   currentUserId?: string;
+  /**
+   * Host bấm khoá/mở khoá bảng (C1, review vòng 2 web PR #18) — thay vì tự
+   * lật `isPublished` cục bộ rồi broadcast (chỉ tới máy KHÁC vì LiveKit không
+   * echo gói tự gửi), giao cho `RoomClient` gọi REST lock-whiteboard trước,
+   * chỉ cập nhật state khi request thành công, rồi mới broadcast. Tham số là
+   * giá trị "locked" MỚI mong muốn (true = khoá).
+   */
+  onToggleLock?: (locked: boolean) => void;
 }
 
 function WhiteboardTabInner({
@@ -31,6 +39,7 @@ function WhiteboardTabInner({
   whiteboardPublished: initialPublished = false,
   onClose,
   onBroadcast,
+  onToggleLock,
   currentUserId = '',
   currentUserName = 'User',
 }: WhiteboardTabProps) {
@@ -222,14 +231,13 @@ function WhiteboardTabInner({
   };
 
   // ===== TOGGLE PUBLISH (edit permission) =====
+  // C1 (review vòng 2 web PR #18): không tự lật `isPublished` + broadcast ở
+  // đây nữa — RoomClient gọi REST lock-whiteboard/unlock-whiteboard trước
+  // (qua `onToggleLock`), chỉ khi thành công mới cập nhật `whiteboardPublished`
+  // (đẩy xuống lại qua prop `initialPublished`) rồi mới broadcast. Đang
+  // published (isPublished=true, có thể vẽ) => bấm nghĩa là khoá (locked=true).
   const handlePublish = () => {
-    const newState = !isPublished;
-    setIsPublished(newState);
-    onBroadcast?.({
-      type: 'whiteboard_control',
-      action: newState ? 'publish' : 'unpublish',
-      senderId: currentUserId,
-    });
+    onToggleLock?.(isPublished);
   };
 
   return (

@@ -14,6 +14,7 @@ import { getMe } from '@/lib/meet/auth';
 import { api, MeetApiError } from '@/lib/meet/api';
 import { resolveTimerRestartDuration } from './room-timer';
 import { useIsMobile } from '@/lib/meet/use-is-mobile';
+import { applyWhiteboardLock } from './whiteboard-lock';
 
 interface AssignmentNotification {
   assignment_id: string;
@@ -74,6 +75,11 @@ export default function RoomClient({
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserName, setCurrentUserName] = useState<string>('User');
   const [hostId, setHostId] = useState<string | null>(null);
+  // I3 (review vòng 2 web PR #18): tách "chưa biết/lỗi" khỏi "hostId=null vì
+  // chưa fetch xong" để hiện lỗi rõ ràng thay vì âm thầm chặn hết thao tác
+  // gate/duyệt (hostId=null vẫn giữ nguyên tác dụng chặn — có chủ đích, fail
+  // closed khi không xác định được host).
+  const [hostIdError, setHostIdError] = useState(false);
   const [remoteWhiteboardEvent, setRemoteWhiteboardEvent] = useState<any>(null);
   const [whiteboardShared, setWhiteboardShared] = useState(false);
   const [whiteboardPublished, setWhiteboardPublished] = useState(false);
@@ -163,15 +169,22 @@ export default function RoomClient({
       })
       .catch(() => setCurrentUserId(null));
 
-    // Fetch session to get host_id
-    api.get<{ data: { host_id: string } }>(`/livestream/${sessionId}`)
+    // Fetch session để lấy host_id VÀ trạng thái khoá bảng ban đầu (C1 —
+    // whiteboard_locked là nguồn sự thật server, học sinh/host vào muộn đọc
+    // ngay ở đây thay vì đợi một gói LiveKit không bao giờ tới nếu là chính
+    // người vừa khoá/mở khoá).
+    api.get<{ data: { host_id: string; settings?: { whiteboard_locked?: boolean } } }>(`/livestream/${sessionId}`)
       .then((res: any) => {
         const hid = res?.data?.host_id || res?.host_id || '';
         setHostId(hid);
+        setHostIdError(false);
+        const locked = res?.data?.settings?.whiteboard_locked ?? res?.settings?.whiteboard_locked ?? false;
+        setWhiteboardPublished(!locked);
       })
       .catch((err) => {
         console.error('[RoomClient] Failed to fetch hostId:', err);
         setHostId(null);
+        setHostIdError(true);
       });
 
     // Fetch published assignments for this session
@@ -268,6 +281,33 @@ export default function RoomClient({
       setNotification(null);
     }
   };
+
+  // C1 (review vòng 2 web PR #18): host bấm khoá/mở khoá => gọi REST TRƯỚC,
+  // chỉ cập nhật state cục bộ khi request thành công, rồi mới broadcast cho
+  // người khác. Trước đây `whiteboardPublished` chỉ đổi khi NHẬN gói LiveKit
+  // — không bao giờ xảy ra với chính người gửi — nên host tự khoá vĩnh viễn
+  // client của chính mình.
+  const handleToggleWhiteboardLock = useCallback(async (locked: boolean) => {
+    const result = await applyWhiteboardLock(sessionId, locked);
+    if (result.ok) {
+      setWhiteboardPublished(!result.locked);
+      whiteboardBroadcastRef.current?.({
+        type: 'whiteboard_control',
+        action: result.locked ? 'unpublish' : 'publish',
+        senderId: currentUserId,
+      });
+    } else {
+      console.error('[RoomClient] Failed to toggle whiteboard lock:', result.error);
+      window.alert('Không thể khoá/mở khoá bảng vẽ. Vui lòng thử lại.');
+    }
+  }, [sessionId, currentUserId]);
+
+  // I2 (review vòng 2 web PR #18): backend đã ngắt kết nối LiveKit khi kick,
+  // nhưng trước đây không có nhánh UI nào cho người bị đuổi giữa buổi.
+  const handleKicked = useCallback(() => {
+    window.alert('Bạn đã bị mời ra khỏi buổi học này bởi giáo viên.');
+    router.push('/my-courses');
+  }, [router]);
 
   const handleWhiteboardEvent = useCallback((event: any) => {
     // Whiteboard events
@@ -774,6 +814,28 @@ export default function RoomClient({
         }
       `}</style>
 
+      {/* I3 (review vòng 2 web PR #18): fetch host_id lỗi trước đây chỉ
+          console.error rồi âm thầm chặn hết thao tác gate/duyệt — giờ báo rõ
+          cho người dùng. hostId vẫn giữ null (fail closed: chặn duyệt
+          chia sẻ màn hình, vứt nét vẽ non-host) vì không xác định được host
+          thì không thể xác thực các thao tác đó an toàn. */}
+      {hostIdError && (
+        <div
+          style={{
+            background: 'rgba(248,113,113,0.15)',
+            borderBottom: '1px solid rgba(248,113,113,0.35)',
+            color: '#f87171',
+            fontSize: '0.8rem',
+            fontWeight: 500,
+            padding: '0.5rem 1rem',
+            textAlign: 'center',
+            flexShrink: 0,
+          }}
+        >
+          Không thể xác định giáo viên của buổi học. Một số chức năng (duyệt chia sẻ màn hình, bảng vẽ) có thể không hoạt động — hãy tải lại trang.
+        </div>
+      )}
+
       {/* Main content */}
       <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
             <div
@@ -811,6 +873,7 @@ export default function RoomClient({
                   }
                 }}
                 onLeave={handleLeave}
+                onKicked={handleKicked}
                 pip={isOverlay}
                 isHost={isHost}
                 hostId={hostId || undefined}
@@ -910,6 +973,7 @@ export default function RoomClient({
                   whiteboardPublished={whiteboardPublished}
                   onClose={() => setShowWhiteboard(false)}
                   onBroadcast={(event) => whiteboardBroadcastRef.current?.(event)}
+                  onToggleLock={handleToggleWhiteboardLock}
                   currentUserId={currentUserId || ''}
                   currentUserName={currentUserName}
                 />
