@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import RoomClient from './RoomClient';
-import { serverApi } from '@/lib/server-api';
+import { joinLivestream } from './join-livestream';
+import { forbiddenFlagsFromCode } from '@/lib/meet/forbidden-code';
 
 /**
  * H5 fix (plans/reports/code-reviewer-260909-1340-web-logic-integration.md):
@@ -13,47 +15,41 @@ import { serverApi } from '@/lib/server-api';
  * giờ xuất hiện trên URL.
  */
 
-interface JoinLivestreamResult {
-  token?: string;
-  server_url?: string;
-  room_name?: string;
-}
-
-interface CurrentUser {
-  id: string;
-  full_name?: string;
-  username: string;
-}
-
-async function joinLivestream(sessionId: string): Promise<JoinLivestreamResult | null> {
-  try {
-    const me = await serverApi.get<CurrentUser>('/auth/me');
-    const result = await serverApi.post<JoinLivestreamResult>(`/livestream/${sessionId}/join`, {
-      user_id: me.id,
-      name: me.full_name || me.username,
-    });
-    return result;
-  } catch {
-    return null;
-  }
-}
-
 export default async function RoomPage({
   params,
 }: {
   params: Promise<{ roomName: string }>;
 }) {
   const { roomName } = await params;
-  const join = await joinLivestream(roomName);
+  const { result: join, forbiddenCode } = await joinLivestream(roomName);
 
   if (!join?.token || !join?.server_url) {
+    // I2 (review vòng 2 web PR #18): trước đây chỉ phân nhánh NOT_SESSION_MEMBER
+    // — học sinh bị đuổi (KICKED) rồi F5 thấy nhầm thông báo chung chung.
+    const { isNotMember, isKicked } = forbiddenFlagsFromCode(forbiddenCode);
+
+    const heading = isNotMember
+      ? 'Bạn không thuộc lớp này.'
+      : isKicked
+        ? 'Bạn đã bị mời ra khỏi buổi học này.'
+        : 'Không thể tham gia buổi học trực tiếp này.';
+    const detail = isNotMember
+      ? 'Buổi live này chỉ dành cho học sinh của lớp được gán. Liên hệ giáo viên nếu bạn nghĩ đây là nhầm lẫn.'
+      : isKicked
+        ? 'Giáo viên đã yêu cầu bạn rời khỏi buổi học. Liên hệ giáo viên nếu bạn nghĩ đây là nhầm lẫn.'
+        : 'Buổi học có thể chưa bắt đầu, đã kết thúc, hoặc bạn chưa đăng nhập.';
+
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-950 px-4 text-center text-white">
         <div>
-          <p className="text-lg font-medium">Không thể tham gia buổi học trực tiếp này.</p>
-          <p className="mt-2 text-sm text-gray-400">
-            Buổi học có thể chưa bắt đầu, đã kết thúc, hoặc bạn chưa đăng nhập.
-          </p>
+          <p className="text-lg font-medium">{heading}</p>
+          <p className="mt-2 text-sm text-gray-400">{detail}</p>
+          <Link
+            href="/my-courses"
+            className="mt-6 inline-block rounded-lg bg-primary-600 px-6 py-2 text-sm font-medium text-white hover:bg-primary-700"
+          >
+            Quay lại danh sách lớp học
+          </Link>
         </div>
       </div>
     );

@@ -12,10 +12,57 @@ import {
   useConnectionState,
   useRoomContext,
 } from '@livekit/components-react';
-import { Track, RoomEvent, ConnectionState, VideoPresets, DataPacket_Kind } from 'livekit-client';
+import {
+  Track,
+  RoomEvent,
+  ConnectionState,
+  VideoPresets,
+  DataPacket_Kind,
+  ParticipantEvent,
+  DisconnectReason,
+  type LocalParticipant,
+} from 'livekit-client';
 import { useParticipants } from '@livekit/components-react';
 import React, { useEffect, useState, useRef } from 'react';
 import { useIsMobile } from '@/lib/meet/use-is-mobile';
+import { shouldDiscardWhiteboardEvent } from './whiteboard-gate';
+
+/**
+ * Đợi quyền publish màn hình được LiveKit ÁP DỤNG THẬT trên client cục bộ
+ * trước khi gọi `setScreenShareEnabled(true)` (issue #58 review vòng 2 —
+ * PR #18 bổ sung).
+ *
+ * Vì sao cần đợi: khi host duyệt, backend cập nhật quyền `CanPublish` cho học
+ * sinh đó trên LiveKit SERVER (`UpdateParticipant`), nhưng client LiveKit của
+ * học sinh chỉ biết quyền mới khi tín hiệu đó truyền tới qua kết nối realtime
+ * — có độ trễ, không đồng bộ với thời điểm `share_response` (đi qua data
+ * channel riêng, nhanh hơn) tới nơi. Gọi `setScreenShareEnabled(true)` ngay
+ * khi nhận `share_response approved` có thể chạy TRƯỚC khi quyền thật sự áp
+ * dụng, khiến LiveKit từ chối publish dù đã được duyệt.
+ */
+function waitForScreenSharePermission(
+  localParticipant: LocalParticipant,
+  timeoutMs = 3000
+): Promise<boolean> {
+  const hasPermission = () => !!localParticipant.permissions?.canPublish;
+  if (hasPermission()) return Promise.resolve(true);
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (result: boolean) => {
+      if (settled) return;
+      settled = true;
+      localParticipant.off(ParticipantEvent.ParticipantPermissionsChanged, onChanged);
+      clearTimeout(timer);
+      resolve(result);
+    };
+    const onChanged = () => {
+      if (hasPermission()) finish(true);
+    };
+    localParticipant.on(ParticipantEvent.ParticipantPermissionsChanged, onChanged);
+    const timer = setTimeout(() => finish(hasPermission()), timeoutMs);
+  });
+}
 
 interface AssignmentPublishedEvent {
   type: 'assignment_published';
@@ -39,6 +86,24 @@ interface VideoTabProps {
   isHost?: boolean;
   hostId?: string;
   currentUserName?: string;
+  /**
+   * Bảng vẽ đang khoá quyền chỉnh sửa — nguồn PHẢI là trạng thái server
+   * (`settings.whiteboard_locked` qua GET/lock/unlock, C1 review vòng 2 web PR
+   * #18), không phải suy từ việc đã nhận gói LiveKit nào đó. Khi true,
+   * `WhiteboardReceiver` bỏ qua event `whiteboard_event`/`whiteboard_control`
+   * đến từ người gửi không phải host — đây là bộ lọc bảo vệ CLIENT TRUNG
+   * THỰC ở phía người nhận (xem `shouldDiscardWhiteboardEvent`), KHÔNG phải
+   * kiểm soát an ninh: một client độc hại vẫn publishData thẳng qua LiveKit
+   * được nếu bỏ qua UI gate ở máy của chính nó. An ninh thật nằm ở backend
+   * (`SaveSnapshot` từ chối 403 `WHITEBOARD_LOCKED`).
+   */
+  whiteboardLocked?: boolean;
+  /**
+   * Gọi khi phiên LiveKit bị ngắt do host kick (`DisconnectReason.PARTICIPANT_REMOVED`,
+   * I2 review vòng 2 web PR #18) — trước đây không có nhánh nào, người bị đuổi
+   * giữa buổi chỉ thấy phòng đứng im.
+   */
+  onKicked?: () => void;
 }
 
 export default function VideoTab({
@@ -54,6 +119,8 @@ export default function VideoTab({
   isHost = false,
   hostId,
   currentUserName = 'User',
+  whiteboardLocked = false,
+  onKicked,
 }: VideoTabProps) {
   const [showParticipants, setShowParticipants] = useState(false);
   const [handRaised, setHandRaised] = useState(false);
@@ -72,7 +139,16 @@ export default function VideoTab({
     }
   };
 
-  // Request to share screen
+  // Request to share screen.
+  //
+  // R2-I1 (re-review vòng 2 PR #18 lần 2): trước đây gửi kèm `userId` tự khai
+  // trong payload để host lấy `user_id` truyền cho `POST screenshare/start`
+  // khi duyệt — một client độc hại có thể khai `userId` của MỘT NGƯỜI KHÁC,
+  // khiến host duyệt nhầm quyền publish cho nạn nhân đó thay vì người thật sự
+  // gửi yêu cầu. Không còn gửi field này — phía nhận (`handleDataReceived`)
+  // đọc thẳng `participant.identity` THẬT của gói LiveKit (không thể giả mạo
+  // từ payload) làm `user_id`, khớp đúng quy ước backend `Identity ==
+  // userID.String()` (`livestream_service.go:679,711`).
   const handleRequestShare = () => {
     if (broadcastRef.current) {
       broadcastRef.current({ type: 'share_request', name: currentUserName });
@@ -127,6 +203,16 @@ export default function VideoTab({
       token={token}
       connect={true}
       style={{ height: '100%', background: '#0a0a0a' }}
+      onDisconnected={(reason) => {
+        // I2 (review vòng 2 web PR #18): backend đã ngắt kết nối LiveKit khi
+        // kick (`RemoveParticipant`, livestream_service.go:803) — nhưng trước
+        // đây không có nhánh UI nào, người bị đuổi giữa buổi chỉ thấy phòng
+        // đứng im. Chỉ xử lý riêng lý do bị kick; các lý do khác (tự rời,
+        // server tắt, mất mạng...) giữ nguyên hành vi cũ.
+        if (reason === DisconnectReason.PARTICIPANT_REMOVED) {
+          onKicked?.();
+        }
+      }}
       options={{
         // Camera: lower quality to save bandwidth
         videoCaptureDefaults: {
@@ -179,6 +265,8 @@ export default function VideoTab({
           onBroadcasterReady={handleBroadcasterReady}
           currentUserName={currentUserName}
           isHost={isHost}
+          hostId={hostId}
+          whiteboardLocked={whiteboardLocked}
           onShareResponse={handleShareResponse}
           onLeaveResponse={handleLeaveResponse}
         />
@@ -216,6 +304,8 @@ function WhiteboardReceiver({
   onBroadcasterReady,
   currentUserName,
   isHost,
+  hostId,
+  whiteboardLocked,
   onShareResponse,
   onLeaveResponse,
 }: {
@@ -223,6 +313,8 @@ function WhiteboardReceiver({
   onBroadcasterReady?: (broadcast: (event: any) => void) => void;
   currentUserName?: string;
   isHost?: boolean;
+  hostId?: string;
+  whiteboardLocked?: boolean;
   onShareResponse?: (approved: boolean) => void;
   onLeaveResponse?: (approved: boolean) => void;
 }) {
@@ -253,15 +345,42 @@ function WhiteboardReceiver({
       try {
         const text = new TextDecoder().decode(payload);
         const data = JSON.parse(text);
+        // Danh tính THẬT của người gửi (LiveKit `participant.identity`, không
+        // thể giả mạo từ payload) — so với `hostId` để xác nhận sự kiện có
+        // thực sự đến từ host hay không (issue #58 review vòng 2, §7 "Web
+        // phải đổi"). Trước đây chỉ so `data.name` (một field client tự khai
+        // trong payload) nên bất kỳ participant nào cũng tự phê duyệt được
+        // yêu cầu share/leave của chính mình.
+        const senderIsHost = !!hostId && participant?.identity === hostId;
 
-        // Handle share_response for students
-        if (data.type === 'share_response' && !isHost && data.name === currentUserName) {
+        // R2-I1 (re-review vòng 2 PR #18 lần 2): đính kèm danh tính THẬT của
+        // người gửi (không thể giả mạo từ payload) vào mọi event forward lên
+        // — dùng cho `share_request` để lấy đúng `user_id` cấp quyền publish,
+        // thay vì tin một field tự khai trong payload.
+        data.senderIdentity = participant?.identity;
+
+        // Handle share_response for students — chỉ nhận khi đúng là host gửi.
+        if (data.type === 'share_response' && !isHost && data.name === currentUserName && senderIsHost) {
           onShareResponseRef.current?.(data.approved);
         }
 
-        // Handle leave_response for students
-        if (data.type === 'leave_response' && !isHost && data.name === currentUserName) {
+        // Handle leave_response for students — chỉ nhận khi đúng là host gửi.
+        if (data.type === 'leave_response' && !isHost && data.name === currentUserName && senderIsHost) {
           onLeaveResponseRef.current?.(data.approved);
+        }
+
+        // Bảng đang khoá: bỏ qua event vẽ/điều khiển từ người gửi không phải
+        // host — bảo vệ client trung thực, không phải kiểm soát an ninh
+        // (xem JSDoc `whiteboardLocked` ở trên và `shouldDiscardWhiteboardEvent`).
+        if (
+          (data.type === 'whiteboard_event' || data.type === 'whiteboard_control') &&
+          shouldDiscardWhiteboardEvent({
+            senderIdentity: participant?.identity,
+            hostId,
+            whiteboardLocked,
+          })
+        ) {
+          return;
         }
 
         // Forward to whiteboard
@@ -273,7 +392,7 @@ function WhiteboardReceiver({
     return () => {
       room.off(RoomEvent.DataReceived, handleDataReceived);
     };
-  }, [room, isHost, currentUserName]);
+  }, [room, isHost, currentUserName, hostId, whiteboardLocked]);
 
   // Register broadcast function
   useEffect(() => {
@@ -921,6 +1040,9 @@ function BottomBar({
   const { localParticipant } = useLocalParticipant();
   const totalCount = participants.length + 1;
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  // Lỗi chia sẻ màn hình (PR #18) — hiện rõ cho học sinh khi quyền publish
+  // không kịp áp dụng sau khi được duyệt, thay vì fail âm thầm.
+  const [shareError, setShareError] = useState<string | null>(null);
 
   // Check if host is in the room
   const hostInRoom = hostId ? participants.some(p => p.identity === hostId) : false;
@@ -947,26 +1069,79 @@ function BottomBar({
     };
   }, [localParticipant]);
 
-  // Auto-enable screen share when approved
+  // Auto-enable screen share when approved — PR #18: đợi quyền publish LiveKit
+  // thật sự áp dụng trước khi gọi setScreenShareEnabled (xem
+  // waitForScreenSharePermission ở đầu file), thay vì gọi ngay khi nhận
+  // share_response (có thể chạy trước khi quyền server-side kịp tới client).
   useEffect(() => {
-    if (shareApproved && localParticipant && !isScreenSharing) {
-      localParticipant.setScreenShareEnabled(true).then(() => {
+    if (!shareApproved || !localParticipant || isScreenSharing) return;
+    let cancelled = false;
+
+    (async () => {
+      const granted = await waitForScreenSharePermission(localParticipant);
+      if (cancelled) return;
+
+      if (!granted) {
+        setShareError('Giáo viên đã duyệt nhưng quyền chia sẻ màn hình chưa được cấp kịp thời. Vui lòng thử lại.');
         onShareStarted?.();
-      }).catch(() => {
-        onShareStarted?.(); // Reset state even on error
-      });
-    }
+        return;
+      }
+
+      try {
+        await localParticipant.setScreenShareEnabled(true);
+        setShareError(null);
+      } catch {
+        setShareError('Không thể bật chia sẻ màn hình. Vui lòng thử lại.');
+      } finally {
+        onShareStarted?.();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [shareApproved, localParticipant, isScreenSharing, onShareStarted]);
+
+  // Tự xoá lỗi sau vài giây, tránh dính mãi trên thanh công cụ.
+  useEffect(() => {
+    if (!shareError) return;
+    const t = setTimeout(() => setShareError(null), 6000);
+    return () => clearTimeout(t);
+  }, [shareError]);
 
   // Handle screen share button click for students
   const handleScreenShareClick = async () => {
     if (isHost) {
-      // Host can toggle directly
+      // Host can toggle directly — baseline CanPublish của host luôn đầy đủ
+      // từ lúc join (backend D3), không cần gọi screenshare/start.
       await localParticipant?.setScreenShareEnabled(!isScreenSharing);
     } else {
       if (isScreenSharing) {
-        // Student can stop sharing anytime
+        // Student can stop sharing anytime — dừng publish ở LiveKit trước.
+        //
+        // R2-I2 (re-review vòng 2 PR #18 lần 2): trước đây gọi thẳng REST
+        // `screenshare/stop` với `.catch(() => {})` — nhưng backend chỉ cho
+        // actor QUẢN TRỊ được phiên gọi endpoint này
+        // (`getManageableSession` trong `StopScreenShare`,
+        // `livestream_service.go:961-965`), học sinh gọi CHẮC CHẮN 403. Cái
+        // `.catch` không phải "best effort", nó nuốt một lỗi luôn xảy ra.
+        // Giờ chỉ báo qua data-channel để HOST (actor hợp lệ) gọi REST hộ —
+        // xem `RoomClient.handleWhiteboardEvent` nhánh `share_stopped`.
         await localParticipant?.setScreenShareEnabled(false);
+        // `BottomBar` không có `broadcastRef` của VideoTab (component khác) —
+        // publishData trực tiếp qua `localParticipant`, cùng cơ chế
+        // `broadcast()` dùng trong `WhiteboardReceiver` (topic 'whiteboard',
+        // reliable vì không phải cursor).
+        if (localParticipant) {
+          try {
+            const payload = new TextEncoder().encode(JSON.stringify({ type: 'share_stopped' }));
+            await localParticipant.publishData(payload, { reliable: true, topic: 'whiteboard' });
+          } catch {
+            // Best-effort — học sinh đã dừng share ở phía LiveKit của chính
+            // mình dù gói không tới host; không ảnh hưởng bảo mật vì backend
+            // không tự cấp lại quyền publish.
+          }
+        }
       } else if (!hostInRoom) {
         // No host in room - student can share directly
         onDirectShare?.();
@@ -989,6 +1164,23 @@ function BottomBar({
   };
 
   return (
+    <>
+      {shareError && (
+        <div
+          style={{
+            background: 'rgba(248,113,113,0.15)',
+            borderTop: '1px solid rgba(248,113,113,0.3)',
+            padding: '0.4rem 1rem',
+            fontSize: '0.72rem',
+            color: '#f87171',
+            fontWeight: 500,
+            textAlign: 'center',
+            flexShrink: 0,
+          }}
+        >
+          {shareError}
+        </div>
+      )}
     <div
       style={{
         background: 'rgba(20,20,20,0.95)',
@@ -1006,8 +1198,21 @@ function BottomBar({
         overflowX: 'auto',
       }}
     >
-      <TrackToggle source={Track.Source.Microphone} className="lk-toggle" />
-      <TrackToggle source={Track.Source.Camera} className="lk-toggle" />
+      {/*
+        PR #18: học sinh KHÔNG được bật cam/mic (quyết định đã chốt với
+        user) — chỉ được chia sẻ MÀN HÌNH sau khi host duyệt. `isHost` lấy từ
+        vai trò server-verify (so `currentUserId` với `hostId`, cả hai đều
+        đến từ response REST — `getMe()` và `GET /livestream/:id` — không
+        suy từ bất kỳ tín hiệu data-channel nào có thể bị giả mạo). Ẩn hẳn
+        thay vì chỉ disable — học sinh baseline CanPublish=false ở backend
+        nên nút bật cũng sẽ luôn thất bại, hiện nút chỉ gây nhầm lẫn.
+      */}
+      {isHost && (
+        <>
+          <TrackToggle source={Track.Source.Microphone} className="lk-toggle" />
+          <TrackToggle source={Track.Source.Camera} className="lk-toggle" />
+        </>
+      )}
       {/* Custom Screen Share button for permission flow */}
       <button
         onClick={handleScreenShareClick}
@@ -1157,5 +1362,6 @@ function BottomBar({
         </svg>
       </button>
     </div>
+    </>
   );
 }

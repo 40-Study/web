@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, memo, useCallback, useState } from 'react';
-import { api } from '@/lib/meet/api';
+import { api, MeetApiError } from '@/lib/meet/api';
 import { CursorManager, CursorData, ViewportState } from '@/lib/meet/realtime-cursors';
 import '@excalidraw/excalidraw/index.css';
 
@@ -21,6 +21,14 @@ interface WhiteboardTabProps {
   onBroadcast?: (event: any) => void;
   currentUserName?: string;
   currentUserId?: string;
+  /**
+   * Host bấm khoá/mở khoá bảng (C1, review vòng 2 web PR #18) — thay vì tự
+   * lật `isPublished` cục bộ rồi broadcast (chỉ tới máy KHÁC vì LiveKit không
+   * echo gói tự gửi), giao cho `RoomClient` gọi REST lock-whiteboard trước,
+   * chỉ cập nhật state khi request thành công, rồi mới broadcast. Tham số là
+   * giá trị "locked" MỚI mong muốn (true = khoá).
+   */
+  onToggleLock?: (locked: boolean) => void;
 }
 
 function WhiteboardTabInner({
@@ -31,6 +39,7 @@ function WhiteboardTabInner({
   whiteboardPublished: initialPublished = false,
   onClose,
   onBroadcast,
+  onToggleLock,
   currentUserId = '',
   currentUserName = 'User',
 }: WhiteboardTabProps) {
@@ -44,6 +53,10 @@ function WhiteboardTabInner({
   const [isShared, setIsShared] = useState(initialShared);
   const [isPublished, setIsPublished] = useState(initialPublished);
   const canEdit = isHost || isPublished;
+  // Lỗi khi lưu snapshot lên backend (issue #58 review vòng 2, §7.4) — trước
+  // đây `.catch(() => {})` nuốt trọn 403, học sinh mất bảng mà không biết vì
+  // sao.
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Ref to track latest isPublished for cursor callback
   const isPublishedRef = useRef(isPublished);
@@ -95,7 +108,21 @@ function WhiteboardTabInner({
     });
 
     // Save to backend
-    api.post(`/whiteboard/${sessionId}/snapshot`, { elements }).catch(() => {});
+    api.post(`/whiteboard/${sessionId}/snapshot`, { elements }).then(
+      () => setSaveError(null),
+      (err) => {
+        if (err instanceof MeetApiError && err.status === 403) {
+          setSaveError(
+            err.code === 'WHITEBOARD_LOCKED'
+              ? 'Giáo viên đã khoá bảng vẽ. Thay đổi của bạn không được lưu.'
+              : 'Bạn không thuộc phiên này nên bảng vẽ không được lưu.'
+          );
+          // Khoá lại UI vẽ ngay — đừng đợi sự kiện LiveKit "unpublish" tới
+          // (có thể chưa gửi hoặc bị mất gói).
+          if (err.code === 'WHITEBOARD_LOCKED') setIsPublished(false);
+        }
+      }
+    );
   }, [onBroadcast, isHost, isPublished, currentUserId, sessionId]);
 
   // ===== EXCALIDRAW ONCHANGE =====
@@ -204,14 +231,13 @@ function WhiteboardTabInner({
   };
 
   // ===== TOGGLE PUBLISH (edit permission) =====
+  // C1 (review vòng 2 web PR #18): không tự lật `isPublished` + broadcast ở
+  // đây nữa — RoomClient gọi REST lock-whiteboard/unlock-whiteboard trước
+  // (qua `onToggleLock`), chỉ khi thành công mới cập nhật `whiteboardPublished`
+  // (đẩy xuống lại qua prop `initialPublished`) rồi mới broadcast. Đang
+  // published (isPublished=true, có thể vẽ) => bấm nghĩa là khoá (locked=true).
   const handlePublish = () => {
-    const newState = !isPublished;
-    setIsPublished(newState);
-    onBroadcast?.({
-      type: 'whiteboard_control',
-      action: newState ? 'publish' : 'unpublish',
-      senderId: currentUserId,
-    });
+    onToggleLock?.(isPublished);
   };
 
   return (
@@ -319,6 +345,19 @@ function WhiteboardTabInner({
           </button>
         </div>
       </div>
+
+      {saveError && (
+        <div style={{
+          background: 'rgba(248,113,113,0.12)',
+          borderBottom: '1px solid rgba(248,113,113,0.25)',
+          padding: '0.4rem 0.75rem',
+          fontSize: '0.7rem',
+          color: '#f87171',
+          fontWeight: 500,
+        }}>
+          {saveError}
+        </div>
+      )}
 
       {/* Canvas - rely on Excalidraw's built-in dark theme */}
       <div ref={containerRef} style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>

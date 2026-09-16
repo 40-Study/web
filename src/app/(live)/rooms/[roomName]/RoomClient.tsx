@@ -11,9 +11,12 @@ import AssignmentWorkOverlay from './tabs/AssignmentWorkOverlay';
 import { TimerModal, MinimizedTimer, RandomPickerModal, HandRaisedNotification, LeaveRequestNotification, ShareRequestNotification, ResponseNotification } from './tabs/HostTools';
 import SharedBoardPanel, { StudentMiniBoard, BoardData } from './tabs/SharedBoardPanel';
 import { getMe } from '@/lib/meet/auth';
-import { api } from '@/lib/meet/api';
+import { api, MeetApiError } from '@/lib/meet/api';
 import { resolveTimerRestartDuration } from './room-timer';
 import { useIsMobile } from '@/lib/meet/use-is-mobile';
+import { applyWhiteboardLock } from './whiteboard-lock';
+import { parseSessionSettings } from './session-settings';
+import { livestreamService } from '@/services/livestream.service';
 
 interface AssignmentNotification {
   assignment_id: string;
@@ -74,6 +77,11 @@ export default function RoomClient({
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserName, setCurrentUserName] = useState<string>('User');
   const [hostId, setHostId] = useState<string | null>(null);
+  // I3 (review vòng 2 web PR #18): tách "chưa biết/lỗi" khỏi "hostId=null vì
+  // chưa fetch xong" để hiện lỗi rõ ràng thay vì âm thầm chặn hết thao tác
+  // gate/duyệt (hostId=null vẫn giữ nguyên tác dụng chặn — có chủ đích, fail
+  // closed khi không xác định được host).
+  const [hostIdError, setHostIdError] = useState(false);
   const [remoteWhiteboardEvent, setRemoteWhiteboardEvent] = useState<any>(null);
   const [whiteboardShared, setWhiteboardShared] = useState(false);
   const [whiteboardPublished, setWhiteboardPublished] = useState(false);
@@ -99,6 +107,14 @@ export default function RoomClient({
   const [handRaisedName, setHandRaisedName] = useState<string | null>(null);
   const [leaveRequestName, setLeaveRequestName] = useState<string | null>(null);
   const [shareRequestName, setShareRequestName] = useState<string | null>(null);
+  // `user_id` THẬT của học sinh đang xin chia sẻ — từ `senderIdentity` (danh
+  // tính LiveKit xác thực của gói `share_request`, R2-I1), không phải field
+  // tự khai trong payload — cần để gọi đúng `POST screenshare/start` với
+  // target đúng người khi host duyệt; tên hiển thị (`shareRequestName`)
+  // không đủ để xác định.
+  const [shareRequestUserId, setShareRequestUserId] = useState<string | null>(null);
+  // Duyệt chia sẻ màn hình đang gọi backend — chặn double-click trong lúc chờ.
+  const [approvingShare, setApprovingShare] = useState(false);
   const [responseMessage, setResponseMessage] = useState<{ type: 'leave' | 'share'; approved: boolean } | null>(null);
   const [participants, setParticipants] = useState<{identity: string; name: string}[]>([]);
   const [participantLeftName, setParticipantLeftName] = useState<string | null>(null);
@@ -157,15 +173,29 @@ export default function RoomClient({
       })
       .catch(() => setCurrentUserId(null));
 
-    // Fetch session to get host_id
-    api.get<{ data: { host_id: string } }>(`/livestream/${sessionId}`)
+    // Fetch session để lấy host_id VÀ trạng thái khoá bảng ban đầu (C1 —
+    // whiteboard_locked là nguồn sự thật server, học sinh/host vào muộn đọc
+    // ngay ở đây thay vì đợi một gói LiveKit không bao giờ tới nếu là chính
+    // người vừa khoá/mở khoá).
+    //
+    // R2-C1 (re-review vòng 2 PR #18 lần 2): backend trả `settings` là CHUỖI
+    // JSON đã json.Marshal (`dto.LivestreamResponseDTO.Settings string`),
+    // KHÔNG phải object lồng — đọc thẳng `.whiteboard_locked` trên field kiểu
+    // string luôn ra `undefined`, khiến seed trước đây luôn rơi về mặc định
+    // `false` bất kể trạng thái thật. `parseSessionSettings` parse an toàn cả
+    // hai dạng và fail-closed (locked=true) nếu parse lỗi.
+    api.get<{ data: { host_id: string; settings?: unknown } }>(`/livestream/${sessionId}`)
       .then((res: any) => {
         const hid = res?.data?.host_id || res?.host_id || '';
         setHostId(hid);
+        setHostIdError(false);
+        const { whiteboardLocked: locked } = parseSessionSettings(res?.data?.settings ?? res?.settings);
+        setWhiteboardPublished(!locked);
       })
       .catch((err) => {
         console.error('[RoomClient] Failed to fetch hostId:', err);
         setHostId(null);
+        setHostIdError(true);
       });
 
     // Fetch published assignments for this session
@@ -262,6 +292,33 @@ export default function RoomClient({
       setNotification(null);
     }
   };
+
+  // C1 (review vòng 2 web PR #18): host bấm khoá/mở khoá => gọi REST TRƯỚC,
+  // chỉ cập nhật state cục bộ khi request thành công, rồi mới broadcast cho
+  // người khác. Trước đây `whiteboardPublished` chỉ đổi khi NHẬN gói LiveKit
+  // — không bao giờ xảy ra với chính người gửi — nên host tự khoá vĩnh viễn
+  // client của chính mình.
+  const handleToggleWhiteboardLock = useCallback(async (locked: boolean) => {
+    const result = await applyWhiteboardLock(sessionId, locked);
+    if (result.ok) {
+      setWhiteboardPublished(!result.locked);
+      whiteboardBroadcastRef.current?.({
+        type: 'whiteboard_control',
+        action: result.locked ? 'unpublish' : 'publish',
+        senderId: currentUserId,
+      });
+    } else {
+      console.error('[RoomClient] Failed to toggle whiteboard lock:', result.error);
+      window.alert('Không thể khoá/mở khoá bảng vẽ. Vui lòng thử lại.');
+    }
+  }, [sessionId, currentUserId]);
+
+  // I2 (review vòng 2 web PR #18): backend đã ngắt kết nối LiveKit khi kick,
+  // nhưng trước đây không có nhánh UI nào cho người bị đuổi giữa buổi.
+  const handleKicked = useCallback(() => {
+    window.alert('Bạn đã bị mời ra khỏi buổi học này bởi giáo viên.');
+    router.push('/my-courses');
+  }, [router]);
 
   const handleWhiteboardEvent = useCallback((event: any) => {
     // Whiteboard events
@@ -405,7 +462,29 @@ export default function RoomClient({
     if (event?.type === 'share_request') {
       if (isHost && event.name) {
         setShareRequestName(event.name);
+        // R2-I1 (re-review vòng 2 PR #18 lần 2): lấy `user_id` từ
+        // `senderIdentity` — danh tính THẬT của người gửi mà `VideoTab`'s
+        // `handleDataReceived` đính vào từ `participant.identity` của gói
+        // LiveKit (không thể giả mạo), KHÔNG còn từ field `userId` tự khai
+        // trong payload nữa (client độc hại có thể khai user_id của MỘT
+        // NGƯỜI KHÁC để lừa host duyệt nhầm quyền publish cho nạn nhân đó).
+        setShareRequestUserId(typeof event.senderIdentity === 'string' ? event.senderIdentity : null);
         playNotificationSound();
+      }
+      return;
+    }
+
+    // R2-I2 (re-review vòng 2 PR #18 lần 2): học sinh tự dừng chia sẻ không
+    // còn tự gọi REST screenshare/stop nữa — backend chỉ cho actor QUẢN TRỊ
+    // được phiên gọi (`getManageableSession` trong `StopScreenShare`), học
+    // sinh gọi CHẮC CHẮN 403; bản cũ nuốt lỗi đó bằng `.catch(() => {})` nên
+    // trông như "best effort" nhưng thực ra không bao giờ thành công. Giờ học
+    // sinh chỉ báo qua data-channel, host (actor hợp lệ) gọi REST hộ.
+    if (event?.type === 'share_stopped') {
+      if (isHost && typeof event.senderIdentity === 'string' && event.senderIdentity) {
+        livestreamService.stopScreenShare(sessionId, event.senderIdentity).catch((err) => {
+          console.error('[RoomClient] Failed to revoke screen share permission after student stop:', err);
+        });
       }
       return;
     }
@@ -492,7 +571,7 @@ export default function RoomClient({
       }
       return;
     }
-  }, [isHost, currentUserId, currentUserName, playNotificationSound, timerTotal]);
+  }, [isHost, currentUserId, currentUserName, playNotificationSound, timerTotal, sessionId]);
 
   const handleWhiteboardBroadcasterReady = useCallback((broadcast: (event: any) => void) => {
     whiteboardBroadcastRef.current = broadcast;
@@ -767,6 +846,28 @@ export default function RoomClient({
         }
       `}</style>
 
+      {/* I3 (review vòng 2 web PR #18): fetch host_id lỗi trước đây chỉ
+          console.error rồi âm thầm chặn hết thao tác gate/duyệt — giờ báo rõ
+          cho người dùng. hostId vẫn giữ null (fail closed: chặn duyệt
+          chia sẻ màn hình, vứt nét vẽ non-host) vì không xác định được host
+          thì không thể xác thực các thao tác đó an toàn. */}
+      {hostIdError && (
+        <div
+          style={{
+            background: 'rgba(248,113,113,0.15)',
+            borderBottom: '1px solid rgba(248,113,113,0.35)',
+            color: '#f87171',
+            fontSize: '0.8rem',
+            fontWeight: 500,
+            padding: '0.5rem 1rem',
+            textAlign: 'center',
+            flexShrink: 0,
+          }}
+        >
+          Không thể xác định giáo viên của buổi học. Một số chức năng (duyệt chia sẻ màn hình, bảng vẽ) có thể không hoạt động — hãy tải lại trang.
+        </div>
+      )}
+
       {/* Main content */}
       <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
             <div
@@ -804,10 +905,12 @@ export default function RoomClient({
                   }
                 }}
                 onLeave={handleLeave}
+                onKicked={handleKicked}
                 pip={isOverlay}
                 isHost={isHost}
                 hostId={hostId || undefined}
                 currentUserName={currentUserName}
+                whiteboardLocked={!whiteboardPublished}
               />
             </div>
 
@@ -900,6 +1003,7 @@ export default function RoomClient({
                   whiteboardPublished={whiteboardPublished}
                   onClose={() => setShowWhiteboard(false)}
                   onBroadcast={(event) => whiteboardBroadcastRef.current?.(event)}
+                  onToggleLock={handleToggleWhiteboardLock}
                   currentUserId={currentUserId || ''}
                   currentUserName={currentUserName}
                 />
@@ -1606,18 +1710,58 @@ export default function RoomClient({
       {shareRequestName && isHost && (
         <ShareRequestNotification
           name={shareRequestName}
+          approving={approvingShare}
           onClose={() => {
-            // Closing notification = rejection
+            // Closing notification = rejection — chưa từng gọi screenshare/start
+            // nên không cần thu quyền, chỉ cần báo học sinh bị từ chối.
             whiteboardBroadcastRef.current?.({ type: 'share_response', name: shareRequestName, approved: false });
             setShareRequestName(null);
+            setShareRequestUserId(null);
           }}
-          onApprove={() => {
-            whiteboardBroadcastRef.current?.({ type: 'share_response', name: shareRequestName, approved: true });
-            setShareRequestName(null);
+          onApprove={async () => {
+            // PR #18 (re-review backend #59): trước đây web CHỈ gửi
+            // share_response qua data channel — không hề gọi
+            // POST /livestream/:id/screenshare/start. Từ #59, học sinh có
+            // CanPublish=false mặc định nên "duyệt" xong vẫn bị LiveKit từ
+            // chối publish. Phải gọi API cấp quyền THẬT trước, đợi 200 rồi
+            // mới báo học sinh — nếu không, chỉ dàn xếp lại UX trên một
+            // luồng vẫn còn 403 ở tầng thật.
+            if (!shareRequestUserId) {
+              // Không có user_id thật (client cũ chưa gửi kèm, hoặc payload
+              // hỏng) — không thể gọi đúng target, từ chối an toàn thay vì
+              // gọi API với target rỗng (sẽ tự cấp cho actor = host, sai đối
+              // tượng).
+              whiteboardBroadcastRef.current?.({ type: 'share_response', name: shareRequestName, approved: false });
+              setShareRequestName(null);
+              setShareRequestUserId(null);
+              window.alert('Không xác định được người xin chia sẻ (thiếu user_id) — đã từ chối. Học sinh nên tắt/mở lại yêu cầu.');
+              return;
+            }
+
+            setApprovingShare(true);
+            try {
+              await api.post(`/livestream/${sessionId}/screenshare/start`, {
+                action: 'start',
+                user_id: shareRequestUserId,
+              });
+              whiteboardBroadcastRef.current?.({ type: 'share_response', name: shareRequestName, approved: true });
+            } catch (err) {
+              whiteboardBroadcastRef.current?.({ type: 'share_response', name: shareRequestName, approved: false });
+              if (err instanceof MeetApiError && err.status === 403) {
+                window.alert('Bạn không có quyền duyệt chia sẻ màn hình trong phiên này.');
+              } else {
+                window.alert('Không cấp được quyền chia sẻ màn hình. Vui lòng thử lại.');
+              }
+            } finally {
+              setApprovingShare(false);
+              setShareRequestName(null);
+              setShareRequestUserId(null);
+            }
           }}
           onReject={() => {
             whiteboardBroadcastRef.current?.({ type: 'share_response', name: shareRequestName, approved: false });
             setShareRequestName(null);
+            setShareRequestUserId(null);
           }}
         />
       )}

@@ -17,9 +17,13 @@ export interface ChatMessage {
   created_at?: string;
 }
 
+/**
+ * Body của `POST /chat/send`. KHÔNG có `user_id`: handler dùng
+ * `EnsureSessionMember` với danh tính từ access token, không đọc từ body
+ * (issue #58 review vòng 2, §7.1).
+ */
 export interface SendMessageDTO {
   session_id: string;
-  user_id: string;
   message: string;
 }
 

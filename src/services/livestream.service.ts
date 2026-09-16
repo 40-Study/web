@@ -24,6 +24,16 @@ export interface LivestreamSession {
   scheduled_at?: string;
   created_at?: string;
   updated_at?: string;
+  /**
+   * Cờ cấu hình phiên (review vòng 2 web PR #18, C1) — `whiteboard_locked` là
+   * NGUỒN SỰ THẬT phía server cho trạng thái khoá bảng, khớp
+   * `model.LivestreamSettings` (`internal/model/livestream_session.go:56-63`).
+   * Web đọc field này khi vào phòng để seed trạng thái ban đầu thay vì đợi một
+   * gói LiveKit (LiveKit không echo lại gói tự gửi cho chính người gửi).
+   */
+  settings?: {
+    whiteboard_locked?: boolean;
+  };
 }
 
 /** Envelope thật của GET /livestream — không bọc {message,data} */
@@ -118,11 +128,12 @@ export const livestreamService = {
   end: (sessionId: string) =>
     api.post<R<null>>(`/livestream/${sessionId}/end`, {}).then((r) => r.data),
 
-  /** POST /livestream/:sessionId/join */
-  join: (sessionId: string, userId: string, role = "viewer") =>
-    api
-      .post<R<null>>(`/livestream/${sessionId}/join`, { user_id: userId, role })
-      .then((r) => r.data),
+  // Đã xoá `join` (review vòng 2 web PR #18, §5 + I4): gửi `{user_id, role}`,
+  // thiếu `name` là field BẮT BUỘC của `JoinLivestimeDTO` (backend) nên chắc
+  // chắn 400 nếu được nối dây; 0 call site xác nhận bằng
+  // `git grep -n "livestreamService\.join\b" src/` (rỗng). Luồng join thật
+  // dùng `serverApi.post` trực tiếp trong
+  // `app/(live)/rooms/[roomName]/join-livestream.ts`.
 
   /** POST /livestream/:sessionId/leave */
   leave: (sessionId: string, userId: string) =>
@@ -160,21 +171,32 @@ export const livestreamService = {
 
   // ── Screen Share ──────────────────────────────────────────────────────────
 
-  /** POST /livestream/:sessionId/screenshare/start */
-  startScreenShare: (sessionId: string, userId: string) =>
+  /**
+   * POST /livestream/:sessionId/screenshare/start
+   *
+   * Sửa lại đúng (PR #18, re-review backend #59 — bản sửa §7.1 ban đầu ĐÃ
+   * XOÁ NHẦM `user_id`): `dto.ScreenShareDTO.UserID` là ĐỐI TƯỢNG được
+   * host/GV DUYỆT chia sẻ — rỗng = actor tự chia sẻ (host bật màn hình của
+   * chính mình), có giá trị = actor (đã được `canManageSession` xác nhận là
+   * host/GV/instructor/admin) cấp quyền publish cho một học sinh cụ thể.
+   * Không phải danh tính người gọi (actor luôn lấy từ access token) — cùng
+   * kiểu tham số với `ModerationActionDTO.user_id` (mute/kick), không phải
+   * kiểu bị xoá ở §7.1 (JoinLiveSessionDTO.user_id — danh tính tự khai).
+   */
+  startScreenShare: (sessionId: string, targetUserId?: string) =>
     api
       .post<R<null>>(`/livestream/${sessionId}/screenshare/start`, {
-        user_id: userId,
         action: "start",
+        ...(targetUserId ? { user_id: targetUserId } : {}),
       })
       .then((r) => r.data),
 
-  /** POST /livestream/:sessionId/screenshare/stop */
-  stopScreenShare: (sessionId: string, userId: string) =>
+  /** POST /livestream/:sessionId/screenshare/stop — cùng ý nghĩa `targetUserId` như trên. */
+  stopScreenShare: (sessionId: string, targetUserId?: string) =>
     api
       .post<R<null>>(`/livestream/${sessionId}/screenshare/stop`, {
-        user_id: userId,
         action: "stop",
+        ...(targetUserId ? { user_id: targetUserId } : {}),
       })
       .then((r) => r.data),
 };

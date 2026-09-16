@@ -27,7 +27,14 @@ interface FetchOptions {
 export class HttpError extends Error {
   constructor(
     public status: number,
-    message: string
+    message: string,
+    /**
+     * Body JSON gốc nếu parse được (issue #58 review vòng 2, §7.4). Lỗi 403 uy quyền của
+     * nhóm livestream/chat/whiteboard trả `{message: <MÃ CỐ ĐỊNH>, error: <chuỗi Go gốc>}` —
+     * `message` ở ĐÂY (property của Error) vẫn giữ format cũ ("API Error: ...") để không đổi
+     * hành vi những nơi đã dựa vào nó; nơi cần phân biệt lý do 403 đọc `body?.message`.
+     */
+    public body?: { message?: string; error?: string }
   ) {
     super(message);
     this.name = "HttpError";
@@ -59,7 +66,8 @@ export async function serverFetch<T>(
   });
 
   if (!response.ok) {
-    throw new HttpError(response.status, `API Error: ${response.status} ${response.statusText}`);
+    const body = await response.json().catch(() => undefined);
+    throw new HttpError(response.status, `API Error: ${response.status} ${response.statusText}`, body);
   }
 
   const data = await response.json();
