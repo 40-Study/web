@@ -31,16 +31,23 @@ import {
  * `handleTimeUpdate` (use-video-progress.ts) tính `creditedEnd`, để hàm này
  * dùng chung được cho cả kịch bản xem thật lẫn kịch bản dùng để đo tầng
  * payload (V-H) ở describe bên dưới.
+ *
+ * V-J: `startMedia` (mặc định 0) dịch điểm bắt đầu sang một PHA khác trong
+ * giây. Đây là tham số quyết định khả năng phát hiện hồi quy của các test
+ * spam bên dưới: ở `startMedia = 0` mọi vị trí đều rơi đúng số nguyên nên
+ * phép làm tròn nào cũng cho cùng kết quả (đo được: floor/floor, floor/ceil
+ * và ceil/floor đều ra 0 giây trên dây) — test xanh với cả code hỏng.
  */
 function simulate(
   tickMs: number,
   playbackRate: number,
   totalWallMs: number,
-  advance: (mediaTime: number) => number = (t) => t + (tickMs / 1000) * playbackRate
+  advance: (mediaTime: number) => number = (t) => t + (tickMs / 1000) * playbackRate,
+  startMedia = 0
 ): { ranges: PlayedRange[]; continuousCount: number; tickCount: number; finalMediaTime: number } {
   const tickCount = Math.round(totalWallMs / tickMs);
   let ranges: PlayedRange[] = [];
-  let mediaTime = 0;
+  let mediaTime = startMedia;
   let previous: number | null = null;
   let continuousCount = 0;
   for (let i = 0; i < tickCount; i += 1) {
@@ -238,6 +245,16 @@ describe("appendSample", () => {
   });
 });
 
+/**
+ * Các PHA khởi điểm (phần lẻ của giây) mà kịch bản spam được quét qua.
+ *
+ * V-J (gate #17 vòng 4): một pha duy nhất là test không chứng minh gì. Ở pha
+ * 0 mọi vị trí rơi đúng số nguyên nên floor/floor, floor/ceil và ceil/floor
+ * cho CÙNG kết quả — test xanh với cả code còn lỗ. 0.8 và 0.95 là hai pha
+ * từng khiến bản floor/floor nở một khoảng 0.25s thành 1 giây (4x).
+ */
+const SPAM_PHASES = [0, 0.25, 0.5, 0.8, 0.95] as const;
+
 describe("kịch bản đo tốc độ xem thật (BLOCKER PR #17, #2 + #3) — đo qua buildHeartbeatPayload, không phải mảng thô (V-H, #3c)", () => {
   it("phát thật 1x, tick 1000ms (máy chậm) → gần đúng 10s thực, KHÔNG mất một nửa", () => {
     // Trước fix: mỗi tick 1s bị appendSample cắt vụn ở ngưỡng 0.5s tuyệt đối
@@ -265,15 +282,22 @@ describe("kịch bản đo tốc độ xem thật (BLOCKER PR #17, #2 + #3) — 
   // payload thực tế (không phải mảng thô) để cùng lúc bắt được cả hai lớp
   // phòng thủ: nếu ai đó nới lại sàn dung sai HOẶC bỏ trần tổng payload
   // (V-H), test này phải đỏ.
-  it("kéo thanh tua ĐỀU 0.9s mỗi tick 250ms → tổng tín dụng trên payload thực tế ≤ 10.5s so với 10s thực (V-F)", () => {
-    const { ranges, continuousCount, finalMediaTime } = simulate(250, 1, 10_000, (t) => t + 0.9);
-    // Xác nhận lớp phòng thủ thứ nhất: sàn dung sai mới từ chối đúng mẫu này.
-    expect(continuousCount).toBe(0);
-    const totalWatched = totalWatchedViaPayload(ranges, finalMediaTime, 10_000, 1);
-    expect(totalWatched).toBeLessThanOrEqual(10.5);
+  //
+  // V-J: quét nhiều PHA (xem `SPAM_PHASES`) — xem giải thích ở test spam bên
+  // dưới về vì sao một pha duy nhất là test không chứng minh gì.
+  it("kéo thanh tua ĐỀU 0.9s mỗi tick 250ms → tổng tín dụng trên payload thực tế ≤ 10.5s so với 10s thực, mọi pha (V-F/V-J)", () => {
+    for (const phase of SPAM_PHASES) {
+      const { ranges, continuousCount, finalMediaTime } = simulate(
+        250, 1, 10_000, (t) => t + 0.9, phase
+      );
+      // Xác nhận lớp phòng thủ thứ nhất: sàn dung sai mới từ chối đúng mẫu này.
+      expect(continuousCount).toBe(0);
+      const totalWatched = totalWatchedViaPayload(ranges, finalMediaTime, 10_000, 1);
+      expect(totalWatched).toBeLessThanOrEqual(10.5);
+    }
   });
 
-  it("kéo thanh tua chậm 1.5s mỗi tick 250ms → KHÔNG mẫu nào được chấm liên tục, tổng tín dụng trên payload thực tế ≤10.5s so với 10s thực (BLOCKER PR #17 vòng 2b + V-H)", () => {
+  it("kéo thanh tua chậm 1.5s mỗi tick 250ms → KHÔNG mẫu nào được chấm liên tục, tổng tín dụng trên payload thực tế ≤10.5s so với 10s thực, mọi pha (BLOCKER PR #17 vòng 2b + V-H + V-J)", () => {
     // Vòng 2a: 0/40 mẫu được chấm liên tục — đúng, nhưng MỖI mẫu bị từ chối
     // vẫn được `openRange` seed CỐ ĐỊNH 0.5s (MIN_RANGE_SECONDS) bất kể có
     // bao nhiêu thời gian thực trôi qua → 40 × 0.5s = 20s tín dụng trên 10s
@@ -283,26 +307,68 @@ describe("kịch bản đo tốc độ xem thật (BLOCKER PR #17, #2 + #3) — 
     // (0.25s ở kịch bản này — nhỏ hơn sàn 0.5s) — mảng thô cộng dồn còn
     // 10.25s (0.5 + 39×0.25). Nhưng V-H đo ở TẦNG PAYLOAD: mỗi khoảng dài
     // 0.25–0.5s, cách xa nhau (bước nhảy media 1.5s/tick) nên không gộp được
-    // với nhau — floor cả hai đầu khiến HẦU HẾT các khoảng ngắn này co về
-    // rỗng và bị lọc bỏ (đúng chủ đích V-H: không "nở" tín dụng tua giả lên
-    // dây). Vẫn giữ trần ≤10.5s làm chốt an toàn chung.
-    const { continuousCount, ranges, finalMediaTime } = simulate(250, 1, 10_000, (t) => t + 1.5);
-    expect(continuousCount).toBe(0);
-    const totalWatched = totalWatchedViaPayload(ranges, finalMediaTime, 10_000, 1);
-    expect(totalWatched).toBeLessThanOrEqual(10.5);
+    // với nhau — làm tròn vào trong khiến HẦU HẾT các khoảng ngắn này co về
+    // rỗng và bị lọc bỏ. Vẫn giữ trần ≤10.5s làm chốt an toàn chung.
+    for (const phase of SPAM_PHASES) {
+      const { continuousCount, ranges, finalMediaTime } = simulate(
+        250, 1, 10_000, (t) => t + 1.5, phase
+      );
+      expect(continuousCount).toBe(0);
+      const totalWatched = totalWatchedViaPayload(ranges, finalMediaTime, 10_000, 1);
+      expect(totalWatched).toBeLessThanOrEqual(10.5);
+    }
   });
 
-  it("spam phím tua +5s mỗi 200ms → KHÔNG mẫu nào được chấm liên tục, tổng tín dụng trên payload thực tế ≤10.5s so với 10s thực (BLOCKER PR #17 vòng 2b + V-H)", () => {
-    // Vòng 2a: 0/50 mẫu liên tục đúng, nhưng 50 × 0.5s = 25s tín dụng trên
-    // 10s thực (sai số 150%). Vòng 2b: mảng thô còn 10.3s (0.5 + 49×0.2).
-    // V-H (đúng lỗi reviewer nêu): TRƯỚC fix, `ceil` đầu cuối "nở" mỗi khoảng
-    // ~0.2s thành trọn 1s trên dây — 49 khoảng như vậy có thể thổi phồng
-    // thành tới ~50s trên payload dù mảng thô chỉ 10.3s. Floor cả hai đầu +
-    // trần tổng theo wall-clock chặn cả hai đường gian lận này cùng lúc.
-    const { continuousCount, ranges, finalMediaTime } = simulate(200, 1, 10_000, (t) => t + 5);
-    expect(continuousCount).toBe(0);
-    const totalWatched = totalWatchedViaPayload(ranges, finalMediaTime, 10_000, 1);
-    expect(totalWatched).toBeLessThanOrEqual(10.5);
+  // V-J (gate #17 vòng 4, BLOCKER): kịch bản spam +5s/tick 200ms — quét NHIỀU
+  // PHA thay vì chỉ pha 0.
+  //
+  // Vì sao phải quét pha (đo được, không phải giả định): ở `startMedia = 0`
+  // mọi vị trí đều rơi đúng số nguyên nên MỌI quy tắc làm tròn cho cùng kết
+  // quả — floor/floor, floor/ceil và ceil/floor đều ra 0 giây trên dây, và
+  // ngưỡng `<= 10.5` xanh một cách vô nghĩa. Đo trên bản floor/floor ở các
+  // pha khác (cùng kịch bản, cùng mảng thô 10.3s):
+  //   pha 0.00 → 0s · pha 0.50 → 1s · pha 0.80 → 50s · pha 0.95 → 50s
+  // tức ngưỡng 10.5 chỉ có hiệu lực ở pha ≥ ~0.75 — đúng ~25% không gian vị
+  // trí dừng, và đó là pha duy nhất test cũ không chạm tới.
+  //
+  // Khẳng định trên dây thôi là CHƯA ĐỦ (0 ≤ 10.5 luôn đúng): test còn khẳng
+  // định mảng THÔ thật sự tích luỹ tín dụng đáng kể, để phép đo là "10.3s tín
+  // dụng trong bộ nhớ đã bị chặn xuống ≤10.5s trên dây" chứ không phải "không
+  // có gì để đo".
+  it("spam phím tua +5s mỗi 200ms → tổng tín dụng trên payload thực tế ≤10.5s so với 10s thực, MỌI PHA (BLOCKER PR #17 vòng 2b + V-H + V-J)", () => {
+    for (const phase of SPAM_PHASES) {
+      const { continuousCount, ranges, finalMediaTime } = simulate(
+        200, 1, 10_000, (t) => t + 5, phase
+      );
+      expect(continuousCount).toBe(0);
+
+      // Mảng thô PHẢI tích luỹ tín dụng — nếu không, khẳng định dưới đây là
+      // một test xanh không chứng minh gì (đúng lỗi của bản trước ở pha 0).
+      const rawTotal = totalWatchedSeconds(ranges);
+      expect(rawTotal).toBeGreaterThan(10);
+
+      const totalWatched = totalWatchedViaPayload(ranges, finalMediaTime, 10_000, 1);
+      expect(totalWatched).toBeLessThanOrEqual(10.5);
+      // Khoảng do spam tua đều dưới 1 giây (tín dụng mỗi mẫu không liên tục bị
+      // `boundedOpenCredit` chặn ở 0.5s) nên bị LỌC SẠCH trước khi floor — đo
+      // được 0 giây trên dây ở cả 5 pha.
+      expect(totalWatched).toBe(0);
+
+      // Đo RIÊNG tầng chuyển-giây-nguyên, KHÔNG qua trần (bỏ `maxTotalSeconds`)
+      // — vì trần sau khi chuyển xuống dưới bước đó (V-J) đã trở thành một
+      // chốt chặn THẬT, nó che mất lỗi làm tròn: đo được dưới bản floor/floor
+      // KHÔNG lọc rằng 50 giây phình ra vẫn bị trần cắt về ≤10.5 nên khẳng
+      // định trên vẫn xanh. Phép đo dưới đây cô lập đúng tầng đó và là thứ đỏ
+      // khi ai đó bỏ phép lọc-trước (đo được: 50 giây ở pha 0.8 so với 10.3
+      // giây thô).
+      const uncapped = buildHeartbeatPayload({
+        positionSeconds: finalMediaTime,
+        durationSeconds: 1_000_000,
+        ranges,
+      });
+      const uncappedTotal = uncapped.played_ranges.reduce((sum, [s, e]) => sum + (e - s), 0);
+      expect(uncappedTotal).toBeLessThanOrEqual(rawTotal);
+    }
   });
 });
 
@@ -421,10 +487,10 @@ describe("buildHeartbeatPayload", () => {
       lesson_id: "lesson-1",
       position_seconds: 754,
       duration_seconds: 1200,
-      // V-H (re-review vòng 2, đổi từ floor/ceil sang floor CẢ HAI ĐẦU —
-      // xem giải thích đầy đủ trong played-ranges.ts): gộp trước
-      // ([0.2,120.9] gộp với [118.4,754.1] vì 118.4<=120.9 → [0.2,754.1]),
-      // rồi floor(0.2)=0, floor(754.1)=754.
+      // V-J (gate #17 vòng 4 — xem giải thích đầy đủ trong played-ranges.ts):
+      // gộp trước ([0.2,120.9] gộp với [118.4,754.1] vì 118.4<=120.9 →
+      // [0.2,754.1]), khoảng dài >= 1s nên qua được ngưỡng, rồi floor(0.2)=0,
+      // floor(754.1)=754 → [0,754].
       played_ranges: [[0, 754]],
     });
   });
@@ -449,15 +515,14 @@ describe("buildHeartbeatPayload", () => {
     expect(payload.played_ranges).toEqual([[0, 600]]);
   });
 
-  // V-H (re-review vòng 2, BLOCKER): review vòng 1 (#19) từng làm tròn RA
-  // NGOÀI (floor start, ceil end) để "không bao giờ mất khoảng ngắn" — nhưng
-  // đúng cơ chế NÀY là nguồn gốc lỗi V-H: mỗi khoảng ~0.2-0.5s do
-  // `boundedOpenCredit` cắt đúng mức tua bị `ceil` "nở" thành trọn 1 giây
-  // trên dây, và spam tua tạo ra hàng chục khoảng như vậy mỗi nhịp heartbeat
-  // → tín dụng bị thổi phồng gấp nhiều lần dù mảng thô hoàn toàn đúng. Sửa
-  // theo đúng đề xuất reviewer: floor CẢ HAI ĐẦU, BỎ hẳn khoảng < 1 giây
-  // (không ceil cưỡng bức để giữ lại).
-  it("khoảng ngắn dưới 1 giây bị BỎ (floor cả hai đầu, không ceil nở lên) — V-H", () => {
+  // V-J (gate #17 vòng 4): quy tắc trên dây là "LỌC khoảng thô ngắn hơn 1 giây
+  // TRƯỚC, rồi floor cả hai đầu". Lịch sử ba đời: floor/ceil (vòng 1) nở
+  // khoảng ngắn thành 1 giây (lỗi V-H); floor/floor KHÔNG LỌC (vòng 2) vẫn nở
+  // đúng 4x ở pha bất lợi vì `floor(10.80)=10` lệch `floor(11.05)=11` — lỗi
+  // V-J; ceil/floor (vòng 3) hết nở nhưng mất 10% khi xem liên tục dài (khe
+  // 1 giây tại mỗi mốc heartbeat). Bản này là bản duy nhất vừa không nở vừa
+  // không mất: lọc trước khi floor là mấu chốt, không phải hàm làm tròn.
+  it("khoảng ngắn dưới 1 giây bị BỎ TRƯỚC khi floor (không có gì để nở) — V-J", () => {
     const payload = buildHeartbeatPayload({
       positionSeconds: 1,
       durationSeconds: 600,
@@ -466,15 +531,66 @@ describe("buildHeartbeatPayload", () => {
     expect(payload.played_ranges).toEqual([]);
   });
 
-  it("khoảng đủ dài sau khi floor (>=1s) vẫn được giữ, không bị floor làm ngắn đi ngoài ý muốn", () => {
-    // [10.1, 11.9] dài 1.8s thật — floor(10.1)=10, floor(11.9)=11 → [10,11],
-    // vẫn còn >=1s nên được giữ (khác với khoảng < 1s ở test trên).
+  // Test khoá chặt phép LỌC-TRƯỚC: quay lại floor/floor KHÔNG lọc làm test
+  // này ĐỎ, vì `floor(10.80)=10` và `floor(11.05)=11` lệch nhau 1 nên khoảng
+  // 0.25s nở thành trọn 1 giây (4x). Quét cả 4 pha bất lợi, không chỉ một.
+  it("khoảng ngắn 0.25s ở pha bất lợi KHÔNG được nở thành 1 giây (4x) — V-J", () => {
+    for (const frac of [0.75, 0.8, 0.9, 0.95]) {
+      const start = 10 + frac;
+      const payload = buildHeartbeatPayload({
+        positionSeconds: start,
+        durationSeconds: 600,
+        ranges: [[start, start + 0.25]],
+      });
+      expect(payload.played_ranges).toEqual([]);
+    }
+  });
+
+  it("khoảng dài >= 1 giây vẫn được giữ và floor cả hai đầu — V-J", () => {
+    // [10.1, 11.9] dài 1.8s, qua ngưỡng → floor(10.1)=10, floor(11.9)=11.
     const payload = buildHeartbeatPayload({
       positionSeconds: 12,
       durationSeconds: 600,
       ranges: [[10.1, 11.9]],
     });
     expect(payload.played_ranges).toEqual([[10, 11]]);
+  });
+
+  it("khoảng dài floor đúng biên, không đẩy đầu lên — V-J", () => {
+    // [10.1, 12.9] dài 2.8s → floor(10.1)=10, floor(12.9)=12 → [10,12].
+    const payload = buildHeartbeatPayload({
+      positionSeconds: 13,
+      durationSeconds: 600,
+      ranges: [[10.1, 12.9]],
+    });
+    expect(payload.played_ranges).toEqual([[10, 12]]);
+  });
+
+  // Bất biến trung tâm của V-J — phát biểu CHÍNH XÁC: một khoảng thô NGẮN HƠN
+  // 1 giây không bao giờ tới được dây (nó bị lọc trước khi floor, nên không có
+  // pha nào biến nó thành 1 giây). Đây là thứ phân biệt bản này với floor/floor
+  // KHÔNG lọc, và là bất biến đã đo được ở MỌI pha.
+  //
+  // KHÔNG khẳng định "tổng trên dây ≤ tổng thô" cho MỌI khoảng: điều đó KHÔNG
+  // đúng với floor/floor. Một khoảng vừa trên 1 giây bắt đầu ở pha ~0.99 (ví
+  // dụ [10.99, 12.0] dài 1.01s) vẫn nở lên 2 giây vì `floor(10.99)=10` và
+  // `floor(12.0)=12`. Mức nở bị chặn trên bởi đúng 1 giây cho mỗi khoảng (vì
+  // `floor(e)-floor(s)-(e-s) = frac(s) - frac(e) < 1`), và các khoảng ngắn do
+  // tua luôn dưới 1 giây nên không bao giờ chạm tới trường hợp này.
+  it("BẤT BIẾN V-J: khoảng thô dưới 1 giây KHÔNG BAO GIỜ lên dây, mọi pha", () => {
+    for (const frac of [0, 0.25, 0.5, 0.75, 0.8, 0.9, 0.95, 0.99]) {
+      const rawStart = 10 + frac;
+      const raw: PlayedRange = [rawStart, rawStart + 0.25];
+      const payload = buildHeartbeatPayload({
+        positionSeconds: rawStart,
+        durationSeconds: 600,
+        ranges: [raw],
+      });
+      const wire = payload.played_ranges.reduce((sum, [s, e]) => sum + (e - s), 0);
+      // 0.25s thô ở MỌI pha: bị lọc, không bao giờ thành 1 giây. Bản floor/floor
+      // KHÔNG lọc cho 1s (4x) ở các pha 0.75–0.95.
+      expect(wire).toBe(0);
+    }
   });
 
   describe("V-H — trần TỔNG played_ranges theo wall-clock (maxTotalSeconds)", () => {
@@ -499,23 +615,74 @@ describe("buildHeartbeatPayload", () => {
       expect(payload.played_ranges).toEqual([[0, 3], [10, 11]]);
     });
 
-    it("mô phỏng đúng số đo reviewer nêu: spam tua +5s/tick 200ms không được nở thành ~50s trên payload (mutation kiểm chứng V-H)", () => {
-      // Trước fix (ceil hai đầu KHÔNG có trần tổng): mỗi khoảng ~0.2s bị ceil
-      // thành 1s — 49 khoảng như vậy có thể thổi phồng thành tới ~50s trên
-      // dây dù mảng thô đo được chỉ 10.3s (đúng số liệu review vòng 2, mục
-      // V-H). Muốn xác nhận bằng mutation thật (đổi floor→ceil và bỏ dòng
-      // capTotalByWallClock trong played-ranges.ts) test này phải đỏ — chưa
-      // chạy được vì Bash hỏng, ghi rõ trong report để team-lead xác nhận.
-      const { ranges, finalMediaTime } = simulate(200, 1, 10_000, (t) => t + 5);
-      const maxTotalSeconds = 1 * (10_000 / 1000) * (1 + WALL_CLOCK_CREDIT_SLACK);
-      const payload = buildHeartbeatPayload({
-        positionSeconds: finalMediaTime,
-        durationSeconds: 1_000_000,
+    // Trần là chốt chặn THẬT (V-J): nó đo tổng SAU làm tròn, nên khi mảng đã
+    // toàn số nguyên và vượt trần thì trần phải cắt. Test này cố ý dùng khoảng
+    // nguyên nên nó KHÔNG phụ thuộc vào quy tắc làm tròn — bỏ trần là đỏ ngay,
+    // bất kể ai đó đổi ceil/floor thành gì.
+    it("trần cắt ĐÚNG tổng SAU làm tròn, không phải tổng thô — đỏ nếu bỏ trần (V-J)", () => {
+      const ranges: PlayedRange[] = [[0, 30], [100, 130], [200, 230]];
+      // Không trần: cả 90 giây lên dây.
+      expect(
+        buildHeartbeatPayload({ positionSeconds: 230, durationSeconds: 600, ranges }).played_ranges
+      ).toEqual([[0, 30], [100, 130], [200, 230]]);
+
+      // Trần 40s: giữ trọn [0,30], còn dư 10s cho [100,130] → cắt còn
+      // [100,110]; [200,230] vượt hẳn → vào `leftover`, không lên dây.
+      const capped = buildHeartbeatPayload({
+        positionSeconds: 230,
+        durationSeconds: 600,
         ranges,
-        maxTotalSeconds,
+        maxTotalSeconds: 40,
       });
-      const payloadTotal = payload.played_ranges.reduce((sum, [start, end]) => sum + (end - start), 0);
-      expect(payloadTotal).toBeLessThanOrEqual(10.5);
+      expect(capped.played_ranges).toEqual([[0, 30], [100, 110]]);
+      const total = capped.played_ranges.reduce((sum, [s, e]) => sum + (e - s), 0);
+      expect(total).toBeLessThanOrEqual(40);
+    });
+
+    // V-J: bất biến "trần là chặn trên THẬT" phải đúng ở MỌI pha — đây là
+    // khẳng định trực tiếp lên thứ tự (làm tròn → chặn trần) mà V-J sửa.
+    it("mọi pha: tổng trên dây ≤ trần, kể cả khi mảng thô vượt trần (V-J)", () => {
+      const maxTotalSeconds = 5;
+      for (const phase of SPAM_PHASES) {
+        const ranges: PlayedRange[] = [];
+        for (let i = 0; i < 20; i += 1) {
+          const start = phase + i * 3;
+          ranges.push([start, start + 2.5]);
+        }
+        const payload = buildHeartbeatPayload({
+          positionSeconds: 100,
+          durationSeconds: 600,
+          ranges,
+          maxTotalSeconds,
+        });
+        const total = payload.played_ranges.reduce((sum, [s, e]) => sum + (e - s), 0);
+        expect(total).toBeLessThanOrEqual(maxTotalSeconds);
+      }
+    });
+
+    it("mô phỏng đúng số đo reviewer nêu: spam tua +5s/tick 200ms không được nở thành ~50s trên payload, MỌI PHA (V-H + V-J)", () => {
+      // Trước fix (ceil đầu cuối + KHÔNG có trần tổng): mỗi khoảng ~0.2s bị
+      // ceil thành 1s — 49 khoảng thổi phồng thành ~50s trên dây dù mảng thô
+      // chỉ 10.3s. Sau V-J, chính phép làm tròn vào trong đã chặn được đường
+      // này ở mọi pha (đo được: 0s trên dây ở cả 5 pha) — nhưng khẳng định
+      // TỔNG trên dây thôi sẽ là một test xanh không chứng minh gì, nên dưới
+      // đây đo thêm mảng thô để chắc chắn có tín dụng thật bị chặn.
+      const maxTotalSeconds = 1 * (10_000 / 1000) * (1 + WALL_CLOCK_CREDIT_SLACK);
+      for (const phase of SPAM_PHASES) {
+        const { ranges, finalMediaTime } = simulate(200, 1, 10_000, (t) => t + 5, phase);
+        expect(totalWatchedSeconds(ranges)).toBeGreaterThan(10);
+        const payload = buildHeartbeatPayload({
+          positionSeconds: finalMediaTime,
+          durationSeconds: 1_000_000,
+          ranges,
+          maxTotalSeconds,
+        });
+        const payloadTotal = payload.played_ranges.reduce(
+          (sum, [start, end]) => sum + (end - start),
+          0
+        );
+        expect(payloadTotal).toBeLessThanOrEqual(10.5);
+      }
     });
   });
 });

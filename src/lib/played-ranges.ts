@@ -253,7 +253,8 @@ export function totalWatchedSeconds(ranges: readonly PlayedRange[]): number {
  * `POSITION_MATCH_TOLERANCE_SECONDS` (2s) nên `appendSample` trả `bestIndex
  * === -1` và mở khoảng MỚI — cú "mở khoảng mới" này lặp lại mỗi nhịp, cắt dải
  * đang xem thành từng mảnh ~10s và **bỏ hẳn** khoảng giữa các mảnh (mảnh sau
- * ngắn hơn 10s bị `buildHeartbeatPayload` floor cả hai đầu rồi lọc bỏ). Marker
+ * ngắn hơn 10s bị `buildHeartbeatPayload` làm tròn vào trong rồi lọc bỏ).
+ * Marker
  * dưới `MIN_RANGE_SECONDS` không bao giờ tự lọt lên dây (bị floor/lọc), nhưng
  * đủ để `appendSample` tìm thấy và giữ đúng vị trí.
  *
@@ -322,6 +323,11 @@ export interface BuildHeartbeatPayloadInput {
    * qua kể từ lần gửi trước × (1 + WALL_CLOCK_CREDIT_SLACK)`. Không truyền
    * (hoặc `Infinity`) nghĩa là không chặn (test đơn lẻ không quan tâm tầng
    * payload). Caller thật (`use-video-progress.ts`) LUÔN truyền giá trị này.
+   *
+   * V-J (gate #17 vòng 4): trần được áp SAU bước làm tròn vào trong, nên nó
+   * đo đúng tổng đi lên dây. Ý nghĩa đại lượng không đổi (ngân sách theo
+   * wall-clock) — làm tròn vào trong chỉ thu nhỏ, nên cùng một trần giờ là
+   * chặn trên CHẶT hơn so với khi đo trên mảng thô.
    */
   maxTotalSeconds?: number;
 }
@@ -331,8 +337,13 @@ export interface BuildHeartbeatPayloadInput {
  * wall-clock của MỘT LẦN GỬI (`included` — dùng để dựng payload) và phần
  * VƯỢT trần (`leftover`). Giữ các khoảng SỚM NHẤT trước, cắt ngắn đúng
  * khoảng chạm trần (phần bị cắt đi vào `leftover`, không phải bị bỏ hẳn).
- * Áp trên giá trị THỰC (trước khi làm tròn số nguyên) vì trần tính bằng
- * wall-clock là một đại lượng liên tục.
+ *
+ * Hàm thuần trên giá trị nhận vào — nó không biết gì về số nguyên hay làm
+ * tròn. Người gọi quyết định nó đo cái gì:
+ *  - `buildHeartbeatPayload` gọi nó SAU khi làm tròn vào trong (V-J), nên ở
+ *    đó trần đo đúng con số đi lên dây;
+ *  - hook (`use-video-progress.ts`) gọi nó trên mảng THÔ, chỉ để biết phần nào
+ *    đã đưa vào payload và phần nào phải giữ lại cho nhịp sau.
  *
  * V-H tái review (gate #17 vòng 3 lần 2, BUG THẬT phát hiện qua test): bản
  * trước (`capTotalByWallClock`, chỉ trả `included`) khiến hook
@@ -378,6 +389,65 @@ export function splitByWallClockCap(
   return { included, leftover };
 }
 
+/**
+ * Ngưỡng "khoảng ngắn" cho đường truyền: khoảng thô ngắn hơn 1 giây bị BỎ
+ * TRƯỚC khi làm tròn số nguyên (contract §1 — đơn vị gửi lên là giây nguyên,
+ * một khoảng không phủ trọn một giây thì không có gì để khai).
+ */
+export const MIN_WIRE_RANGE_SECONDS = 1;
+
+/**
+ * Chuyển một khoảng về giây NGUYÊN cho đường truyền (contract §1) — V-J.
+ *
+ * Quy tắc, ĐÚNG THEO THỨ TỰ NÀY: BỎ khoảng thô ngắn hơn `MIN_WIRE_RANGE_SECONDS`
+ * → `floor` CẢ HAI ĐẦU → bỏ lần nữa nếu kết quả co xuống dưới ngưỡng.
+ *
+ * V-J (gate #17 vòng 4, BLOCKER đo được): `floor` CẢ HAI ĐẦU không trung tính
+ * như comment cũ trong `buildHeartbeatPayload` khẳng định. Đo trên khoảng thô
+ * 0.25s (đúng mức `boundedOpenCredit` cắt cho một cú tua):
+ *
+ * | frac(media) | thô  | floor/floor KHÔNG lọc |
+ * |-------------|------|-----------------------|
+ * | 0.00–0.50   | 0.25 | 0s (rỗng)             |
+ * | 0.75–0.95   | 0.25 | **1s (4x)**           |
+ *
+ * `floor(10.80)=10` và `floor(11.05)=11` lệch nhau 1, nên 0.25s phình thành
+ * trọn 1 giây ở ~25% vị trí dừng. Đo trên kịch bản spam tua +5s/tick 200ms
+ * (mảng thô 10.3s): pha 0.80 và 0.95 cho **50 giây** trên dây, pha 0.50 cho
+ * 1 giây — mở lại đúng lỗ 4x mà V-F tồn tại để chặn.
+ *
+ * KHÓA CỦA LỜI GIẢI nằm ở chỗ LỌC TRƯỚC, không phải ở chỗ đổi hàm làm tròn.
+ * Một khoảng ngắn do tua sinh ra luôn ngắn hơn 1 giây (sàn tín dụng mỗi mẫu
+ * không liên tục là `MIN_RANGE_SECONDS` = 0.5s, xem `boundedOpenCredit`), nên
+ * BỎ nó ngay từ đầu thì không còn gì để `floor` thổi lên nữa. Lọc SAU khi
+ * floor là chưa đủ: lúc đó khoảng 0.25s đã thành 1 giây và thoả điều kiện
+ * `>= 1`, tức nó đã "nở" xong rồi.
+ *
+ * Vì sao vẫn dùng `floor`/`floor` (chứ không phải `ceil(start)`/`floor(end)`):
+ * `send()` cắt dải đang xem thành từng mảnh theo nhịp heartbeat 10 giây, hai
+ * mảnh LIỀN KỀ chia sẻ cùng một giá trị biên (`[a, b.x]` rồi `[b.x, c]`).
+ * `floor` đưa CẢ HAI về cùng một số nguyên nên chúng dán liền, không sinh khe.
+ * `ceil(start)` đẩy đầu mảnh sau lên `b+1` → một khe đúng 1 giây tại MỖI mốc
+ * heartbeat; đo được: xem liên tục 100→500s còn 360/400 (mất 10% thời lượng
+ * xem thật) — cái giá đó lớn hơn hẳn vấn đề nó định giải quyết.
+ *
+ * `mergeRanges` PHẢI chạy trước hàm này (người gọi đảm nhiệm): nhiều mảnh ngắn
+ * liền kề phải gộp thành một khoảng dài rồi mới xét ngưỡng, nếu không một dải
+ * xem thật bị cắt vụn sẽ bị bỏ oan.
+ */
+function toWireRanges(
+  ranges: readonly PlayedRange[],
+  duration: number
+): PlayedRange[] {
+  return ranges
+    .filter(([start, end]) => end - start >= MIN_WIRE_RANGE_SECONDS)
+    .map(([start, end]): PlayedRange => [
+      clamp(Math.floor(start), 0, duration),
+      clamp(Math.floor(end), 0, duration),
+    ])
+    .filter(([start, end]) => end - start >= MIN_WIRE_RANGE_SECONDS);
+}
+
 /** Dựng payload gửi lên; giây làm tròn về số nguyên, khoảng đã gộp trước khi gửi. */
 export function buildHeartbeatPayload(
   input: BuildHeartbeatPayloadInput
@@ -386,29 +456,31 @@ export function buildHeartbeatPayload(
   const position = clamp(Math.round(input.positionSeconds), 0, duration);
 
   const merged = mergeRanges(input.ranges);
-  // V-H phần (a): chặn TỔNG theo wall-clock TRƯỚC khi làm tròn — cùng nguyên
-  // tắc `boundedOpenCredit` áp cho một mẫu, nhưng ở đây áp cho CẢ PAYLOAD.
-  // Không có trần này, làm tròn ra ngoài ở bước dưới có thể "nở" hàng chục
-  // khoảng ngắn (mỗi khoảng do tua bị `boundedOpenCredit` cắt còn 0.2–0.25s)
-  // thành hàng chục giây trên dây dù mảng thô đúng đắn — số "đã đóng" đo ở
-  // tầng mảng thô không phải con số thực gửi lên server.
-  const { included: capped } = splitByWallClockCap(merged, input.maxTotalSeconds ?? Number.POSITIVE_INFINITY);
 
-  // V-H phần (b): làm tròn về SỐ NGUYÊN (contract §1: "giây: số nguyên") —
-  // đổi từ floor/ceil (review vòng 1, #19) sang floor CẢ HAI ĐẦU. Ceil ở đầu
-  // cuối là nguồn gốc của lỗi vòng 2: một khoảng thô 0.2–0.25s (đúng — bị
-  // `boundedOpenCredit` cắt đúng mức tua) bị `ceil` "nở" thành trọn 1 giây
-  // trên dây — 40–50 khoảng như vậy mỗi nhịp heartbeat thổi phồng tín dụng
-  // 4–5 lần dù số đo ở tầng mảng thô hoàn toàn đúng. Floor cả hai đầu không
-  // bao giờ nở khoảng lên; hệ quả là một khoảng < 1s sau khi floor có thể
-  // co về `start === end` (rỗng) — BỎ hẳn (không ceil cưỡng bức) thay vì giữ
-  // lại bằng cách thổi phồng, đúng đề xuất "bỏ khoảng < 1 giây thay vì ceil".
-  const ranges = capped
-    .map(([start, end]): PlayedRange => [
-      clamp(Math.floor(start), 0, duration),
-      clamp(Math.floor(end), 0, duration),
-    ])
-    .filter(([start, end]) => end - start >= 1);
+  // V-J (gate #17 vòng 4): chuyển sang giây nguyên TRƯỚC, chặn trần SAU.
+  //
+  // Thứ tự cũ (trần TRƯỚC, làm tròn SAU — V-H) khiến trần không bao giờ chạm
+  // tới con số THẬT SỰ đi lên dây: nó đo tổng THÔ, còn thứ phình ra lại là
+  // tổng SAU làm tròn. Reviewer đo được `wire(có trần) == wire(không trần)`
+  // trong MỌI trường hợp — trần chỉ chặn đúng thứ không bao giờ to lên, còn
+  // thứ to lên (làm tròn) thì nằm ngoài tầm với của nó. Đặt trần SAU bước
+  // chuyển sang giây nguyên thì `maxTotalSeconds` mới là chốt chặn thật: nó
+  // đo đúng đại lượng gửi lên server.
+  const whole = toWireRanges(merged, duration);
+
+  // `leftover` vẫn theo đúng ngữ nghĩa cũ — hàm này chỉ dùng `included`, người
+  // gọi (hook) tự gọi `splitByWallClockCap` để giữ phần vượt trần cho nhịp sau.
+  const { included } = splitByWallClockCap(
+    whole,
+    input.maxTotalSeconds ?? Number.POSITIVE_INFINITY
+  );
+
+  // Chuyển lần hai: `splitByWallClockCap` cắt ở `start + remaining` — một điểm
+  // cắt LIÊN TỤC (trần tính bằng wall-clock, không phải số nguyên), nên khoảng
+  // chạm trần có thể ra đầu cuối lẻ. Với mọi khoảng ĐÃ nguyên thì đây là no-op
+  // (`floor(n)=n`); nó chỉ hạ phần lẻ của khoảng bị cắt, và có thể bỏ luôn
+  // khoảng đó nếu phần còn lại dưới 1 giây.
+  const ranges = toWireRanges(included, duration);
 
   const payload: HeartbeatPayload = {
     position_seconds: position,

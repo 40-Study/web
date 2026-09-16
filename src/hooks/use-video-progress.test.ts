@@ -83,8 +83,8 @@ describe("useVideoProgress", () => {
     // wall-clock THỰC (`playbackRate × dtWall × 1.05`) — phải advance fake
     // timer GIỮA các tick để mô phỏng đúng nhịp `timeupdate` 250ms thật, nếu
     // không dtWall ≈ 0 và tín dụng bị cắt gần hết. 8 tick × 0.25s = 2s liên
-    // tục 1x — đủ để sau floor/floor (V-H, contract giây nguyên) khoảng vẫn
-    // còn ≥1s, không bị bỏ.
+    // tục 1x — khoảng thô [0.25, 2.0] dài 1.75s, qua ngưỡng 1 giây rồi floor
+    // cả hai đầu (V-J) → [0,2].
     await act(async () => {
       for (let i = 1; i <= 8; i += 1) {
         result.current.handleTimeUpdate(i * 0.25, 1, 600);
@@ -125,8 +125,8 @@ describe("useVideoProgress", () => {
       result.current.handleTimeUpdate(540, 1, 600);
       vi.advanceTimersByTime(250);
       // 6 tick liên tục sau khi tua (1,5s) — đủ dài để khoảng này còn sống
-      // sót qua floor/floor (V-H, contract giây nguyên bỏ khoảng < 1s); chỉ
-      // một tick duy nhất (0,25s) sẽ bị floor/floor xoá mất hoàn toàn.
+      // sót qua bước làm tròn vào trong (V-J: contract giây nguyên, bỏ khoảng
+      // < 1s); một tick duy nhất (0,25s) sẽ bị xoá mất hoàn toàn.
       for (let i = 1; i <= 6; i += 1) {
         result.current.handleTimeUpdate(540 + i * 0.25, 1, 600);
         vi.advanceTimersByTime(250);
@@ -220,13 +220,15 @@ describe("useVideoProgress", () => {
     // đang xem 100→500 có thể cắt đoạn này thành 2-3 khoảng liền kề nhau (vô
     // hại — vẫn đúng vị trí, chỉ khác lần gửi), không phải bug V-G. Bug V-G
     // (nối nhầm vào [500,600]) khiến độ phủ ở đây gần như BẰNG 0 (chỉ còn
-    // marker mở khoảng tại vị trí tua), nên ngưỡng 390/400 vẫn đủ phân biệt.
+    // marker mở khoảng tại vị trí tua). SAU V-J (lọc <1s trước rồi floor/floor)
+    // độ phủ đo được là 399/400 — hơn hẳn 360/400 của bản ceil/floor. Ngưỡng
+    // 395 nằm giữa hai mức đó nên nó ĐỎ nếu ai quay lại ceil/floor.
     const coverageIn100To500 = ranges.reduce((sum, [start, end]) => {
       const overlapStart = Math.max(start, 100);
       const overlapEnd = Math.min(end, 500);
       return sum + Math.max(0, overlapEnd - overlapStart);
     }, 0);
-    expect(coverageIn100To500).toBeGreaterThanOrEqual(390);
+    expect(coverageIn100To500).toBeGreaterThanOrEqual(395);
 
     // TỔNG độ phủ của TOÀN kịch bản. Hai đoạn đã xem (500→600 rồi lùi về
     // 100→500) hợp lại đúng bằng cửa sổ [100,600] = 500 giây thật, nên tổng
@@ -234,19 +236,20 @@ describe("useVideoProgress", () => {
     // `ranges` đã gộp nên các khoảng không chồng nhau — cộng theo từng khoảng
     // là chính xác, không đếm trùng.
     //
-    // Ngưỡng 495 (mất ≤5s): `buildHeartbeatPayload` floor cả hai đầu về giây
-    // nguyên, và làm tròn chỉ ăn khớp ranh giới khi hai mảnh LIỀN KỀ nhau (hai
-    // ranh giới phân số cùng floor về một số nguyên thì liền lại, không sinh
-    // khe) — nên sai số làm tròn thật đo được là 0, không phải một giây mỗi
-    // mảnh. Ngưỡng này tách được đúng hai trạng thái đã đo: 500/500 (sau fix,
-    // PASS) so với 490/500 (trước fix, RED) — chặt hơn hẳn ngưỡng 390 của cửa
-    // sổ [100,500], vốn xanh với cả hai.
+    // V-J (gate #17 vòng 4) — ĐỌC KỸ TRƯỚC KHI NỚI NGƯỠNG NÀY: `floor` cả hai
+    // đầu khiến hai mảnh LIỀN KỀ dán lại đúng tại biên (cùng một giá trị phân
+    // số floor về cùng một số nguyên) nên các mốc heartbeat KHÔNG sinh khe —
+    // đo được 49 mốc, 0 khe. Mất mát còn lại là phần lẻ ở CUỐI mỗi dải đã xem
+    // (dải kết thúc ở 499.x nên floor về 499), tức 1 giây cho MỖI DẢI chứ
+    // không phải mỗi mốc heartbeat. Đo được trên kịch bản này: 498/500.
+    // Ngưỡng 490 nằm giữa 498 (bản này) và 450 (bản ceil/floor, mất 1 giây
+    // mỗi mốc) nên nó ĐỎ nếu ai quay lại ceil/floor.
     const coverageIn100To600 = ranges.reduce((sum, [start, end]) => {
       const overlapStart = Math.max(start, 100);
       const overlapEnd = Math.min(end, 600);
       return sum + Math.max(0, overlapEnd - overlapStart);
     }, 0);
-    expect(coverageIn100To600).toBeGreaterThanOrEqual(495);
+    expect(coverageIn100To600).toBeGreaterThanOrEqual(490);
   });
 
   // V-G tái review (gate #17 vòng 3): BUG THẬT ở mốc qua nhịp heartbeat.
@@ -286,7 +289,9 @@ describe("useVideoProgress", () => {
     await waitFor(() => expect(updateProgress).toHaveBeenCalled());
 
     // 5% mất mát là mức làm tròn về giây nguyên của `buildHeartbeatPayload`,
-    // không phải mất cả một khoảng 10 giây (bug thật cho ~265/400).
+    // không phải mất cả một khoảng 10 giây (bug thật cho ~265/400). V-J (lọc
+    // <1s trước rồi floor/floor) đo được 39/40 — chỉ mất phần lẻ ở cuối dải;
+    // bản ceil/floor cho 36/40. Ngưỡng 38 nằm giữa hai mức đó.
     const merged = allSentRanges();
     const credited = merged
       .map(([start, end]) => Math.min(end, 40) - start)
