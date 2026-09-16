@@ -34,6 +34,13 @@ export interface CreateLessonVideoDTO {
   type: "video";
   title: string;
   video_url: string;
+  /**
+   * Thời lượng video, tính bằng **GIÂY**.
+   *
+   * Vắng mặt (KHÔNG phải `0`) = "chưa biết": backend coi `0` y hệt chưa biết và
+   * từ chối tính `watched_pct` (C-2), nên video ngoài hệ thống upload mà thiếu
+   * trường này thì bài học không bao giờ đạt `completed` (C-6).
+   */
   duration?: number;
   is_mandatory?: boolean;
 }

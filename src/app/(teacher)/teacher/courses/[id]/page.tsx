@@ -74,6 +74,8 @@ import { useClasses } from "@/hooks/queries/use-classes";
 import { lessonContentKeys } from "@/hooks/queries/use-lesson-content";
 import { submitLivestreamContent } from "@/lib/livestream";
 import { LIVESTREAM_NOT_READY_HINT, resolveLivestreamRoomHref } from "@/lib/lesson-content-link";
+import { formatLessonDuration, parseLessonDuration } from "@/lib/lesson-duration";
+import { VideoDurationField } from "@/components/teacher/video-duration-field";
 
 // ─── Content type config ────────────────────────────────────────────────────
 
@@ -691,6 +693,12 @@ export default function CourseDetailPage() {
           title: data.title,
           video_url: videoUrl,
           is_mandatory: true,
+          /*
+            C-6: `data.duration` VẮNG MẶT khi giáo viên để trống ô thời lượng —
+            spread có điều kiện giữ nguyên tính vắng mặt đó, không biến nó thành `0`
+            (backend đọc `0` là "chưa biết").
+          */
+          ...(data.duration !== undefined ? { duration: data.duration } : {}),
         });
         // Handle quiz questions if any
         if (data.quizQuestions.length > 0) {
@@ -1400,6 +1408,8 @@ function EditContentModal({
 }) {
   const [title, setTitle] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  /** Ô thời lượng ở dạng chuỗi `phút:giây`; rỗng = không đổi (xem `handleSave`). */
+  const [durationText, setDurationText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const queryClient = useQueryClient();
 
@@ -1408,16 +1418,34 @@ function EditContentModal({
     if (content) {
       setTitle(content.title);
       setVideoUrl(content.video_url || "");
+      // Nạp thời lượng đang lưu (giây, backend) về dạng `phút:giây` cho dễ đọc/sửa.
+      setDurationText(formatLessonDuration(content.duration));
     }
   }, [content]);
 
+  // Ô thời lượng gõ sai thì chặn lưu (xem ghi chú ở form tạo nội dung).
+  const durationInvalid =
+    content?.type === "video" && parseLessonDuration(durationText).kind === "invalid";
+
   const handleSave = async () => {
-    if (!content || !title.trim()) return;
+    if (!content || !title.trim() || durationInvalid) return;
     setIsSaving(true);
     try {
       const { lessonContentService } = await import("@/services/lesson-content.service");
+
+      /*
+        C-6: chỉ video mới có thời lượng, và chỉ gửi khi giáo viên thực sự nhập.
+        Ô trống → KHÔNG gửi khoá `duration`; gửi `duration: 0` sẽ bị backend đọc là
+        "chưa biết" và vô hiệu hoá luôn thời lượng đang lưu. Hệ quả: xoá trắng ô
+        không xoá được thời lượng cũ — đã nói rõ trong gợi ý của ô nhập.
+      */
+      const parsedDuration = parseLessonDuration(durationText);
+
       await lessonContentService.updateContent(lessonId, content.id, {
         title: title.trim(),
+        ...(content.type === "video" && parsedDuration.kind === "valid"
+          ? { duration: parsedDuration.seconds }
+          : {}),
       });
       // Invalidate lesson contents query
       queryClient.invalidateQueries({ queryKey: ["lesson-contents", lessonId] });
@@ -1468,11 +1496,25 @@ function EditContentModal({
               </p>
             </div>
           )}
+
+          {/*
+            C-6: video ngoài hệ thống upload không có thời lượng nào server tự đọc
+            được → bài học không bao giờ hoàn thành được. Đây là chỗ duy nhất sửa được
+            thời lượng của nội dung đã tạo.
+          */}
+          {content.type === "video" && (
+            <VideoDurationField
+              value={durationText}
+              onChange={setDurationText}
+              videoUrl={content.video_url}
+              isEditing
+            />
+          )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
-          <Button onClick={handleSave} disabled={!title.trim() || isSaving}>
+          <Button onClick={handleSave} disabled={!title.trim() || isSaving || durationInvalid}>
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Lưu thay đổi
           </Button>
