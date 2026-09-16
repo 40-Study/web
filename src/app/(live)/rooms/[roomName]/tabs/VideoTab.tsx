@@ -25,7 +25,6 @@ import {
 import { useParticipants } from '@livekit/components-react';
 import React, { useEffect, useState, useRef } from 'react';
 import { useIsMobile } from '@/lib/meet/use-is-mobile';
-import { api, MeetApiError } from '@/lib/meet/api';
 import { shouldDiscardWhiteboardEvent } from './whiteboard-gate';
 
 /**
@@ -87,14 +86,6 @@ interface VideoTabProps {
   isHost?: boolean;
   hostId?: string;
   currentUserName?: string;
-  /** ID phiên live — cần cho lời gọi REST `screenshare/start|stop` (PR #18). */
-  sessionId?: string;
-  /**
-   * ID người dùng THẬT của người đang xem (từ `getMe()`, không phải LiveKit
-   * identity tự khai) — gửi kèm `share_request` để host biết chính xác
-   * `user_id` cần truyền cho `POST screenshare/start` khi duyệt (PR #18).
-   */
-  currentUserId?: string;
   /**
    * Bảng vẽ đang khoá quyền chỉnh sửa — nguồn PHẢI là trạng thái server
    * (`settings.whiteboard_locked` qua GET/lock/unlock, C1 review vòng 2 web PR
@@ -128,8 +119,6 @@ export default function VideoTab({
   isHost = false,
   hostId,
   currentUserName = 'User',
-  sessionId,
-  currentUserId,
   whiteboardLocked = false,
   onKicked,
 }: VideoTabProps) {
@@ -150,11 +139,19 @@ export default function VideoTab({
     }
   };
 
-  // Request to share screen — kèm `userId` (PR #18) để host biết đúng
-  // `user_id` cần truyền cho `POST screenshare/start` khi duyệt.
+  // Request to share screen.
+  //
+  // R2-I1 (re-review vòng 2 PR #18 lần 2): trước đây gửi kèm `userId` tự khai
+  // trong payload để host lấy `user_id` truyền cho `POST screenshare/start`
+  // khi duyệt — một client độc hại có thể khai `userId` của MỘT NGƯỜI KHÁC,
+  // khiến host duyệt nhầm quyền publish cho nạn nhân đó thay vì người thật sự
+  // gửi yêu cầu. Không còn gửi field này — phía nhận (`handleDataReceived`)
+  // đọc thẳng `participant.identity` THẬT của gói LiveKit (không thể giả mạo
+  // từ payload) làm `user_id`, khớp đúng quy ước backend `Identity ==
+  // userID.String()` (`livestream_service.go:679,711`).
   const handleRequestShare = () => {
     if (broadcastRef.current) {
-      broadcastRef.current({ type: 'share_request', name: currentUserName, userId: currentUserId });
+      broadcastRef.current({ type: 'share_request', name: currentUserName });
       setPendingShareRequest(true);
     }
   };
@@ -246,7 +243,6 @@ export default function VideoTab({
               showParticipants={showParticipants}
               isHost={isHost}
               hostId={hostId}
-              sessionId={sessionId}
               handRaised={handRaised}
               onToggleHand={handleToggleHand}
               onLeave={handleRequestLeave}
@@ -356,6 +352,12 @@ function WhiteboardReceiver({
         // trong payload) nên bất kỳ participant nào cũng tự phê duyệt được
         // yêu cầu share/leave của chính mình.
         const senderIsHost = !!hostId && participant?.identity === hostId;
+
+        // R2-I1 (re-review vòng 2 PR #18 lần 2): đính kèm danh tính THẬT của
+        // người gửi (không thể giả mạo từ payload) vào mọi event forward lên
+        // — dùng cho `share_request` để lấy đúng `user_id` cấp quyền publish,
+        // thay vì tin một field tự khai trong payload.
+        data.senderIdentity = participant?.identity;
 
         // Handle share_response for students — chỉ nhận khi đúng là host gửi.
         if (data.type === 'share_response' && !isHost && data.name === currentUserName && senderIsHost) {
@@ -1008,7 +1010,6 @@ function BottomBar({
   showParticipants,
   isHost,
   hostId,
-  sessionId,
   handRaised,
   onToggleHand,
   onLeave,
@@ -1024,7 +1025,6 @@ function BottomBar({
   showParticipants?: boolean;
   isHost?: boolean;
   hostId?: string;
-  sessionId?: string;
   handRaised?: boolean;
   onToggleHand?: () => void;
   onLeave?: () => void;
@@ -1117,12 +1117,30 @@ function BottomBar({
       await localParticipant?.setScreenShareEnabled(!isScreenSharing);
     } else {
       if (isScreenSharing) {
-        // Student can stop sharing anytime — thu lại quyền publish đã cấp
-        // riêng ở backend (PR #18). Best-effort: không chặn UI nếu lỗi, vì
-        // hành động chính (ngừng phát) đã hoàn tất ở phía LiveKit.
+        // Student can stop sharing anytime — dừng publish ở LiveKit trước.
+        //
+        // R2-I2 (re-review vòng 2 PR #18 lần 2): trước đây gọi thẳng REST
+        // `screenshare/stop` với `.catch(() => {})` — nhưng backend chỉ cho
+        // actor QUẢN TRỊ được phiên gọi endpoint này
+        // (`getManageableSession` trong `StopScreenShare`,
+        // `livestream_service.go:961-965`), học sinh gọi CHẮC CHẮN 403. Cái
+        // `.catch` không phải "best effort", nó nuốt một lỗi luôn xảy ra.
+        // Giờ chỉ báo qua data-channel để HOST (actor hợp lệ) gọi REST hộ —
+        // xem `RoomClient.handleWhiteboardEvent` nhánh `share_stopped`.
         await localParticipant?.setScreenShareEnabled(false);
-        if (sessionId) {
-          api.post(`/livestream/${sessionId}/screenshare/stop`, { action: 'stop' }).catch(() => {});
+        // `BottomBar` không có `broadcastRef` của VideoTab (component khác) —
+        // publishData trực tiếp qua `localParticipant`, cùng cơ chế
+        // `broadcast()` dùng trong `WhiteboardReceiver` (topic 'whiteboard',
+        // reliable vì không phải cursor).
+        if (localParticipant) {
+          try {
+            const payload = new TextEncoder().encode(JSON.stringify({ type: 'share_stopped' }));
+            await localParticipant.publishData(payload, { reliable: true, topic: 'whiteboard' });
+          } catch {
+            // Best-effort — học sinh đã dừng share ở phía LiveKit của chính
+            // mình dù gói không tới host; không ảnh hưởng bảo mật vì backend
+            // không tự cấp lại quyền publish.
+          }
         }
       } else if (!hostInRoom) {
         // No host in room - student can share directly

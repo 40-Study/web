@@ -15,6 +15,8 @@ import { api, MeetApiError } from '@/lib/meet/api';
 import { resolveTimerRestartDuration } from './room-timer';
 import { useIsMobile } from '@/lib/meet/use-is-mobile';
 import { applyWhiteboardLock } from './whiteboard-lock';
+import { parseSessionSettings } from './session-settings';
+import { livestreamService } from '@/services/livestream.service';
 
 interface AssignmentNotification {
   assignment_id: string;
@@ -105,9 +107,11 @@ export default function RoomClient({
   const [handRaisedName, setHandRaisedName] = useState<string | null>(null);
   const [leaveRequestName, setLeaveRequestName] = useState<string | null>(null);
   const [shareRequestName, setShareRequestName] = useState<string | null>(null);
-  // `user_id` THẬT của học sinh đang xin chia sẻ (từ payload `share_request`,
-  // PR #18) — cần để gọi đúng `POST screenshare/start` với target đúng người
-  // khi host duyệt; tên hiển thị (`shareRequestName`) không đủ để xác định.
+  // `user_id` THẬT của học sinh đang xin chia sẻ — từ `senderIdentity` (danh
+  // tính LiveKit xác thực của gói `share_request`, R2-I1), không phải field
+  // tự khai trong payload — cần để gọi đúng `POST screenshare/start` với
+  // target đúng người khi host duyệt; tên hiển thị (`shareRequestName`)
+  // không đủ để xác định.
   const [shareRequestUserId, setShareRequestUserId] = useState<string | null>(null);
   // Duyệt chia sẻ màn hình đang gọi backend — chặn double-click trong lúc chờ.
   const [approvingShare, setApprovingShare] = useState(false);
@@ -173,12 +177,19 @@ export default function RoomClient({
     // whiteboard_locked là nguồn sự thật server, học sinh/host vào muộn đọc
     // ngay ở đây thay vì đợi một gói LiveKit không bao giờ tới nếu là chính
     // người vừa khoá/mở khoá).
-    api.get<{ data: { host_id: string; settings?: { whiteboard_locked?: boolean } } }>(`/livestream/${sessionId}`)
+    //
+    // R2-C1 (re-review vòng 2 PR #18 lần 2): backend trả `settings` là CHUỖI
+    // JSON đã json.Marshal (`dto.LivestreamResponseDTO.Settings string`),
+    // KHÔNG phải object lồng — đọc thẳng `.whiteboard_locked` trên field kiểu
+    // string luôn ra `undefined`, khiến seed trước đây luôn rơi về mặc định
+    // `false` bất kể trạng thái thật. `parseSessionSettings` parse an toàn cả
+    // hai dạng và fail-closed (locked=true) nếu parse lỗi.
+    api.get<{ data: { host_id: string; settings?: unknown } }>(`/livestream/${sessionId}`)
       .then((res: any) => {
         const hid = res?.data?.host_id || res?.host_id || '';
         setHostId(hid);
         setHostIdError(false);
-        const locked = res?.data?.settings?.whiteboard_locked ?? res?.settings?.whiteboard_locked ?? false;
+        const { whiteboardLocked: locked } = parseSessionSettings(res?.data?.settings ?? res?.settings);
         setWhiteboardPublished(!locked);
       })
       .catch((err) => {
@@ -451,8 +462,29 @@ export default function RoomClient({
     if (event?.type === 'share_request') {
       if (isHost && event.name) {
         setShareRequestName(event.name);
-        setShareRequestUserId(typeof event.userId === 'string' ? event.userId : null);
+        // R2-I1 (re-review vòng 2 PR #18 lần 2): lấy `user_id` từ
+        // `senderIdentity` — danh tính THẬT của người gửi mà `VideoTab`'s
+        // `handleDataReceived` đính vào từ `participant.identity` của gói
+        // LiveKit (không thể giả mạo), KHÔNG còn từ field `userId` tự khai
+        // trong payload nữa (client độc hại có thể khai user_id của MỘT
+        // NGƯỜI KHÁC để lừa host duyệt nhầm quyền publish cho nạn nhân đó).
+        setShareRequestUserId(typeof event.senderIdentity === 'string' ? event.senderIdentity : null);
         playNotificationSound();
+      }
+      return;
+    }
+
+    // R2-I2 (re-review vòng 2 PR #18 lần 2): học sinh tự dừng chia sẻ không
+    // còn tự gọi REST screenshare/stop nữa — backend chỉ cho actor QUẢN TRỊ
+    // được phiên gọi (`getManageableSession` trong `StopScreenShare`), học
+    // sinh gọi CHẮC CHẮN 403; bản cũ nuốt lỗi đó bằng `.catch(() => {})` nên
+    // trông như "best effort" nhưng thực ra không bao giờ thành công. Giờ học
+    // sinh chỉ báo qua data-channel, host (actor hợp lệ) gọi REST hộ.
+    if (event?.type === 'share_stopped') {
+      if (isHost && typeof event.senderIdentity === 'string' && event.senderIdentity) {
+        livestreamService.stopScreenShare(sessionId, event.senderIdentity).catch((err) => {
+          console.error('[RoomClient] Failed to revoke screen share permission after student stop:', err);
+        });
       }
       return;
     }
@@ -539,7 +571,7 @@ export default function RoomClient({
       }
       return;
     }
-  }, [isHost, currentUserId, currentUserName, playNotificationSound, timerTotal]);
+  }, [isHost, currentUserId, currentUserName, playNotificationSound, timerTotal, sessionId]);
 
   const handleWhiteboardBroadcasterReady = useCallback((broadcast: (event: any) => void) => {
     whiteboardBroadcastRef.current = broadcast;
@@ -877,8 +909,6 @@ export default function RoomClient({
                 pip={isOverlay}
                 isHost={isHost}
                 hostId={hostId || undefined}
-                sessionId={sessionId}
-                currentUserId={currentUserId || undefined}
                 currentUserName={currentUserName}
                 whiteboardLocked={!whiteboardPublished}
               />
