@@ -24,12 +24,17 @@ import { toast } from "sonner";
 import { enrollmentService, type LessonProgressResponse } from "@/services/enrollment.service";
 import {
   HEARTBEAT_INTERVAL_MS,
+  WALL_CLOCK_CREDIT_SLACK,
   appendSample,
   boundedOpenCredit,
   buildHeartbeatPayload,
+  creditedEndForContinuousSample,
   isContinuousSample,
+  mergeRanges,
   openRange,
   pendingAfterFailure,
+  splitByWallClockCap,
+  withOpenRangeMarker,
   type PlayedRange,
 } from "@/lib/played-ranges";
 
@@ -69,6 +74,26 @@ export function useVideoProgress({
   const inFlightRef = useRef(false);
   /** Chặn spam toast mất mạng — mỗi lần heartbeat lỗi (10s/lần) không cần báo lại. */
   const lastOfflineToastAtRef = useRef(0);
+  /**
+   * V-H tái review lần 3 (gate #17 vòng 3, BUG THẬT — test đo được đúng NỬA
+   * tiến độ, 200/400): mốc cũ `lastSendAtRef` (thời điểm GỬI gần nhất, dù có
+   * bị trần cắt hay không) SAI khi có `leftover` tồn đọng — mỗi lần gửi (kể
+   * cả gửi bị cắt bớt) đều reset mốc về "bây giờ", nên trần của lần gửi KẾ
+   * TIẾP chỉ tính theo khoảng cách tới heartbeat TRƯỚC ĐÓ (~10s), không phản
+   * ánh việc `leftover` đã tồn đọng từ RẤT LÂU trước đó — hệ quả: một backlog
+   * lớn (do `inFlightRef` giữ nhịp gửi thưa hơn bình thường) không bao giờ
+   * được phép "bắt kịp", vì trần luôn bị giữ ở mức ~1 cửa sổ 10s/lần dù thời
+   * gian thực đã trôi qua đủ để giải thích toàn bộ backlog đó.
+   *
+   * `pendingSinceRef` thay thế: mốc thời gian THẬT khi khoảng ĐẦU TIÊN của
+   * batch hiện đang CHỜ GỬI bắt đầu tích luỹ (đặt trong `handleTimeUpdate`,
+   * chỉ khi đang từ trạng thái không có gì chờ). Chỉ reset về `null` khi biết
+   * chắc một lần gửi đã THÀNH CÔNG và không còn `leftover` nào — còn nguyên
+   * nếu vẫn còn `leftover` (kể cả nếu lần gửi đó thất bại), để trần lần sau
+   * lớn dần đúng theo thời gian thực đã trôi qua, cho tới khi đủ để gửi hết
+   * backlog trong một lần.
+   */
+  const pendingSinceRef = useRef<number | null>(null);
 
   useEffect(() => {
     onProgressChangeRef.current = onProgressChange;
@@ -78,22 +103,66 @@ export function useVideoProgress({
     if (inFlightRef.current && !useBeacon) return;
     if (durationRef.current <= 0) return;
 
+    // V-H: trần TỔNG cho payload này — thời gian thực trôi qua kể từ khi
+    // khoảng CŨ NHẤT còn đang chờ gửi bắt đầu tích luỹ (`pendingSinceRef`,
+    // KHÔNG phải "lần gửi gần nhất" — xem giải thích tại khai báo ref) ×
+    // playbackRate hiện tại × (1+slack). Rộng rãi có chủ đích với thời gian
+    // rảnh/tạm dừng (không phát) — trần chỉ cần đủ LỚN để không bao giờ cắt
+    // hụt phần xem thật, việc cắt phần gian lận đã do `boundedOpenCredit`
+    // (mỗi mẫu) và trần wall-clock ở `handleTimeUpdate` (nhánh liên tục, xem
+    // V-F) đảm nhiệm từ trước khi tới đây.
+    const wallClockSecondsPending =
+      pendingSinceRef.current === null
+        ? 0
+        : Math.max(0, (Date.now() - pendingSinceRef.current) / 1000);
+    const rate = playbackRateRef.current > 0 ? playbackRateRef.current : 1;
+    const maxTotalSeconds = rate * wallClockSecondsPending * (1 + WALL_CLOCK_CREDIT_SLACK);
+
+    // V-H tái review (gate #17 vòng 3 lần 2, BUG THẬT): trần wall-clock chỉ
+    // được phép chặn TỐC ĐỘ một lần gửi, KHÔNG được làm mất tiến độ thật —
+    // trước đây `rangesRef.current = []` xoá cả phần bị `buildHeartbeatPayload`
+    // cắt bớt do trần này, nên khi một lần gửi bị trần cắt (VD: `inFlightRef`
+    // giữ nhịp gửi thưa hơn 10s bình thường, tích luỹ nhiều tiến độ thật hơn
+    // trần một lần gửi cho phép), phần vượt trần biến mất vĩnh viễn thay vì
+    // được gửi ở nhịp sau. Tách trước bằng `splitByWallClockCap` ở chính tầng
+    // này để biết chính xác phần nào đã đưa vào payload (`included`) và phần
+    // nào phải giữ lại (`leftover`).
+    const merged = mergeRanges(rangesRef.current);
+    const { included, leftover } = splitByWallClockCap(merged, maxTotalSeconds);
+
     const payload = buildHeartbeatPayload({
       lessonId: lessonIdRef.current,
       positionSeconds: positionRef.current,
       durationSeconds: durationRef.current,
-      ranges: rangesRef.current,
+      ranges: included,
     });
 
     // Không có gì mới thì không bắn request rỗng làm phiền server.
     if (!useBeacon && payload.played_ranges.length === 0) return;
 
-    rangesRef.current = [];
+    // Chỉ xoá phần ĐÃ ĐƯA VÀO payload này — `leftover` (phần bị trần cắt bớt)
+    // phải còn nguyên trong buffer để gửi ở nhịp heartbeat kế tiếp.
+    //
+    // V-G tái review (gate #17 vòng 3): `leftover` giữ được NỘI DUNG chưa gửi
+    // nhưng KHÔNG giữ được VỊ TRÍ ĐANG PHÁT — sau lần gửi đầu tiên nó chỉ còn
+    // đoạn đuôi ngắn, cách vị trí media hiện tại nguyên một nhịp heartbeat, xa
+    // hơn `POSITION_MATCH_TOLERANCE_SECONDS`. Không có marker dưới đây,
+    // `appendSample` mất mốc và mở khoảng mới mỗi nhịp → dải đang xem bị cắt
+    // thành từng mảnh ~10s và phần giữa bị BỎ HẲN khi lên dây (mảnh sau ngắn
+    // hơn 10s bị floor/lọc) — đo được đúng một nửa tiến độ (200/400).
+    // `lastSampleRef.current.time` là vị trí media THẬT của mẫu gần nhất (chỉ
+    // `timeupdate` mới ghi vào ref này, nên một heartbeat chen vào giữa không
+    // đẩy nó lệch đi như `positionRef`).
+    rangesRef.current = withOpenRangeMarker(leftover, lastSampleRef.current?.time ?? null);
 
     if (useBeacon && typeof navigator !== "undefined" && navigator.sendBeacon) {
       const body = new Blob([JSON.stringify(payload)], { type: "application/json" });
       // `sendBeacon` bắn vào path tương đối của trang; backend proxy `/api` nhận ở đây.
       navigator.sendBeacon("/api/progress", body);
+      // Không có tín hiệu lỗi từ sendBeacon — coi như đã gửi. Chỉ reset mốc
+      // "đang chờ từ khi nào" nếu KHÔNG còn leftover (gửi hết sạch); còn
+      // leftover thì giữ nguyên mốc gốc để lần sau trần tính đúng.
+      if (leftover.length === 0) pendingSinceRef.current = null;
       return;
     }
 
@@ -110,12 +179,21 @@ export function useVideoProgress({
       });
       setProgress(response);
       onProgressChangeRef.current?.(response);
+      // Gửi thành công — chỉ reset mốc nếu không còn leftover (xem giải
+      // thích ở nhánh beacon phía trên).
+      if (leftover.length === 0) pendingSinceRef.current = null;
     } catch {
       // Mất mạng: giữ khoảng lại để gửi kèm lần sau, không mất tiến độ.
       // `justSent` đã bị rút khỏi `rangesRef` trước khi gửi, nên phải cộng lại
       // đúng khoảng vừa gửi hỏng — SSOT là `rangesRef`, không có bộ giữ thứ hai
       // (review vòng 1, #11: `pendingRef` cũ bị ghi nhưng không nơi nào đọc).
       rangesRef.current = pendingAfterFailure(rangesRef.current, payload.played_ranges);
+      // V-H: CỐ Ý KHÔNG đụng `pendingSinceRef` ở đây (dù `leftover` rỗng) —
+      // gửi thất bại nghĩa là NỘI DUNG VỪA GỬI (giờ được cộng lại vào buffer
+      // ở dòng trên) vẫn còn tồn đọng thật, mốc "đang chờ từ khi nào" phải
+      // giữ nguyên để cửa sổ wall-clock cộng dồn qua các lần thử lại — nếu
+      // không, lần gửi kế tiếp sẽ tính trần chỉ theo khoảng thời gian RETRY
+      // (ngắn), cắt hụt đúng phần tồn đọng hợp lệ vừa được giữ lại.
 
       // Báo người học biết tiến độ chưa gửi được (review vòng 1, #11:
       // `notifyProgressOffline` từng được export nhưng không ai gọi). Debounce
@@ -144,6 +222,10 @@ export function useVideoProgress({
     lastSampleRef.current = null;
     positionRef.current = 0;
     durationRef.current = 0;
+    // Đổi bài reset luôn mốc "đang chờ gửi từ khi nào" — bài mới bắt đầu từ
+    // trạng thái không có gì tồn đọng (khoảng của bài CŨ đã được `send(true)`
+    // ở cleanup dưới đây flush trước khi effect này chạy).
+    pendingSinceRef.current = null;
     setProgress(null);
 
     return () => {
@@ -159,6 +241,15 @@ export function useVideoProgress({
       positionRef.current = currentTime;
       playbackRateRef.current = playbackRate;
 
+      // V-H tái review lần 3: đánh dấu mốc THẬT khi batch đang chờ gửi bắt
+      // đầu tích luỹ — CHỈ đặt khi chưa có gì chờ (`pendingSinceRef` đang
+      // `null`, nghĩa là buffer vừa được gửi hết sạch hoặc mới khởi tạo).
+      // Cả hai nhánh dưới đây (liên tục lẫn mở khoảng mới) đều thêm nội dung
+      // vào `rangesRef.current`, nên mốc này phải có TRƯỚC khi chạy tới đó.
+      if (pendingSinceRef.current === null) {
+        pendingSinceRef.current = now;
+      }
+
       const previous = lastSampleRef.current;
       lastSampleRef.current = { time: currentTime, at: now };
 
@@ -166,7 +257,24 @@ export function useVideoProgress({
       // mốc trước để so, nên coi nó là điểm bắt đầu chứ không phải bằng chứng
       // của một khoảng đã phát.
       if (previous && isContinuousSample(previous.time, currentTime, playbackRate, now - previous.at)) {
-        rangesRef.current = appendSample(rangesRef.current, currentTime);
+        // V-F (re-review vòng 2, CHẶN): nhánh liên tục trước đây cộng TRỌN
+        // `currentTime - previous.time` — dung sai của `isContinuousSample`
+        // (dù đã hạ sàn) vẫn cho qua một khoảng dtMedia LỚN HƠN thời gian
+        // thực trôi qua (`dtWall`) một chút; cộng trọn phần đó vẫn là tín
+        // dụng vượt mức. Trần wall-clock từng mẫu nằm ở
+        // `creditedEndForContinuousSample` (dùng chung với test, xem ở đó).
+        const creditedEnd = creditedEndForContinuousSample(
+          previous.time,
+          currentTime,
+          playbackRate,
+          now - previous.at
+        );
+        // V-G tái review (gate #17 vòng 3): `previous.time` có thể đã bị một
+        // lần gửi heartbeat rút khỏi buffer (xem `withOpenRangeMarker` ở
+        // `send()`), nên nó có thể nằm TRƯỚC đầu khoảng đang mở cả một nhịp
+        // gửi. Không có marker đó, `appendSample` không tìm thấy khoảng nào
+        // (`bestIndex === -1`) và mở khoảng mới mỗi nhịp, bỏ hẳn phần giữa.
+        rangesRef.current = appendSample(rangesRef.current, previous.time, creditedEnd);
         return;
       }
       // Seek / buffering / mẫu đầu: đoạn nhảy qua KHÔNG được tính, nhưng những

@@ -21,8 +21,37 @@ export const HEARTBEAT_INTERVAL_MS = 10_000;
 /**
  * Sàn tuyệt đối cho dung sai liên tục (giây) — bao dung tick rất ngắn/jitter
  * khi `expected` (xem `isContinuousSample`) gần 0.
+ *
+ * V-F (re-review vòng 2 web PR #17): sàn cũ 0.75s đủ rộng để một cú kéo tua
+ * đều 0.9s/tick 250ms (rate 1, expected 0.25) vẫn lọt qua thành "liên tục"
+ * (|0.9-0.25|=0.65 ≤ 0.75) — 4x tín dụng gian lận. Hạ sàn xuống 0.25s để
+ * kịch bản này bị `isContinuousSample` từ chối ngay ở bước phân loại. Sàn
+ * này chỉ còn có ý nghĩa với `expected` rất nhỏ (tick cực ngắn), không đủ để
+ * tự nó gây lỗ khai thác nữa — nhánh liên tục còn có thêm trần wall-clock ở
+ * `handleTimeUpdate` (xem V-F) làm lớp chặn thứ hai.
  */
-export const CONTINUITY_TOLERANCE_FLOOR_SECONDS = 0.75;
+export const CONTINUITY_TOLERANCE_FLOOR_SECONDS = 0.25;
+
+/**
+ * Hệ số nới cho trần wall-clock của MỖI mẫu (liên tục hay không) — V-F: tín
+ * dụng một mẫu không được vượt quá `playbackRate × dtWall × (1 + hệ số này)`.
+ * 5% dư ra để hấp thụ sai số làm tròn/jitter đo thời gian, không phải một kẽ
+ * hở tín dụng.
+ */
+export const WALL_CLOCK_CREDIT_SLACK = 0.05;
+
+/**
+ * Dung sai (giây) khi tìm khoảng "chứa hoặc kề" một vị trí trong `appendSample`
+ * (V-G). Không dùng bằng-tuyệt-đối vì trần wall-clock (V-F) có thể khiến đầu
+ * cuối một khoảng đang mở tụt lại một chút so với vị trí media THẬT ở mẫu
+ * trước (`previousTime`) khi tín dụng bị cắt liên tục nhiều tick — độ trễ đó
+ * bị chặn trên bởi chính trần wall-clock (tối đa vài phần mười giây mỗi
+ * tick), nên một dung sai nhỏ vài giây là đủ an toàn và KHÔNG đủ lớn để nhầm
+ * sang một khoảng khác thật sự ở xa (một cú tua luôn cách hàng chục giây trở
+ * lên, xem hàm `isContinuousSample` — `appendSample` chỉ được gọi khi hàm đó
+ * đã xác nhận liên tục).
+ */
+export const POSITION_MATCH_TOLERANCE_SECONDS = 2;
 
 /**
  * Tỉ lệ dung sai TƯƠNG ĐỐI theo `expected` — review PR #17 đo được: một hằng
@@ -134,20 +163,111 @@ export function openRange(
  * nên một tick chậm (máy yếu, timeupdate 1s/lần) hoặc phát ở 2x bị cắt vụn
  * thành nhiều đoạn dưới 0.5s mỗi lần — mất tới 50% `watched_pct` dù xem thật
  * 100%. Muốn mở khoảng mới (mẫu KHÔNG liên tục), gọi `openRange`.
+ *
+ * V-G (re-review vòng 2, HỒI QUY): bản trước chọn khoảng để nối bằng
+ * `ranges[ranges.length - 1]` — nhưng `mergeRanges` luôn sắp theo `start`
+ * TĂNG DẦN, nên phần tử cuối là khoảng có `start` LỚN NHẤT, không phải khoảng
+ * đang phát. Kịch bản vỡ: xem 500→600 (`[[500,600]]`), tua lùi về 100 (mở
+ * khoảng mới `[[100,100.25],[500,600]]` — mảng vẫn có `[500,600]` ở cuối vì
+ * `start` của nó lớn hơn), xem tiếp 100→500: mọi mẫu liên tục nối vào phần tử
+ * CUỐI (`[500,600]`) bằng `Math.max(600, sample)` — không đổi gì cho tới khi
+ * playhead vượt 600. 400 giây xem thật bị ghi 0 giây.
+ *
+ * Sửa: chọn khoảng theo VỊ TRÍ — khoảng chứa `previousTime` (vị trí media ở
+ * mẫu TRƯỚC, không phải mẫu hiện tại), hoặc gần nhất trong
+ * `POSITION_MATCH_TOLERANCE_SECONDS`. Không tìm thấy khoảng nào phù hợp (mẫu
+ * đầu tiên, hoặc dữ liệu bất thường) thì coi như mở khoảng mới — an toàn hơn
+ * nối nhầm vào một khoảng không liên quan.
  */
 export function appendSample(
   ranges: readonly PlayedRange[],
+  previousTime: number,
   sample: number,
   minLength = MIN_RANGE_SECONDS
 ): PlayedRange[] {
-  const last = ranges[ranges.length - 1];
-  if (!last) return openRange(ranges, sample, minLength);
-  return mergeRanges([...ranges.slice(0, -1), [last[0], Math.max(last[1], sample)] as PlayedRange]);
+  const merged = mergeRanges(ranges);
+  let bestIndex = -1;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  for (let i = 0; i < merged.length; i += 1) {
+    const [start, end] = merged[i];
+    if (previousTime >= start && previousTime <= end) {
+      // Chứa hẳn — không khoảng nào khác cùng chứa (đã merge, không chồng lấn).
+      bestIndex = i;
+      bestDistance = 0;
+      break;
+    }
+    const distance = previousTime > end ? previousTime - end : start - previousTime;
+    if (distance <= POSITION_MATCH_TOLERANCE_SECONDS && distance < bestDistance) {
+      bestIndex = i;
+      bestDistance = distance;
+    }
+  }
+
+  if (bestIndex === -1) return openRange(merged, sample, minLength);
+
+  const [start, end] = merged[bestIndex];
+  const next = [...merged];
+  next[bestIndex] = [Math.min(start, sample), Math.max(end, sample)];
+  return mergeRanges(next);
+}
+
+/**
+ * Đầu cuối được GHI cho một mẫu LIÊN TỤC (V-F) — chặn trên theo wall-clock.
+ *
+ * `isContinuousSample` cho qua một băng dung sai quanh `expected`, nên một mẫu
+ * vẫn có thể có `dtMedia` LỚN HƠN thời gian thực đã trôi qua một chút (trong
+ * băng đó). Cộng trọn phần đó vẫn là tín dụng vượt mức, nên đầu cuối bị kẹp về
+ * `previousTime + playbackRate × dtWall × (1 + WALL_CLOCK_CREDIT_SLACK)`: tín
+ * dụng vượt trần bị CẮT về đúng trần (mẫu vẫn là liên tục, chỉ giới hạn LƯỢNG
+ * được ghi), không bị từ chối hoàn toàn.
+ *
+ * Tách thành hàm riêng vì đây là một trong HAI lớp của fix V-F và trước đây
+ * biểu thức này bị chép lại ở cả hook lẫn helper `simulate()` của test — chép
+ * lại nghĩa là mutation vào bản này không được bản kia phát hiện.
+ */
+export function creditedEndForContinuousSample(
+  previousTime: number,
+  currentTime: number,
+  playbackRate: number,
+  elapsedMs: number
+): number {
+  const dtWall = elapsedMs / 1000;
+  const rate = playbackRate > 0 ? playbackRate : 1;
+  return Math.min(currentTime, previousTime + rate * dtWall * (1 + WALL_CLOCK_CREDIT_SLACK));
 }
 
 /** Tổng thời lượng đã phát thật (giây) sau khi gộp. */
 export function totalWatchedSeconds(ranges: readonly PlayedRange[]): number {
   return mergeRanges(ranges).reduce((sum, [start, end]) => sum + (end - start), 0);
+}
+
+/**
+ * V-G tái review (gate #17 vòng 3): giữ lại MARKER VỊ TRÍ của khoảng đang mở
+ * trong buffer trước khi `rangesRef` bị gán lại sau một lần gửi.
+ *
+ * `send()` rút phần đã gửi khỏi buffer, để lại `leftover` — mà `leftover` chỉ
+ * chứa phần CHƯA gửi, nên đầu cuối của nó KHÔNG phải vị trí media hiện tại.
+ * Sau khi gửi, vị trí media của mẫu kế tiếp nằm một nhịp heartbeat (~
+ * `HEARTBEAT_INTERVAL_MS`) về phía trước đầu cuối đó; khoảng cách này vượt
+ * `POSITION_MATCH_TOLERANCE_SECONDS` (2s) nên `appendSample` trả `bestIndex
+ * === -1` và mở khoảng MỚI — cú "mở khoảng mới" này lặp lại mỗi nhịp, cắt dải
+ * đang xem thành từng mảnh ~10s và **bỏ hẳn** khoảng giữa các mảnh (mảnh sau
+ * ngắn hơn 10s bị `buildHeartbeatPayload` floor cả hai đầu rồi lọc bỏ). Marker
+ * dưới `MIN_RANGE_SECONDS` không bao giờ tự lọt lên dây (bị floor/lọc), nhưng
+ * đủ để `appendSample` tìm thấy và giữ đúng vị trí.
+ *
+ * Marker phải được thêm CẢ KHI `leftover` RỖNG (đã gửi hết): đó chính là
+ * trường hợp buffer bị xoá sạch, và không có marker thì mẫu liên tục kế tiếp
+ * lại rơi vào nhánh mở-khoảng-mới.
+ */
+export function withOpenRangeMarker(
+  ranges: readonly PlayedRange[],
+  position: number | null,
+  marker = MIN_OPEN_MARKER_SECONDS
+): PlayedRange[] {
+  if (position === null || !Number.isFinite(position)) return [...ranges];
+  return mergeRanges([...ranges, [position, position + marker] as PlayedRange]);
 }
 
 /**
@@ -196,6 +316,66 @@ export interface BuildHeartbeatPayloadInput {
   durationSeconds: number;
   /** Chỉ những khoảng MỚI kể từ lần gửi trước (server tự merge). */
   ranges: readonly PlayedRange[];
+  /**
+   * V-H (re-review vòng 2 web PR #17, CHẶN): trần TỔNG chiều dài
+   * `played_ranges` trong payload này — `playbackRate × thời gian thực trôi
+   * qua kể từ lần gửi trước × (1 + WALL_CLOCK_CREDIT_SLACK)`. Không truyền
+   * (hoặc `Infinity`) nghĩa là không chặn (test đơn lẻ không quan tâm tầng
+   * payload). Caller thật (`use-video-progress.ts`) LUÔN truyền giá trị này.
+   */
+  maxTotalSeconds?: number;
+}
+
+/**
+ * Tách `ranges` (đã sắp theo `start` tăng dần) thành phần NẰM TRONG trần
+ * wall-clock của MỘT LẦN GỬI (`included` — dùng để dựng payload) và phần
+ * VƯỢT trần (`leftover`). Giữ các khoảng SỚM NHẤT trước, cắt ngắn đúng
+ * khoảng chạm trần (phần bị cắt đi vào `leftover`, không phải bị bỏ hẳn).
+ * Áp trên giá trị THỰC (trước khi làm tròn số nguyên) vì trần tính bằng
+ * wall-clock là một đại lượng liên tục.
+ *
+ * V-H tái review (gate #17 vòng 3 lần 2, BUG THẬT phát hiện qua test): bản
+ * trước (`capTotalByWallClock`, chỉ trả `included`) khiến hook
+ * (`use-video-progress.ts`) xoá TOÀN BỘ `rangesRef.current` sau mỗi lần gửi
+ * bất kể có bị trần này cắt hay không — phần VƯỢT trần (ví dụ xem liên tục
+ * hàng trăm giây thật trong khi trần MỘT payload chỉ cho phép ~10s, do
+ * `inFlightRef` giữ nhịp gửi thưa hơn bình thường) bị MẤT VĨNH VIỄN thay vì
+ * được gửi ở nhịp heartbeat SAU. Trần này chỉ có ý nghĩa CHẶN TỐC ĐỘ một lần
+ * gửi (chống một payload đơn lẻ mang quá nhiều do lỗi làm tròn/nở — xem
+ * comment ở `buildHeartbeatPayload`), KHÔNG được phép làm mất TỔNG tiến độ
+ * thật đã xem — khác hẳn `boundedOpenCredit`/trần liên tục (V-F), vốn chặn
+ * đúng TÍN DỤNG NGHI VẤN GIAN LẬN (được phép mất vĩnh viễn, đó chính là mục
+ * đích chống tua). Người gọi (hook) chịu trách nhiệm giữ lại `leftover`.
+ */
+export function splitByWallClockCap(
+  ranges: readonly PlayedRange[],
+  maxTotalSeconds: number
+): { included: PlayedRange[]; leftover: PlayedRange[] } {
+  if (!Number.isFinite(maxTotalSeconds) || maxTotalSeconds < 0) {
+    return { included: [...ranges], leftover: [] };
+  }
+
+  const included: PlayedRange[] = [];
+  const leftover: PlayedRange[] = [];
+  let total = 0;
+  for (const [start, end] of ranges) {
+    if (total >= maxTotalSeconds) {
+      leftover.push([start, end]);
+      continue;
+    }
+    const length = end - start;
+    const remaining = maxTotalSeconds - total;
+    if (length <= remaining) {
+      included.push([start, end]);
+      total += length;
+    } else {
+      const splitPoint = start + remaining;
+      included.push([start, splitPoint]);
+      leftover.push([splitPoint, end]);
+      total = maxTotalSeconds;
+    }
+  }
+  return { included, leftover };
 }
 
 /** Dựng payload gửi lên; giây làm tròn về số nguyên, khoảng đã gộp trước khi gửi. */
@@ -204,21 +384,31 @@ export function buildHeartbeatPayload(
 ): HeartbeatPayload {
   const duration = Math.max(0, Math.round(input.durationSeconds));
   const position = clamp(Math.round(input.positionSeconds), 0, duration);
-  // Làm tròn RA NGOÀI (start xuống, end lên) — review vòng 1 (#19): làm tròn
-  // cả hai đầu bằng `Math.round` không nhất quán: [10.2, 10.7] nở thành
-  // [10, 11] (thêm 0.5s không phát thật), còn [10.6, 10.9] co thành [11, 11]
-  // rồi bị lọc mất hẳn — "vừa thổi phồng vừa làm mất, tuỳ vị trí lẻ".
-  // Chọn hướng RỘNG TAY (nhất quán, không tuỳ vị trí lẻ) thay vì chặt tay:
-  // heartbeat gộp mỗi 10 giây nên khoảng NGẮN (< 1s) là bình thường — ví dụ
-  // vài mẫu đầu trước nhịp gửi đầu tiên; làm tròn chặt sẽ xoá sạch những
-  // khoảng ngắn đó (`ceil(start) > floor(end)` khi khoảng < 1s), mất tiến độ
-  // thật nhiều hơn phần "thừa" tối đa 2s/khoảng mà cách này chấp nhận đổi lấy.
-  const ranges = mergeRanges(input.ranges)
+
+  const merged = mergeRanges(input.ranges);
+  // V-H phần (a): chặn TỔNG theo wall-clock TRƯỚC khi làm tròn — cùng nguyên
+  // tắc `boundedOpenCredit` áp cho một mẫu, nhưng ở đây áp cho CẢ PAYLOAD.
+  // Không có trần này, làm tròn ra ngoài ở bước dưới có thể "nở" hàng chục
+  // khoảng ngắn (mỗi khoảng do tua bị `boundedOpenCredit` cắt còn 0.2–0.25s)
+  // thành hàng chục giây trên dây dù mảng thô đúng đắn — số "đã đóng" đo ở
+  // tầng mảng thô không phải con số thực gửi lên server.
+  const { included: capped } = splitByWallClockCap(merged, input.maxTotalSeconds ?? Number.POSITIVE_INFINITY);
+
+  // V-H phần (b): làm tròn về SỐ NGUYÊN (contract §1: "giây: số nguyên") —
+  // đổi từ floor/ceil (review vòng 1, #19) sang floor CẢ HAI ĐẦU. Ceil ở đầu
+  // cuối là nguồn gốc của lỗi vòng 2: một khoảng thô 0.2–0.25s (đúng — bị
+  // `boundedOpenCredit` cắt đúng mức tua) bị `ceil` "nở" thành trọn 1 giây
+  // trên dây — 40–50 khoảng như vậy mỗi nhịp heartbeat thổi phồng tín dụng
+  // 4–5 lần dù số đo ở tầng mảng thô hoàn toàn đúng. Floor cả hai đầu không
+  // bao giờ nở khoảng lên; hệ quả là một khoảng < 1s sau khi floor có thể
+  // co về `start === end` (rỗng) — BỎ hẳn (không ceil cưỡng bức) thay vì giữ
+  // lại bằng cách thổi phồng, đúng đề xuất "bỏ khoảng < 1 giây thay vì ceil".
+  const ranges = capped
     .map(([start, end]): PlayedRange => [
       clamp(Math.floor(start), 0, duration),
-      clamp(Math.ceil(end), 0, duration),
+      clamp(Math.floor(end), 0, duration),
     ])
-    .filter(([start, end]) => end > start);
+    .filter(([start, end]) => end - start >= 1);
 
   const payload: HeartbeatPayload = {
     position_seconds: position,

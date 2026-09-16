@@ -8,9 +8,12 @@
  * → PUT lên presigned → chunk-complete → complete` — để phụ đề nằm cùng bucket
  * `study-media` với video, không mở thêm đường upload thứ hai.
  *
- * Nhãn nút nói rõ đang chờ GÌ, vì backend hiện chưa trả URL cuối sau `complete`
- * (`data = null`): khi đó nút chuyển sang trạng thái "chờ backend trả URL" thay vì
- * báo thành công rồi lưu một URL rỗng.
+ * V-I (re-review vòng 2 web PR #17): backend nay trả `data.url` sau `complete`
+ * (`CompleteUploadResponse.url`, xem `video-upload.service.ts`) — dùng luôn
+ * URL đó để gọi `onUploaded`, không bắt giáo viên dán tay nữa. Nếu backend cũ
+ * chưa deploy field này (`url` thiếu/`undefined`), giữ nguyên phương án phụ:
+ * chuyển sang trạng thái "chờ backend trả URL" để giáo viên dán tay, không
+ * bịa URL từ tên file (sai bucket/prefix là hỏng âm thầm).
  */
 
 import { useRef, useState } from "react";
@@ -87,11 +90,18 @@ export function SubtitleUploadField({
         etag: put.headers.get("ETag") ?? "",
         size: file.size,
       });
-      await videoUploadService.completeUpload(init.upload_id);
+      const completed = await videoUploadService.completeUpload(init.upload_id);
 
-      // Backend chưa trả URL cuối ⇒ không bịa URL từ tên file (sai bucket/prefix
-      // là hỏng âm thầm). Giữ trạng thái chờ để giáo viên dán URL nếu cần.
-      setState({ kind: "awaiting-url" });
+      if (completed?.url) {
+        // V-I: backend đã trả URL cuối — dùng luôn, lưu ngay vào bài học.
+        setState({ kind: "saved", url: completed.url });
+        onUploaded(completed.url);
+      } else {
+        // Backend chưa trả URL cuối (chưa deploy field, hoặc lỗi tạm) ⇒
+        // không bịa URL từ tên file (sai bucket/prefix là hỏng âm thầm). Giữ
+        // trạng thái chờ để giáo viên dán URL làm phương án phụ.
+        setState({ kind: "awaiting-url" });
+      }
     } catch (error) {
       setState({
         kind: "error",
