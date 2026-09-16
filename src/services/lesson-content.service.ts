@@ -108,6 +108,31 @@ export interface UpdateClassContentDTO {
 
 type R<T> = { message: string; data: T };
 
+/**
+ * Bỏ khoá `duration` khi nó không phải số dương.
+ *
+ * C-6: `duration` là mẫu số server dùng để tính `watched_pct`, và server chỉ tin
+ * `watched_pct` khi CHÍNH NÓ biết thời lượng (C-2). Gửi `duration: 0` đi thì backend
+ * đọc y hệt "chưa biết" — nghĩa là bài học vẫn không bao giờ hoàn thành được, đúng
+ * cái khoảng trống mà tính năng này sinh ra để bịt. Vì vậy `0`/`undefined`/`NaN`
+ * phải biến thành **khoá vắng mặt**, không phải thành số 0.
+ *
+ * Đặt ở tầng service (không phải ở từng component) để mọi đường gọi — tạo nội dung,
+ * sửa nội dung, và bất kỳ call site thêm sau này — đều đi qua cùng một luật.
+ *
+ * (`livestream`/`exercise` không khai báo `duration`, nên không ràng buộc generic
+ * theo trường đó — đọc qua một kiểu hẹp bên trong là đủ, và giữ cho union không
+ * phải thoả một constraint mà nó cố tình không có.)
+ */
+function omitEmptyDuration<T extends object>(data: T): T {
+  const { duration } = data as { duration?: number };
+  if (typeof duration === "number" && Number.isFinite(duration) && duration > 0) {
+    return data;
+  }
+  const { duration: _dropped, ...rest } = data as { duration?: number };
+  return rest as T;
+}
+
 // ─── Service ────────────────────────────────────────────────────────────────
 
 export const lessonContentService = {
@@ -119,12 +144,17 @@ export const lessonContentService = {
 
   /** POST /lessons/:lessonId/contents */
   createContent: (lessonId: string, data: CreateContentDTO) =>
-    api.post<R<LessonContent>>(`/lessons/${lessonId}/contents`, data).then((r) => r.data.data),
+    api
+      .post<R<LessonContent>>(`/lessons/${lessonId}/contents`, omitEmptyDuration(data))
+      .then((r) => r.data.data),
 
   /** PUT /lessons/:lessonId/contents/:contentId */
   updateContent: (lessonId: string, contentId: string, data: UpdateContentDTO) =>
     api
-      .put<R<LessonContent>>(`/lessons/${lessonId}/contents/${contentId}`, data)
+      .put<R<LessonContent>>(
+        `/lessons/${lessonId}/contents/${contentId}`,
+        omitEmptyDuration(data)
+      )
       .then((r) => r.data.data),
 
   /** PUT /lessons/:lessonId/contents/reorder */

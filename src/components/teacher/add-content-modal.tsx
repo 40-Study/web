@@ -47,6 +47,8 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { requiresClassSelection } from "@/lib/livestream";
+import { parseLessonDuration } from "@/lib/lesson-duration";
+import { VideoDurationField } from "@/components/teacher/video-duration-field";
 import type { Class } from "@/services/class.service";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -83,6 +85,15 @@ export interface VideoContentData {
   description: string;
   videoFile?: File;
   videoUrl?: string;
+  /**
+   * Thời lượng video, tính bằng **GIÂY** — mẫu số backend dùng để tính `watched_pct`.
+   *
+   * CHỈ có mặt khi giáo viên nhập hợp lệ. Video ngoài hệ thống (YouTube/Vimeo/mp4)
+   * không có nguồn nào để server tự đọc, thiếu trường này thì bài học không bao giờ
+   * đạt `completed` (C-6) — nhưng `duration: 0` còn tệ hơn: backend đọc `0` y hệt
+   * "chưa biết" nên nó cũng kẹt y hệt. Vì vậy khoá phải VẮNG MẶT, không được bằng 0.
+   */
+  duration?: number;
   documents: File[];
   quizQuestions: QuizQuestion[];
 }
@@ -217,6 +228,7 @@ export function AddContentModal({
   const [videoDesc, setVideoDesc] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState("");
+  const [videoDuration, setVideoDuration] = useState("");
   const [videoDocs, setVideoDocs] = useState<File[]>([]);
   const [videoQuiz, setVideoQuiz] = useState<QuizQuestion[]>([]);
 
@@ -285,6 +297,7 @@ export function AddContentModal({
     setContentType(null);
     setActiveTab("content");
     setVideoTitle(""); setVideoDesc(""); setVideoFile(null); setVideoUrl("");
+    setVideoDuration("");
     setVideoDocs([]); setVideoQuiz([]);
     setLiveTitle(""); setLiveDesc(""); setLiveDate(""); setLiveTime("20:00");
     setLiveClassId(""); setLiveRecording(true); setLiveDocs([]); setLiveQuiz([]);
@@ -317,12 +330,22 @@ export function AddContentModal({
     if (contentType === "video") {
       // Use uploadedVideoUrl if file was uploaded, otherwise use manual videoUrl
       const finalVideoUrl = uploadedVideoUrl || videoUrl || undefined;
+
+      /*
+        Thời lượng: khoá `duration` phải VẮNG MẶT khi ô trống, không được là `0`.
+        Backend coi `0` là "chưa biết" (C-2) nên gửi `0` tái mở đúng khoảng trống
+        C-6 mà tính năng này sinh ra để bịt. Nút gửi đã bị chặn khi ô nhập sai
+        định dạng, nên tới đây chỉ còn `empty` hoặc `valid`.
+      */
+      const parsedDuration = parseLessonDuration(videoDuration);
+
       onSubmit({
         type: "video",
         title: videoTitle,
         description: videoDesc,
         videoFile: undefined, // File already uploaded, URL is in finalVideoUrl
         videoUrl: finalVideoUrl,
+        ...(parsedDuration.kind === "valid" ? { duration: parsedDuration.seconds } : {}),
         documents: videoDocs,
         quizQuestions: videoQuiz,
       });
@@ -355,7 +378,7 @@ export function AddContentModal({
       });
     }
     handleClose();
-  }, [contentType, exerciseType, videoTitle, videoDesc, videoUrl, uploadedVideoUrl, videoDocs, videoQuiz, liveTitle, liveDesc, liveDate, liveTime, effectiveClassId, liveRecording, liveDocs, liveQuiz, exTitle, exDesc, exQuiz, exTimeLimit, exLanguage, exTestCases, exSolution, exMinWords, exMaxWords, onSubmit, handleClose]);
+  }, [contentType, exerciseType, videoTitle, videoDesc, videoUrl, videoDuration, uploadedVideoUrl, videoDocs, videoQuiz, liveTitle, liveDesc, liveDate, liveTime, effectiveClassId, liveRecording, liveDocs, liveQuiz, exTitle, exDesc, exQuiz, exTimeLimit, exLanguage, exTestCases, exSolution, exMinWords, exMaxWords, onSubmit, handleClose]);
 
   // Document handlers
   const addDocs = useCallback((files: FileList, target: "video" | "live") => {
@@ -426,6 +449,15 @@ export function AddContentModal({
   const currentDocs = contentType === "video" ? videoDocs : liveDocs;
   const currentQuiz = contentType === "video" ? videoQuiz : liveQuiz;
   const quizTarget = contentType === "video" ? "video" : contentType === "livestream" ? "live" : "exercise";
+
+  /*
+    C-6: ô thời lượng gõ sai thì phải CHẶN gửi, không được im lặng bỏ qua.
+    Bỏ qua trong im lặng sẽ gửi bài lên mà thiếu thời lượng — giáo viên tưởng đã
+    nhập, còn học viên thì kẹt ở bài đó vĩnh viễn. Ô trống vẫn hợp lệ (không gửi
+    khoá `duration`).
+  */
+  const durationInvalid =
+    contentType === "video" && parseLessonDuration(videoDuration).kind === "invalid";
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -582,6 +614,17 @@ export function AddContentModal({
                   placeholder="https://..."
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
+                />
+
+                {/*
+                  C-6: ô thời lượng. Gợi ý đổi theo nguồn video — video upload thì
+                  server tự đọc được nên ô này chỉ là tuỳ chọn; video ngoài hệ thống
+                  mà bỏ trống thì bài học không bao giờ hoàn thành được.
+                */}
+                <VideoDurationField
+                  value={videoDuration}
+                  onChange={setVideoDuration}
+                  videoUrl={uploadedVideoUrl || videoUrl}
                 />
               </TabsContent>
 
@@ -972,12 +1015,17 @@ export function AddContentModal({
                 {classBlockReason}
               </p>
             )}
+            {durationInvalid && (
+              <p role="status" className="text-xs text-destructive sm:mr-auto sm:text-left">
+                Sửa lại thời lượng video hoặc xoá trắng ô đó để tiếp tục.
+              </p>
+            )}
             <div className="flex flex-col-reverse gap-2 sm:ml-auto sm:flex-row">
               <Button variant="outline" onClick={handleClose}>Hủy</Button>
               <Button
                 onClick={handleSubmit}
                 isLoading={isLoading}
-                disabled={contentType === "livestream" && !effectiveClassId}
+                disabled={(contentType === "livestream" && !effectiveClassId) || durationInvalid}
               >
                 {contentType === "video" ? "Thêm video" : contentType === "livestream" ? "Tạo buổi live" : "Lưu bài tập"}
               </Button>
