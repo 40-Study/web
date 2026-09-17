@@ -7,8 +7,9 @@ import { ArrowLeft, Loader2, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { SubtitleUploadField } from "@/components/teacher/subtitle-upload-field";
 import { useSections } from "@/hooks/queries/use-sections";
-import { useLessons } from "@/hooks/queries/use-lessons";
+import { useLessons, useUpdateLesson } from "@/hooks/queries/use-lessons";
 import type { Section } from "@/types/section";
 import type { Lesson } from "@/types/lesson";
 
@@ -73,6 +74,12 @@ function LessonDetailContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sections, s0.data, s1.data, s2.data, s3.data, s4.data, s5.data, s6.data, s7.data, s8.data, s9.data]);
 
+  // Section THẬT của bài này — review vòng 1 (#14): trước đây `useUpdateLesson`
+  // luôn nhận `sections[0]`, nên sửa bài ở chương khác invalidate sai key
+  // (`lessonKeys.bySection`), danh sách bài của chương thật không refresh.
+  const found = isLoading ? null : findLessonInSections(sections, lessonsMap, lessonId);
+  const updateLesson = useUpdateLesson(courseId, found?.section.id ?? sections[0]?.id ?? "");
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -80,8 +87,6 @@ function LessonDetailContent({
       </div>
     );
   }
-
-  const found = findLessonInSections(sections, lessonsMap, lessonId);
 
   if (!found) {
     notFound();
@@ -134,6 +139,25 @@ function LessonDetailContent({
           </div>
         </CardContent>
       </Card>
+
+      {/* Phụ đề bài giảng (contract §4) — upload ngay cạnh thông tin video */}
+      {lesson.type === "video" && (
+        <Card>
+          <CardContent className="p-6">
+            <SubtitleUploadField
+              courseId={courseId}
+              lessonId={lesson.id}
+              currentUrl={lesson.subtitle_url}
+              onUploaded={(subtitleUrl) =>
+                updateLesson.mutate({ id: lesson.id, data: { subtitle_url: subtitleUrl } })
+              }
+              onCleared={() =>
+                updateLesson.mutate({ id: lesson.id, data: { subtitle_url: null } })
+              }
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Comments — no backend endpoint yet, show empty state */}
       <Card>

@@ -9,6 +9,14 @@ export interface PlayerLesson {
   type: "video" | "quiz" | "exercise" | "reading";
   completed: boolean;
   locked: boolean;
+  /** `previous_incomplete` | `not_enrolled` | null — dùng cho microcopy (contract §2). */
+  lockReason?: string | null;
+  /** Vị trí resume đọc từ curriculum `progress.last_position_seconds` (contract §2). */
+  lastPositionSeconds?: number;
+  /** Tổng thời lượng (giây) nếu server trả — để `resolveResumeSeconds` bỏ qua đoạn cuối. */
+  durationSeconds?: number;
+  /** Phụ đề WebVTT của bài (contract §4). `null` = bài không có phụ đề. */
+  subtitleUrl?: string | null;
   videoUrl?: string;
 }
 

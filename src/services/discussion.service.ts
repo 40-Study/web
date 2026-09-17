@@ -3,9 +3,23 @@
  */
 
 import { api } from "@/lib/api-client";
+import { NotFoundError } from "@/lib/errors";
 import type { ForumPost, ForumPostListResponse, ForumPostDetail, ForumComment } from "@/types/discussion";
 
 type ApiResponse<T> = { message: string; data: T };
+
+/**
+ * Backend trả 404 (route không tồn tại) ⇒ coi như "chưa có dữ liệu", không
+ * phải lỗi của người học.
+ *
+ * Review vòng 1 (#16): trước đây gộp CẢ `NetworkError` vào đây — mất mạng bị
+ * hiển thị y hệt "chưa có câu hỏi nào", nuốt mất tín hiệu lỗi thật. `NetworkError`
+ * KHÔNG được coi là thiếu endpoint; nó phải ném ra để UI hiện "Không tải được,
+ * thử lại" thay vì một empty-state trông giống hệt trạng thái bình thường.
+ */
+function isMissingEndpoint(error: unknown): boolean {
+  return error instanceof NotFoundError;
+}
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
@@ -23,10 +37,29 @@ export const discussionService = {
       .then((r) => r.data.data),
 
   /** POST /discussions — create new post (auth required) */
-  createPost: (data: { title: string; content: string; category: string }) =>
+  createPost: (data: { title: string; content: string; category: string; lesson_id?: string }) =>
     api
       .post<ApiResponse<ForumPost>>("/discussions", data)
       .then((r) => r.data.data),
+
+  /**
+   * GET /lessons/:lessonId/discussions — hỏi đáp theo bài (contract §5).
+   *
+   * 404 (route chưa triển khai ở môi trường đang chạy) ⇒ trả danh sách rỗng,
+   * panel hiện empty state chứ không đỏ lỗi cho người học. Mọi lỗi KHÁC —
+   * kể cả mất mạng — vẫn ném ra để UI phân biệt được "chưa có câu hỏi" với
+   * "không tải được" (review vòng 1, #16).
+   */
+  listByLesson: async (lessonId: string, params?: { page?: number; limit?: number }) => {
+    try {
+      return await api
+        .get<ApiResponse<ForumPostListResponse>>(`/lessons/${lessonId}/discussions`, { params })
+        .then((r) => r.data.data);
+    } catch (error) {
+      if (isMissingEndpoint(error)) return { posts: [], total: 0, page: 1, page_size: 0 };
+      throw error;
+    }
+  },
 
   /** POST /discussions/:slug/comments — add comment (auth required) */
   addComment: (slug: string, data: { content: string; parent_id?: string }) =>

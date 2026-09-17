@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { ChevronRight, Loader2, Star } from "lucide-react";
 import Link from "next/link";
-import { VideoPlayer } from "@/components/lesson/video-player";
 import {
   PlayerHeader,
   PlayerLessonSidebar,
@@ -12,14 +11,28 @@ import {
   FloatingButtons,
   CodeEditorModal,
   QuizLessonContent,
-  QuizResultContent,
+  HeartbeatVideo,
+  LessonLockedNotice,
+  LessonStudyTools,
+  KeyboardShortcutsDialog,
+  LessonLoadError,
 } from "@/components/player";
-import type { QuizResultData } from "@/components/player";
+import type { StudyToolKey } from "@/components/player";
+import { QuizAttemptReview } from "@/components/quiz";
 import { useCourseBySlug } from "@/hooks/queries/use-courses";
 import { useSections } from "@/hooks/queries/use-sections";
 import { useLessonContents } from "@/hooks/queries/use-lesson-content";
 import { useHlsInfo, getVideoUrl } from "@/hooks/use-hls";
-import { useStartQuiz, useSubmitQuiz, useQuizzesByLesson, useSaveQuizAnswer } from "@/hooks/queries/use-quiz";
+import {
+  useStartQuiz,
+  useSubmitQuiz,
+  useQuizzesByLesson,
+  useSaveQuizAnswer,
+  useQuizAttemptDetail,
+} from "@/hooks/queries/use-quiz";
+import { resolveResumeSeconds, findPreviousLesson } from "@/lib/lesson-lock";
+import { detectPlatform } from "@/lib/keyboard-shortcut-label";
+import type { VideoPlayerHandle } from "@/components/lesson/video-player";
 import type { StartQuizResponse } from "@/services/quiz.service";
 import type { PlayerCourse, PlayerChapter, PlayerLesson } from "@/types/course-player";
 import type { Section } from "@/types/section";
@@ -28,6 +41,13 @@ import type { ApiCourse } from "@/services/course.service";
 
 // ─── Backend → PlayerCourse mapping ────────────────────────────────────────
 
+/**
+ * Backend → PlayerCourse mapping.
+ *
+ * `locked` / `lock_reason` / `progress` đến TỪ SERVER (contract §2) — KHÔNG suy ra
+ * ở client. Trước đây chỗ này gán `locked: !lesson.is_preview`, tức mọi bài không
+ * phải preview đều bị khoá, kể cả bài đã học xong. Server là nguồn duy nhất.
+ */
 function mapSectionsToChapters(sections: Section[]): PlayerChapter[] {
   return sections.map((section) => ({
     id: section.id,
@@ -35,10 +55,29 @@ function mapSectionsToChapters(sections: Section[]): PlayerChapter[] {
     lessons: (section.lessons ?? []).map((lesson: Lesson) => ({
       id: lesson.id,
       title: lesson.title,
-      duration: lesson.duration ? `${Math.floor(lesson.duration / 60)}:${String(lesson.duration % 60).padStart(2, "0")}` : "00:00",
+      // Review vòng 1 (#12, quyết định Q3): `lesson.duration` (@deprecated) là
+      // ĐƠN VỊ PHÚT (alias của `duration_minutes`), KHÔNG phải giây — dòng cũ
+      // chia nó cho 60 để lấy phút, tức coi nhầm phút thành giây. Nguồn đúng
+      // là `duration_minutes` (phút, chỉ dùng hiển thị); giây thật lấy từ
+      // lesson content (`lessonVideo.duration`, xem `durationSeconds` dưới).
+      duration: lesson.duration_minutes
+        ? `${lesson.duration_minutes}:00`
+        : "00:00",
       type: lesson.type === "article" ? "reading" : (lesson.type as PlayerLesson["type"]),
-      completed: false,
-      locked: !lesson.is_preview,
+      completed: lesson.progress?.status === "completed",
+      locked: lesson.locked ?? false,
+      lockReason: lesson.lock_reason ?? null,
+      lastPositionSeconds: lesson.progress?.last_position_seconds ?? 0,
+      // KHÔNG dùng `lesson.duration` cho bất kỳ phép tính nào (Q3) — dự phòng
+      // thô từ phút (kém chính xác tối đa 59s); bài ĐANG XEM ưu tiên giây thật
+      // từ lesson content (threaded qua prop `durationSeconds` ở VideoLessonContent).
+      durationSeconds: lesson.duration_minutes ? lesson.duration_minutes * 60 : undefined,
+      // BLOCKER review vòng 1 (#4): trước đây không gán field này nên
+      // `currentLesson?.subtitleUrl` luôn `undefined`. Nguồn AUTHORITATIVE là
+      // lesson content (`lessonVideo?.subtitle_url`, quyết định Q1) vì đó là
+      // nơi backend Phase 1 trả lại sau khi ghi qua `PUT /lessons/:id`; giữ
+      // field này ở đây làm dự phòng nếu curriculum cũng trả kèm.
+      subtitleUrl: lesson.subtitle_url ?? null,
     })),
   }));
 }
@@ -67,6 +106,11 @@ function mapApiCourseToPlayerCourse(course: ApiCourse, sections: Section[]): Pla
   };
 }
 
+/** Bài này có bị khoá trong curriculum THÔ không (trước khi map sang PlayerLesson). */
+function isLessonLockedInSections(sections: Section[], lessonId: string): boolean {
+  return sections.some((s) => s.lessons?.some((l) => l.id === lessonId && l.locked === true));
+}
+
 function getLessonById(course: PlayerCourse, lessonId: string): PlayerLesson | undefined {
   for (const chapter of course.chapters) {
     const lesson = chapter.lessons.find((l) => l.id === lessonId);
@@ -90,6 +134,8 @@ function VideoLessonContent({
   next,
   courseSlug,
   isLoading,
+  subtitleUrl,
+  durationSeconds,
 }: {
   videoSrc: string | null;
   currentLesson: PlayerLesson | undefined;
@@ -97,7 +143,59 @@ function VideoLessonContent({
   next: PlayerLesson | undefined;
   courseSlug: string;
   isLoading?: boolean;
+  /** Giây thật từ lesson content (Q3) — ưu tiên hơn ước lượng từ `duration_minutes`. */
+  durationSeconds?: number;
+  /** Contract §4 — nguồn authoritative là lesson content (quyết định Q1). */
+  subtitleUrl?: string | null;
 }) {
+  const lessonId = currentLesson?.id ?? "";
+  const sectionId = course.chapters.find((ch) =>
+    ch.lessons.some((l) => l.id === lessonId)
+  )?.id;
+
+  /**
+   * Giây hiện tại được giữ trong một state nhỏ ở đây thay vì trong player: player
+   * tự quản `currentTime` cho UI của nó, còn panel ghi chú/transcript cần đọc để
+   * chọn mốc và cuộn theo cue. `onClockTick` bắn mỗi `timeupdate` nên đây là state
+   * nóng — chỉ những component con thật sự đọc nó mới render lại.
+   */
+  const [currentTime, setCurrentTime] = useState(0);
+  const [activeTool, setActiveTool] = useState<StudyToolKey | null>(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [composeToken, setComposeToken] = useState(0);
+  const [prefill, setPrefill] = useState<{ text: string; timestampSeconds: number } | null>(null);
+  const playerControl = useRef<VideoPlayerHandle | null>(null);
+
+  const seekTo = (seconds: number) => playerControl.current?.seekTo(seconds);
+
+  /**
+   * Phím tắt thuộc về trang (contract §7): `B` mở ô ghi chú tại giây hiện tại,
+   * `N` đóng/mở panel ghi chú. Player đã lo Space/←/→/J/L/↑/↓/</>/C; ở đây chỉ
+   * nhận hai phím mà player không biết vì chúng mở UI của trang.
+   */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || e.metaKey || e.ctrlKey || e.altKey) {
+        return;
+      }
+
+      if (e.code === "KeyB") {
+        e.preventDefault();
+        setActiveTool("notes");
+        setComposeToken((n) => n + 1);
+      } else if (e.code === "KeyN") {
+        e.preventDefault();
+        setActiveTool((tool) => (tool === "notes" ? null : "notes"));
+      } else if (e.code === "Escape") {
+        setActiveTool(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-5 gap-4">
       <div className="rounded-2xl overflow-hidden shadow-sm bg-black aspect-video">
@@ -105,14 +203,46 @@ function VideoLessonContent({
           <div className="w-full h-full flex items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-white" />
           </div>
-        ) : videoSrc ? (
-          <VideoPlayer src={videoSrc} className="rounded-none" />
+        ) : videoSrc && lessonId ? (
+          <HeartbeatVideo
+            src={videoSrc}
+            lessonId={lessonId}
+            courseId={course.id}
+            resumeSeconds={resolveResumeSeconds(
+              currentLesson?.lastPositionSeconds,
+              durationSeconds ?? currentLesson?.durationSeconds
+            )}
+            subtitleUrl={subtitleUrl ?? currentLesson?.subtitleUrl}
+            controlRef={playerControl}
+            onClockTick={setCurrentTime}
+            onToggleShortcutsHelp={() => setShortcutsOpen(true)}
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white">
             <p>Video không khả dụng</p>
           </div>
         )}
       </div>
+
+      {lessonId && (
+        <LessonStudyTools
+          lessonId={lessonId}
+          courseId={course.id}
+          lessonTitle={currentLesson?.title}
+          sectionId={sectionId}
+          subtitleUrl={subtitleUrl ?? currentLesson?.subtitleUrl}
+          currentTime={currentTime}
+          onSeek={seekTo}
+          activeTool={activeTool}
+          onToolChange={setActiveTool}
+          composeToken={composeToken}
+          prefill={prefill}
+          onPrefillFromTranscript={(next) => {
+            setPrefill(next);
+            setActiveTool("notes");
+          }}
+        />
+      )}
 
       <div className="bg-white rounded-2xl shadow-sm px-6 pt-5 pb-4">
         <div className="flex items-start justify-between gap-4">
@@ -144,6 +274,12 @@ function VideoLessonContent({
           <PlayerTabs course={course} courseSlug={courseSlug} />
         </div>
       </div>
+
+      <KeyboardShortcutsDialog
+        open={shortcutsOpen}
+        onOpenChange={setShortcutsOpen}
+        platform={detectPlatform()}
+      />
     </div>
   );
 }
@@ -155,23 +291,42 @@ export default function CourseLessonPage() {
   const { courseSlug, lessonId } = params;
 
   const [isCodeEditorOpen, setCodeEditorOpen] = useState(false);
-  const [quizAnswers, setQuizAnswers] = useState<Record<string, string> | null>(null);
-  const [quizTimeSpent, setQuizTimeSpent] = useState(0);
   const [activeQuiz, setActiveQuiz] = useState<StartQuizResponse | null>(null);
-  const [quizResult, setQuizResult] = useState<QuizResultData | null>(null);
+  // BLOCKER review vòng 1 (#5, quyết định Q5): KHÔNG dựng lại đúng/sai ở
+  // client. Sau khi nộp chỉ giữ `attempt_id`, kết quả thật đọc qua
+  // `useQuizAttemptDetail` (GET /quizzes/:id/attempts/:attemptId, contract §6).
+  const [submittedAttemptId, setSubmittedAttemptId] = useState<string | null>(null);
   const [quizError, setQuizError] = useState<string | null>(null);
 
-  const { data: apiCourse, isLoading: courseLoading } = useCourseBySlug(courseSlug);
+  const {
+    data: apiCourse,
+    isLoading: courseLoading,
+    isError: courseError,
+    refetch: refetchCourse,
+  } = useCourseBySlug(courseSlug);
   const { data: sections = [], isLoading: sectionsLoading } = useSections(apiCourse?.id ?? "");
-  const { data: lessonContents } = useLessonContents(lessonId);
+
+  // Bài khoá (contract §2): không fetch content/quiz/HLS trước khi biết mở
+  // khoá — review vòng 1 (#9). Tính trực tiếp từ `sections` THÔ (chưa qua
+  // `mapApiCourseToPlayerCourse`) vì các hook dưới đây bắt buộc gọi trước mọi
+  // early-return (Rules of Hooks), tức trước khi `course`/`currentLesson`
+  // dựng xong. Truyền lessonId rỗng để mỗi hook tự vô hiệu hoá qua `enabled`
+  // sẵn có của nó — không cần thêm tham số `enabled` mới.
+  const isLessonLocked = isLessonLockedInSections(sections, lessonId);
+  const { data: lessonContents } = useLessonContents(isLessonLocked ? "" : lessonId);
   const lessonVideo = lessonContents?.find((c) => c.type === "video");
 
   // Quiz hooks
-  const { data: quizzes } = useQuizzesByLesson(lessonId);
+  const { data: quizzes } = useQuizzesByLesson(isLessonLocked ? "" : lessonId);
   const lessonQuiz = quizzes?.[0]; // Assume one quiz per lesson
   const startQuizMutation = useStartQuiz();
   const submitQuizMutation = useSubmitQuiz();
   const saveAnswerMutation = useSaveQuizAnswer();
+  const {
+    data: submittedAttempt,
+    isLoading: isLoadingAttemptDetail,
+    isError: isAttemptDetailError,
+  } = useQuizAttemptDetail(lessonQuiz?.id, submittedAttemptId ?? undefined);
 
   // Get video upload ID - prefer direct field, fallback to parsing URL
   const videoId = lessonVideo?.video_upload_id
@@ -189,6 +344,14 @@ export default function CourseLessonPage() {
     );
   }
 
+  if (courseError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <LessonLoadError onRetry={() => refetchCourse()} />
+      </div>
+    );
+  }
+
   if (!apiCourse) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -200,6 +363,25 @@ export default function CourseLessonPage() {
   const course = mapApiCourseToPlayerCourse(apiCourse, sections);
   const currentLesson = getLessonById(course, lessonId);
   const next = getNextLesson(course, lessonId);
+  const previous = findPreviousLesson(course, lessonId);
+
+  /**
+   * Bài chưa mở (contract §2): chặn ngay ở đây, KHÔNG tải video/quiz.
+   * Backend cũng trả 403 LESSON_LOCKED cho nội dung bài khoá — chặn ở client chỉ
+   * để người học thấy lý do thay vì một khung video trắng.
+   */
+  const isLocked = currentLesson?.locked === true;
+  const lockNotice = isLocked && currentLesson ? (
+    <div className="flex-1 flex items-center justify-center p-5">
+      <div className="aspect-video w-full max-w-3xl overflow-hidden rounded-2xl">
+        <LessonLockedNotice
+          lesson={currentLesson}
+          courseSlug={courseSlug}
+          previousLesson={previous}
+        />
+      </div>
+    </div>
+  ) : null;
 
   // Get video URL: HLS if ready, fallback to original video.mp4 endpoint
   const videoSrc = videoId && hlsInfo
@@ -223,91 +405,50 @@ export default function CourseLessonPage() {
     }
     try {
       setQuizError(null);
-      const response = await startQuizMutation.mutateAsync(lessonQuiz.id);
+      const response = await startQuizMutation.mutateAsync({ quizId: lessonQuiz.id });
       setActiveQuiz(response);
-    } catch (err: any) {
-      setQuizError(err?.message || "Khong the bat dau quiz");
+    } catch (err: unknown) {
+      setQuizError(err instanceof Error ? err.message : "Khong the bat dau quiz");
     }
   };
 
-  // Submit quiz answers (API format)
+  /**
+   * Nộp bài quiz nhúng trong bài học (API format).
+   *
+   * BLOCKER review vòng 1 (#5): bản trước dựng lại đúng/sai ở CLIENT bằng
+   * `ans.is_correct` qua `as any` — field đó không tồn tại trên
+   * `AttemptAnswer` (`quiz.service.ts`), nên `correctIds` luôn rỗng và mọi câu
+   * bị chấm sai. Giờ chỉ lưu `attempt_id`; `useQuizAttemptDetail` đọc đúng/sai
+   * + giải thích thật từ server, đúng contract §6 ("kết quả đọc từ server").
+   */
   const handleQuizSubmitApi = async (
-    answers: Record<string, string> | Array<{ question_id: string; selected_answer_ids: string[] }>,
-    timeSpent: number
+    answers: Record<string, string> | Array<{ question_id: string; selected_answer_ids?: string[] }>
   ) => {
     if (!lessonQuiz?.id || !activeQuiz) return;
 
-    // Convert to API format if needed
-    const apiAnswers = Array.isArray(answers)
-      ? answers
-      : Object.entries(answers).map(([qId, aId]) => ({
-          question_id: qId,
-          selected_answer_ids: [aId],
-        }));
+    if (!Array.isArray(answers)) {
+      // `apiQuiz` (StartQuizResponse) luôn gọi onSubmit với mảng — nhánh
+      // Record chỉ tồn tại cho định dạng demo cũ của QuizLessonContent. Nộp
+      // mảng rỗng trong im lặng ở đây sẽ mất trắng lần làm của học viên.
+      setQuizError("Không đọc được câu trả lời. Vui lòng thử lại, đừng đóng trang.");
+      return;
+    }
 
     try {
       const result = await submitQuizMutation.mutateAsync({
         quizId: lessonQuiz.id,
-        data: { answers: apiAnswers },
+        data: { answers },
       });
-
-      // Build quiz result data from response and active quiz
-      // Note: In real implementation, the API should return full result data
-      // For now, we construct it from available data
-      const correctCount = apiAnswers.filter((a, idx) => {
-        const question = activeQuiz.questions[idx];
-        if (!question) return false;
-        const correctIds = question.answers.filter((ans: any) => ans.is_correct).map((ans: any) => ans.id);
-        return a.selected_answer_ids.some(id => correctIds.includes(id));
-      }).length;
-
-      const resultData: QuizResultData = {
-        quiz_id: lessonQuiz.id,
-        attempt_id: activeQuiz.attempt_id,
-        title: activeQuiz.title,
-        score: result.percentage ? Number(result.percentage) : (correctCount / activeQuiz.questions.length) * 100,
-        total_points: activeQuiz.questions.length,
-        earned_points: result.score ? Number(result.score) : correctCount,
-        correct_count: correctCount,
-        incorrect_count: apiAnswers.length - correctCount,
-        skipped_count: activeQuiz.questions.length - apiAnswers.length,
-        total_questions: activeQuiz.questions.length,
-        time_spent_seconds: timeSpent,
-        is_passed: result.is_passed ?? (correctCount / activeQuiz.questions.length >= 0.7),
-        pass_percentage: lessonQuiz.pass_percentage ?? 70,
-        answers: activeQuiz.questions.map((q, idx) => {
-          const submitted = apiAnswers[idx];
-          const selectedIds = submitted?.selected_answer_ids || [];
-          const correctIds = q.answers.filter((a: any) => a.is_correct).map((a: any) => a.id);
-          const isCorrect = selectedIds.some(id => correctIds.includes(id));
-
-          return {
-            id: `answer-${idx}`,
-            question_id: q.id,
-            question_text: q.question_text,
-            question_type: q.question_type,
-            options: q.answers.map((a: any, aIdx: number) => ({
-              id: a.id,
-              key: String.fromCharCode(65 + aIdx),
-              text: a.answer_text,
-              is_correct: correctIds.includes(a.id),
-            })),
-            selected_answer_ids: selectedIds,
-            correct_answer_ids: correctIds,
-            is_correct: isCorrect,
-            points_earned: isCorrect ? 1 : 0,
-            explanation: undefined, // API should provide this
-          };
-        }),
-      };
-
-      setQuizResult(resultData);
-      setQuizTimeSpent(timeSpent);
-      setQuizAnswers(Array.isArray(answers) ? {} : answers);
-    } catch (err: any) {
-      console.error("Submit quiz error:", err);
+      setSubmittedAttemptId(result.id || activeQuiz.attempt_id);
+    } catch (err: unknown) {
+      setQuizError(err instanceof Error ? err.message : "Không nộp được bài. Câu trả lời vẫn được lưu tạm, hãy thử nộp lại.");
     }
   };
+
+  /** id → chữ đáp án, lấy từ đề đã tải (không lộ đáp án đúng — chỉ có chữ). */
+  const quizAnswerText = new Map(
+    (activeQuiz?.questions ?? []).flatMap((q) => q.answers.map((a) => [a.id, a.answer_text] as const))
+  );
 
   // Save answer in progress (auto-save)
   const handleSaveAnswer = (questionId: string, answerIds: string[]) => {
@@ -321,22 +462,51 @@ export default function CourseLessonPage() {
 
   // Reset quiz to try again
   const handleRetryQuiz = () => {
-    setQuizAnswers(null);
     setActiveQuiz(null);
-    setQuizResult(null);
+    setSubmittedAttemptId(null);
     setQuizError(null);
   };
 
   const renderContent = () => {
+    if (lockNotice) return lockNotice;
+
     // Quiz lesson
     if (currentLesson?.type === "quiz") {
-      // Quiz completed - show result
-      if (quizResult) {
+      // Đã nộp — đọc kết quả THẬT từ server, không dựng lại ở client (§6).
+      if (submittedAttemptId) {
+        if (isLoadingAttemptDetail) {
+          return (
+            <div className="flex-1 flex items-center justify-center p-5">
+              <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
+            </div>
+          );
+        }
+        if (isAttemptDetailError || !submittedAttempt) {
+          return (
+            <div className="flex-1 flex items-center justify-center p-5">
+              <LessonLoadError onRetry={handleRetryQuiz} />
+            </div>
+          );
+        }
+        const percentage = submittedAttempt.percentage ?? 0;
         return (
-          <QuizResultContent
-            result={quizResult}
-            onRetry={handleRetryQuiz}
-          />
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            <div className="bg-white rounded-2xl shadow-sm p-6 space-y-1">
+              <h2 className="text-xl font-bold text-gray-900">
+                {submittedAttempt.is_passed ? "Bạn đã đạt bài kiểm tra này" : "Bạn chưa đạt bài kiểm tra này"}
+              </h2>
+              <p className="text-sm text-gray-500">
+                Điểm: {Math.round(percentage)}% · Đúng {submittedAttempt.answers.filter((a) => a.is_correct === true).length}/{submittedAttempt.answers.length} câu
+              </p>
+              <button
+                onClick={handleRetryQuiz}
+                className="mt-3 px-4 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50"
+              >
+                Làm lại
+              </button>
+            </div>
+            <QuizAttemptReview answers={submittedAttempt.answers} answerText={quizAnswerText} />
+          </div>
         );
       }
 
@@ -385,6 +555,17 @@ export default function CourseLessonPage() {
             >
               {startQuizMutation.isPending ? "Dang tai..." : "Bat dau lam bai"}
             </button>
+            {/* Trang riêng (contract §6): cùng bài quiz, thêm chế độ luyện tập
+                không tính điểm — link từ curriculum qua GET /lessons/:id/quizzes
+                đã fetch ở trên (`lessonQuiz`). */}
+            {lessonQuiz?.id && (
+              <Link
+                href={`/quizzes/${lessonQuiz.id}`}
+                className="mt-3 block text-sm text-blue-600 hover:underline"
+              >
+                Mở trang làm bài riêng (có chế độ luyện tập)
+              </Link>
+            )}
           </div>
         </div>
       );
@@ -410,6 +591,8 @@ export default function CourseLessonPage() {
         next={next}
         courseSlug={courseSlug}
         isLoading={isVideoLoading}
+        subtitleUrl={lessonVideo?.subtitle_url}
+        durationSeconds={lessonVideo?.duration}
       />
     );
   };

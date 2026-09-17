@@ -34,6 +34,11 @@ export interface UpdateLessonDTO {
   duration_minutes?: number;
   is_preview?: boolean;
   is_mandatory?: boolean;
+  /**
+   * Phụ đề WebVTT của bài (contract §4). Gửi URL đã upload xong; `null` để gỡ.
+   * Player ẩn panel transcript khi field này rỗng.
+   */
+  subtitle_url?: string | null;
 }
 
 export interface ReorderItem {

@@ -55,6 +55,18 @@ export interface IncompleteUpload {
   created_at: string;
 }
 
+/**
+ * V-I (re-review vòng 2 web PR #17): trước đây `POST /videos/upload/complete`
+ * trả `data: null` — không có cách nào tự động điền URL sau khi upload xong
+ * (giáo viên phải tự dán URL, xem `subtitle-upload-field.tsx`). `url` là field
+ * MỚI backend bổ sung (phía backend chịu trách nhiệm) để trả về URL công khai
+ * của file vừa upload xong; optional vì backend cũ (chưa deploy field này)
+ * vẫn phải chạy được — web không được coi thiếu field là lỗi.
+ */
+export interface CompleteUploadResponse {
+  url?: string;
+}
+
 type R<T> = { message: string; data: T };
 
 // ─── Service ────────────────────────────────────────────────────────────────
@@ -78,11 +90,17 @@ export const videoUploadService = {
   chunkComplete: (data: ChunkCompleteDTO) =>
     api.post<R<null>>("/videos/upload/chunk-complete", data).then((r) => r.data),
 
-  /** POST /videos/upload/complete — finalize upload */
+  /**
+   * POST /videos/upload/complete — finalize upload.
+   *
+   * Trả `data.url` khi backend đã bổ sung field này (V-I); `undefined`/thiếu
+   * field trên backend cũ vẫn hợp lệ — caller tự quyết định phương án phụ
+   * (xem `subtitle-upload-field.tsx`).
+   */
   completeUpload: (uploadId: string) =>
     api
-      .post<R<null>>("/videos/upload/complete", { upload_id: uploadId })
-      .then((r) => r.data),
+      .post<R<CompleteUploadResponse | null>>("/videos/upload/complete", { upload_id: uploadId })
+      .then((r) => r.data.data),
 
   /** GET /videos/upload/:uploadId/status */
   getUploadStatus: (uploadId: string) =>

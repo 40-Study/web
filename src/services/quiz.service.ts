@@ -10,6 +10,13 @@ import { api } from "@/lib/api-client";
 export type TriggerType = "manual" | "scheduled" | "video_checkpoint" | "ai_triggered";
 export type QuestionType = "single_choice" | "multiple_choice" | "true_false" | "short_answer";
 
+/**
+ * Chế độ làm bài (contract §6).
+ * `official` — tính điểm vào khoá, đếm vào `quiz_max_attempts`.
+ * `practice` — luyện tập: không tính điểm, không khoá điểm, không đếm số lần làm.
+ */
+export type QuizMode = "official" | "practice";
+
 export interface Quiz {
   id: string;
   lesson_id?: string;
@@ -30,9 +37,17 @@ export interface Quiz {
   updated_at?: string;
 }
 
+/**
+ * `is_correct` optional (review web #60, ghi chú contract cho PR #17): backend
+ * sẽ bỏ `is_correct`/`explanation` khỏi `GET /quizzes/:id` và
+ * `/quizzes/:id/questions` khi người gọi là học viên — chỉ trả trong attempt
+ * detail SAU KHI nộp (`QuizAttemptDetail`, đã optional sẵn ở đó). Đánh dấu
+ * optional ở đây để không có chỗ nào lỡ coi field này luôn có mặt trước khi
+ * nộp bài.
+ */
 export interface QuizAnswer {
   answer_text: string;
-  is_correct: boolean;
+  is_correct?: boolean;
   display_order: number;
 }
 
@@ -200,10 +215,16 @@ export const quizService = {
 
   // ── Attempts ──────────────────────────────────────────────────────────────
 
-  /** POST /quizzes/:quizId/start — start a quiz attempt */
-  startQuiz: (quizId: string) =>
+  /**
+   * POST /quizzes/:quizId/start — start a quiz attempt.
+   *
+   * `mode` (contract §6): `official` là mặc định và tính điểm vào khoá;
+   * `practice` để luyện tập — không tính điểm, không đếm vào số lần làm tối đa.
+   * Bỏ trống thì không gửi field, giữ nguyên hành vi cũ cho mọi caller hiện có.
+   */
+  startQuiz: (quizId: string, mode?: QuizMode) =>
     api
-      .post<R<StartQuizResponse>>(`/quizzes/${quizId}/start`, {})
+      .post<R<StartQuizResponse>>(`/quizzes/${quizId}/start`, mode ? { mode } : {})
       .then((r) => r.data.data),
 
   /** POST /quizzes/:quizId/submit — submit quiz answers */
