@@ -9,6 +9,7 @@ import { Heart, CornerDownRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TiptapEditor } from "@/components/editor/tiptap-editor";
 import type { ForumComment } from "@/types/discussion";
+import { sanitizeHtml } from "@/lib/sanitize-html";
 
 interface DiscussionCommentProps {
   comment: ForumComment;
@@ -70,7 +71,7 @@ export function DiscussionComment({
           {/* Content */}
           <div
             className="prose prose-sm max-w-none text-slate-700 [&_p]:mb-1"
-            dangerouslySetInnerHTML={{ __html: comment.content }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(comment.content) }}
           />
 
           {/* Actions */}

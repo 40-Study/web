@@ -16,6 +16,7 @@ import {
 import { TiptapEditor } from "@/components/editor/tiptap-editor";
 import { DiscussionComment } from "./discussion-comment";
 import { useState } from "react";
+import { sanitizeHtml } from "@/lib/sanitize-html";
 
 interface PageProps {
   params: { slug: string };
@@ -146,7 +147,7 @@ export default function DiscussionDetailPage({ params }: PageProps) {
         {/* Content */}
         <div
           className="prose prose-sm max-w-none text-slate-700 mb-6"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
         />
 
         {/* Actions */}
