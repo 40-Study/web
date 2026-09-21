@@ -1,6 +1,6 @@
 "use client";
 
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeHtml } from "@/lib/sanitize-html";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -512,7 +512,7 @@ export default function TeacherAssignmentsPage() {
                   <p className="text-sm font-medium">Chi tiết nhanh: {selectedAssignment.title}</p>
                   <div
                     className="prose prose-sm mt-2 max-w-none text-sm text-muted-foreground"
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedAssignment.description) }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedAssignment.description) }}
                   />
                 </div>
               )}

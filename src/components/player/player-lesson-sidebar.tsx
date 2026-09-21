@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { sanitizeHtml } from "@/lib/sanitize-html";
 import type { PlayerChapter, PlayerLesson } from "@/types/course-player";
 
 /** Lesson content section for table of contents */
@@ -222,7 +223,7 @@ function LessonContentView({ content }: { content: LessonContentData }) {
             prose-p:text-gray-600 prose-p:leading-relaxed
             prose-code:bg-gray-900 prose-code:text-gray-100 prose-code:px-3 prose-code:py-2 prose-code:rounded-lg prose-code:text-xs
             prose-pre:bg-gray-900 prose-pre:rounded-lg prose-pre:overflow-x-auto"
-          dangerouslySetInnerHTML={{ __html: content.content }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.content) }}
         />
       </div>
     </div>

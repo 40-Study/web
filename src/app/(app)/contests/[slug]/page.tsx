@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { sanitizeHtml } from "@/lib/sanitize-html";
 import {
   useContest,
   useContestProblems,
@@ -106,7 +107,7 @@ function ProblemCard({
       </div>
 
       <div className="prose prose-sm max-w-none">
-        <div dangerouslySetInnerHTML={{ __html: problem.description.replace(/\n/g, "<br>") }} />
+        <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(problem.description.replace(/\n/g, "<br>")) }} />
       </div>
 
       {problem.sample_input && (
