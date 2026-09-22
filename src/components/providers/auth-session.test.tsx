@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PERMISSIONS } from "@/lib/permissions";
 import { authService, type UnifiedRole, type UserResponseDto } from "@/services/auth.service";
-import { roleService } from "@/services/role.service";
 import { ROLE_SELECTION_TOKEN_KEY, useAuthStore } from "@/stores/auth.store";
 import { Can } from "@/components/guards/can";
 import { RoleGuard } from "@/components/guards/role-guard";
@@ -12,13 +11,7 @@ vi.mock("@/services/auth.service", () => ({
   authService: {
     getMe: vi.fn(),
     getMyRoles: vi.fn(),
-  },
-}));
-
-vi.mock("@/services/role.service", () => ({
-  roleService: {
-    getSystemRolePermissions: vi.fn(),
-    getOrgRolePermissions: vi.fn(),
+    getMyPermissions: vi.fn(),
   },
 }));
 
@@ -51,8 +44,7 @@ describe("cookie-backed auth bootstrap", () => {
   beforeEach(() => {
     vi.mocked(authService.getMe).mockReset();
     vi.mocked(authService.getMyRoles).mockReset();
-    vi.mocked(roleService.getSystemRolePermissions).mockReset();
-    vi.mocked(roleService.getOrgRolePermissions).mockReset();
+    vi.mocked(authService.getMyPermissions).mockReset();
     window.localStorage.clear();
     window.sessionStorage.clear();
     useAuthStore.getState().clearServerSession();
@@ -66,15 +58,14 @@ describe("cookie-backed auth bootstrap", () => {
     });
     vi.mocked(authService.getMe).mockResolvedValue(user);
     vi.mocked(authService.getMyRoles).mockResolvedValue({ roles: [systemRole] });
-    vi.mocked(roleService.getSystemRolePermissions).mockResolvedValue([
-      { id: "permission-1", name: PERMISSIONS.MANAGE_USERS },
-      { id: "permission-unknown", name: "future_backend_permission" },
+    vi.mocked(authService.getMyPermissions).mockResolvedValue([
+      PERMISSIONS.MANAGE_USERS,
+      "future_backend_permission",
     ]);
 
     await expect(bootstrapAuthSession()).resolves.toBe("authenticated");
 
-    expect(roleService.getSystemRolePermissions).toHaveBeenCalledWith(systemRole.id);
-    expect(roleService.getOrgRolePermissions).not.toHaveBeenCalled();
+    expect(authService.getMyPermissions).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState()).toMatchObject({
       sessionStatus: "authenticated",
       isAuthenticated: true,
@@ -84,21 +75,18 @@ describe("cookie-backed auth bootstrap", () => {
     });
   });
 
-  it("uses the organization permission endpoint for an organization role", async () => {
+  it("loads permissions for an organization role from the caller-scoped endpoint", async () => {
     useAuthStore.setState({
       activeRole: "TEACHER",
       activeUnifiedRole: organizationRole,
     });
     vi.mocked(authService.getMe).mockResolvedValue(user);
     vi.mocked(authService.getMyRoles).mockResolvedValue({ roles: [organizationRole] });
-    vi.mocked(roleService.getOrgRolePermissions).mockResolvedValue([
-      { id: "permission-2", name: PERMISSIONS.MANAGE_OWN_CLASSES },
-    ]);
+    vi.mocked(authService.getMyPermissions).mockResolvedValue([PERMISSIONS.MANAGE_OWN_CLASSES]);
 
     await bootstrapAuthSession();
 
-    expect(roleService.getOrgRolePermissions).toHaveBeenCalledWith(organizationRole.id);
-    expect(roleService.getSystemRolePermissions).not.toHaveBeenCalled();
+    expect(authService.getMyPermissions).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().permissions).toEqual([PERMISSIONS.MANAGE_OWN_CLASSES]);
   });
 
@@ -119,6 +107,29 @@ describe("cookie-backed auth bootstrap", () => {
       activeUnifiedRole: null,
       permissions: [],
     });
+  });
+
+  // Lỗi 2 (fullstack-verify-260922): học viên/giảng viên nhận 403 khi nạp quyền; bootstrap từng
+  // xoá cả phiên đã xác thực, đẩy người dùng về trang chọn vai trò ngay sau khi đăng nhập.
+  it("keeps the verified session and role when loading permissions fails", async () => {
+    const studentRole: UnifiedRole = { id: "system-role-student", type: "system", role_name: "STUDENT", display_name: "Học viên" };
+    useAuthStore.setState({ activeRole: "STUDENT", activeUnifiedRole: studentRole });
+    vi.mocked(authService.getMe).mockResolvedValue(user);
+    vi.mocked(authService.getMyRoles).mockResolvedValue({ roles: [studentRole] });
+    vi.mocked(authService.getMyPermissions).mockRejectedValue(new Error("Request failed with status code 403"));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await expect(bootstrapAuthSession()).resolves.toBe("authenticated");
+
+    expect(useAuthStore.getState()).toMatchObject({
+      sessionStatus: "authenticated",
+      isAuthenticated: true,
+      activeRole: "STUDENT",
+      activeUnifiedRole: studentRole,
+      permissions: [],
+    });
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it("becomes anonymous and clears stale authority when server validation fails", async () => {

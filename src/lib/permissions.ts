@@ -6,8 +6,10 @@
 export const PERMISSIONS = {
   // System Admin
   MANAGE_USERS: "manage_users",
-  MANAGE_ORGANIZATIONS: "manage_organizations",
-  MANAGE_ROLES: "manage_roles",
+  // Hai giá trị dưới phải TRÙNG tên permission backend gác route tương ứng (POST /organizations,
+  // nhóm /system-roles), nếu không <Can> sẽ không bao giờ hiện nút cho admin.
+  MANAGE_ORGANIZATIONS: "ORG_CREATE",
+  MANAGE_ROLES: "ROLES_MANAGE_SYSTEM",
   MANAGE_PERMISSIONS: "manage_permissions",
   VIEW_SYSTEM_ANALYTICS: "view_system_analytics",
   MANAGE_SYSTEM_SETTINGS: "manage_system_settings",
