@@ -1,7 +1,6 @@
 import { PERMISSIONS, type Permission } from "@/lib/permissions";
 import { normalizeRole } from "@/lib/routes";
 import { authService, type UnifiedRole, type UserResponseDto } from "@/services/auth.service";
-import { roleService } from "@/services/role.service";
 import { useAuthStore, type AuthUser, type SessionStatus } from "@/stores/auth.store";
 
 export const AUTH_SESSION_EXPIRED_EVENT = "fortex:auth-session-expired";
@@ -48,14 +47,8 @@ export function resolveActiveRole(
 export async function loadPermissionsForRole(role: UnifiedRole | null): Promise<Permission[]> {
   if (!role) return [];
 
-  const records =
-    role.type === "organization"
-      ? await roleService.getOrgRolePermissions(role.id)
-      : await roleService.getSystemRolePermissions(role.id);
-
-  return records
-    .map((permission) => permission.name)
-    .filter((permission): permission is Permission => knownPermissions.has(permission));
+  const names = await authService.getMyPermissions();
+  return names.filter((permission): permission is Permission => knownPermissions.has(permission));
 }
 
 async function runBootstrap(): Promise<SessionStatus> {
@@ -77,7 +70,16 @@ async function runBootstrap(): Promise<SessionStatus> {
     const user = await authService.getMe();
     const { roles } = await authService.getMyRoles();
     const activeUnifiedRole = resolveActiveRole(roles, previousUnifiedRole, previousRoleName);
-    const permissions = await loadPermissionsForRole(activeUnifiedRole);
+    // Lỗi 2 (fullstack-verify-260922): trước đây lỗi nạp quyền rơi xuống catch bên dưới và xoá
+    // phiên đã xác thực (getMe + getMyRoles đều 200), đẩy người dùng về trang chọn vai trò ngay
+    // sau khi đăng nhập. Quyền chỉ dùng để ẩn/hiện UI (server vẫn tự kiểm), nên nạp hỏng thì giữ
+    // phiên với quyền rỗng và ghi cảnh báo, không đăng xuất.
+    let permissions: Permission[] = [];
+    try {
+      permissions = await loadPermissionsForRole(activeUnifiedRole);
+    } catch (error) {
+      console.warn("[auth] Không nạp được quyền của người dùng, tạm dùng quyền rỗng", error);
+    }
 
     store.applyServerSession({
       user: toAuthUser(user),

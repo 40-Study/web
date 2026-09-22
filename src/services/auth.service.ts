@@ -469,6 +469,16 @@ export const authService = {
 
   // ─── Session Management ─────────────────────────────────────────────────
 
+  /**
+   * GET /auth/me/permissions - Quyền THỰC TẾ server áp dụng cho người gọi (system role + org role
+   * theo active org). Không dùng /system-roles/:id/permissions vì route đó yêu cầu quyền quản trị
+   * ROLES_MANAGE_SYSTEM nên học viên/giảng viên luôn nhận 403.
+   */
+  getMyPermissions: () =>
+    api
+      .get<{ message: string; data: { permissions: string[] } }>("/auth/me/permissions")
+      .then((r) => r.data.data.permissions ?? []),
+
   /** GET /auth/me - Get current user info */
   getMe: () =>
     api.get<{ message: string; data: UserResponseDto }>("/auth/me").then((r) => r.data.data),
