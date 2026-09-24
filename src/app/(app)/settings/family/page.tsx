@@ -5,8 +5,7 @@
  */
 
 import { useState } from "react";
-import Image from "next/image";
-import { UserPlus, Eye, Bell, MessageCircle, Mail, Users, Loader2 } from "lucide-react";
+import { UserPlus, Eye, Bell, MessageCircle, Mail, Users, HeartHandshake, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InviteParentModal, SentInvitationsList, PendingInvitationsCard } from "@/components/parent";
 import { useSentInvitations } from "@/hooks/queries/use-invitation";
@@ -78,22 +77,18 @@ export default function FamilySettingsPage() {
               </div>
             </div>
 
-            {/* Hero Image */}
+            {/* Hero visual — khối trang trí tự chứa, không dùng asset ngoài */}
             <div className="w-full max-w-sm lg:max-w-md flex-shrink-0">
-              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
-                <Image
-                  src="/images/family-learning.jpg"
-                  alt="Phụ huynh và con học cùng nhau"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-                {/* Fallback gradient if image doesn't exist */}
-                <div className="absolute inset-0 bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
-                  <div className="text-center text-white p-6">
-                    <Users className="w-16 h-16 mx-auto mb-4 opacity-80" />
-                    <p className="text-lg font-medium opacity-90">Học cùng gia đình</p>
-                  </div>
+              <div
+                role="img"
+                aria-label="Phụ huynh và con học cùng nhau"
+                className="relative aspect-[4/3] rounded-card overflow-hidden shadow-2xl ring-1 ring-primary-100 bg-gradient-to-br from-primary-100 via-primary-50 to-secondary-100 dark:from-primary-950 dark:via-neutral-900 dark:to-secondary-950 flex items-center justify-center"
+              >
+                {/* Vòng tròn nền giúp khối không bị trống khi phóng to; icon giữ vai trò minh hoạ. */}
+                <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/40 blur-2xl" aria-hidden="true" />
+                <div className="absolute -bottom-12 -left-8 h-44 w-44 rounded-full bg-secondary-200/40 blur-2xl" aria-hidden="true" />
+                <div className="relative flex h-28 w-28 items-center justify-center rounded-full bg-white/80 shadow-sm ring-1 ring-primary-100">
+                  <HeartHandshake className="h-14 w-14 text-primary-600" aria-hidden="true" />
                 </div>
               </div>
             </div>

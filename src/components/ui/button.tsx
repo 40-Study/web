@@ -4,14 +4,17 @@ import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
 const buttonVariants = cva(
-    "inline-flex items-center justify-center whitespace-nowrap text-[15px] font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+    "inline-flex items-center justify-center whitespace-nowrap text-[15px] font-medium ring-offset-background transition-all duration-200 active:scale-[0.98] motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
     {
         variants: {
             variant: {
                 // Primary: Blue button (Educational style)
-                default: "bg-primary-600 text-white hover:bg-primary-700 rounded-lg shadow-sm",
+                default: "bg-primary-600 text-white hover:bg-primary-700 hover:shadow-md rounded-lg shadow-sm",
                 // Destructive
-                destructive: "bg-red-600 text-white hover:bg-red-700 rounded-lg",
+                destructive: "bg-red-600 text-white hover:bg-red-700 hover:shadow-md rounded-lg",
+                // Hành động xoá trong DANH SÁCH: giữ tín hiệu đỏ nhưng không lấn át nút chính.
+                // Đỏ đặc chỉ dành cho nút xác nhận cuối trong hộp thoại xoá.
+                destructiveGhost: "text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg",
                 // Outline: White with border
                 outline: "border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-lg shadow-sm",
                 // Secondary: Light blue

@@ -59,8 +59,8 @@ export default function CoursesPage() {
               </p>
             </div>
           </ScrollReveal>
-          <ScrollReveal direction="fade" delay={100}>
-            <div className="w-full md:w-80">
+          <ScrollReveal direction="fade" delay={100} className="w-full md:w-[22rem] md:shrink-0">
+            <div className="w-full max-w-[360px] md:max-w-none">
               <CourseSearch
                 onSearch={handleSearch}
                 suggestions={suggestions}

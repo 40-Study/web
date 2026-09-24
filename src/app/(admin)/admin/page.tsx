@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
+import { Activity } from "lucide-react";
 import { useOrganizations, usePermissions, useSystemRoles } from "@/hooks/queries/use-admin";
 import { QueryState } from "@/components/common/query-state";
+import { EmptyState } from "@/components/ui/empty-state";
 
 
 export default function AdminIndexPage() {
@@ -103,13 +105,12 @@ export default function AdminIndexPage() {
             {/* Backend chưa có API nhật ký hoạt động (xem admin/audit-logs). Trước đây khối này
                 render một mảng tĩnh 4 dòng trông như dữ liệu thật — đã bỏ hẳn. Khi có endpoint,
                 thay khối rỗng bên dưới bằng useQuery + <QueryState> như các trang admin khác. */}
-            <div className="mt-4 rounded-lg border border-dashed border-gray-200 p-6 text-center dark:border-gray-800">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Chưa có dữ liệu nhật ký hoạt động
-              </p>
-              <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                Tính năng đang được phát triển
-              </p>
+            <div className="mt-4 rounded-lg border border-dashed border-gray-200 dark:border-gray-800">
+              <EmptyState
+                icon={Activity}
+                title="Chưa có dữ liệu nhật ký hoạt động"
+                description="Tính năng đang được phát triển"
+              />
             </div>
           </div>
         </section>

@@ -36,11 +36,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     type={type}
                     id={inputId}
                     className={cn(
-                        "flex h-10 w-full rounded-xl bg-white px-4 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 transition-shadow",
-                        "shadow-[rgba(0,0,0,0.06)_0px_0px_0px_1px_inset]",
-                        "hover:shadow-[rgba(0,0,0,0.1)_0px_0px_0px_1px_inset]",
-                        "focus:shadow-[rgba(0,0,0,0.1)_0px_0px_0px_1px_inset,rgba(0,0,0,0.04)_0px_2px_4px]",
-                        error && "shadow-[rgba(239,68,68,0.3)_0px_0px_0px_1px_inset] focus-visible:ring-red-200",
+                        "flex h-10 w-full rounded-xl border border-slate-200 bg-card px-4 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-400 transition-colors duration-150 hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                        "dark:border-border dark:placeholder:text-neutral-500 dark:hover:border-neutral-600",
+                        error && "border-red-400 focus-visible:ring-red-500 dark:border-red-500/70",
                         className
                     )}
                     ref={ref}

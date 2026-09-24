@@ -10,6 +10,7 @@ import {
 } from "@/hooks/queries/use-admin";
 import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
+import { getSystemRoleLabel } from "@/lib/role-labels";
 import type { SystemRole } from "@/services/role.service";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
@@ -198,17 +199,24 @@ export default function RolesPage() {
               return (
                 <div key={role.id} className={`rounded-lg bg-white p-4 shadow-sm ${active ? "ring-2 ring-primary-200" : ""}`}>
                   <button className="w-full text-left" onClick={() => { setSelectedRoleId(role.id); setSelectedUserId(null); }}>
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-gray-900">{role.name}</h3>
-                      <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">{users.length} users</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <h3 className="font-medium text-gray-900">{getSystemRoleLabel(role.name)}</h3>
+                        <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">{role.name}</span>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">{users.length} users</span>
                     </div>
                     <p className="mt-1 text-xs text-gray-500">{role.description || "Không có mô tả"}</p>
                   </button>
 
                   <Can permission={PERMISSIONS.MANAGE_ROLES}>
                     <div className="mt-3 flex gap-2">
-                      <button onClick={() => startEditRole(role)} className="rounded bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700">Sửa role</button>
-                      <button onClick={() => setConfirmDeleteRole(role)} className="rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-700">Xóa role</button>
+                      <Button size="sm" variant="outline" onClick={() => startEditRole(role)}>
+                        Sửa role
+                      </Button>
+                      <Button size="sm" variant="destructiveGhost" onClick={() => setConfirmDeleteRole(role)}>
+                        Xóa role
+                      </Button>
                     </div>
                   </Can>
                 </div>
@@ -252,8 +260,12 @@ export default function RolesPage() {
                         <p className="text-xs text-gray-500">{user.email}</p>
                       </button>
                       <div className="mt-2 flex gap-2">
-                        <button onClick={() => startEditUser(user)} className="rounded bg-primary-100 px-2 py-1 text-xs text-primary-700">Sửa</button>
-                        <button onClick={() => setConfirmDeleteUser(user)} className="rounded bg-red-100 px-2 py-1 text-xs text-red-700">Xóa</button>
+                        <Button size="sm" variant="outline" onClick={() => startEditUser(user)}>
+                          Sửa
+                        </Button>
+                        <Button size="sm" variant="destructiveGhost" onClick={() => setConfirmDeleteUser(user)}>
+                          Xóa
+                        </Button>
                       </div>
                     </div>
                   ))}
