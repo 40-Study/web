@@ -85,10 +85,10 @@ export function CourseFiltersComponent({
           <button
             onClick={() => handleCategoryChange(undefined)}
             className={cn(
-              "px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200",
+              "px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150",
               !filters.category
-                ? "bg-slate-900 text-white shadow-md shadow-slate-900/20"
-                : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                ? "bg-primary-600 text-white border border-transparent"
+                : "border border-slate-200 text-slate-700 hover:border-primary-300 hover:text-primary-700 hover:bg-primary-50 dark:border-border dark:text-foreground dark:hover:border-primary-700"
             )}
           >
             Tất cả
@@ -98,10 +98,10 @@ export function CourseFiltersComponent({
               key={cat.id}
               onClick={() => handleCategoryChange(cat.slug)}
               className={cn(
-                "px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200",
+                "px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150",
                 filters.category === cat.slug
-                  ? "bg-primary-600 text-white shadow-md shadow-primary-600/20"
-                  : "bg-white text-slate-600 border border-slate-200 hover:border-primary-200 hover:text-primary-700 hover:bg-primary-50/50"
+                  ? "bg-primary-600 text-white border border-transparent"
+                  : "border border-slate-200 text-slate-700 hover:border-primary-300 hover:text-primary-700 hover:bg-primary-50 dark:border-border dark:text-foreground dark:hover:border-primary-700"
               )}
             >
               {cat.name}
@@ -113,10 +113,10 @@ export function CourseFiltersComponent({
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
-            "ml-auto flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border",
+            "ml-auto flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150 border",
             showFilters
-              ? "bg-primary-50 text-primary-700 border-primary-200"
-              : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+              ? "bg-primary-50 text-primary-700 border-primary-300"
+              : "border-slate-200 text-slate-700 hover:border-slate-300 dark:border-border dark:text-foreground dark:hover:border-neutral-600"
           )}
         >
           <Filter className="h-4 w-4" />

@@ -101,7 +101,7 @@ export function CourseSearch({
             ref={inputRef}
             type="text"
             placeholder={placeholder}
-            className="pl-10 pr-10 h-12 text-base rounded-2xl border-gray-200 bg-white/90 backdrop-blur-sm shadow-sm"
+            className="h-12 pl-10 pr-10 text-base rounded-2xl border border-slate-200 bg-card shadow-sm hover:border-slate-300 dark:border-border dark:bg-card"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => query.length >= 2 && setShowSuggestions(true)}

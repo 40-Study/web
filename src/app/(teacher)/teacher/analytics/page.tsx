@@ -7,9 +7,11 @@ import {
   TrendingUp,
   MessageSquare,
   Zap,
+  BarChart3,
   Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -96,10 +98,12 @@ export default function TeacherAnalyticsPage() {
 
       {/* Empty state */}
       {!sessionId && (
-        <Card className="p-12 text-center">
-          <p className="text-muted-foreground">
-            Nhập Session ID ở trên để tải thống kê buổi học.
-          </p>
+        <Card>
+          <EmptyState
+            icon={BarChart3}
+            title="Chưa có dữ liệu thống kê"
+            description="Nhập Session ID ở trên để tải thống kê buổi học."
+          />
         </Card>
       )}
 
@@ -268,10 +272,16 @@ export default function TeacherAnalyticsPage() {
 
       {/* No data for given session */}
       {sessionId && !isLoading && !sessionAnalytics && (
-        <Card className="p-8 text-center">
-          <p className="text-muted-foreground">
-            Không tìm thấy dữ liệu cho session <strong>{sessionId}</strong>.
-          </p>
+        <Card>
+          <EmptyState
+            icon={BarChart3}
+            title="Không tìm thấy dữ liệu"
+            description={
+              <>
+                Không có dữ liệu cho session <strong>{sessionId}</strong>.
+              </>
+            }
+          />
         </Card>
       )}
     </div>
