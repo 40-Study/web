@@ -8,15 +8,6 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartItem } from "@/services/cart.service";
 
-/** Legacy shape used by course-detail-sidebar before API integration */
-export interface LegacyCartItem {
-  courseId: string;
-  title: string;
-  price: number;
-  thumbnail: string;
-  instructorName: string;
-}
-
 interface CartState {
   /** Cached items from last API response */
   items: CartItem[];
@@ -31,18 +22,6 @@ interface CartState {
 
   /** Optimistic remove — replaced on next API sync */
   optimisticRemove: (courseId: string) => void;
-
-  /**
-   * Legacy addItem — adapts old shape to CartItem for backward compat.
-   * Use useAddToCart() hook for real API-backed adds.
-   */
-  addItem: (item: LegacyCartItem) => void;
-
-  /**
-   * Legacy removeItem — alias for optimisticRemove.
-   * Use useRemoveFromCart() hook for real API-backed removes.
-   */
-  removeItem: (courseId: string) => void;
 
   /** Clear local cache (e.g. on logout) */
   clearCache: () => void;
@@ -79,28 +58,6 @@ export const useCartStore = create<CartState>()(
           total: Math.max(0, (s.total ?? 0) - (existing?.course?.price ?? 0)),
         }));
       },
-
-      addItem: (legacy) => {
-        if (get().isInCart(legacy.courseId)) return;
-        const item: CartItem = {
-          id: legacy.courseId,
-          course_id: legacy.courseId,
-          course: {
-            id: legacy.courseId,
-            title: legacy.title,
-            price: legacy.price,
-            thumbnail: legacy.thumbnail,
-          },
-          added_at: new Date().toISOString(),
-        };
-        set((s) => ({
-          items: [...(s.items ?? []), item],
-          item_count: (s.item_count ?? 0) + 1,
-          total: (s.total ?? 0) + legacy.price,
-        }));
-      },
-
-      removeItem: (courseId) => get().optimisticRemove(courseId),
 
       clearCache: () => set({ items: [], total: 0, item_count: 0 }),
 
