@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import {
   Award, Trophy, Flame, Shield, Zap, CheckCircle,
-  ChevronRight, Star, Database, Cloud, Monitor, Server, Settings
+  ChevronRight, Star, Cloud, Monitor, Settings
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -507,26 +507,16 @@ export default function AchievementsPage() {
                   />
                 ))
               ) : (
-                <>
-                  <BadgeCard
-                    name="React Native Master"
-                    icon={<Star className="w-10 h-10 text-yellow-400" />}
-                    rarity="legendary"
-                    description="Đã hoàn thành 5 dự án ứng dụng di động thực tế."
-                  />
-                  <BadgeCard
-                    name="Docker & CI/CD"
-                    icon={<Server className="w-10 h-10 text-gray-400" />}
-                    rarity="rare"
-                    description="Làm chủ quy trình triển khai tự động hóa."
-                  />
-                  <BadgeCard
-                    name="DB MongoDB"
-                    icon={<Database className="w-10 h-10 text-orange-400" />}
-                    rarity="common"
-                    description="Xây dựng cấu trúc dữ liệu NoSQL tối ưu."
-                  />
-                </>
+                // QA 260927 P2: trước đây hardcode 3 huy hiệu mẫu ở đây, hiện
+                // ra như thể người dùng đã đạt được dù `GET /api/achievements`
+                // trả rỗng — empty state thật thay vì dữ liệu giả.
+                <div className="sm:col-span-3 text-center py-8">
+                  <Star className="w-10 h-10 mx-auto mb-3 text-gray-200" />
+                  <p className="text-sm font-medium text-gray-600">Chưa có huy hiệu nào</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Hoàn thành khoá học và thử thách để mở khoá huy hiệu đầu tiên.
+                  </p>
+                </div>
               )}
             </div>
           </div>
