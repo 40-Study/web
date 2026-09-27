@@ -57,11 +57,32 @@ async function doRefresh(): Promise<void> {
 
 // ─── Response interceptor: 401 → refresh → retry ───────────────────────────
 
+type ErrorResponseBody = {
+  code?: string;
+  message?: string;
+  /** Nhiều handler (auth/cart/review...) đặt CHI TIẾT lỗi thật ở đây, còn
+   * `message` chỉ là nhãn chung chung ("Register failed", "Refresh token
+   * failed"...) — xem internal/handler/auth_handler.go, cart_handler.go,
+   * review_handler.go. order_handler.go dùng quy ước khác (chi tiết thẳng
+   * trong `message`, không có field này). */
+  error?: string;
+  details?: Record<string, string[]>;
+};
+
+/**
+ * Ưu tiên `error` (chi tiết thật) khi có, rơi về `message` khi không — tương
+ * thích cả 2 quy ước backend đang dùng song song. Trước đây LUÔN đọc
+ * `data?.message`, nên với auth/cart/review handler, mọi lỗi hiện ra chỉ là
+ * nhãn chung chung tiếng Anh ("Register failed") thay vì lý do thật ("invalid
+ * OTP, 4 attempts remaining") — phát hiện khi kiểm chứng lỗi OTP sai (260927).
+ */
+function extractErrorMessage(data: ErrorResponseBody | undefined, fallback: string): string {
+  return data?.error || data?.message || fallback;
+}
+
 api.interceptors.response.use(
   (res) => res,
-  async (
-    error: AxiosError<{ code?: string; message?: string; details?: Record<string, string[]> }>
-  ) => {
+  async (error: AxiosError<ErrorResponseBody>) => {
     if (!error.response) throw new NetworkError();
 
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
@@ -96,18 +117,18 @@ api.interceptors.response.use(
           }
           window.dispatchEvent(new Event("fortex:auth-session-expired"));
         }
-        throw new AuthError(data?.message);
+        throw new AuthError(extractErrorMessage(data, "Authentication required"));
       }
     }
 
     // Normalize errors
     switch (status) {
       case 401:
-        throw new AuthError(data?.message);
+        throw new AuthError(extractErrorMessage(data, "Authentication required"));
       case 403:
-        throw new ForbiddenError(data?.message);
+        throw new ForbiddenError(extractErrorMessage(data, "Insufficient permissions"));
       case 404:
-        throw new NotFoundError(data?.message);
+        throw new NotFoundError(extractErrorMessage(data, "Resource not found"));
       case 422:
         throw new ValidationError(data?.details ?? {});
       case 429:
@@ -116,7 +137,7 @@ api.interceptors.response.use(
         throw new ApiError(
           status,
           data?.code ?? "UNKNOWN",
-          data?.message ?? "Something went wrong"
+          extractErrorMessage(data, "Something went wrong")
         );
     }
   }

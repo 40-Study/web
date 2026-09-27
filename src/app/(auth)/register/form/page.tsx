@@ -43,12 +43,23 @@ export default function RegisterFormPage() {
     setFormError("");
   };
 
+  // Regex email đơn giản, đủ để chặn lỗi gõ nhầm phổ biến — validate thật sự
+  // (email đã tồn tại?) vẫn do backend quyết định khi gọi registerRequest.
+  const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   const validate = (): FieldErrors => {
     const errors: FieldErrors = {};
     if (!formData.username.trim()) errors.username = "Vui lòng nhập tên đăng nhập";
     if (!formData.lastName.trim()) errors.lastName = "Vui lòng nhập họ";
     if (!formData.firstName.trim()) errors.firstName = "Vui lòng nhập tên";
-    if (!formData.email.trim()) errors.email = "Vui lòng nhập email";
+    if (!formData.email.trim()) {
+      errors.email = "Vui lòng nhập email";
+    } else if (!EMAIL_PATTERN.test(formData.email.trim())) {
+      // Trước đây chỉ check rỗng — trình duyệt tự hiện tooltip validate mặc
+      // định tiếng Anh cho input type="email", lệch với phần còn lại của UI
+      // (QA khách P3, 260927).
+      errors.email = "Email không đúng định dạng (vd: ten@vidu.com)";
+    }
     if (formData.password.length < AUTH_CONFIG.PASSWORD_MIN_LENGTH) {
       errors.password = `Mật khẩu phải có ít nhất ${AUTH_CONFIG.PASSWORD_MIN_LENGTH} ký tự`;
     }
@@ -68,14 +79,16 @@ export default function RegisterFormPage() {
     }
 
     try {
-      await registerRequest.mutateAsync({
-        email: formData.email,
+      const payload = {
         password: formData.password,
         confirm_password: formData.confirmPassword,
         user_name: formData.username,
         full_name: `${formData.lastName} ${formData.firstName}`.trim() || undefined,
-      });
+      };
+      await registerRequest.mutateAsync({ email: formData.email, ...payload });
       sessionStorage.setItem(STORAGE_KEYS.REGISTER_EMAIL, formData.email);
+      // Lưu payload (không kèm OTP) để trang /otp gọi lại được khi "Gửi lại mã".
+      sessionStorage.setItem(STORAGE_KEYS.REGISTER_PAYLOAD, JSON.stringify(payload));
       router.push(AUTH_ROUTES.OTP);
     } catch (err) {
       console.error("Failed to request OTP:", err);
@@ -90,7 +103,10 @@ export default function RegisterFormPage() {
       </h2>
       <p className="mb-6 text-center text-sm text-gray-500">Điền thông tin của bạn</p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      {/* noValidate: để validate() tự chạy và hiện lỗi tiếng Việt thay vì
+          tooltip validate mặc định tiếng Anh của trình duyệt cho input
+          type="email"/required (QA khách P3, 260927). */}
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <Input
           label="Tên đăng nhập"
           placeholder="username"
