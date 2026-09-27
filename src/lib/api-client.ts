@@ -80,6 +80,14 @@ function extractErrorMessage(data: ErrorResponseBody | undefined, fallback: stri
   return data?.error || data?.message || fallback;
 }
 
+// Review PR #25 (item 3 — MAJOR): `error`/`message` từ backend CHỈ an toàn
+// hiển thị thẳng cho người dùng khi lỗi là do CHÍNH request đó (4xx — sai
+// input, thiếu quyền, không tồn tại…). Với 5xx (lỗi server) hoặc mất mạng,
+// message backend trả về CÓ THỂ là lỗi kỹ thuật nội bộ (stack trace rút gọn,
+// tên bảng SQL, panic message…) — không được lộ ra UI. Dùng đúng 1 thông báo
+// chung tiếng Việt cho cả 2 trường hợp này.
+const GENERIC_SERVER_ERROR_MESSAGE = "Có lỗi xảy ra, vui lòng thử lại";
+
 api.interceptors.response.use(
   (res) => res,
   async (error: AxiosError<ErrorResponseBody>) => {
@@ -133,12 +141,20 @@ api.interceptors.response.use(
         throw new ValidationError(data?.details ?? {});
       case 429:
         throw new RateLimitError();
-      default:
+      default: {
+        // 4xx chưa được case riêng ở trên (400, 405, 409, 410…) — vẫn là lỗi
+        // do request, an toàn hiển thị chi tiết backend. 5xx (và mọi status
+        // khác nằm ngoài dải 4xx) → CHỈ thông báo chung, không đọc data?.error
+        // /data?.message (xem GENERIC_SERVER_ERROR_MESSAGE).
+        const isClientError = status >= 400 && status < 500;
         throw new ApiError(
           status,
           data?.code ?? "UNKNOWN",
-          extractErrorMessage(data, "Something went wrong")
+          isClientError
+            ? extractErrorMessage(data, "Something went wrong")
+            : GENERIC_SERVER_ERROR_MESSAGE
         );
+      }
     }
   }
 );
