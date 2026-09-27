@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, Building2, LayoutDashboard, LogOut, Settings, ShieldCheck } from "lucide-react";
+import { BarChart3, Building2, LayoutDashboard, LogOut, Settings, ShieldCheck, Receipt } from "lucide-react";
 
 import { RoleGuard } from "@/components/guards";
 import { Avatar } from "@/components/ui/avatar";
@@ -16,6 +16,7 @@ const adminMenu = [
   { label: "Quản lý vai trò", href: "/admin/roles", icon: ShieldCheck },
   { label: "Quản lý tổ chức", href: "/admin/organizations", icon: Building2 },
   { label: "Phân quyền", href: "/admin/permissions", icon: Settings },
+  { label: "Đơn hàng", href: "/admin/orders", icon: Receipt },
   { label: "Báo cáo hệ thống", href: "/admin/reports", icon: BarChart3 },
   // TODO (Phase 3): "Nhật ký hoạt động" (/admin/audit-logs) tạm ẩn khỏi nav.
   // Trang KHÔNG trắng — nó đã có banner amber nói rõ backend chưa có endpoint
