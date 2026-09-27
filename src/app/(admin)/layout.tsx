@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, Building2, LayoutDashboard, LogOut, Settings, ShieldCheck } from "lucide-react";
+import { BarChart3, Building2, Flag, FolderTree, LayoutDashboard, LogOut, Settings, ShieldCheck } from "lucide-react";
 
 import { RoleGuard } from "@/components/guards";
 import { Avatar } from "@/components/ui/avatar";
@@ -16,7 +16,11 @@ const adminMenu = [
   { label: "Quản lý vai trò", href: "/admin/roles", icon: ShieldCheck },
   { label: "Quản lý tổ chức", href: "/admin/organizations", icon: Building2 },
   { label: "Phân quyền", href: "/admin/permissions", icon: Settings },
-  { label: "Báo cáo hệ thống", href: "/admin/reports", icon: BarChart3 },
+  { label: "Danh mục khoá học", href: "/admin/categories", icon: FolderTree },
+  { label: "Báo cáo vi phạm", href: "/admin/moderation", icon: Flag },
+  // Đổi tên từ "Báo cáo hệ thống": trang này thực chất là ví của CHÍNH admin đang đăng nhập,
+  // không phải doanh thu toàn nền tảng — xem chú thích ở admin/reports/page.tsx (A-P1-5).
+  { label: "Ví của tôi", href: "/admin/reports", icon: BarChart3 },
   // TODO (Phase 3): "Nhật ký hoạt động" (/admin/audit-logs) tạm ẩn khỏi nav.
   // Trang KHÔNG trắng — nó đã có banner amber nói rõ backend chưa có endpoint
   // audit-log và hiển thị mảng rỗng có chủ đích. Lý do ẩn là mặt mục này chưa
@@ -97,14 +101,19 @@ export default function AdminLayout({
 
                 {isProfileOpen && (
                   <div className="absolute right-0 top-11 w-52 rounded-xl border bg-white py-2 shadow-lg dark:border-gray-800 dark:bg-gray-900">
-                    <Link
-                      href="/settings"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
-                      onClick={() => setIsProfileOpen(false)}
-                    >
-                      <Settings className="h-4 w-4" />
-                      Cài đặt tài khoản
-                    </Link>
+                    {/*
+                      A-P2-4: đã BỎ link "/settings" ở đây (trước đó bấm vào bị đá ngầm về /admin,
+                      không có thông báo gì). Root cause thật KHÔNG nằm ở RoleGuard của khu vực
+                      admin mà ở web/src/app/(app)/layout.tsx — layout dùng chung cho mọi route
+                      không phải admin (student/teacher/parent), nơi có đoạn:
+                        if (isAuthenticated && isAdminRole) { router.replace("/admin"); return; }
+                      tức MỌI route (app) (bao gồm /settings, /notifications) đều ép admin quay
+                      lại /admin. File đó nằm ngoài phạm vi sở hữu của lane này ((admin)/** +
+                      role-guard.tsx) và dùng chung cho các role khác — sửa nó có thể ảnh hưởng
+                      luồng của student/teacher/parent nên KHÔNG sửa ở đây. Nếu muốn admin có
+                      trang cài đặt tài khoản thật, cần một lane khác thêm điều kiện ngoại lệ cho
+                      "/settings"/"/notifications" vào đoạn redirect ở (app)/layout.tsx.
+                    */}
                     <button
                       onClick={() => {
                         setIsProfileOpen(false);

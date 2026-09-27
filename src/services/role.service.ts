@@ -44,6 +44,26 @@ export interface CreateSystemRoleDTO {
   description?: string;
 }
 
+/** Một dòng gán vai trò hệ thống cho user — KHÔNG có tên/email (xem ghi chú ở getSystemRoleUsers) */
+export interface UserSystemRoleItem {
+  id: string;
+  user_id: string;
+  system_role_id: string;
+  granted_at: string;
+  notes?: string;
+  status: "active" | "suspended" | "revoked";
+  revoked_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserSystemRoleListResponse {
+  user_system_roles: UserSystemRoleItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 type R<T> = { message: string; data: T };
 
 // ─── Service ────────────────────────────────────────────────────────────────
@@ -155,9 +175,16 @@ export const roleService = {
       })
       .then((r) => r.data),
 
-  /** GET /system-roles/:id/users */
-  getSystemRoleUsers: (id: string) =>
-    api.get<R<unknown[]>>(`/system-roles/${id}/users`).then((r) => r.data.data),
+  /**
+   * GET /system-roles/:id/users
+   * Backend trả { user_system_roles: [...], total, page, page_size } — KHÔNG phải mảng trần.
+   * Từng phần tử chỉ có user_id/status/granted_at (backend chưa join bảng users nên không có
+   * tên/email — xem UserSystemRoleResponseDTO ở backend/internal/dto/user_system_role_dto.go).
+   */
+  getSystemRoleUsers: (id: string, params?: { page?: number; page_size?: number; status?: string }) =>
+    api
+      .get<R<UserSystemRoleListResponse>>(`/system-roles/${id}/users`, { params })
+      .then((r) => r.data.data),
 
   // ═══ User Org Roles ═══════════════════════════════════════════════════════
 
