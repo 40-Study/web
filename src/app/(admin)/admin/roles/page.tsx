@@ -168,8 +168,13 @@ export default function RolesPage() {
                         <h3 className="font-medium text-gray-900">{getSystemRoleLabel(role.name)}</h3>
                         <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">{role.name}</span>
                       </div>
-                      <span className="shrink-0 rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
-                        {role.userCount === null ? "…" : `${role.userCount} user`}
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-1 text-xs ${
+                          role.userCountError ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"
+                        }`}
+                        title={role.userCountError ? "Không tải được số user (thiếu quyền hoặc lỗi API)" : undefined}
+                      >
+                        {role.userCountError ? "lỗi" : role.userCount === null ? "…" : `${role.userCount} user`}
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-gray-500">{role.description || "Không có mô tả"}</p>

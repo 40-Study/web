@@ -51,7 +51,16 @@ export default function AdminLayout({
   }, []);
 
   return (
-    <RoleGuard roles={["SYSTEM_ADMIN", "ORG_OWNER"]}>
+    // Review đối kháng PR #24 (MAJOR): trước đây cho cả ORG_OWNER vào toàn bộ /admin/**, nhưng
+    // 40Study là B2C MỘT doanh nghiệp (không đa tổ chức) — data/roles.json (backend) cho ORG_OWNER
+    // chỉ các quyền phạm vi tổ chức (ORG_MEMBERS_MANAGE, ORG_ROLES_MANAGE, ORG_CATEGORIES_MANAGE,
+    // COURSES_APPROVE_OWN_ORG, COURSES_DELETE_ORG, REPORTS_VIEW_ORG, TRACKING_VIEW_ORG_STUDENTS),
+    // KHÔNG có ROLES_MANAGE_SYSTEM / REPORTS_MODERATE / CATEGORIES_SYSTEM_MANAGE mà 4/6 trang khu
+    // vực này cần thật. Cho ORG_OWNER vào rồi để họ dính 403 ở từng lệnh gọi API là UI hứa hẹn
+    // thứ họ không làm được — chỉ SYSTEM_ADMIN mới vào được /admin/**; ORG_OWNER bị RoleGuard đá
+    // thẳng về /403 (không phải màn trắng). Không có trang admin nào hiện tại dùng quyền phạm vi
+    // tổ chức của ORG_OWNER, nên không giữ riêng trang nào cho vai này.
+    <RoleGuard roles={["SYSTEM_ADMIN"]}>
       <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
         <aside className="hidden w-72 shrink-0 border-r bg-white md:flex md:flex-col dark:border-gray-800 dark:bg-gray-950">
           <div className="border-b px-5 py-4 dark:border-gray-800">

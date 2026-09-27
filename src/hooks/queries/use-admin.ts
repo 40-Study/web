@@ -113,11 +113,17 @@ export function useSystemRolesWithUserCounts() {
   });
 
   const countsLoading = roles.length > 0 && countQueries.some((q) => q.isLoading);
+  // Review PR #24 (MINOR): `userCount: null` trước đây dùng chung cho "đang tải" VÀ "lỗi/không đủ
+  // quyền" (vd một role không phải SYSTEM_ADMIN gọi GET /system-roles/:id/users -> 403) — UI hiện
+  // "…" mãi mãi trông như còn đang tải chứ không phải đã lỗi hẳn. Tách riêng `userCountError` để
+  // nơi hiển thị phân biệt được hai trạng thái.
   const rolesWithCounts = roles.map((role, index) => ({
     ...role,
     userCount: countQueries[index]?.data?.total ?? null,
+    userCountError: countQueries[index]?.isError ?? false,
   }));
 
+  const anyCountError = countQueries.some((q) => q.isError);
   const totalAssignedUsers = countQueries.every((q) => q.data)
     ? countQueries.reduce((sum, q) => sum + (q.data?.total ?? 0), 0)
     : null;
@@ -125,6 +131,7 @@ export function useSystemRolesWithUserCounts() {
   return {
     roles: rolesWithCounts,
     totalAssignedUsers,
+    totalAssignedUsersError: anyCountError,
     isLoading: rolesLoading || countsLoading,
     isError: rolesError,
     refetch: refetchRoles,

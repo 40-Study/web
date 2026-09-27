@@ -112,3 +112,21 @@ describe("/admin/roles — A-P1-2: tạo role phải lưu quyền đã tick", ()
     });
   });
 });
+
+describe("/admin/roles — review PR #24 (MINOR): phân biệt lỗi/không có quyền với đang tải", () => {
+  it("GET /system-roles/:id/users lỗi (vd 403 thiếu quyền) -> hiện 'lỗi', KHÔNG kẹt '…' mãi mãi", async () => {
+    mockApi.get.mockImplementation(async (url: string) => {
+      if (url === "/system-roles") return envelope({ roles: [ROLE] });
+      if (url === "/permissions") return envelope({ permissions: [PERMISSION], total: 1 });
+      if (/^\/system-roles\/[^/]+\/users$/.test(url)) throw new Error("403 Forbidden");
+      if (/^\/system-roles\/[^/]+\/permissions$/.test(url)) return envelope([]);
+      throw new Error(`GET không mong đợi trong test: ${url}`);
+    });
+
+    renderWithProviders(<RolesPage />);
+
+    await screen.findByText("lỗi");
+    expect(screen.queryByText("…")).toBeNull();
+    expect(screen.queryByText(/2 user/)).toBeNull();
+  });
+});

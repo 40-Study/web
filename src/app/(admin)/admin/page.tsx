@@ -17,6 +17,7 @@ export default function AdminIndexPage() {
   const {
     roles,
     totalAssignedUsers,
+    totalAssignedUsersError,
     isLoading: rolesLoading,
     isError: rolesError,
     refetch: refetchRoles,
@@ -79,11 +80,12 @@ export default function AdminIndexPage() {
           <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
             <p className="text-sm text-gray-500">Tổng lượt gán role</p>
             <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
-              {totalAssignedUsers === null ? "—" : totalAssignedUsers}
+              {totalAssignedUsersError ? "lỗi" : totalAssignedUsers === null ? "…" : totalAssignedUsers}
             </p>
             <p className="mt-1 text-[11px] text-gray-400">
-              Tổng số LƯỢT gán vai trò (1 user giữ 2 vai trò sẽ tính 2 lần) — API chưa có endpoint
-              đếm user duy nhất.
+              {totalAssignedUsersError
+                ? "Không tải được — thiếu quyền hoặc lỗi API khi đếm user theo vai trò."
+                : "Tổng số LƯỢT gán vai trò (1 user giữ 2 vai trò sẽ tính 2 lần) — API chưa có endpoint đếm user duy nhất."}
             </p>
           </div>
         </section>
@@ -101,8 +103,15 @@ export default function AdminIndexPage() {
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{role.name}</p>
                       <p className="text-xs text-gray-500">{role.description || "Không có mô tả"}</p>
                     </div>
-                    <span className="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
-                      {role.userCount === null ? "…" : `${role.userCount} user`}
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                        role.userCountError
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
+                      }`}
+                      title={role.userCountError ? "Không tải được số user (thiếu quyền hoặc lỗi API)" : undefined}
+                    >
+                      {role.userCountError ? "lỗi" : role.userCount === null ? "…" : `${role.userCount} user`}
                     </span>
                   </div>
                 ))
