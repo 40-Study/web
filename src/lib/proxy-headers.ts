@@ -76,6 +76,25 @@ export function copyEndToEndHeaders(source: Headers, options: { request: boolean
   return result;
 }
 
+/**
+ * Review PR #25 (item 4 — contract với lane backend): X-Forwarded-For gửi
+ * xuống backend PHẢI là chuỗi XFF đến (nếu có) + IP client mà chính Next
+ * (hop này) quan sát được qua `request.ip` — KHÔNG chuyển tiếp nguyên văn
+ * XFF của client mà không gắn thêm quan sát của hop này, vì backend chỉ tin
+ * header này khi TCP peer (chính Next server) thuộc TRUSTED_PROXIES; XFF thô
+ * của client tự khai không được attest thì không có giá trị định danh.
+ * `request.ip` không xác định được (self-host không có proxy đặt sẵn IP, môi
+ * trường test, …) -> KHÔNG gửi header này xuống backend (kể cả khi client có
+ * gửi XFF), tránh backend hiểu nhầm giá trị chưa được hop này xác nhận.
+ */
+export function resolveForwardedFor(request: NextRequest): string | undefined {
+  const clientIp = request.ip;
+  if (!clientIp) return undefined;
+
+  const incomingXff = request.headers.get("x-forwarded-for");
+  return incomingXff ? `${incomingXff}, ${clientIp}` : clientIp;
+}
+
 export function normalizeSetCookie(cookie: string, request: NextRequest): string {
   const isLocalHttp =
     request.nextUrl.protocol === "http:" &&
@@ -99,6 +118,12 @@ export async function proxyRequest(request: NextRequest, path: string[]) {
   const encodedPath = path.map((segment) => encodeURIComponent(segment)).join("/");
   const targetUrl = `${backendUrl}/api/${encodedPath}${request.nextUrl.search}`;
   const requestHeaders = copyEndToEndHeaders(request.headers, { request: true });
+  const forwardedFor = resolveForwardedFor(request);
+  if (forwardedFor) {
+    requestHeaders.set("x-forwarded-for", forwardedFor);
+  } else {
+    requestHeaders.delete("x-forwarded-for");
+  }
   const requestBody =
     request.method !== "GET" && request.method !== "HEAD" ? await request.arrayBuffer() : undefined;
 

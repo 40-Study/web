@@ -126,4 +126,53 @@ describe("same-origin API proxy", () => {
     expect(config).not.toMatch(/async\s+rewrites\s*\(/);
     expect(config).not.toContain("destination: 'http://localhost:5000/api");
   });
+
+  // Review PR #25 (item 4 — contract với lane backend): backend chỉ tin
+  // X-Forwarded-For khi TCP peer (chính Next) thuộc TRUSTED_PROXIES, nên hop
+  // này phải tự gắn IP mình quan sát được, không chuyển tiếp nguyên văn XFF
+  // client tự khai (không có giá trị định danh nếu không được attest).
+  describe("X-Forwarded-For tới backend", () => {
+    beforeEach(() => {
+      requestMock.mockResolvedValue({
+        data: bytes("ok"),
+        status: 200,
+        statusText: "OK",
+        headers: {},
+      });
+    });
+
+    it("chưa có XFF đến -> gửi đúng IP client mà Next quan sát được", async () => {
+      const request = new NextRequest("http://localhost/api/health", { ip: "203.0.113.9" });
+
+      await proxyRequest(request, ["health"]);
+
+      const config = requestMock.mock.calls[0][0];
+      expect((config.headers as Record<string, string>)["x-forwarded-for"]).toBe("203.0.113.9");
+    });
+
+    it("đã có XFF đến -> nối thêm IP client, không thay thế", async () => {
+      const request = new NextRequest("http://localhost/api/health", {
+        headers: { "x-forwarded-for": "198.51.100.5" },
+        ip: "203.0.113.9",
+      });
+
+      await proxyRequest(request, ["health"]);
+
+      const config = requestMock.mock.calls[0][0];
+      expect((config.headers as Record<string, string>)["x-forwarded-for"]).toBe(
+        "198.51.100.5, 203.0.113.9"
+      );
+    });
+
+    it("Next KHÔNG xác định được IP client -> KHÔNG gửi X-Forwarded-For, kể cả khi client tự khai", async () => {
+      const request = new NextRequest("http://localhost/api/health", {
+        headers: { "x-forwarded-for": "198.51.100.5" },
+      });
+
+      await proxyRequest(request, ["health"]);
+
+      const config = requestMock.mock.calls[0][0];
+      expect(config.headers as Record<string, string>).not.toHaveProperty("x-forwarded-for");
+    });
+  });
 });
