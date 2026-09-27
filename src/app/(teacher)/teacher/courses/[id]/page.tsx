@@ -491,6 +491,12 @@ export default function CourseDetailPage() {
   // bỏ hẳn field đó (M-5). Nếu token thiếu, API trả 401 và `onError` của mutation
   // đã báo lỗi thật; guard này chỉ để khỏi gọi API chắc chắn hỏng.
   const teacherId = useAuthStore((s) => s.user?.id);
+  // Review đối kháng web PR #27: cờ isOwner bên dưới trước đây KHÔNG có nhánh admin — dù
+  // RoleGuard ở layout (teacher) hiện chỉ cho "TEACHER" vào, backend đã có sẵn quy ước
+  // isAdmin-bypass ở mọi endpoint quản lý khoá (`isAdminActor`, `course_handler.go`); trang
+  // quản lý này nên nhất quán, phòng khi chính sách RoleGuard sau này mở cho SYSTEM_ADMIN.
+  const activeRole = useAuthStore((s) => s.activeRole);
+  const isAdmin = activeRole === "SYSTEM_ADMIN";
 
   // Danh sách lớp của khoá — chỉ tải khi modal thêm nội dung đang mở (ô chọn lớp
   // của buổi live cần), tránh thêm request cho mọi lần vào trang.
@@ -851,7 +857,7 @@ export default function CourseDetailPage() {
   // "Quản lý lớp"...) dù ghi (write) đã bị chặn đúng ở backend (403). Chặn ở đây, tại trang
   // quản lý — nơi DUY NHẤT trong app dùng useCourse() — thay vì nới lỏng contract chung của
   // endpoint xem-trước.
-  const isOwner = !!teacherId && course.instructor_id === teacherId;
+  const isOwner = isAdmin || (!!teacherId && course.instructor_id === teacherId);
   if (!isOwner) {
     return (
       <div className="max-w-md mx-auto mt-16 text-center space-y-4">
