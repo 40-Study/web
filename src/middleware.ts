@@ -32,6 +32,16 @@ const PUBLIC_ROUTES = [
 // (learn-route-guard.tsx) nên không thể để middleware coi nó là public.
 const LEARN_ROUTE_PATTERN = /^\/courses\/[^/]+\/learn(?:\/|$)/;
 
+// Review PR #25 (BLOCKER #2): (app)/courses/[slug]/exercises/page.tsx nằm
+// trong route group CẦN đăng nhập, nhưng /courses/[slug]/exercises vẫn khớp
+// tiền tố public "/courses" ở trên — cùng lỗ hổng như /courses/[slug]/learn,
+// phát hiện nhờ test liệt kê MỌI page.tsx dưới các route group cần đăng nhập.
+const EXERCISES_ROUTE_PATTERN = /^\/courses\/[^/]+\/exercises(?:\/|$)/;
+
+// Route con của các group cần đăng nhập nhưng lại khớp tiền tố public
+// "/courses" — PHẢI loại trừ khỏi isPublicRoute, xem isProtectedRoute bên dưới.
+const COURSES_AUTH_SUBROUTE_PATTERNS = [LEARN_ROUTE_PATTERN, EXERCISES_ROUTE_PATTERN];
+
 // Tiền tố các route THẬT SỰ cần đăng nhập (đối chiếu `find src/app -name
 // page.tsx`). QA khách 260927 (P1): trước đây middleware coi MỌI path không
 // nằm trong PUBLIC_ROUTES là "cần đăng nhập", kể cả URL rác không tồn tại
@@ -45,6 +55,7 @@ const PROTECTED_ROUTE_PREFIXES = [
   "/achievements",
   "/ai-chat",
   "/cart",
+  "/certificates",
   "/checkout",
   "/coins",
   "/contests",
@@ -77,9 +88,10 @@ const REFRESH_TOKEN_COOKIE = "rfToken";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public routes (trừ /courses/[slug]/learn — xem LEARN_ROUTE_PATTERN)
+  // Allow public routes (trừ các route con cần đăng nhập của "/courses" —
+  // xem COURSES_AUTH_SUBROUTE_PATTERNS)
   const isPublicRoute =
-    !LEARN_ROUTE_PATTERN.test(pathname) &&
+    !COURSES_AUTH_SUBROUTE_PATTERNS.some((pattern) => pattern.test(pathname)) &&
     PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 
   if (isPublicRoute) {
@@ -99,7 +111,7 @@ export function middleware(request: NextRequest) {
   // trên) — không phải "cần đăng nhập", mà là route không tồn tại. Để
   // Next.js tự xử lý (render app/not-found.tsx) thay vì ép về /login.
   const isProtectedRoute =
-    LEARN_ROUTE_PATTERN.test(pathname) ||
+    COURSES_AUTH_SUBROUTE_PATTERNS.some((pattern) => pattern.test(pathname)) ||
     PROTECTED_ROUTE_PREFIXES.some(
       (route) => pathname === route || pathname.startsWith(`${route}/`)
     );
