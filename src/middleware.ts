@@ -32,6 +32,43 @@ const PUBLIC_ROUTES = [
 // (learn-route-guard.tsx) nên không thể để middleware coi nó là public.
 const LEARN_ROUTE_PATTERN = /^\/courses\/[^/]+\/learn(?:\/|$)/;
 
+// Tiền tố các route THẬT SỰ cần đăng nhập (đối chiếu `find src/app -name
+// page.tsx`). QA khách 260927 (P1): trước đây middleware coi MỌI path không
+// nằm trong PUBLIC_ROUTES là "cần đăng nhập", kể cả URL rác không tồn tại
+// route nào — khách gõ nhầm URL bị đá thẳng sang màn hình login giống hệt
+// "cần đăng nhập", không có cách nào biết đó là 404. Danh sách dưới đây liệt
+// kê tiền tố route BẢO VỆ thật; path không khớp bất kỳ tiền tố nào (và không
+// nằm trong PUBLIC_ROUTES) được coi là không tồn tại và để Next.js tự render
+// app/not-found.tsx thay vì ép về /login.
+const PROTECTED_ROUTE_PREFIXES = [
+  "/admin",
+  "/achievements",
+  "/ai-chat",
+  "/cart",
+  "/checkout",
+  "/coins",
+  "/contests",
+  "/friends",
+  "/groups",
+  "/help",
+  "/home",
+  "/leaderboard",
+  "/learn",
+  "/messages",
+  "/my-assignments",
+  "/my-attendance",
+  "/my-courses",
+  "/my-vouchers",
+  "/notifications",
+  "/parent",
+  "/profile",
+  "/quizzes",
+  "/rooms",
+  "/schedule",
+  "/settings",
+  "/teacher",
+];
+
 // Tên cookie httpOnly do backend set — khớp internal/handler/auth_handler.go
 // (Login/RefreshToken: "accessToken" 15 phút, "rfToken" 24h).
 const ACCESS_TOKEN_COOKIE = "accessToken";
@@ -55,6 +92,19 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/api") ||
     pathname.includes(".")
   ) {
+    return NextResponse.next();
+  }
+
+  // Path không khớp route bảo vệ nào đã biết (và không phải PUBLIC_ROUTES ở
+  // trên) — không phải "cần đăng nhập", mà là route không tồn tại. Để
+  // Next.js tự xử lý (render app/not-found.tsx) thay vì ép về /login.
+  const isProtectedRoute =
+    LEARN_ROUTE_PATTERN.test(pathname) ||
+    PROTECTED_ROUTE_PREFIXES.some(
+      (route) => pathname === route || pathname.startsWith(`${route}/`)
+    );
+
+  if (!isProtectedRoute) {
     return NextResponse.next();
   }
 
