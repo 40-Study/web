@@ -53,7 +53,20 @@ export interface LessonProgressResponse {
 
 type R<T> = { message: string; data: T };
 
-// ─── Service ────────────────────────────────────────────────────────────────
+/**
+ * `GET /enrollments` KHÔNG trả mảng phẳng — thực tế trả object phân trang
+ * `{ enrollments: Enrollment[], total, page, page_size }` (phát hiện live
+ * khi verify review PR #26 MAJOR #2: `.find is not a function` crash trên
+ * trang player vì code cũ coi `r.data.data` là mảng). `Enrollment` ở trên
+ * chỉ khai các field client thật sự dùng — payload thật còn nhiều field hơn
+ * (course_title, watched_seconds...), TypeScript không phàn nàn field thừa.
+ */
+interface EnrollmentListResponse {
+  enrollments: Enrollment[];
+  total: number;
+  page: number;
+  page_size: number;
+}
 
 export const enrollmentService = {
   /** POST /courses/:courseId/enroll */
@@ -64,9 +77,11 @@ export const enrollmentService = {
   unenroll: (courseId: string) =>
     api.delete<R<null>>(`/courses/${courseId}/enroll`).then((r) => r.data),
 
-  /** GET /enrollments */
+  /** GET /enrollments — trả mảng đã unwrap từ object phân trang thật của server. */
   getAll: () =>
-    api.get<R<Enrollment[]>>("/enrollments").then((r) => r.data.data),
+    api
+      .get<R<EnrollmentListResponse>>("/enrollments")
+      .then((r) => r.data.data.enrollments),
 
   /** GET /enrollments/:enrollmentId */
   getById: (enrollmentId: string) =>

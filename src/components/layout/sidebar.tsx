@@ -11,9 +11,9 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
 import { useSidebarStore } from "@/stores/sidebar.store";
-import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
+import { getRoleHomeRoute, normalizeRole, resolveNavRole, ROLE_SCOPED_ROUTES, type NavRole } from "@/lib/routes";
 
-type SidebarRole = "GUEST" | "STUDENT" | "PARENT" | "ADMIN";
+type SidebarRole = NavRole;
 
 interface SidebarNavItem {
   label: string;
@@ -21,6 +21,24 @@ interface SidebarNavItem {
   icon: LucideIcon;
   /** Vai trò được thấy mục này — thiếu role hiện tại (kể cả GUEST) => ẩn. */
   roles: SidebarRole[];
+}
+
+/**
+ * Route tĩnh có mặt trong `ROLE_SCOPED_ROUTES` (`lib/routes.ts`) => menu LẤY
+ * NGUYÊN `roles` từ đó, không khai báo lại — nguồn của lỗi review MAJOR #1:
+ * menu ẩn mục nhưng route guard đọc một danh sách role khác nên gõ thẳng URL
+ * vẫn vào được. Route không nằm trong bảng (vd "Trang chủ"/"Khám phá", href
+ * động hoặc không hạn chế theo role) thì giữ mảng roles khai báo tại chỗ.
+ */
+function rolesFromRouteTable(href: string): SidebarRole[] {
+  const entry = ROLE_SCOPED_ROUTES.find((r) => r.href === href);
+  if (!entry) {
+    throw new Error(
+      `sidebar.tsx: route "${href}" không có entry trong ROLE_SCOPED_ROUTES (lib/routes.ts) — ` +
+        `thêm vào đó trước, đừng khai báo roles rời ở đây (tránh lệch menu/route, review PR #26 MAJOR #1).`
+    );
+  }
+  return entry.roles;
 }
 
 /**
@@ -37,21 +55,24 @@ interface SidebarNavItem {
  *   admin ghé các trang tài khoản cá nhân được phép
  *   (`(app)/layout.tsx` § ADMIN_ALLOWED_EXACT_ROUTES) — không lộ menu học
  *   sinh/game-hoá; điều hướng admin thật nằm ở `(admin)/layout.tsx`.
+ * - Mọi item có href tĩnh trùng `ROLE_SCOPED_ROUTES` LẤY roles từ đó (xem
+ *   `rolesFromRouteTable`) — một nguồn duy nhất với route guard ở
+ *   `(app)/layout.tsx` (review PR #26 MAJOR #1).
  */
 function buildSidebarItems(homeHref: string, familyLabel: string): SidebarNavItem[] {
   return [
     { label: "Trang chủ", href: homeHref, icon: Home, roles: ["GUEST", "STUDENT", "PARENT"] },
     { label: "Khám phá", href: "/courses", icon: BookOpen, roles: ["GUEST", "STUDENT", "PARENT"] },
-    { label: "Cuộc thi", href: "/contests", icon: Trophy, roles: ["GUEST", "STUDENT"] },
-    { label: "Khóa học của tôi", href: "/my-courses", icon: GraduationCap, roles: ["STUDENT"] },
-    { label: "Lịch học", href: "/schedule", icon: Calendar, roles: ["STUDENT"] },
-    { label: "Chuyên cần", href: "/my-attendance", icon: CalendarCheck, roles: ["STUDENT"] },
-    { label: "Chứng chỉ", href: "/certificates", icon: ScrollText, roles: ["STUDENT"] },
-    { label: "Tin nhắn", href: "/messages", icon: MessageSquare, roles: ["STUDENT", "PARENT"] },
-    { label: "Nhóm", href: "/groups", icon: UsersRound, roles: ["STUDENT"] },
-    { label: "Xu", href: "/coins", icon: Coins, roles: ["STUDENT"] },
-    { label: familyLabel, href: "/settings/family", icon: Users, roles: ["STUDENT", "PARENT"] },
-    { label: "Thành tích", href: "/achievements", icon: Award, roles: ["STUDENT"] },
+    { label: "Cuộc thi", href: "/contests", icon: Trophy, roles: rolesFromRouteTable("/contests") },
+    { label: "Khóa học của tôi", href: "/my-courses", icon: GraduationCap, roles: rolesFromRouteTable("/my-courses") },
+    { label: "Lịch học", href: "/schedule", icon: Calendar, roles: rolesFromRouteTable("/schedule") },
+    { label: "Chuyên cần", href: "/my-attendance", icon: CalendarCheck, roles: rolesFromRouteTable("/my-attendance") },
+    { label: "Chứng chỉ", href: "/certificates", icon: ScrollText, roles: rolesFromRouteTable("/certificates") },
+    { label: "Tin nhắn", href: "/messages", icon: MessageSquare, roles: rolesFromRouteTable("/messages") },
+    { label: "Nhóm", href: "/groups", icon: UsersRound, roles: rolesFromRouteTable("/groups") },
+    { label: "Xu", href: "/coins", icon: Coins, roles: rolesFromRouteTable("/coins") },
+    { label: familyLabel, href: "/settings/family", icon: Users, roles: rolesFromRouteTable("/settings/family") },
+    { label: "Thành tích", href: "/achievements", icon: Award, roles: rolesFromRouteTable("/achievements") },
   ];
 }
 
@@ -62,16 +83,9 @@ export function Sidebar() {
   const isExpanded = !isCollapsed; // sidebar.store.ts dùng chung 1 API isCollapsed (mục 14)
   const normalizedRole = normalizeRole(activeRole);
   const isParent = normalizedRole === "PARENT";
-  const isAdmin = normalizedRole === "SYSTEM_ADMIN" || normalizedRole === "ORG_OWNER";
   const homeHref = isAuthenticated ? getRoleHomeRoute(normalizedRole) : "/";
 
-  const currentRole: SidebarRole = !isAuthenticated
-    ? "GUEST"
-    : isAdmin
-      ? "ADMIN"
-      : isParent
-        ? "PARENT"
-        : "STUDENT";
+  const currentRole: SidebarRole = resolveNavRole(isAuthenticated, normalizedRole);
   const familyLabel = isParent ? "Con của tôi" : "Gia đình";
   const navItems = buildSidebarItems(homeHref, familyLabel).filter((item) =>
     item.roles.includes(currentRole)

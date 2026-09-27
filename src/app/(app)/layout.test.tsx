@@ -98,3 +98,59 @@ describe("(app)/layout — A-P2-4 admin vẫn vào được trang tài khoản c
     expect(screen.queryByTestId("child")).not.toBeNull();
   });
 });
+
+describe("(app)/layout — MAJOR #1 (review PR #26): route guard đọc CÙNG bảng data-driven với menu", () => {
+  afterEach(() => {
+    useAuthStore.setState({
+      isAuthenticated: false,
+      activeRole: null,
+      hasHydrated: false,
+      sessionStatus: "checking",
+    });
+  });
+
+  const PARENT_BLOCKED_ROUTES = ["/achievements", "/leaderboard", "/coins", "/groups", "/contests", "/my-courses", "/schedule"];
+
+  for (const path of PARENT_BLOCKED_ROUTES) {
+    it(`phụ huynh gõ thẳng URL ${path} (menu đã ẩn) -> KHÔNG render, bị chặn ở route`, () => {
+      setPath(path);
+      setAuth("PARENT", true);
+      render(
+        <AppLayout>
+          <div data-testid="child">CHILD</div>
+        </AppLayout>
+      );
+      expect(screen.queryByTestId("child")).toBeNull();
+    });
+  }
+
+  const PARENT_ALLOWED_ROUTES = ["/settings/family", "/messages", "/home"];
+
+  for (const path of PARENT_ALLOWED_ROUTES) {
+    it(`phụ huynh vào ${path} -> vẫn render bình thường (route dùng chung với học sinh hoặc không bị quản lý)`, () => {
+      setPath(path);
+      setAuth("PARENT", true);
+      render(
+        <AppLayout>
+          <div data-testid="child">CHILD</div>
+        </AppLayout>
+      );
+      expect(screen.queryByTestId("child")).not.toBeNull();
+    });
+  }
+
+  const STUDENT_ROUTES_UNCHANGED = ["/achievements", "/leaderboard", "/coins", "/groups", "/contests", "/my-courses", "/schedule"];
+
+  for (const path of STUDENT_ROUTES_UNCHANGED) {
+    it(`học sinh vào ${path} -> không bị ảnh hưởng bởi guard mới (vẫn render)`, () => {
+      setPath(path);
+      setAuth("STUDENT", true);
+      render(
+        <AppLayout>
+          <div data-testid="child">CHILD</div>
+        </AppLayout>
+      );
+      expect(screen.queryByTestId("child")).not.toBeNull();
+    });
+  }
+});
