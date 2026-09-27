@@ -7,21 +7,19 @@ import { api } from "@/lib/api-client";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-export interface ReviewUser {
-  id: string;
-  name: string;
-  avatar_url?: string;
-}
-
+// Khớp backend/internal/dto/reviewDTO.go `ReviewResponseDTO` — PHẲNG
+// (user_name/avatar_url), KHÔNG có object `user` lồng nhau, KHÔNG có
+// `not_helpful_count` (trước đây type khai sai cả 2 điểm này; do reviews
+// chưa từng render ở UI nên chưa lộ ra — QA khách+học sinh P2, 260927).
 export interface Review {
   id: string;
   course_id: string;
   user_id: string;
-  user?: ReviewUser;
+  user_name: string;
+  avatar_url?: string;
   rating: number;
   comment?: string;
   helpful_count?: number;
-  not_helpful_count?: number;
   user_reaction?: "helpful" | "not_helpful" | null;
   created_at?: string;
   updated_at?: string;
@@ -42,12 +40,19 @@ export interface ReviewReactionDTO {
 }
 
 export interface ReviewListResponse {
-  reviews: Review[];
+  // Khớp backend `ReviewListDTO.Data` — trước đây khai nhầm là `reviews`,
+  // luôn `undefined` (QA khách+học sinh P2, 260927).
+  data: Review[];
   total: number;
   page: number;
   page_size: number;
   average_rating?: number;
-  rating_distribution?: Record<number, number>;
+  /**
+   * Số LƯỢNG review theo từng mức sao (1-5) — khớp
+   * backend/internal/dto/reviewDTO.go `RatingCounts map[int]int64`. KHÔNG
+   * phải phần trăm sẵn — quy đổi ra % ở nơi hiển thị (CourseReviews cần %).
+   */
+  rating_counts?: Record<number, number>;
 }
 
 type R<T> = { message: string; data: T };
