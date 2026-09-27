@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, Building2, LayoutDashboard, LogOut, Settings, ShieldCheck } from "lucide-react";
+import { BarChart3, Building2, LayoutDashboard, LogOut, Settings, ShieldCheck, Users } from "lucide-react";
 
 import { RoleGuard } from "@/components/guards";
 import { Avatar } from "@/components/ui/avatar";
@@ -13,6 +13,7 @@ import { useAuthStore } from "@/stores/auth.store";
 
 const adminMenu = [
   { label: "Tổng quan", href: "/admin", icon: LayoutDashboard },
+  { label: "Người dùng", href: "/admin/users", icon: Users },
   { label: "Quản lý vai trò", href: "/admin/roles", icon: ShieldCheck },
   { label: "Quản lý tổ chức", href: "/admin/organizations", icon: Building2 },
   { label: "Phân quyền", href: "/admin/permissions", icon: Settings },
