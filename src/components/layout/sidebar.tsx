@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { LucideIcon } from "lucide-react";
 import {
-  Home, BookOpen, MessageSquare, Calendar, Award, Users, Sparkles,
-  Trophy, Coins, UsersRound, ChevronLeft, ChevronRight, UserPlus, GraduationCap,
+  Home, BookOpen, MessageSquare, Calendar, Award, Users,
+  Trophy, Coins, UsersRound, ChevronLeft, ChevronRight, GraduationCap,
   CalendarCheck, ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,43 +13,69 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useSidebarStore } from "@/stores/sidebar.store";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 
+type SidebarRole = "GUEST" | "STUDENT" | "PARENT" | "ADMIN";
+
+interface SidebarNavItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  /** Vai trò được thấy mục này — thiếu role hiện tại (kể cả GUEST) => ẩn. */
+  roles: SidebarRole[];
+}
+
+/**
+ * Menu data-driven theo role (M-19 phụ huynh, S-P1-4 bạn bè, H8 AI Chat) — một
+ * mảng duy nhất thay vì if/else rải rác. `roles` là danh sách vai trò được
+ * thấy mục đó; không khai báo role hiện tại => tự ẩn, không cần nhánh riêng.
+ *
+ * - "Bạn bè": bỏ hẳn khỏi menu mọi vai trò — backend chưa có API bạn bè
+ *   (S-P1-4), trang chỉ còn thông báo "Sắp có".
+ * - "AI Chat": bỏ hẳn khỏi menu mọi vai trò — sản phẩm không làm AI (H8).
+ * - Phụ huynh không cần Cuộc thi/Nhóm/Xu (tính năng game-hoá của học sinh);
+ *   "Gia đình" đổi nhãn "Con của tôi" khi xem bằng vai phụ huynh.
+ * - ADMIN (A-P2-4): không có item nào khai báo role này -> sidebar rỗng khi
+ *   admin ghé các trang tài khoản cá nhân được phép
+ *   (`(app)/layout.tsx` § ADMIN_ALLOWED_EXACT_ROUTES) — không lộ menu học
+ *   sinh/game-hoá; điều hướng admin thật nằm ở `(admin)/layout.tsx`.
+ */
+function buildSidebarItems(homeHref: string, familyLabel: string): SidebarNavItem[] {
+  return [
+    { label: "Trang chủ", href: homeHref, icon: Home, roles: ["GUEST", "STUDENT", "PARENT"] },
+    { label: "Khám phá", href: "/courses", icon: BookOpen, roles: ["GUEST", "STUDENT", "PARENT"] },
+    { label: "Cuộc thi", href: "/contests", icon: Trophy, roles: ["GUEST", "STUDENT"] },
+    { label: "Khóa học của tôi", href: "/my-courses", icon: GraduationCap, roles: ["STUDENT"] },
+    { label: "Lịch học", href: "/schedule", icon: Calendar, roles: ["STUDENT"] },
+    { label: "Chuyên cần", href: "/my-attendance", icon: CalendarCheck, roles: ["STUDENT"] },
+    { label: "Chứng chỉ", href: "/certificates", icon: ScrollText, roles: ["STUDENT"] },
+    { label: "Tin nhắn", href: "/messages", icon: MessageSquare, roles: ["STUDENT", "PARENT"] },
+    { label: "Nhóm", href: "/groups", icon: UsersRound, roles: ["STUDENT"] },
+    { label: "Xu", href: "/coins", icon: Coins, roles: ["STUDENT"] },
+    { label: familyLabel, href: "/settings/family", icon: Users, roles: ["STUDENT", "PARENT"] },
+    { label: "Thành tích", href: "/achievements", icon: Award, roles: ["STUDENT"] },
+  ];
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const { isAuthenticated, activeRole } = useAuthStore();
   const { isCollapsed, toggle } = useSidebarStore();
   const isExpanded = !isCollapsed; // sidebar.store.ts dùng chung 1 API isCollapsed (mục 14)
   const normalizedRole = normalizeRole(activeRole);
-  const isStudent = normalizedRole === "STUDENT";
   const isParent = normalizedRole === "PARENT";
+  const isAdmin = normalizedRole === "SYSTEM_ADMIN" || normalizedRole === "ORG_OWNER";
   const homeHref = isAuthenticated ? getRoleHomeRoute(normalizedRole) : "/";
 
-  // Public items - visible to everyone
-  const publicItems = [
-    { label: "Trang chủ", href: homeHref, icon: Home },
-    { label: "Khám phá", href: "/courses", icon: BookOpen },
-    { label: "Cuộc thi", href: "/contests", icon: Trophy },
-  ];
-
-  // Authenticated-only items
-  const authItems = isAuthenticated
-    ? [
-        ...(isStudent ? [{ label: "Khóa học của tôi", href: "/my-courses", icon: GraduationCap }] : []),
-        ...(isStudent ? [{ label: "Lịch học", href: "/schedule", icon: Calendar }] : []),
-        ...(isStudent ? [{ label: "Chuyên cần", href: "/my-attendance", icon: CalendarCheck }] : []),
-        ...(isStudent ? [{ label: "Chứng chỉ", href: "/certificates", icon: ScrollText }] : []),
-        { label: "Bạn bè", href: "/friends", icon: UserPlus },
-        { label: "Tin nhắn", href: "/messages", icon: MessageSquare },
-        { label: "Nhóm", href: "/groups", icon: UsersRound },
-        { label: "Xu", href: "/coins", icon: Coins },
-        ...(isStudent ? [{ label: "AI Chat", href: "/ai-chat", icon: Sparkles }] : []),
-        ...(isStudent || isParent ? [{ label: "Gia đình", href: "/settings/family", icon: Users }] : []),
-        ...(isStudent
-          ? [{ label: "Thành tích", href: "/achievements", icon: Award }]
-          : []),
-      ]
-    : [];
-
-  const navItems = [...publicItems, ...authItems];
+  const currentRole: SidebarRole = !isAuthenticated
+    ? "GUEST"
+    : isAdmin
+      ? "ADMIN"
+      : isParent
+        ? "PARENT"
+        : "STUDENT";
+  const familyLabel = isParent ? "Con của tôi" : "Gia đình";
+  const navItems = buildSidebarItems(homeHref, familyLabel).filter((item) =>
+    item.roles.includes(currentRole)
+  );
 
   return (
     <aside className={cn(
