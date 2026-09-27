@@ -31,10 +31,15 @@ export default function TeacherStudentProfilePage() {
     notFound();
   }
 
-  // Classmates: same class, different id
-  const classmates = students.filter(
-    (s) => s.class_id === student.class_id && s.id !== student.id
-  );
+  // Classmates: same class, different id.
+  //
+  // Review đối kháng backend PR #70 (MAJOR): `class_id` giờ optional (`omitempty` khi học viên
+  // ghi danh thẳng vào khóa, không qua lớp) — so `s.class_id === student.class_id` một mình sẽ
+  // khớp `undefined === undefined` khi CẢ HAI chưa có lớp, gộp nhầm TOÀN BỘ học viên "chưa có
+  // lớp" thành bạn cùng lớp của nhau. Đòi `student.class_id` phải có giá trị thật trước khi so.
+  const classmates = student.class_id
+    ? students.filter((s) => s.class_id === student.class_id && s.id !== student.id)
+    : [];
 
   return (
     <div className="space-y-6">
@@ -95,7 +100,7 @@ export default function TeacherStudentProfilePage() {
                 <BookOpen className="h-4 w-4" />
                 Lớp học hiện tại
               </div>
-              <p className="font-medium">{student.class_name}</p>
+              <p className="font-medium">{student.class_name ?? "Chưa có lớp"}</p>
               {student.course_name && (
                 <p className="text-sm text-muted-foreground">{student.course_name}</p>
               )}
