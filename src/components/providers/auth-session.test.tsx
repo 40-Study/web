@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PERMISSIONS } from "@/lib/permissions";
 import { authService, type UnifiedRole, type UserResponseDto } from "@/services/auth.service";
-import { ROLE_SELECTION_TOKEN_KEY, useAuthStore } from "@/stores/auth.store";
+import { ROLE_SELECTION_TOKEN_KEY, useAuthStore, type AuthUser } from "@/stores/auth.store";
 import { Can } from "@/components/guards/can";
 import { RoleGuard } from "@/components/guards/role-guard";
 import { bootstrapAuthSession } from "./auth-session";
@@ -23,6 +23,14 @@ const user: UserResponseDto = {
   is_active: true,
   created_at: "2026-08-09T00:00:00Z",
 };
+
+// bootstrapAuthSession() giờ chỉ gọi GET /auth/me khi store đã có `user`
+// cache (persist từ lần đăng nhập trước) — khách chưa từng đăng nhập không
+// còn tự bắn 401 rồi refresh-token, tốn chung quota rate-limit với /login
+// (QA khách P2, 260927; xem auth-session.ts). Mọi test dưới đây mô phỏng
+// "phiên đã xác thực trước đó, cookie có thể còn hợp lệ" nên phải seed
+// `user` giống với dữ liệu thật sự được persist cùng activeRole.
+const authUser: AuthUser = { id: user.id, email: user.email, name: user.full_name ?? user.email };
 
 const systemRole: UnifiedRole = {
   id: "system-role-1",
@@ -53,6 +61,7 @@ describe("cookie-backed auth bootstrap", () => {
 
   it("restores a valid system role and hydrates known permission names", async () => {
     useAuthStore.setState({
+      user: authUser,
       activeRole: "SYSTEM_ADMIN",
       activeUnifiedRole: systemRole,
     });
@@ -77,6 +86,7 @@ describe("cookie-backed auth bootstrap", () => {
 
   it("loads permissions for an organization role from the caller-scoped endpoint", async () => {
     useAuthStore.setState({
+      user: authUser,
       activeRole: "TEACHER",
       activeUnifiedRole: organizationRole,
     });
@@ -92,6 +102,7 @@ describe("cookie-backed auth bootstrap", () => {
 
   it("clears a stale active role while keeping the verified session authenticated", async () => {
     useAuthStore.setState({
+      user: authUser,
       activeRole: "SYSTEM_ADMIN",
       activeUnifiedRole: systemRole,
       permissions: [PERMISSIONS.MANAGE_USERS],
@@ -113,7 +124,7 @@ describe("cookie-backed auth bootstrap", () => {
   // xoá cả phiên đã xác thực, đẩy người dùng về trang chọn vai trò ngay sau khi đăng nhập.
   it("keeps the verified session and role when loading permissions fails", async () => {
     const studentRole: UnifiedRole = { id: "system-role-student", type: "system", role_name: "STUDENT", display_name: "Học viên" };
-    useAuthStore.setState({ activeRole: "STUDENT", activeUnifiedRole: studentRole });
+    useAuthStore.setState({ user: authUser, activeRole: "STUDENT", activeUnifiedRole: studentRole });
     vi.mocked(authService.getMe).mockResolvedValue(user);
     vi.mocked(authService.getMyRoles).mockResolvedValue({ roles: [studentRole] });
     vi.mocked(authService.getMyPermissions).mockRejectedValue(new Error("Request failed with status code 403"));
@@ -134,6 +145,7 @@ describe("cookie-backed auth bootstrap", () => {
 
   it("becomes anonymous and clears stale authority when server validation fails", async () => {
     useAuthStore.setState({
+      user: authUser,
       activeRole: "SYSTEM_ADMIN",
       activeUnifiedRole: systemRole,
       permissions: [PERMISSIONS.MANAGE_USERS],
@@ -149,6 +161,24 @@ describe("cookie-backed auth bootstrap", () => {
       user: null,
       activeRole: null,
       permissions: [],
+    });
+  });
+
+  // QA khách P2 (260927): trước đây MỌI lần tải trang (kể cả khách chưa từng
+  // đăng nhập, không có `user` cache) đều gọi GET /auth/me -> 401 -> tự động
+  // POST /auth/refresh-token, tốn chung quota rate-limit 5 lần/phút/IP với
+  // /auth/login (authRateLimiter) — vài lần refresh trang bình thường đã đủ
+  // khiến người dùng thật login ngay sau đó bị 429.
+  it("khách chưa từng đăng nhập (không có user cache) không gọi getMe/refresh-token", async () => {
+    // beforeEach đã clearServerSession() -> user: null, không set thêm gì.
+    await expect(bootstrapAuthSession()).resolves.toBe("anonymous");
+
+    expect(authService.getMe).not.toHaveBeenCalled();
+    expect(authService.getMyRoles).not.toHaveBeenCalled();
+    expect(useAuthStore.getState()).toMatchObject({
+      sessionStatus: "anonymous",
+      isAuthenticated: false,
+      user: null,
     });
   });
 
