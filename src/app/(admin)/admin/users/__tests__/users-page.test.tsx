@@ -19,6 +19,22 @@ const mockUseAdminUsers = vi.fn();
 const mockUseUpdateUserStatus = vi.fn();
 const mockUseSystemRoles = vi.fn();
 
+// vitest.setup.ts mock next/navigation bằng arrow function thường (không phải
+// vi.fn()) nên không control được qua vi.mocked() từ trong test — ghi đè cục
+// bộ ở đây bằng bản vi.fn() thật để mỗi test tự set searchParams/router.
+const mockUseRouter = vi.fn();
+const mockUsePathname = vi.fn();
+const mockUseSearchParams = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => mockUseRouter(),
+  usePathname: () => mockUsePathname(),
+  useSearchParams: () => mockUseSearchParams(),
+  useParams: () => ({}),
+  redirect: vi.fn(),
+  notFound: vi.fn(),
+}));
+
 vi.mock("@/hooks/queries/use-admin-users", () => ({
   useAdminUsers: (...args: unknown[]) => mockUseAdminUsers(...args),
   useUpdateUserStatus: () => mockUseUpdateUserStatus(),
@@ -61,6 +77,16 @@ function buildUser(overrides: Partial<AdminUserListItem> = {}): AdminUserListIte
 beforeEach(() => {
   mockUseSystemRoles.mockReturnValue({ data: [] });
   mockUseUpdateUserStatus.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
+  mockUsePathname.mockReturnValue("/admin/users");
+  mockUseSearchParams.mockReturnValue(new URLSearchParams());
+  mockUseRouter.mockReturnValue({
+    push: vi.fn(),
+    replace: vi.fn(),
+    refresh: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    prefetch: vi.fn(),
+  });
 });
 
 describe("AdminUsersPage — loading/empty/error", () => {
@@ -202,5 +228,114 @@ describe("AdminUsersPage — khoá tài khoản", () => {
     await waitFor(() => {
       expect(screen.queryByText(/Khoá tài khoản "student1@fortex.vn"/)).toBeNull();
     });
+  });
+});
+
+// URL-state-first (yêu cầu coordinator sau vụ e2e khoá nhầm parent1@demo.com vì
+// /admin/users?keyword=student2 không lọc sẵn danh sách): mở link kèm query
+// phải lọc NGAY từ lần render đầu, gõ/lọc phải ghi lại URL (replace, debounce).
+describe("AdminUsersPage — đồng bộ bộ lọc với URL", () => {
+  it("mở /admin/users?keyword=student2 → ô tìm kiếm và query gọi API đã lọc sẵn student2 (không cần gõ lại)", () => {
+    mockUseSearchParams.mockReturnValue(new URLSearchParams("keyword=student2"));
+    mockUseAdminUsers.mockReturnValue({
+      data: {
+        items: [buildUser({ id: "u-student2", email: "student2@demo.com" })],
+        total_count: 1,
+        page: 1,
+        limit: 20,
+        total_pages: 1,
+      },
+      isLoading: false,
+      isError: false,
+      error: undefined,
+      refetch: vi.fn(),
+    });
+
+    render(<AdminUsersPage />);
+
+    const input = screen.getByPlaceholderText(/Tìm theo email/i) as HTMLInputElement;
+    expect(input.value).toBe("student2");
+    // Ngay lần render đầu — không đợi debounce — vì giá trị debounce khởi tạo
+    // bằng chính giá trị URL (useDebouncedValue seed từ useState(value)).
+    expect(mockUseAdminUsers).toHaveBeenCalledWith(
+      expect.objectContaining({ keyword: "student2" })
+    );
+    expect(screen.getByText("student2@demo.com")).toBeTruthy();
+  });
+
+  it("mở /admin/users?role=TEACHER&status=locked&page=2 → khởi tạo đúng filter role/status/page từ URL", () => {
+    mockUseSearchParams.mockReturnValue(new URLSearchParams("role=TEACHER&status=locked&page=2"));
+    mockUseAdminUsers.mockReturnValue({
+      data: { items: [], total_count: 0, page: 2, limit: 20, total_pages: 3 },
+      isLoading: false,
+      isError: false,
+      error: undefined,
+      refetch: vi.fn(),
+    });
+
+    render(<AdminUsersPage />);
+
+    expect(mockUseAdminUsers).toHaveBeenCalledWith(
+      expect.objectContaining({ role: "TEACHER", status: "locked", page: 2 })
+    );
+  });
+
+  it("gõ vào ô tìm kiếm → URL được replace (debounce) với ?keyword=..., không push (không thêm history)", async () => {
+    mockUseSearchParams.mockReturnValue(new URLSearchParams());
+    const replace = vi.fn();
+    const push = vi.fn();
+    mockUseRouter.mockReturnValue({
+      push,
+      replace,
+      refresh: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn(),
+      prefetch: vi.fn(),
+    });
+    mockUseAdminUsers.mockReturnValue({
+      data: { items: [], total_count: 0, page: 1, limit: 20, total_pages: 1 },
+      isLoading: false,
+      isError: false,
+      error: undefined,
+      refetch: vi.fn(),
+    });
+
+    render(<AdminUsersPage />);
+
+    fireEvent.change(screen.getByPlaceholderText(/Tìm theo email/i), {
+      target: { value: "student2" },
+    });
+
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith(
+        expect.stringContaining("?keyword=student2"),
+        expect.objectContaining({ scroll: false })
+      );
+    });
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("URL rỗng khi mọi filter về mặc định (keyword rỗng, ALL, trang 1) — không rác query string", () => {
+    mockUseSearchParams.mockReturnValue(new URLSearchParams());
+    const replace = vi.fn();
+    mockUseRouter.mockReturnValue({
+      push: vi.fn(),
+      replace,
+      refresh: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn(),
+      prefetch: vi.fn(),
+    });
+    mockUseAdminUsers.mockReturnValue({
+      data: { items: [], total_count: 0, page: 1, limit: 20, total_pages: 1 },
+      isLoading: false,
+      isError: false,
+      error: undefined,
+      refetch: vi.fn(),
+    });
+
+    render(<AdminUsersPage />);
+
+    expect(replace).toHaveBeenCalledWith("/admin/users", { scroll: false });
   });
 });

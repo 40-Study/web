@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Lock, Unlock } from "lucide-react";
 
 import { useAdminUsers, useUpdateUserStatus } from "@/hooks/queries/use-admin-users";
@@ -26,14 +27,33 @@ function formatDate(iso: string | null): string {
   return iso ? new Date(iso).toLocaleString("vi-VN") : "—";
 }
 
+function parsePageParam(raw: string | null): number {
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
+}
+
+function parseStatusParam(raw: string | null): "ALL" | AdminUserStatusFilter {
+  return raw === "active" || raw === "locked" ? raw : "ALL";
+}
+
 export default function AdminUsersPage() {
   const currentUserId = useAuthStore((s) => s.user?.id);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const [keyword, setKeyword] = useState("");
+  // URL-state-first (quy ước project): mở /admin/users?keyword=... đã lọc sẵn,
+  // gõ/lọc thì URL cập nhật theo (replace, không push — tránh spam history mỗi
+  // ký tự), refresh/mở lại link giữ nguyên bộ lọc. Khởi tạo 1 lần từ URL lúc
+  // mount — searchParams đổi sau đó là DO CHÍNH state effect bên dưới ghi ra,
+  // không phải nguồn cập nhật ngược cho state.
+  const [keyword, setKeyword] = useState(() => searchParams.get("keyword") ?? "");
   const debouncedKeyword = useDebouncedValue(keyword, 300);
-  const [roleFilter, setRoleFilter] = useState("ALL");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | AdminUserStatusFilter>("ALL");
-  const [page, setPage] = useState(1);
+  const [roleFilter, setRoleFilter] = useState(() => searchParams.get("role") ?? "ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | AdminUserStatusFilter>(() =>
+    parseStatusParam(searchParams.get("status"))
+  );
+  const [page, setPage] = useState(() => parsePageParam(searchParams.get("page")));
 
   // Đổi filter → luôn quay về trang 1, tránh xin trang 5 khi kết quả lọc mới chỉ có 1 trang.
   const params = useMemo(
@@ -46,6 +66,17 @@ export default function AdminUsersPage() {
     }),
     [debouncedKeyword, roleFilter, statusFilter, page]
   );
+
+  useEffect(() => {
+    const qs = new URLSearchParams();
+    const trimmed = debouncedKeyword.trim();
+    if (trimmed) qs.set("keyword", trimmed);
+    if (roleFilter !== "ALL") qs.set("role", roleFilter);
+    if (statusFilter !== "ALL") qs.set("status", statusFilter);
+    if (page > 1) qs.set("page", String(page));
+    const query = qs.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [debouncedKeyword, roleFilter, statusFilter, page, pathname, router]);
 
   const { data, isLoading, isError, error, refetch } = useAdminUsers(params);
   const { data: systemRoles = [] } = useSystemRoles();

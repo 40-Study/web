@@ -1,7 +1,14 @@
+import { toast } from "sonner";
+import { AuthError } from "@/lib/errors";
 import { PERMISSIONS, type Permission } from "@/lib/permissions";
 import { normalizeRole } from "@/lib/routes";
 import { authService, type UnifiedRole, type UserResponseDto } from "@/services/auth.service";
 import { useAuthStore, type AuthUser, type SessionStatus } from "@/stores/auth.store";
+
+// Thông báo khoá tài khoản (Phase 1 quản lý người dùng): message NGUYÊN VĂN backend trả về khi
+// AuthMiddleware/Login từ chối vì is_active=false (auth_middleware.go, auth_handler.go) — khớp
+// CHÍNH XÁC chuỗi này để phân biệt với mọi lý do 401 khác (hết hạn, đổi mật khẩu nơi khác...).
+const ACCOUNT_LOCKED_MESSAGE = "Tài khoản đã bị khoá";
 
 export const AUTH_SESSION_EXPIRED_EVENT = "fortex:auth-session-expired";
 
@@ -89,10 +96,18 @@ async function runBootstrap(): Promise<SessionStatus> {
       permissions,
     });
     return "authenticated";
-  } catch {
+  } catch (error) {
     if (useAuthStore.getState().sessionToken) {
       useAuthStore.getState().setSessionStatus("anonymous");
       return "anonymous";
+    }
+    // Trước đây: bị đá về /login HOÀN TOÀN ÂM THẦM khi tài khoản bị admin khoá giữa phiên —
+    // không có gì phân biệt với việc token hết hạn thông thường. Toast này chạy TRƯỚC khi
+    // clearServerSession() — SPA điều hướng sang /login không unmount Toaster nên vẫn hiển thị.
+    if (error instanceof AuthError && error.message === ACCOUNT_LOCKED_MESSAGE) {
+      toast.error(ACCOUNT_LOCKED_MESSAGE, {
+        description: "Tài khoản của bạn đã bị quản trị viên khoá. Vui lòng liên hệ hỗ trợ.",
+      });
     }
     store.clearServerSession();
     return "anonymous";

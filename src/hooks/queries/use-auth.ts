@@ -11,6 +11,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { getRoleFromToken } from "@/lib/jwt";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { bootstrapAuthSession } from "@/components/providers/auth-session";
+import { AuthError } from "@/lib/errors";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Query Keys
@@ -177,6 +178,15 @@ export function useLogin() {
     },
     onError: (error: unknown) => {
       console.error("Login error:", error);
+      // Phase 1 quản lý người dùng (2026-09-28): tài khoản bị khoá phải hiện thông báo RIÊNG,
+      // không lẫn với "sai mật khẩu" — backend trả message này nguyên văn khi is_active=false
+      // (auth_handler.go Login, code ACCOUNT_LOCKED).
+      if (error instanceof AuthError && error.message === "Tài khoản đã bị khoá") {
+        toast.error("Tài khoản đã bị khoá", {
+          description: "Vui lòng liên hệ quản trị viên để được hỗ trợ.",
+        });
+        return;
+      }
       toast.error("Đăng nhập thất bại", { description: "Email hoặc mật khẩu không đúng" });
     },
   });
