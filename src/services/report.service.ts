@@ -42,8 +42,15 @@ export interface UpdateReportStatusDTO {
   admin_notes?: string;
 }
 
+/**
+ * Khớp đúng backend/internal/dto/report_dto.go ReportListDTO: field JSON là "data", KHÔNG phải
+ * "reports". Bug trước đây (chưa từng có consumer nào dùng tới nên chưa lộ ra): field sai tên
+ * khiến mọi lần gọi list()/getMyReports() đều trả mảng rỗng dù backend có dữ liệu thật — phát
+ * hiện khi build trang /admin/moderation (A-P2-5) và thấy danh sách luôn trống dù đã tạo report
+ * thật, tái hiện bằng gọi thẳng GET /reports và so JSON field.
+ */
 export interface ReportListResponse {
-  reports: Report[];
+  data: Report[];
   total: number;
   page: number;
   page_size: number;

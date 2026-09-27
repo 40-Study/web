@@ -2,7 +2,7 @@
  * React Query hooks for admin operations
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { organizationService } from "@/services/organization.service";
 import { permissionService } from "@/services/permission.service";
@@ -16,6 +16,8 @@ export const adminKeys = {
   orgMembers: (id: string) => [...adminKeys.all, "org-members", id] as const,
   orgRoles: (orgId: string) => [...adminKeys.all, "org-roles", orgId] as const,
   systemRoles: () => [...adminKeys.all, "system-roles"] as const,
+  systemRoleUsers: (roleId: string) => [...adminKeys.all, "system-role-users", roleId] as const,
+  systemRolePermissions: (roleId: string) => [...adminKeys.all, "system-role-permissions", roleId] as const,
   permissions: () => [...adminKeys.all, "permissions"] as const,
 };
 
@@ -93,10 +95,66 @@ export function useSystemRoles() {
   });
 }
 
+/**
+ * A-P2-2: dashboard cần số user thật theo từng vai trò để sắp "Top vai trò" và tính tổng —
+ * GET /system-roles/:id/users chỉ trả TOTAL cho 1 role/lần, không có endpoint tổng hợp sẵn, nên
+ * gọi song song cho từng role (chỉ 6 role hệ thống — quy mô nhỏ, không cần fan-out phức tạp).
+ * Lưu ý: tổng là TỔNG SỐ LƯỢT GÁN theo role, một user có 2 role sẽ được đếm 2 lần.
+ */
+export function useSystemRolesWithUserCounts() {
+  const { data: roles = [], isLoading: rolesLoading, isError: rolesError, refetch: refetchRoles } = useSystemRoles();
+
+  const countQueries = useQueries({
+    queries: roles.map((role) => ({
+      queryKey: adminKeys.systemRoleUsers(role.id),
+      queryFn: () => roleService.getSystemRoleUsers(role.id, { page_size: 1 }),
+      enabled: roles.length > 0,
+    })),
+  });
+
+  const countsLoading = roles.length > 0 && countQueries.some((q) => q.isLoading);
+  // Review PR #24 (MINOR): `userCount: null` trước đây dùng chung cho "đang tải" VÀ "lỗi/không đủ
+  // quyền" (vd một role không phải SYSTEM_ADMIN gọi GET /system-roles/:id/users -> 403) — UI hiện
+  // "…" mãi mãi trông như còn đang tải chứ không phải đã lỗi hẳn. Tách riêng `userCountError` để
+  // nơi hiển thị phân biệt được hai trạng thái.
+  const rolesWithCounts = roles.map((role, index) => ({
+    ...role,
+    userCount: countQueries[index]?.data?.total ?? null,
+    userCountError: countQueries[index]?.isError ?? false,
+  }));
+
+  const anyCountError = countQueries.some((q) => q.isError);
+  const totalAssignedUsers = countQueries.every((q) => q.data)
+    ? countQueries.reduce((sum, q) => sum + (q.data?.total ?? 0), 0)
+    : null;
+
+  return {
+    roles: rolesWithCounts,
+    totalAssignedUsers,
+    totalAssignedUsersError: anyCountError,
+    isLoading: rolesLoading || countsLoading,
+    isError: rolesError,
+    refetch: refetchRoles,
+  };
+}
+
 export function usePermissions() {
   return useQuery({
     queryKey: adminKeys.permissions(),
     queryFn: permissionService.getAll,
+  });
+}
+
+// A-P1-3: backend chỉ có PUT /permissions/:id (sửa description) — KHÔNG có POST/DELETE.
+export function useUpdatePermission() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, description }: { id: string; description: string }) =>
+      permissionService.update(id, { description }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: adminKeys.permissions() });
+      toast.success("Đã cập nhật mô tả quyền");
+    },
   });
 }
 
@@ -142,6 +200,63 @@ export function useDeleteSystemRole() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: adminKeys.systemRoles() });
       toast.success("Xóa vai trò hệ thống thành công");
+    },
+  });
+}
+
+// ─── System role: users thật theo vai trò (A-P1-1) ─────────────────────────
+// GET /system-roles/:id/users — real data, không còn seedUsersForRole giả.
+
+export function useSystemRoleUsers(roleId: string | null) {
+  return useQuery({
+    queryKey: roleId ? adminKeys.systemRoleUsers(roleId) : [...adminKeys.all, "system-role-users", "none"],
+    queryFn: () => roleService.getSystemRoleUsers(roleId as string, { page_size: 100 }),
+    enabled: !!roleId,
+  });
+}
+
+export function useAssignSystemRoleToUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, roleId }: { userId: string; roleId: string; notes?: string }) =>
+      roleService.assignSystemRoles(userId, { system_role_ids: [roleId] }),
+    onSuccess: (_, { roleId }) => {
+      qc.invalidateQueries({ queryKey: adminKeys.systemRoleUsers(roleId) });
+      toast.success("Đã gán vai trò cho user");
+    },
+  });
+}
+
+export function useRevokeSystemRoleFromUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, roleId }: { userId: string; roleId: string }) =>
+      roleService.revokeSystemRole(userId, roleId),
+    onSuccess: (_, { roleId }) => {
+      qc.invalidateQueries({ queryKey: adminKeys.systemRoleUsers(roleId) });
+      toast.success("Đã gỡ vai trò khỏi user");
+    },
+  });
+}
+
+// ─── System role: quyền của vai trò (A-P1-2) ────────────────────────────────
+// Tạo/sửa role phải lưu và nạp lại đúng danh sách quyền đã tick.
+
+export function useSystemRolePermissions(roleId: string | null) {
+  return useQuery({
+    queryKey: roleId ? adminKeys.systemRolePermissions(roleId) : [...adminKeys.all, "system-role-permissions", "none"],
+    queryFn: () => roleService.getSystemRolePermissions(roleId as string),
+    enabled: !!roleId,
+  });
+}
+
+export function useSetSystemRolePermissions() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ roleId, permissionIds }: { roleId: string; permissionIds: string[] }) =>
+      roleService.setSystemRolePermissions(roleId, permissionIds),
+    onSuccess: (_, { roleId }) => {
+      qc.invalidateQueries({ queryKey: adminKeys.systemRolePermissions(roleId) });
     },
   });
 }

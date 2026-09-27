@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { Activity } from "lucide-react";
-import { useOrganizations, usePermissions, useSystemRoles } from "@/hooks/queries/use-admin";
+import { useOrganizations, usePermissions, useSystemRolesWithUserCounts } from "@/hooks/queries/use-admin";
 import { QueryState } from "@/components/common/query-state";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -15,11 +15,13 @@ export default function AdminIndexPage() {
     refetch: refetchOrgs,
   } = useOrganizations();
   const {
-    data: roles = [],
+    roles,
+    totalAssignedUsers,
+    totalAssignedUsersError,
     isLoading: rolesLoading,
     isError: rolesError,
     refetch: refetchRoles,
-  } = useSystemRoles();
+  } = useSystemRolesWithUserCounts();
   const {
     data: permissions = [],
     isLoading: permsLoading,
@@ -27,10 +29,13 @@ export default function AdminIndexPage() {
     refetch: refetchPerms,
   } = usePermissions();
 
-  const topRoles = useMemo(
-    () => roles.slice(0, 4),
-    [roles]
-  );
+  // A-P2-2: sắp xếp GIẢM DẦN theo userCount thật trước khi lấy top 4 — trước đây chỉ
+  // `roles.slice(0, 4)` (thứ tự ngẫu nhiên theo API) nên nhãn "Top" sai.
+  const topRoles = useMemo(() => {
+    return [...roles]
+      .sort((a, b) => (b.userCount ?? -1) - (a.userCount ?? -1))
+      .slice(0, 4);
+  }, [roles]);
 
   const loading = orgLoading || rolesLoading || permsLoading;
   const hasError = orgError || rolesError || permsError;
@@ -73,8 +78,15 @@ export default function AdminIndexPage() {
             </p>
           </div>
           <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-            <p className="text-sm text-gray-500">Tổng user được gán role</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">—</p>
+            <p className="text-sm text-gray-500">Tổng lượt gán role</p>
+            <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
+              {totalAssignedUsersError ? "lỗi" : totalAssignedUsers === null ? "…" : totalAssignedUsers}
+            </p>
+            <p className="mt-1 text-[11px] text-gray-400">
+              {totalAssignedUsersError
+                ? "Không tải được — thiếu quyền hoặc lỗi API khi đếm user theo vai trò."
+                : "Tổng số LƯỢT gán vai trò (1 user giữ 2 vai trò sẽ tính 2 lần) — API chưa có endpoint đếm user duy nhất."}
+            </p>
           </div>
         </section>
 
@@ -91,8 +103,15 @@ export default function AdminIndexPage() {
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{role.name}</p>
                       <p className="text-xs text-gray-500">{role.description || "Không có mô tả"}</p>
                     </div>
-                    <span className="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
-                      {role.name}
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                        role.userCountError
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
+                      }`}
+                      title={role.userCountError ? "Không tải được số user (thiếu quyền hoặc lỗi API)" : undefined}
+                    >
+                      {role.userCountError ? "lỗi" : role.userCount === null ? "…" : `${role.userCount} user`}
                     </span>
                   </div>
                 ))

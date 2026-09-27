@@ -89,8 +89,10 @@ export default function AdminReportsPage() {
   const metrics = useMemo(() => {
     const successful = filteredRecords.filter((r) => r.status === "completed");
     const revenue = successful.reduce((sum: number, tx: WalletTransaction) => sum + tx.amount, 0);
-    // "cancelled" is the closest status to refunded in this API
-    const cancelled = filteredRecords
+    // A-P1-5: KHÔNG có trạng thái "refunded" thật trong API ví — "cancelled" chỉ là đơn bị hủy,
+    // không phải tiền đã hoàn. Đổi tên biến + nhãn hiển thị cho đúng bản chất, không gọi là
+    // "hoàn tiền" nữa.
+    const cancelledAmount = filteredRecords
       .filter((r) => r.status === "cancelled")
       .reduce((sum: number, tx: WalletTransaction) => sum + tx.amount, 0);
     const successRate = filteredRecords.length
@@ -99,7 +101,7 @@ export default function AdminReportsPage() {
     return {
       revenue,
       transactions: filteredRecords.length,
-      refunded: cancelled,
+      cancelledAmount,
       successRate,
     };
   }, [filteredRecords]);
@@ -126,19 +128,22 @@ export default function AdminReportsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          Báo cáo tài chính
+          Ví của tôi (Admin)
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Dashboard doanh thu và danh sách giao dịch chi tiết.
+          Đây là giao dịch ví của CHÍNH tài khoản admin đang đăng nhập (GET /api/wallet/transactions
+          chỉ trả giao dịch của người gọi) — <strong>chưa phải doanh thu toàn nền tảng</strong>.
+          Backend chưa có API thống kê doanh thu toàn nền tảng (quyền DASHBOARD_VIEW_GLOBAL đã tồn
+          tại nhưng chưa có route dùng đến).
         </p>
       </div>
 
       {/* Metric cards */}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Gross Revenue" value={formatCurrency(metrics.revenue)} />
-        <MetricCard label="Refund Amount" value={formatCurrency(metrics.refunded)} />
-        <MetricCard label="Transactions" value={String(metrics.transactions)} />
-        <MetricCard label="Success Rate" value={`${metrics.successRate.toFixed(1)}%`} />
+        <MetricCard label="Tổng thu (ví của tôi)" value={formatCurrency(metrics.revenue)} />
+        <MetricCard label="Đơn đã hủy (không phải hoàn tiền)" value={formatCurrency(metrics.cancelledAmount)} />
+        <MetricCard label="Số giao dịch" value={String(metrics.transactions)} />
+        <MetricCard label="Tỉ lệ thành công" value={`${metrics.successRate.toFixed(1)}%`} />
       </section>
 
       {/* Filters */}
