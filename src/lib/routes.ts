@@ -56,3 +56,66 @@ export const ROUTES = {
   ...AUTH_ROUTES,
   ...COMMON_ROUTES,
 } as const;
+
+// ─── Role-scoped route access (review PR #26 MAJOR #1) ─────────────────────
+//
+// Trước đây `sidebar.tsx`/`bottom-nav.tsx` tự quyết định menu hiển thị gì
+// theo role, còn `(app)/layout.tsx` chỉ kiểm role có thuộc nhóm
+// STUDENT/TEACHER/PARENT hay không cho TOÀN BỘ `(app)/**` — không phân biệt
+// sub-route. Kết quả: phụ huynh ẩn "Cuộc thi"/"Nhóm"/"Xu"/"Thành tích" khỏi
+// menu nhưng gõ thẳng URL vẫn vào được y nguyên nội dung game-hoá của học
+// sinh. Bảng này là NGUỒN DUY NHẤT cho cả hai — `sidebar.tsx` lọc menu bằng
+// nó, `(app)/layout.tsx` lọc route bằng nó — nên không thể lệch nhau nữa.
+
+export type NavRole = "GUEST" | "STUDENT" | "PARENT" | "ADMIN";
+
+/**
+ * Vai trò "điều hướng" hiện tại — dùng chung bởi Sidebar/BottomNav/AppLayout
+ * thay vì mỗi nơi tự viết lại ternary GUEST/ADMIN/PARENT/STUDENT (nguồn của
+ * chính lỗi MAJOR #1: 3 chỗ suy role độc lập, dễ lệch).
+ */
+export function resolveNavRole(isAuthenticated: boolean, normalizedRole: string | null): NavRole {
+  if (!isAuthenticated) return "GUEST";
+  if (normalizedRole === "SYSTEM_ADMIN" || normalizedRole === "ORG_OWNER") return "ADMIN";
+  if (normalizedRole === "PARENT") return "PARENT";
+  return "STUDENT";
+}
+
+interface RoleScopedRoute {
+  /** Route tĩnh (không có tham số động) trong `(app)/**`. */
+  href: string;
+  /** Vai trò được vào route này. Không nằm trong bảng => không bị hạn chế bởi cơ chế này. */
+  roles: NavRole[];
+}
+
+/**
+ * Mọi route "học sinh/game-hoá" phụ huynh không cần tới — kể cả
+ * "/leaderboard" (chỉ có link ở bottom-nav mobile học sinh, KHÔNG có trong
+ * sidebar desktop) vẫn phải nằm ở đây vì đây là bảng gate ROUTE, không phải
+ * bảng "menu item nào tồn tại".
+ */
+export const ROLE_SCOPED_ROUTES: RoleScopedRoute[] = [
+  { href: "/contests", roles: ["GUEST", "STUDENT"] },
+  { href: "/my-courses", roles: ["STUDENT"] },
+  { href: "/schedule", roles: ["STUDENT"] },
+  { href: "/my-attendance", roles: ["STUDENT"] },
+  { href: "/certificates", roles: ["STUDENT"] },
+  { href: "/groups", roles: ["STUDENT"] },
+  { href: "/coins", roles: ["STUDENT"] },
+  { href: "/achievements", roles: ["STUDENT"] },
+  { href: "/leaderboard", roles: ["STUDENT"] },
+  { href: "/settings/family", roles: ["STUDENT", "PARENT"] },
+  { href: "/messages", roles: ["STUDENT", "PARENT"] },
+];
+
+/**
+ * `pathname` không khớp entry nào => route này không do bảng trên quản lý
+ * (vd `/notifications`, `/checkout`, `/cart`...) => luôn cho qua ở tầng này.
+ */
+export function isRouteAllowedForRole(pathname: string, role: NavRole): boolean {
+  const entry = ROLE_SCOPED_ROUTES.find(
+    (r) => pathname === r.href || pathname.startsWith(`${r.href}/`)
+  );
+  if (!entry) return true;
+  return entry.roles.includes(role);
+}

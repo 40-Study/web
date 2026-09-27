@@ -39,7 +39,10 @@ export default function TeacherStudentsPage() {
   const { data: students = [], isLoading } = useMyStudents();
 
   const courseOptions = useMemo(
-    () => Array.from(new Set(students.map((s) => s.class_name).filter(Boolean))),
+    () =>
+      Array.from(
+        new Set(students.map((s) => s.class_name).filter((name): name is string => !!name))
+      ),
     [students]
   );
 
@@ -79,7 +82,7 @@ export default function TeacherStudentsPage() {
         s.name,
         s.parent_name ?? "",
         s.parent_phone ?? "",
-        s.class_name,
+        s.class_name ?? "",
         s.status,
       ]),
     ];
@@ -212,7 +215,7 @@ export default function TeacherStudentsPage() {
                       </a>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm">{student.class_name}</span>
+                      <span className="text-sm">{student.class_name ?? "—"}</span>
                     </TableCell>
                     <TableCell>
                       <Badge

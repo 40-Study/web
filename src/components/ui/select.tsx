@@ -9,6 +9,14 @@ interface SelectContextValue {
   onValueChange: (value: string) => void;
   open: boolean;
   setOpen: (open: boolean) => void;
+  /**
+   * Nhãn hiển thị (children của SelectItem) theo từng value — đây là component Select tự
+   * viết (không phải Radix), nên SelectValue không tự "biết" nhãn tương ứng với value đang
+   * chọn trừ khi mỗi SelectItem tự đăng ký nó vào đây (P3 QA 260927 teacher: trước bản vá
+   * này SelectValue chỉ in thẳng `value` thô — "all", "MIXED"... — thay vì nhãn tiếng Việt).
+   */
+  labels: Record<string, React.ReactNode>;
+  registerLabel: (itemValue: string, label: React.ReactNode) => void;
 }
 
 const SelectContext = React.createContext<SelectContextValue | undefined>(undefined);
@@ -29,9 +37,16 @@ interface SelectProps {
 
 function Select({ value, onValueChange, children }: SelectProps) {
   const [open, setOpen] = React.useState(false);
+  const [labels, setLabels] = React.useState<Record<string, React.ReactNode>>({});
+
+  // Chỉ setState khi nhãn THỰC SỰ đổi — children là object JSX mới mỗi lần render nên nếu so
+  // sánh trực tiếp sẽ setState mỗi render, gây vòng lặp render vô hạn.
+  const registerLabel = React.useCallback((itemValue: string, label: React.ReactNode) => {
+    setLabels((prev) => (prev[itemValue] === label ? prev : { ...prev, [itemValue]: label }));
+  }, []);
 
   return (
-    <SelectContext.Provider value={{ value, onValueChange, open, setOpen }}>
+    <SelectContext.Provider value={{ value, onValueChange, open, setOpen, labels, registerLabel }}>
       <div className="relative">{children}</div>
     </SelectContext.Provider>
   );
@@ -72,8 +87,13 @@ interface SelectValueProps {
 }
 
 function SelectValue({ placeholder }: SelectValueProps) {
-  const { value } = useSelect();
-  return <span>{value || placeholder}</span>;
+  const { value, labels } = useSelect();
+  // P3 QA 260927 teacher: value rỗng ("") phải rơi về placeholder (dùng "||", không phải "??"
+  // — "" không phải null/undefined nên "??" sẽ dừng lại ở chuỗi rỗng, làm trigger trống trơn).
+  // value có giá trị: tra nhãn tiếng Việt đã đăng ký (SelectItem); nếu SelectItem chưa kịp
+  // đăng ký (render đầu tiên) thì tạm rơi về value thô, còn hơn trống trơn.
+  if (!value) return <span>{placeholder}</span>;
+  return <span>{labels[value] ?? value}</span>;
 }
 
 interface SelectContentProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -102,13 +122,17 @@ const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
       };
     }, [open, setOpen]);
 
-    if (!open) return null;
-
+    // P3 QA 260927 teacher: KHÔNG unmount (return null) khi đóng nữa — SelectItem con chỉ đăng
+    // ký nhãn (registerLabel) qua useEffect lúc mount; unmount hoàn toàn khi đóng khiến
+    // SelectValue không biết nhãn của value đang chọn cho tới khi người dùng mở dropdown ít
+    // nhất 1 lần (trigger hiện raw value hoặc placeholder sai cho tới lúc đó). Ẩn bằng "hidden"
+    // (display:none) thay vì unmount để SelectItem luôn đăng ký nhãn ngay từ lần render đầu.
     return (
       <div
         ref={contentRef}
         className={cn(
           "absolute z-50 mt-1 min-w-[8rem] w-full overflow-hidden rounded-xl border bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-xl animate-in fade-in-0 zoom-in-95",
+          !open && "hidden",
           className
         )}
         {...props}
@@ -126,8 +150,18 @@ interface SelectItemProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const SelectItem = React.forwardRef<HTMLDivElement, SelectItemProps>(
   ({ className, children, value: itemValue, ...props }, ref) => {
-    const { value, onValueChange, setOpen } = useSelect();
+    const { value, onValueChange, setOpen, registerLabel } = useSelect();
     const isSelected = value === itemValue;
+
+    // P3 QA 260927 teacher: đăng ký nhãn hiển thị (children) cho value này để SelectValue tra
+    // được — chỉ đăng ký khi children là chuỗi/số đơn giản (đủ cho mọi Select đang dùng trong
+    // app), tránh đăng ký node JSX phức tạp không so sánh được bằng "===" (registerLabel đã tự
+    // chặn setState thừa khi giá trị KHÔNG đổi, nhưng so sánh "===" trên object JSX luôn false).
+    React.useEffect(() => {
+      if (typeof children === "string" || typeof children === "number") {
+        registerLabel(itemValue, children);
+      }
+    }, [itemValue, children, registerLabel]);
 
     return (
       <div

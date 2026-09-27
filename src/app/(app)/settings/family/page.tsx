@@ -5,11 +5,18 @@
  */
 
 import { useState } from "react";
-import { UserPlus, Eye, Bell, MessageCircle, Mail, Users, HeartHandshake, Loader2 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import {
+  UserPlus, Eye, Bell, MessageCircle, Mail, Users, HeartHandshake, Loader2,
+  ChevronRight, Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InviteParentModal, SentInvitationsList, PendingInvitationsCard } from "@/components/parent";
 import { useSentInvitations } from "@/hooks/queries/use-invitation";
+import { useChildren } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth.store";
+import { normalizeRole } from "@/lib/routes";
 
 const features = [
   {
@@ -32,9 +39,134 @@ const features = [
   },
 ];
 
-export default function FamilySettingsPage() {
+/**
+ * Trang "Gia đình" cho vai PHỤ HUYNH — QA 260927 P0: trước đây trang này
+ * hiển thị y hệt luồng "học sinh mời phụ huynh" (copy "Mời phụ huynh", "Phụ
+ * huynh có thể xem...") cho cả phụ huynh đang xem, không có danh sách con
+ * hay link xem tiến độ nào. `FamilyConnectionCard` (widget nhỏ cho sidebar)
+ * đã viết đúng logic PARENT nhưng chưa từng được lắp vào trang nào — ở đây
+ * dựng lại thành nội dung TRANG ĐẦY ĐỦ (không dùng thẳng card đó vì nó có
+ * link "Xem tất cả" trỏ về chính /settings/family — vòng lặp nếu đặt tại đây).
+ */
+function ParentFamilyView() {
+  const { data: childrenData, isLoading } = useChildren();
+  const children = childrenData?.children ?? [];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary-50 via-white to-blue-50">
+        <div className="max-w-4xl mx-auto px-6 py-10 lg:py-12">
+          <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+            <div className="flex-1 text-center lg:text-left">
+              <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
+                Con của tôi
+              </h1>
+              <p className="text-slate-600 text-lg leading-relaxed mb-6">
+                Theo dõi tiến độ học tập, điểm số và chuyên cần của con — kết nối cùng
+                hành trình học tập tại Fortex.
+              </p>
+            </div>
+
+            <div className="w-full max-w-sm lg:max-w-md flex-shrink-0">
+              <div
+                role="img"
+                aria-label="Phụ huynh theo dõi tiến độ học tập của con"
+                className="relative aspect-[4/3] rounded-card overflow-hidden shadow-2xl ring-1 ring-primary-100 bg-gradient-to-br from-primary-100 via-primary-50 to-secondary-100 dark:from-primary-950 dark:via-neutral-900 dark:to-secondary-950 flex items-center justify-center"
+              >
+                <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/40 blur-2xl" aria-hidden="true" />
+                <div className="absolute -bottom-12 -left-8 h-44 w-44 rounded-full bg-secondary-200/40 blur-2xl" aria-hidden="true" />
+                <div className="relative flex h-28 w-28 items-center justify-center rounded-full bg-white/80 shadow-sm ring-1 ring-primary-100">
+                  <HeartHandshake className="h-14 w-14 text-primary-600" aria-hidden="true" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Lời mời từ con đang chờ chấp nhận — PendingInvitationsCard tự chỉ fetch
+          khi vai trò là PARENT (usePendingInvitations), giữ nguyên như cũ. */}
+      <div className="max-w-4xl mx-auto px-6 pt-10 lg:pt-12">
+        <PendingInvitationsCard className="mb-6" />
+      </div>
+
+      {/* Danh sách con đã liên kết */}
+      <div className="max-w-4xl mx-auto px-6 pb-12">
+        <h2 className="text-xl font-semibold text-slate-900 mb-4">Danh sách con</h2>
+
+        {isLoading ? (
+          <div className="bg-white rounded-2xl border border-slate-100 p-12">
+            <div className="flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+            </div>
+          </div>
+        ) : children.length === 0 ? (
+          <div className="bg-gradient-to-b from-slate-50 to-white rounded-3xl border border-slate-100 p-10 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="relative w-28 h-28 mx-auto mb-6">
+                <div className="absolute inset-0 bg-primary-100 rounded-full" />
+                <div className="absolute inset-3 bg-primary-50 rounded-full flex items-center justify-center">
+                  <Users className="w-10 h-10 text-primary-500" />
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                Chưa liên kết với con nào
+              </h3>
+              <p className="text-slate-500 leading-relaxed">
+                Khi con của bạn gửi lời mời phụ huynh từ tài khoản học sinh của con (trang
+                &quot;Gia đình&quot; của con), lời mời sẽ hiện ở đây để bạn chấp nhận.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-4">
+            {children.map((child) => {
+              const displayName = child.full_name || child.username;
+              return (
+                <Link
+                  key={child.id}
+                  href={`/parent/children/${child.id}`}
+                  className="group flex items-center gap-4 bg-white rounded-2xl border border-slate-100 p-5 hover:border-primary-200 hover:shadow-md transition-all"
+                >
+                  {child.avatar_url ? (
+                    <Image
+                      src={child.avatar_url}
+                      alt={displayName}
+                      width={48}
+                      height={48}
+                      className="rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+                      <span className="text-lg font-medium text-primary-700">
+                        {displayName.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-slate-900 truncate group-hover:text-primary-600">
+                      {displayName}
+                    </p>
+                    <p className="text-sm text-slate-500 flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                      Đã liên kết
+                    </p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-primary-500 shrink-0" />
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Trang "Gia đình" cho vai HỌC SINH — luồng mời phụ huynh (giữ nguyên như cũ). */
+function StudentFamilyView() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const { activeRole } = useAuthStore();
   const { data: sentInvitations = [], isLoading } = useSentInvitations();
 
   const linkedParents = sentInvitations.filter((inv) => inv.status === "accepted");
@@ -185,4 +317,11 @@ export default function FamilySettingsPage() {
       />
     </div>
   );
+}
+
+export default function FamilySettingsPage() {
+  const { activeRole } = useAuthStore();
+  // QA 260927 P0: rẽ nhánh theo activeRole — trước đây trang luôn render luồng
+  // "học sinh mời phụ huynh" bất kể ai đang xem.
+  return normalizeRole(activeRole) === "PARENT" ? <ParentFamilyView /> : <StudentFamilyView />;
 }

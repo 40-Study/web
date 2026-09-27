@@ -24,12 +24,93 @@ import {
   useMessages,
   useSendMessage,
   useMarkAsRead,
+  useCreateDirectConversation,
 } from "@/hooks/queries/use-conversations";
 import { useAuthStore } from "@/stores/auth.store";
+import { useEnrolledCourses } from "@/hooks/use-courses";
+import { normalizeRole } from "@/lib/routes";
 import { QueryState } from "@/components/common/query-state";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AuthError } from "@/lib/errors";
 import type { Conversation, Message } from "@/services/conversation.service";
 import { useMarkConversationRead } from "./use-mark-conversation-read";
+
+/**
+ * Modal "Tin nhắn mới" — chọn giáo viên của khoá đang học để bắt đầu hội
+ * thoại (QA 260927 P2 student+parent). Endpoint tạo hội thoại đã có
+ * (`POST /conversations/direct`, dùng ở `/friends`) nhưng `/messages` không
+ * có điểm bắt đầu nào cho hội thoại MỚI. Chỉ dựng cho HỌC SINH: dữ liệu
+ * `instructor.id` thật có ở `useEnrolledCourses()`; phía PHỤ HUYNH,
+ * `/parent/children/{id}/courses` (`ChildCourse`) chỉ trả `instructor_name`,
+ * KHÔNG có id giáo viên — không đủ dữ liệu thật để bịa nút tương tự (ghi lại
+ * làm việc-cần-backend thay vì tạo nút không click được).
+ */
+function NewConversationDialog({
+  open,
+  onOpenChange,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreated: (conversationId: string) => void;
+}) {
+  const { data: enrolledCourses = [], isLoading: isLoadingCourses } = useEnrolledCourses();
+  const createConv = useCreateDirectConversation();
+
+  const teachers = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; avatar?: string }>();
+    enrolledCourses.forEach((c) => {
+      if (c.instructor?.id) {
+        const id = String(c.instructor.id);
+        map.set(id, { id, name: c.instructor.name, avatar: c.instructor.avatar });
+      }
+    });
+    return Array.from(map.values());
+  }, [enrolledCourses]);
+
+  const handleSelect = (teacherId: string) => {
+    createConv.mutate(teacherId, {
+      onSuccess: (conv) => {
+        onCreated(conv.id);
+        onOpenChange(false);
+      },
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Nhắn tin cho giáo viên</DialogTitle>
+        </DialogHeader>
+        {isLoadingCourses ? (
+          <div className="flex justify-center py-6">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : teachers.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4">
+            Bạn chưa đăng ký khoá học nào nên chưa có giáo viên để nhắn tin.
+          </p>
+        ) : (
+          <div className="space-y-1 py-2 max-h-80 overflow-y-auto">
+            {teachers.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                disabled={createConv.isPending}
+                onClick={() => handleSelect(t.id)}
+                className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 text-left transition-colors disabled:opacity-50"
+              >
+                <Avatar src={t.avatar} fallback={t.name[0] ?? "?"} size="sm" />
+                <span className="text-sm font-medium">{t.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function ConversationItem({
   conversation,
@@ -140,10 +221,12 @@ function MessageBubble({
 }
 
 export default function MessagesPage() {
-  const { user } = useAuthStore();
+  const { user, activeRole } = useAuthStore();
+  const isStudent = normalizeRole(activeRole) === "STUDENT";
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isNewConvOpen, setIsNewConvOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -203,10 +286,25 @@ export default function MessagesPage() {
 
   return (
     <div className="container max-w-6xl mx-auto py-6">
-      <h1 className="text-2xl font-bold flex items-center gap-2 mb-4">
-        <MessageSquare className="h-7 w-7 text-primary" />
-        Tin nhắn
-      </h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <MessageSquare className="h-7 w-7 text-primary" />
+          Tin nhắn
+        </h1>
+        {/* Nút "+ Tin nhắn mới" — chỉ HỌC SINH (xem docstring NewConversationDialog). */}
+        {isStudent && (
+          <Button size="sm" onClick={() => setIsNewConvOpen(true)}>
+            <Plus className="h-4 w-4 mr-1.5" />
+            Tin nhắn mới
+          </Button>
+        )}
+      </div>
+
+      <NewConversationDialog
+        open={isNewConvOpen}
+        onOpenChange={setIsNewConvOpen}
+        onCreated={(id) => setSelectedConvId(id)}
+      />
 
       <Card className="flex h-[calc(100vh-200px)] overflow-hidden">
         {/* Conversation list */}

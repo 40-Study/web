@@ -20,6 +20,7 @@ import {
 import type { StudyToolKey } from "@/components/player";
 import { QuizAttemptReview } from "@/components/quiz";
 import { useCourseBySlug } from "@/hooks/queries/use-courses";
+import { useMyEnrollments } from "@/hooks/queries/use-enrollments";
 import { useSections } from "@/hooks/queries/use-sections";
 import { useLessonContents } from "@/hooks/queries/use-lesson-content";
 import { useHlsInfo, getVideoUrl } from "@/hooks/use-hls";
@@ -82,6 +83,18 @@ function mapSectionsToChapters(sections: Section[]): PlayerChapter[] {
   }));
 }
 
+// Nhãn tiếng Việt cho `level`/`language` thô từ API (QA 260927 student P3 — trộn
+// tiếng Anh "intermediate"/"vi" trong UI tiếng Việt của trang học).
+const LEVEL_LABELS_VI: Record<string, string> = {
+  beginner: "Cơ bản",
+  intermediate: "Trung cấp",
+  advanced: "Nâng cao",
+};
+const LANGUAGE_LABELS_VI: Record<string, string> = {
+  vi: "Tiếng Việt",
+  en: "Tiếng Anh",
+};
+
 function mapApiCourseToPlayerCourse(course: ApiCourse, sections: Section[]): PlayerCourse {
   return {
     id: course.id,
@@ -98,8 +111,10 @@ function mapApiCourseToPlayerCourse(course: ApiCourse, sections: Section[]): Pla
     },
     rating: Number(course.average_rating ?? 0),
     reviewCount: course.total_reviews ?? 0,
-    level: course.level ?? "",
-    language: course.language ?? "Tiếng Việt",
+    level: course.level ? (LEVEL_LABELS_VI[course.level] ?? course.level) : "",
+    language: course.language
+      ? (LANGUAGE_LABELS_VI[course.language] ?? course.language)
+      : "Tiếng Việt",
     chapters: mapSectionsToChapters(sections),
     resources: [],
     reviews: [],
@@ -305,6 +320,13 @@ export default function CourseLessonPage() {
     refetch: refetchCourse,
   } = useCourseBySlug(courseSlug);
   const { data: sections = [], isLoading: sectionsLoading } = useSections(apiCourse?.id ?? "");
+  // S-P0-4: sidebar bài học phải dùng CÙNG nguồn tiến độ với server (enrollment
+  // progress_percentage), không tự tính lại `completed/total` ở client — trước
+  // đây gây lệch số % hiển thị so với /courses/[slug] và /my-courses.
+  const { data: enrollments = [] } = useMyEnrollments();
+  const enrollment = apiCourse
+    ? enrollments.find((e) => e.course_id === apiCourse.id)
+    : undefined;
 
   // Bài khoá (contract §2): không fetch content/quiz/HLS trước khi biết mở
   // khoá — review vòng 1 (#9). Tính trực tiếp từ `sections` THÔ (chưa qua
@@ -612,6 +634,7 @@ export default function CourseLessonPage() {
           chapters={course.chapters}
           currentLessonId={lessonId}
           courseSlug={courseSlug}
+          serverProgressPct={enrollment?.progress_percentage}
         />
       </div>
 

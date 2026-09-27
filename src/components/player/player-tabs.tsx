@@ -90,14 +90,15 @@ export const PlayerTabs = forwardRef<PlayerTabsHandle, PlayerTabsProps>(
 
     return (
       <div className="mt-4">
-        {/* Tab navigation */}
-        <div className="flex gap-0 border-b border-gray-200">
+        {/* Tab navigation — cuộn ngang trên mobile (S-P1-5): 5 tab (kể cả nhãn
+            dài "Đánh giá (N)"/"Hỏi & Đáp") vỡ chữ dọc ở 390px nếu để flex co lại. */}
+        <div className="flex gap-0 overflow-x-auto whitespace-nowrap border-b border-gray-200">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                "px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px",
+                "shrink-0 px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px",
                 activeTab === tab.key
                   ? "border-primary-500 text-primary-600"
                   : "border-transparent text-gray-500 hover:text-gray-700"
