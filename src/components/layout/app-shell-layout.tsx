@@ -16,9 +16,20 @@ interface AppShellLayoutProps {
 export function AppShellLayout({ children }: AppShellLayoutProps) {
   const { isCollapsed } = useSidebarStore();
   const isExpanded = !isCollapsed; // sidebar.store.ts dùng chung 1 API isCollapsed (mục 14)
-  const { activeRole } = useAuthStore();
-  // Học sinh và phụ huynh dùng chung AppShellLayout — chọn đúng bộ tab cho BottomNav (M-19).
-  const bottomNavRole = normalizeRole(activeRole) === "PARENT" ? "parent" : "student";
+  const { activeRole, isAuthenticated } = useAuthStore();
+  const normalizedRole = normalizeRole(activeRole);
+  const isAdminRole = normalizedRole === "SYSTEM_ADMIN" || normalizedRole === "ORG_OWNER";
+  // Học sinh, phụ huynh, khách VÀ admin (A-P2-4: admin ghé vài trang tài khoản
+  // cá nhân qua layout này) dùng chung AppShellLayout — chọn đúng bộ tab cho
+  // BottomNav (M-19 + QA guest P1: khách chưa đăng nhập trước đây rơi vào bộ
+  // tab "student", 3/5 mục dẫn thẳng vào tường đăng nhập).
+  const bottomNavRole = !isAuthenticated
+    ? "guest"
+    : isAdminRole
+      ? "admin"
+      : normalizedRole === "PARENT"
+        ? "parent"
+        : "student";
 
   return (
     <div className="min-h-screen bg-gray-50/50 flex flex-col">

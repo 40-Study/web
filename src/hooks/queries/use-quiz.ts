@@ -11,6 +11,7 @@ import {
   type QuizMode,
   type QuizAttemptDetail,
 } from "@/services/quiz.service";
+import { enrollmentKeys } from "@/hooks/queries/use-enrollments";
 
 // ─── Query Keys ──────────────────────────────────────────────────────────────
 
@@ -101,6 +102,12 @@ export function useSubmitQuiz() {
     onSuccess: (result, { quizId }) => {
       // Invalidate attempts list
       queryClient.invalidateQueries({ queryKey: quizKeys.attempts(quizId) });
+      // Review PR #26 MAJOR #2: nếu nộp quiz cũng khiến server tính lại
+      // enrollment.progress_percentage (cùng cơ chế với hoàn thành video ở
+      // `heartbeat-video.tsx`), sidebar player phải thấy số mới ngay — không
+      // đợi remount/staleTime. Vô hại nếu backend không đổi gì (invalidate
+      // một query không có thay đổi chỉ là no-op).
+      queryClient.invalidateQueries({ queryKey: enrollmentKeys.all });
     },
   });
 }

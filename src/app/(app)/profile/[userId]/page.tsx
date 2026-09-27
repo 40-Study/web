@@ -71,9 +71,14 @@ function PublicProfilePageSkeleton() {
 
 export default function PublicProfilePage() {
   const params = useParams();
-  const userId = params.userId as string;
+  const rawUserId = params.userId as string;
   const [activeTab, setActiveTab] = useState("overview");
-  const { user: authUser } = useAuthStore();
+  const { user: authUser, hasHydrated } = useAuthStore();
+  // QA 260927 S-P2: `/profile/me` gọi API public-profile với đúng chuỗi "me"
+  // làm userId (400 "Hồ sơ không tồn tại") thay vì map sang id thật của người
+  // đang đăng nhập. `usePublicProfile("")` tự vô hiệu hoá (enabled: Boolean),
+  // nên trước khi store hydrate xong ta chỉ hiện skeleton, không gọi API sai.
+  const userId = rawUserId === "me" ? (authUser?.id ?? "") : rawUserId;
   const { data, isLoading, error } = usePublicProfile(userId);
   const isOwnProfile = authUser?.id === userId;
 
@@ -128,6 +133,12 @@ export default function PublicProfilePage() {
       completedAt: new Date(course.completed_at),
     }));
   }, [data]);
+
+  // "me" chưa resolve được (store chưa hydrate xong) -> query "" đang tắt, đợi
+  // thay vì rơi xuống nhánh lỗi "Hồ sơ không tồn tại".
+  if (rawUserId === "me" && !hasHydrated) {
+    return <PublicProfilePageSkeleton />;
+  }
 
   if (isLoading) {
     return <PublicProfilePageSkeleton />;
