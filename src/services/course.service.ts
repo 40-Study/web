@@ -160,11 +160,21 @@ export const courseService = {
   getCourseBySlug: (slug: string) =>
     api.get<{ message: string; data: ApiCourse }>(`/courses/slug/${slug}`).then((r) => r.data.data),
 
-  /** GET /courses — teacher's own courses (filtered by current user) */
+  /**
+   * GET /courses/mine — khoá học của giáo viên đang đăng nhập.
+   *
+   * P1 QA 260927 teacher: trước đây gọi `GET /courses?mine=true` — nhưng
+   * `GetAllCourses` (course_router.go) KHÔNG BAO GIỜ đọc query `mine`, nên
+   * tham số này luôn bị bỏ qua và "Khóa của tôi" trả về TOÀN BỘ khoá học đã
+   * published (của mọi giáo viên), không lọc theo instructor. Nay gọi route
+   * `/courses/mine` mới (course_router.go, dùng GetMyCourses — lọc bằng
+   * user_id từ access token, không nhận instructor_id qua query để tránh
+   * giáo viên A xem được khoá "của tôi" là của giáo viên B).
+   */
   getMyCourses: (params?: { status?: string }) =>
     api
-      .get<{ message: string; data: { courses: ApiCourse[]; total: number } }>("/courses", {
-        params: { ...params, mine: true, page_size: 100 },
+      .get<{ message: string; data: { courses: ApiCourse[]; total: number } }>("/courses/mine", {
+        params: { ...params, page_size: 100 },
       })
       .then((r) => r.data.data.courses),
 
