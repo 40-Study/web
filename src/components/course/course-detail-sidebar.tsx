@@ -6,7 +6,7 @@
  * Contains video preview, price, CTAs, course includes, voucher input
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -59,6 +59,15 @@ export function CourseDetailSidebar({
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
 
+  // Review PR #25 (BLOCKER #1): idempotency_key phải CỐ ĐỊNH theo 1 phiên
+  // checkout, không sinh mới mỗi lần handleCheckoutConfirm chạy — trước đây
+  // `uuidv4()` gọi inline trong hàm khiến 2 lần bấm "Thanh toán" liên tiếp
+  // (double-click, hoặc click trước khi Dialog kịp unmount) tạo 2 key khác
+  // nhau -> backend không nhận ra là cùng 1 yêu cầu -> tạo 2 đơn hàng thật
+  // độc lập. Key chỉ đổi khi đóng modal (huỷ, hoặc đơn đã tạo xong) — xem
+  // resetIdempotencyKey() + handleCheckoutOpenChange().
+  const idempotencyKeyRef = useRef<string>(uuidv4());
+
   const courseId = String(course.id);
   const addToCartMutation = useAddToCart();
   const removeFromCartMutation = useRemoveFromCart();
@@ -101,6 +110,18 @@ export function CourseDetailSidebar({
     setCheckoutOpen(true);
   }
 
+  /**
+   * Đóng/mở CheckoutModal. Khi ĐÓNG (huỷ, hoặc do handleCheckoutConfirm tự
+   * đóng sau khi tạo đơn xong) -> sinh idempotency_key MỚI cho phiên checkout
+   * tiếp theo, để lần mua sau không vô tình tái dùng key của lần mua trước.
+   */
+  function handleCheckoutOpenChange(nextOpen: boolean) {
+    if (!nextOpen) {
+      idempotencyKeyRef.current = uuidv4();
+    }
+    setCheckoutOpen(nextOpen);
+  }
+
   /** onConfirm thật của CheckoutModal — tạo đơn qua API order (source=buy_now). */
   async function handleCheckoutConfirm(_paymentMethod: string, voucherCode?: string) {
     try {
@@ -108,8 +129,13 @@ export function CourseDetailSidebar({
         source: "buy_now",
         course_ids: [courseId],
         coupon_code: voucherCode,
-        idempotency_key: uuidv4(),
+        idempotency_key: idempotencyKeyRef.current,
       });
+
+      // Đơn tạo THÀNH CÔNG -> đóng modal (đồng thời sinh key mới cho lần
+      // mua tiếp theo qua handleCheckoutOpenChange). Lỗi thì KHÔNG đóng — xem
+      // catch bên dưới, giữ nguyên key để bấm lại (retry) không tạo đơn trùng.
+      handleCheckoutOpenChange(false);
 
       if (Number(order.total_amount) <= 0) {
         // Đơn 0đ (voucher giảm 100%) — cùng cơ chế với app/(app)/checkout/page.tsx:
@@ -122,7 +148,9 @@ export function CourseDetailSidebar({
       setActiveOrder(order);
       setPaymentDialogOpen(true);
     } catch (error) {
-      // Lỗi tạo đơn đã có toast riêng trong useCreateOrder.onError.
+      // Lỗi tạo đơn đã có toast riêng trong useCreateOrder.onError. Modal vẫn
+      // MỞ, idempotency_key GIỮ NGUYÊN — bấm lại (retry) dùng đúng key cũ,
+      // backend coi là cùng 1 yêu cầu trong TTL, không tạo đơn thứ 2.
       console.error("Buy now checkout error:", error);
     }
   }
@@ -130,7 +158,10 @@ export function CourseDetailSidebar({
   function handleRetryExpiredOrder() {
     setPaymentDialogOpen(false);
     setActiveOrder(null);
-    // Đơn cũ hết hạn — mở lại modal xác nhận để người dùng thử lại từ đầu.
+    // Đơn cũ đã hết hạn (khác hẳn lỗi tạo đơn ở trên) — idempotency_key hiện
+    // tại ĐÃ được đổi mới ngay sau khi đơn cũ tạo thành công (xem
+    // handleCheckoutOpenChange trong handleCheckoutConfirm), nên mở lại modal
+    // ở đây chắc chắn dùng key mới, tránh backend trả lại đúng đơn cũ đã hết hạn.
     setCheckoutOpen(true);
   }
 
@@ -146,9 +177,10 @@ export function CourseDetailSidebar({
     <>
       <CheckoutModal
         open={checkoutOpen}
-        onOpenChange={setCheckoutOpen}
+        onOpenChange={handleCheckoutOpenChange}
         course={course}
         onConfirm={handleCheckoutConfirm}
+        isConfirming={createOrderMutation.isPending}
       />
 
       <OrderPaymentDialog

@@ -5,8 +5,8 @@
  * Shows course summary, voucher input, payment method selector, and confirm button
  */
 
-import { useState } from "react";
-import { CreditCard, Wallet, ShoppingCart } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { CreditCard, Loader2, Wallet, ShoppingCart } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -34,9 +34,17 @@ interface CheckoutModalProps {
   course: CourseDetail;
   /** Called when user confirms purchase */
   onConfirm?: (paymentMethod: PaymentMethod, voucherCode?: string) => void;
+  /** true trong lúc đơn đang được tạo — khoá nút "Thanh toán", hiện spinner. */
+  isConfirming?: boolean;
 }
 
-export function CheckoutModal({ open, onOpenChange, course, onConfirm }: CheckoutModalProps) {
+export function CheckoutModal({
+  open,
+  onOpenChange,
+  course,
+  onConfirm,
+  isConfirming = false,
+}: CheckoutModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
   const [voucherResult, setVoucherResult] = useState<VoucherValidateResponse | null>(null);
 
@@ -45,9 +53,39 @@ export function CheckoutModal({ open, onOpenChange, course, onConfirm }: Checkou
   const voucherDiscount = voucherResult?.discount_amount ?? 0;
   const finalPrice = Math.max(0, course.price - voucherDiscount);
 
+  // Review PR #25 (BLOCKER #1): `isConfirming` (từ React Query's isPending)
+  // chỉ cập nhật ở lượt render SAU khi mutate() được gọi — có 1 khung hình mà
+  // 2 click liên tiếp (double-click, hoặc click ngay trước khi Dialog kịp
+  // unmount) đều lọt qua trước khi `disabled` kịp bật. Ref đồng bộ chặn ngay
+  // trong CÙNG tick, độc lập với chu kỳ render, làm lớp chặn thứ 2 bên cạnh
+  // `disabled={isConfirming}`.
+  const submittingRef = useRef(false);
+
+  // KHÔNG dùng dependency array [isConfirming] ở đây: khi mutation reject/
+  // resolve cực nhanh (mock trong test, hoặc 1 request rất nhanh ở production),
+  // React 18 gộp 2 lượt cập nhật idle->pending->error vào MỘT lần commit duy
+  // nhất — isConfirming không bao giờ được render ra `true` ở một lượt riêng,
+  // nên effect phụ thuộc [isConfirming] không thấy thay đổi (false -> false)
+  // và KHÔNG BAO GIỜ reset submittingRef, khoá nút "Thanh toán" vĩnh viễn dù
+  // `disabled` đã hiển thị false. Chạy lại sau MỖI lần render thay vì chỉ khi
+  // isConfirming đổi giá trị để luôn đồng bộ đúng trạng thái đã commit.
+  useEffect(() => {
+    if (!isConfirming) submittingRef.current = false;
+  });
+
+  useEffect(() => {
+    // Modal đóng (huỷ, hoặc cha tự đóng sau khi biết kết quả) -> mở lại lần
+    // sau phải bấm được, không bị kẹt ở trạng thái khoá.
+    if (!open) submittingRef.current = false;
+  }, [open]);
+
   function handleConfirm() {
+    if (submittingRef.current || isConfirming) return;
+    submittingRef.current = true;
     onConfirm?.(paymentMethod, voucherResult?.voucher?.code);
-    onOpenChange(false);
+    // KHÔNG tự đóng modal ở đây nữa — component cha (course-detail-sidebar)
+    // đóng khi đã biết kết quả tạo đơn (thành công), và GIỮ MỞ khi lỗi để
+    // người dùng bấm lại (retry) với cùng idempotency_key.
   }
 
   return (
@@ -132,11 +170,27 @@ export function CheckoutModal({ open, onOpenChange, course, onConfirm }: Checkou
 
         {/* Actions */}
         <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => onOpenChange(false)}
+            disabled={isConfirming}
+          >
             Hủy
           </Button>
-          <Button className="flex-1 bg-primary-600 hover:bg-primary-700 text-white" onClick={handleConfirm}>
-            Thanh toán {formatCurrency(finalPrice)}
+          <Button
+            className="flex-1 bg-primary-600 hover:bg-primary-700 text-white"
+            onClick={handleConfirm}
+            disabled={isConfirming}
+          >
+            {isConfirming ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Đang xử lý...
+              </>
+            ) : (
+              `Thanh toán ${formatCurrency(finalPrice)}`
+            )}
           </Button>
         </div>
       </DialogContent>
