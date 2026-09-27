@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
 import { useEnrolledCourses } from "@/hooks/use-courses";
 import { useMySchedules } from "@/hooks/queries/use-class-schedule";
+import { normalizeRole } from "@/lib/routes";
+import { ParentHomeOverview } from "@/components/parent";
 import type { ClassSchedule } from "@/types/class-schedule";
 
 // ─── Activity Chart ─────────────────────────────────────────────────────────
@@ -284,9 +286,13 @@ function StatCard({ icon: Icon, label, value, color }: { icon: typeof Flame; lab
 
 // ─── Page ───────────────────────────────────────────────────────────────────
 
-export default function HomePage() {
-  const router = useRouter();
-  const { isAuthenticated, hasHydrated, user } = useAuthStore();
+/**
+ * Nội dung `/home` cho vai HỌC SINH (dashboard khoá học/lịch/hoạt động — giữ
+ * nguyên như cũ). Auth/hydration guard + rẽ nhánh role nằm ở `HomePage` bên
+ * dưới, nên component này chỉ render khi đã chắc chắn đăng nhập.
+ */
+function StudentHomeContent() {
+  const { user } = useAuthStore();
   const { data: enrolledCourses = [], isLoading } = useEnrolledCourses();
   const { data: schedules = [] } = useMySchedules();
 
@@ -302,15 +308,6 @@ export default function HomePage() {
   }, [schedules]);
 
   const upcoming = useMemo(() => buildUpcoming(schedules || []), [schedules]);
-
-  useEffect(() => {
-    if (hasHydrated && !isAuthenticated) {
-      router.push("/");
-    }
-  }, [hasHydrated, isAuthenticated, router]);
-
-  // Wait for hydration and auth check
-  if (!hasHydrated || !isAuthenticated) return null;
 
   const sorted = [...enrolledCourses].sort((a, b) => {
     const aT = a.lastAccessedAt ? new Date(a.lastAccessedAt).getTime() : 0;
@@ -454,4 +451,27 @@ export default function HomePage() {
       </div>
     </div>
   );
+}
+
+export default function HomePage() {
+  const router = useRouter();
+  const { isAuthenticated, hasHydrated, activeRole } = useAuthStore();
+
+  useEffect(() => {
+    if (hasHydrated && !isAuthenticated) {
+      router.push("/");
+    }
+  }, [hasHydrated, isAuthenticated, router]);
+
+  // Wait for hydration and auth check
+  if (!hasHydrated || !isAuthenticated) return null;
+
+  // QA 260927 P1: `/home` của phụ huynh trước đây render nguyên dashboard học
+  // sinh (0 khoá, 0% tiến độ...) — rẽ nhánh sớm để phụ huynh không gọi các
+  // hook chỉ có ý nghĩa cho học sinh (enrollments/schedules của CHÍNH họ).
+  if (normalizeRole(activeRole) === "PARENT") {
+    return <ParentHomeOverview />;
+  }
+
+  return <StudentHomeContent />;
 }
