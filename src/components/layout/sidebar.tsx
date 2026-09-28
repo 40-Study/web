@@ -49,8 +49,10 @@ function rolesFromRouteTable(href: string): SidebarRole[] {
  * - "Bạn bè": bỏ hẳn khỏi menu mọi vai trò — backend chưa có API bạn bè
  *   (S-P1-4), trang chỉ còn thông báo "Sắp có".
  * - "AI Chat": bỏ hẳn khỏi menu mọi vai trò — sản phẩm không làm AI (H8).
- * - Phụ huynh không cần Cuộc thi/Nhóm/Xu (tính năng game-hoá của học sinh);
+ * - Phụ huynh không cần Nhóm/Xu (tính năng game-hoá của học sinh);
  *   "Gia đình" đổi nhãn "Con của tôi" khi xem bằng vai phụ huynh.
+ * - "Cuộc thi": phụ huynh THẤY (xem chỉ đọc danh sách + chi tiết, contract
+ *   cuộc thi §7) — roles lấy từ ROLE_SCOPED_ROUTES nên menu tự khớp route guard.
  * - ADMIN (A-P2-4): không có item nào khai báo role này -> sidebar rỗng khi
  *   admin ghé các trang tài khoản cá nhân được phép
  *   (`(app)/layout.tsx` § ADMIN_ALLOWED_EXACT_ROUTES) — không lộ menu học

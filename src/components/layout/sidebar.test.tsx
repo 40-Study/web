@@ -1,7 +1,7 @@
 /**
  * QA 260927 M-19/S-P1-4/H8 — sidebar menu data-driven theo role.
  *
- * Proves: phụ huynh KHÔNG thấy Cuộc thi/Nhóm/Xu/Bạn bè/AI Chat, học sinh vẫn
+ * Proves: phụ huynh KHÔNG thấy Nhóm/Xu/Bạn bè/AI Chat (nhưng thấy Cuộc thi), học sinh vẫn
  * thấy đủ; "Gia đình" đổi nhãn "Con của tôi" khi xem bằng vai phụ huynh; mục
  * "Bạn bè"/"AI Chat" đã bỏ khỏi menu MỌI vai trò (không chỉ phụ huynh).
  *
@@ -24,13 +24,12 @@ describe("Sidebar — menu data-driven theo role", () => {
     useAuthStore.setState({ isAuthenticated: false, activeRole: null });
   });
 
-  it("phụ huynh: ẩn Cuộc thi/Nhóm/Xu/Bạn bè/AI Chat, nhãn Gia đình -> Con của tôi", () => {
+  it("phụ huynh: ẩn Nhóm/Xu/Bạn bè/AI Chat, nhãn Gia đình -> Con của tôi", () => {
     setRole("PARENT", true);
     render(<Sidebar />);
 
     expect(screen.getByText("Con của tôi")).toBeTruthy();
     expect(screen.queryByText("Gia đình")).toBeNull();
-    expect(screen.queryByText("Cuộc thi")).toBeNull();
     expect(screen.queryByText("Nhóm")).toBeNull();
     expect(screen.queryByText("Xu")).toBeNull();
     expect(screen.queryByText("Bạn bè")).toBeNull();
@@ -39,6 +38,13 @@ describe("Sidebar — menu data-driven theo role", () => {
     expect(screen.getByText("Tin nhắn")).toBeTruthy();
     expect(screen.getByText("Trang chủ")).toBeTruthy();
     expect(screen.getByText("Khám phá")).toBeTruthy();
+  });
+
+  it("phụ huynh: THẤY Cuộc thi (xem chỉ đọc, contract cuộc thi §7)", () => {
+    setRole("PARENT", true);
+    render(<Sidebar />);
+
+    expect(screen.getByText("Cuộc thi")).toBeTruthy();
   });
 
   it("học sinh: vẫn thấy Cuộc thi/Nhóm/Xu, nhưng KHÔNG còn Bạn bè/AI Chat", () => {

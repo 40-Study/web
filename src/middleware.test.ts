@@ -65,9 +65,19 @@ function fileToRoute(filePath: string): string {
   return `/${segments.join("/")}`;
 }
 
+// Trang thuộc group cần đăng nhập nhưng PUBLIC theo thiết kế (contract cuộc thi §7: khách xem
+// danh sách + chi tiết). Liệt kê CHÍNH XÁC — mọi route con khác của /contests vẫn phải bị chặn.
+const PUBLIC_BY_DESIGN = new Set(["/contests", "/contests/stub-id"]);
+
 function protectedRoutesFromGroup(group: string): string[] {
   const groupDir = path.join(APP_ROOT, group);
-  return findPageFiles(groupDir).map(fileToRoute);
+  return findPageFiles(groupDir)
+    .map(fileToRoute)
+    .filter((route) => !PUBLIC_BY_DESIGN.has(route));
+}
+
+function run(url: string): Response {
+  return middleware(new NextRequest(new URL(url, "http://localhost:3000")));
 }
 
 function isRedirectToLogin(response: Response): boolean {
@@ -104,5 +114,41 @@ describe("middleware — mọi page.tsx dưới route group cần đăng nhập 
     const request = new NextRequest(new URL("/certificates/verify/CERT-001", "http://localhost:3000"));
     const response = middleware(request);
     expect(isRedirectToLogin(response)).toBe(false);
+  });
+});
+
+describe("middleware — Cuộc thi (contract §7)", () => {
+  it.each(["/contests", "/contests/thi-git", "/contests?phase=ACTIVE"])("khách vào %s -> KHÔNG bị đá về /login", (url) => {
+    expect(isRedirectToLogin(run(url))).toBe(false);
+  });
+
+  it.each(["/contests/thi-git/play", "/contests/thi-git/result", "/contests/thi-git/certificate"])(
+    "khách vào %s -> redirect /login",
+    (url) => {
+      expect(isRedirectToLogin(run(url))).toBe(true);
+    }
+  );
+
+  it("slug trùng tên route con (/contests/play) vẫn là trang chi tiết public", () => {
+    expect(isRedirectToLogin(run("/contests/play"))).toBe(false);
+  });
+
+  it("có cookie phiên -> vào được route làm bài", () => {
+    const request = new NextRequest(new URL("/contests/thi-git/play", "http://localhost:3000"));
+    request.cookies.set("rfToken", "x");
+    expect(isRedirectToLogin(middleware(request))).toBe(false);
+  });
+});
+
+describe("middleware — tham số quay lại sau đăng nhập", () => {
+  it("dùng ?redirect= (trang login chỉ đọc tham số này), không dùng ?next=", () => {
+    const location = new URL(run("/contests/thi-git/play").headers.get("location") ?? "");
+    expect(location.searchParams.get("redirect")).toBe("/contests/thi-git/play");
+    expect(location.searchParams.has("next")).toBe(false);
+  });
+
+  it("giữ nguyên query string của trang cũ", () => {
+    const location = new URL(run("/my-courses?tab=done").headers.get("location") ?? "");
+    expect(location.searchParams.get("redirect")).toBe("/my-courses?tab=done");
   });
 });
