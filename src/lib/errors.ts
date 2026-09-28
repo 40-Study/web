@@ -15,8 +15,13 @@ export class ApiError extends Error {
 }
 
 export class AuthError extends ApiError {
-  constructor(message = "Authentication required") {
-    super(401, "AUTH_ERROR", message);
+  // Review đối kháng (plans/reports/review-260928-users-pr72-pr28.md, finding #5 MAJOR):
+  // trước đây gán CỨNG code="AUTH_ERROR", bỏ qua data?.code thật mà backend trả (vd.
+  // "ACCOUNT_LOCKED") — buộc nơi tiêu thụ phải so sánh nguyên văn chuỗi message tiếng Việt,
+  // dễ vỡ nếu backend đổi câu chữ. Nhận `code` từ call site (api-client.ts đọc data?.code),
+  // fallback "AUTH_ERROR" khi backend không trả code cụ thể.
+  constructor(message = "Authentication required", code = "AUTH_ERROR") {
+    super(401, code, message);
     this.name = "AuthError";
   }
 }

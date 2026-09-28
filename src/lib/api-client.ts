@@ -96,14 +96,14 @@ api.interceptors.response.use(
           }
           window.dispatchEvent(new Event("fortex:auth-session-expired"));
         }
-        throw new AuthError(data?.message);
+        throw new AuthError(data?.message, data?.code);
       }
     }
 
     // Normalize errors
     switch (status) {
       case 401:
-        throw new AuthError(data?.message);
+        throw new AuthError(data?.message, data?.code);
       case 403:
         throw new ForbiddenError(data?.message);
       case 404:

@@ -49,3 +49,44 @@ describe("API cookie refresh boundary", () => {
     window.removeEventListener("fortex:auth-session-expired", expired);
   });
 });
+
+// Review đối kháng (plans/reports/review-260928-users-pr72-pr28.md, finding #5 MAJOR): trước
+// đây mọi lỗi 401 bị gán CỨNG error.code="AUTH_ERROR", bỏ qua data.code thật mà backend trả
+// (vd. "ACCOUNT_LOCKED") — buộc nơi tiêu thụ (use-auth.ts, auth-session.ts) phải so sánh
+// NGUYÊN VĂN chuỗi message tiếng Việt, dễ vỡ nếu backend đổi câu chữ. 2 test dưới khoá lại
+// hành vi ĐÚNG: error.code phải PHẢN ÁNH data.code thật từ response.
+function lockedResponse(config: InternalAxiosRequestConfig) {
+  return new AxiosError("locked", "ERR_BAD_REQUEST", config, undefined, {
+    status: 401,
+    statusText: "Unauthorized",
+    headers: {},
+    config,
+    data: { code: "ACCOUNT_LOCKED", message: "Tài khoản đã bị khoá" },
+  });
+}
+
+describe("API 401 error.code — giữ nguyên code thật từ backend", () => {
+  it("data.code=ACCOUNT_LOCKED (refresh cũng thất bại) -> error.code=ACCOUNT_LOCKED, KHÔNG hardcode AUTH_ERROR", async () => {
+    vi.spyOn(axios, "post").mockRejectedValue(new Error("refresh failed"));
+
+    await expect(
+      api.get("/protected", {
+        adapter: async (config) => {
+          throw lockedResponse(config);
+        },
+      })
+    ).rejects.toMatchObject({ status: 401, code: "ACCOUNT_LOCKED", message: "Tài khoản đã bị khoá" });
+  });
+
+  it("401 không có data.code (vd. token hết hạn thường) -> fallback error.code=AUTH_ERROR", async () => {
+    vi.spyOn(axios, "post").mockRejectedValue(new Error("refresh failed"));
+
+    await expect(
+      api.get("/protected", {
+        adapter: async (config) => {
+          throw unauthorized(config); // data: { message: "expired" }, không có code
+        },
+      })
+    ).rejects.toMatchObject({ status: 401, code: "AUTH_ERROR" });
+  });
+});

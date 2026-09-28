@@ -1,5 +1,7 @@
 import { render, screen } from "@testing-library/react";
+import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AuthError } from "@/lib/errors";
 import { PERMISSIONS } from "@/lib/permissions";
 import { authService, type UnifiedRole, type UserResponseDto } from "@/services/auth.service";
 import { ROLE_SELECTION_TOKEN_KEY, useAuthStore } from "@/stores/auth.store";
@@ -150,6 +152,41 @@ describe("cookie-backed auth bootstrap", () => {
       activeRole: null,
       permissions: [],
     });
+  });
+
+  // Review đối kháng (plans/reports/review-260928-users-pr72-pr28.md, finding #5 MAJOR): phải
+  // phân biệt "bị khoá" bằng error.code === "ACCOUNT_LOCKED", KHÔNG so nguyên văn message tiếng
+  // Việt — test này dùng error.code thật (không phải error.message) để xác nhận toast đúng.
+  it("shows the ACCOUNT_LOCKED toast and clears session when getMe fails with that code", async () => {
+    useAuthStore.setState({
+      activeRole: "STUDENT",
+      activeUnifiedRole: { id: "system-role-student", type: "system", role_name: "STUDENT", display_name: "Học viên" },
+    });
+    vi.mocked(authService.getMe).mockRejectedValue(new AuthError("Tài khoản đã bị khoá", "ACCOUNT_LOCKED"));
+    const toastError = vi.spyOn(toast, "error").mockImplementation(() => "" as never);
+
+    await expect(bootstrapAuthSession()).resolves.toBe("anonymous");
+
+    expect(toastError).toHaveBeenCalledWith(
+      "Tài khoản đã bị khoá",
+      expect.objectContaining({ description: expect.any(String) })
+    );
+    expect(useAuthStore.getState()).toMatchObject({
+      sessionStatus: "anonymous",
+      isAuthenticated: false,
+      activeRole: null,
+    });
+    toastError.mockRestore();
+  });
+
+  it("does NOT show the ACCOUNT_LOCKED toast for a generic 401 (different code)", async () => {
+    vi.mocked(authService.getMe).mockRejectedValue(new AuthError("Invalid or expired token", "AUTH_ERROR"));
+    const toastError = vi.spyOn(toast, "error").mockImplementation(() => "" as never);
+
+    await expect(bootstrapAuthSession()).resolves.toBe("anonymous");
+
+    expect(toastError).not.toHaveBeenCalled();
+    toastError.mockRestore();
   });
 
   it("keeps the multi-role selection token in sessionStorage only", async () => {

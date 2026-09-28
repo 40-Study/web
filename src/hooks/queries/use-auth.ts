@@ -179,9 +179,11 @@ export function useLogin() {
     onError: (error: unknown) => {
       console.error("Login error:", error);
       // Phase 1 quản lý người dùng (2026-09-28): tài khoản bị khoá phải hiện thông báo RIÊNG,
-      // không lẫn với "sai mật khẩu" — backend trả message này nguyên văn khi is_active=false
-      // (auth_handler.go Login, code ACCOUNT_LOCKED).
-      if (error instanceof AuthError && error.message === "Tài khoản đã bị khoá") {
+      // không lẫn với "sai mật khẩu". So bằng `error.code` (ACCOUNT_LOCKED do backend trả,
+      // auth_handler.go Login), KHÔNG so nguyên văn message tiếng Việt — review đối kháng
+      // (review-260928-users-pr72-pr28.md finding #5) chỉ ra so chuỗi cứng sẽ âm thầm vỡ nếu
+      // backend đổi câu chữ thông báo mà không đổi code.
+      if (error instanceof AuthError && error.code === "ACCOUNT_LOCKED") {
         toast.error("Tài khoản đã bị khoá", {
           description: "Vui lòng liên hệ quản trị viên để được hỗ trợ.",
         });
