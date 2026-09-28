@@ -88,6 +88,52 @@ export function msUntil(targetIso: string, offsetMs: number, clientNowMs: number
   return Math.max(0, target - (clientNowMs + offsetMs));
 }
 
+/**
+ * Ân hạn nộp bài (backend `model.ContestSubmitGraceSeconds`). ĐÍNH CHÍNH 2 của contract: đáp án
+ * và bảng xếp hạng công khai mở từ `end_time + 30s`, KHÔNG phải `end_time` — trong 30 giây đó
+ * người bắt đầu sát giờ vẫn còn nộp được.
+ */
+export const CONTEST_SUBMIT_GRACE_SECONDS = 30;
+
+/** Mốc công bố bảng xếp hạng/đáp án: `end_time + ân hạn` (ISO). */
+export function contestRevealAt(endTime: string): string {
+  const end = Date.parse(endTime);
+  return Number.isNaN(end) ? endTime : new Date(end + CONTEST_SUBMIT_GRACE_SECONDS * 1000).toISOString();
+}
+
+/** Giờ có giây, giờ Việt Nam: "00:10:30 29/09/2026" — mốc công bố chỉ cách giờ đóng 30 giây. */
+export function formatContestTimeWithSeconds(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const time = d.toLocaleTimeString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  const date = d.toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", day: "2-digit", month: "2-digit", year: "numeric" });
+  return `${time} ${date}`;
+}
+
+export type LeaderboardVisibility = { visible: true } | { visible: false; message: string };
+
+/**
+ * Bảng xếp hạng có hiện chưa. `revealRemainingMs` = thời gian còn lại tới `contestRevealAt`
+ * theo giờ server (null khi chưa tính được). Câu chữ phải khớp trạng thái: trong 30 giây ân hạn
+ * cuộc thi ĐÃ kết thúc, nên không được nói "sau khi cuộc thi kết thúc".
+ */
+export function resolveLeaderboardVisibility(
+  phase: ContestPhase,
+  revealAt: string,
+  revealRemainingMs: number | null
+): LeaderboardVisibility {
+  if (phase === "FINALIZED") return { visible: true };
+  if (phase !== "ENDED") {
+    return { visible: false, message: `Bảng xếp hạng được công bố lúc ${formatContestTimeWithSeconds(revealAt)}, sau khi hết giờ nộp bài.` };
+  }
+  if (revealRemainingMs === null || revealRemainingMs > 0) {
+    const wait = revealRemainingMs === null ? "" : ` sau ${formatCountdown(revealRemainingMs)}`;
+    return { visible: false, message: `Cuộc thi đã kết thúc, đang chờ hết thời gian nộp bài. Bảng xếp hạng công bố${wait} (lúc ${formatContestTimeWithSeconds(revealAt)}).` };
+  }
+  return { visible: true };
+}
+
 /** 93784000 → "1 ngày 02:03:04"; dưới 1 ngày → "02:03:04". */
 export function formatCountdown(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));

@@ -11,11 +11,19 @@ import { msUntil, serverClockOffset } from "@/lib/contest/contest-format";
 export function useServerCountdown(
   targetIso: string | null | undefined,
   serverTime: string | null | undefined,
-  onReachZero?: () => void
+  onReachZero?: () => void,
+  /**
+   * Lúc web NHẬN `serverTime` (React Query `dataUpdatedAt`). Bắt buộc khi dữ liệu có thể lấy từ
+   * cache: so `serverTime` cũ với `Date.now()` hiện tại làm đồng hồ chậm đúng bằng tuổi cache.
+   */
+  receivedAtMs?: number
 ): number | null {
   // Tính đồng bộ (không qua effect) để lần render đầu đã dùng đúng độ lệch — nếu bắt đầu từ 0,
   // máy chạy nhanh hơn server sẽ thấy "0" một khoảnh khắc và gọi onReachZero sớm.
-  const offset = useMemo(() => (serverTime ? serverClockOffset(serverTime, Date.now()) : 0), [serverTime]);
+  const offset = useMemo(
+    () => (serverTime ? serverClockOffset(serverTime, receivedAtMs || Date.now()) : 0),
+    [serverTime, receivedAtMs]
+  );
   const [now, setNow] = useState(() => Date.now());
   const firedRef = useRef(false);
   const callbackRef = useRef(onReachZero);

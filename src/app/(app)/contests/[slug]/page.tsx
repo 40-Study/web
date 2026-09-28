@@ -48,13 +48,12 @@ export default function ContestDetailPage() {
   // Tải lại khi đồng hồ chạm mốc mở/đóng. Trễ 1,5 giây: đồng hồ web và server lệch vài trăm ms,
   // gọi đúng giây 0 có thể nhận lại phase cũ và đồng hồ đứng ở 00:00:00.
   const refreshSoon = () => window.setTimeout(() => query.refetch(), 1500);
-  return <ContestDetailView detail={query.data} activeRole={normalizeRole(activeRole)} onRefresh={refreshSoon} />;
+  return <ContestDetailView detail={query.data} receivedAt={query.dataUpdatedAt} activeRole={normalizeRole(activeRole)} onRefresh={refreshSoon} />;
 }
 
-function ContestDetailView({ detail, activeRole, onRefresh }: { detail: ContestDetail; activeRole: string | null; onRefresh: () => void }) {
-  const isClosed = detail.phase === "ENDED" || detail.phase === "FINALIZED";
+function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { detail: ContestDetail; receivedAt: number; activeRole: string | null; onRefresh: () => void }) {
   const boundary = detail.phase === "UPCOMING" ? detail.start_time : detail.phase === "ACTIVE" ? detail.end_time : null;
-  const remaining = useServerCountdown(boundary, detail.server_time, onRefresh);
+  const remaining = useServerCountdown(boundary, detail.server_time, onRefresh, receivedAt);
   const mine = detail.viewer.my_participation;
   const seats = detail.max_participants > 0 ? `${detail.participant_count}/${detail.max_participants}` : `${detail.participant_count}`;
 
@@ -123,7 +122,7 @@ function ContestDetailView({ detail, activeRole, onRefresh }: { detail: ContestD
               <Trophy className="h-5 w-5 text-amber-500" aria-hidden="true" />
               Bảng xếp hạng
             </h2>
-            <ContestLeaderboard contestId={detail.id} visible={isClosed} />
+            <ContestLeaderboard contestId={detail.id} phase={detail.phase} endTime={detail.end_time} serverTime={detail.server_time} receivedAt={receivedAt} />
           </section>
         </section>
 
@@ -137,7 +136,7 @@ function ContestDetailView({ detail, activeRole, onRefresh }: { detail: ContestD
                 </p>
               </div>
             )}
-            <ContestCtaPanel detail={detail} activeRole={activeRole} onPhaseBoundary={onRefresh} />
+            <ContestCtaPanel detail={detail} receivedAt={receivedAt} activeRole={activeRole} onPhaseBoundary={onRefresh} />
           </div>
 
           {mine && mine.attempt_status === "SUBMITTED" && (

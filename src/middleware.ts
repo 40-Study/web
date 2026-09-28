@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { CONTEST_PARTICIPANT_ROUTE_PATTERN } from "@/lib/routes";
-import { sanitizeRedirect } from "@/lib/safe-redirect";
+import { buildLoginRedirectUrl } from "@/lib/login-redirect";
 
 // Routes accessible without authentication. Đối chiếu `find src/app -name
 // page.tsx` (B-02, plans/reports/code-reviewer-260909-1412-web-review.md) —
@@ -139,10 +139,7 @@ export function middleware(request: NextRequest) {
   if (!hasAccessToken && !hasRefreshToken) {
     // Trang login chỉ đọc `?redirect=` (trước đây gắn `?next=` nên đăng nhập xong không quay lại
     // được trang cũ). Đi qua sanitizeRedirect như chính trang login, và giữ cả query string.
-    const loginUrl = new URL("/login", request.url);
-    const redirectTo = sanitizeRedirect(`${pathname}${request.nextUrl.search}`);
-    if (redirectTo) loginUrl.searchParams.set("redirect", redirectTo);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(buildLoginRedirectUrl(pathname, request.nextUrl.search, request.url));
   }
 
   return NextResponse.next();

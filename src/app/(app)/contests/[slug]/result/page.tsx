@@ -4,13 +4,10 @@
  * Kết quả của chính mình (#15 `GET /contests/:id/my-result`). Điểm hiện ngay sau khi nộp; đáp án
  * và giải thích chỉ có khi cuộc thi đã đóng (backend trả `questions = null` trước đó, §4.3).
  */
-import { useMemo } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Award, ArrowLeft, Ticket } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 import { useContestDetail, useContestMyResult } from "@/hooks/queries/use-contests";
-import { loadAnswerTexts } from "@/lib/contest/contest-answers";
 import { contestPath } from "@/lib/contest/contest-cta";
 import { contestErrorCode } from "@/lib/contest/contest-errors";
 import {
@@ -21,6 +18,7 @@ import {
 } from "@/lib/contest/contest-format";
 import { ContestAnswerReview } from "../../_components/contest-answer-review";
 import { ContestPhaseBadge } from "../../_components/contest-card";
+import { ContestAnswersPending, ContestAwardPanel } from "../../_components/contest-result-parts";
 import { ContestErrorState, ContestLoading } from "../../_components/contest-states";
 
 export default function ContestResultPage() {
@@ -28,8 +26,6 @@ export default function ContestResultPage() {
   const slug = params?.slug ?? "";
   const detailQuery = useContestDetail(slug);
   const resultQuery = useContestMyResult(detailQuery.data?.id);
-  const attemptId = resultQuery.data?.my_participation?.attempt_id ?? null;
-  const answerText = useMemo(() => (attemptId ? loadAnswerTexts(attemptId) : undefined), [attemptId]);
 
   if (detailQuery.isLoading || (detailQuery.data && resultQuery.isLoading)) return <ContestLoading label="Đang tải kết quả…" />;
   const error = detailQuery.error ?? resultQuery.error;
@@ -74,25 +70,7 @@ export default function ContestResultPage() {
         <p className="text-xs text-gray-500">Nộp lúc {formatContestDateTime(mine?.submitted_at)}</p>
 
         {award && (award.certificate_number || award.voucher) ? (
-          <div className="space-y-2 rounded-xl bg-violet-50 p-3 text-sm text-violet-900">
-            <p className="font-semibold">Chúc mừng, bạn đã nhận giải!</p>
-            {award.certificate_number && (
-              <Link href={contestPath(slug, "certificate")} className={buttonVariants({ variant: "outline", size: "sm" })}>
-                <Award className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                Xem chứng nhận {award.certificate_number}
-              </Link>
-            )}
-            {award.voucher && (
-              <p className="flex items-center gap-1.5">
-                <Ticket className="h-4 w-4" aria-hidden="true" />
-                Voucher {award.voucher.name} (mã {award.voucher.code}) đã được thêm vào{" "}
-                <Link href="/my-vouchers" className="font-medium underline">
-                  voucher của tôi
-                </Link>
-                .
-              </p>
-            )}
-          </div>
+          <ContestAwardPanel slug={slug} award={award} />
         ) : detail.phase === "FINALIZED" ? (
           <p className="text-sm text-gray-600">Kết quả đã chốt. Lần này bạn chưa đạt giải, hẹn gặp lại ở cuộc thi sau.</p>
         ) : (
@@ -103,11 +81,15 @@ export default function ContestResultPage() {
       <section className="space-y-3 rounded-2xl border border-gray-200 bg-white p-5">
         <h2 className="font-semibold text-gray-900">Đáp án và giải thích</h2>
         {result.questions === null ? (
-          <p className="text-sm text-gray-600">
-            Đáp án được công bố khi cuộc thi kết thúc ({formatContestDateTime(result.answers_available_at)}).
-          </p>
+          <ContestAnswersPending
+            answersAvailableAt={result.answers_available_at}
+            serverTime={detail.server_time}
+            receivedAt={detailQuery.dataUpdatedAt}
+            // Trễ 1,5 giây như trang chi tiết: gọi đúng giây 0 có thể vẫn nhận `questions: null`.
+            onAvailable={() => window.setTimeout(() => resultQuery.refetch(), 1500)}
+          />
         ) : (
-          <ContestAnswerReview answers={result.questions} answerText={answerText} />
+          <ContestAnswerReview answers={result.questions} />
         )}
       </section>
     </div>

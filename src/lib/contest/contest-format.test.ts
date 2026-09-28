@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { CONTEST_PHASES } from "@/types/contest";
 import {
   CONTEST_PHASE_LABELS,
+  contestRevealAt,
+  resolveLeaderboardVisibility,
   formatContestPercent,
   formatContestPrize,
   formatContestScore,
@@ -47,6 +49,32 @@ describe("đồng hồ theo giờ server", () => {
   it("formatCountdown", () => {
     expect(formatCountdown(65_000)).toBe("00:01:05");
     expect(formatCountdown(93_784_000)).toBe("1 ngày 02:03:04");
+  });
+});
+
+describe("mốc công bố BXH/đáp án = end_time + 30s (ĐÍNH CHÍNH 2)", () => {
+  const END = "2026-09-29T10:00:00Z";
+  const REVEAL = contestRevealAt(END);
+
+  it("contestRevealAt cộng đúng ân hạn", () => {
+    expect(REVEAL).toBe("2026-09-29T10:00:30.000Z");
+  });
+
+  it("ENDED trong ân hạn -> ẩn, câu không nói 'sau khi cuộc thi kết thúc'", () => {
+    const v = resolveLeaderboardVisibility("ENDED", REVEAL, 12_000);
+    expect(v.visible).toBe(false);
+    if (!v.visible) {
+      expect(v.message).toContain("đã kết thúc");
+      expect(v.message).toContain("00:00:12");
+      expect(v.message).not.toContain("sau khi cuộc thi kết thúc");
+    }
+  });
+
+  it("ENDED qua mốc -> hiện; FINALIZED -> hiện; UPCOMING/ACTIVE -> ẩn", () => {
+    expect(resolveLeaderboardVisibility("ENDED", REVEAL, 0).visible).toBe(true);
+    expect(resolveLeaderboardVisibility("FINALIZED", REVEAL, null).visible).toBe(true);
+    expect(resolveLeaderboardVisibility("ACTIVE", REVEAL, null).visible).toBe(false);
+    expect(resolveLeaderboardVisibility("UPCOMING", REVEAL, null).visible).toBe(false);
   });
 });
 

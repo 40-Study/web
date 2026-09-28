@@ -9,10 +9,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useSubmitContest } from "@/hooks/queries/use-contests";
 import {
   buildSubmitAnswers,
+  clearAnswerDraft,
   isQuestionAnswered,
   loadAnswerDraft,
   saveAnswerDraft,
-  saveAnswerTexts,
   type ContestAnswerMap,
 } from "@/lib/contest/contest-answers";
 import { contestPath } from "@/lib/contest/contest-cta";
@@ -37,8 +37,7 @@ export function ContestPlayer({ detail, session }: { detail: ContestDetail; sess
   // Khôi phục nháp của ĐÚNG attempt này (start trả lại attempt cũ khi tải lại trang).
   useEffect(() => {
     setAnswers(loadAnswerDraft(session.attempt_id));
-    saveAnswerTexts(session.attempt_id, session.questions);
-  }, [session.attempt_id, session.questions]);
+  }, [session.attempt_id]);
 
   const updateAnswer = (questionId: string, draft: ContestAnswerMap[string]) => {
     setAnswers((prev) => {
@@ -57,6 +56,7 @@ export function ContestPlayer({ detail, session }: { detail: ContestDetail; sess
         { contestId: detail.id, body: { attempt_id: session.attempt_id, answers: buildSubmitAnswers(questions, answers) } },
         {
           onSuccess: () => {
+            clearAnswerDraft(session.attempt_id);
             toast.success(reason === "timeout" ? "Hết giờ, hệ thống đã tự nộp bài của bạn" : "Nộp bài thành công");
             router.replace(contestPath(detail.slug, "result"));
           },

@@ -262,11 +262,20 @@ export interface ContestSubmitResult {
   submitted_at: string | null;
 }
 
-/** `QuizAttemptAnswerDTO` — chỉ có ở my-result khi phase ENDED/FINALIZED. */
+/**
+ * Một câu trong `my-result.questions` — chỉ có từ `answers_available_at` (ĐÍNH CHÍNH 2), trước
+ * đó `questions = null`. ĐÍNH CHÍNH 3 (29/09) thêm `question_type`, `options`, `accepted_answers`
+ * để web lấy CHỮ đáp án từ response thay vì tự nhớ ở localStorage.
+ */
 export interface ContestReviewAnswer {
   id: string;
   question_id: string;
   question_text: string;
+  question_type: ContestQuestionType;
+  /** Mọi lựa chọn của câu theo `display_order`; `fill_blank` luôn `[]`. Luôn có mặt. */
+  options: ContestAttemptAnswerOption[];
+  /** Chỉ `fill_blank`: các đáp án được chấp nhận; câu khác luôn `[]`. Luôn có mặt. */
+  accepted_answers: string[];
   selected_answer_ids: string[] | null;
   text_answer?: string;
   is_correct?: boolean;
