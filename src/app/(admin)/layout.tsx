@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, Building2, Flag, FolderTree, LayoutDashboard, LogOut, Receipt, Settings, ShieldCheck, Users } from "lucide-react";
+import { BarChart3, Banknote, Building2, Flag, FolderTree, LayoutDashboard, LogOut, Receipt, Settings, ShieldCheck, Users } from "lucide-react";
 import { BookCheck, UserCheck } from "lucide-react";
 
 import { RoleGuard } from "@/components/guards";
@@ -21,6 +21,7 @@ const adminMenu = [
   { label: "Danh mục khoá học", href: "/admin/categories", icon: FolderTree },
   { label: "Báo cáo vi phạm", href: "/admin/moderation", icon: Flag },
   { label: "Đơn hàng", href: "/admin/orders", icon: Receipt },
+  { label: "Rút tiền giảng viên", href: "/admin/withdrawals", icon: Banknote },
   // "Ví của tôi" (PR #24) đã được thay bằng báo cáo doanh thu nền tảng THẬT (PR #29) —
   // xem admin/reports/page.tsx. Đổi lại tên mục nav cho khớp nội dung trang thật.
   { label: "Báo cáo hệ thống", href: "/admin/reports", icon: BarChart3 },
