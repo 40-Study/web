@@ -15,10 +15,28 @@ export class ApiError extends Error {
 }
 
 export class AuthError extends ApiError {
-  constructor(message = "Authentication required") {
-    super(401, "AUTH_ERROR", message);
+  // Review đối kháng (plans/reports/review-260928-users-pr72-pr28.md, finding #5 MAJOR):
+  // trước đây gán CỨNG code="AUTH_ERROR", bỏ qua data?.code thật mà backend trả (vd.
+  // "ACCOUNT_LOCKED") — buộc nơi tiêu thụ phải so sánh nguyên văn chuỗi message tiếng Việt,
+  // dễ vỡ nếu backend đổi câu chữ. Nhận `code` từ call site (api-client.ts đọc data?.code),
+  // fallback "AUTH_ERROR" khi backend không trả code cụ thể.
+  constructor(message = "Authentication required", code = "AUTH_ERROR") {
+    super(401, code, message);
     this.name = "AuthError";
   }
+}
+
+/**
+ * Tài khoản bị admin khoá — backend trả 401 với `code: "ACCOUNT_LOCKED"` (auth_middleware.go khi
+ * khoá giữa phiên, auth_handler.go khi đăng nhập). Tiêu đề hiển thị là hằng tiếng Việt, KHÔNG lấy
+ * từ `error.message`: `extractErrorMessage` ưu tiên field `error` của body, mà middleware trả
+ * `error: "Please login again"` (tiếng Anh) — lấy message sẽ hiện tiêu đề tiếng Anh cho người dùng.
+ */
+export const ACCOUNT_LOCKED_CODE = "ACCOUNT_LOCKED";
+export const ACCOUNT_LOCKED_TITLE = "Tài khoản đã bị khoá";
+
+export function isAccountLockedError(error: unknown): error is AuthError {
+  return error instanceof AuthError && error.code === ACCOUNT_LOCKED_CODE;
 }
 
 export class ForbiddenError extends ApiError {

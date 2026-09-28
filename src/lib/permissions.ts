@@ -10,6 +10,10 @@ export const PERMISSIONS = {
   // nhóm /system-roles), nếu không <Can> sẽ không bao giờ hiện nút cho admin.
   MANAGE_ORGANIZATIONS: "ORG_CREATE",
   MANAGE_ROLES: "ROLES_MANAGE_SYSTEM",
+  // Phase 1 quản lý người dùng (2026-09-27): trùng tên permission backend seed sẵn,
+  // trang /admin/users cần CẢ 2 (xem danh sách khác quyền khoá/mở khoá).
+  USERS_VIEW_ALL: "USERS_VIEW_ALL",
+  USERS_BAN: "USERS_BAN",
   MANAGE_PERMISSIONS: "manage_permissions",
   VIEW_SYSTEM_ANALYTICS: "view_system_analytics",
   MANAGE_SYSTEM_SETTINGS: "manage_system_settings",

@@ -11,7 +11,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { getRoleFromToken } from "@/lib/jwt";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { bootstrapAuthSession } from "@/components/providers/auth-session";
-import { ApiError, RateLimitError } from "@/lib/errors";
+import { ApiError, AuthError, RateLimitError } from "@/lib/errors";
 
 /**
  * Ưu tiên message thật từ backend (ApiError), rơi về fallback khi không có.
@@ -229,6 +229,17 @@ export function useLogin() {
       // đợi. Phân biệt rõ 429 với lỗi đăng nhập thật.
       if (error instanceof RateLimitError) {
         toast.error("Bạn thử quá nhiều lần, vui lòng đợi 1 phút rồi thử lại");
+        return;
+      }
+      // Phase 1 quản lý người dùng (2026-09-28): tài khoản bị khoá phải hiện thông báo RIÊNG,
+      // không lẫn với "sai mật khẩu". So bằng `error.code` (ACCOUNT_LOCKED do backend trả,
+      // auth_handler.go Login), KHÔNG so nguyên văn message tiếng Việt — review đối kháng
+      // (review-260928-users-pr72-pr28.md finding #5) chỉ ra so chuỗi cứng sẽ âm thầm vỡ nếu
+      // backend đổi câu chữ thông báo mà không đổi code.
+      if (error instanceof AuthError && error.code === "ACCOUNT_LOCKED") {
+        toast.error("Tài khoản đã bị khoá", {
+          description: "Vui lòng liên hệ quản trị viên để được hỗ trợ.",
+        });
         return;
       }
       toast.error("Đăng nhập thất bại", { description: "Email hoặc mật khẩu không đúng" });

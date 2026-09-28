@@ -125,14 +125,14 @@ api.interceptors.response.use(
           }
           window.dispatchEvent(new Event("fortex:auth-session-expired"));
         }
-        throw new AuthError(extractErrorMessage(data, "Authentication required"));
+        throw new AuthError(extractErrorMessage(data, "Authentication required"), data?.code);
       }
     }
 
     // Normalize errors
     switch (status) {
       case 401:
-        throw new AuthError(extractErrorMessage(data, "Authentication required"));
+        throw new AuthError(extractErrorMessage(data, "Authentication required"), data?.code);
       case 403:
         throw new ForbiddenError(extractErrorMessage(data, "Insufficient permissions"));
       case 404:

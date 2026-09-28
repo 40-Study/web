@@ -4,7 +4,7 @@
 
 import { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AuthError, NetworkError, ValidationError } from "./errors";
+import { AuthError, isAccountLockedError, NetworkError, ValidationError } from "./errors";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,6 +21,10 @@ export const queryClient = new QueryClient({
       onError: (error) => {
         // Validation errors handled by form
         if (error instanceof ValidationError) return;
+        // Bị khoá giữa phiên: interceptor phát `fortex:auth-session-expired` -> bootstrap hiện
+        // toast tiếng Việt riêng. Không hiện thêm "Error / Please login again" (message tiếng Anh
+        // từ field `error` của body backend).
+        if (isAccountLockedError(error)) return;
 
         if (error instanceof NetworkError) {
           toast.error("Connection lost", { description: error.message });
