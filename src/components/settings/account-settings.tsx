@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuthStore, type UnifiedRole } from "@/stores/auth.store";
+import { ApplyTeacherButton } from "@/components/teacher-application/apply-teacher-button";
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
 
@@ -148,6 +149,9 @@ export function AccountSettings({
           </Button>
         </div>
       </div>
+
+      {/* Phase 3: lối vào nộp hồ sơ giảng viên cho user đã có vai trò (tự ẩn khi đã là TEACHER). */}
+      <ApplyTeacherButton />
 
       {/* Email — display only */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
