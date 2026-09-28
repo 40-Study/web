@@ -14,6 +14,7 @@ import { CourseDetailHeader } from "@/components/course/course-detail-header";
 import { CourseDetailContent } from "@/components/course/course-detail-content";
 import { CourseDetailSidebar } from "@/components/course/course-detail-sidebar";
 import { useCourseBySlug, useEnrolledCourses, useEnrollCourse } from "@/hooks/use-courses";
+import { useCourseReviews } from "@/hooks/queries/use-reviews";
 import { useAuthStore } from "@/stores/auth.store";
 
 function LoadingSkeleton() {
@@ -46,6 +47,11 @@ export default function CourseDetailPage() {
   // use-courses.ts; nếu vẫn gọi thì khách bị 401 rồi đá về /login.
   const { data: enrolledCourses = [], isLoading: enrolledLoading } = useEnrolledCourses();
   const enrollMutation = useEnrollCourse();
+  // Số liệu đánh giá THẬT từ bảng reviews (public, không cần đăng nhập) —
+  // trước đây header hiện "4.8 (318 đánh giá)" lấy từ cột lưu sẵn trên
+  // courses, không đồng bộ với reviews thật (0 review) (QA khách+học sinh P2,
+  // 260927; verify-260927 xác nhận root cause là cột dẫn xuất không đồng bộ).
+  const { data: reviewsData } = useCourseReviews(course?.id ? String(course.id) : "");
 
   const enrolledCourse = useMemo(() => {
     return enrolledCourses.find(
@@ -115,12 +121,24 @@ export default function CourseDetailPage() {
 
   return (
     <div>
-      <CourseDetailHeader course={course} />
+      <CourseDetailHeader
+        course={course}
+        reviewsSummary={
+          reviewsData
+            ? { average: Number(reviewsData.average_rating ?? 0), total: reviewsData.total }
+            : undefined
+        }
+      />
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <CourseDetailContent course={course} isEnrolled={isEnrolled} courseSlug={courseSlug} />
+            <CourseDetailContent
+              course={course}
+              isEnrolled={isEnrolled}
+              courseSlug={courseSlug}
+              reviewsData={reviewsData}
+            />
           </div>
 
           <div className="lg:col-span-1">

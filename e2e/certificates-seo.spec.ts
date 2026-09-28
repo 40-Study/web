@@ -38,6 +38,21 @@ test.describe("tra cứu chứng chỉ (công khai)", () => {
   });
 });
 
+// Review PR #25 (BLOCKER #2): /certificates ("chứng chỉ của tôi", route
+// group (app) — cần đăng nhập) trước đây KHÔNG có trong
+// PROTECTED_ROUTE_PREFIXES của middleware -> khách chưa đăng nhập vào thẳng
+// trang này bị NextResponse.next() cho qua, trang tự render rồi API 401 ->
+// trắng màn hình thay vì được đá về /login như mọi route (app) khác.
+test.describe("chứng chỉ của tôi (cần đăng nhập)", () => {
+  test("chưa đăng nhập vào /certificates -> bị đá về /login, không trắng màn hình", async ({
+    page,
+  }) => {
+    await page.goto("/certificates");
+
+    await expect(page).toHaveURL(/\/login/);
+  });
+});
+
 test.describe("file SEO", () => {
   test("/robots.txt chặn khu vực riêng tư, trỏ tới sitemap", async ({
     request,

@@ -1,6 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { describe, expect, it, vi } from "vitest";
 import { api } from "./api-client";
+import { ApiError, NetworkError } from "./errors";
 
 function unauthorized(config: InternalAxiosRequestConfig) {
   return new AxiosError("unauthorized", "ERR_BAD_REQUEST", config, undefined, {
@@ -9,6 +10,16 @@ function unauthorized(config: InternalAxiosRequestConfig) {
     headers: {},
     config,
     data: { message: "expired" },
+  });
+}
+
+function errorResponse(config: InternalAxiosRequestConfig, status: number, data: unknown) {
+  return new AxiosError("request failed", "ERR_BAD_REQUEST", config, undefined, {
+    status,
+    statusText: String(status),
+    headers: {},
+    config,
+    data,
   });
 }
 
@@ -88,5 +99,87 @@ describe("API 401 error.code — giữ nguyên code thật từ backend", () => 
         },
       })
     ).rejects.toMatchObject({ status: 401, code: "AUTH_ERROR" });
+  });
+
+  // Nhánh thứ 2 ném AuthError: `case 401` trong switch — chỉ chạy khi request đã `_retry`
+  // (refresh THÀNH CÔNG nhưng request gửi lại vẫn 401). Test đột biến lúc merge main vào #28
+  // cho thấy bỏ `data?.code` riêng ở nhánh này thì 2 test trên vẫn xanh — test này khoá lại.
+  it("refresh thành công nhưng retry vẫn 401 ACCOUNT_LOCKED (case 401 trong switch) -> error.code=ACCOUNT_LOCKED", async () => {
+    const refresh = vi.spyOn(axios, "post").mockResolvedValue({ data: {} });
+    let requestAttempts = 0;
+
+    await expect(
+      api.get("/protected", {
+        adapter: async (config) => {
+          requestAttempts += 1;
+          throw lockedResponse(config);
+        },
+      })
+    ).rejects.toMatchObject({ status: 401, code: "ACCOUNT_LOCKED", message: "Tài khoản đã bị khoá" });
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(requestAttempts).toBe(2);
+  });
+});
+
+// Review PR #25 (item 3, MAJOR): extractErrorMessage có thể lộ lỗi kỹ thuật
+// backend (SQL/panic message) khi status không phải 4xx — chỉ 4xx (lỗi do
+// chính request) mới được hiển thị chi tiết `error`/`message` backend trả về;
+// 5xx và mất mạng PHẢI luôn là thông báo chung tiếng Việt.
+describe("extractErrorMessage — chỉ lộ chi tiết backend khi 4xx", () => {
+  it("400 (chưa case riêng, vẫn là 4xx) -> hiện đúng chi tiết backend trả về", async () => {
+    await expect(
+      api.get("/orders", {
+        adapter: async (config) =>
+          Promise.reject(errorResponse(config, 400, { error: "coupon_code đã hết hạn" })),
+      })
+    ).rejects.toMatchObject({ message: "coupon_code đã hết hạn" });
+  });
+
+  it("404 (đã case riêng, vẫn 4xx) -> hiện đúng chi tiết backend trả về", async () => {
+    await expect(
+      api.get("/orders/does-not-exist", {
+        adapter: async (config) =>
+          Promise.reject(errorResponse(config, 404, { message: "order không tồn tại" })),
+      })
+    ).rejects.toMatchObject({ message: "order không tồn tại" });
+  });
+
+  it("500 -> KHÔNG lộ message/error kỹ thuật của backend, chỉ thông báo chung", async () => {
+    const rejection = api.get("/orders", {
+      adapter: async (config) =>
+        Promise.reject(
+          errorResponse(config, 500, {
+            error: "pq: duplicate key value violates unique constraint \"orders_pkey\"",
+          })
+        ),
+    });
+
+    await expect(rejection).rejects.toBeInstanceOf(ApiError);
+    await expect(rejection).rejects.toMatchObject({
+      status: 500,
+      message: "Có lỗi xảy ra, vui lòng thử lại",
+    });
+    await expect(rejection).rejects.not.toMatchObject({
+      message: expect.stringContaining("duplicate key"),
+    });
+  });
+
+  it("502/503 (5xx khác) -> cũng chỉ thông báo chung, không lộ backend", async () => {
+    await expect(
+      api.get("/orders", {
+        adapter: async (config) =>
+          Promise.reject(errorResponse(config, 503, { message: "upstream connect error" })),
+      })
+    ).rejects.toMatchObject({ status: 503, message: "Có lỗi xảy ra, vui lòng thử lại" });
+  });
+
+  it("mất mạng (không có response) -> NetworkError với thông báo chung tiếng Việt", async () => {
+    const rejection = api.get("/orders", {
+      adapter: async () => Promise.reject(new AxiosError("Network Error", "ERR_NETWORK")),
+    });
+
+    await expect(rejection).rejects.toBeInstanceOf(NetworkError);
+    await expect(rejection).rejects.toMatchObject({ message: "Có lỗi xảy ra, vui lòng thử lại" });
   });
 });

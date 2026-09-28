@@ -72,6 +72,20 @@ async function runBootstrap(): Promise<SessionStatus> {
     return "anonymous";
   }
 
+  // Khách chưa từng đăng nhập trên trình duyệt này — không có `user` cache từ
+  // lần trước (persist trong localStorage "auth-storage", xoá khi logout).
+  // Bỏ qua getMe()/refresh-token hoàn toàn thay vì gọi vô điều kiện. Trước
+  // đây MỌI lần tải trang của khách đều bắn 401 GET /auth/me rồi tự động
+  // POST /auth/refresh-token (api-client.ts interceptor), tốn chung quota
+  // rate-limit 5 lần/phút/IP với /auth/login (authRateLimiter) — vài lần tải
+  // lại trang bình thường đã đủ khiến người dùng thật login ngay sau đó bị
+  // 429 (QA khách P2, 260927). Người dùng ĐÃ từng đăng nhập (còn `user` cache)
+  // vẫn được thử khôi phục phiên bình thường bên dưới.
+  if (!store.user) {
+    store.setSessionStatus("anonymous");
+    return "anonymous";
+  }
+
   const previousUnifiedRole = store.activeUnifiedRole;
   const previousRoleName = store.activeRole;
   store.setSessionStatus("checking");

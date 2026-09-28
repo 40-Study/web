@@ -76,6 +76,31 @@ export function copyEndToEndHeaders(source: Headers, options: { request: boolean
   return result;
 }
 
+/**
+ * Review PR #25 vòng 2 (contract với lane backend): item trước dùng
+ * `request.ip` để tự gắn thêm IP client — nhưng Next.js 14.2.20 KHÔNG điền
+ * `request.ip` cho App Router Route Handler chạy `runtime = "nodejs"` (route
+ * này khai `export const runtime = "nodejs"` ở đầu file); trường đó chỉ có ở
+ * Edge runtime hoặc nền tảng có cắm sẵn (Vercel). Nên `clientIp` luôn
+ * `undefined` ở đây, và bản trước đó khi `undefined` sẽ chủ động XOÁ
+ * `x-forwarded-for` — kể cả khi Next đã tự có sẵn giá trị đúng.
+ *
+ * Next tự đặt `x-forwarded-for ??= socket.remoteAddress` lên request thô
+ * TRƯỚC khi request tới route handler (base-server.js:529 trong bản
+ * 14.2.20 đang cài) — nghĩa là `request.headers.get("x-forwarded-for")` ở
+ * đây ĐÃ mang giá trị đúng: chuỗi XFF client tự gửi (nếu có — Next append
+ * IP của chính nó vào, không thay thế) hoặc địa chỉ socket ngay lập tức nếu
+ * client không gửi gì. Việc của hop này chỉ là CHUYỂN TIẾP NGUYÊN GIÁ TRỊ
+ * đó xuống backend — không xoá, không tự bịa thêm IP nào khác.
+ *
+ * Backend (#69 BLOCKER) chỉ tin header này khi TCP peer (chính Next server)
+ * nằm trong TRUSTED_PROXIES — việc "attest" nằm ở phía backend (peer trust),
+ * không phải ở hop Next này phải tự gắn thêm gì.
+ */
+export function resolveForwardedFor(request: NextRequest): string | undefined {
+  return request.headers.get("x-forwarded-for") ?? undefined;
+}
+
 export function normalizeSetCookie(cookie: string, request: NextRequest): string {
   const isLocalHttp =
     request.nextUrl.protocol === "http:" &&
@@ -99,6 +124,12 @@ export async function proxyRequest(request: NextRequest, path: string[]) {
   const encodedPath = path.map((segment) => encodeURIComponent(segment)).join("/");
   const targetUrl = `${backendUrl}/api/${encodedPath}${request.nextUrl.search}`;
   const requestHeaders = copyEndToEndHeaders(request.headers, { request: true });
+  const forwardedFor = resolveForwardedFor(request);
+  if (forwardedFor) {
+    requestHeaders.set("x-forwarded-for", forwardedFor);
+  } else {
+    requestHeaders.delete("x-forwarded-for");
+  }
   const requestBody =
     request.method !== "GET" && request.method !== "HEAD" ? await request.arrayBuffer() : undefined;
 

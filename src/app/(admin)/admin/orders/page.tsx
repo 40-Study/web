@@ -1,0 +1,186 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useAdminOrders } from "@/hooks/queries/use-admin-orders";
+import type { OrderStatus } from "@/services/order.service";
+import { QueryState } from "@/components/common/query-state";
+import { Badge } from "@/components/ui/badge";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+
+// ─── Local types ──────────────────────────────────────────────────────────────
+
+type StatusFilter = OrderStatus | "";
+
+const STATUS_LIST: OrderStatus[] = [
+  "pending",
+  "processing",
+  "completed",
+  "cancelled",
+  "refunded",
+  "expired",
+];
+
+// Màu badge theo trạng thái — "refunded"/"cancelled" PHẢI khác màu nhau (lỗi đã có
+// ở trang /admin/reports cũ: đánh đồng 2 trạng thái này, xem qa-260927-admin.md).
+const STATUS_VARIANT: Record<OrderStatus, "success" | "warning" | "destructive" | "outline" | "secondary"> = {
+  pending: "outline",
+  processing: "warning",
+  completed: "success",
+  cancelled: "secondary",
+  refunded: "destructive",
+  expired: "outline",
+};
+
+const STATUS_LABEL: Record<OrderStatus, string> = {
+  pending: "Chờ thanh toán",
+  processing: "Đang xử lý",
+  completed: "Hoàn tất",
+  cancelled: "Đã hủy",
+  refunded: "Đã hoàn tiền",
+  expired: "Hết hạn",
+};
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default function AdminOrdersPage() {
+  const [status, setStatus] = useState<StatusFilter>("");
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
+  const [page, setPage] = useState(1);
+  const limit = 20;
+
+  const { data, isLoading, isError, error, refetch } = useAdminOrders({
+    status: status || undefined,
+    page,
+    limit,
+  });
+
+  // Lọc theo mã đơn/email PHÍA CLIENT trên trang hiện tại — filter server-side (status/user_id/
+  // from/to) đã đủ cho khối lượng V1; tìm-nhanh-trong-trang không cần round-trip riêng.
+  const filteredItems = (data?.items ?? []).filter((o) => {
+    if (!debouncedSearch) return true;
+    const q = debouncedSearch.toLowerCase();
+    return (
+      o.order_number.toLowerCase().includes(q) || o.user_email.toLowerCase().includes(q)
+    );
+  });
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Đơn hàng</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Toàn bộ đơn hàng trên hệ thống — xem chi tiết và xử lý hoàn tiền.
+        </p>
+      </div>
+
+      {/* Filters */}
+      <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm theo mã đơn hoặc email học viên..."
+            className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+          />
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value as StatusFilter);
+              setPage(1);
+            }}
+            className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+          >
+            <option value="">Tất cả trạng thái</option>
+            {STATUS_LIST.map((s) => (
+              <option key={s} value={s}>
+                {STATUS_LABEL[s]}
+              </option>
+            ))}
+          </select>
+        </div>
+      </section>
+
+      <QueryState
+        isLoading={isLoading}
+        isError={isError}
+        error={error}
+        onRetry={() => refetch()}
+        isEmpty={!isLoading && !isError && filteredItems.length === 0}
+        emptyTitle="Không có đơn hàng nào"
+        emptyDescription="Chưa có đơn khớp bộ lọc hiện tại."
+      >
+        <section className="overflow-hidden rounded-xl border bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+          <div className="overflow-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th className="px-4 py-3 text-left">Mã đơn</th>
+                  <th className="px-4 py-3 text-left">Học viên</th>
+                  <th className="px-4 py-3 text-left">Khóa học</th>
+                  <th className="px-4 py-3 text-left">Tổng tiền</th>
+                  <th className="px-4 py-3 text-left">Trạng thái</th>
+                  <th className="px-4 py-3 text-left">Ngày tạo</th>
+                  <th className="px-4 py-3 text-left" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {filteredItems.map((order) => (
+                  <tr key={order.id}>
+                    <td className="px-4 py-3 font-medium">{order.order_number}</td>
+                    <td className="px-4 py-3">{order.user_email}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                      {order.items.map((i) => i.course_title).join(", ") || "-"}
+                    </td>
+                    <td className="px-4 py-3 font-medium">{formatCurrency(order.total_amount)}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant={STATUS_VARIANT[order.status]}>
+                        {STATUS_LABEL[order.status]}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-gray-500">{formatDate(order.created_at)}</td>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/orders/${order.id}`}
+                        className="rounded bg-gray-100 px-2 py-1 text-xs font-medium hover:bg-gray-200 dark:bg-gray-800"
+                      >
+                        Chi tiết
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Pagination */}
+        {data && data.total_pages > 1 && (
+          <div className="flex items-center justify-between px-1 text-sm text-gray-500">
+            <span>
+              Trang {data.page}/{data.total_pages} — {data.total_count} đơn
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="rounded border px-3 py-1 disabled:opacity-40 dark:border-gray-700"
+              >
+                Trước
+              </button>
+              <button
+                disabled={page >= data.total_pages}
+                onClick={() => setPage((p) => p + 1)}
+                className="rounded border px-3 py-1 disabled:opacity-40 dark:border-gray-700"
+              >
+                Sau
+              </button>
+            </div>
+          </div>
+        )}
+      </QueryState>
+    </div>
+  );
+}

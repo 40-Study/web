@@ -11,7 +11,51 @@ import { useAuthStore } from "@/stores/auth.store";
 import { getRoleFromToken } from "@/lib/jwt";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { bootstrapAuthSession } from "@/components/providers/auth-session";
-import { AuthError } from "@/lib/errors";
+import { ApiError, AuthError, RateLimitError } from "@/lib/errors";
+
+/**
+ * Ưu tiên message thật từ backend (ApiError), rơi về fallback khi không có.
+ * Rate-limit (429) luôn xử lý riêng bằng message tiếng Việt cố định —
+ * `RateLimitError.message` là text tiếng Anh cứng ("Too many requests.")
+ * không lấy được `retry_after`/message thật từ backend
+ * ("Too many authentication attempts...") vì api-client.ts's interceptor
+ * ném `new RateLimitError()` không kèm dữ liệu response. Phát hiện khi test
+ * lại OTP sai bị dính chung bucket rate-limit với /register (260927) —
+ * nếu không tách riêng, người dùng bị 429 sẽ thấy message tiếng Anh khó hiểu
+ * y hệt lỗi thật.
+ */
+export function authErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof RateLimitError) {
+    return "Bạn thao tác quá nhiều lần, vui lòng đợi một chút rồi thử lại";
+  }
+  if (error instanceof ApiError && error.message) return error.message;
+  return fallback;
+}
+
+/**
+ * Dịch 3 message OTP tiếng Anh CỐ ĐỊNH mà backend trả (xem
+ * internal/service/auth_service.go dòng ~281, ~1392, ~1400/1432 — dùng chung
+ * cho cả xác thực đăng ký lẫn quên mật khẩu) sang tiếng Việt. Giữ lại số lượt
+ * thử còn lại khi có — thông tin hữu ích, không phải chỉ báo lỗi suông. Message
+ * không khớp mẫu nào (RateLimitError tiếng Việt, fallback tiếng Việt...) được
+ * trả nguyên vẹn. api-client.ts giờ ưu tiên đọc field `error` (chi tiết thật)
+ * thay vì `message` (nhãn chung "Register failed") nên chuỗi tiếng Anh này
+ * mới lộ ra được — nếu không dịch sẽ vi phạm "UI tiếng Việt nhất quán" (QA
+ * khách P1, 260927).
+ */
+export function translateOtpErrorMessage(message: string): string {
+  const attemptsMatch = message.match(/invalid OTP,\s*(\d+)\s*attempts?\s*remaining/i);
+  if (attemptsMatch) {
+    return `Mã OTP không đúng, còn ${attemptsMatch[1]} lần thử`;
+  }
+  if (/OTP not found or expired/i.test(message)) {
+    return "Mã OTP đã hết hạn, vui lòng bấm \"Gửi lại mã\"";
+  }
+  if (/invalid OTP data/i.test(message)) {
+    return "Mã OTP không hợp lệ, vui lòng thử lại";
+  }
+  return message;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Query Keys
@@ -178,6 +222,15 @@ export function useLogin() {
     },
     onError: (error: unknown) => {
       console.error("Login error:", error);
+      // A-P3-1 (verify-260927-student-admin.md): trước đây LUÔN hiện "Email
+      // hoặc mật khẩu không đúng" bất kể lỗi thật là gì — bị rate-limit 429
+      // (dùng chung bucket với /refresh-token, xem S-P1-2) cũng hiện y hệt
+      // sai mật khẩu, khiến người dùng đổi mật khẩu vô ích trong lúc chỉ cần
+      // đợi. Phân biệt rõ 429 với lỗi đăng nhập thật.
+      if (error instanceof RateLimitError) {
+        toast.error("Bạn thử quá nhiều lần, vui lòng đợi 1 phút rồi thử lại");
+        return;
+      }
       // Phase 1 quản lý người dùng (2026-09-28): tài khoản bị khoá phải hiện thông báo RIÊNG,
       // không lẫn với "sai mật khẩu". So bằng `error.code` (ACCOUNT_LOCKED do backend trả,
       // auth_handler.go Login), KHÔNG so nguyên văn message tiếng Việt — review đối kháng
@@ -357,6 +410,17 @@ export function useResetPassword() {
     onSuccess: () => {
       toast.success("Đặt lại mật khẩu thành công");
       router.push("/reset-password/success");
+    },
+    onError: (error: unknown) => {
+      // Trước đây KHÔNG có onError — OTP sai/hết hạn khi đặt lại mật khẩu rơi
+      // vào catch{} rỗng ở reset-password/page.tsx (comment cũ ghi nhầm "toast
+      // shown in hook"), người dùng bấm "Đặt lại mật khẩu" không thấy phản hồi
+      // gì (QA khách P1, 260927 — áp dụng cho luồng quên mật khẩu).
+      toast.error(
+        translateOtpErrorMessage(
+          authErrorMessage(error, "Mã OTP không đúng hoặc đã hết hạn, vui lòng thử lại")
+        )
+      );
     },
   });
 }

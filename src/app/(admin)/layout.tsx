@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, Building2, Flag, FolderTree, LayoutDashboard, LogOut, Settings, ShieldCheck, Users } from "lucide-react";
+import { BarChart3, Building2, Flag, FolderTree, LayoutDashboard, LogOut, Receipt, Settings, ShieldCheck, Users } from "lucide-react";
 
 import { RoleGuard } from "@/components/guards";
 import { Avatar } from "@/components/ui/avatar";
@@ -19,9 +19,10 @@ const adminMenu = [
   { label: "Phân quyền", href: "/admin/permissions", icon: Settings },
   { label: "Danh mục khoá học", href: "/admin/categories", icon: FolderTree },
   { label: "Báo cáo vi phạm", href: "/admin/moderation", icon: Flag },
-  // Đổi tên từ "Báo cáo hệ thống": trang này thực chất là ví của CHÍNH admin đang đăng nhập,
-  // không phải doanh thu toàn nền tảng — xem chú thích ở admin/reports/page.tsx (A-P1-5).
-  { label: "Ví của tôi", href: "/admin/reports", icon: BarChart3 },
+  { label: "Đơn hàng", href: "/admin/orders", icon: Receipt },
+  // "Ví của tôi" (PR #24) đã được thay bằng báo cáo doanh thu nền tảng THẬT (PR #29) —
+  // xem admin/reports/page.tsx. Đổi lại tên mục nav cho khớp nội dung trang thật.
+  { label: "Báo cáo hệ thống", href: "/admin/reports", icon: BarChart3 },
   // TODO (Phase 3): "Nhật ký hoạt động" (/admin/audit-logs) tạm ẩn khỏi nav.
   // Trang KHÔNG trắng — nó đã có banner amber nói rõ backend chưa có endpoint
   // audit-log và hiển thị mảng rỗng có chủ đích. Lý do ẩn là mặt mục này chưa

@@ -57,11 +57,40 @@ async function doRefresh(): Promise<void> {
 
 // ─── Response interceptor: 401 → refresh → retry ───────────────────────────
 
+type ErrorResponseBody = {
+  code?: string;
+  message?: string;
+  /** Nhiều handler (auth/cart/review...) đặt CHI TIẾT lỗi thật ở đây, còn
+   * `message` chỉ là nhãn chung chung ("Register failed", "Refresh token
+   * failed"...) — xem internal/handler/auth_handler.go, cart_handler.go,
+   * review_handler.go. order_handler.go dùng quy ước khác (chi tiết thẳng
+   * trong `message`, không có field này). */
+  error?: string;
+  details?: Record<string, string[]>;
+};
+
+/**
+ * Ưu tiên `error` (chi tiết thật) khi có, rơi về `message` khi không — tương
+ * thích cả 2 quy ước backend đang dùng song song. Trước đây LUÔN đọc
+ * `data?.message`, nên với auth/cart/review handler, mọi lỗi hiện ra chỉ là
+ * nhãn chung chung tiếng Anh ("Register failed") thay vì lý do thật ("invalid
+ * OTP, 4 attempts remaining") — phát hiện khi kiểm chứng lỗi OTP sai (260927).
+ */
+function extractErrorMessage(data: ErrorResponseBody | undefined, fallback: string): string {
+  return data?.error || data?.message || fallback;
+}
+
+// Review PR #25 (item 3 — MAJOR): `error`/`message` từ backend CHỈ an toàn
+// hiển thị thẳng cho người dùng khi lỗi là do CHÍNH request đó (4xx — sai
+// input, thiếu quyền, không tồn tại…). Với 5xx (lỗi server) hoặc mất mạng,
+// message backend trả về CÓ THỂ là lỗi kỹ thuật nội bộ (stack trace rút gọn,
+// tên bảng SQL, panic message…) — không được lộ ra UI. Dùng đúng 1 thông báo
+// chung tiếng Việt cho cả 2 trường hợp này.
+const GENERIC_SERVER_ERROR_MESSAGE = "Có lỗi xảy ra, vui lòng thử lại";
+
 api.interceptors.response.use(
   (res) => res,
-  async (
-    error: AxiosError<{ code?: string; message?: string; details?: Record<string, string[]> }>
-  ) => {
+  async (error: AxiosError<ErrorResponseBody>) => {
     if (!error.response) throw new NetworkError();
 
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
@@ -96,28 +125,36 @@ api.interceptors.response.use(
           }
           window.dispatchEvent(new Event("fortex:auth-session-expired"));
         }
-        throw new AuthError(data?.message, data?.code);
+        throw new AuthError(extractErrorMessage(data, "Authentication required"), data?.code);
       }
     }
 
     // Normalize errors
     switch (status) {
       case 401:
-        throw new AuthError(data?.message, data?.code);
+        throw new AuthError(extractErrorMessage(data, "Authentication required"), data?.code);
       case 403:
-        throw new ForbiddenError(data?.message);
+        throw new ForbiddenError(extractErrorMessage(data, "Insufficient permissions"));
       case 404:
-        throw new NotFoundError(data?.message);
+        throw new NotFoundError(extractErrorMessage(data, "Resource not found"));
       case 422:
         throw new ValidationError(data?.details ?? {});
       case 429:
         throw new RateLimitError();
-      default:
+      default: {
+        // 4xx chưa được case riêng ở trên (400, 405, 409, 410…) — vẫn là lỗi
+        // do request, an toàn hiển thị chi tiết backend. 5xx (và mọi status
+        // khác nằm ngoài dải 4xx) → CHỈ thông báo chung, không đọc data?.error
+        // /data?.message (xem GENERIC_SERVER_ERROR_MESSAGE).
+        const isClientError = status >= 400 && status < 500;
         throw new ApiError(
           status,
           data?.code ?? "UNKNOWN",
-          data?.message ?? "Something went wrong"
+          isClientError
+            ? extractErrorMessage(data, "Something went wrong")
+            : GENERIC_SERVER_ERROR_MESSAGE
         );
+      }
     }
   }
 );

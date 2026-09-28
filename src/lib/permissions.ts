@@ -21,6 +21,13 @@ export const PERMISSIONS = {
   MANAGE_ALL_CLASSES: "manage_all_classes",
   IMPERSONATE_USER: "impersonate_user",
   VIEW_AUDIT_LOGS: "view_audit_logs",
+  // Đơn hàng admin + hoàn tiền + báo cáo doanh thu (quyết định chủ dự án 27/09/2026). Giá trị PHẢI
+  // khớp tên permission thật ở backend (data/permissions/system_admin_permissions.json) — khác
+  // với MANAGE_SYSTEM_SETTINGS/VIEW_SYSTEM_ANALYTICS phía trên (placeholder chưa từng khớp
+  // backend thật, 0 nơi dùng), 2 hằng số này gate thật cho trang /admin/orders và mục cấu hình
+  // % phí ở /admin/reports.
+  MANAGE_PAYMENTS: "PAYMENTS_MANAGE",
+  MANAGE_PLATFORM_FEE: "SYSTEM_SETTINGS_MANAGE",
 
   // Org Owner
   MANAGE_ORG_MEMBERS: "manage_org_members",
