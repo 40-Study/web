@@ -20,6 +20,8 @@ export interface PrizeDraft {
   rank_to: string;
   grant_certificate: boolean;
   voucher_id: string | null;
+  /** Tên hiển thị của voucher đang gắn (từ server) — để giảng viên thấy và gỡ voucher admin đã gắn. */
+  voucher_label?: string;
 }
 
 export interface ContestFormValues {
@@ -81,7 +83,11 @@ export function validatePrizes(prizes: PrizeDraft[], allowVoucher: boolean): str
     if (from < 1) return `${label}: hạng bắt đầu từ 1.`;
     if (to < from) return `${label}: "đến hạng" phải lớn hơn hoặc bằng "từ hạng".`;
     if (to > CONTEST_MAX_PRIZE_RANK) return `${label}: hạng tối đa là ${CONTEST_MAX_PRIZE_RANK}.`;
-    if (!allowVoucher && p.voucher_id) return "Chỉ quản trị viên được gắn giải voucher.";
+    // Cuộc thi bị từ chối có thể còn voucher admin gắn lúc chờ duyệt; giảng viên gửi voucher_id
+    // sẽ nhận 403 CONTEST_VOUCHER_ADMIN_ONLY → chỉ rõ dòng và cách gỡ (review m5).
+    if (!allowVoucher && p.voucher_id) {
+      return `${label}: đang có voucher do quản trị viên gắn. Giảng viên không gửi được voucher, hãy bấm "Gỡ voucher" ở dòng này.`;
+    }
     if (!p.grant_certificate && !p.voucher_id) {
       return `${label}: cần trao chứng nhận hoặc voucher.`;
     }
@@ -197,6 +203,7 @@ export function prizesToDrafts(contest: Pick<ContestManage, "prizes">): PrizeDra
     rank_to: String(p.rank_to),
     grant_certificate: p.grant_certificate,
     voucher_id: p.voucher?.id ?? null,
+    voucher_label: p.voucher ? `${p.voucher.name} (${p.voucher.code})` : undefined,
   }));
 }
 

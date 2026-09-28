@@ -100,6 +100,24 @@ export function PrizeEditor({
               />
               Trao chứng nhận
             </label>
+            {!allowVoucher && prize.voucher_id && (
+              // Voucher admin gắn trước khi từ chối: giảng viên chỉ xem được và gỡ, không chọn lại (m5).
+              <div
+                className="flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 px-2 py-1 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                data-testid={`prize-admin-voucher-${index}`}
+              >
+                <span className="min-w-0 break-words">Voucher do quản trị viên gắn: {prize.voucher_label ?? "không rõ tên"}</span>
+                <button
+                  type="button"
+                  disabled={disabled}
+                  className="font-medium underline"
+                  onClick={() => update(index, { voucher_id: null, voucher_label: undefined })}
+                  data-testid={`prize-remove-voucher-${index}`}
+                >
+                  Gỡ voucher
+                </button>
+              </div>
+            )}
             {allowVoucher && (
               <select
                 value={prize.voucher_id ?? ""}

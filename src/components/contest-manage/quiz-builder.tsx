@@ -1,16 +1,22 @@
 "use client";
 
 /**
- * Tạo nhanh bài trắc nghiệm standalone cho cuộc thi. Tạo quiz trước rồi lần lượt từng câu; nếu một
- * câu lỗi thì dừng và báo đúng câu đó — quiz đã tạo vẫn còn (sửa tiếp được vì cuộc thi chưa gửi duyệt).
+ * Tạo nhanh bài trắc nghiệm standalone cho cuộc thi.
+ *
+ * Tạo quiz trước rồi lần lượt từng câu. Nếu một câu lỗi giữa chừng, component NHỚ quiz đã tạo và số
+ * câu đã lưu: bấm "Lưu" lần nữa chỉ thêm các câu còn thiếu vào CHÍNH quiz đó (không tạo quiz trùng),
+ * còn các câu đã lưu bị khoá sửa để nội dung trên màn hình luôn khớp với backend. Bấm "Huỷ" khi đã có
+ * quiz dở thì xoá quiz đó (chưa ai làm nên backend cho xoá) để không để lại rác.
  */
 
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { contestErrorMessage } from "@/lib/contest-manage/errors";
 import {
+  FILL_BLANK_MAX_ACCEPTED,
   QUESTION_TYPE_LABEL,
   newQuestion,
   toCreateQuestionDTO,
@@ -21,11 +27,17 @@ import {
 import { quizService } from "@/services/quiz.service";
 
 const FIELD =
-  "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900";
+  "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:bg-gray-50 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-900";
 
 interface QuizBuilderProps {
   onCreated: (quizId: string) => void;
   onCancel: () => void;
+}
+
+/** Quiz đã tạo trên backend và số câu đầu tiên đã lưu thành công. */
+interface PartialQuiz {
+  quizId: string;
+  saved: number;
 }
 
 export function QuizBuilder({ onCreated, onCancel }: QuizBuilderProps) {
@@ -33,6 +45,10 @@ export function QuizBuilder({ onCreated, onCancel }: QuizBuilderProps) {
   const [questions, setQuestions] = useState<QuestionDraft[]>([newQuestion()]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [partial, setPartial] = useState<PartialQuiz | null>(null);
+
+  const savedCount = partial?.saved ?? 0;
+  const isLocked = (qi: number) => qi < savedCount;
 
   const updateQuestion = (qi: number, patch: Partial<QuestionDraft>) =>
     setQuestions((prev) => prev.map((q, i) => (i === qi ? { ...q, ...patch } : q)));
@@ -54,24 +70,44 @@ export function QuizBuilder({ onCreated, onCancel }: QuizBuilderProps) {
     }
     setError(null);
     setSaving(true);
+    let quizId = partial?.quizId ?? null;
+    let saved = partial?.saved ?? 0;
     try {
-      const quiz = await quizService.create({ title: title.trim(), trigger_type: "manual" });
-      for (let i = 0; i < questions.length; i += 1) {
+      if (!quizId) {
+        const quiz = await quizService.create({ title: title.trim(), trigger_type: "manual" });
+        quizId = quiz.id;
+      }
+      for (let i = saved; i < questions.length; i += 1) {
         try {
-          await quizService.createQuestion(quiz.id, toCreateQuestionDTO(questions[i], i));
+          await quizService.createQuestion(quizId, toCreateQuestionDTO(questions[i], i));
+          saved = i + 1;
         } catch (err) {
           setError(
-            `Đã tạo bài trắc nghiệm nhưng lưu câu ${i + 1} thất bại: ${contestErrorMessage(err, "lỗi không xác định")}`
+            `Lưu câu ${i + 1} thất bại: ${contestErrorMessage(err, "lỗi không xác định")}. Sửa rồi bấm lưu lại, các câu đã lưu được giữ nguyên.`
           );
           return;
         }
       }
-      onCreated(quiz.id);
+      setPartial(null);
+      onCreated(quizId);
     } catch (err) {
       setError(contestErrorMessage(err, "Không thể tạo bài trắc nghiệm, thử lại sau."));
     } finally {
+      // Ghi lại tiến độ kể cả khi lỗi, để lần lưu sau tái dùng đúng quiz và bỏ qua câu đã lưu.
+      if (quizId && saved < questions.length) setPartial({ quizId, saved });
       setSaving(false);
     }
+  };
+
+  const cancel = async () => {
+    if (partial) {
+      try {
+        await quizService.delete(partial.quizId);
+      } catch (err) {
+        toast.error(contestErrorMessage(err, "Không xoá được bài trắc nghiệm đang tạo dở."));
+      }
+    }
+    onCancel();
   };
 
   return (
@@ -80,103 +116,130 @@ export function QuizBuilder({ onCreated, onCancel }: QuizBuilderProps) {
         <label htmlFor="quiz-title" className="mb-1 block text-sm font-medium">
           Tên bài trắc nghiệm <span className="text-red-500">*</span>
         </label>
-        <input id="quiz-title" value={title} onChange={(e) => setTitle(e.target.value)} className={FIELD} />
+        <input
+          id="quiz-title"
+          value={title}
+          disabled={!!partial}
+          onChange={(e) => setTitle(e.target.value)}
+          className={FIELD}
+        />
       </div>
 
-      {questions.map((q, qi) => (
-        <div key={qi} className="space-y-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-950" data-testid={`question-${qi}`}>
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-semibold">Câu {qi + 1}</span>
-            <Button
-              type="button"
-              variant="destructiveGhost"
-              size="icon"
-              disabled={questions.length === 1}
-              onClick={() => setQuestions((prev) => prev.filter((_, i) => i !== qi))}
-              aria-label={`Xoá câu ${qi + 1}`}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-          <textarea
-            value={q.text}
-            onChange={(e) => updateQuestion(qi, { text: e.target.value })}
-            rows={2}
-            placeholder="Nội dung câu hỏi"
-            aria-label={`Nội dung câu ${qi + 1}`}
-            className={FIELD}
-          />
-          <div className="grid gap-2 sm:grid-cols-2">
-            <select
-              value={q.type}
-              aria-label={`Loại câu ${qi + 1}`}
-              onChange={(e) => {
-                const type = e.target.value as ContestQuestionType;
-                updateQuestion(qi, { ...newQuestion(type), text: q.text, points: q.points });
-              }}
-              className={FIELD}
-            >
-              {(Object.keys(QUESTION_TYPE_LABEL) as ContestQuestionType[]).map((t) => (
-                <option key={t} value={t}>
-                  {QUESTION_TYPE_LABEL[t]}
-                </option>
-              ))}
-            </select>
-            <input
-              type="number"
-              min={0.5}
-              step={0.5}
-              value={q.points}
-              aria-label={`Điểm câu ${qi + 1}`}
-              onChange={(e) => updateQuestion(qi, { points: e.target.value })}
+      {questions.map((q, qi) => {
+        const locked = isLocked(qi);
+        const fillBlank = q.type === "fill_blank";
+        return (
+          <div key={qi} className="space-y-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-950" data-testid={`question-${qi}`}>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-semibold">
+                Câu {qi + 1}
+                {locked && <span className="ml-2 text-xs font-normal text-green-700">Đã lưu</span>}
+              </span>
+              <Button
+                type="button"
+                variant="destructiveGhost"
+                size="icon"
+                disabled={questions.length === 1 || locked}
+                onClick={() => setQuestions((prev) => prev.filter((_, i) => i !== qi))}
+                aria-label={`Xoá câu ${qi + 1}`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+            <textarea
+              value={q.text}
+              disabled={locked}
+              onChange={(e) => updateQuestion(qi, { text: e.target.value })}
+              rows={2}
+              placeholder={fillBlank ? "Nội dung câu hỏi, ví dụ: Thủ đô của Việt Nam là ___" : "Nội dung câu hỏi"}
+              aria-label={`Nội dung câu ${qi + 1}`}
               className={FIELD}
             />
-          </div>
-          <div className="space-y-2">
-            {q.answers.map((a, ai) => (
-              <div key={ai} className="flex items-center gap-2">
-                <input
-                  type={q.type === "multiple_choice" ? "checkbox" : "radio"}
-                  name={`correct-${qi}`}
-                  checked={a.correct}
-                  onChange={(e) => setCorrect(qi, ai, e.target.checked)}
-                  aria-label={`Câu ${qi + 1} đáp án ${ai + 1} đúng`}
-                />
-                <input
-                  value={a.text}
-                  disabled={q.type === "true_false"}
-                  onChange={(e) =>
-                    updateQuestion(qi, {
-                      answers: q.answers.map((x, i) => (i === ai ? { ...x, text: e.target.value } : x)),
-                    })
-                  }
-                  placeholder={`Đáp án ${ai + 1}`}
-                  aria-label={`Câu ${qi + 1} đáp án ${ai + 1}`}
-                  className={FIELD}
-                />
-                {q.type !== "true_false" && q.answers.length > 2 && (
-                  <button
-                    type="button"
-                    className="text-xs text-red-600"
-                    onClick={() => updateQuestion(qi, { answers: q.answers.filter((_, i) => i !== ai) })}
-                  >
-                    Xoá
-                  </button>
-                )}
-              </div>
-            ))}
-            {q.type !== "true_false" && q.answers.length < 6 && (
-              <button
-                type="button"
-                className="text-xs font-medium text-primary-700"
-                onClick={() => updateQuestion(qi, { answers: [...q.answers, { text: "", correct: false }] })}
+            <div className="grid gap-2 sm:grid-cols-2">
+              <select
+                value={q.type}
+                disabled={locked}
+                aria-label={`Loại câu ${qi + 1}`}
+                onChange={(e) => {
+                  const type = e.target.value as ContestQuestionType;
+                  updateQuestion(qi, { ...newQuestion(type), text: q.text, points: q.points });
+                }}
+                className={FIELD}
               >
-                + Thêm đáp án
-              </button>
+                {(Object.keys(QUESTION_TYPE_LABEL) as ContestQuestionType[]).map((t) => (
+                  <option key={t} value={t}>
+                    {QUESTION_TYPE_LABEL[t]}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                min={0.5}
+                step={0.5}
+                value={q.points}
+                disabled={locked}
+                aria-label={`Điểm câu ${qi + 1}`}
+                onChange={(e) => updateQuestion(qi, { points: e.target.value })}
+                className={FIELD}
+              />
+            </div>
+            {fillBlank && (
+              <p className="text-xs text-gray-500" data-testid={`fill-blank-hint-${qi}`}>
+                Học viên gõ câu trả lời; bài chỉ được tính đúng khi khớp CHÍNH XÁC một trong các đáp án dưới
+                đây (phân biệt chữ hoa, chữ thường). Thêm các cách viết khác nếu muốn chấp nhận.
+              </p>
             )}
+            <div className="space-y-2">
+              {q.answers.map((a, ai) => (
+                <div key={ai} className="flex items-center gap-2">
+                  {!fillBlank && (
+                    <input
+                      type={q.type === "multiple_choice" ? "checkbox" : "radio"}
+                      name={`correct-${qi}`}
+                      checked={a.correct}
+                      disabled={locked}
+                      onChange={(e) => setCorrect(qi, ai, e.target.checked)}
+                      aria-label={`Câu ${qi + 1} đáp án ${ai + 1} đúng`}
+                    />
+                  )}
+                  <input
+                    value={a.text}
+                    disabled={locked || q.type === "true_false"}
+                    onChange={(e) =>
+                      updateQuestion(qi, {
+                        answers: q.answers.map((x, i) => (i === ai ? { ...x, text: e.target.value } : x)),
+                      })
+                    }
+                    placeholder={fillBlank ? `Đáp án chấp nhận ${ai + 1}` : `Đáp án ${ai + 1}`}
+                    aria-label={fillBlank ? `Câu ${qi + 1} đáp án chấp nhận ${ai + 1}` : `Câu ${qi + 1} đáp án ${ai + 1}`}
+                    className={FIELD}
+                  />
+                  {!locked && q.type !== "true_false" && q.answers.length > (fillBlank ? 1 : 2) && (
+                    <button
+                      type="button"
+                      className="text-xs text-red-600"
+                      onClick={() => updateQuestion(qi, { answers: q.answers.filter((_, i) => i !== ai) })}
+                    >
+                      Xoá
+                    </button>
+                  )}
+                </div>
+              ))}
+              {!locked && q.type !== "true_false" && q.answers.length < (fillBlank ? FILL_BLANK_MAX_ACCEPTED : 6) && (
+                <button
+                  type="button"
+                  className="text-xs font-medium text-primary-700"
+                  onClick={() =>
+                    updateQuestion(qi, { answers: [...q.answers, { text: "", correct: fillBlank }] })
+                  }
+                >
+                  {fillBlank ? "+ Thêm cách viết khác" : "+ Thêm đáp án"}
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       <Button type="button" variant="outline" size="sm" onClick={() => setQuestions((p) => [...p, newQuestion()])}>
         <Plus className="mr-1 h-4 w-4" />
@@ -189,11 +252,11 @@ export function QuizBuilder({ onCreated, onCancel }: QuizBuilderProps) {
         </p>
       )}
       <div className="flex flex-wrap justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
+        <Button type="button" variant="outline" onClick={cancel} disabled={saving}>
           Huỷ
         </Button>
         <Button type="button" onClick={save} isLoading={saving} data-testid="quiz-builder-save">
-          Lưu bài trắc nghiệm
+          {partial ? "Lưu các câu còn lại" : "Lưu bài trắc nghiệm"}
         </Button>
       </div>
     </div>

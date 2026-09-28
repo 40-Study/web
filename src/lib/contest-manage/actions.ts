@@ -34,15 +34,21 @@ export type FinalizeState =
 
 /**
  * Trạng thái nút "Chốt kết quả" cho ADMIN.
- *  - hidden: cuộc thi chưa công bố hoặc chưa kết thúc (DRAFT/PENDING/REJECTED/CANCELLED/UPCOMING/ACTIVE).
- *  - wait: phase ENDED nhưng chưa qua `end_time + 60s` (backend trả 409 CONTEST_NOT_ENDED) — hiện
- *    nút khoá kèm giờ mở.
+ *  - hidden: chưa công bố, hoặc `now` còn trước `end_time`.
+ *  - wait: đã qua `end_time` nhưng chưa tới `end_time + 60s` (backend trả 409 CONTEST_NOT_ENDED) —
+ *    hiện nút khoá kèm giờ mở.
  *  - ready: bấm được. done: đã chốt.
+ *
+ * Tính theo `end_time` + đồng hồ `now`, KHÔNG theo `phase` của lần tải: `phase` là ảnh chụp lúc gọi
+ * API, nên admin mở trang khi cuộc thi còn ACTIVE sẽ thấy `phase=ACTIVE` mãi tới khi tải lại (review
+ * m4). Backend tính phase đúng bằng quy tắc này (contract §3.1) nên hai bên luôn khớp.
  */
 export function getFinalizeState(contest: ContestLike, now: Date): FinalizeState {
   if (contest.finalized_at || contest.phase === "FINALIZED") return { kind: "done" };
-  if (contest.status !== "PUBLISHED" || contest.phase !== "ENDED") return { kind: "hidden" };
-  const availableAt = new Date(new Date(contest.end_time).getTime() + CONTEST_FINALIZE_DELAY_MS);
+  if (contest.status !== "PUBLISHED") return { kind: "hidden" };
+  const endMs = new Date(contest.end_time).getTime();
+  if (now.getTime() < endMs) return { kind: "hidden" };
+  const availableAt = new Date(endMs + CONTEST_FINALIZE_DELAY_MS);
   if (now.getTime() < availableAt.getTime()) return { kind: "wait", availableAt };
   return { kind: "ready" };
 }

@@ -9,11 +9,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ContestManage } from "@/types/contest";
 
 const mockUseManagedContest = vi.fn();
+const mockUpdate = vi.fn();
 const noopMutation = () => ({ mutate: vi.fn(), isPending: false });
 
 vi.mock("@/hooks/queries/use-contest-manage", () => ({
   useManagedContest: (...args: unknown[]) => mockUseManagedContest(...args),
-  useUpdateContest: () => noopMutation(),
+  useUpdateContest: () => ({ mutate: mockUpdate, isPending: false }),
   useDeleteContest: () => noopMutation(),
   useSubmitContestReview: () => noopMutation(),
   useContestQuizOptions: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }),
@@ -77,7 +78,10 @@ function withContest(contest: ContestManage) {
 }
 
 describe("/teacher/contests/[id]", () => {
-  beforeEach(() => mockUseManagedContest.mockReset());
+  beforeEach(() => {
+    mockUseManagedContest.mockReset();
+    mockUpdate.mockReset();
+  });
 
   it("cuộc thi đã kết thúc, không có voucher: KHÔNG có nút chốt, chỉ có ghi chú chờ admin", () => {
     withContest(buildContest());
@@ -101,5 +105,34 @@ describe("/teacher/contests/[id]", () => {
     expect(screen.getByTestId("prize-row-0")).toBeTruthy();
     expect(screen.queryByTestId("prize-voucher-0")).toBeNull();
     expect(screen.queryByText(/Không tặng voucher/)).toBeNull();
+  });
+
+  it("m5: bị từ chối còn giải voucher admin gắn → thấy voucher, gỡ được rồi lưu (không kẹt lỗi voucher)", () => {
+    withContest(
+      buildContest({
+        status: "REJECTED",
+        phase: "REJECTED",
+        reject_reason: "Sửa lịch",
+        start_time: "2099-01-01T08:00:00Z",
+        end_time: "2099-01-01T10:00:00Z",
+        prizes: [
+          { id: "p-1", rank_from: 1, rank_to: 1, grant_certificate: true, voucher: { id: "v-1", code: "VIP100", name: "Giảm 100k" } },
+        ],
+      })
+    );
+    render(<TeacherContestDetailPage />);
+    expect(screen.getByTestId("prize-admin-voucher-0").textContent).toContain("Giảm 100k (VIP100)");
+
+    fireEvent.click(screen.getByTestId("contest-form-submit"));
+    expect(screen.getByTestId("prize-error").textContent).toMatch(/Giải 1: .*Gỡ voucher/);
+    expect(mockUpdate).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByTestId("prize-remove-voucher-0"));
+    expect(screen.queryByTestId("prize-admin-voucher-0")).toBeNull();
+    fireEvent.click(screen.getByTestId("contest-form-submit"));
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+    expect(mockUpdate.mock.calls[0][0].body.prizes).toEqual([
+      { rank_from: 1, rank_to: 1, grant_certificate: true, voucher_id: null },
+    ]);
   });
 });

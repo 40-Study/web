@@ -36,12 +36,18 @@ describe("getTeacherContestActions", () => {
 });
 
 describe("getFinalizeState (admin)", () => {
-  it("ẩn khi cuộc thi chưa kết thúc hoặc chưa công bố", () => {
-    const now = new Date("2026-10-01T12:00:00Z");
-    expect(getFinalizeState(contest("PUBLISHED", "ACTIVE"), now)).toEqual({ kind: "hidden" });
-    expect(getFinalizeState(contest("PUBLISHED", "UPCOMING"), now)).toEqual({ kind: "hidden" });
-    expect(getFinalizeState(contest("CANCELLED", "CANCELLED"), now)).toEqual({ kind: "hidden" });
-    expect(getFinalizeState(contest("PENDING_REVIEW", "PENDING_REVIEW"), now)).toEqual({ kind: "hidden" });
+  it("ẩn khi cuộc thi chưa tới end_time hoặc chưa công bố", () => {
+    const beforeEnd = new Date("2026-10-01T09:59:59Z");
+    expect(getFinalizeState(contest("PUBLISHED", "ACTIVE"), beforeEnd)).toEqual({ kind: "hidden" });
+    expect(getFinalizeState(contest("PUBLISHED", "UPCOMING"), beforeEnd)).toEqual({ kind: "hidden" });
+    const afterEnd = new Date("2026-10-01T12:00:00Z");
+    expect(getFinalizeState(contest("CANCELLED", "CANCELLED"), afterEnd)).toEqual({ kind: "hidden" });
+    expect(getFinalizeState(contest("PENDING_REVIEW", "PENDING_REVIEW"), afterEnd)).toEqual({ kind: "hidden" });
+  });
+
+  it("m4: dữ liệu tải lúc ACTIVE (phase cũ) nhưng đồng hồ đã qua end_time + 60s → bấm được", () => {
+    expect(getFinalizeState(contest("PUBLISHED", "ACTIVE"), new Date("2026-10-01T10:01:00Z"))).toEqual({ kind: "ready" });
+    expect(getFinalizeState(contest("PUBLISHED", "ACTIVE"), new Date("2026-10-01T10:00:10Z")).kind).toBe("wait");
   });
 
   it("ENDED nhưng chưa qua end_time + 60s → chờ, kèm giờ mở", () => {

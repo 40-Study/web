@@ -91,7 +91,7 @@ describe("validatePrizes", () => {
 
   it("giảng viên không được gắn voucher, admin thì được", () => {
     const withVoucher = [prize(1, 1, { voucher_id: "v-1" })];
-    expect(validatePrizes(withVoucher, false)).toBe("Chỉ quản trị viên được gắn giải voucher.");
+    expect(validatePrizes(withVoucher, false)).toMatch(/^Giải 1: .*Gỡ voucher/);
     expect(validatePrizes(withVoucher, true)).toBeNull();
   });
 

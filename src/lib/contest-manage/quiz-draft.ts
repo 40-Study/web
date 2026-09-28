@@ -1,12 +1,16 @@
 /**
  * Bản nháp bài trắc nghiệm tạo riêng cho cuộc thi (contract §7: bước 1 của form dùng
  * `quizService.create` KHÔNG lesson_id/course_id + `quizService.createQuestion`).
- * Chỉ các loại câu chấm tự động được: cuộc thi từ chối quiz có câu tự luận (§3.3).
+ * Chỉ các loại câu chấm tự động được (§3.3): không có tự luận.
+ *
+ * `fill_blank` (điền khuyết): backend chấm bằng so khớp CHÍNH XÁC `text_answer` với từng đáp án
+ * `is_correct=true` (quiz_service.go, phân biệt hoa thường, không cắt khoảng trắng). Vì vậy mỗi
+ * "đáp án" của câu điền khuyết là một CÁCH VIẾT được chấp nhận, và tất cả đều gửi `is_correct: true`.
  */
 
 import type { CreateQuestionDTO } from "@/services/quiz.service";
 
-export type ContestQuestionType = "single_choice" | "multiple_choice" | "true_false";
+export type ContestQuestionType = "single_choice" | "multiple_choice" | "true_false" | "fill_blank";
 
 export interface AnswerDraft {
   text: string;
@@ -24,7 +28,10 @@ export const QUESTION_TYPE_LABEL: Record<ContestQuestionType, string> = {
   single_choice: "Một đáp án đúng",
   multiple_choice: "Nhiều đáp án đúng",
   true_false: "Đúng / Sai",
+  fill_blank: "Điền khuyết",
 };
+
+export const FILL_BLANK_MAX_ACCEPTED = 10;
 
 export function newQuestion(type: ContestQuestionType = "single_choice"): QuestionDraft {
   if (type === "true_false") {
@@ -37,6 +44,9 @@ export function newQuestion(type: ContestQuestionType = "single_choice"): Questi
         { text: "Sai", correct: false },
       ],
     };
+  }
+  if (type === "fill_blank") {
+    return { text: "", type, points: "1", answers: [{ text: "", correct: true }] };
   }
   return {
     text: "",
@@ -60,6 +70,12 @@ export function validateQuizDraft(title: string, questions: QuestionDraft[]): st
     if (!q.text.trim()) return `${label}: chưa nhập nội dung câu hỏi.`;
     const points = Number(q.points);
     if (!Number.isFinite(points) || points <= 0) return `${label}: điểm phải lớn hơn 0.`;
+    if (q.type === "fill_blank") {
+      // Điền khuyết: không có "đáp án sai"; chỉ cần ít nhất 1 cách viết được chấp nhận.
+      if (q.answers.length === 0) return `${label}: cần ít nhất 1 đáp án được chấp nhận.`;
+      if (q.answers.some((a) => !a.text.trim())) return `${label}: có đáp án được chấp nhận đang để trống.`;
+      continue;
+    }
     if (q.answers.length < 2) return `${label}: cần ít nhất 2 đáp án.`;
     if (q.answers.some((a) => !a.text.trim())) return `${label}: có đáp án đang để trống.`;
     const correct = q.answers.filter((a) => a.correct).length;
@@ -70,14 +86,17 @@ export function validateQuizDraft(title: string, questions: QuestionDraft[]): st
 }
 
 export function toCreateQuestionDTO(q: QuestionDraft, index: number): CreateQuestionDTO {
+  const isFillBlank = q.type === "fill_blank";
   return {
     question_text: q.text.trim(),
     question_type: q.type,
     points: Number(q.points),
     display_order: index + 1,
     answers: q.answers.map((a, i) => ({
+      // Điền khuyết so khớp nguyên văn ở backend → giữ đúng chuỗi người nhập, chỉ bỏ khoảng trắng
+      // hai đầu để một dấu cách thừa lúc gõ không làm hỏng việc chấm.
       answer_text: a.text.trim(),
-      is_correct: a.correct,
+      is_correct: isFillBlank ? true : a.correct,
       display_order: i + 1,
     })),
   };

@@ -3,7 +3,7 @@
  * duyệt gửi kèm giải (có voucher admin chọn); từ chối bắt buộc lý do.
  */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ContestManage } from "@/types/contest";
@@ -124,6 +124,44 @@ describe("/admin/contests/[id]", () => {
     withContest(buildContest({ phase: "ACTIVE" }));
     render(<AdminContestDetailPage />);
     expect(screen.queryByTestId("finalize-contest")).toBeNull();
+  });
+
+  it("m4: mở trang lúc còn ACTIVE, đồng hồ chạy qua end_time + 60s → nút chốt tự bật, không cần tải lại", () => {
+    vi.setSystemTime(new Date("2026-10-01T09:59:00Z"));
+    withContest(buildContest({ phase: "ACTIVE" }));
+    render(<AdminContestDetailPage />);
+    expect(screen.queryByTestId("finalize-contest")).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(125_000); // 10:01:05 — đã qua mốc mở chốt 10:01:00
+    });
+    expect((screen.getByTestId("finalize-contest") as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("m6: duyệt không sửa giải vẫn gửi ĐỦ giải đang có (không gửi prizes: [] làm xoá hết giải)", () => {
+    vi.setSystemTime(new Date("2026-09-30T00:00:00Z"));
+    withContest(
+      buildContest({
+        status: "PENDING_REVIEW",
+        phase: "PENDING_REVIEW",
+        prizes: [
+          { id: "p-1", rank_from: 1, rank_to: 1, grant_certificate: true, voucher: { id: "v-1", code: "QACONTEST", name: "Giảm 50k" } },
+          { id: "p-2", rank_from: 2, rank_to: 3, grant_certificate: true, voucher: null },
+        ],
+      })
+    );
+    render(<AdminContestDetailPage />);
+    fireEvent.click(screen.getByTestId("approve-contest"));
+    fireEvent.click(screen.getByTestId("approve-confirm"));
+    expect(mockApprove).toHaveBeenCalledWith(
+      {
+        id: "c-1",
+        prizes: [
+          { rank_from: 1, rank_to: 1, grant_certificate: true, voucher_id: "v-1" },
+          { rank_from: 2, rank_to: 3, grant_certificate: true, voucher_id: null },
+        ],
+      },
+      expect.anything()
+    );
   });
 
   it("chờ duyệt: admin gắn voucher cho giải rồi duyệt → gửi prizes kèm voucher_id", () => {
