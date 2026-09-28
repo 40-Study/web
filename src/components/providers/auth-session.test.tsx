@@ -226,6 +226,29 @@ describe("cookie-backed auth bootstrap", () => {
     });
   });
 
+  // Tài khoản nhiều vai trò (vd teacher1): /auth/login không trả `user`, nên sau select-role
+  // store vẫn chưa có `user` cache. Bootstrap ép (forceFresh) ngay sau select-role / OAuth
+  // success PHẢI gọi getMe và lưu `user` vào "auth-storage" — nếu không, mọi lần tải lại trang
+  // rơi vào guard khách ở trên và bị đá về /login dù cookie phiên hợp lệ.
+  it("bootstrap ngay sau khi hoàn tất đăng nhập gọi getMe dù chưa có user cache và lưu user", async () => {
+    const teacherRole: UnifiedRole = { id: "system-role-teacher", type: "system", role_name: "TEACHER", display_name: "Giáo viên" };
+    useAuthStore.setState({ activeRole: "TEACHER", activeUnifiedRole: teacherRole });
+    vi.mocked(authService.getMe).mockResolvedValue(user);
+    vi.mocked(authService.getMyRoles).mockResolvedValue({ roles: [teacherRole, systemRole] });
+    vi.mocked(authService.getMyPermissions).mockResolvedValue([]);
+
+    await expect(bootstrapAuthSession(true)).resolves.toBe("authenticated");
+
+    expect(authService.getMe).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState()).toMatchObject({
+      sessionStatus: "authenticated",
+      user: authUser,
+      activeRole: "TEACHER",
+    });
+    const persisted = JSON.parse(window.localStorage.getItem("auth-storage") ?? "{}");
+    expect(persisted.state.user).toEqual(authUser);
+  });
+
   it("keeps the multi-role selection token in sessionStorage only", async () => {
     useAuthStore.getState().setSessionToken("tab-scoped-token");
     useAuthStore.getState().setAuthenticated(true);
