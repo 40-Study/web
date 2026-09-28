@@ -208,6 +208,30 @@ describe("cookie-backed auth bootstrap", () => {
     toastError.mockRestore();
   });
 
+  // C3 / N-08 (QA vòng 2): phiên đang có bị mất (401 cả sau refresh) → layout đưa về /login; phải
+  // có thông báo tiếng Việt cho biết lý do thay vì bị đá đi âm thầm.
+  it("phiên đang có bị 401 (không phải khoá) -> toast 'Phiên đăng nhập đã hết hạn' tiếng Việt", async () => {
+    useAuthStore.setState({ user: authUser });
+    vi.mocked(authService.getMe).mockRejectedValue(new AuthError("Invalid or expired token", "AUTH_ERROR"));
+    const toastInfo = vi.spyOn(toast, "info").mockImplementation(() => "" as never);
+
+    await expect(bootstrapAuthSession()).resolves.toBe("anonymous");
+
+    expect(toastInfo).toHaveBeenCalledWith("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+    toastInfo.mockRestore();
+  });
+
+  it("lỗi không phải 401 (vd. mất mạng) -> KHÔNG báo hết phiên", async () => {
+    useAuthStore.setState({ user: authUser });
+    vi.mocked(authService.getMe).mockRejectedValue(new Error("network down"));
+    const toastInfo = vi.spyOn(toast, "info").mockImplementation(() => "" as never);
+
+    await bootstrapAuthSession();
+
+    expect(toastInfo).not.toHaveBeenCalled();
+    toastInfo.mockRestore();
+  });
+
   // QA khách P2 (260927): trước đây MỌI lần tải trang (kể cả khách chưa từng
   // đăng nhập, không có `user` cache) đều gọi GET /auth/me -> 401 -> tự động
   // POST /auth/refresh-token, tốn chung quota rate-limit 5 lần/phút/IP với

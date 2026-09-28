@@ -16,6 +16,7 @@ import { CourseDetailSidebar } from "@/components/course/course-detail-sidebar";
 import { useCourseBySlug, useEnrolledCourses, useEnrollCourse } from "@/hooks/use-courses";
 import { useCourseReviews } from "@/hooks/queries/use-reviews";
 import { useAuthStore } from "@/stores/auth.store";
+import { getErrorMessage } from "@/lib/error-messages";
 
 function LoadingSkeleton() {
   return (
@@ -76,13 +77,14 @@ export default function CourseDetailPage() {
   if (isLoading) return <LoadingSkeleton />;
 
   if (error) {
+    // N13: không in thẳng error.message (lộ "invalid UUID length: 14"); slug không tồn tại đã được
+    // hook trả null → nhánh notFound() bên dưới. Còn lại là lỗi mạng/server thật.
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <h2 className="text-2xl font-bold text-destructive mb-2">Lỗi tải khóa học</h2>
         <p className="text-muted-foreground mb-4">
-          {error instanceof Error ? error.message : "Không thể tải thông tin khóa học"}
+          {getErrorMessage(error, "Không thể tải thông tin khóa học, vui lòng thử lại")}
         </p>
-        <p className="text-sm text-muted-foreground">Slug: {slug}</p>
       </div>
     );
   }

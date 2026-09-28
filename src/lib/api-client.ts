@@ -17,6 +17,7 @@ import {
   NotFoundError,
 } from "./errors";
 import { AUTH_ROLE_CHANGED_EVENT, type AuthRoleChangedDetail } from "./auth-events";
+import { useAuthStore } from "@/stores/auth.store";
 
 function resolveApiBaseUrl(): string {
   if (typeof window !== "undefined") {
@@ -73,11 +74,58 @@ async function doRefresh(): Promise<void> {
   }
 }
 
+// ─── Khi nào 401 KHÔNG được gọi refresh (C2, QA khách 260928) ───────────────
+//
+// `/auth/refresh-token` dùng chung bucket rate-limit 5 lần/phút/IP với `/auth/login`. Trước đây
+// MỌI 401 đều gọi refresh, nên gõ sai mật khẩu tốn 2 lượt (login 401 + refresh 400) và người dùng
+// bị 429 ngay lần thứ 4. Hai trường hợp refresh chắc chắn vô ích:
+//  1. Request tự nó là bước xác thực (gửi mật khẩu / OTP / token): 401 nghĩa là thông tin sai,
+//     không phải access token hết hạn. KHÔNG gồm /auth/me, /auth/my-roles... (cần refresh để khôi
+//     phục phiên), nên so khớp CHÍNH XÁC đường dẫn, không dùng tiền tố "/auth/".
+//  2. Store đã biết phiên là `anonymous` (khách, hoặc refresh vừa thất bại): không có refresh
+//     token hợp lệ để dùng. `checking` (bootstrap đang gọi /auth/me) vẫn được refresh.
+const CREDENTIAL_AUTH_PATHS = new Set([
+  "/auth/login",
+  "/auth/register",
+  "/auth/register/request",
+  "/auth/refresh-token",
+  "/auth/reset-password",
+  "/auth/reset-password/request",
+  "/auth/select-role",
+  "/auth/logout",
+]);
+
+function normalizeRequestPath(url: string | undefined): string {
+  if (!url) return "";
+  // `url` của axios là tương đối theo baseURL ("/auth/login"), có thể kèm query string.
+  const path = url.split("?")[0].replace(/^https?:\/\/[^/]+/, "").replace(/^\/api(?=\/)/, "");
+  return path.length > 1 ? path.replace(/\/+$/, "") : path;
+}
+
+export function shouldAttemptRefresh(url: string | undefined): boolean {
+  if (CREDENTIAL_AUTH_PATHS.has(normalizeRequestPath(url))) return false;
+  if (useAuthStore.getState().sessionStatus === "anonymous") return false;
+  return true;
+}
+
+function readRetryAfterSeconds(
+  data: ErrorResponseBody | undefined,
+  headers: Record<string, unknown> | undefined
+): number | undefined {
+  const fromBody = Number(data?.retry_after);
+  if (Number.isFinite(fromBody) && fromBody > 0) return Math.ceil(fromBody);
+  const fromHeader = Number(headers?.["retry-after"]);
+  if (Number.isFinite(fromHeader) && fromHeader > 0) return Math.ceil(fromHeader);
+  return undefined;
+}
+
 // ─── Response interceptor: 401 → refresh → retry ───────────────────────────
 
 type ErrorResponseBody = {
   code?: string;
   message?: string;
+  /** Số giây phải đợi khi 429 (internal/middleware/rate_limiter.go, account_lockout.go). */
+  retry_after?: number;
   /** Nhiều handler (auth/cart/review...) đặt CHI TIẾT lỗi thật ở đây, còn
    * `message` chỉ là nhãn chung chung ("Register failed", "Refresh token
    * failed"...) — xem internal/handler/auth_handler.go, cart_handler.go,
@@ -112,10 +160,10 @@ api.interceptors.response.use(
     if (!error.response) throw new NetworkError();
 
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
-    const { status, data } = error.response;
+    const { status, data, headers } = error.response;
 
-    // 401 → thử refresh 1 lần
-    if (status === 401 && !original._retry) {
+    // 401 → thử refresh 1 lần (trừ các trường hợp refresh vô ích, xem shouldAttemptRefresh)
+    if (status === 401 && !original._retry && shouldAttemptRefresh(original.url)) {
       original._retry = true;
 
       try {
@@ -158,7 +206,9 @@ api.interceptors.response.use(
       case 422:
         throw new ValidationError(data?.details ?? {});
       case 429:
-        throw new RateLimitError();
+        throw new RateLimitError(
+          readRetryAfterSeconds(data, headers as Record<string, unknown> | undefined)
+        );
       default: {
         // 4xx chưa được case riêng ở trên (400, 405, 409, 410…) — vẫn là lỗi
         // do request, an toàn hiển thị chi tiết backend. 5xx (và mọi status

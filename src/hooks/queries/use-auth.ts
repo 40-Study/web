@@ -11,7 +11,8 @@ import { useAuthStore } from "@/stores/auth.store";
 import { getRoleFromToken } from "@/lib/jwt";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { bootstrapAuthSession } from "@/components/providers/auth-session";
-import { ApiError, AuthError, RateLimitError } from "@/lib/errors";
+import { AuthError, RateLimitError } from "@/lib/errors";
+import { getErrorMessage } from "@/lib/error-messages";
 
 /**
  * Ưu tiên message thật từ backend (ApiError), rơi về fallback khi không có.
@@ -25,11 +26,9 @@ import { ApiError, AuthError, RateLimitError } from "@/lib/errors";
  * y hệt lỗi thật.
  */
 export function authErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof RateLimitError) {
-    return "Bạn thao tác quá nhiều lần, vui lòng đợi một chút rồi thử lại";
-  }
-  if (error instanceof ApiError && error.message) return error.message;
-  return fallback;
+  // QA vòng 2 (N9): trước đây trả thẳng `error.message` tiếng Anh của backend. Giờ đi qua bảng
+  // ánh xạ chung (lib/error-messages.ts); 429 tự kèm số giây chờ (RateLimitError, C5).
+  return getErrorMessage(error, fallback);
 }
 
 /**
@@ -228,7 +227,8 @@ export function useLogin() {
       // sai mật khẩu, khiến người dùng đổi mật khẩu vô ích trong lúc chỉ cần
       // đợi. Phân biệt rõ 429 với lỗi đăng nhập thật.
       if (error instanceof RateLimitError) {
-        toast.error("Bạn thử quá nhiều lần, vui lòng đợi 1 phút rồi thử lại");
+        // C5: kèm số giây chờ thật từ backend (retry_after) khi có.
+        toast.error(error.message);
         return;
       }
       // Phase 1 quản lý người dùng (2026-09-28): tài khoản bị khoá phải hiện thông báo RIÊNG,
@@ -432,6 +432,13 @@ export function useChangePassword() {
     onSuccess: () => {
       toast.success("Đổi mật khẩu thành công");
     },
+    // N9 / P-N1: trước đây không có onError → rơi vào toast mặc định "Error / incorrect current
+    // password". Form (account-settings.tsx) còn gắn lỗi ngay dưới ô "Mật khẩu hiện tại".
+    onError: (error: unknown) => {
+      toast.error("Đổi mật khẩu thất bại", {
+        description: getErrorMessage(error, "Không thể đổi mật khẩu, vui lòng thử lại"),
+      });
+    },
   });
 }
 
@@ -457,8 +464,7 @@ export function useDisconnectProvider() {
       toast.success("Đã ngắt kết nối tài khoản");
     },
     onError: (error: unknown) => {
-      const msg = error instanceof Error ? error.message : "Không thể ngắt kết nối";
-      toast.error(msg);
+      toast.error(getErrorMessage(error, "Không thể ngắt kết nối"));
     },
   });
 }

@@ -20,7 +20,7 @@ export default function AppLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isAuthenticated, hasHydrated, activeRole } = useAuthStore();
+  const { isAuthenticated, hasHydrated, activeRole, sessionStatus } = useAuthStore();
   const normalizedRole = normalizeRole(activeRole);
   const isAdminRole = normalizedRole === "SYSTEM_ADMIN" || normalizedRole === "ORG_OWNER";
 
@@ -66,8 +66,22 @@ export default function AppLayout({
     !!normalizedRole &&
     !isRouteAllowedForRole(pathname, navRole);
 
+  // N-08 (QA admin 260928, P1): mất phiên (bị khoá giữa phiên, token hết hạn) → bootstrap đặt
+  // `anonymous` nhưng layout chỉ `return null` và KHÔNG có nhánh điều hướng nào — RoleGuard (nơi
+  // có redirect /login) nằm BÊN DƯỚI lệnh return null đó nên không bao giờ mount → trang trắng vĩnh
+  // viễn, kể cả sau khi tải lại. Chỉ điều hướng khi bootstrap đã KẾT LUẬN (`anonymous`), không
+  // điều hướng lúc `checking` để khỏi đá người dùng đang khôi phục phiên hợp lệ.
+  const isSessionLost = hasHydrated && sessionStatus === "anonymous" && !isPublicRoute;
+
   useEffect(() => {
     if (!hasHydrated) return;
+
+    if (isSessionLost) {
+      // Trang login đọc `?redirect=` (lưu sessionStorage, dùng sau khi đăng nhập xong).
+      const current = `${window.location.pathname}${window.location.search}`;
+      router.replace(`${AUTH_ROUTES.LOGIN}?redirect=${encodeURIComponent(current)}`);
+      return;
+    }
 
     // Admin roles should go to admin dashboard — trừ các trang tài khoản cá nhân được phép ở trên.
     if (isAuthenticated && isAdminRole && !isAdminAllowedRoute) {
@@ -88,6 +102,7 @@ export default function AppLayout({
     }
   }, [
     hasHydrated,
+    isSessionLost,
     isAuthenticated,
     isAdminRole,
     isAdminAllowedRoute,
@@ -111,7 +126,16 @@ export default function AppLayout({
   // Wait for hydration
   if (!hasHydrated) return null;
 
-  // Not authenticated or no role → show nothing (redirect will happen in useEffect)
+  // Đang chuyển về /login (useEffect ở trên): hiện chữ thay vì màn trắng, phòng khi điều hướng chậm.
+  if (isSessionLost) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-6 text-sm text-muted-foreground" role="status">
+        Đang chuyển tới trang đăng nhập…
+      </div>
+    );
+  }
+
+  // Đang kiểm tra phiên, hoặc đã đăng nhập nhưng chưa chọn vai trò (useEffect chuyển sang chọn vai trò).
   if (!isAuthenticated || !normalizedRole) return null;
 
   // Admin trên trang tài khoản cá nhân: qua được RoleGuard bình thường (Sidebar/

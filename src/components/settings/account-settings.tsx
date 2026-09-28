@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuthStore, type UnifiedRole } from "@/stores/auth.store";
 import { ApplyTeacherButton } from "@/components/teacher-application/apply-teacher-button";
+import { ApiError } from "@/lib/errors";
+import { getErrorMessage } from "@/lib/error-messages";
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
 
@@ -98,7 +100,13 @@ export function AccountSettings({
       await onPasswordChange?.(data.currentPassword, data.newPassword);
       setPasswordDialogOpen(false);
       passwordForm.reset();
-    } catch { /* toast shown in hook */ } finally { setIsLoading(false); }
+    } catch (error) {
+      // Toast do useChangePassword hiện. Sai mật khẩu hiện tại (backend 400 "incorrect current
+      // password") thì gắn thêm lỗi ngay dưới ô nhập để người dùng biết sửa ô nào (P-N1).
+      if (error instanceof ApiError && /incorrect current password/i.test(error.message)) {
+        passwordForm.setError("currentPassword", { message: getErrorMessage(error) });
+      }
+    } finally { setIsLoading(false); }
   };
 
   const handleDeleteSubmit = async (data: DeleteAccountData) => {
