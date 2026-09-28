@@ -8,7 +8,7 @@
  * Test ĐỎ nếu roles quay lại bao gồm "ORG_OWNER".
  */
 
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import AdminLayout from "./layout";
@@ -31,6 +31,22 @@ describe("(admin)/layout — RoleGuard", () => {
     );
 
     await screen.findByText("NOI DUNG ADMIN");
+  });
+
+  it("menu quản trị có mục \"Cuộc thi\" trỏ tới /admin/contests (contract contest-feature §7)", async () => {
+    useAuthStore.getState().setSessionStatus("authenticated");
+    useAuthStore.getState().setActiveRole("SYSTEM_ADMIN");
+
+    renderWithProviders(
+      <AdminLayout>
+        <div>NOI DUNG ADMIN</div>
+      </AdminLayout>
+    );
+
+    await screen.findByText("NOI DUNG ADMIN");
+    const nav = screen.getByRole("navigation", { name: "Menu quản trị" });
+    const link = within(nav).getByRole("link", { name: /Cuộc thi/ });
+    expect(link.getAttribute("href")).toBe("/admin/contests");
   });
 
   it("ORG_OWNER KHÔNG vào được — không thấy nội dung con (bị RoleGuard chặn, redirect /403)", async () => {

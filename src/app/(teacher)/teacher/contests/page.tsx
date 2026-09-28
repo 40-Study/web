@@ -1,144 +1,137 @@
 "use client";
 
+/**
+ * /teacher/contests — cuộc thi do giảng viên tạo (GET /contests/manage).
+ * Sửa/xoá/gửi duyệt chỉ ở bản nháp hoặc bị từ chối. KHÔNG có nút chốt kết quả: ĐÍNH CHÍNH 28/09,
+ * chỉ quản trị viên chốt.
+ */
+
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  Trophy,
-  Plus,
-  Clock,
-  Users,
-  Trash2,
-  Send,
-  Loader2,
-  Eye,
-} from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Plus, Trophy } from "lucide-react";
+
+import { QueryState } from "@/components/common/query-state";
+import { ContestRowActions } from "@/components/contest-manage/teacher-row-actions";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import {
-  useContests,
-  useDeleteContest,
-  usePublishContest,
-} from "@/hooks/queries/use-contests";
-import type { Contest } from "@/services/contest.service";
-
-const STATUS_COLORS: Record<string, string> = {
-  DRAFT: "bg-gray-100 text-gray-700",
-  UPCOMING: "bg-blue-100 text-blue-700",
-  ACTIVE: "bg-green-100 text-green-700",
-  ENDED: "bg-orange-100 text-orange-700",
-  CANCELLED: "bg-red-100 text-red-700",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  DRAFT: "Bản nháp",
-  UPCOMING: "Sắp diễn ra",
-  ACTIVE: "Đang diễn ra",
-  ENDED: "Đã kết thúc",
-  CANCELLED: "Đã hủy",
-};
+import { Button } from "@/components/ui/button";
+import { useMyManagedContests } from "@/hooks/queries/use-contest-manage";
+import { formatVnDateTime } from "@/lib/contest-manage/format";
+import { CONTEST_STATUS_LABEL, phaseLabel, phaseVariant } from "@/lib/contest-manage/labels";
+import { CONTEST_STATUSES, isContestStatus, type ContestStatus } from "@/types/contest-manage";
 
 export default function TeacherContestsPage() {
-  const router = useRouter();
-  const { data, isLoading } = useContests({ limit: 100 });
-  const deleteContest = useDeleteContest();
-  const publishContest = usePublishContest();
-
-  const contests = data?.contests ?? [];
+  const [status, setStatus] = useState<ContestStatus | "">("");
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isError, error, refetch } = useMyManagedContests({
+    status: status || undefined,
+    page,
+    limit: 12,
+  });
+  const contests = data?.items ?? [];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Quản lý cuộc thi</h1>
-          <p className="text-muted-foreground mt-1">Tạo và quản lý các cuộc thi cho học sinh</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="flex items-center gap-2 text-2xl font-bold">
+            <Trophy className="h-6 w-6 shrink-0 text-primary-600" />
+            Cuộc thi của tôi
+          </h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Tạo cuộc thi trắc nghiệm, gửi quản trị viên duyệt. Kết quả do quản trị viên chốt sau khi cuộc thi kết thúc.
+          </p>
         </div>
-        <Link href="/teacher/contests/create">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
+        <Button asChild>
+          <Link href="/teacher/contests/create" data-testid="create-contest-link">
+            <Plus className="mr-1 h-4 w-4" />
             Tạo cuộc thi
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : contests.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Trophy className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
-          <h3 className="font-semibold text-lg">Chưa có cuộc thi nào</h3>
-          <p className="text-muted-foreground mt-1">Tạo cuộc thi đầu tiên cho học sinh</p>
-          <Link href="/teacher/contests/create">
-            <Button className="mt-4">
-              <Plus className="h-4 w-4 mr-2" />
-              Tạo cuộc thi
-            </Button>
-          </Link>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {contests.map((contest) => (
-            <Card key={contest.id} className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold truncate">{contest.title}</h3>
-                    <Badge className={cn("text-xs shrink-0", STATUS_COLORS[contest.status])}>
-                      {STATUS_LABELS[contest.status]}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />
-                      {new Date(contest.start_time).toLocaleDateString("vi-VN")}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5" />
-                      {contest.participant_count} thí sinh
-                    </span>
-                  </div>
-                </div>
+      <select
+        value={status}
+        aria-label="Lọc theo trạng thái"
+        onChange={(e) => {
+          setStatus(isContestStatus(e.target.value) ? e.target.value : "");
+          setPage(1);
+        }}
+        className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm sm:w-64 dark:border-gray-700 dark:bg-gray-900"
+      >
+        <option value="">Tất cả trạng thái</option>
+        {CONTEST_STATUSES.map((s) => (
+          <option key={s} value={s}>
+            {CONTEST_STATUS_LABEL[s]}
+          </option>
+        ))}
+      </select>
 
-                <div className="flex items-center gap-2">
-                  {contest.status === "DRAFT" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => publishContest.mutate(contest.id)}
-                      disabled={publishContest.isPending}
-                    >
-                      <Send className="h-3.5 w-3.5 mr-1" />
-                      Công bố
-                    </Button>
+      <QueryState
+        isLoading={isLoading}
+        isError={isError}
+        error={error}
+        onRetry={() => refetch()}
+        isEmpty={!isLoading && !isError && contests.length === 0}
+        emptyTitle="Chưa có cuộc thi nào"
+        emptyDescription="Bấm “Tạo cuộc thi” để bắt đầu."
+      >
+        <ul className="space-y-3" data-testid="teacher-contest-list">
+          {contests.map((c) => (
+            <li
+              key={c.id}
+              data-testid={`teacher-contest-${c.id}`}
+              className="rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-gray-950"
+            >
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="min-w-0 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link href={`/teacher/contests/${c.id}`} className="break-words font-semibold hover:underline">
+                      {c.title}
+                    </Link>
+                    <Badge variant={phaseVariant(c.phase)}>{phaseLabel(c.phase)}</Badge>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {formatVnDateTime(c.start_time)} → {formatVnDateTime(c.end_time)} · {c.duration_minutes} phút ·{" "}
+                    {c.participant_count} người tham gia
+                  </p>
+                  {c.status === "REJECTED" && c.reject_reason && (
+                    <p className="text-sm text-red-600" data-testid="reject-reason">
+                      Lý do từ chối: {c.reject_reason}
+                    </p>
                   )}
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => router.push(`/contests/${contest.slug}`)}
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Xem
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive"
-                    onClick={() => deleteContest.mutate(contest.id)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Xoá
-                  </Button>
+                  {c.status === "CANCELLED" && c.cancel_reason && (
+                    <p className="text-sm text-gray-600">Lý do huỷ: {c.cancel_reason}</p>
+                  )}
                 </div>
+                <ContestRowActions contest={c} />
               </div>
-            </Card>
+            </li>
           ))}
-        </div>
-      )}
+        </ul>
+        {data && data.total_pages > 1 && (
+          <div className="flex items-center justify-between text-sm text-gray-500">
+            <span>
+              Trang {page}/{data.total_pages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="rounded border px-3 py-1 disabled:opacity-40 dark:border-gray-700"
+              >
+                Trước
+              </button>
+              <button
+                disabled={page >= data.total_pages}
+                onClick={() => setPage((p) => p + 1)}
+                className="rounded border px-3 py-1 disabled:opacity-40 dark:border-gray-700"
+              >
+                Sau
+              </button>
+            </div>
+          </div>
+        )}
+      </QueryState>
     </div>
   );
 }

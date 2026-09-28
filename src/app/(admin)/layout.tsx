@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BarChart3, Banknote, Building2, Flag, FolderTree, LayoutDashboard, LogOut, Receipt, Settings, ShieldCheck, Users } from "lucide-react";
-import { BookCheck, UserCheck } from "lucide-react";
+import { BookCheck, Trophy, UserCheck } from "lucide-react";
 
 import { RoleGuard } from "@/components/guards";
 import { Avatar } from "@/components/ui/avatar";
@@ -33,6 +33,8 @@ const adminMenu = [
   // backend có API nhật ký hoạt động.
   { label: "Duyệt khoá học", href: "/admin/courses", icon: BookCheck },
   { label: "Duyệt giáo viên", href: "/admin/teacher-applications", icon: UserCheck },
+  // Cuộc thi (contract contest-feature §7): duyệt, gắn voucher, huỷ và CHỐT kết quả — chỉ admin chốt.
+  { label: "Cuộc thi", href: "/admin/contests", icon: Trophy },
 ];
 
 export default function AdminLayout({
