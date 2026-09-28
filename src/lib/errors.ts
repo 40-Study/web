@@ -26,6 +26,19 @@ export class AuthError extends ApiError {
   }
 }
 
+/**
+ * Tài khoản bị admin khoá — backend trả 401 với `code: "ACCOUNT_LOCKED"` (auth_middleware.go khi
+ * khoá giữa phiên, auth_handler.go khi đăng nhập). Tiêu đề hiển thị là hằng tiếng Việt, KHÔNG lấy
+ * từ `error.message`: `extractErrorMessage` ưu tiên field `error` của body, mà middleware trả
+ * `error: "Please login again"` (tiếng Anh) — lấy message sẽ hiện tiêu đề tiếng Anh cho người dùng.
+ */
+export const ACCOUNT_LOCKED_CODE = "ACCOUNT_LOCKED";
+export const ACCOUNT_LOCKED_TITLE = "Tài khoản đã bị khoá";
+
+export function isAccountLockedError(error: unknown): error is AuthError {
+  return error instanceof AuthError && error.code === ACCOUNT_LOCKED_CODE;
+}
+
 export class ForbiddenError extends ApiError {
   constructor(message = "Insufficient permissions") {
     super(403, "FORBIDDEN", message);

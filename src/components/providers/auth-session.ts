@@ -1,17 +1,14 @@
 import { toast } from "sonner";
-import { AuthError } from "@/lib/errors";
+import { ACCOUNT_LOCKED_TITLE, isAccountLockedError } from "@/lib/errors";
 import { PERMISSIONS, type Permission } from "@/lib/permissions";
 import { normalizeRole } from "@/lib/routes";
 import { authService, type UnifiedRole, type UserResponseDto } from "@/services/auth.service";
 import { useAuthStore, type AuthUser, type SessionStatus } from "@/stores/auth.store";
 
-// Thông báo khoá tài khoản (Phase 1 quản lý người dùng) — hiển thị NGUYÊN VĂN message backend
-// trả (auth_middleware.go/auth_handler.go). Phân biệt "bị khoá" với mọi lý do 401 khác bằng
-// `error.code === "ACCOUNT_LOCKED"` (xem dưới), KHÔNG so chuỗi message — review đối kháng
-// (review-260928-users-pr72-pr28.md finding #5) chỉ ra so chuỗi cứng sẽ âm thầm vỡ nếu backend
-// đổi câu chữ thông báo mà không đổi code.
-const ACCOUNT_LOCKED_CODE = "ACCOUNT_LOCKED";
-const ACCOUNT_LOCKED_MESSAGE = "Tài khoản đã bị khoá";
+// Thông báo khoá tài khoản (Phase 1 quản lý người dùng). Phân biệt "bị khoá" với mọi lý do 401
+// khác bằng `error.code === "ACCOUNT_LOCKED"`, KHÔNG so chuỗi message — review đối kháng
+// (review-260928-users-pr72-pr28.md finding #5). Tiêu đề là hằng tiếng Việt, KHÔNG dùng
+// `error.message` (body middleware có `error: "Please login again"`, xem lib/errors.ts).
 
 export const AUTH_SESSION_EXPIRED_EVENT = "fortex:auth-session-expired";
 
@@ -121,8 +118,8 @@ async function runBootstrap(): Promise<SessionStatus> {
     // Trước đây: bị đá về /login HOÀN TOÀN ÂM THẦM khi tài khoản bị admin khoá giữa phiên —
     // không có gì phân biệt với việc token hết hạn thông thường. Toast này chạy TRƯỚC khi
     // clearServerSession() — SPA điều hướng sang /login không unmount Toaster nên vẫn hiển thị.
-    if (error instanceof AuthError && error.code === ACCOUNT_LOCKED_CODE) {
-      toast.error(error.message || ACCOUNT_LOCKED_MESSAGE, {
+    if (isAccountLockedError(error)) {
+      toast.error(ACCOUNT_LOCKED_TITLE, {
         description: "Tài khoản của bạn đã bị quản trị viên khoá. Vui lòng liên hệ hỗ trợ.",
       });
     }

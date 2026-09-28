@@ -72,7 +72,9 @@ function lockedResponse(config: InternalAxiosRequestConfig) {
     statusText: "Unauthorized",
     headers: {},
     config,
-    data: { code: "ACCOUNT_LOCKED", message: "Tài khoản đã bị khoá" },
+    // Khớp NGUYÊN VĂN body thật của backend (internal/middleware/auth_middleware.go, nhánh
+    // ACCOUNT_LOCKED) — kể cả field `error` tiếng Anh mà extractErrorMessage ưu tiên đọc.
+    data: { message: "Tài khoản đã bị khoá", code: "ACCOUNT_LOCKED", error: "Please login again" },
   });
 }
 
@@ -86,7 +88,7 @@ describe("API 401 error.code — giữ nguyên code thật từ backend", () => 
           throw lockedResponse(config);
         },
       })
-    ).rejects.toMatchObject({ status: 401, code: "ACCOUNT_LOCKED", message: "Tài khoản đã bị khoá" });
+    ).rejects.toMatchObject({ status: 401, code: "ACCOUNT_LOCKED" });
   });
 
   it("401 không có data.code (vd. token hết hạn thường) -> fallback error.code=AUTH_ERROR", async () => {
@@ -115,7 +117,7 @@ describe("API 401 error.code — giữ nguyên code thật từ backend", () => 
           throw lockedResponse(config);
         },
       })
-    ).rejects.toMatchObject({ status: 401, code: "ACCOUNT_LOCKED", message: "Tài khoản đã bị khoá" });
+    ).rejects.toMatchObject({ status: 401, code: "ACCOUNT_LOCKED" });
 
     expect(refresh).toHaveBeenCalledTimes(1);
     expect(requestAttempts).toBe(2);
