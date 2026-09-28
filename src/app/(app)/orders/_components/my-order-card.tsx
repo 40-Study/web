@@ -49,6 +49,9 @@ export function MyOrderCard({
   // còn đối chiếu ngân hàng (ân hạn 30 phút, hoặc ngân hàng tạm lỗi), không cho huỷ, không cho tạo
   // đơn trùng. Hiện "Đang đối chiếu" + nút kiểm tra, không có "Hủy đơn" / "Tạo đơn mới".
   const isReconciling = !open && order.status === "processing";
+  // Review #76 vòng 4 (phương án b): đơn đã cấp mã rồi bị huỷ vẫn được backend đối chiếu; tiền chuyển
+  // trong hạn thì đơn được khôi phục "Hoàn tất", về muộn thì bộ phận hỗ trợ hoàn tiền.
+  const cancelledWithCode = order.status === "cancelled" && order.payment_code_issued === true;
   // Đơn pending đã quá hạn nhưng backend chưa kịp quét sang "expired": hiện đúng là hết hạn thay vì
   // cho bấm thanh toán rồi nhận lỗi.
   const heldButExpired = !open && order.status === "pending";
@@ -112,6 +115,17 @@ export function MyOrderCard({
           <p className="text-sm text-gray-500">
             Hệ thống đang đối chiếu thanh toán của đơn này với ngân hàng nên chưa thể hủy hay tạo đơn mới.
             Nếu bạn đã chuyển khoản, đừng chuyển lại.
+          </p>
+          <Button variant="outline" className="shrink-0" isLoading={isCheckingPayment} onClick={() => onCheckPayment(order)}>
+            Kiểm tra thanh toán
+          </Button>
+        </div>
+      )}
+
+      {cancelledWithCode && (
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-gray-500">
+            Nếu bạn đã chuyển khoản cho đơn này trước khi hủy, hãy kiểm tra để hệ thống đối chiếu với ngân hàng.
           </p>
           <Button variant="outline" className="shrink-0" isLoading={isCheckingPayment} onClick={() => onCheckPayment(order)}>
             Kiểm tra thanh toán

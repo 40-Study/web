@@ -56,6 +56,19 @@ describe("MyOrderCard — đơn đang đối chiếu", () => {
     expect(screen.queryByText("Đang đối chiếu")).toBeNull();
   });
 
+  // Review #76 vòng 4 (phương án b): đơn đã cấp mã rồi huỷ vẫn được đối chiếu khi kiểm tra.
+  it("đơn đã hủy từng có mã: có Kiểm tra thanh toán; đơn hủy chưa từng có mã thì không", () => {
+    const withCode = makeOrder({ id: "c1", status: "cancelled", expires_at: null, payment_code_issued: true });
+    const { onCheckPayment } = renderCard(withCode);
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra thanh toán" }));
+    expect(onCheckPayment).toHaveBeenCalledWith(withCode);
+  });
+
+  it("đơn đã hủy chưa từng có mã: không có Kiểm tra thanh toán", () => {
+    renderCard(makeOrder({ status: "cancelled", expires_at: null }));
+    expect(screen.queryByRole("button", { name: "Kiểm tra thanh toán" })).toBeNull();
+  });
+
   it("pending quá hạn giữ (chưa từng có mã): vẫn là hết hạn + Tạo đơn mới", () => {
     const { onReorder } = renderCard(makeOrder({ status: "pending", expires_at: past() }));
     expect(screen.queryByText("Đang đối chiếu")).toBeNull();

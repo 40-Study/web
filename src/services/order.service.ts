@@ -77,6 +77,11 @@ export interface Order {
   created_at: string;
   /** Hạn giữ đơn còn mở — backend tính từ dữ liệu đã lưu (không tự gia hạn khi đọc lại). */
   expires_at?: string | null;
+  /**
+   * Đơn chưa hoàn tất từng được cấp mã chuyển khoản (review backend #76 vòng 4), nên có thể đã có
+   * tiền về. Thẻ đơn đã huỷ có cờ này hiện nút "Kiểm tra thanh toán".
+   */
+  payment_code_issued?: boolean;
   /** Chỉ có khi đơn đã hoàn tiền (quyết định #1: ghi lý do + mã giao dịch chuyển khoản). */
   refund_reason?: string | null;
   refund_transaction_ref?: string | null;

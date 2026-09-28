@@ -121,7 +121,13 @@ export function useCreateOrder() {
     onError: (error) => {
       // Đơn trùng khóa đang chờ chuyển khoản: chỉ user tự quyết tiếp tục hay hủy đơn cũ, nên
       // dẫn thẳng sang "Đơn hàng của tôi" thay vì để user bấm lại "Mua ngay" vô ích.
-      if (error instanceof ApiError && error.status === 409 && error.code === ORDER_IN_PROGRESS_CODE) {
+      // Review #76 vòng 4: đơn trước cùng khoá đã cấp mã và đang đối chiếu (kể cả vừa huỷ) → 409
+      // ERR_PAYMENT_VERIFYING, cũng dẫn về "Đơn hàng của tôi" để kiểm tra thanh toán.
+      if (
+        error instanceof ApiError &&
+        error.status === 409 &&
+        (error.code === ORDER_IN_PROGRESS_CODE || error.code === PAYMENT_VERIFYING_CODE)
+      ) {
         toast.error(error.message, {
           action: { label: "Xem đơn hàng", onClick: () => window.location.assign("/orders") },
         });

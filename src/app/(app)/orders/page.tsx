@@ -120,6 +120,8 @@ export default function MyOrdersPage() {
         toast.info("Hệ thống đã nhận tiền cho đơn này sau khi hết hạn. Bộ phận hỗ trợ sẽ liên hệ hoàn tiền, vui lòng không chuyển khoản lại.");
       } else if (checked.status === "expired") {
         toast.info("Không tìm thấy giao dịch cho đơn này, đơn đã hết hạn. Bạn có thể tạo đơn mới.");
+      } else if (checked.status === "cancelled") {
+        toast.info("Chưa ghi nhận giao dịch nào cho đơn đã hủy này.");
       } else {
         toast.info(PAYMENT_RECONCILING_NOTICE);
       }
