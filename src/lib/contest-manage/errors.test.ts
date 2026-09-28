@@ -1,56 +1,58 @@
 /**
- * Map lỗi API cuộc thi sang tiếng Việt. `api-client` làm mất `code` của 403/404 (chỉ còn message),
- * nên 403 CONTEST_FORBIDDEN dựa vào message tiếng Việt của backend, còn 403 từ middleware quyền
- * (tiếng Anh) phải rơi về câu tiếng Việt cố định — không bao giờ hiện tiếng Anh cho người dùng.
+ * Map lỗi màn quản lý cuộc thi sang tiếng Việt: mã riêng của màn quản lý (ghi đè) + uỷ quyền cho
+ * bảng SSOT của W1. Service quản lý dùng `contestRequest` nên 403/404 GIỮ `code` nghiệp vụ.
  */
 
 import { describe, expect, it } from "vitest";
 
-import { ApiError, ForbiddenError, NotFoundError } from "@/lib/errors";
+import { ForbiddenError, NotFoundError } from "@/lib/errors";
+import { ContestApiError } from "@/services/contest.service";
 
 import { contestErrorMessage } from "./errors";
 
 const FALLBACK = "Không thể thực hiện, thử lại sau.";
 
-describe("contestErrorMessage", () => {
-  it("409 CONTEST_NOT_ENDED (chốt sớm) → câu tiếng Việt về mốc 60 giây", () => {
-    const err = new ApiError(409, "CONTEST_NOT_ENDED", "Cuộc thi chưa kết thúc");
+describe("contestErrorMessage (quản lý)", () => {
+  it("409 CONTEST_NOT_ENDED (chốt sớm) → câu nói rõ mốc 60 giây (ghi đè câu chung của W1)", () => {
+    const err = new ContestApiError(409, "CONTEST_NOT_ENDED", "Cuộc thi chưa kết thúc");
     expect(contestErrorMessage(err, FALLBACK)).toBe(
       "Chỉ có thể chốt kết quả sau khi cuộc thi kết thúc ít nhất 60 giây."
     );
   });
 
-  it("409 CONTEST_QUIZ_LOCKED dù message tiếng Anh vẫn ra tiếng Việt (tra theo code)", () => {
-    const err = new ApiError(409, "CONTEST_QUIZ_LOCKED", "quiz is used by an active contest");
-    expect(contestErrorMessage(err, FALLBACK)).toMatch(/không thể sửa/);
+  it("404 CONTEST_NOT_FOUND ở màn quản lý (cuộc thi của người khác) → nhắc có thể không phải người tạo", () => {
+    const err = new ContestApiError(404, "CONTEST_NOT_FOUND", "Không tìm thấy cuộc thi");
+    expect(contestErrorMessage(err, FALLBACK)).toMatch(/không phải người tạo/);
+  });
+
+  it("403 CONTEST_FORBIDDEN (sửa/xoá/gửi duyệt cuộc thi của người khác) → tiếng Việt từ bảng W1", () => {
+    const err = new ContestApiError(403, "CONTEST_FORBIDDEN", "english");
+    expect(contestErrorMessage(err, FALLBACK)).toMatch(/không có quyền/);
+  });
+
+  it("409 CONTEST_QUIZ_LOCKED dù message tiếng Anh vẫn ra tiếng Việt", () => {
+    const err = new ContestApiError(409, "CONTEST_QUIZ_LOCKED", "quiz is used by an active contest");
+    expect(contestErrorMessage(err, FALLBACK)).toMatch(/Không thể sửa bộ câu hỏi/);
   });
 
   it("409 CONTEST_INVALID_STATUS → nhắc tải lại trang", () => {
-    const err = new ApiError(409, "CONTEST_INVALID_STATUS", "Trạng thái cuộc thi không cho phép thao tác này");
+    const err = new ContestApiError(409, "CONTEST_INVALID_STATUS", "x");
     expect(contestErrorMessage(err, FALLBACK)).toMatch(/tải lại trang/);
   });
 
-  it("403 CONTEST_FORBIDDEN (sửa/xoá/gửi duyệt cuộc thi của người khác) → message tiếng Việt của backend", () => {
-    const err = new ForbiddenError("Bạn không có quyền với cuộc thi này");
-    expect(contestErrorMessage(err, FALLBACK)).toBe("Bạn không có quyền với cuộc thi này");
-  });
-
-  it("403 từ middleware quyền (tiếng Anh) → câu tiếng Việt cố định", () => {
-    const err = new ForbiddenError("Insufficient permissions");
-    expect(contestErrorMessage(err, FALLBACK)).toBe("Bạn không có quyền thực hiện thao tác này.");
-  });
-
-  it("404 (xem bản quản lý cuộc thi của người khác) tiếng Anh → câu tiếng Việt", () => {
-    expect(contestErrorMessage(new NotFoundError("Resource not found"), FALLBACK)).toMatch(
-      /^Không tìm thấy cuộc thi/
+  it("403 từ middleware quyền (tiếng Anh, qua interceptor) → câu tiếng Việt cố định", () => {
+    expect(contestErrorMessage(new ForbiddenError("Insufficient permissions"), FALLBACK)).toBe(
+      "Bạn không có quyền thực hiện thao tác này."
     );
   });
 
-  it("400 Validation failed (không code) → câu chung tiếng Việt, không lộ tiếng Anh", () => {
-    const err = new ApiError(400, "UNKNOWN", "Validation failed");
-    expect(contestErrorMessage(err, FALLBACK)).toBe(
-      "Dữ liệu chưa hợp lệ, vui lòng kiểm tra lại các trường đã nhập."
-    );
+  it("404 không code (tiếng Anh) → câu tiếng Việt", () => {
+    expect(contestErrorMessage(new NotFoundError("Resource not found"), FALLBACK)).toBe("Không tìm thấy dữ liệu.");
+  });
+
+  it("400 validate không code → câu chung tiếng Việt", () => {
+    const err = new ContestApiError(400, "VALIDATION_FAILED", "Validation failed");
+    expect(contestErrorMessage(err, FALLBACK)).toBe("Dữ liệu gửi lên không hợp lệ.");
   });
 
   it("lỗi lạ không phải ApiError → fallback", () => {

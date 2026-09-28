@@ -15,7 +15,8 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatVnDateTime } from "@/lib/contest-manage/format";
 import { CONTEST_STATUS_LABEL, phaseLabel, phaseVariant } from "@/lib/contest-manage/labels";
 import { cn } from "@/lib/utils";
-import { CONTEST_STATUSES, isContestStatus, type ContestStatus } from "@/types/contest-manage";
+import { isContestStatus } from "@/lib/contest-manage/labels";
+import { CONTEST_STATUSES, type ContestStatus } from "@/types/contest";
 
 type Tab = "pending" | "all";
 const PAGE_SIZE = 20;

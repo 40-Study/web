@@ -1,6 +1,6 @@
 /** Nhãn tiếng Việt + màu badge cho trạng thái/phase cuộc thi (trang quản lý). */
 
-import type { ContestAttemptStatus, ContestPhase, ContestStatus } from "@/types/contest-manage";
+import { CONTEST_STATUSES, type ContestAttemptStatus, type ContestPhase, type ContestStatus } from "@/types/contest";
 
 export type BadgeVariant = "success" | "warning" | "destructive" | "outline" | "secondary" | "default";
 
@@ -47,4 +47,9 @@ export function phaseLabel(phase: string): string {
 
 export function phaseVariant(phase: string): BadgeVariant {
   return (CONTEST_PHASE_VARIANT as Record<string, BadgeVariant>)[phase] ?? "outline";
+}
+
+// Thu hẹp giá trị <select> về ContestStatus (W1 không có type guard này).
+export function isContestStatus(value: string): value is ContestStatus {
+  return (CONTEST_STATUSES as readonly string[]).includes(value);
 }

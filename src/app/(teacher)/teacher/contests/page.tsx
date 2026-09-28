@@ -17,7 +17,8 @@ import { Button } from "@/components/ui/button";
 import { useMyManagedContests } from "@/hooks/queries/use-contest-manage";
 import { formatVnDateTime } from "@/lib/contest-manage/format";
 import { CONTEST_STATUS_LABEL, phaseLabel, phaseVariant } from "@/lib/contest-manage/labels";
-import { CONTEST_STATUSES, isContestStatus, type ContestStatus } from "@/types/contest-manage";
+import { isContestStatus } from "@/lib/contest-manage/labels";
+import { CONTEST_STATUSES, type ContestStatus } from "@/types/contest";
 
 export default function TeacherContestsPage() {
   const [status, setStatus] = useState<ContestStatus | "">("");

@@ -53,7 +53,11 @@ function fallbackCode(status: number, body: ErrorBody | undefined): string {
   return "UNKNOWN";
 }
 
-async function request<T>(config: AxiosRequestConfig): Promise<T> {
+/**
+ * Export để `contest-manage.service.ts` (W2) dùng CHUNG một cách xử lý lỗi — màn quản lý cũng cần
+ * `code` của 403/404 (`CONTEST_FORBIDDEN`, `CONTEST_NOT_FOUND`) mà interceptor làm rơi.
+ */
+export async function contestRequest<T>(config: AxiosRequestConfig): Promise<T> {
   const res = await api.request<Envelope<T> | ErrorBody>({
     ...config,
     validateStatus: (status) => (status >= 200 && status < 300) || BUSINESS_ERROR_STATUSES.has(status),
@@ -68,35 +72,32 @@ async function request<T>(config: AxiosRequestConfig): Promise<T> {
 export const contestService = {
   /** #1 — công khai, không middleware. */
   list: (params?: ContestListParams) =>
-    request<ContestPage<ContestSummary>>({ method: "GET", url: "/contests", params }),
+    contestRequest<ContestPage<ContestSummary>>({ method: "GET", url: "/contests", params }),
 
   /** #2 — cuộc thi mình đã đăng ký. */
   listMine: (params?: { page?: number; limit?: number }) =>
-    request<ContestPage<ContestMySummary>>({ method: "GET", url: "/contests/me", params }),
+    contestRequest<ContestPage<ContestMySummary>>({ method: "GET", url: "/contests/me", params }),
 
   /** #7 — OptionalAuth: khách không có cookie nhận `viewer` của khách. */
   getBySlug: (slug: string) =>
-    request<ContestDetail>({ method: "GET", url: `/contests/${encodeURIComponent(slug)}` }),
+    contestRequest<ContestDetail>({ method: "GET", url: `/contests/${encodeURIComponent(slug)}` }),
 
   join: (contestId: string) =>
-    request<MyParticipation>({ method: "POST", url: `/contests/${contestId}/join` }),
+    contestRequest<MyParticipation>({ method: "POST", url: `/contests/${contestId}/join` }),
 
   /** Idempotent: đang làm dở thì backend trả lại ĐÚNG attempt cũ (§4.1). */
   start: (contestId: string) =>
-    request<ContestStartResult>({ method: "POST", url: `/contests/${contestId}/start` }),
+    contestRequest<ContestStartResult>({ method: "POST", url: `/contests/${contestId}/start` }),
 
   submit: (contestId: string, body: ContestSubmitRequest) =>
-    request<ContestSubmitResult>({ method: "POST", url: `/contests/${contestId}/submit`, data: body }),
+    contestRequest<ContestSubmitResult>({ method: "POST", url: `/contests/${contestId}/submit`, data: body }),
 
   myResult: (contestId: string) =>
-    request<ContestMyResult>({ method: "GET", url: `/contests/${contestId}/my-result` }),
+    contestRequest<ContestMyResult>({ method: "GET", url: `/contests/${contestId}/my-result` }),
 
   leaderboard: (contestId: string, params?: { page?: number; limit?: number }) =>
-    request<ContestLeaderboardPage>({ method: "GET", url: `/contests/${contestId}/leaderboard`, params }),
+    contestRequest<ContestLeaderboardPage>({ method: "GET", url: `/contests/${contestId}/leaderboard`, params }),
 
   certificate: (contestId: string) =>
-    request<ContestCertificate>({ method: "GET", url: `/contests/${contestId}/certificate` }),
+    contestRequest<ContestCertificate>({ method: "GET", url: `/contests/${contestId}/certificate` }),
 };
-
-// LEGACY — trang giảng viên cũ (lane W2) còn import các type này từ đây; xoá khi W2 merge.
-export type { Contest, CreateContestDTO, CreateProblemDTO } from "./contest-legacy.service";

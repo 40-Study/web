@@ -93,12 +93,3 @@ export function useSubmitContest() {
     onSettled: () => qc.invalidateQueries({ queryKey: contestKeys.all }),
   });
 }
-
-// LEGACY — trang giảng viên cũ (lane W2) còn import các hook này từ đây; xoá khi W2 merge.
-export {
-  useContests,
-  useCreateContest,
-  useDeleteContest,
-  usePublishContest,
-  useCreateProblem,
-} from "./use-contests-legacy";

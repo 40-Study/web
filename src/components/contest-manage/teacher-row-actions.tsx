@@ -13,7 +13,7 @@ import { ApproveConfirmDialog } from "@/components/admin/review-dialogs";
 import { Button } from "@/components/ui/button";
 import { useDeleteContest, useSubmitContestReview } from "@/hooks/queries/use-contest-manage";
 import { getTeacherContestActions } from "@/lib/contest-manage/actions";
-import type { ContestManage } from "@/types/contest-manage";
+import type { ContestManage } from "@/types/contest";
 
 interface Props {
   contest: ContestManage;

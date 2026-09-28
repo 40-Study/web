@@ -32,7 +32,7 @@ import { contestErrorMessage } from "@/lib/contest-manage/errors";
 import { formatVnDateTime } from "@/lib/contest-manage/format";
 import { prizeDraftsToInput, prizesToDrafts, validatePrizes, type PrizeDraft } from "@/lib/contest-manage/form";
 import { useAuthStore } from "@/stores/auth.store";
-import type { ContestManage } from "@/types/contest-manage";
+import type { ContestManage } from "@/types/contest";
 
 /** Nhịp cập nhật đồng hồ để nút "Chốt" tự mở khi qua mốc end_time + 60s mà không cần tải lại. */
 const CLOCK_TICK_MS = 5_000;

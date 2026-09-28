@@ -7,108 +7,100 @@
  *  - Admin: GET /admin/contests; POST /admin/contests/:id/{approve,reject,cancel,finalize};
  *    PUT /admin/contests/:id/prizes.
  * ĐÍNH CHÍNH 28/09: CHỈ admin chốt kết quả — service này không có hàm chốt cho giảng viên.
- * API công khai/thí sinh (danh sách, chi tiết, làm bài) thuộc lane W1 (`contest.service.ts`).
+ *
+ * Dùng `contestRequest` của W1 (`contest.service.ts`) để lỗi 403/404 giữ nguyên `code` nghiệp vụ
+ * (`CONTEST_FORBIDDEN`, `CONTEST_NOT_FOUND`) — interceptor chung làm rơi mã này.
  */
 
-import { api } from "@/lib/api-client";
+import { contestRequest } from "@/services/contest.service";
 import type {
   ContestFinalizeResult,
   ContestManage,
-  ContestManageListParams,
   ContestPage,
   ContestParticipantRow,
+  ContestPhase,
   ContestPrizeInput,
   ContestQuizOption,
+  ContestStatus,
   ContestUpsertRequest,
-} from "@/types/contest-manage";
+} from "@/types/contest";
 
-type Envelope<T> = { message: string; data: T };
+/** Query của GET /contests/manage và GET /admin/contests (handler `listQuery`). */
+export interface ContestManageListParams {
+  status?: ContestStatus;
+  phase?: ContestPhase;
+  q?: string;
+  page?: number;
+  limit?: number;
+}
 
 export const contestManageService = {
   // ── Giảng viên (và admin với cuộc thi của chính mình) ─────────────────────
 
   /** GET /contests/manage — cuộc thi do CHÍNH người gọi tạo. */
   listMine: (params?: ContestManageListParams) =>
-    api
-      .get<Envelope<ContestPage<ContestManage>>>("/contests/manage", { params })
-      .then((r) => r.data.data),
+    contestRequest<ContestPage<ContestManage>>({ method: "GET", url: "/contests/manage", params }),
 
   /** GET /contests/manage/quiz-options — quiz standalone đủ điều kiện gắn cuộc thi. */
   quizOptions: () =>
-    api
-      .get<Envelope<ContestQuizOption[]>>("/contests/manage/quiz-options")
-      .then((r) => r.data.data),
+    contestRequest<ContestQuizOption[]>({ method: "GET", url: "/contests/manage/quiz-options" }),
 
   /** GET /contests/manage/:id — chủ hoặc admin; người khác nhận 404. */
-  getManage: (id: string) =>
-    api.get<Envelope<ContestManage>>(`/contests/manage/${id}`).then((r) => r.data.data),
+  getManage: (id: string) => contestRequest<ContestManage>({ method: "GET", url: `/contests/manage/${id}` }),
 
   /** GET /contests/manage/:id/participants. */
   participants: (id: string, params?: { page?: number; limit?: number }) =>
-    api
-      .get<Envelope<ContestPage<ContestParticipantRow>>>(`/contests/manage/${id}/participants`, {
-        params,
-      })
-      .then((r) => r.data.data),
+    contestRequest<ContestPage<ContestParticipantRow>>({
+      method: "GET",
+      url: `/contests/manage/${id}/participants`,
+      params,
+    }),
 
   /** POST /contests — tạo DRAFT. */
   create: (body: ContestUpsertRequest) =>
-    api.post<Envelope<ContestManage>>("/contests", body).then((r) => r.data.data),
+    contestRequest<ContestManage>({ method: "POST", url: "/contests", data: body }),
 
   /** PUT /contests/:id — chỉ khi DRAFT/REJECTED; thay toàn bộ giải. */
   update: (id: string, body: ContestUpsertRequest) =>
-    api.put<Envelope<ContestManage>>(`/contests/${id}`, body).then((r) => r.data.data),
+    contestRequest<ContestManage>({ method: "PUT", url: `/contests/${id}`, data: body }),
 
   /** DELETE /contests/:id — chỉ khi DRAFT/REJECTED (xoá hẳn, giải phóng quiz). */
-  remove: (id: string) => api.delete<Envelope<null>>(`/contests/${id}`).then((r) => r.data),
+  remove: (id: string) => contestRequest<null>({ method: "DELETE", url: `/contests/${id}` }),
 
   /** POST /contests/:id/submit-review — DRAFT/REJECTED → PENDING_REVIEW. */
   submitReview: (id: string) =>
-    api
-      .post<Envelope<ContestManage>>(`/contests/${id}/submit-review`)
-      .then((r) => r.data.data),
+    contestRequest<ContestManage>({ method: "POST", url: `/contests/${id}/submit-review` }),
 
   // ── Admin ─────────────────────────────────────────────────────────────────
 
   /** GET /admin/contests — mọi cuộc thi trừ bản nháp của người khác. */
   adminList: (params?: ContestManageListParams) =>
-    api
-      .get<Envelope<ContestPage<ContestManage>>>("/admin/contests", { params })
-      .then((r) => r.data.data),
+    contestRequest<ContestPage<ContestManage>>({ method: "GET", url: "/admin/contests", params }),
 
   /**
    * POST /admin/contests/:id/approve. `prizes` undefined → giữ giải hiện có (backend nhận body
    * rỗng); có giá trị → thay toàn bộ giải (kèm voucher) trước khi công bố.
    */
   approve: (id: string, prizes?: ContestPrizeInput[]) =>
-    api
-      .post<Envelope<ContestManage>>(
-        `/admin/contests/${id}/approve`,
-        prizes === undefined ? undefined : { prizes }
-      )
-      .then((r) => r.data.data),
+    contestRequest<ContestManage>({
+      method: "POST",
+      url: `/admin/contests/${id}/approve`,
+      data: prizes === undefined ? undefined : { prizes },
+    }),
 
   /** POST /admin/contests/:id/reject — PENDING_REVIEW → REJECTED, bắt buộc lý do. */
   reject: (id: string, reason: string) =>
-    api
-      .post<Envelope<ContestManage>>(`/admin/contests/${id}/reject`, { reason })
-      .then((r) => r.data.data),
+    contestRequest<ContestManage>({ method: "POST", url: `/admin/contests/${id}/reject`, data: { reason } }),
 
   /** POST /admin/contests/:id/cancel — PENDING_REVIEW hoặc PUBLISHED chưa chốt → CANCELLED. */
   cancel: (id: string, reason: string) =>
-    api
-      .post<Envelope<ContestManage>>(`/admin/contests/${id}/cancel`, { reason })
-      .then((r) => r.data.data),
+    contestRequest<ContestManage>({ method: "POST", url: `/admin/contests/${id}/cancel`, data: { reason } }),
 
   /** PUT /admin/contests/:id/prizes — PENDING_REVIEW/PUBLISHED chưa chốt. */
   updatePrizes: (id: string, prizes: ContestPrizeInput[]) =>
-    api
-      .put<Envelope<ContestManage>>(`/admin/contests/${id}/prizes`, { prizes })
-      .then((r) => r.data.data),
+    contestRequest<ContestManage>({ method: "PUT", url: `/admin/contests/${id}/prizes`, data: { prizes } }),
 
   /** POST /admin/contests/:id/finalize — idempotent; lần 2 trả `already_finalized=true`. */
   finalize: (id: string) =>
-    api
-      .post<Envelope<ContestFinalizeResult>>(`/admin/contests/${id}/finalize`)
-      .then((r) => r.data.data),
+    contestRequest<ContestFinalizeResult>({ method: "POST", url: `/admin/contests/${id}/finalize` }),
 };

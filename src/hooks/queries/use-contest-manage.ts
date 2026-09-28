@@ -7,13 +7,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { contestErrorMessage } from "@/lib/contest-manage/errors";
-import { contestManageService } from "@/services/contest-manage.service";
+import { contestKeys } from "@/hooks/queries/use-contests";
+import { contestManageService, type ContestManageListParams } from "@/services/contest-manage.service";
 import { voucherService } from "@/services/voucher.service";
 import type {
-  ContestManageListParams,
   ContestPrizeInput,
   ContestUpsertRequest,
-} from "@/types/contest-manage";
+} from "@/types/contest";
 
 export const contestManageKeys = {
   all: ["contest-manage"] as const,
@@ -80,7 +80,11 @@ export function useContestVoucherOptions(enabled: boolean) {
 /** Mọi thay đổi trạng thái đều ảnh hưởng danh sách + chi tiết → xoá cache cả nhánh. */
 function useInvalidateContests() {
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({ queryKey: contestManageKeys.all });
+  return () => {
+    qc.invalidateQueries({ queryKey: contestManageKeys.all });
+    // Duyệt/huỷ/chốt đổi cả dữ liệu công khai (danh sách, chi tiết, BXH) của lane W1.
+    qc.invalidateQueries({ queryKey: contestKeys.all });
+  };
 }
 
 export function useCreateContest() {

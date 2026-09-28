@@ -6,7 +6,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ContestManage } from "@/types/contest-manage";
+import type { ContestManage } from "@/types/contest";
 
 const mockUseManagedContest = vi.fn();
 const noopMutation = () => ({ mutate: vi.fn(), isPending: false });

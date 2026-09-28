@@ -18,7 +18,7 @@ import {
   type ContestFormErrors,
   type ContestFormValues,
 } from "@/lib/contest-manage/form";
-import type { ContestQuizBrief, ContestUpsertRequest } from "@/types/contest-manage";
+import type { ContestQuizBrief, ContestUpsertRequest } from "@/types/contest";
 
 const FIELD =
   "h-10 w-full rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900";

@@ -5,7 +5,7 @@
 import { Badge } from "@/components/ui/badge";
 import { formatVnDateTime } from "@/lib/contest-manage/format";
 import { phaseLabel, phaseVariant } from "@/lib/contest-manage/labels";
-import type { ContestManage, ContestPrizeAdmin } from "@/types/contest-manage";
+import type { ContestManage, ContestPrizeAdmin } from "@/types/contest";
 
 function prizeText(p: ContestPrizeAdmin): string {
   const ranks = p.rank_from === p.rank_to ? `Hạng ${p.rank_from}` : `Hạng ${p.rank_from}–${p.rank_to}`;

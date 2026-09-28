@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import type { ContestPhase, ContestStatus } from "@/types/contest-manage";
+import type { ContestPhase, ContestStatus } from "@/types/contest";
 
 import { getAdminContestActions, getFinalizeState, getTeacherContestActions } from "./actions";
 

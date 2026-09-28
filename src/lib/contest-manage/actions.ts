@@ -5,7 +5,7 @@
  */
 
 import { CONTEST_FINALIZE_DELAY_MS } from "@/lib/contest-manage/form";
-import type { ContestManage } from "@/types/contest-manage";
+import type { ContestManage } from "@/types/contest";
 
 type ContestLike = Pick<ContestManage, "status" | "phase" | "end_time" | "finalized_at" | "created_by">;
 

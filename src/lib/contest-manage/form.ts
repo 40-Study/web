@@ -5,7 +5,7 @@
  * ô nhập thay vì một 400 chung; backend vẫn là nơi quyết định cuối cùng.
  */
 
-import type { ContestManage, ContestPrizeInput, ContestUpsertRequest } from "@/types/contest-manage";
+import type { ContestManage, ContestPrizeInput, ContestUpsertRequest } from "@/types/contest";
 
 export const CONTEST_MAX_PRIZES = 10;
 export const CONTEST_MAX_PRIZE_RANK = 100;
