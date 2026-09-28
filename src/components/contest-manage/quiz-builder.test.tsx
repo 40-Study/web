@@ -48,6 +48,10 @@ describe("QuizBuilder", () => {
     fillBasics();
     addFillBlankQuestion();
     expect(screen.queryByLabelText(/Câu 2 đáp án 1 đúng/)).toBeNull();
+    // Quy tắc chấm fill_blank chốt 29/09: không phân biệt hoa thường, giữ nguyên dấu.
+    const hint = screen.getByTestId("fill-blank-hint-1").textContent ?? "";
+    expect(hint).toMatch(/không phân biệt chữ hoa, chữ thường/);
+    expect(hint).toMatch(/GIỮ NGUYÊN dấu/);
     fireEvent.click(screen.getByRole("button", { name: /Thêm cách viết khác/ }));
     fireEvent.change(screen.getByLabelText("Câu 2 đáp án chấp nhận 2"), { target: { value: "Ha Noi" } });
 

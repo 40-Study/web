@@ -185,8 +185,9 @@ export function QuizBuilder({ onCreated, onCancel }: QuizBuilderProps) {
             </div>
             {fillBlank && (
               <p className="text-xs text-gray-500" data-testid={`fill-blank-hint-${qi}`}>
-                Học viên gõ câu trả lời; bài chỉ được tính đúng khi khớp CHÍNH XÁC một trong các đáp án dưới
-                đây (phân biệt chữ hoa, chữ thường). Thêm các cách viết khác nếu muốn chấp nhận.
+                Học viên gõ câu trả lời; bài được tính đúng khi khớp một trong các đáp án dưới đây. Hệ thống bỏ
+                khoảng trắng thừa và không phân biệt chữ hoa, chữ thường, nhưng GIỮ NGUYÊN dấu (&quot;Ha Noi&quot; khác
+                &quot;Hà Nội&quot;). Thêm các cách viết khác nếu muốn chấp nhận.
               </p>
             )}
             <div className="space-y-2">

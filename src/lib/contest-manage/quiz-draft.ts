@@ -3,9 +3,10 @@
  * `quizService.create` KHÔNG lesson_id/course_id + `quizService.createQuestion`).
  * Chỉ các loại câu chấm tự động được (§3.3): không có tự luận.
  *
- * `fill_blank` (điền khuyết): backend chấm bằng so khớp CHÍNH XÁC `text_answer` với từng đáp án
- * `is_correct=true` (quiz_service.go, phân biệt hoa thường, không cắt khoảng trắng). Vì vậy mỗi
- * "đáp án" của câu điền khuyết là một CÁCH VIẾT được chấp nhận, và tất cả đều gửi `is_correct: true`.
+ * `fill_blank` (điền khuyết): backend so `text_answer` với từng đáp án `is_correct=true` sau khi
+ * chuẩn hoá (quy tắc điều phối chốt 29/09: bỏ khoảng trắng thừa, không phân biệt hoa thường, chuẩn
+ * hoá NFC, GIỮ NGUYÊN dấu). Vì vậy mỗi "đáp án" của câu điền khuyết là một CÁCH VIẾT được chấp nhận
+ * (vd có dấu và không dấu là hai cách khác nhau), và tất cả đều gửi `is_correct: true`.
  */
 
 import type { CreateQuestionDTO } from "@/services/quiz.service";
@@ -93,8 +94,8 @@ export function toCreateQuestionDTO(q: QuestionDraft, index: number): CreateQues
     points: Number(q.points),
     display_order: index + 1,
     answers: q.answers.map((a, i) => ({
-      // Điền khuyết so khớp nguyên văn ở backend → giữ đúng chuỗi người nhập, chỉ bỏ khoảng trắng
-      // hai đầu để một dấu cách thừa lúc gõ không làm hỏng việc chấm.
+      // Giữ đúng chữ và dấu người nhập (backend tự chuẩn hoá hoa thường/khoảng trắng lúc chấm);
+      // chỉ bỏ khoảng trắng hai đầu cho gọn dữ liệu lưu.
       answer_text: a.text.trim(),
       is_correct: isFillBlank ? true : a.correct,
       display_order: i + 1,
