@@ -16,9 +16,11 @@ describe("getErrorMessage — ánh xạ lỗi backend sang tiếng Việt", () =
     expect(message).toBe("Dữ liệu gửi lên không hợp lệ, vui lòng kiểm tra lại");
   });
 
-  it("ASCII không có trong bảng (vd. lỗi GORM) -> câu chung theo status, không in nguyên văn", () => {
+  it("ASCII kỹ thuật không có trong bảng (vd. lỗi GORM) -> câu chung theo status, không in nguyên văn", () => {
     const error = new ApiError(409, "UNKNOWN", "ERROR: could not serialize access due to concurrent update");
-    expect(getErrorMessage(error)).toBe("Dữ liệu vừa thay đổi, vui lòng tải lại trang rồi thử lại");
+    const message = getErrorMessage(error);
+    expect(message).toBe("Thao tác xung đột với dữ liệu hiện có");
+    expect(message).not.toMatch(/tải lại trang/);
   });
 
   it("message backend đã là tiếng Việt -> giữ nguyên (đó là lý do thật)", () => {
@@ -55,6 +57,69 @@ describe("getErrorMessage — ánh xạ lỗi backend sang tiếng Việt", () =
     expect(getErrorMessage(new ApiError(400, "UNKNOWN", "weird"), "Không thể tạo đơn")).toBe(
       "Không thể tạo đơn"
     );
+  });
+
+  // Review PR #33 (MAJOR): chuỗi lấy nguyên văn từ backend/internal (service trả err.Error()).
+  it.each([
+    [409, "course already in cart", "Khoá học đã có trong giỏ hàng"],
+    [409, "you are already enrolled in this course", "Bạn đã đăng ký khoá học này"],
+    [409, "you have already reviewed this course", "Bạn đã đánh giá khoá học này rồi"],
+    [400, "student is already enrolled in this class", "Học viên này đã có trong lớp"],
+    [400, "you are banned from this group", "Bạn đã bị chặn khỏi nhóm này"],
+    [400, "contest is full", "Cuộc thi đã đủ người tham gia"],
+    [400, "cannot send gift to yourself", "Không thể tự tặng quà cho chính mình"],
+  ])("%i '%s' -> câu nghiệp vụ tiếng Việt", (status, raw, expected) => {
+    expect(getErrorMessage(new ApiError(status, "UNKNOWN", raw))).toBe(expected);
+  });
+
+  it("400/409 nghiệp vụ CHƯA có trong bảng -> giữ lý do thật, không thay bằng câu chung", () => {
+    expect(getErrorMessage(new ApiError(409, "UNKNOWN", "some new business rule failed"))).toBe(
+      "some new business rule failed"
+    );
+    expect(getErrorMessage(new ApiError(400, "UNKNOWN", "member is not banned"))).toBe("member is not banned");
+    // nơi gọi có fallback thì dùng fallback
+    expect(getErrorMessage(new ApiError(400, "UNKNOWN", "member is not banned"), "Không thể bỏ chặn")).toBe(
+      "Không thể bỏ chặn"
+    );
+  });
+
+  it("khoá theo chuỗi client thật sự nhận: mã máy trong `error` / `message`", () => {
+    expect(getErrorMessage(new ApiError(409, "UNKNOWN", "withdrawal_already_open"))).toBe(
+      "Bạn đang có một yêu cầu rút tiền chờ xử lý"
+    );
+    expect(getErrorMessage(new ApiError(403, "UNKNOWN", "LESSON_LOCKED"))).toBe("Bài học đang bị khoá");
+    expect(getErrorMessage(new ApiError(409, "UNKNOWN", "already_refunded"))).toBe("Đơn hàng đã được hoàn tiền");
+  });
+
+  it("code chung (ERR_NOT_FOUND, ERR_VALIDATION) -> message cụ thể được xét trước code", () => {
+    expect(getErrorMessage(new ApiError(404, "ERR_NOT_FOUND", "Voucher not found"))).toBe(
+      "Mã voucher không tồn tại, vui lòng kiểm tra lại"
+    );
+    expect(
+      getErrorMessage(
+        new ApiError(400, "ERR_VALIDATION", "bank_name, bank_account_number, and bank_account_name are required")
+      )
+    ).toBe("Vui lòng nhập đủ tên ngân hàng, số tài khoản và tên chủ tài khoản");
+    // message không khớp gì -> vẫn dùng câu của code, không lộ chuỗi kỹ thuật
+    expect(getErrorMessage(new ApiError(400, "ERR_VALIDATION", "Key: 'Req.Name' Error:required"))).toBe(
+      "Dữ liệu gửi lên không hợp lệ, vui lòng kiểm tra lại"
+    );
+  });
+
+  it("401 'Invalid or expired token' của middleware -> hết phiên, không phải 'dữ liệu không hợp lệ'", () => {
+    expect(getErrorMessage(new AuthError("Invalid or expired token"))).toBe(
+      "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại"
+    );
+    // cùng câu nhưng 400 (token lời mời) -> không phải hết phiên
+    expect(getErrorMessage(new ApiError(400, "UNKNOWN", "Invalid or expired token"))).not.toMatch(/Phiên/);
+  });
+
+  it("khoá tạm vì sai mật khẩu nhiều lần -> giữ số phút", () => {
+    expect(
+      getErrorMessage(
+        new AuthError("account temporarily locked due to too many failed attempts, try again in 15 minutes")
+      )
+    ).toBe("Tài khoản tạm khoá do nhập sai nhiều lần, vui lòng thử lại sau 15 phút");
   });
 
   it("mất mạng, 429 kèm số giây, 5xx và lỗi lạ", () => {

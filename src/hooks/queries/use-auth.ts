@@ -13,6 +13,7 @@ import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { bootstrapAuthSession } from "@/components/providers/auth-session";
 import { AuthError, RateLimitError } from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-messages";
+import { sanitizeRedirect } from "@/lib/safe-redirect";
 
 /**
  * Ưu tiên message thật từ backend (ApiError), rơi về fallback khi không có.
@@ -303,9 +304,9 @@ export function useSelectRole() {
         qc.invalidateQueries({ queryKey: authKeys.all });
 
         // Check redirect (e.g., from accept-invitation)
-        const redirect = sessionStorage.getItem("auth_redirect");
+        const redirect = sanitizeRedirect(sessionStorage.getItem("auth_redirect"));
+        sessionStorage.removeItem("auth_redirect");
         if (redirect) {
-          sessionStorage.removeItem("auth_redirect");
           router.push(redirect);
         } else {
           router.push(getRoleHomeRoute(normalizeRole(data.active_role.role_name)));

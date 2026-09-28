@@ -314,6 +314,29 @@ describe("API 401 — không gọi refresh khi vô ích (C2)", () => {
     expect(res.data).toEqual({ ok: true });
     expect(refresh).toHaveBeenCalledTimes(1);
   });
+
+  // Review PR #33 (BLOCKER): /auth/logout nằm sau AuthMiddleware. Access token hết hạn mà không
+  // refresh thì logout thất bại, refresh token 7 ngày vẫn sống → người sau vào lại phiên cũ.
+  it.each(["/auth/logout", "/auth/logout-all"])(
+    "401 ở POST %s (access token hết hạn) -> refresh rồi gửi lại logout",
+    async (path) => {
+      useAuthStore.setState({ sessionStatus: "authenticated", isAuthenticated: true });
+      const refresh = vi.spyOn(axios, "post").mockResolvedValue({ data: {} });
+      let attempts = 0;
+
+      const res = await api.post(path, undefined, {
+        adapter: async (config) => {
+          attempts += 1;
+          if (attempts === 1) throw unauthorized(config);
+          return { data: { ok: true }, status: 200, statusText: "OK", headers: {}, config };
+        },
+      });
+
+      expect(res.data).toEqual({ ok: true });
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(attempts).toBe(2);
+    }
+  );
 });
 
 // C5 (QA admin A-P3-1): 429 không kèm số giây chờ dù backend có trả `retry_after`.

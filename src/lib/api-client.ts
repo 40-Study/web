@@ -82,6 +82,10 @@ async function doRefresh(): Promise<void> {
 //  1. Request tự nó là bước xác thực (gửi mật khẩu / OTP / token): 401 nghĩa là thông tin sai,
 //     không phải access token hết hạn. KHÔNG gồm /auth/me, /auth/my-roles... (cần refresh để khôi
 //     phục phiên), nên so khớp CHÍNH XÁC đường dẫn, không dùng tiền tố "/auth/".
+//     CỐ Ý KHÔNG gồm /auth/logout và /auth/logout-all: backend đặt chúng SAU AuthMiddleware, nên
+//     401 ở đây đúng là access token hết hạn (15 phút). Bỏ refresh thì logout thất bại, refresh
+//     token (cookie `rfToken`, sống 7 ngày) không bị thu hồi và người dùng sau trên máy dùng chung
+//     vào lại được phiên cũ (review PR #33, BLOCKER).
 //  2. Store đã biết phiên là `anonymous` (khách, hoặc refresh vừa thất bại): không có refresh
 //     token hợp lệ để dùng. `checking` (bootstrap đang gọi /auth/me) vẫn được refresh.
 const CREDENTIAL_AUTH_PATHS = new Set([
@@ -92,7 +96,6 @@ const CREDENTIAL_AUTH_PATHS = new Set([
   "/auth/reset-password",
   "/auth/reset-password/request",
   "/auth/select-role",
-  "/auth/logout",
 ]);
 
 function normalizeRequestPath(url: string | undefined): string {

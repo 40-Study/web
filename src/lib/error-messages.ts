@@ -6,9 +6,14 @@
  * `translateOtpErrorMessage`, `apply-teacher-button.tsx` regex /already have/). Đổi `message` ở
  * nguồn sẽ âm thầm làm hỏng các nơi đó. Nơi nào HIỂN THỊ lỗi thì gọi `getErrorMessage(error)`.
  *
- * Thứ tự tra: `code` → chuỗi khớp chính xác → mẫu → message đã có dấu tiếng Việt → câu chung
- * theo HTTP status. Chuỗi ASCII không khớp gì bị coi là chi tiết kỹ thuật (vd. "invalid UUID
- * length: 14", lỗi GORM) và KHÔNG bao giờ được in ra.
+ * Thứ tự tra: `code` riêng → chuỗi khớp chính xác → message đã có dấu tiếng Việt → mẫu → `code`
+ * chung (ERR_VALIDATION, ERR_NOT_FOUND...) → `fallback` của nơi gọi → message nghiệp vụ nguyên văn
+ * (chỉ 400/409) → câu chung theo HTTP status. Chuỗi mang dấu hiệu kỹ thuật (vd. "invalid UUID
+ * length: 14", lỗi GORM có dấu ":") KHÔNG bao giờ được in ra.
+ *
+ * Khoá của bảng phải là CHUỖI backend thật sự gửi tới client qua `data.error || data.message`.
+ * Vài handler đặt mã máy vào `error` (withdrawal_handler.go, admin_order_handler.go) hoặc
+ * `message` ("LESSON_LOCKED"), nên khoá là mã máy chứ không phải câu tiếng Anh của service.
  */
 
 import { ApiError, NetworkError, RateLimitError } from "./errors";
@@ -19,6 +24,9 @@ export const SESSION_EXPIRED_MESSAGE = "Phiên đăng nhập đã hết hạn, v
 const FORBIDDEN_MESSAGE = "Bạn không có quyền thực hiện thao tác này";
 const NOT_FOUND_MESSAGE = "Không tìm thấy dữ liệu, có thể đã bị xoá";
 const INVALID_INPUT_MESSAGE = "Dữ liệu gửi lên không hợp lệ, vui lòng kiểm tra lại";
+// 409 = xung đột với trạng thái hiện có (đã có trong giỏ, đã đánh giá...). KHÔNG nói "dữ liệu vừa
+// thay đổi, tải lại trang": câu đó sai sự thật với phần lớn lỗi 409 của backend (review PR #33).
+const CONFLICT_MESSAGE = "Thao tác xung đột với dữ liệu hiện có";
 
 /** Heuristic dùng chung với query-state.tsx / approval-errors.ts: lỗi kỹ thuật gần như luôn ASCII. */
 export const HAS_VIETNAMESE_DIACRITICS = /[à-ỹÀ-Ỹ]/;
@@ -40,6 +48,18 @@ const CODE_MESSAGES: Record<string, string> = {
   APPLICATION_UNDER_REVIEW: "Hồ sơ của bạn đang chờ duyệt.",
   RESUBMISSION_LIMIT_REACHED: "Bạn đã nộp lại quá số lần cho phép. Vui lòng liên hệ hỗ trợ.",
 };
+
+// Code chỉ nói LOẠI lỗi, message mới nói lý do (vd. ERR_NOT_FOUND + "Voucher not found",
+// ERR_VALIDATION + "bank_name, ... are required"). Với các code này xét message trước.
+const GENERIC_CODES = new Set([
+  "ERR_UNAUTHORIZED",
+  "ERR_FORBIDDEN",
+  "ERR_NOT_FOUND",
+  "ERR_INVALID_ID",
+  "ERR_INVALID_REQUEST",
+  "ERR_INVALID_BODY",
+  "ERR_VALIDATION",
+]);
 
 // Khoá là message backend viết thường (so khớp không phân biệt hoa thường).
 const EXACT_MESSAGES: Record<string, string> = {
@@ -65,19 +85,28 @@ const EXACT_MESSAGES: Record<string, string> = {
     "Yêu cầu đăng ký đã hết hạn, vui lòng đăng ký lại",
   "already enrolled in course": "Bạn đã đăng ký khoá học này",
   "already enrolled in this course": "Bạn đã đăng ký khoá học này",
+  "you are already enrolled in this course": "Bạn đã đăng ký khoá học này",
+  "course already in cart": "Khoá học đã có trong giỏ hàng",
+  "you have already reviewed this course": "Bạn đã đánh giá khoá học này rồi",
+  "student is already enrolled in this class": "Học viên này đã có trong lớp",
+  "already a member of this group": "Bạn đã là thành viên của nhóm này",
+  "you are banned from this group": "Bạn đã bị chặn khỏi nhóm này",
+  "contest is full": "Cuộc thi đã đủ người tham gia",
+  "contest is not accepting participants": "Cuộc thi hiện không nhận thêm người tham gia",
+  "already joined this contest": "Bạn đã tham gia cuộc thi này",
+  "you must join the contest before submitting": "Bạn cần tham gia cuộc thi trước khi nộp bài",
+  "cannot send gift to yourself": "Không thể tự tặng quà cho chính mình",
   "not enrolled in this course": "Bạn chưa đăng ký khoá học này",
   "not enrolled in the course containing this lesson": "Bạn chưa đăng ký khoá học chứa bài học này",
   "payment required for this course": "Khoá học này cần thanh toán trước khi học",
-  "lesson locked": "Bài học đang bị khoá",
+  // enrollment_handler.go gửi `message: "LESSON_LOCKED"` (không phải "lesson locked" của service).
+  lesson_locked: "Bài học đang bị khoá",
   "course must be completed before issuing a certificate": "Cần hoàn thành khoá học trước khi nhận chứng chỉ",
   "certificate already issued for this course": "Chứng chỉ của khoá học này đã được cấp",
-  "coupon expired": "Mã giảm giá đã hết hạn",
-  "coupon invalid": "Mã giảm giá không hợp lệ",
+  // Luồng coupon cũ (coupon_repository.go) không còn được gọi; order_service làm phẳng mọi lỗi
+  // mã giảm giá thành "invalid coupon".
   "invalid coupon": "Mã giảm giá không hợp lệ",
-  "coupon not found": "Không tìm thấy mã giảm giá",
-  "coupon not applicable to selected courses": "Mã giảm giá không áp dụng cho khoá học đã chọn",
-  "coupon per-user limit exceeded": "Bạn đã dùng hết lượt của mã giảm giá này",
-  "coupon usage limit exceeded": "Mã giảm giá đã hết lượt sử dụng",
+  "voucher not found": "Mã voucher không tồn tại, vui lòng kiểm tra lại",
   "voucher is expired": "Voucher đã hết hạn",
   "voucher is inactive": "Voucher đang tạm ngưng",
   "voucher is not started yet": "Voucher chưa đến thời gian áp dụng",
@@ -86,16 +115,25 @@ const EXACT_MESSAGES: Record<string, string> = {
   "order does not meet minimum purchase requirement": "Đơn hàng chưa đạt giá trị tối thiểu để dùng mã",
   "order already cancelled": "Đơn hàng đã bị huỷ",
   "order already completed": "Đơn hàng đã hoàn tất",
-  "order already refunded": "Đơn hàng đã được hoàn tiền",
-  "only completed orders can be refunded": "Chỉ hoàn tiền được cho đơn đã hoàn tất",
+  // admin_order_handler.go (hoàn tiền) đặt mã máy vào `error`.
+  already_refunded: "Đơn hàng đã được hoàn tiền",
+  invalid_status: "Trạng thái hiện tại không cho phép thao tác này",
+  not_found: NOT_FOUND_MESSAGE,
   "no courses selected": "Bạn chưa chọn khoá học nào",
   "insufficient balance": "Số dư không đủ",
-  "amount exceeds available balance": "Số tiền vượt quá số dư khả dụng",
-  "amount is below the minimum withdrawal": "Số tiền thấp hơn mức rút tối thiểu",
-  "amount must be greater than 0": "Số tiền phải lớn hơn 0",
-  "bank info required before withdrawal": "Vui lòng cập nhật thông tin ngân hàng trước khi rút tiền",
-  "you already have a withdrawal request in progress": "Bạn đang có một yêu cầu rút tiền chờ xử lý",
-  "payment expired": "Phiên thanh toán đã hết hạn",
+  // withdrawal_handler.go đặt mã máy vào `error` (message tiếng Anh không bao giờ tới đây).
+  invalid_amount: "Số tiền phải lớn hơn 0",
+  below_minimum: "Số tiền thấp hơn mức rút tối thiểu",
+  bank_info_required: "Vui lòng cập nhật thông tin ngân hàng trước khi rút tiền",
+  insufficient_balance: "Số tiền vượt quá số dư khả dụng",
+  negative_balance: "Số dư đang âm, tạm thời chưa thể rút tiền",
+  withdrawal_already_open: "Bạn đang có một yêu cầu rút tiền chờ xử lý",
+  teacher_profile_required: "Bạn cần có hồ sơ giảng viên để rút tiền",
+  withdrawal_not_found: "Không tìm thấy yêu cầu rút tiền",
+  invalid_status_transition: "Yêu cầu đã được xử lý trước đó, vui lòng tải lại trang",
+  "bank_name, bank_account_number, and bank_account_name are required":
+    "Vui lòng nhập đủ tên ngân hàng, số tài khoản và tên chủ tài khoản",
+  "teacher profile not found": "Bạn chưa có hồ sơ giảng viên",
   "payment already processed": "Giao dịch đã được xử lý",
   "you have already reported this content": "Bạn đã báo cáo nội dung này rồi",
   "category with this name already exists": "Tên danh mục đã tồn tại",
@@ -115,15 +153,18 @@ const EXACT_MESSAGES: Record<string, string> = {
   "max attempts reached": "Bạn đã dùng hết số lần làm bài",
   "quiz attempt already submitted": "Bài làm đã được nộp",
   "teacher profile already exists for this user": "Bạn đã có hồ sơ giảng viên",
-  "teacher application resubmission limit reached": "Bạn đã nộp lại hồ sơ quá số lần cho phép",
   "this role cannot be self-assigned": "Vai trò này không thể tự đăng ký",
   "idempotency key already claimed by a concurrent request": "Yêu cầu đang được xử lý, vui lòng đợi",
-  "rate limiting service unavailable": "Hệ thống đang bận, vui lòng thử lại sau ít phút",
 };
 
 // Mẫu tổng quát cho nhóm lỗi lặp lại hàng trăm biến thể ("x not found", "invalid x_id"...).
 const PATTERN_MESSAGES: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
   [/invalid OTP,\s*(\d+)\s*attempts?\s*remaining/i, (m) => `Mã OTP không đúng, còn ${m[1]} lần thử`],
+  // auth_service.go:367 — khoá tạm vì sai mật khẩu nhiều lần (401, không có code).
+  [
+    /account temporarily locked.*try again in\s*(\d+)\s*minutes?/i,
+    (m) => `Tài khoản tạm khoá do nhập sai nhiều lần, vui lòng thử lại sau ${m[1]} phút`,
+  ],
   [/please login again|session expired|invalid or expired refresh token/i, () => SESSION_EXPIRED_MESSAGE],
   [/^forbidden|not the (owner|teacher)|insufficient permissions|does not belong to you/i, () => FORBIDDEN_MESSAGE],
   [/not found/i, () => NOT_FOUND_MESSAGE],
@@ -135,10 +176,20 @@ const STATUS_MESSAGES: Record<number, string> = {
   401: SESSION_EXPIRED_MESSAGE,
   403: FORBIDDEN_MESSAGE,
   404: NOT_FOUND_MESSAGE,
-  409: "Dữ liệu vừa thay đổi, vui lòng tải lại trang rồi thử lại",
+  409: CONFLICT_MESSAGE,
   413: "Tệp quá lớn",
   422: INVALID_INPUT_MESSAGE,
 };
+
+// Dấu hiệu chuỗi kỹ thuật (lỗi GORM/pq, JSON parse, validator "Key: 'X' Error:...", tên field
+// snake_case, format verb). Chuỗi không có dấu hiệu nào và là một câu (có khoảng trắng) được coi
+// là thông điệp nghiệp vụ, vd. "you are banned from this group".
+const TECHNICAL_HINT =
+  /[:{}[\]"'`=<>\\/_%]|\b(sql|gorm|pq|json|strconv|parse|nil|null|uuid|syntax|unexpected|panic|runtime|deadline|constraint)\b/i;
+
+function isBusinessMessage(raw: string): boolean {
+  return raw.length > 0 && raw.length <= 200 && /\s/.test(raw) && !TECHNICAL_HINT.test(raw);
+}
 
 /**
  * Dịch thông tin lỗi thô (status/code/message backend) sang câu tiếng Việt.
@@ -152,7 +203,7 @@ export function translateApiErrorMessage(
   fallback?: string
 ): string {
   const byCode = code ? CODE_MESSAGES[code] : undefined;
-  if (byCode) return byCode;
+  if (byCode && !GENERIC_CODES.has(code as string)) return byCode;
 
   const raw = (message ?? "").trim();
   if (raw) {
@@ -161,13 +212,23 @@ export function translateApiErrorMessage(
     // Backend đã trả tiếng Việt (vd. "coupon_code đã hết hạn") → giữ nguyên, đó là lý do thật.
     // Kiểm TRƯỚC mẫu: câu tiếng Việt chứa "not found"/"invalid" ở tên field không được bị đè.
     if (HAS_VIETNAMESE_DIACRITICS.test(raw)) return raw;
+    // 401 của auth_middleware.go ("Invalid or expired token", "Invalid token type") là hết phiên.
+    // Phải xét trước mẫu `^invalid `, nếu không người dùng thấy "Dữ liệu gửi lên không hợp lệ"
+    // cùng lúc với toast "Phiên đăng nhập đã hết hạn" của bootstrap. Chỉ áp dụng cho 401: cùng
+    // câu đó ở parent_invitation_handler.go là token LỜI MỜI, không phải phiên.
+    if (status === 401 && /\btoken\b/i.test(raw)) return SESSION_EXPIRED_MESSAGE;
     for (const [pattern, toMessage] of PATTERN_MESSAGES) {
       const match = raw.match(pattern);
       if (match) return toMessage(match);
     }
   }
 
-  return fallback ?? STATUS_MESSAGES[status] ?? GENERIC_ERROR_MESSAGE;
+  if (byCode) return byCode;
+  if (fallback) return fallback;
+  // 400/409 không có trong bảng: thường là lỗi nghiệp vụ mới ("contest is full"...). Giữ nguyên
+  // lý do thật (dù tiếng Anh) thay vì câu chung che mất thông tin (review PR #33, MAJOR).
+  if ((status === 400 || status === 409) && isBusinessMessage(raw)) return raw;
+  return STATUS_MESSAGES[status] ?? GENERIC_ERROR_MESSAGE;
 }
 
 /** Câu tiếng Việt để hiển thị cho MỌI loại lỗi (toast, dòng lỗi dưới form, trang lỗi). */
