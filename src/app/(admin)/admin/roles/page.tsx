@@ -19,6 +19,7 @@ import { getSystemRoleLabel } from "@/lib/role-labels";
 import type { SystemRole, UserSystemRoleItem } from "@/services/role.service";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import { formatVnDateTime } from "../_lib/format-vn-datetime";
 
 type RoleFormState = {
   id?: string;
@@ -36,7 +37,6 @@ const USER_STATUS_LABEL: Record<UserSystemRoleItem["status"], string> = {
   revoked: "Đã gỡ",
 };
 
-const formatDate = (iso: string) => new Date(iso).toLocaleString("vi-VN");
 
 export default function RolesPage() {
   const { roles: rolesWithCounts, isLoading: rolesLoading } = useSystemRolesWithUserCounts();
@@ -243,7 +243,7 @@ export default function RolesPage() {
                       <div key={u.id} className="rounded border border-gray-100 p-2">
                         <p className="break-all font-mono text-xs text-gray-900">{u.user_id}</p>
                         <p className="mt-1 text-xs text-gray-500">
-                          {USER_STATUS_LABEL[u.status] ?? u.status} · Gán lúc {formatDate(u.granted_at)}
+                          {USER_STATUS_LABEL[u.status] ?? u.status} · Gán lúc {formatVnDateTime(u.granted_at)}
                         </p>
                         <Can permission={PERMISSIONS.MANAGE_ROLES}>
                           <div className="mt-2">

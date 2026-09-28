@@ -12,6 +12,7 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { getSystemRoleLabel } from "@/lib/role-labels";
 import { useAuthStore } from "@/stores/auth.store";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { getUserActiveLabel } from "../_lib/user-status-label";
 import type { AdminUserListItem, AdminUserStatusFilter } from "@/types/user";
 import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
@@ -219,7 +220,7 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={user.is_active ? "success" : "destructive"}>
-                        {user.is_active ? "Active" : "Locked"}
+                        {getUserActiveLabel(user.is_active)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{formatDate(user.created_at)}</TableCell>
