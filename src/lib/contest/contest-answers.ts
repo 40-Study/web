@@ -5,9 +5,6 @@
  * lại ĐÚNG attempt cũ) nhưng không lưu câu trả lời giữa chừng, nên thiếu nháp thì tải lại là mất
  * hết đáp án đã chọn. Đây chỉ là tiện ích của người đang làm bài — server không đọc, mọi đọc/ghi
  * bọc try/catch (chế độ riêng tư, bộ nhớ bị chặn) và thiếu nháp vẫn làm bài bình thường.
- *
- * Kèm bảng "id đáp án → chữ" để trang kết quả hiện chữ đáp án: `QuizAttemptAnswerDTO` của
- * my-result chỉ có id, và API quiz bị khoá với thí sinh (QUIZ_LOCKED_BY_CONTEST).
  */
 import type { ContestAttemptQuestion, ContestSubmitAnswer } from "@/types/contest";
 
@@ -48,7 +45,6 @@ export function toggleAnswer(question: ContestAttemptQuestion, draft: ContestAns
 }
 
 const DRAFT_PREFIX = "contest-draft:";
-const ANSWER_TEXT_PREFIX = "contest-answer-text:";
 
 export function loadAnswerDraft(attemptId: string): ContestAnswerMap {
   try {
@@ -67,21 +63,15 @@ export function saveAnswerDraft(attemptId: string, answers: ContestAnswerMap): v
   }
 }
 
-export function saveAnswerTexts(attemptId: string, questions: ContestAttemptQuestion[]): void {
+/**
+ * Xoá nháp sau khi nộp THÀNH CÔNG (review m3): nộp xong nháp vô dụng, và để lại thì bài làm nằm
+ * trên máy dùng chung. Chỉ gọi khi nộp thành công — nộp lỗi (mạng) thì nháp phải còn để nộp lại.
+ */
+export function clearAnswerDraft(attemptId: string): void {
   try {
-    const texts: Record<string, string> = {};
-    for (const q of questions) for (const a of q.answers) texts[a.id] = a.answer_text;
-    window.localStorage.setItem(ANSWER_TEXT_PREFIX + attemptId, JSON.stringify(texts));
+    window.localStorage.removeItem(DRAFT_PREFIX + attemptId);
   } catch {
-    // như trên
+    // Bộ nhớ bị chặn: không có gì để xoá.
   }
 }
 
-export function loadAnswerTexts(attemptId: string): Map<string, string> {
-  try {
-    const raw = window.localStorage.getItem(ANSWER_TEXT_PREFIX + attemptId);
-    return new Map(Object.entries(raw ? (JSON.parse(raw) as Record<string, string>) : {}));
-  } catch {
-    return new Map();
-  }
-}

@@ -5,19 +5,47 @@ import { ChevronLeft, ChevronRight, Medal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useContestLeaderboard } from "@/hooks/queries/use-contests";
 import { contestErrorCode, contestErrorMessage } from "@/lib/contest/contest-errors";
-import { formatContestDuration, formatContestPercent, formatContestScore } from "@/lib/contest/contest-format";
+import {
+  contestRevealAt,
+  formatContestDuration,
+  formatContestPercent,
+  formatContestScore,
+  resolveLeaderboardVisibility,
+} from "@/lib/contest/contest-format";
 import { cn } from "@/lib/utils";
+import type { ContestPhase } from "@/types/contest";
 import { ContestLoading } from "./contest-states";
+import { useServerCountdown } from "./use-server-countdown";
 
 const MEDAL_COLOR: Record<number, string> = { 1: "text-amber-500", 2: "text-slate-400", 3: "text-orange-600" };
 
-/** BXH (#16): công khai sau khi cuộc thi đóng (ENDED/FINALIZED); backend chặn trước đó. */
-export function ContestLeaderboard({ contestId, visible }: { contestId: string; visible: boolean }) {
-  const [page, setPage] = useState(1);
-  const query = useContestLeaderboard(contestId, page, visible);
+interface ContestLeaderboardProps {
+  contestId: string;
+  phase: ContestPhase;
+  endTime: string;
+  serverTime: string;
+  /** `dataUpdatedAt` của truy vấn chi tiết — xem useServerCountdown. */
+  receivedAt?: number;
+}
 
-  if (!visible) {
-    return <p className="text-sm text-gray-600">Bảng xếp hạng được công bố sau khi cuộc thi kết thúc.</p>;
+/**
+ * BXH (#16): công khai từ `end_time + 30s` (ĐÍNH CHÍNH 2), backend trả 403 trước mốc đó. Trong
+ * 30 giây ân hạn component tự đếm ngược theo giờ server và bật truy vấn đúng lúc qua mốc — không
+ * gọi sớm (sẽ nhận 403) và không bắt người dùng tải lại trang.
+ */
+export function ContestLeaderboard({ contestId, phase, endTime, serverTime, receivedAt }: ContestLeaderboardProps) {
+  const [page, setPage] = useState(1);
+  const revealAt = contestRevealAt(endTime);
+  const revealRemaining = useServerCountdown(phase === "ENDED" ? revealAt : null, serverTime, undefined, receivedAt);
+  const visibility = resolveLeaderboardVisibility(phase, revealAt, revealRemaining);
+  const query = useContestLeaderboard(contestId, page, visibility.visible);
+
+  if (!visibility.visible) {
+    return (
+      <p className="text-sm text-gray-600" role="status">
+        {visibility.message}
+      </p>
+    );
   }
   if (query.isLoading) return <ContestLoading label="Đang tải bảng xếp hạng…" />;
   if (query.error) {

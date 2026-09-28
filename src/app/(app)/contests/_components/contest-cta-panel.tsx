@@ -11,12 +11,14 @@ import { useServerCountdown } from "./use-server-countdown";
 
 interface ContestCtaPanelProps {
   detail: ContestDetail;
+  /** `dataUpdatedAt` của truy vấn chi tiết — xem useServerCountdown. */
+  receivedAt: number;
   activeRole: string | null;
   /** Gọi khi mốc đếm ngược về 0 để tải lại chi tiết (phase đổi theo giờ server). */
   onPhaseBoundary: () => void;
 }
 
-export function ContestCtaPanel({ detail, activeRole, onPhaseBoundary }: ContestCtaPanelProps) {
+export function ContestCtaPanel({ detail, receivedAt, activeRole, onPhaseBoundary }: ContestCtaPanelProps) {
   const cta = resolveContestCta(detail, activeRole);
   const join = useJoinContest();
 
@@ -45,7 +47,7 @@ export function ContestCtaPanel({ detail, activeRole, onPhaseBoundary }: Contest
         </Button>
       );
     case "countdown":
-      return <RegisteredCountdown label={cta.label} target={cta.targetTime} serverTime={detail.server_time} onZero={onPhaseBoundary} />;
+      return <RegisteredCountdown label={cta.label} target={cta.targetTime} serverTime={detail.server_time} receivedAt={receivedAt} onZero={onPhaseBoundary} />;
     case "start":
     case "continue":
       return (
@@ -85,8 +87,8 @@ export function ContestCtaPanel({ detail, activeRole, onPhaseBoundary }: Contest
   }
 }
 
-function RegisteredCountdown({ label, target, serverTime, onZero }: { label: string; target: string; serverTime: string; onZero: () => void }) {
-  const remaining = useServerCountdown(target, serverTime, onZero);
+function RegisteredCountdown({ label, target, serverTime, receivedAt, onZero }: { label: string; target: string; serverTime: string; receivedAt: number; onZero: () => void }) {
+  const remaining = useServerCountdown(target, serverTime, onZero, receivedAt);
   return (
     <div className="rounded-xl bg-blue-50 p-3 text-center" role="timer" aria-live="off">
       <p className="text-sm text-blue-800">{label}</p>
