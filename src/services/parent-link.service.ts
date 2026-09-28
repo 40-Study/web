@@ -23,11 +23,16 @@ export interface ParentLinkRequest {
   status: LinkRequestStatus;
   relationship: LinkRelationship;
   message?: string;
+  /** Email phụ huynh đã nhập (chữ thường). Luôn có. */
+  student_email: string;
   created_at: string;
   responded_at?: string;
   /** Có ở danh sách "đến" của học sinh. */
   parent?: LinkUser;
-  /** Có ở danh sách "đã gửi" của phụ huynh. */
+  /**
+   * Chỉ có ở danh sách "đã gửi" SAU KHI con đã trả lời: khi còn chờ, backend không trả tên học
+   * sinh để form không thành công cụ dò email nào là tài khoản học sinh.
+   */
   student?: LinkUser;
 }
 

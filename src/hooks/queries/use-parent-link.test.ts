@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ApiError, RateLimitError } from "@/lib/errors";
-import { parentLinkErrorMessage } from "./use-parent-link";
+import { LINK_REQUEST_RATE_LIMIT_MESSAGE, parentLinkErrorMessage } from "./use-parent-link";
 
 describe("parentLinkErrorMessage", () => {
   it("giữ thông điệp tiếng Việt backend trả cho lỗi 4xx (vd đã gửi yêu cầu)", () => {
@@ -9,8 +9,14 @@ describe("parentLinkErrorMessage", () => {
   });
 
   it("429 (api-client bỏ body, câu tiếng Anh) được dịch sang tiếng Việt", () => {
-    const msg = parentLinkErrorMessage(new RateLimitError(), "x");
+    const msg = parentLinkErrorMessage(new RateLimitError(), "x", LINK_REQUEST_RATE_LIMIT_MESSAGE);
     expect(msg).toContain("quá nhiều yêu cầu liên kết");
+    expect(msg).not.toMatch(/Too many/);
+  });
+
+  it("429 ở thao tác khác (huỷ, trả lời) dùng câu chung, không nói về gửi yêu cầu (W5)", () => {
+    const msg = parentLinkErrorMessage(new RateLimitError(), "x");
+    expect(msg).not.toContain("yêu cầu liên kết");
     expect(msg).not.toMatch(/Too many/);
   });
 

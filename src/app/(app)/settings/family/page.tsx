@@ -14,6 +14,7 @@ import {
   LinkedChildrenList, IncomingLinkRequestsCard, LinkedParentsList,
 } from "@/components/parent";
 import { useSentInvitations } from "@/hooks/queries/use-invitation";
+import { useLinkedParents } from "@/hooks/queries/use-parent-link";
 import { useAuthStore } from "@/stores/auth.store";
 import { normalizeRole } from "@/lib/routes";
 import { siteConfig } from "@/lib/constants";
@@ -103,13 +104,18 @@ function ParentFamilyView() {
 /** Trang "Gia đình" cho vai HỌC SINH — luồng mời phụ huynh (giữ nguyên như cũ). */
 function StudentFamilyView() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const { data: sentInvitations = [], isLoading } = useSentInvitations();
+  const { data: sentInvitations = [], isLoading: isLoadingInvitations } = useSentInvitations();
+  // Review #38 W1: "đang liên kết" lấy từ quan hệ active (/family/parents), không suy từ lời mời
+  // "accepted" — lời mời không biết liên kết đã bị huỷ hay được tạo qua yêu cầu của phụ huynh.
+  const { data: linkedParents = [], isLoading: isLoadingParents } = useLinkedParents();
+  const isLoading = isLoadingInvitations || isLoadingParents;
 
-  const linkedParents = sentInvitations.filter((inv) => inv.status === "accepted");
   const pendingInvitations = sentInvitations.filter((inv) =>
     ["pending", "invited"].includes(inv.status)
   );
-  const hasInvitations = linkedParents.length > 0 || pendingInvitations.length > 0;
+  // Empty state chỉ khi thật sự chưa có ai liên kết VÀ không có lời mời nào đang chờ.
+  const isEmpty = linkedParents.length === 0 && pendingInvitations.length === 0;
+  const hasInvitations = sentInvitations.length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -208,10 +214,12 @@ function StudentFamilyView() {
                 <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
               </div>
             </div>
-          ) : hasInvitations ? (
-            <div className="bg-white rounded-2xl border border-slate-100 p-6">
-              <SentInvitationsList onInviteClick={() => setIsInviteModalOpen(true)} />
-            </div>
+          ) : !isEmpty ? (
+            hasInvitations && (
+              <div className="bg-white rounded-2xl border border-slate-100 p-6">
+                <SentInvitationsList onInviteClick={() => setIsInviteModalOpen(true)} />
+              </div>
+            )
           ) : (
             /* Empty State */
             <div className="bg-gradient-to-b from-slate-50 to-white rounded-3xl border border-slate-100 p-10 text-center">

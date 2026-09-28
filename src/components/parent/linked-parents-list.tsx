@@ -7,13 +7,17 @@ import { useLinkedParents, useUnlinkParent } from "@/hooks/queries/use-parent-li
 import type { LinkedParent } from "@/services/parent-link.service";
 import { ConfirmUnlinkDialog } from "./confirm-unlink-dialog";
 import { RELATIONSHIP_OPTIONS } from "./link-child-form";
+import { FamilyLoadError } from "./family-load-error";
 
 /** Học sinh xem phụ huynh đang liên kết (nguồn thật: quan hệ active) và có thể huỷ liên kết. */
 export function LinkedParentsList({ className }: { className?: string }) {
-  const { data: parents = [] } = useLinkedParents();
+  const { data: parents = [], isError, refetch } = useLinkedParents();
   const unlink = useUnlinkParent();
   const [target, setTarget] = useState<LinkedParent | null>(null);
 
+  if (isError) {
+    return <FamilyLoadError className={className} what="danh sách phụ huynh đang liên kết" onRetry={() => refetch()} />;
+  }
   if (parents.length === 0) return null;
 
   const targetName = target ? target.full_name || target.username : "";

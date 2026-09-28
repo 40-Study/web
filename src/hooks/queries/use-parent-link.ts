@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { parentLinkService, type CreateLinkRequestDTO } from "@/services/parent-link.service";
 import { authKeys } from "@/hooks/queries/use-auth";
 import { parentDashboardKeys } from "@/hooks/queries/use-parent-dashboard";
+import { invitationKeys } from "@/hooks/queries/use-invitation";
 import { ApiError, RateLimitError } from "@/lib/errors";
 
 export const parentLinkKeys = {
@@ -12,15 +13,21 @@ export const parentLinkKeys = {
   parents: () => [...parentLinkKeys.all, "parents"] as const,
 };
 
+/** Câu 429 riêng cho thao tác GỬI yêu cầu (hạn mức theo tài khoản và theo thiết bị). */
+export const LINK_REQUEST_RATE_LIMIT_MESSAGE =
+  "Bạn đã gửi quá nhiều yêu cầu liên kết. Vui lòng thử lại sau.";
+
 /**
  * Thông điệp lỗi hiển thị cho người dùng. Backend trả `message` tiếng Việt (envelope
- * {"message","code"}); riêng 429 thì api-client hiện bỏ body và thay bằng câu tiếng Anh chung,
- * nên dịch tại đây theo đúng luật nghiệp vụ của luồng này (giới hạn số yêu cầu mỗi ngày).
+ * {"message","code"}); riêng 429 thì api-client bỏ body và thay bằng câu tiếng Anh chung, nên
+ * dịch tại đây. Câu 429 mặc định là câu chung; nơi gửi yêu cầu truyền câu riêng (review #38 W5).
  */
-export function parentLinkErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof RateLimitError) {
-    return "Bạn đã gửi quá nhiều yêu cầu liên kết trong 24 giờ. Vui lòng thử lại sau.";
-  }
+export function parentLinkErrorMessage(
+  error: unknown,
+  fallback: string,
+  rateLimitMessage = "Bạn thao tác quá nhanh. Vui lòng thử lại sau ít phút.",
+): string {
+  if (error instanceof RateLimitError) return rateLimitMessage;
   if (error instanceof ApiError && error.status < 500 && error.message) return error.message;
   return fallback;
 }
@@ -97,6 +104,8 @@ export function useUnlinkParent() {
     onSuccess: () => {
       toast.success("Đã huỷ liên kết với phụ huynh.");
       qc.invalidateQueries({ queryKey: parentLinkKeys.parents() });
+      // Backend thu hồi luôn lời mời còn chờ của cặp này (review #81 MAJOR-2) — làm mới danh sách.
+      qc.invalidateQueries({ queryKey: invitationKeys.sent() });
     },
     onError: (e) => toast.error(parentLinkErrorMessage(e, "Không huỷ được liên kết, vui lòng thử lại.")),
   });

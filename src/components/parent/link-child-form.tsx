@@ -5,7 +5,9 @@ import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { parentLinkErrorMessage, useCreateLinkRequest } from "@/hooks/queries/use-parent-link";
+import {
+  LINK_REQUEST_RATE_LIMIT_MESSAGE, parentLinkErrorMessage, useCreateLinkRequest,
+} from "@/hooks/queries/use-parent-link";
 import type { LinkRelationship } from "@/services/parent-link.service";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -42,7 +44,8 @@ export function LinkChildForm() {
           setEmail("");
           setMessage("");
         },
-        onError: (err) => setError(parentLinkErrorMessage(err, "Không gửi được yêu cầu, vui lòng thử lại.")),
+        onError: (err) =>
+        setError(parentLinkErrorMessage(err, "Không gửi được yêu cầu, vui lòng thử lại.", LINK_REQUEST_RATE_LIMIT_MESSAGE)),
       }
     );
   };

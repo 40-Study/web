@@ -4,6 +4,7 @@ import { ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIncomingLinkRequests, useRespondLinkRequest } from "@/hooks/queries/use-parent-link";
 import { RELATIONSHIP_OPTIONS } from "./link-child-form";
+import { FamilyLoadError } from "./family-load-error";
 
 const relationshipLabel = (value: string) =>
   RELATIONSHIP_OPTIONS.find((o) => o.value === value)?.label ?? value;
@@ -13,9 +14,12 @@ const relationshipLabel = (value: string) =>
  * phụ huynh mới xem được tiến độ; không hiện gì khi không có yêu cầu đang chờ.
  */
 export function IncomingLinkRequestsCard({ className }: { className?: string }) {
-  const { data: requests = [] } = useIncomingLinkRequests();
+  const { data: requests = [], isError, refetch } = useIncomingLinkRequests();
   const respond = useRespondLinkRequest();
 
+  if (isError) {
+    return <FamilyLoadError className={className} what="yêu cầu liên kết từ phụ huynh" onRetry={() => refetch()} />;
+  }
   if (requests.length === 0) return null;
 
   return (
