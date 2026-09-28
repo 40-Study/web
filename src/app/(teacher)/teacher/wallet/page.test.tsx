@@ -12,12 +12,17 @@ import { describe, expect, it, vi } from "vitest";
 import type { TeacherTransaction } from "@/services/wallet.service";
 
 let mockTransactions: TeacherTransaction[] = [];
+const emptyWallet = {
+  available_balance: 0,
+  total_earnings: 0,
+  total_paid_out: 0,
+  pending_withdrawal: 0,
+  order_count: 0,
+};
+let mockWallet = emptyWallet;
 
 vi.mock("@/hooks/queries/use-wallet", () => ({
-  useTeacherWallet: () => ({
-    data: { available_balance: 0, total_earnings: 0, total_paid_out: 0, order_count: 0 },
-    isLoading: false,
-  }),
+  useTeacherWallet: () => ({ data: mockWallet, isLoading: false }),
   useTeacherTransactions: () => ({
     data: {
       transactions: mockTransactions,
@@ -58,6 +63,37 @@ function txFixture(overrides: Partial<TeacherTransaction>): TeacherTransaction {
     ...overrides,
   };
 }
+
+/** Đọc số tiền VND ngay sau nhãn trong dòng tóm tắt, vd "Đang chờ rút: 100.000 ₫" -> 100000. */
+function amountAfter(text: string, label: string): number {
+  const m = text.match(new RegExp(`${label}:\\s*(-?[\\d.]+)`));
+  if (!m) throw new Error(`không thấy "${label}" trong: ${text}`);
+  return Number(m[1].replace(/\./g, ""));
+}
+
+describe("/teacher/wallet — các con số số dư cộng lại được (review Phase 4, W-1)", () => {
+  it("Tổng thu nhập = Đã rút + Đang chờ rút + Khả dụng, cả 4 số đều hiện trên trang", () => {
+    mockTransactions = [];
+    mockWallet = {
+      available_balance: 885000,
+      total_earnings: 1185000,
+      total_paid_out: 200000,
+      pending_withdrawal: 100000,
+      order_count: 2,
+    };
+    render(<TeacherWalletPage />);
+
+    const breakdown = screen.getByTestId("wallet-breakdown").textContent ?? "";
+    const total = amountAfter(breakdown, "Tổng thu nhập");
+    const paid = amountAfter(breakdown, "Đã rút");
+    const pending = amountAfter(breakdown, "Đang chờ rút");
+    const available = Number((screen.getByText(/^885\.000/).textContent ?? "").replace(/\D/g, ""));
+
+    expect([total, paid, pending, available]).toEqual([1185000, 200000, 100000, 885000]);
+    expect(paid + pending + available).toBe(total);
+    mockWallet = emptyWallet;
+  });
+});
 
 describe("/teacher/wallet — đơn huỷ không hiện như đã nhận tiền (review đối kháng PR #27)", () => {
   it("đơn 'cancelled': KHÔNG dấu '+', KHÔNG màu xanh (text-green-600), badge 'Đã huỷ'", () => {

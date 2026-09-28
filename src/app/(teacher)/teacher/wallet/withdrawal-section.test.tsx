@@ -93,6 +93,27 @@ describe("WithdrawalSection", () => {
     expect(screen.getByText(/chưa đạt mức rút tối thiểu \(100\.000đ\)/i)).toBeTruthy();
   });
 
+  // Review Phase 4, W-2: mức tối thiểu phải lấy từ min_withdrawal_amount của API (backend đọc
+  // WITHDRAWAL_MIN_AMOUNT), không hardcode 100.000. API trả 200.000: số dư 150.000 phải bị khoá.
+  it("mức tối thiểu lấy từ API (200.000đ): số dư 150.000 -> nút rút bị khoá", () => {
+    mockWallet = walletFixture({ available_balance: 150000, min_withdrawal_amount: 200000 });
+    render(<WithdrawalSection />);
+    expect(requestButton().disabled).toBe(true);
+    expect(screen.getByText(/chưa đạt mức rút tối thiểu \(200\.000đ\)/i)).toBeTruthy();
+  });
+
+  it("mức tối thiểu lấy từ API (200.000đ): nhập 150.000 -> không gọi API", () => {
+    mockWallet = walletFixture({ available_balance: 500000, min_withdrawal_amount: 200000 });
+    render(<WithdrawalSection />);
+    fireEvent.click(requestButton());
+    fireEvent.change(screen.getByPlaceholderText("Nhập số tiền muốn rút..."), { target: { value: "150000" } });
+    expect(screen.getByText("Số tiền rút tối thiểu là 200.000đ.")).toBeTruthy();
+    const confirmBtn = screen.getByRole("button", { name: "Xác nhận rút tiền" }) as HTMLButtonElement;
+    expect(confirmBtn.disabled).toBe(true);
+    fireEvent.click(confirmBtn);
+    expect(mockMutate).not.toHaveBeenCalled();
+  });
+
   it("đủ điều kiện -> nút rút bật", () => {
     mockWallet = walletFixture({});
     render(<WithdrawalSection />);

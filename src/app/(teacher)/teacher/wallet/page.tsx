@@ -125,9 +125,12 @@ export default function TeacherWalletPage() {
               >
                 {formatCurrency(wallet?.available_balance ?? 0)}
               </p>
-              <p className="text-xs text-muted-foreground mb-4">
+              {/* Tổng thu nhập = Đã rút + Đang chờ rút + Khả dụng: thiếu dòng "Đang chờ rút" thì
+                  3 con số không cộng lại được (review Phase 4, W-1). */}
+              <p className="text-xs text-muted-foreground mb-4" data-testid="wallet-breakdown">
                 Tổng thu nhập: {formatCurrency(wallet?.total_earnings ?? 0)} · Đã rút:{" "}
-                {formatCurrency(wallet?.total_paid_out ?? 0)}
+                {formatCurrency(wallet?.total_paid_out ?? 0)} · Đang chờ rút:{" "}
+                {formatCurrency(wallet?.pending_withdrawal ?? 0)}
               </p>
             </CardContent>
           </Card>
