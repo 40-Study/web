@@ -126,6 +126,11 @@ export interface PaymentStatus {
   status: string;
   paid_at?: string | null;
   amount: number;
+  /**
+   * Đơn "expired" nhưng hệ thống đã nhận tiền cho mã này sau hạn (backend ghi history để admin
+   * hoàn tiền). Web báo "bộ phận hỗ trợ sẽ liên hệ hoàn tiền", không mời tạo đơn mới rồi trả lần 2.
+   */
+  late_payment_received?: boolean;
 }
 
 // ─── Service ────────────────────────────────────────────────────────────────

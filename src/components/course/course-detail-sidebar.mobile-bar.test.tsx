@@ -1,7 +1,8 @@
 /**
- * Thanh mua cố định trên mobile (B8) và review #34 MINOR: thanh chỉ hiện khi thẻ giá chính còn ở
- * PHÍA DƯỚI màn hình. Khi thẻ đang hiện hoặc đã cuộn qua phía trên (vùng footer) thì ẩn, trước
- * đây nó hiện lại ở đó và che ~70px cuối footer.
+ * Thanh mua cố định trên mobile (B8): chỉ hiện khi thẻ giá chính còn nằm hẳn PHÍA DƯỚI màn hình.
+ * - Review #34 MINOR: thẻ đã cuộn qua phía trên (vùng footer) thì ẩn, trước đây thanh che footer.
+ * - Re-review vòng 2 MINOR: nhảy thẳng từ cuối trang lên đầu trang (thẻ đi từ "trên" xuống "dưới"
+ *   viewport, không qua trạng thái giao nhau) thì thanh phải hiện lại, không bị kẹt ẩn.
  */
 
 import { act, render, screen } from "@testing-library/react";
@@ -47,29 +48,36 @@ const course: CourseDetail = {
   ratingDistribution: {},
 };
 
-type ObserverCallback = (entries: Array<Partial<IntersectionObserverEntry>>) => void;
-let observerCallback: ObserverCallback | null = null;
+const VIEWPORT_HEIGHT = 800;
+let cardTop = 2000;
 
-class FakeIntersectionObserver {
-  constructor(cb: ObserverCallback) {
-    observerCallback = cb;
-  }
-  observe() {}
-  disconnect() {}
-}
-
-function report(isIntersecting: boolean, top: number) {
-  act(() => observerCallback!([{ isIntersecting, boundingClientRect: { top } as DOMRectReadOnly }]));
+/** Đặt vị trí thẻ giá (top so với viewport) rồi phát sự kiện scroll như khi người dùng cuộn/nhảy. */
+function scrollCardTo(top: number) {
+  cardTop = top;
+  act(() => {
+    window.dispatchEvent(new Event("scroll"));
+  });
 }
 
 describe("CourseDetailSidebar — thanh mua mobile", () => {
   beforeEach(() => {
-    observerCallback = null;
-    vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
+    cardTop = 2000;
+    vi.stubGlobal("innerHeight", VIEWPORT_HEIGHT);
+    // rAF chạy đồng bộ để mỗi lần scroll cập nhật ngay trong act().
+    vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
+      cb(0);
+      return 0;
+    });
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+      () => ({ top: cardTop, bottom: cardTop + 400, left: 0, right: 0, width: 0, height: 400, x: 0, y: cardTop, toJSON: () => ({}) }) as DOMRect
+    );
   });
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
 
-  it("hiện khi thẻ giá còn ở dưới, ẩn khi thẻ đang hiện hoặc đã cuộn qua (vùng footer)", () => {
+  it("hiện khi thẻ giá ở dưới; ẩn khi thẻ hiện hoặc đã cuộn qua; hiện lại khi nhảy thẳng về đầu trang", () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={qc}>
@@ -77,13 +85,16 @@ describe("CourseDetailSidebar — thanh mua mobile", () => {
       </QueryClientProvider>
     );
 
-    report(false, 900); // thẻ giá còn ở phía dưới màn hình
+    // Lúc tải trang: thẻ giá còn ở phía dưới (top 2000 > cao màn hình 800).
     expect(screen.queryByTestId("mobile-buy-bar")).not.toBeNull();
 
-    report(true, 200); // thẻ giá đang hiện
+    scrollCardTo(300); // thẻ giá đang hiện
     expect(screen.queryByTestId("mobile-buy-bar")).toBeNull();
 
-    report(false, -400); // đã cuộn qua thẻ giá, đang ở vùng footer
+    scrollCardTo(-400); // đã cuộn qua thẻ giá, đang ở vùng footer
     expect(screen.queryByTestId("mobile-buy-bar")).toBeNull();
+
+    scrollCardTo(2000); // nhảy thẳng về đầu trang (Home / chạm thanh trạng thái iOS)
+    expect(screen.queryByTestId("mobile-buy-bar")).not.toBeNull();
   });
 });

@@ -119,6 +119,9 @@ export function OrderPaymentDialog({
 
   // Poll ra "expired" (backend chốt đơn hết hạn) cũng là màn hết hạn, không phải "đang chờ".
   const isOrderExpired = expiredMessage !== null || status === "expired";
+  // Re-review #76 vòng 2: backend đã nhận tiền cho mã này nhưng SAU hạn → không mời "Tạo đơn mới"
+  // (dễ trả lần 2); báo bộ phận hỗ trợ sẽ hoàn tiền.
+  const latePaymentReceived = status === "expired" && polled?.late_payment_received === true;
   const dialogStatus: BankTransferDialogStatus = isCompleted
     ? "success"
     : isOrderExpired
@@ -144,12 +147,16 @@ export function OrderPaymentDialog({
       successDescription={<>Khóa học đã được thêm vào tài khoản của bạn.</>}
       onCheckNow={orderId ? () => checkPayment.mutate(orderId) : undefined}
       isCheckingNow={checkPayment.isPending}
-      onRetryExpired={onRetryExpired}
-      expiredTitle="Đơn hàng đã hết hạn"
+      onRetryExpired={latePaymentReceived ? undefined : onRetryExpired}
+      expiredTitle={latePaymentReceived ? "Đã nhận tiền sau khi đơn hết hạn" : "Đơn hàng đã hết hạn"}
       expiredDescription={
-        expiredMessage ?? "Đơn đã hết hạn giữ chỗ. Tạo đơn mới để thanh toán theo giá hiện tại."
+        latePaymentReceived
+          ? "Hệ thống đã nhận khoản chuyển của bạn nhưng sau thời hạn thanh toán. Bộ phận hỗ trợ sẽ liên hệ hoàn tiền, vui lòng không chuyển khoản lại."
+          : expiredMessage ?? "Đơn đã hết hạn giữ chỗ. Tạo đơn mới để thanh toán theo giá hiện tại."
       }
       retryExpiredLabel="Tạo đơn mới"
+      // Hết giờ trên đồng hồ chưa phải hết hạn thật: chờ server đối chiếu giao dịch lần cuối.
+      awaitServerAfterExpiry
     />
   );
 }

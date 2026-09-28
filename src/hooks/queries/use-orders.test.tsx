@@ -17,7 +17,13 @@ vi.mock("@/services/order.service", () => ({
 
 import { toast } from "sonner";
 import { orderService } from "@/services/order.service";
-import { orderKeys, useCreateOrder, useCreatePaymentIntent } from "./use-orders";
+import {
+  PAYMENT_FINAL_CHECK_WINDOW_MS,
+  nextPaymentPollDelay,
+  orderKeys,
+  useCreateOrder,
+  useCreatePaymentIntent,
+} from "./use-orders";
 
 function setup() {
   const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
@@ -63,6 +69,23 @@ describe("useCreateOrder — lỗi 409", () => {
     act(() => result.current.mutate({ source: "buy_now", course_ids: ["c1"], idempotency_key: "k" }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
     expect(vi.mocked(toast.error).mock.calls[0]).toEqual(["Khóa học không tồn tại"]);
+  });
+});
+
+// Re-review #76 vòng 2: hết hạn mã chưa phải kết quả cuối, backend còn đối chiếu ngân hàng lần cuối.
+describe("nextPaymentPollDelay", () => {
+  const expiresAt = "2026-09-28T12:00:00Z";
+  const at = (iso: string) => new Date(iso).getTime();
+
+  it("vẫn poll sau hạn mã trong cửa sổ đối chiếu, dừng khi quá cửa sổ", () => {
+    expect(nextPaymentPollDelay("processing", expiresAt, at("2026-09-28T11:59:00Z"))).toBe(5_000);
+    expect(nextPaymentPollDelay("processing", expiresAt, at("2026-09-28T12:01:00Z"))).toBe(5_000);
+    expect(nextPaymentPollDelay("processing", expiresAt, at("2026-09-28T12:00:00Z") + PAYMENT_FINAL_CHECK_WINDOW_MS + 1)).toBe(false);
+  });
+
+  it("dừng ngay khi server trả kết quả cuối", () => {
+    expect(nextPaymentPollDelay("expired", expiresAt, at("2026-09-28T12:01:00Z"))).toBe(false);
+    expect(nextPaymentPollDelay("completed", expiresAt, at("2026-09-28T11:00:00Z"))).toBe(false);
   });
 });
 

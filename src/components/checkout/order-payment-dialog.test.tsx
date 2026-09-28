@@ -40,6 +40,7 @@ function renderDialog(orderId: string, onRetryExpired = vi.fn()) {
 describe("OrderPaymentDialog — đơn hết hạn", () => {
   beforeEach(() => {
     vi.mocked(orderService.createPaymentIntent).mockReset();
+    vi.mocked(orderService.getPaymentStatus).mockReset();
   });
 
   it("409 ERR_ORDER_EXPIRED: hiện câu của backend và nút 'Tạo đơn mới'", async () => {
@@ -72,6 +73,36 @@ describe("OrderPaymentDialog — đơn hết hạn", () => {
     await waitFor(() => expect(screen.getByText("40STUDY PAYNEW123")).toBeTruthy());
     expect(screen.queryByText("Đơn hàng đã hết hạn")).toBeNull();
     expect(vi.mocked(orderService.createPaymentIntent).mock.calls[1][0]).toBe("order-new");
+  });
+
+  // Re-review #76 vòng 2: hết giờ trên đồng hồ chưa phải hết hạn thật. Server còn đối chiếu lần
+  // cuối; tiền về SAU hạn → báo hoàn tiền, KHÔNG có nút "Tạo đơn mới" (tránh trả lần 2).
+  it("hết giờ mà server chưa chốt: hiện đang kiểm tra lần cuối, không mời tạo đơn mới", async () => {
+    vi.mocked(orderService.createPaymentIntent).mockResolvedValue({
+      order_id: "order-late", payment_code: "PAYLATE", amount: 499000, currency: "VND",
+      expired_at: new Date(Date.now() - 1000).toISOString(),
+      bank_transfer_info: { bank_name: "MB", account_number: "123", account_name: "40STUDY", content: "40STUDY PAYLATE" },
+    });
+    vi.mocked(orderService.getPaymentStatus).mockResolvedValue({ order_id: "order-late", status: "processing", amount: 499000 });
+    renderDialog("order-late");
+
+    await waitFor(() => expect(screen.getByText(/đang kiểm tra lần cuối/)).toBeTruthy());
+    expect(screen.queryByRole("button", { name: "Tạo đơn mới" })).toBeNull();
+  });
+
+  it("server báo đã nhận tiền sau hạn: báo hoàn tiền, không có nút Tạo đơn mới", async () => {
+    vi.mocked(orderService.createPaymentIntent).mockResolvedValue({
+      order_id: "order-late2", payment_code: "PAYLATE2", amount: 499000, currency: "VND",
+      expired_at: new Date(Date.now() - 1000).toISOString(),
+    });
+    vi.mocked(orderService.getPaymentStatus).mockResolvedValue({
+      order_id: "order-late2", status: "expired", amount: 499000, late_payment_received: true,
+    });
+    renderDialog("order-late2");
+
+    await waitFor(() => expect(screen.getByText("Đã nhận tiền sau khi đơn hết hạn")).toBeTruthy());
+    expect(screen.getByText(/Bộ phận hỗ trợ sẽ liên hệ hoàn tiền/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Tạo đơn mới" })).toBeNull();
   });
 
   it("lỗi khác vẫn là màn lỗi chung", async () => {

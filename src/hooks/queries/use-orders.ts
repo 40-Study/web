@@ -60,24 +60,32 @@ export function useOrder(id: string) {
 
 const PAYMENT_STATUS_POLL_INTERVAL_MS = 5_000;
 const PAYMENT_TERMINAL_STATUSES = new Set(["completed", "paid", "cancelled", "refunded", "expired"]);
+/**
+ * Re-review #76 vòng 2: hết hạn mã KHÔNG phải kết quả cuối. Backend đối chiếu ngân hàng lần cuối rồi
+ * mới chốt completed/expired (và giữ nguyên trạng thái nếu chưa xác minh được), nên vẫn poll thêm
+ * một khoảng sau hạn để nhận đúng kết quả đó thay vì tự coi là hết hạn.
+ */
+export const PAYMENT_FINAL_CHECK_WINDOW_MS = 10 * 60_000;
 
 /**
  * Poll GET /orders/:id/payment-status mỗi 5s cho tới khi có kết quả cuối
- * (completed/cancelled/refunded/expired) hoặc quá hạn `expiresAt`
+ * (completed/cancelled/refunded/expired), hoặc quá `expiresAt` + PAYMENT_FINAL_CHECK_WINDOW_MS
  * (ISO string từ PaymentIntent.expired_at — mục 13 trong plans/reports/
  * web-core-developer-260909-1412-web-logic-fixes.md).
  */
+/** Nhịp poll kế tiếp (ms) hoặc false để dừng: dừng khi có kết quả cuối hoặc quá hạn + cửa sổ đối chiếu. */
+export function nextPaymentPollDelay(status: string | undefined, expiresAt?: string | null, now = Date.now()): number | false {
+  if (status && PAYMENT_TERMINAL_STATUSES.has(status)) return false;
+  if (expiresAt && now > new Date(expiresAt).getTime() + PAYMENT_FINAL_CHECK_WINDOW_MS) return false;
+  return PAYMENT_STATUS_POLL_INTERVAL_MS;
+}
+
 export function usePaymentStatus(id: string, enabled = false, expiresAt?: string | null) {
   return useQuery({
     queryKey: orderKeys.paymentStatus(id),
     queryFn: () => orderService.getPaymentStatus(id),
     enabled: !!id && enabled,
-    refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      if (status && PAYMENT_TERMINAL_STATUSES.has(status)) return false;
-      if (expiresAt && Date.now() > new Date(expiresAt).getTime()) return false;
-      return PAYMENT_STATUS_POLL_INTERVAL_MS;
-    },
+    refetchInterval: (query) => nextPaymentPollDelay(query.state.data?.status, expiresAt),
   });
 }
 

@@ -73,16 +73,28 @@ export function CourseDetailSidebar({
   const [isPurchaseCardVisible, setIsPurchaseCardVisible] = useState(false);
   useEffect(() => {
     const el = purchaseCardRef.current;
-    if (!el || typeof IntersectionObserver === "undefined") return;
-    // Review #34 MINOR: trên mobile thẻ giá nằm cuối nội dung, ngay trên footer. Khi thẻ đã cuộn
-    // qua phía trên (top < 0) thì người dùng đang ở vùng footer và đã thấy nút mua, nên ẩn thanh
-    // cố định luôn; trước đây thanh hiện lại ở đó và che ~70px cuối footer.
-    const observer = new IntersectionObserver(
-      ([entry]) => setIsPurchaseCardVisible(entry.isIntersecting || entry.boundingClientRect.top < 0),
-      { threshold: 0.2 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
+    if (!el || typeof window === "undefined") return;
+    // Thanh mua chỉ hiện khi thẻ giá còn nằm HẲN phía dưới màn hình. Thẻ đang hiện, hoặc đã cuộn qua
+    // phía trên (trên mobile thẻ nằm ngay trên footer, review #34 MINOR: thanh từng che ~70px cuối
+    // footer) thì ẩn. Re-review vòng 2 (MINOR): tính lại theo vị trí thật ở mỗi lần scroll/resize
+    // thay vì IntersectionObserver, vì IO không báo khi thẻ nhảy thẳng từ "trên" xuống "dưới"
+    // viewport (chạm thanh trạng thái iOS, phím Home) nên thanh bị kẹt ẩn.
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      setIsPurchaseCardVisible(el.getBoundingClientRect().top < window.innerHeight);
+    };
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, []);
 
   const courseId = String(course.id);

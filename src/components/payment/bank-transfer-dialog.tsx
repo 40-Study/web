@@ -49,6 +49,11 @@ export interface BankTransferDialogProps {
   expiredTitle?: string;
   expiredDescription?: React.ReactNode;
   retryExpiredLabel?: string;
+  /**
+   * Đồng hồ về 0 KHÔNG tự chuyển sang màn "hết hạn": server còn đối chiếu giao dịch lần cuối (đơn
+   * khóa học). Hiện "đang kiểm tra" cho tới khi `status` do server trả đổi sang expired/success.
+   */
+  awaitServerAfterExpiry?: boolean;
 }
 
 function CopyRow({ label, value }: { label: string; value: string }) {
@@ -115,9 +120,12 @@ export function BankTransferDialog({
   expiredTitle = "Đã hết hạn chuyển khoản",
   expiredDescription = "Vui lòng tạo lại giao dịch để nhận mã chuyển khoản mới.",
   retryExpiredLabel = "Tạo lại",
+  awaitServerAfterExpiry = false,
 }: BankTransferDialogProps) {
   const remainingMs = useCountdown(expiresAt);
-  const isExpired = status === "pending" && remainingMs !== null && remainingMs <= 0;
+  const countdownOver = status === "pending" && remainingMs !== null && remainingMs <= 0;
+  const isExpired = countdownOver && !awaitServerAfterExpiry;
+  const isFinalChecking = countdownOver && awaitServerAfterExpiry;
   const effectiveStatus: BankTransferDialogStatus = isExpired ? "expired" : status;
 
   return (
@@ -190,10 +198,17 @@ export function BankTransferDialog({
               </p>
             )}
 
-            {remainingMs !== null && (
-              <p className="text-center text-xs text-muted-foreground">
-                Hết hạn sau <span className="font-medium">{formatCountdown(remainingMs)}</span>
+            {isFinalChecking ? (
+              <p className="text-center text-xs text-amber-600">
+                Đã hết thời gian chuyển khoản. Hệ thống đang kiểm tra lần cuối các giao dịch đã nhận,
+                vui lòng không chuyển khoản lại.
               </p>
+            ) : (
+              remainingMs !== null && (
+                <p className="text-center text-xs text-muted-foreground">
+                  Hết hạn sau <span className="font-medium">{formatCountdown(remainingMs)}</span>
+                </p>
+              )
             )}
 
             <div className="flex items-center justify-center gap-2 rounded-lg border border-dashed py-3 text-sm text-muted-foreground">

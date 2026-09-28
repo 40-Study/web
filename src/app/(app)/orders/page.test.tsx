@@ -3,7 +3,7 @@
  * xong/đã quá hạn thì không còn nút hành động.
  */
 
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Order } from "@/services/order.service";
 import MyOrdersPage from "./page";
@@ -11,6 +11,7 @@ import MyOrdersPage from "./page";
 const mockCancel = vi.fn();
 const mockRefetch = vi.fn();
 const mockCreateOrder = vi.fn();
+const mockCheckPayment = vi.fn();
 let mockOrders: Order[] = [];
 
 vi.mock("next/navigation", () => ({
@@ -27,7 +28,10 @@ vi.mock("@/hooks/queries/use-orders", () => ({
   }),
   useCancelOrder: () => ({ mutate: mockCancel, isPending: false }),
   useCreateOrder: () => ({ mutate: mockCreateOrder, isPending: false }),
+  useCheckPayment: () => ({ mutateAsync: mockCheckPayment, isPending: false }),
 }));
+
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 
 // Hộp thanh toán thật gọi API — ở đây chỉ cần biết trang mở nó cho ĐÚNG đơn.
 vi.mock("@/components/checkout/order-payment-dialog", () => ({
@@ -59,12 +63,15 @@ describe("MyOrdersPage", () => {
     mockCancel.mockReset();
     mockRefetch.mockReset();
     mockCreateOrder.mockReset();
+    mockCheckPayment.mockReset();
     mockOrders = [];
   });
 
   // Review backend #76 MAJOR 2: đơn hết hạn (đã "expired" hoặc quá hạn giữ) → "Tạo đơn mới" cho
-  // đúng các khóa của đơn đó, rồi mở thanh toán cho ĐƠN MỚI.
-  it("đơn hết hạn có nút Tạo đơn mới: tạo đơn cho đúng khóa rồi mở thanh toán đơn mới", () => {
+  // đúng các khóa của đơn đó, rồi mở thanh toán cho ĐƠN MỚI. Re-review vòng 2: đơn từng có mã phải
+  // được backend đối chiếu lần cuối (check-payment) TRƯỚC khi tạo đơn mới.
+  it("đơn hết hạn có nút Tạo đơn mới: đối chiếu trước, tạo đơn cho đúng khóa rồi mở thanh toán đơn mới", async () => {
+    mockCheckPayment.mockResolvedValue({ order_id: "old-expired", status: "expired", amount: 499000 });
     mockOrders = [
       makeOrder({ id: "old-expired", status: "expired", expires_at: null }),
       makeOrder({ id: "done", order_number: "ORD-QA-2", status: "completed", expires_at: null }),
@@ -76,13 +83,29 @@ describe("MyOrdersPage", () => {
     expect(screen.getByText(/Đơn đã hết hạn giữ chỗ/)).toBeTruthy();
 
     fireEvent.click(buttons[0]);
-    expect(mockCreateOrder).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mockCreateOrder).toHaveBeenCalledTimes(1));
+    expect(mockCheckPayment).toHaveBeenCalledWith("old-expired");
     const [dto, callbacks] = mockCreateOrder.mock.calls[0];
     expect(dto).toMatchObject({ source: "buy_now", course_ids: ["course-1"] });
     expect(typeof dto.idempotency_key).toBe("string");
 
     act(() => callbacks.onSuccess(makeOrder({ id: "order-new", status: "pending" })));
     expect(screen.getByTestId("payment-dialog").textContent).toBe("order-new");
+  });
+
+  it.each([
+    ["đã thanh toán trong hạn", { status: "completed" }],
+    ["nhận tiền sau hạn (chờ hoàn tiền)", { status: "expired", late_payment_received: true }],
+    ["chưa xác minh được", { status: "processing" }],
+  ])("đơn từng có mã, backend báo %s → KHÔNG tạo đơn mới", async (_label, checked) => {
+    mockCheckPayment.mockResolvedValue({ order_id: "had-code", amount: 499000, ...checked });
+    mockOrders = [makeOrder({ id: "had-code", status: "processing", expires_at: new Date(Date.now() - 60_000).toISOString() })];
+    render(<MyOrdersPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Tạo đơn mới" }));
+    await waitFor(() => expect(mockCheckPayment).toHaveBeenCalledWith("had-code"));
+    await act(async () => {});
+    expect(mockCreateOrder).not.toHaveBeenCalled();
   });
 
   it("hiện tên khóa, ngày tạo và 2 hành động cho đơn đang chờ", () => {

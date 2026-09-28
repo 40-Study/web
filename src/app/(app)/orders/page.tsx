@@ -20,7 +20,7 @@ import { QueryState } from "@/components/common/query-state";
 import { OrderPaymentDialog } from "@/components/checkout/order-payment-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
-import { useCancelOrder, useCreateOrder, useMyOrders } from "@/hooks/queries/use-orders";
+import { useCancelOrder, useCheckPayment, useCreateOrder, useMyOrders } from "@/hooks/queries/use-orders";
 import { ORDER_STATUS_LABEL, type Order, type OrderStatus } from "@/services/order.service";
 import { MyOrderCard } from "./_components/my-order-card";
 
@@ -38,6 +38,7 @@ export default function MyOrdersPage() {
   });
   const cancelMutation = useCancelOrder();
   const createOrderMutation = useCreateOrder();
+  const checkPaymentMutation = useCheckPayment();
 
   const [payingOrder, setPayingOrder] = useState<Order | null>(null);
   const [cancellingOrder, setCancellingOrder] = useState<Order | null>(null);
@@ -52,8 +53,37 @@ export default function MyOrdersPage() {
   };
 
   // Lỗi (409 đơn đang mở, đã ghi danh...) đã được useCreateOrder toast sẵn.
-  const reorder = (order: Order) => {
+  const reorder = async (order: Order) => {
     setReorderingId(order.id);
+    // Re-review #76 vòng 2: đơn từng có mã chuyển khoản (processing quá hạn, hoặc đã expired) có thể
+    // đã được trả tiền. Hỏi backend đối chiếu lần cuối TRƯỚC khi tạo đơn mới, để không dẫn học viên
+    // trả lần 2. Lỗi gọi API đã được useCheckPayment toast.
+    if (order.status !== "pending") {
+      let checked;
+      try {
+        checked = await checkPaymentMutation.mutateAsync(order.id);
+      } catch {
+        setReorderingId(null);
+        return;
+      }
+      if (checked.status === "completed" || checked.status === "paid") {
+        toast.success("Đơn này đã được thanh toán, khóa học đã được thêm vào tài khoản của bạn.");
+        refetch();
+        setReorderingId(null);
+        return;
+      }
+      if (checked.late_payment_received) {
+        toast.info("Hệ thống đã nhận tiền cho đơn này sau khi hết hạn. Bộ phận hỗ trợ sẽ liên hệ hoàn tiền, vui lòng không chuyển khoản lại.");
+        refetch();
+        setReorderingId(null);
+        return;
+      }
+      if (checked.status !== "expired") {
+        toast.error("Chưa xác minh được thanh toán của đơn này. Nếu bạn đã chuyển khoản, đừng chuyển lại; vui lòng thử lại sau ít phút.");
+        setReorderingId(null);
+        return;
+      }
+    }
     createOrderMutation.mutate(
       { source: "buy_now", course_ids: order.items.map((item) => item.course_id), idempotency_key: uuidv4() },
       {
@@ -74,7 +104,7 @@ export default function MyOrdersPage() {
   const retryExpiredPayment = () => {
     const expired = payingOrder;
     setPayingOrder(null);
-    if (expired) reorder(expired);
+    if (expired) void reorder(expired);
   };
 
   const confirmCancel = () => {
