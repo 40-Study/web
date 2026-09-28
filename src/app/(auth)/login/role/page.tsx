@@ -2,23 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { AuthCard } from "@/components/auth/auth-card";
-import { RoleCard } from "@/components/auth/role-card";
-import type { RoleType } from "@/components/auth/role-card";
+import { RoleCard, roleNameToRoleType as toRoleType } from "@/components/auth/role-card";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores";
 import { useSelectRole } from "@/hooks/queries/use-auth";
 import { authService } from "@/services/auth.service";
 import type { UnifiedRole, SystemRoleOption } from "@/services/auth.service";
-
-/** Map backend role_name to RoleCard display type */
-function toRoleType(roleName: string): RoleType {
-  const name = roleName.toLowerCase();
-  if (name.includes("student")) return "student";
-  if (name.includes("teacher")) return "teacher";
-  if (name.includes("parent")) return "parent";
-  if (name.includes("admin") || name.includes("owner")) return "admin";
-  return "student";
-}
 
 export default function LoginRolePage() {
   const { roles, sessionToken, isAuthenticated } = useAuthStore();

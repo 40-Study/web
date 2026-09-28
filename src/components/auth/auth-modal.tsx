@@ -12,7 +12,7 @@ import { startOAuthFlow } from "@/services/auth.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SocialLoginButton } from "@/components/auth/social-login-button";
-import { RoleCard } from "@/components/auth/role-card";
+import { RoleCard, roleNameToRoleType } from "@/components/auth/role-card";
 
 import { OtpInput } from "@/components/auth/otp-input";
 import { AuthIconHeader } from "@/components/auth/auth-icon-header";
@@ -41,15 +41,8 @@ interface AuthModalProps {
     initialMode?: "login" | "register";
 }
 
-/** Map backend role_name to RoleCard display type */
-function toRoleType(roleName: string): RoleType {
-    const name = roleName.toLowerCase();
-    if (name.includes("student")) return "student";
-    if (name.includes("teacher")) return "teacher";
-    if (name.includes("parent")) return "parent";
-    if (name.includes("admin") || name.includes("owner")) return "admin";
-    return "student";
-}
+/** Map backend role_name to RoleCard display type (SSOT ở role-card.tsx). */
+const toRoleType = (roleName: string): RoleType => roleNameToRoleType(roleName);
 
 // ─── Progress Bar ───────────────────────────────────────────────────────────
 

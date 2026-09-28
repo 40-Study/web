@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BarChart3, Building2, Flag, FolderTree, LayoutDashboard, LogOut, Receipt, Settings, ShieldCheck, Users } from "lucide-react";
+import { BookCheck, UserCheck } from "lucide-react";
 
 import { RoleGuard } from "@/components/guards";
 import { Avatar } from "@/components/ui/avatar";
@@ -29,6 +30,8 @@ const adminMenu = [
   // có dữ liệu thật để điều hướng tới. Route + page vẫn giữ nguyên (vào được
   // bằng URL trực tiếp, vẫn qua RoleGuard của layout); bật lại mục nav khi
   // backend có API nhật ký hoạt động.
+  { label: "Duyệt khoá học", href: "/admin/courses", icon: BookCheck },
+  { label: "Duyệt giáo viên", href: "/admin/teacher-applications", icon: UserCheck },
 ];
 
 export default function AdminLayout({

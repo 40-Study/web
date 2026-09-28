@@ -3,7 +3,23 @@
 import { cn } from "@/lib/utils";
 import { SmallCheckIcon, GraduationCapIcon, UsersIcon, SettingsIcon } from "@/components/icons";
 
-export type RoleType = "student" | "parent" | "teacher" | "admin";
+export type RoleType = "student" | "parent" | "teacher" | "applicant" | "admin";
+
+/**
+ * Map role_name backend → loại thẻ hiển thị. Kiểm "applicant" TRƯỚC "teacher":
+ * "TEACHER_APPLICANT" cũng chứa chữ "teacher" và từng hiện sai là thẻ "Giáo viên — Quản lý
+ * lớp học" dù ứng viên chưa có quyền giảng dạy (Phase 3: /auth/system-roles trả
+ * TEACHER_APPLICANT thay cho TEACHER).
+ */
+export function roleNameToRoleType(roleName: string): RoleType {
+  const name = roleName.toLowerCase();
+  if (name.includes("applicant")) return "applicant";
+  if (name.includes("student")) return "student";
+  if (name.includes("teacher")) return "teacher";
+  if (name.includes("parent")) return "parent";
+  if (name.includes("admin") || name.includes("owner")) return "admin";
+  return "student";
+}
 
 interface RoleCardProps {
   role: RoleType;
@@ -30,6 +46,11 @@ const roleConfig: Record<RoleType, { label: string; description: string; icon: R
   teacher: {
     label: "Giáo viên",
     description: "Quản lý lớp học và bài giảng",
+    icon: <UsersIcon size={28} />,
+  },
+  applicant: {
+    label: "Đăng ký làm giảng viên",
+    description: "Nộp hồ sơ để quản trị viên duyệt trở thành giảng viên",
     icon: <UsersIcon size={28} />,
   },
   admin: {
