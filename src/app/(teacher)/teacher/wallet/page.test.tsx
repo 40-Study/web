@@ -34,6 +34,12 @@ vi.mock("./bank-info-dialog", () => ({
   BankInfoDialog: () => null,
 }));
 
+// Phase 4 (rút tiền): khối riêng, có test riêng ở withdrawal-section.test.tsx — mock no-op ở đây
+// để suite review-đối-kháng PR #27 (bảng giao dịch) không phụ thuộc thêm hook rút tiền.
+vi.mock("./withdrawal-section", () => ({
+  WithdrawalSection: () => null,
+}));
+
 // eslint-disable-next-line import/first
 import TeacherWalletPage from "./page";
 

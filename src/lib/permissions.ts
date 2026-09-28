@@ -28,6 +28,10 @@ export const PERMISSIONS = {
   // % phí ở /admin/reports.
   MANAGE_PAYMENTS: "PAYMENTS_MANAGE",
   MANAGE_PLATFORM_FEE: "SYSTEM_SETTINGS_MANAGE",
+  // Phase 4 (rút tiền giảng viên, 28/09/2026) — gate trang /admin/withdrawals + nút
+  // duyệt/từ chối/đánh dấu đã chuyển. Giá trị PHẢI khớp tên permission thật ở backend
+  // (data/permissions/system_admin_permissions.json), theo đúng withdrawal-contract.md.
+  WALLET_WITHDRAWALS_MANAGE: "WALLET_WITHDRAWALS_MANAGE",
 
   // Org Owner
   MANAGE_ORG_MEMBERS: "manage_org_members",

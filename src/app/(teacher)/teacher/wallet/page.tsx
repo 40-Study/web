@@ -27,6 +27,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useTeacherWallet, useTeacherTransactions } from "@/hooks/queries/use-wallet";
 import type { TeacherTransaction } from "@/services/wallet.service";
 import { BankInfoDialog } from "./bank-info-dialog";
+import { WithdrawalSection } from "./withdrawal-section";
 
 // ─── Status display config ───────��───────────────────────────────────────────
 
@@ -115,7 +116,13 @@ export default function TeacherWalletPage() {
                 </div>
                 <span className="text-sm text-muted-foreground">Số dư khả dụng</span>
               </div>
-              <p className="text-3xl font-bold text-green-600 mb-1">
+              {/* Phase 4: available_balance có thể ÂM (hoàn tiền sau khi đã rút) — hiển thị đỏ
+                  thay vì xanh cố định, xem withdrawal-contract.md công thức số dư. */}
+              <p
+                className={`text-3xl font-bold mb-1 ${
+                  Number(wallet?.available_balance ?? 0) < 0 ? "text-red-600" : "text-green-600"
+                }`}
+              >
                 {formatCurrency(wallet?.available_balance ?? 0)}
               </p>
               <p className="text-xs text-muted-foreground mb-4">
@@ -185,6 +192,9 @@ export default function TeacherWalletPage() {
           </Card>
         </div>
       )}
+
+      {/* Rút tiền — component riêng (Phase 4), xem withdrawal-section.tsx */}
+      <WithdrawalSection />
 
       {/* Transactions */}
       <Card>
