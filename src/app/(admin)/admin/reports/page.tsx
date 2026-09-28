@@ -1,265 +1,205 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
-import { useWalletTransactions } from "@/hooks/queries/use-wallet";
-import type { WalletTransaction, TransactionStatus } from "@/services/wallet.service";
+import { toast } from "sonner";
+import {
+  useAdminRevenueReport,
+  usePlatformFeeSetting,
+  useUpdatePlatformFeeSetting,
+} from "@/hooks/queries/use-admin-reports";
+import { Can } from "@/components/guards";
+import { PERMISSIONS } from "@/lib/permissions";
 import { QueryState } from "@/components/common/query-state";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/utils";
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
-type ReportFilter = "today" | "7days" | "all";
-type StatusFilter = "ALL" | TransactionStatus;
+type PeriodFilter = "7days" | "30days" | "90days";
 
-const STATUS_LIST: TransactionStatus[] = ["completed", "pending", "failed", "cancelled"];
+const PERIOD_DAYS: Record<PeriodFilter, number> = { "7days": 7, "30days": 30, "90days": 90 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+const STATUS_LABEL: Record<string, string> = {
+  pending: "Chờ thanh toán",
+  processing: "Đang xử lý",
+  completed: "Hoàn tất",
+  failed: "Thất bại",
+  refunded: "Đã hoàn tiền",
+  cancelled: "Đã hủy",
+  expired: "Hết hạn",
+};
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
+// ─── Sub-components ────────────────────────────────────────────────────────────
 
-const formatDate = (iso: string) => new Date(iso).toLocaleString("vi-VN");
-
-// ─── Sub-components (kept local — page-only UI primitives) ───────────────────
-
-function MetricCard({ label, value }: { label: string; value: string }) {
+function MetricCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <article className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
       <p className="text-sm text-gray-500">{label}</p>
       <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+      {hint && <p className="mt-1 text-xs text-gray-400">{hint}</p>}
     </article>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-2 last:border-0 dark:border-gray-800">
-      <span className="text-gray-500">{label}</span>
-      <span className="text-right font-medium text-gray-900 dark:text-gray-100">{value}</span>
-    </div>
   );
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminReportsPage() {
-  const [search, setSearch] = useState("");
-  // Debounce 300ms: `search` lọc lại toàn bộ giao dịch theo từng ký tự.
-  const debouncedSearch = useDebouncedValue(search, 300);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
-  const [period, setPeriod] = useState<ReportFilter>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [period, setPeriod] = useState<PeriodFilter>("30days");
 
-  const { data: txResponse, isLoading, isError, error, refetch } = useWalletTransactions();
+  const { from, to } = useMemo(() => {
+    const now = new Date();
+    const from = new Date(now.getTime() - PERIOD_DAYS[period] * 24 * 60 * 60 * 1000);
+    return { from: from.toISOString(), to: now.toISOString() };
+  }, [period]);
 
-  const filteredRecords = useMemo(() => {
-    // Unwrap paginated response — API returns { transactions[], total, page, limit }
-    const transactions: WalletTransaction[] = txResponse?.transactions ?? [];
-    const now = Date.now();
-    return transactions.filter((tx) => {
-      const textMatched =
-        (tx.order_number ?? "").toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        (tx.description ?? "").toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        (tx.payment_method ?? "").toLowerCase().includes(debouncedSearch.toLowerCase());
-
-      const statusMatched = statusFilter === "ALL" || tx.status === statusFilter;
-
-      const timestamp = new Date(tx.created_at).getTime();
-      const periodMatched =
-        period === "today"
-          ? now - timestamp <= 24 * 60 * 60 * 1000
-          : period === "7days"
-            ? now - timestamp <= 7 * 24 * 60 * 60 * 1000
-            : true;
-
-      return textMatched && statusMatched && periodMatched;
-    });
-  }, [txResponse, debouncedSearch, statusFilter, period]);
-
-  // Auto-select first record once data loads
-  const firstId = filteredRecords[0]?.id ?? null;
-  const effectiveSelectedId = selectedId ?? firstId;
-
-  const selectedRecord = useMemo(
-    () => filteredRecords.find((tx) => tx.id === effectiveSelectedId) ?? filteredRecords[0] ?? null,
-    [filteredRecords, effectiveSelectedId]
-  );
-
-  const metrics = useMemo(() => {
-    const successful = filteredRecords.filter((r) => r.status === "completed");
-    const revenue = successful.reduce((sum: number, tx: WalletTransaction) => sum + tx.amount, 0);
-    // A-P1-5: KHÔNG có trạng thái "refunded" thật trong API ví — "cancelled" chỉ là đơn bị hủy,
-    // không phải tiền đã hoàn. Đổi tên biến + nhãn hiển thị cho đúng bản chất, không gọi là
-    // "hoàn tiền" nữa.
-    const cancelledAmount = filteredRecords
-      .filter((r) => r.status === "cancelled")
-      .reduce((sum: number, tx: WalletTransaction) => sum + tx.amount, 0);
-    const successRate = filteredRecords.length
-      ? (successful.length / filteredRecords.length) * 100
-      : 0;
-    return {
-      revenue,
-      transactions: filteredRecords.length,
-      cancelledAmount,
-      successRate,
-    };
-  }, [filteredRecords]);
-
-  if (isLoading || isError) {
-    return (
-      <QueryState
-        isLoading={isLoading}
-        isError={isError}
-        error={error}
-        onRetry={() => refetch()}
-        loadingFallback={
-          <div className="flex justify-center items-center p-12">
-            <Loader2 className="animate-spin h-8 w-8 text-gray-400" />
-          </div>
-        }
-      >
-        {null}
-      </QueryState>
-    );
-  }
+  const {
+    data: report,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useAdminRevenueReport({ from, to });
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          Ví của tôi (Admin)
+          Báo cáo doanh thu nền tảng
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Đây là giao dịch ví của CHÍNH tài khoản admin đang đăng nhập (GET /api/wallet/transactions
-          chỉ trả giao dịch của người gọi) — <strong>chưa phải doanh thu toàn nền tảng</strong>.
-          Backend chưa có API thống kê doanh thu toàn nền tảng (quyền DASHBOARD_VIEW_GLOBAL đã tồn
-          tại nhưng chưa có route dùng đến).
+          Doanh thu thật tính trực tiếp từ đơn hàng — không phải ví của người xem báo cáo.
         </p>
       </div>
 
-      {/* Metric cards */}
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Tổng thu (ví của tôi)" value={formatCurrency(metrics.revenue)} />
-        <MetricCard label="Đơn đã hủy (không phải hoàn tiền)" value={formatCurrency(metrics.cancelledAmount)} />
-        <MetricCard label="Số giao dịch" value={String(metrics.transactions)} />
-        <MetricCard label="Tỉ lệ thành công" value={`${metrics.successRate.toFixed(1)}%`} />
-      </section>
-
-      {/* Filters */}
+      {/* Filter khoảng thời gian */}
       <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-        <div className="grid gap-3 lg:grid-cols-3">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo mã đơn, mô tả, phương thức..."
-            className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
-          />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
-          >
-            <option value="ALL">Tất cả trạng thái</option>
-            {STATUS_LIST.map((s) => (
-              <option key={s} value={s}>
-                {s.charAt(0).toUpperCase() + s.slice(1)}
-              </option>
-            ))}
-          </select>
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value as ReportFilter)}
-            className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
-          >
-            <option value="today">Hôm nay</option>
-            <option value="7days">7 ngày</option>
-            <option value="all">Toàn bộ</option>
-          </select>
+        <div className="flex gap-2">
+          {(["7days", "30days", "90days"] as PeriodFilter[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+                period === p
+                  ? "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
+                  : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+              }`}
+            >
+              {PERIOD_DAYS[p]} ngày gần nhất
+            </button>
+          ))}
         </div>
       </section>
 
-      {/* Table + Detail panel */}
-      <section className="grid gap-4 xl:grid-cols-[1.8fr_1fr]">
-        {/* Transaction table */}
-        <div className="overflow-hidden rounded-xl border bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
-          <div className="overflow-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-900">
-                <tr>
-                  <th className="px-4 py-3 text-left">Mã đơn</th>
-                  <th className="px-4 py-3 text-left">Mô tả</th>
-                  <th className="px-4 py-3 text-left">Phương thức</th>
-                  <th className="px-4 py-3 text-left">Số tiền</th>
-                  <th className="px-4 py-3 text-left">Trạng thái</th>
-                  <th className="px-4 py-3 text-left">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {filteredRecords.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="px-4 py-8 text-center text-gray-500 text-sm"
-                    >
-                      Không có giao dịch nào.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredRecords.map((tx) => (
-                    <tr
-                      key={tx.id}
-                      className={
-                        selectedRecord?.id === tx.id
-                          ? "bg-primary-50/60 dark:bg-primary-900/20"
-                          : ""
-                      }
-                    >
-                      <td className="px-4 py-3 font-medium">
-                        {tx.order_number ?? tx.id}
-                      </td>
-                      <td className="px-4 py-3">{tx.description ?? "-"}</td>
-                      <td className="px-4 py-3">{tx.payment_method ?? "-"}</td>
-                      <td className="px-4 py-3">{formatCurrency(tx.amount)}</td>
-                      <td className="px-4 py-3 capitalize">{tx.status}</td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => setSelectedId(tx.id)}
-                          className="rounded bg-gray-100 px-2 py-1 text-xs hover:bg-gray-200 dark:bg-gray-800"
-                        >
-                          Chi tiết
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      <QueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
+        {report && (
+          <>
+            {/* Metric cards — gộp / hoàn / ròng / phí nền tảng / phần giảng viên (quyết định #2) */}
+            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <MetricCard label="Doanh thu gộp" value={formatCurrency(report.gross_revenue)} />
+              <MetricCard label="Đã hoàn tiền" value={formatCurrency(report.refund_amount)} />
+              <MetricCard label="Doanh thu ròng" value={formatCurrency(report.net_revenue)} />
+              <MetricCard
+                label="Phí nền tảng"
+                value={formatCurrency(report.platform_fee_amount)}
+                hint="Chốt theo % lúc từng đơn thanh toán — đổi cấu hình không ảnh hưởng đơn cũ."
+              />
+              <MetricCard
+                label="Phần giảng viên"
+                value={formatCurrency(report.teacher_share_amount)}
+                hint="Doanh thu gộp trừ phí nền tảng."
+              />
+              <MetricCard
+                label="Tỷ lệ thành công"
+                value={`${report.success_rate.toFixed(1)}%`}
+                hint={`${report.completed_count} hoàn tất / ${report.transaction_count} đơn trong kỳ`}
+              />
+            </section>
 
-        {/* Detail panel */}
-        <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-          <h2 className="text-base font-semibold mb-3">Chi tiết giao dịch</h2>
-          {selectedRecord ? (
-            <div className="space-y-2 text-sm">
-              <DetailRow label="ID" value={selectedRecord.id} />
-              <DetailRow label="Mã đơn" value={selectedRecord.order_number ?? "-"} />
-              <DetailRow label="Mô tả" value={selectedRecord.description ?? "-"} />
-              <DetailRow label="Phương thức" value={selectedRecord.payment_method ?? "-"} />
-              <DetailRow label="Số tiền" value={formatCurrency(selectedRecord.amount)} />
-              <DetailRow label="Loại" value={selectedRecord.type} />
-              <DetailRow label="Trạng thái" value={selectedRecord.status} />
-              <DetailRow label="Ngày tạo" value={formatDate(selectedRecord.created_at)} />
-              {selectedRecord.paid_at && (
-                <DetailRow label="Ngày thanh toán" value={formatDate(selectedRecord.paid_at)} />
-              )}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500">Chưa chọn giao dịch.</p>
-          )}
-        </div>
-      </section>
+            {/* Phân bổ theo trạng thái */}
+            <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+              <h2 className="mb-3 text-base font-semibold">Phân bổ theo trạng thái</h2>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {Object.entries(report.by_status).map(([status, count]) => (
+                  <div key={status} className="rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
+                    <p className="text-xs text-gray-500">{STATUS_LABEL[status] ?? status}</p>
+                    <p className="text-lg font-semibold">{count}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
+      </QueryState>
+
+      {/* Cấu hình % phí nền tảng (quyết định #2) — chỉ SYSTEM_SETTINGS_MANAGE mới sửa được. */}
+      <Can permission={PERMISSIONS.MANAGE_PLATFORM_FEE}>
+        <PlatformFeeSettingCard />
+      </Can>
     </div>
+  );
+}
+
+function PlatformFeeSettingCard() {
+  const { data, isLoading } = usePlatformFeeSetting();
+  const updateMutation = useUpdatePlatformFeeSetting();
+  const [draft, setDraft] = useState<string>("");
+  const [editing, setEditing] = useState(false);
+
+  const currentPercent = data?.platform_fee_percent ?? 0;
+
+  const startEdit = () => {
+    setDraft(String(currentPercent));
+    setEditing(true);
+  };
+
+  const onSave = () => {
+    const percent = Number(draft);
+    if (Number.isNaN(percent) || percent < 0 || percent > 100) {
+      toast.error("% phí nền tảng phải là số từ 0 đến 100");
+      return;
+    }
+    updateMutation.mutate(percent, { onSuccess: () => setEditing(false) });
+  };
+
+  return (
+    <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+      <h2 className="mb-1 text-base font-semibold">Cấu hình phí nền tảng</h2>
+      <p className="mb-3 text-xs text-gray-500">
+        % áp dụng cho đơn thanh toán SAU thời điểm lưu — không ảnh hưởng đơn đã hoàn tất trước đó
+        (mỗi đơn chốt % ngay lúc thanh toán).
+      </p>
+
+      {isLoading ? (
+        <p className="text-sm text-gray-400">Đang tải...</p>
+      ) : editing ? (
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step="0.1"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            className="h-10 w-28 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+          />
+          <span className="text-sm text-gray-500">%</span>
+          <Button size="sm" isLoading={updateMutation.isPending} onClick={onSave}>
+            Lưu
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
+            Hủy
+          </Button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3">
+          <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            {currentPercent}%
+          </span>
+          <Button size="sm" variant="outline" onClick={startEdit}>
+            Sửa
+          </Button>
+        </div>
+      )}
+    </section>
   );
 }
