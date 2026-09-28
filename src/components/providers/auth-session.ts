@@ -58,7 +58,12 @@ export async function loadPermissionsForRole(role: UnifiedRole | null): Promise<
   return names.filter((permission): permission is Permission => knownPermissions.has(permission));
 }
 
-async function runBootstrap(): Promise<SessionStatus> {
+/**
+ * @param sessionJustEstablished true khi caller vừa nhận response hoàn tất đăng nhập / đổi vai
+ * trò từ server (cookie phiên vừa được đặt): select-role, OAuth success, switch-role, login 1 vai
+ * trò. Khi đó PHẢI gọi getMe dù store chưa có `user` cache — xem nhánh guard khách bên dưới.
+ */
+async function runBootstrap(sessionJustEstablished: boolean): Promise<SessionStatus> {
   const store = useAuthStore.getState();
   const roleSelectionToken = store.restoreSessionToken();
 
@@ -78,7 +83,13 @@ async function runBootstrap(): Promise<SessionStatus> {
   // lại trang bình thường đã đủ khiến người dùng thật login ngay sau đó bị
   // 429 (QA khách P2, 260927). Người dùng ĐÃ từng đăng nhập (còn `user` cache)
   // vẫn được thử khôi phục phiên bình thường bên dưới.
-  if (!store.user) {
+  //
+  // Guard này CHỈ áp cho bootstrap thụ động lúc tải trang. Tài khoản nhiều vai trò: response
+  // /auth/login không có `user` (backend chỉ trả `user` khi Completed=true, tức 1 vai trò), và
+  // `user` chỉ được ghi vào store qua applyServerSession() SAU getMe(). Trước đây guard chặn luôn
+  // lần bootstrap ngay sau select-role / OAuth success, nên getMe() không bao giờ chạy, `user` ở
+  // lại null trong "auth-storage" và mọi lần tải lại trang đều bị đá về /login dù cookie hợp lệ.
+  if (!store.user && !sessionJustEstablished) {
     store.setSessionStatus("anonymous");
     return "anonymous";
   }
@@ -165,12 +176,16 @@ export async function applyServerRoleChange(newRole: string | null): Promise<voi
   }, ROLE_CHANGE_REDIRECT_DELAY_MS);
 }
 
+/**
+ * @param forceFresh true = caller vừa hoàn tất đăng nhập / đổi vai trò phía server (cookie mới):
+ * chờ lần bootstrap đang chạy (nếu có) rồi chạy lại, và luôn gọi getMe dù chưa có `user` cache.
+ */
 export async function bootstrapAuthSession(forceFresh = false): Promise<SessionStatus> {
   if (forceFresh && bootstrapPromise) {
     await bootstrapPromise;
   }
   if (!bootstrapPromise) {
-    bootstrapPromise = runBootstrap().finally(() => {
+    bootstrapPromise = runBootstrap(forceFresh).finally(() => {
       bootstrapPromise = null;
     });
   }
