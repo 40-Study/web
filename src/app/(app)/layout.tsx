@@ -20,7 +20,7 @@ export default function AppLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isAuthenticated, hasHydrated, activeRole, sessionStatus } = useAuthStore();
+  const { isAuthenticated, hasHydrated, activeRole, sessionStatus, sessionEndedByUser } = useAuthStore();
   const normalizedRole = normalizeRole(activeRole);
   const isAdminRole = normalizedRole === "SYSTEM_ADMIN" || normalizedRole === "ORG_OWNER";
 
@@ -77,6 +77,12 @@ export default function AppLayout({
     if (!hasHydrated) return;
 
     if (isSessionLost) {
+      // Đăng xuất chủ động: về trang chủ, KHÔNG gắn ?redirect (người đăng nhập sau không bị đẩy
+      // tới trang của người trước). Chỉ mất phiên thật mới giữ đường quay lại.
+      if (sessionEndedByUser) {
+        router.replace("/");
+        return;
+      }
       // Trang login đọc `?redirect=` (lưu sessionStorage, dùng sau khi đăng nhập xong).
       const current = `${window.location.pathname}${window.location.search}`;
       router.replace(`${AUTH_ROUTES.LOGIN}?redirect=${encodeURIComponent(current)}`);
@@ -103,6 +109,7 @@ export default function AppLayout({
   }, [
     hasHydrated,
     isSessionLost,
+    sessionEndedByUser,
     isAuthenticated,
     isAdminRole,
     isAdminAllowedRoute,
@@ -130,7 +137,7 @@ export default function AppLayout({
   if (isSessionLost) {
     return (
       <div className="flex min-h-screen items-center justify-center p-6 text-sm text-muted-foreground" role="status">
-        Đang chuyển tới trang đăng nhập…
+        {sessionEndedByUser ? "Đang đăng xuất…" : "Đang chuyển tới trang đăng nhập…"}
       </div>
     );
   }

@@ -41,6 +41,35 @@ describe("(app) layout — mất phiên phải về /login, không trang trắng
     expect(screen.queryByText("nội dung riêng")).toBeNull();
   });
 
+  // Re-review PR #33 (MAJOR): đăng xuất chủ động từng bị hiểu là mất phiên -> /login?redirect=<trang cũ>.
+  it("đăng xuất CHỦ ĐỘNG (store.logout) -> về '/', không gắn ?redirect", () => {
+    useAuthStore.getState().logout();
+
+    render(<AppLayout><p>nội dung riêng</p></AppLayout>);
+
+    expect(replace).toHaveBeenCalledWith("/");
+    expect(replace).not.toHaveBeenCalledWith(expect.stringContaining("redirect="));
+    expect(screen.queryByText("nội dung riêng")).toBeNull();
+  });
+
+  it("đăng xuất rồi đăng nhập lại -> cờ reset, mất phiên sau đó lại giữ ?redirect", () => {
+    const store = useAuthStore.getState();
+    store.logout();
+    store.applyServerSession({
+      user: { id: "u1", email: "a@b.c", name: "A" },
+      roles: [],
+      activeRole: "STUDENT",
+      activeUnifiedRole: null,
+      permissions: [],
+    });
+    expect(useAuthStore.getState().sessionEndedByUser).toBe(false);
+
+    useAuthStore.getState().clearServerSession();
+    render(<AppLayout><p>nội dung riêng</p></AppLayout>);
+
+    expect(replace).toHaveBeenCalledWith(`/login?redirect=${encodeURIComponent("/my-courses?tab=done")}`);
+  });
+
   it("đang kiểm tra phiên (checking) -> KHÔNG đá về /login", () => {
     useAuthStore.setState({ sessionStatus: "checking" });
 

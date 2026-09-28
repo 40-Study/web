@@ -6,6 +6,10 @@ describe("sanitizeRedirect — chỉ nhận đường dẫn nội bộ", () => {
     expect(sanitizeRedirect(value)).toBe(value);
   });
 
+  it("trả về đường dẫn đã chuẩn hoá (thứ được điều hướng = thứ đã kiểm)", () => {
+    expect(sanitizeRedirect("/a/./b/../c?x=1#h")).toBe("/a/c?x=1#h");
+  });
+
   it.each([
     "//evil.com",
     "/\\evil.com",
@@ -14,6 +18,14 @@ describe("sanitizeRedirect — chỉ nhận đường dẫn nội bộ", () => {
     "javascript:alert(1)",
     "evil.com",
     "/\t/evil.com",
+    // Re-review PR #33: dot-segment được chuẩn hoá thành "//evil.com".
+    "/.//evil.com",
+    "/..//evil.com",
+    "/%2e//evil.com",
+    "/%2e%2e//evil.com",
+    "/./\\evil.com",
+    "/.\\/evil.com",
+    "/a/..//evil.com",
     " /my-courses",
     "",
     null,

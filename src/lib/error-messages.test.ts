@@ -72,14 +72,33 @@ describe("getErrorMessage — ánh xạ lỗi backend sang tiếng Việt", () =
     expect(getErrorMessage(new ApiError(status, "UNKNOWN", raw))).toBe(expected);
   });
 
-  it("400/409 nghiệp vụ CHƯA có trong bảng -> giữ lý do thật, không thay bằng câu chung", () => {
-    expect(getErrorMessage(new ApiError(409, "UNKNOWN", "some new business rule failed"))).toBe(
-      "some new business rule failed"
-    );
-    expect(getErrorMessage(new ApiError(400, "UNKNOWN", "member is not banned"))).toBe("member is not banned");
-    // nơi gọi có fallback thì dùng fallback
+  // Re-review PR #33 (chủ dự án chốt): toast KHÔNG bao giờ hiện câu tiếng Anh thô.
+  it.each([
+    [400, "Unprocessable Entity", "Yêu cầu không hợp lệ, vui lòng kiểm tra lại thông tin"],
+    [400, "Bad Request", "Yêu cầu không hợp lệ, vui lòng kiểm tra lại thông tin"],
+    [400, "context canceled", "Yêu cầu không hợp lệ, vui lòng kiểm tra lại thông tin"],
+    [400, "failed to create order", "Yêu cầu không hợp lệ, vui lòng kiểm tra lại thông tin"],
+    [400, "value too long for type character varying(255)", "Yêu cầu không hợp lệ, vui lòng kiểm tra lại thông tin"],
+    [409, "achievement already unlocked", "Thao tác xung đột với dữ liệu hiện có"],
+    [409, "failed to create order", "Thao tác xung đột với dữ liệu hiện có"],
+  ])("%i '%s' không có trong bảng -> câu Việt chung, không in tiếng Anh", (status, raw, expected) => {
+    const message = getErrorMessage(new ApiError(status, "UNKNOWN", raw));
+    expect(message).toBe(expected);
+    expect(message).not.toContain(raw);
+  });
+
+  it("400/409 không có trong bảng + nơi gọi có fallback -> dùng fallback", () => {
     expect(getErrorMessage(new ApiError(400, "UNKNOWN", "member is not banned"), "Không thể bỏ chặn")).toBe(
       "Không thể bỏ chặn"
+    );
+    expect(getErrorMessage(new ApiError(409, "UNKNOWN", "Unprocessable Entity"), "Không thể lưu")).toBe(
+      "Không thể lưu"
+    );
+  });
+
+  it("400/409 message backend có dấu tiếng Việt -> giữ nguyên văn", () => {
+    expect(getErrorMessage(new ApiError(409, "UNKNOWN", "Lớp đã khoá đăng ký"), "Không thể lưu")).toBe(
+      "Lớp đã khoá đăng ký"
     );
   });
 

@@ -35,6 +35,24 @@ describe("RoleGuard returnToCurrentPath — mất phiên giữ đường quay l�
     );
   });
 
+  // Re-review PR #33 (MAJOR): áp cho (teacher)/(dashboard) (returnToCurrentPath) và (admin)
+  // (redirectTo đã kèm ?redirect=).
+  it.each([
+    ["returnToCurrentPath", { returnToCurrentPath: true }],
+    ["redirectTo kèm ?redirect (admin)", { redirectTo: "/login?redirect=%2Fadmin%2Fusers" }],
+  ])("đăng xuất CHỦ ĐỘNG + %s -> về '/', không ?redirect", (_label, props) => {
+    useAuthStore.getState().logout();
+
+    render(
+      <RoleGuard roles={["TEACHER"]} {...props}>
+        <p>nội dung</p>
+      </RoleGuard>
+    );
+
+    expect(replace).toHaveBeenCalledWith("/");
+    expect(replace).not.toHaveBeenCalledWith(expect.stringContaining("redirect="));
+  });
+
   it("mặc định (không bật) -> giữ nguyên redirectTo", () => {
     render(
       <RoleGuard roles={["TEACHER"]}>

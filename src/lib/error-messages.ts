@@ -7,9 +7,9 @@
  * nguồn sẽ âm thầm làm hỏng các nơi đó. Nơi nào HIỂN THỊ lỗi thì gọi `getErrorMessage(error)`.
  *
  * Thứ tự tra: `code` riêng → chuỗi khớp chính xác → message đã có dấu tiếng Việt → mẫu → `code`
- * chung (ERR_VALIDATION, ERR_NOT_FOUND...) → `fallback` của nơi gọi → message nghiệp vụ nguyên văn
- * (chỉ 400/409) → câu chung theo HTTP status. Chuỗi mang dấu hiệu kỹ thuật (vd. "invalid UUID
- * length: 14", lỗi GORM có dấu ":") KHÔNG bao giờ được in ra.
+ * chung (ERR_VALIDATION, ERR_NOT_FOUND...) → `fallback` của nơi gọi → câu Việt chung theo HTTP
+ * status. Chuỗi tiếng Anh không có trong bảng (lý do nghiệp vụ hay chi tiết kỹ thuật như "invalid
+ * UUID length: 14") KHÔNG bao giờ được in ra.
  *
  * Khoá của bảng phải là CHUỖI backend thật sự gửi tới client qua `data.error || data.message`.
  * Vài handler đặt mã máy vào `error` (withdrawal_handler.go, admin_order_handler.go) hoặc
@@ -172,7 +172,7 @@ const PATTERN_MESSAGES: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
 ];
 
 const STATUS_MESSAGES: Record<number, string> = {
-  400: INVALID_INPUT_MESSAGE,
+  400: "Yêu cầu không hợp lệ, vui lòng kiểm tra lại thông tin",
   401: SESSION_EXPIRED_MESSAGE,
   403: FORBIDDEN_MESSAGE,
   404: NOT_FOUND_MESSAGE,
@@ -181,15 +181,6 @@ const STATUS_MESSAGES: Record<number, string> = {
   422: INVALID_INPUT_MESSAGE,
 };
 
-// Dấu hiệu chuỗi kỹ thuật (lỗi GORM/pq, JSON parse, validator "Key: 'X' Error:...", tên field
-// snake_case, format verb). Chuỗi không có dấu hiệu nào và là một câu (có khoảng trắng) được coi
-// là thông điệp nghiệp vụ, vd. "you are banned from this group".
-const TECHNICAL_HINT =
-  /[:{}[\]"'`=<>\\/_%]|\b(sql|gorm|pq|json|strconv|parse|nil|null|uuid|syntax|unexpected|panic|runtime|deadline|constraint)\b/i;
-
-function isBusinessMessage(raw: string): boolean {
-  return raw.length > 0 && raw.length <= 200 && /\s/.test(raw) && !TECHNICAL_HINT.test(raw);
-}
 
 /**
  * Dịch thông tin lỗi thô (status/code/message backend) sang câu tiếng Việt.
@@ -224,11 +215,12 @@ export function translateApiErrorMessage(
   }
 
   if (byCode) return byCode;
-  if (fallback) return fallback;
-  // 400/409 không có trong bảng: thường là lỗi nghiệp vụ mới ("contest is full"...). Giữ nguyên
-  // lý do thật (dù tiếng Anh) thay vì câu chung che mất thông tin (review PR #33, MAJOR).
-  if ((status === 400 || status === 409) && isBusinessMessage(raw)) return raw;
-  return STATUS_MESSAGES[status] ?? GENERIC_ERROR_MESSAGE;
+  // Không khớp bảng: câu dự phòng của nơi gọi (biết ngữ cảnh, vd. "Không thể thêm học viên"), rồi
+  // câu Việt chung theo status. KHÔNG in nguyên văn tiếng Anh: không phân biệt được lý do nghiệp
+  // vụ với chuỗi kỹ thuật ("Unprocessable Entity", "context canceled", "value too long for type
+  // character varying(255)"...) — chủ dự án chốt UI luôn tiếng Việt (re-review PR #33). Lỗi nghiệp
+  // vụ người dùng cần biết phải có entry trong EXACT_MESSAGES.
+  return fallback ?? STATUS_MESSAGES[status] ?? GENERIC_ERROR_MESSAGE;
 }
 
 /** Câu tiếng Việt để hiển thị cho MỌI loại lỗi (toast, dòng lỗi dưới form, trang lỗi). */
