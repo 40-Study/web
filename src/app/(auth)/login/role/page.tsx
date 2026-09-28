@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores";
 import { useSelectRole } from "@/hooks/queries/use-auth";
 import { authService } from "@/services/auth.service";
+import { getSystemRoleLabel } from "@/lib/role-labels";
 import type { UnifiedRole, SystemRoleOption } from "@/services/auth.service";
 
 export default function LoginRolePage() {
@@ -125,10 +126,13 @@ export default function LoginRolePage() {
                 setSelectedRole(role);
                 setSelectedSystemRole(null);
               }}
-              label={role.display_name}
+              // QA vòng 2 (G6, N-04/A-P3-2): backend trả display_name là mã thô ("TEACHER") hoặc
+              // "ORG_OWNER - <tên tổ chức>". Nhãn hiển thị lấy từ SSOT tiếng Việt theo role_name;
+              // tên tổ chức (nếu có, không toàn khoảng trắng) nằm ở dòng phụ.
+              label={getSystemRoleLabel(role.role_name)}
               subtitle={
-                role.type === "organization" && role.organization_name
-                  ? role.organization_name
+                role.type === "organization" && role.organization_name?.trim()
+                  ? role.organization_name.trim()
                   : undefined
               }
             />

@@ -15,6 +15,7 @@ import { Can } from "@/components/guards";
 import { PERMISSIONS, SYSTEM_ROLES } from "@/lib/permissions";
 import { getSystemRoleLabel } from "@/lib/role-labels";
 import { useAuthStore } from "@/stores/auth.store";
+import { getUserActiveLabel } from "../../_lib/user-status-label";
 import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -121,7 +122,7 @@ export default function AdminUserDetailPage() {
                     <p className="text-sm text-gray-500">{user.email}</p>
                   </div>
                   <Badge variant={user.is_active ? "success" : "destructive"}>
-                    {user.is_active ? "Active" : "Locked"}
+                    {getUserActiveLabel(user.is_active)}
                   </Badge>
                 </div>
 

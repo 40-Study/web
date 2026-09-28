@@ -339,3 +339,31 @@ describe("AdminUsersPage — đồng bộ bộ lọc với URL", () => {
     expect(replace).toHaveBeenCalledWith("/admin/users", { scroll: false });
   });
 });
+
+describe("AdminUsersPage — QA vòng 2 G6 (N-04): nhãn trạng thái tiếng Việt", () => {
+  it("badge trạng thái hiện 'Đang hoạt động'/'Đã khoá', không còn 'Active'/'Locked'", () => {
+    mockUseAdminUsers.mockReturnValue({
+      data: {
+        items: [
+          buildUser({ id: "u-active", email: "on@fortex.vn", is_active: true }),
+          buildUser({ id: "u-locked", email: "off@fortex.vn", is_active: false }),
+        ],
+        total_count: 2,
+        page: 1,
+        limit: 20,
+        total_pages: 1,
+      },
+      isLoading: false,
+      isError: false,
+      error: undefined,
+      refetch: vi.fn(),
+    });
+
+    render(<AdminUsersPage />);
+
+    expect(screen.queryByText("Active")).toBeNull();
+    expect(screen.queryByText("Locked")).toBeNull();
+    expect(screen.getAllByText("Đang hoạt động").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Đã khoá").length).toBeGreaterThan(0);
+  });
+});

@@ -12,6 +12,7 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import { formatVnDateTime } from "../_lib/format-vn-datetime";
 
 type OrgFormState = {
   id?: string;
@@ -19,6 +20,9 @@ type OrgFormState = {
 };
 
 const emptyForm: OrgFormState = { name: "" };
+
+// Khớp validate backend CreateOrganizationDTO/UpdateOrganizationDTO (min=2 sau khi trim).
+const ORG_NAME_MIN_LENGTH = 2;
 
 export default function OrganizationsPage() {
   const { data = [], isLoading, isError, refetch } = useOrganizations();
@@ -30,6 +34,7 @@ export default function OrganizationsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Xác nhận trước khi xóa tổ chức (đồng nhất với H-09 ở admin/roles)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const selected = useMemo(
     () => data.find((org) => org.id === selectedId) || null,
@@ -42,12 +47,20 @@ export default function OrganizationsPage() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name) return;
+    // QA vòng 2 (G2/G8): trước đây "   " lọt qua `!form.name` và được gửi lên (backend cũng không
+    // chặn) -> tổ chức tên rỗng; còn ô trống thì bấm "Tạo" không có phản hồi gì. Trim + báo lỗi
+    // ngay trên form; backend vẫn validate lại (required, min=2 sau trim).
+    const name = form.name.trim();
+    if (name.length < ORG_NAME_MIN_LENGTH) {
+      setNameError(`Tên tổ chức phải có ít nhất ${ORG_NAME_MIN_LENGTH} ký tự (không tính khoảng trắng).`);
+      return;
+    }
+    setNameError(null);
 
     if (form.id) {
-      updateOrg.mutate({ id: form.id, data: { name: form.name } });
+      updateOrg.mutate({ id: form.id, data: { name } });
     } else {
-      createOrg.mutate({ name: form.name });
+      createOrg.mutate({ name });
     }
 
     setForm(emptyForm);
@@ -112,10 +125,20 @@ export default function OrganizationsPage() {
               <div className="mt-3 space-y-2">
                 <input
                   placeholder="Tên tổ chức"
+                  aria-label="Tên tổ chức"
+                  aria-invalid={nameError ? true : undefined}
                   value={form.name}
-                  onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, name: e.target.value }));
+                    if (nameError) setNameError(null);
+                  }}
                   className="h-10 w-full rounded border border-gray-200 px-3 text-sm"
                 />
+                {nameError && (
+                  <p role="alert" className="text-xs text-red-600">
+                    {nameError}
+                  </p>
+                )}
                 <div className="flex gap-2">
                   <button type="submit" className="rounded bg-primary-600 px-3 py-2 text-sm font-medium text-white">
                     {form.id ? "Lưu" : "Tạo"}
@@ -139,7 +162,7 @@ export default function OrganizationsPage() {
                 <p><span className="text-gray-500">ID:</span> {selected.id}</p>
                 <p><span className="text-gray-500">Tên:</span> {selected.name}</p>
                 <p><span className="text-gray-500">Mã:</span> {selected.code}</p>
-                {selected.created_at && <p><span className="text-gray-500">Tạo lúc:</span> {new Date(selected.created_at).toLocaleString("vi-VN")}</p>}
+                {selected.created_at && <p><span className="text-gray-500">Tạo lúc:</span> {formatVnDateTime(selected.created_at)}</p>}
               </div>
             ) : (
               <p className="mt-2 text-sm text-gray-500">Chọn một tổ chức để xem chi tiết.</p>
