@@ -16,6 +16,11 @@ interface RoleGuardProps {
   permissions?: Permission[];
   permissionMode?: "any" | "all";
   redirectTo?: string;
+  /**
+   * Mất phiên (anonymous) → gắn `?redirect=<trang hiện tại>` vào `redirectTo` để đăng nhập lại xong
+   * quay về đúng chỗ (C3). Dùng cho layout server component không tự lấy được pathname.
+   */
+  returnToCurrentPath?: boolean;
   children: React.ReactNode;
 }
 
@@ -24,10 +29,11 @@ export function RoleGuard({
   permissions: requiredPerms,
   permissionMode = "any",
   redirectTo = "/login",
+  returnToCurrentPath = false,
   children,
 }: RoleGuardProps) {
   const router = useRouter();
-  const { sessionStatus, activeRole, permissions } = useAuthStore();
+  const { sessionStatus, activeRole, permissions, sessionEndedByUser } = useAuthStore();
   const normalizedRole = normalizeRole(activeRole);
   const normalizedAllowedRoles = useMemo(
     () => roles?.map((role) => normalizeRole(role)).filter(Boolean) as string[] | undefined,
@@ -44,7 +50,18 @@ export function RoleGuard({
 
     // Redirect only when this protected surface knows the session is anonymous.
     if (sessionStatus === "anonymous") {
-      router.replace(redirectTo);
+      // Đăng xuất chủ động: về trang chủ, bỏ qua `redirectTo` (admin truyền sẵn ?redirect=) và
+      // `returnToCurrentPath`. Chỉ mất phiên thật mới giữ đường quay lại (re-review PR #33).
+      if (sessionEndedByUser) {
+        router.replace("/");
+        return;
+      }
+      // Đọc window.location trong effect (chỉ chạy ở client) thay vì useSearchParams: không bắt
+      // layout phải bọc Suspense, và lấy được cả query string của trang đang xem.
+      const current = `${window.location.pathname}${window.location.search}`;
+      router.replace(
+        returnToCurrentPath ? `${redirectTo}?redirect=${encodeURIComponent(current)}` : redirectTo
+      );
       return;
     }
 
@@ -72,6 +89,8 @@ export function RoleGuard({
     hasPermissionAccess,
     router,
     redirectTo,
+    returnToCurrentPath,
+    sessionEndedByUser,
   ]);
 
   // Never reveal protected children until cookie-backed bootstrap is complete.

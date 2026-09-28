@@ -57,6 +57,13 @@ interface AuthState {
   isLoading: boolean;
   hasHydrated: boolean;
   registerRole: string | null;
+  /**
+   * `anonymous` do người dùng CHỦ ĐỘNG đăng xuất (không phải mất phiên). Guard đọc cờ này để về
+   * thẳng "/" thay vì `/login?redirect=<trang cũ>`: nếu không, người đăng nhập sau trong cùng tab
+   * bị đẩy tới trang của người trước (re-review PR #33). Không persist; về false khi đăng nhập lại
+   * hoặc khi mất phiên thật (clearServerSession).
+   */
+  sessionEndedByUser: boolean;
 
   setUser: (user: AuthUser | null) => void;
   setAuthenticated: (value: boolean) => void;
@@ -124,6 +131,7 @@ const initialState = {
   isLoading: false,
   hasHydrated: false,
   registerRole: null,
+  sessionEndedByUser: false,
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -151,6 +159,7 @@ export const useAuthStore = create<AuthState>()(
                 sessionStatus: "anonymous",
                 isAuthenticated: false,
                 permissions: [],
+                sessionEndedByUser: false,
               }
             : { sessionToken }
         );
@@ -175,6 +184,7 @@ export const useAuthStore = create<AuthState>()(
           activeOrg,
           sessionStatus: "authenticated",
           isAuthenticated: true,
+          sessionEndedByUser: false,
         });
       },
       clearServerSession: () => {
@@ -202,7 +212,19 @@ export const useAuthStore = create<AuthState>()(
       // the cookie-backed session authenticated.
       login: (user, roles) => set({ user, roles: roles || get().roles }),
 
-      logout: () => get().clearServerSession(),
+      // Chỉ dùng cho đăng xuất CHỦ ĐỘNG (useLogout, useLogoutAll, useDeleteAccount). Mất phiên
+      // (auth-session.ts) gọi clearServerSession() trực tiếp nên cờ vẫn là false.
+      // Một lần `set` duy nhất: guard không bao giờ thấy trạng thái trung gian "anonymous mà cờ
+      // còn false" (sẽ bị hiểu là mất phiên và gắn ?redirect).
+      logout: () => {
+        writeRoleSelectionToken(null);
+        set((state) => ({
+          ...initialState,
+          hasHydrated: state.hasHydrated,
+          sessionStatus: "anonymous",
+          sessionEndedByUser: true,
+        }));
+      },
       reset: () => get().clearServerSession(),
     }),
     {

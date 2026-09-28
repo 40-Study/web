@@ -66,7 +66,8 @@ export default function AdminLayout({
     // thứ họ không làm được — chỉ SYSTEM_ADMIN mới vào được /admin/**; ORG_OWNER bị RoleGuard đá
     // thẳng về /403 (không phải màn trắng). Không có trang admin nào hiện tại dùng quyền phạm vi
     // tổ chức của ORG_OWNER, nên không giữ riêng trang nào cho vai này.
-    <RoleGuard roles={["SYSTEM_ADMIN"]}>
+    // Mất phiên giữa chừng: quay lại đúng trang admin đang xem sau khi đăng nhập lại (C3).
+    <RoleGuard roles={["SYSTEM_ADMIN"]} redirectTo={`/login?redirect=${encodeURIComponent(pathname)}`}>
       <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
         <aside className="hidden w-72 shrink-0 border-r bg-white md:flex md:flex-col dark:border-gray-800 dark:bg-gray-950">
           <div className="border-b px-5 py-4 dark:border-gray-800">
@@ -102,7 +103,7 @@ export default function AdminLayout({
           <header className="sticky top-0 z-40 border-b bg-white dark:border-gray-800 dark:bg-gray-950">
             <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 md:px-6">
               <div>
-                <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
+                <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">Trang quản trị</h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Quản lý vai trò, tổ chức và phân quyền</p>
               </div>
               <div className="relative" ref={profileMenuRef}>

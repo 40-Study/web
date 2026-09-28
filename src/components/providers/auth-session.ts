@@ -1,5 +1,6 @@
 import { toast } from "sonner";
-import { ACCOUNT_LOCKED_TITLE, isAccountLockedError } from "@/lib/errors";
+import { ACCOUNT_LOCKED_TITLE, AuthError, isAccountLockedError } from "@/lib/errors";
+import { SESSION_EXPIRED_MESSAGE } from "@/lib/error-messages";
 import { PERMISSIONS, type Permission } from "@/lib/permissions";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { authService, type UnifiedRole, type UserResponseDto } from "@/services/auth.service";
@@ -96,6 +97,7 @@ async function runBootstrap(sessionJustEstablished: boolean): Promise<SessionSta
 
   const previousUnifiedRole = store.activeUnifiedRole;
   const previousRoleName = store.activeRole;
+  const hadCachedUser = Boolean(store.user);
   store.setSessionStatus("checking");
 
   try {
@@ -133,6 +135,11 @@ async function runBootstrap(sessionJustEstablished: boolean): Promise<SessionSta
       toast.error(ACCOUNT_LOCKED_TITLE, {
         description: "Tài khoản của bạn đã bị quản trị viên khoá. Vui lòng liên hệ hỗ trợ.",
       });
+    } else if (hadCachedUser && error instanceof AuthError) {
+      // N-08 / C3: người dùng ĐANG có phiên (còn `user` cache) mà server trả 401 cả sau refresh →
+      // phiên hết hạn/bị thu hồi. Layout sẽ đưa về /login; toast cho biết vì sao. Không báo khi lỗi
+      // mạng (NetworkError) vì khi đó phiên có thể vẫn còn.
+      toast.info(SESSION_EXPIRED_MESSAGE);
     }
     store.clearServerSession();
     return "anonymous";

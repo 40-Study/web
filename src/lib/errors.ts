@@ -71,8 +71,18 @@ export class NetworkError extends Error {
 }
 
 export class RateLimitError extends ApiError {
+  /** Số giây phải đợi, đọc từ `retry_after` (body) hoặc header `Retry-After` của backend (C5). */
+  public retryAfter?: number;
+
   constructor(retryAfter?: number) {
-    super(429, "RATE_LIMIT", `Too many requests. ${retryAfter ? `Retry after ${retryAfter}s` : ""}`);
+    super(
+      429,
+      "RATE_LIMIT",
+      retryAfter
+        ? `Bạn thao tác quá nhiều lần, vui lòng thử lại sau ${retryAfter} giây`
+        : "Bạn thao tác quá nhiều lần, vui lòng đợi một chút rồi thử lại"
+    );
     this.name = "RateLimitError";
+    this.retryAfter = retryAfter;
   }
 }

@@ -1,7 +1,8 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { useAuthStore } from "@/stores/auth.store";
 import { api } from "./api-client";
-import { ApiError, NetworkError } from "./errors";
+import { ApiError, NetworkError, RateLimitError } from "./errors";
 
 function unauthorized(config: InternalAxiosRequestConfig) {
   return new AxiosError("unauthorized", "ERR_BAD_REQUEST", config, undefined, {
@@ -246,5 +247,110 @@ describe("extractErrorMessage — chỉ lộ chi tiết backend khi 4xx", () => 
 
     await expect(rejection).rejects.toBeInstanceOf(NetworkError);
     await expect(rejection).rejects.toMatchObject({ message: "Có lỗi xảy ra, vui lòng thử lại" });
+  });
+});
+
+// C2 (QA khách 260928, P2): mọi 401 đều gọi POST /auth/refresh-token, kể cả sai mật khẩu. Refresh
+// dùng chung bucket rate-limit 5/phút/IP với /auth/login nên mỗi lần gõ sai tốn 2 lượt → 429 ở lần
+// thứ 4. Khoá lại: request xác thực và phiên `anonymous` KHÔNG kích hoạt refresh.
+describe("API 401 — không gọi refresh khi vô ích (C2)", () => {
+  afterEach(() => {
+    useAuthStore.setState({ sessionStatus: "checking", isAuthenticated: false });
+  });
+
+  it("401 ở POST /auth/login (sai mật khẩu) -> KHÔNG gọi refresh, KHÔNG phát session-expired", async () => {
+    const refresh = vi.spyOn(axios, "post").mockResolvedValue({ data: {} });
+    const expired = vi.fn();
+    window.addEventListener("fortex:auth-session-expired", expired);
+    let attempts = 0;
+
+    await expect(
+      api.post(
+        "/auth/login",
+        { email: "a@b.c", password: "wrong" },
+        {
+          adapter: async (config) => {
+            attempts += 1;
+            throw errorResponse(config, 401, { error: "invalid email or password" });
+          },
+        }
+      )
+    ).rejects.toMatchObject({ status: 401 });
+
+    window.removeEventListener("fortex:auth-session-expired", expired);
+    expect(refresh).not.toHaveBeenCalled();
+    expect(expired).not.toHaveBeenCalled();
+    expect(attempts).toBe(1);
+  });
+
+  it("khách (sessionStatus=anonymous) gặp 401 -> KHÔNG gọi refresh", async () => {
+    useAuthStore.setState({ sessionStatus: "anonymous", isAuthenticated: false });
+    const refresh = vi.spyOn(axios, "post").mockResolvedValue({ data: {} });
+
+    await expect(
+      api.get("/lessons/abc/contents", {
+        adapter: async (config) => {
+          throw unauthorized(config);
+        },
+      })
+    ).rejects.toMatchObject({ status: 401 });
+
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("GET /auth/me (khôi phục phiên, không phải bước gửi mật khẩu) VẪN được refresh", async () => {
+    useAuthStore.setState({ sessionStatus: "checking", isAuthenticated: false });
+    const refresh = vi.spyOn(axios, "post").mockResolvedValue({ data: {} });
+    let attempts = 0;
+
+    const res = await api.get("/auth/me", {
+      adapter: async (config) => {
+        attempts += 1;
+        if (attempts === 1) throw unauthorized(config);
+        return { data: { ok: true }, status: 200, statusText: "OK", headers: {}, config };
+      },
+    });
+
+    expect(res.data).toEqual({ ok: true });
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  // Review PR #33 (BLOCKER): /auth/logout nằm sau AuthMiddleware. Access token hết hạn mà không
+  // refresh thì logout thất bại, refresh token 7 ngày vẫn sống → người sau vào lại phiên cũ.
+  it.each(["/auth/logout", "/auth/logout-all"])(
+    "401 ở POST %s (access token hết hạn) -> refresh rồi gửi lại logout",
+    async (path) => {
+      useAuthStore.setState({ sessionStatus: "authenticated", isAuthenticated: true });
+      const refresh = vi.spyOn(axios, "post").mockResolvedValue({ data: {} });
+      let attempts = 0;
+
+      const res = await api.post(path, undefined, {
+        adapter: async (config) => {
+          attempts += 1;
+          if (attempts === 1) throw unauthorized(config);
+          return { data: { ok: true }, status: 200, statusText: "OK", headers: {}, config };
+        },
+      });
+
+      expect(res.data).toEqual({ ok: true });
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(attempts).toBe(2);
+    }
+  );
+});
+
+// C5 (QA admin A-P3-1): 429 không kèm số giây chờ dù backend có trả `retry_after`.
+describe("API 429 — đọc retry_after (C5)", () => {
+  it("body retry_after=37 -> RateLimitError.retryAfter=37, message tiếng Việt kèm số giây", async () => {
+    const rejection = api.post("/auth/login", {}, {
+      adapter: async (config) =>
+        Promise.reject(errorResponse(config, 429, { error: "Too many requests", retry_after: 37 })),
+    });
+
+    await expect(rejection).rejects.toBeInstanceOf(RateLimitError);
+    await expect(rejection).rejects.toMatchObject({
+      retryAfter: 37,
+      message: "Bạn thao tác quá nhiều lần, vui lòng thử lại sau 37 giây",
+    });
   });
 });

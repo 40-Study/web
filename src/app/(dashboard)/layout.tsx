@@ -10,7 +10,8 @@ import { RoleGuard } from "@/components/guards/role-guard";
  */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <RoleGuard roles={["PARENT"]}>
+    // Mất phiên giữa chừng: đăng nhập lại xong quay về đúng trang phụ huynh đang xem (C3).
+    <RoleGuard roles={["PARENT"]} returnToCurrentPath>
       <div className="min-h-screen bg-background">{children}</div>
     </RoleGuard>
   );

@@ -9,6 +9,7 @@ import {
 } from "@/services/course.service";
 import { categoryService } from "@/services/category.service";
 import { useAuthStore } from "@/stores/auth.store";
+import { NotFoundError } from "@/lib/errors";
 import {
   Course,
   CourseDetail,
@@ -294,26 +295,40 @@ export function useFeaturedCourses() {
   });
 }
 
-/** Fetch course by slug — tries slug first, falls back to ID lookup */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Fetch course by slug — tries slug first, falls back to ID lookup.
+ * Trả `null` khi khoá không tồn tại → trang gọi notFound() (404 thật, không phải "Lỗi tải").
+ */
 export function useCourseBySlug(slug: string) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return useQuery({
     queryKey: [...courseKeys.detail(slug), isAuthenticated] as const,
-    queryFn: async (): Promise<CourseDetail> => {
+    queryFn: async (): Promise<CourseDetail | null> => {
       try {
         const raw = await courseService.getCourseBySlug(slug);
         return mapApiCourseDetail(raw);
       } catch (slugError) {
-        // Fallback tra theo ID CHI dùng được khi đã đăng nhập: GET /courses/:id
-        // có auth middleware (course_router.go), còn GET /courses/slug/:slug
-        // thì public. Khách chưa đăng nhập mà rơi vào fallback sẽ nhận 401 ->
-        // api-client ép window.location = "/login" -> bị đá khỏi trang công
-        // khai. Nên với khách, slug không tìm thấy = không tìm thấy.
-        if (!isAuthenticated) throw slugError;
+        // N13 (QA học viên 260928): trước đây MỌI slug 404 đều fallback GET /courses/:id với
+        // chính chuỗi slug → backend 400 "invalid UUID length: 14", lỗi này ĐÈ lên 404 gốc và bị
+        // in thẳng ra trang. Chỉ fallback khi tham số thật sự là UUID (link cũ dạng /courses/<id>).
+        // Fallback tra theo ID cũng CHỈ dùng được khi đã đăng nhập: GET /courses/:id có auth
+        // middleware (course_router.go), còn GET /courses/slug/:slug thì public.
+        const canLookupById = isAuthenticated && UUID_PATTERN.test(slug);
+        if (!canLookupById) {
+          if (slugError instanceof NotFoundError) return null;
+          throw slugError;
+        }
 
-        const byId = await courseService.getCourseById(slug);
-        return mapApiCourseDetail(byId);
+        try {
+          const byId = await courseService.getCourseById(slug);
+          return mapApiCourseDetail(byId);
+        } catch (idError) {
+          if (idError instanceof NotFoundError) return null;
+          throw idError;
+        }
       }
     },
     enabled: !!slug,

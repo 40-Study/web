@@ -6,6 +6,7 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { useAuthStore } from "@/stores/auth.store";
 import { getRoleFromToken } from "@/lib/jwt";
 import { normalizeRole } from "@/lib/routes";
+import { sanitizeRedirect } from "@/lib/safe-redirect";
 import { bootstrapAuthSession } from "@/components/providers/auth-session";
 
 function OAuthCallbackContent() {
@@ -37,9 +38,9 @@ function OAuthCallbackContent() {
           }
           await bootstrapAuthSession(true);
           if (cancelled) return;
-          const redirect = sessionStorage.getItem("auth_redirect");
+          const redirect = sanitizeRedirect(sessionStorage.getItem("auth_redirect"));
+          sessionStorage.removeItem("auth_redirect");
           if (redirect) {
-            sessionStorage.removeItem("auth_redirect");
             router.replace(redirect);
           } else {
             router.replace("/home");

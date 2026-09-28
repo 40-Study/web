@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AUTH_ROUTES, getRoleHomeRoute } from "@/lib/routes";
 import { getRoleFromToken } from "@/lib/jwt";
+import { sanitizeRedirect } from "@/lib/safe-redirect";
 import { showComingSoon } from "@/lib/toast-helpers";
 import { useLogin } from "@/hooks/queries/use-auth";
 import { getDeviceInfo, startOAuthFlow } from "@/services/auth.service";
@@ -22,11 +23,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Lưu redirect URL vào sessionStorage (từ accept-invitation flow)
+  // Lưu redirect URL vào sessionStorage (accept-invitation, mất phiên giữa chừng). Chỉ nhận đường
+  // dẫn nội bộ (chống open redirect). Vào /login KHÔNG kèm redirect hợp lệ thì xoá giá trị cũ, để
+  // lần đăng nhập tài khoản/vai trò khác trong cùng tab không bị đẩy tới trang của phiên trước.
   useEffect(() => {
-    const redirect = searchParams.get("redirect");
+    const redirect = sanitizeRedirect(searchParams.get("redirect"));
     if (redirect) {
       sessionStorage.setItem("auth_redirect", redirect);
+    } else {
+      sessionStorage.removeItem("auth_redirect");
     }
   }, [searchParams]);
 
@@ -46,9 +51,9 @@ export default function LoginPage() {
 
           // Direct login (1 role, có access_token) → vào app
           if (data.access_token && !data.session_token) {
-            const redirect = sessionStorage.getItem("auth_redirect");
+            const redirect = sanitizeRedirect(sessionStorage.getItem("auth_redirect"));
+            sessionStorage.removeItem("auth_redirect");
             if (redirect) {
-              sessionStorage.removeItem("auth_redirect");
               router.push(redirect);
             } else {
               const role =
