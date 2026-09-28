@@ -59,6 +59,8 @@ export type RefundMethod = "manual_bank_transfer";
 export interface RefundOrderDTO {
   reason: string;
   refund_method: RefundMethod;
+  /** Mã giao dịch chuyển khoản hoàn tiền (bắt buộc, quyết định #1 "kèm mã giao dịch"). */
+  transaction_ref: string;
 }
 
 export interface RefundOrderResult {

@@ -1,0 +1,107 @@
+/**
+ * "Đơn hàng của tôi" (B3, QA vòng 2 N1): đơn còn mở phải tiếp tục thanh toán và hủy được; đơn đã
+ * xong/đã quá hạn thì không còn nút hành động.
+ */
+
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Order } from "@/services/order.service";
+import MyOrdersPage from "./page";
+
+const mockCancel = vi.fn();
+const mockRefetch = vi.fn();
+let mockOrders: Order[] = [];
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+}));
+
+vi.mock("@/hooks/queries/use-orders", () => ({
+  useMyOrders: () => ({
+    data: { orders: mockOrders, total_count: mockOrders.length, page: 1, limit: 10, total_pages: 1 },
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: mockRefetch,
+  }),
+  useCancelOrder: () => ({ mutate: mockCancel, isPending: false }),
+}));
+
+// Hộp thanh toán thật gọi API — ở đây chỉ cần biết trang mở nó cho ĐÚNG đơn.
+vi.mock("@/components/checkout/order-payment-dialog", () => ({
+  OrderPaymentDialog: ({ orderId, open }: { orderId: string | null; open: boolean }) =>
+    open ? <div data-testid="payment-dialog">{orderId}</div> : null,
+}));
+
+function makeOrder(overrides: Partial<Order>): Order {
+  return {
+    id: "order-1",
+    order_number: "ORD-QA-1",
+    subtotal: 499000,
+    discount_amount: 0,
+    tax_amount: 0,
+    total_amount: 499000,
+    currency: "VND",
+    status: "pending",
+    items: [
+      { id: "item-1", course_id: "course-1", course_name: "Lập trình Go", price: 499000, discount_amount: 0, final_price: 499000 },
+    ],
+    created_at: "2026-09-28T08:00:00+07:00",
+    expires_at: new Date(Date.now() + 3 * 3600_000).toISOString(),
+    ...overrides,
+  };
+}
+
+describe("MyOrdersPage", () => {
+  beforeEach(() => {
+    mockCancel.mockReset();
+    mockRefetch.mockReset();
+    mockOrders = [];
+  });
+
+  it("hiện tên khóa, ngày tạo và 2 hành động cho đơn đang chờ", () => {
+    mockOrders = [makeOrder({})];
+    render(<MyOrdersPage />);
+
+    expect(screen.getByText("Lập trình Go")).toBeTruthy();
+    // Ngày tạo lấy đúng created_at của backend (giờ Việt Nam), không phải thời điểm render.
+    expect(screen.getByText("08:00 28/09/2026")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Tiếp tục thanh toán" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Hủy đơn" })).toBeTruthy();
+  });
+
+  it("Tiếp tục thanh toán mở hộp thanh toán cho đúng đơn", () => {
+    mockOrders = [makeOrder({ id: "order-processing", status: "processing" })];
+    render(<MyOrdersPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục thanh toán" }));
+    expect(screen.getByTestId("payment-dialog").textContent).toBe("order-processing");
+  });
+
+  it("Hủy đơn phải xác nhận rồi mới gọi hủy đúng đơn", () => {
+    mockOrders = [makeOrder({ id: "order-cancel" })];
+    render(<MyOrdersPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Hủy đơn" }));
+    expect(mockCancel).not.toHaveBeenCalled();
+
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Hủy đơn" }));
+    expect(mockCancel).toHaveBeenCalledTimes(1);
+    expect(mockCancel.mock.calls[0][0]).toBe("order-cancel");
+  });
+
+  it("đơn đã hoàn tất hoặc đã quá hạn giữ thì không còn nút hành động", () => {
+    mockOrders = [
+      makeOrder({ id: "done", status: "completed", expires_at: null }),
+      makeOrder({ id: "late", order_number: "ORD-QA-2", expires_at: new Date(Date.now() - 60_000).toISOString() }),
+    ];
+    render(<MyOrdersPage />);
+
+    expect(screen.queryByRole("button", { name: "Tiếp tục thanh toán" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Hủy đơn" })).toBeNull();
+    const cards = screen.getAllByRole("article");
+    expect(within(cards[0]).getByText("Hoàn tất")).toBeTruthy();
+    expect(within(cards[1]).getByText("Hết hạn")).toBeTruthy();
+  });
+});

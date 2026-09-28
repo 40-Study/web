@@ -73,6 +73,13 @@ describe("AdminOrderDetailPage — refund dialog", () => {
       target: { value: "Học viên khiếu nại nội dung sai" },
     });
 
+    // Chưa có mã giao dịch: vẫn chặn (B6, quyết định #1 "kèm mã giao dịch").
+    expect(confirmBtn.disabled).toBe(true);
+
+    fireEvent.change(screen.getByLabelText(/Mã giao dịch chuyển khoản/i), {
+      target: { value: "FT26271123456789" },
+    });
+
     expect(confirmBtn.disabled).toBe(false);
   });
 
@@ -83,16 +90,26 @@ describe("AdminOrderDetailPage — refund dialog", () => {
     fireEvent.change(screen.getByPlaceholderText(/Học viên khiếu nại/i), {
       target: { value: "Đã xác minh và đồng ý hoàn tiền" },
     });
+    fireEvent.change(screen.getByLabelText(/Mã giao dịch chuyển khoản/i), {
+      target: { value: "  FT26271123456789  " },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Xác nhận đã hoàn tiền" }));
 
     expect(mockMutate).toHaveBeenCalledTimes(1);
     const [payload] = mockMutate.mock.calls[0] as [
-      { id: string; dto: { reason: string; refund_method: string } },
+      { id: string; dto: { reason: string; refund_method: string; transaction_ref: string } },
     ];
     expect(payload.id).toBe("order-1");
     expect(payload.dto.reason).toBe("Đã xác minh và đồng ý hoàn tiền");
     // Quyết định #1 (27/09/2026): KHÔNG hoàn vào ví xu — chỉ 1 giá trị hợp lệ.
     expect(payload.dto.refund_method).toBe("manual_bank_transfer");
+    expect(payload.dto.transaction_ref).toBe("FT26271123456789");
+  });
+
+  it("hiện nhãn trạng thái tiếng Việt thay vì mã thô (B6)", () => {
+    render(<AdminOrderDetailPage />);
+    expect(screen.getByText("Hoàn tất")).toBeTruthy();
+    expect(screen.queryByText("completed")).toBeNull();
   });
 
   it("does not show the refund button without PAYMENTS_MANAGE permission", () => {

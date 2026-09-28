@@ -2,7 +2,7 @@
  * React Query hooks for order operations
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { orderService, type CreateOrderDTO, type PaymentIntentDTO } from "@/services/order.service";
 import { ApiError } from "@/lib/errors";
@@ -13,18 +13,29 @@ function orderErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+/** 409 ERR_ORDER_IN_PROGRESS: đã có đơn còn hạn cho khóa này (backend B4). */
+export const ORDER_IN_PROGRESS_CODE = "ERR_ORDER_IN_PROGRESS";
+
+export interface MyOrdersParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+}
+
 export const orderKeys = {
   all: ["orders"] as const,
   mine: () => [...orderKeys.all, "mine"] as const,
+  mineList: (params: MyOrdersParams) => [...orderKeys.mine(), params] as const,
   detail: (id: string) => [...orderKeys.all, "detail", id] as const,
   paymentStatus: (id: string) => [...orderKeys.all, "payment-status", id] as const,
 };
 
-/** Fetch all orders for the current user */
-export function useMyOrders() {
+/** Đơn hàng của user hiện tại (phân trang, lọc trạng thái) — trang /orders. */
+export function useMyOrders(params: MyOrdersParams = {}) {
   return useQuery({
-    queryKey: orderKeys.mine(),
-    queryFn: () => orderService.getMyOrders(),
+    queryKey: orderKeys.mineList(params),
+    queryFn: () => orderService.getMyOrders(params),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -69,6 +80,14 @@ export function useCreateOrder() {
       qc.invalidateQueries({ queryKey: orderKeys.mine() });
     },
     onError: (error) => {
+      // Đơn trùng khóa đang chờ chuyển khoản: chỉ user tự quyết tiếp tục hay hủy đơn cũ, nên
+      // dẫn thẳng sang "Đơn hàng của tôi" thay vì để user bấm lại "Mua ngay" vô ích.
+      if (error instanceof ApiError && error.status === 409 && error.code === ORDER_IN_PROGRESS_CODE) {
+        toast.error(error.message, {
+          action: { label: "Xem đơn hàng", onClick: () => window.location.assign("/orders") },
+        });
+        return;
+      }
       toast.error(orderErrorMessage(error, "Không thể tạo đơn hàng"));
     },
   });
@@ -84,8 +103,8 @@ export function useCancelOrder() {
       qc.invalidateQueries({ queryKey: orderKeys.detail(id) });
       toast.success("Đã hủy đơn hàng");
     },
-    onError: () => {
-      toast.error("Không thể hủy đơn hàng");
+    onError: (error) => {
+      toast.error(orderErrorMessage(error, "Không thể hủy đơn hàng"));
     },
   });
 }

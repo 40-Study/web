@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAdminOrders } from "@/hooks/queries/use-admin-orders";
-import type { OrderStatus } from "@/services/order.service";
+import { ORDER_STATUS_LABEL, type OrderStatus } from "@/services/order.service";
 import { QueryState } from "@/components/common/query-state";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -33,23 +34,57 @@ const STATUS_VARIANT: Record<OrderStatus, "success" | "warning" | "destructive" 
   expired: "outline",
 };
 
-const STATUS_LABEL: Record<OrderStatus, string> = {
-  pending: "Chờ thanh toán",
-  processing: "Đang xử lý",
-  completed: "Hoàn tất",
-  cancelled: "Đã hủy",
-  refunded: "Đã hoàn tiền",
-  expired: "Hết hạn",
-};
+const STATUS_LABEL = ORDER_STATUS_LABEL;
+
+function parseStatus(value: string | null): StatusFilter {
+  return value && (STATUS_LIST as string[]).includes(value) ? (value as OrderStatus) : "";
+}
+
+function parsePage(value: string | null): number {
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 1 ? n : 1;
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminOrdersPage() {
-  const [status, setStatus] = useState<StatusFilter>("");
-  const [search, setSearch] = useState("");
+  // useSearchParams cần Suspense boundary khi Next prerender trang client.
+  return (
+    <Suspense fallback={null}>
+      <AdminOrdersContent />
+    </Suspense>
+  );
+}
+
+function AdminOrdersContent() {
+  // B6 (QA vòng 2 N-13): bộ lọc nằm trên URL (?status=&page=&q=) để F5, quay lại từ trang chi
+  // tiết hay gửi link cho người khác vẫn giữ đúng bộ lọc. URL là nguồn sự thật cho status/page.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const status = parseStatus(searchParams.get("status"));
+  const page = parsePage(searchParams.get("page"));
+  const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const debouncedSearch = useDebouncedValue(search, 300);
-  const [page, setPage] = useState(1);
   const limit = 20;
+
+  const updateQuery = (patch: Record<string, string | number | null>) => {
+    const next = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === null || value === "" || (key === "page" && value === 1)) next.delete(key);
+      else next.set(key, String(value));
+    }
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
+  const setStatus = (value: StatusFilter) => updateQuery({ status: value, page: null });
+  const setPage = (updater: (p: number) => number) => updateQuery({ page: updater(page) });
+
+  // Ô tìm kiếm ghi lên URL sau debounce (không đẩy URL mỗi phím gõ).
+  useEffect(() => {
+    if ((searchParams.get("q") ?? "") !== debouncedSearch) updateQuery({ q: debouncedSearch });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
 
   const { data, isLoading, isError, error, refetch } = useAdminOrders({
     status: status || undefined,
@@ -87,10 +122,7 @@ export default function AdminOrdersPage() {
           />
           <select
             value={status}
-            onChange={(e) => {
-              setStatus(e.target.value as StatusFilter);
-              setPage(1);
-            }}
+            onChange={(e) => setStatus(e.target.value as StatusFilter)}
             className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
           >
             <option value="">Tất cả trạng thái</option>

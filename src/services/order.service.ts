@@ -21,6 +21,35 @@ export type OrderStatus =
   | "expired";
 export type OrderSource = "buy_now" | "cart";
 
+/** Nhãn tiếng Việt DUY NHẤT cho trạng thái đơn (trang học viên + admin dùng chung). */
+export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  pending: "Chờ thanh toán",
+  processing: "Đang chờ chuyển khoản",
+  completed: "Hoàn tất",
+  cancelled: "Đã hủy",
+  refunded: "Đã hoàn tiền",
+  expired: "Hết hạn",
+};
+
+/** "14:05 28/09/2026" (định dạng vi-VN) theo giờ Việt Nam — ngày tạo/hạn đơn cần cả giờ, không chỉ ngày. */
+export function formatOrderDateTime(iso: string): string {
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(new Date(iso));
+}
+
+/** Đơn còn mở (chưa thanh toán) — được tiếp tục thanh toán hoặc hủy nếu chưa quá hạn. */
+export function isOrderOpen(order: Pick<Order, "status" | "expires_at">, now = Date.now()): boolean {
+  if (order.status !== "pending" && order.status !== "processing") return false;
+  return !order.expires_at || new Date(order.expires_at).getTime() > now;
+}
+
 export interface OrderItem {
   id: string;
   course_id: string;
@@ -46,7 +75,12 @@ export interface Order {
   notes?: string | null;
   items: OrderItem[];
   created_at: string;
+  /** Hạn giữ đơn còn mở — backend tính từ dữ liệu đã lưu (không tự gia hạn khi đọc lại). */
   expires_at?: string | null;
+  /** Chỉ có khi đơn đã hoàn tiền (quyết định #1: ghi lý do + mã giao dịch chuyển khoản). */
+  refund_reason?: string | null;
+  refund_transaction_ref?: string | null;
+  refunded_at?: string | null;
 }
 
 export interface OrderListResponse {
