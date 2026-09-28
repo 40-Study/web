@@ -61,6 +61,69 @@ describe("API cookie refresh boundary", () => {
   });
 });
 
+// Phase 3 (contract mục C): admin duyệt hồ sơ giảng viên → token cũ 401 ROLE_CHANGED, refresh
+// thành công kèm role_changed + active_role. Interceptor phải phát fortex:auth-role-changed để
+// AuthBootstrap chuyển vai trò — và TUYỆT ĐỐI không phát khi refresh thường (sẽ đá người dùng
+// sang trang chủ vai trò mỗi 15 phút token hết hạn).
+describe("API refresh — role_changed (Phase 3)", () => {
+  function roleChangedResponse(config: InternalAxiosRequestConfig) {
+    return new AxiosError("role changed", "ERR_BAD_REQUEST", config, undefined, {
+      status: 401,
+      statusText: "Unauthorized",
+      headers: {},
+      config,
+      data: { message: "Role changed", code: "ROLE_CHANGED", error: "Please refresh token" },
+    });
+  }
+
+  it("refresh trả role_changed=true -> phát fortex:auth-role-changed kèm activeRole mới, retry request", async () => {
+    vi.spyOn(axios, "post").mockResolvedValue({
+      data: {
+        message: "Refresh token successfully",
+        data: { access_token: "a", refresh_token: "r", role_changed: true, active_role: "TEACHER" },
+      },
+    });
+    const onRoleChanged = vi.fn();
+    window.addEventListener("fortex:auth-role-changed", onRoleChanged);
+    let attempts = 0;
+
+    const res = await api.get("/teacher-profiles/me", {
+      adapter: async (config) => {
+        attempts += 1;
+        if (attempts === 1) throw roleChangedResponse(config);
+        return { data: { ok: true }, status: 200, statusText: "OK", headers: {}, config };
+      },
+    });
+
+    window.removeEventListener("fortex:auth-role-changed", onRoleChanged);
+    expect(res.data).toEqual({ ok: true });
+    expect(onRoleChanged).toHaveBeenCalledTimes(1);
+    const event = onRoleChanged.mock.calls[0][0] as CustomEvent<{ activeRole: string | null }>;
+    expect(event.detail).toEqual({ activeRole: "TEACHER" });
+  });
+
+  it("refresh thường (không có role_changed) -> KHÔNG phát event", async () => {
+    vi.spyOn(axios, "post").mockResolvedValue({
+      data: { message: "Refresh token successfully", data: { access_token: "a", refresh_token: "r" } },
+    });
+    const onRoleChanged = vi.fn();
+    window.addEventListener("fortex:auth-role-changed", onRoleChanged);
+    let attempts = 0;
+
+    await api.get("/protected", {
+      adapter: async (config) => {
+        attempts += 1;
+        if (attempts === 1) throw unauthorized(config);
+        return { data: {}, status: 200, statusText: "OK", headers: {}, config };
+      },
+    });
+
+    window.removeEventListener("fortex:auth-role-changed", onRoleChanged);
+    expect(attempts).toBe(2);
+    expect(onRoleChanged).not.toHaveBeenCalled();
+  });
+});
+
 // Review đối kháng (plans/reports/review-260928-users-pr72-pr28.md, finding #5 MAJOR): trước
 // đây mọi lỗi 401 bị gán CỨNG error.code="AUTH_ERROR", bỏ qua data.code thật mà backend trả
 // (vd. "ACCOUNT_LOCKED") — buộc nơi tiêu thụ (use-auth.ts, auth-session.ts) phải so sánh

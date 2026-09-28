@@ -58,7 +58,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { useCourse, useUpdateCourse } from "@/hooks/queries/use-courses";
+import { useCourse } from "@/hooks/queries/use-courses";
+import { CourseReviewPanel, CourseStatusBadge } from "@/components/teacher/course-review-status";
 import { useSections, useCreateSection, useReorderSections, useDeleteSection } from "@/hooks/queries/use-sections";
 import { useLessons, useCreateLesson, useReorderLessons, useDeleteLesson } from "@/hooks/queries/use-lessons";
 import { useLessonContents, useCreateLessonContent, useDeleteLessonContent } from "@/hooks/queries/use-lesson-content";
@@ -460,7 +461,6 @@ export default function CourseDetailPage() {
   const createSection = useCreateSection(courseId);
   const reorderSections = useReorderSections(courseId);
   const deleteSection = useDeleteSection(courseId);
-  const updateCourse = useUpdateCourse();
 
   // Dialogs
   const [sectionDialog, setSectionDialog] = useState(false);
@@ -570,10 +570,6 @@ export default function CourseDetailPage() {
     if (confirm("Xóa chương này và tất cả bài học bên trong?")) {
       deleteSection.mutate(sectionId);
     }
-  };
-
-  const handlePublish = () => {
-    updateCourse.mutate({ id: courseId, data: { status: "published" } });
   };
 
   // Open add content modal for specific lesson
@@ -872,8 +868,6 @@ export default function CourseDetailPage() {
     );
   }
 
-  const isPublished = course.status === "published";
-
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
@@ -887,9 +881,7 @@ export default function CourseDetailPage() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl font-bold truncate">{course.title}</h1>
-            <Badge variant={isPublished ? "default" : "secondary"} className={isPublished ? "bg-green-100 text-green-700 border-green-200" : ""}>
-              {isPublished ? "Đang xuất bản" : "Bản nháp"}
-            </Badge>
+            <CourseStatusBadge status={course.status} />
           </div>
           {course.short_description && (
             <p className="text-sm text-muted-foreground mt-0.5 truncate">{course.short_description}</p>
@@ -906,11 +898,12 @@ export default function CourseDetailPage() {
 
       {/* Action bar */}
       <div className="flex gap-2 flex-wrap">
-        {!isPublished && (
-          <Button size="sm" onClick={handlePublish} disabled={updateCourse.isPending}>
-            Xuất bản
-          </Button>
-        )}
+        {/* Phase 3: không còn tự "Xuất bản" — gửi duyệt/banner theo trạng thái duyệt. */}
+        <CourseReviewPanel
+          courseId={courseId}
+          status={course.status}
+          rejectionReason={course.rejection_reason}
+        />
         <Button variant="outline" size="sm" onClick={() => setClassDialog(true)}>
           <Users className="w-4 h-4 mr-1" /> Quản lý lớp
         </Button>

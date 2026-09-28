@@ -78,6 +78,8 @@ const PROTECTED_ROUTE_PREFIXES = [
   "/schedule",
   "/settings",
   "/teacher",
+  // Không khớp tiền tố "/teacher" ở trên (so theo "/teacher/"), phải liệt kê riêng.
+  "/teacher-application",
 ];
 
 // Tên cookie httpOnly do backend set — khớp internal/handler/auth_handler.go

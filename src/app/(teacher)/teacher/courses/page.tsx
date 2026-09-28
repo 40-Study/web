@@ -19,9 +19,31 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn, formatCurrency } from "@/lib/utils";
+import { COURSE_STATUS_LABEL, isCourseStatus, type CourseStatus as ApiCourseStatus } from "@/types/approval";
 
-type CourseStatus = "published" | "draft" | "archived";
+// Phase 3: đủ 5 trạng thái backend + "other" cho giá trị lạ. Trước đây mọi status không phải
+// published/archived bị ép thành "draft" — khoá chờ duyệt/bị từ chối sẽ hiện sai là bản nháp.
+type CourseStatus = ApiCourseStatus | "other";
 type CourseType = "video" | "livestream" | "hybrid";
+
+// Thứ tự tab: việc cần giáo viên xử lý (bị từ chối, nháp) đứng gần tab mặc định.
+const TAB_ORDER: ApiCourseStatus[] = ["published", "pending_review", "rejected", "draft", "archived"];
+
+const TAB_EMPTY_MESSAGE: Record<CourseStatus, string> = {
+  published: "Không có khóa học đang xuất bản",
+  pending_review: "Không có khóa học nào đang chờ duyệt",
+  rejected: "Không có khóa học bị từ chối",
+  draft: "Không có bản nháp nào",
+  archived: "Không có khóa học lưu trữ",
+  other: "Không có khóa học nào",
+};
+
+const CARD_STATUS_BADGE: Partial<Record<CourseStatus, { label: string; className: string }>> = {
+  draft: { label: "BẢN NHÁP", className: "bg-orange-100 text-orange-700 border-orange-200" },
+  pending_review: { label: "CHỜ DUYỆT", className: "bg-amber-100 text-amber-700 border-amber-200" },
+  rejected: { label: "BỊ TỪ CHỐI", className: "bg-red-100 text-red-700 border-red-200" },
+  archived: { label: "LƯU TRỮ", className: "bg-slate-100 text-slate-600 border-slate-200" },
+};
 
 interface Course {
   id: string;
@@ -40,7 +62,7 @@ interface Course {
 
 /** Map API course to local Course type + calculate progress */
 function mapApiCourse(c: { id: string; title: string; short_description?: string; description?: string; thumbnail_url?: string; status?: string; total_students?: number; average_rating?: number | string; price?: number | string; discount_price?: number | string; is_featured?: boolean; is_free?: boolean; objectives?: string[]; requirements?: string[] }): Course {
-  const status = c.status === "published" ? "published" : c.status === "archived" ? "archived" : "draft";
+  const status: CourseStatus = isCourseStatus(c.status) ? c.status : "other";
 
   // Calculate completion progress for drafts
   const checks = [
@@ -93,6 +115,9 @@ function CourseTypeBadge({ type }: { type: CourseType }) {
 
 function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: string) => void }) {
   const isDraft = course.status === "draft";
+  // Nháp + bị từ chối là 2 trạng thái giáo viên còn phải sửa rồi (gửi) duyệt.
+  const needsWork = isDraft || course.status === "rejected";
+  const statusBadge = CARD_STATUS_BADGE[course.status];
   const canDelete = isDraft || course.students === 0;
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -108,7 +133,7 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: strin
   };
 
   return (
-    <Card className={cn("overflow-hidden hover:shadow-md transition-shadow group", isDraft && "border-dashed")}>
+    <Card className={cn("overflow-hidden hover:shadow-md transition-shadow group", needsWork && "border-dashed")}>
       {/* Thumbnail */}
       <div className="relative aspect-video bg-gray-100">
         {course.thumbnail ? (
@@ -121,12 +146,12 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: strin
         <div className="absolute top-2 left-2">
           <CourseTypeBadge type={course.type} />
         </div>
-        {isDraft && (
-          <Badge className="absolute top-2 right-2 bg-orange-100 text-orange-700 border-orange-200 text-[10px]">
-            BẢN NHÁP
+        {statusBadge && (
+          <Badge className={cn("absolute top-2 right-2 text-[10px]", statusBadge.className)}>
+            {statusBadge.label}
           </Badge>
         )}
-        {course.isBestSeller && !isDraft && (
+        {course.isBestSeller && !statusBadge && (
           <Badge className="absolute top-2 right-2 bg-orange-500 text-white text-[10px]">
             BÁN CHẠY
           </Badge>
@@ -147,7 +172,7 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: strin
         <h3 className="font-semibold text-sm line-clamp-2 min-h-[40px]">{course.title}</h3>
 
         {/* Stats row — only for published */}
-        {!isDraft && (
+        {!needsWork && (
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
@@ -164,16 +189,19 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: strin
         )}
 
         {/* Missing items for draft */}
-        {isDraft && course.missingItems && (
+        {needsWork && course.missingItems && (
           <p className="text-[11px] text-orange-600">{course.missingItems}</p>
         )}
 
         {/* Action buttons */}
         <div className="grid grid-cols-2 gap-1.5 pt-1">
-          {isDraft ? (
+          {needsWork ? (
             <>
+              {/* Gửi duyệt thật diễn ra ở trang chi tiết (xem trạng thái + lý do từ chối trước khi gửi). */}
               <Button size="sm" variant="outline" className="w-full text-xs h-8" asChild>
-                <Link href={`/teacher/courses/${course.id}`}>Phát hành</Link>
+                <Link href={`/teacher/courses/${course.id}`}>
+                  {isDraft ? "Gửi duyệt" : "Xem lý do"}
+                </Link>
               </Button>
               <Button size="sm" className="w-full text-xs h-8" asChild>
                 <Link href={`/teacher/courses/${course.id}/edit`}>Tiếp tục sửa</Link>
@@ -218,11 +246,21 @@ export default function TeacherCoursesPage() {
     });
   }, [courses, activeTab, searchQuery, formatFilter]);
 
-  const counts = useMemo(() => ({
-    published: courses.filter((c) => c.status === "published").length,
-    draft: courses.filter((c) => c.status === "draft").length,
-    archived: courses.filter((c) => c.status === "archived").length,
-  }), [courses]);
+  const counts = useMemo(() => {
+    const result: Record<CourseStatus, number> = {
+      draft: 0,
+      pending_review: 0,
+      published: 0,
+      rejected: 0,
+      archived: 0,
+      other: 0,
+    };
+    for (const c of courses) result[c.status] += 1;
+    return result;
+  }, [courses]);
+
+  // Tab "Khác" chỉ hiện khi backend trả trạng thái web chưa biết — không để khoá "biến mất".
+  const tabs: CourseStatus[] = counts.other > 0 ? [...TAB_ORDER, "other"] : TAB_ORDER;
 
   if (isLoading) {
     return (
@@ -247,10 +285,12 @@ export default function TeacherCoursesPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as CourseStatus)}>
-        <TabsList>
-          <TabsTrigger value="published">Đang xuất bản ({counts.published})</TabsTrigger>
-          <TabsTrigger value="draft">Bản nháp ({counts.draft})</TabsTrigger>
-          <TabsTrigger value="archived">Lưu trữ ({counts.archived})</TabsTrigger>
+        <TabsList className="flex-wrap h-auto">
+          {tabs.map((tab) => (
+            <TabsTrigger key={tab} value={tab}>
+              {tab === "other" ? "Khác" : COURSE_STATUS_LABEL[tab]} ({counts[tab]})
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         {/* Filters */}
@@ -296,33 +336,19 @@ export default function TeacherCoursesPage() {
         </div>
 
         {/* Content */}
-        <TabsContent value="published" className="mt-6">
-          {filteredCourses.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredCourses.map((course) => (
-                <CourseCard key={course.id} course={course} onDelete={handleDeleteCourse} />
-              ))}
-            </div>
-          ) : (
-            <EmptyState message="Không có khóa học đang xuất bản" />
-          )}
-        </TabsContent>
-
-        <TabsContent value="draft" className="mt-6">
-          {filteredCourses.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredCourses.map((course) => (
-                <CourseCard key={course.id} course={course} onDelete={handleDeleteCourse} />
-              ))}
-            </div>
-          ) : (
-            <EmptyState message="Không có bản nháp nào" />
-          )}
-        </TabsContent>
-
-        <TabsContent value="archived" className="mt-6">
-          <EmptyState message="Không có khóa học lưu trữ" />
-        </TabsContent>
+        {tabs.map((tab) => (
+          <TabsContent key={tab} value={tab} className="mt-6">
+            {filteredCourses.length > 0 ? (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredCourses.map((course) => (
+                  <CourseCard key={course.id} course={course} onDelete={handleDeleteCourse} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState message={TAB_EMPTY_MESSAGE[tab]} />
+            )}
+          </TabsContent>
+        ))}
       </Tabs>
     </div>
   );
