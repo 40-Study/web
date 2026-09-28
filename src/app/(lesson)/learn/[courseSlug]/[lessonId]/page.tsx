@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Loader2, Star } from "lucide-react";
 import Link from "next/link";
 import {
@@ -18,6 +19,12 @@ import {
   LessonLoadError,
 } from "@/components/player";
 import type { StudyToolKey } from "@/components/player";
+import { NonVideoLessonContent } from "@/components/player/non-video-lesson-content";
+import { announceCourseCompleted, isCourseCompleted } from "@/components/player/lesson-progress-sync";
+import { resolveLessonKind } from "@/components/player/lesson-kind";
+import { resolveLivestreamRoomHref } from "@/lib/lesson-content-link";
+import type { LessonProgressResponse } from "@/services/enrollment.service";
+import type { Quiz } from "@/services/quiz.service";
 import { QuizAttemptReview } from "@/components/quiz";
 import { useCourseBySlug } from "@/hooks/queries/use-courses";
 import { useMyEnrollments } from "@/hooks/queries/use-enrollments";
@@ -140,6 +147,14 @@ function getNextLesson(course: PlayerCourse, lessonId: string): PlayerLesson | u
   return idx < allLessons.length - 1 ? allLessons[idx + 1] : undefined;
 }
 
+function findRawLesson(sections: Section[], lessonId: string): Lesson | undefined {
+  for (const s of sections) {
+    const found = s.lessons?.find((l) => l.id === lessonId);
+    if (found) return found;
+  }
+  return undefined;
+}
+
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
 function VideoLessonContent({
@@ -151,6 +166,9 @@ function VideoLessonContent({
   isLoading,
   subtitleUrl,
   durationSeconds,
+  studentCount,
+  lessonQuizzes,
+  onProgress,
 }: {
   videoSrc: string | null;
   currentLesson: PlayerLesson | undefined;
@@ -162,6 +180,10 @@ function VideoLessonContent({
   durationSeconds?: number;
   /** Contract §4 — nguồn authoritative là lesson content (quyết định Q1). */
   subtitleUrl?: string | null;
+  /** Số học viên của KHOÁ (`course.total_students`), không phải của giảng viên (A8). */
+  studentCount: number;
+  lessonQuizzes?: Quiz[];
+  onProgress?: (progress: LessonProgressResponse) => void;
 }) {
   const lessonId = currentLesson?.id ?? "";
   const sectionId = course.chapters.find((ch) =>
@@ -212,7 +234,10 @@ function VideoLessonContent({
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto p-5 gap-4">
+    // A7 (QA vòng 2, S-P1-5): pb-40 dưới lg chừa chỗ cho hai nút nổi ("Bài học"
+    // bottom-24 + cao ~42px, menu công cụ bên phải) — trước đây chúng đè lên phần
+    // cuối trang và không cuộn qua được.
+    <div className="flex-1 min-w-0 flex flex-col overflow-y-auto p-3 sm:p-5 pb-40 lg:pb-5 gap-4">
       <div className="rounded-2xl overflow-hidden shadow-sm bg-black aspect-video">
         {isLoading ? (
           <div className="w-full h-full flex items-center justify-center">
@@ -229,6 +254,7 @@ function VideoLessonContent({
             )}
             subtitleUrl={subtitleUrl ?? currentLesson?.subtitleUrl}
             controlRef={playerControl}
+            onProgressChange={onProgress}
             onClockTick={setCurrentTime}
             onToggleShortcutsHelp={() => setShortcutsOpen(true)}
           />
@@ -259,26 +285,35 @@ function VideoLessonContent({
         />
       )}
 
-      <div className="bg-white rounded-2xl shadow-sm px-6 pt-5 pb-4">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">
+      <div className="bg-white rounded-2xl shadow-sm px-4 sm:px-6 pt-5 pb-4">
+        {/* A7: xếp dọc dưới sm — nút "Bài tiếp theo" shrink-0 cạnh tiêu đề dài
+            từng tràn ra ngoài khung ở 390px. */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold text-gray-900 break-words">
               {currentLesson?.title ?? "Đang tải bài học..."}
             </h1>
-            <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
-              <div className="flex items-center gap-1 bg-gray-100 rounded-full px-2.5 py-0.5">
-                <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-                <span className="font-medium text-gray-700">{course.rating}/5.0</span>
-              </div>
-              <span>{course.instructor.studentCount.toLocaleString()} học viên</span>
-              <span>•</span>
-              <span>Cập nhật gần đây</span>
+            {/* A8 (QA vòng 2, N8): trước đây hiện "4.8/5.0 · 0 học viên" — điểm
+                ghi cứng từ seed và số học viên của GIẢNG VIÊN (API không trả,
+                luôn 0). Nay: điểm chỉ hiện khi có đánh giá thật, số học viên là
+                của khoá. Bỏ chữ "Cập nhật gần đây" không có dữ liệu nào đứng sau. */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-sm text-gray-500">
+              {course.reviewCount > 0 ? (
+                <div className="flex items-center gap-1 bg-gray-100 rounded-full px-2.5 py-0.5 whitespace-nowrap">
+                  <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+                  <span className="font-medium text-gray-700">{course.rating.toFixed(1)}/5</span>
+                  <span>({course.reviewCount} đánh giá)</span>
+                </div>
+              ) : (
+                <span className="whitespace-nowrap">Chưa có đánh giá</span>
+              )}
+              <span className="whitespace-nowrap">{studentCount.toLocaleString("vi-VN")} học viên</span>
             </div>
           </div>
           {next && (
             <Link
               href={`/learn/${courseSlug}/${next.id}`}
-              className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary-600 text-white font-medium text-sm hover:bg-primary-700 transition-colors shrink-0 shadow-sm"
+              className="self-start flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary-600 text-white font-medium text-sm hover:bg-primary-700 transition-colors shrink-0 shadow-sm whitespace-nowrap"
             >
               Bài tiếp theo
               <ChevronRight className="w-4 h-4" />
@@ -286,7 +321,7 @@ function VideoLessonContent({
           )}
         </div>
         <div className="mt-4 border-t border-gray-100 pt-1">
-          <PlayerTabs course={course} courseSlug={courseSlug} />
+          <PlayerTabs course={course} lessonQuizzes={lessonQuizzes} />
         </div>
       </div>
 
@@ -304,6 +339,9 @@ function VideoLessonContent({
 export default function CourseLessonPage() {
   const params = useParams<{ courseSlug: string; lessonId: string }>();
   const { courseSlug, lessonId } = params;
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const completionAnnouncedRef = useRef(false);
 
   const [isCodeEditorOpen, setCodeEditorOpen] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<StartQuizResponse | null>(null);
@@ -337,6 +375,23 @@ export default function CourseLessonPage() {
   const isLessonLocked = isLessonLockedInSections(sections, lessonId);
   const { data: lessonContents } = useLessonContents(isLessonLocked ? "" : lessonId);
   const lessonVideo = lessonContents?.find((c) => c.type === "video");
+  const lessonKind = resolveLessonKind(lessonContents);
+
+  /**
+   * A4: báo hoàn thành khoá đúng MỘT lần — chỉ khi khoá CHƯA hoàn thành lúc mở
+   * trang (`completed_at` rỗng). Sau khi hoàn thành, mỗi nhịp heartbeat đều trả
+   * `course_completed: true`; không có điều kiện này toast sẽ lặp lại mỗi 10 giây
+   * và hiện cả khi học viên xem lại khoá đã xong.
+   */
+  const courseAlreadyCompleted = !!enrollment?.completed_at;
+  const handleLessonProgress = useCallback(
+    (progress: LessonProgressResponse) => {
+      if (!isCourseCompleted(progress) || courseAlreadyCompleted || completionAnnouncedRef.current) return;
+      completionAnnouncedRef.current = true;
+      announceCourseCompleted(queryClient, () => router.push("/certificates"));
+    },
+    [courseAlreadyCompleted, queryClient, router]
+  );
 
   // Quiz hooks
   const { data: quizzes } = useQuizzesByLesson(isLessonLocked ? "" : lessonId);
@@ -422,15 +477,16 @@ export default function CourseLessonPage() {
   // Start quiz attempt
   const handleStartQuiz = async () => {
     if (!lessonQuiz?.id) {
-      setQuizError("Khong tim thay quiz cho bai hoc nay");
+      setQuizError("Không tìm thấy bài kiểm tra cho bài học này.");
       return;
     }
     try {
       setQuizError(null);
       const response = await startQuizMutation.mutateAsync({ quizId: lessonQuiz.id });
       setActiveQuiz(response);
-    } catch (err: unknown) {
-      setQuizError(err instanceof Error ? err.message : "Khong the bat dau quiz");
+    } catch {
+      // Không in thẳng err.message (thông điệp tiếng Anh của backend) ra UI.
+      setQuizError("Không bắt đầu được bài kiểm tra. Vui lòng thử lại.");
     }
   };
 
@@ -554,18 +610,18 @@ export default function CourseLessonPage() {
               </svg>
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">
-              {lessonQuiz?.title || "Bai kiem tra"}
+              {lessonQuiz?.title || "Bài kiểm tra"}
             </h2>
             {lessonQuiz?.description && (
               <p className="text-gray-500 mb-4">{lessonQuiz.description}</p>
             )}
             <div className="flex flex-col gap-2 text-sm text-gray-500 mb-6">
-              {lessonQuiz?.time_limit_minutes && (
-                <span>Thoi gian: {lessonQuiz.time_limit_minutes} phut</span>
-              )}
-              {lessonQuiz?.max_attempts && (
-                <span>So lan lam toi da: {lessonQuiz.max_attempts}</span>
-              )}
+              {lessonQuiz?.time_limit_minutes ? (
+                <span>Thời gian: {lessonQuiz.time_limit_minutes} phút</span>
+              ) : null}
+              {lessonQuiz?.max_attempts ? (
+                <span>Số lần làm tối đa: {lessonQuiz.max_attempts}</span>
+              ) : null}
             </div>
             {quizError && (
               <p className="text-red-500 text-sm mb-4">{quizError}</p>
@@ -575,7 +631,7 @@ export default function CourseLessonPage() {
               disabled={startQuizMutation.isPending || !lessonQuiz}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {startQuizMutation.isPending ? "Dang tai..." : "Bat dau lam bai"}
+              {startQuizMutation.isPending ? "Đang tải..." : "Bắt đầu làm bài"}
             </button>
             {/* Trang riêng (contract §6): cùng bài quiz, thêm chế độ luyện tập
                 không tính điểm — link từ curriculum qua GET /lessons/:id/quizzes
@@ -593,13 +649,32 @@ export default function CourseLessonPage() {
       );
     }
 
-    // Exercise lesson
-    if (currentLesson?.type === "exercise") {
+    // Bài không có video: bài tập / buổi live (A2) — xem resolveLessonKind.
+    if (lessonKind !== "video" && currentLesson) {
+      const rawLesson = findRawLesson(sections, lessonId);
+      const livestreamContent = lessonContents?.find((c) => c.type === "livestream");
       return (
-        <div className="flex-1 overflow-y-auto p-5 flex items-center justify-center">
-          <div className="text-center text-gray-500">
-            <p>Tính năng thực hành code đang được phát triển.</p>
-          </div>
+        <div className="flex-1 min-w-0 overflow-y-auto p-3 sm:p-5 pb-40 lg:pb-5 space-y-4">
+          <NonVideoLessonContent
+            kind={lessonKind}
+            lessonId={lessonId}
+            courseId={course.id}
+            courseSlug={courseSlug}
+            title={currentLesson.title}
+            description={rawLesson?.description}
+            completed={currentLesson.completed}
+            livestreamHref={livestreamContent ? resolveLivestreamRoomHref(livestreamContent) : null}
+            onProgress={handleLessonProgress}
+          />
+          {next && (
+            <Link
+              href={`/learn/${courseSlug}/${next.id}`}
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary-600 text-white font-medium text-sm hover:bg-primary-700 transition-colors shadow-sm whitespace-nowrap"
+            >
+              Bài tiếp theo
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          )}
         </div>
       );
     }
@@ -615,6 +690,9 @@ export default function CourseLessonPage() {
         isLoading={isVideoLoading}
         subtitleUrl={lessonVideo?.subtitle_url}
         durationSeconds={lessonVideo?.duration}
+        studentCount={apiCourse.total_students ?? 0}
+        lessonQuizzes={quizzes}
+        onProgress={handleLessonProgress}
       />
     );
   };

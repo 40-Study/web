@@ -1,21 +1,27 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useState } from "react";
-import { Star, Download, ExternalLink, FileText, Link as LinkIcon, Code2, HelpCircle, Lock, Clock, Check, X, Circle } from "lucide-react";
+import { Download, ExternalLink, FileText, Link as LinkIcon, ClipboardCheck, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import type { PlayerCourse, PlayerResource, VideoQuiz } from "@/types/course-player";
+import { useCourseReviews } from "@/hooks/queries/use-reviews";
+import type { PlayerCourse, PlayerResource } from "@/types/course-player";
+import type { Quiz } from "@/services/quiz.service";
+import { LessonReviewsPanel } from "./lesson-reviews-panel";
 
 interface PlayerTabsProps {
   course: PlayerCourse;
-  courseSlug: string;
-  reviewCount?: number;
-  videoQuizzes?: VideoQuiz[];
-  currentVideoTime?: number;
-  onQuizClick?: (quiz: VideoQuiz) => void;
+  /**
+   * Quiz gắn với bài đang học (`GET /lessons/:id/quizzes`) — A3, QA vòng 2
+   * (N16). Trước đây trang không truyền gì vào đây nên tab Quiz luôn "chưa có
+   * câu hỏi" kể cả khi bài có quiz thật.
+   */
+  lessonQuizzes?: Quiz[];
 }
 
-type TabKey = "overview" | "resources" | "quiz" | "reviews" | "qna";
+// A5 (QA vòng 2, N7): bỏ tab "Hỏi & Đáp" giữ chỗ ("sẽ sớm ra mắt") — trang học
+// đã có panel Hỏi đáp THẬT trong thanh công cụ học tập (LessonStudyTools).
+type TabKey = "overview" | "resources" | "quiz" | "reviews";
 
 function ResourceIcon({ type }: { type: PlayerResource["type"] }) {
   switch (type) {
@@ -28,32 +34,17 @@ function ResourceIcon({ type }: { type: PlayerResource["type"] }) {
   }
 }
 
-function StarRating({ rating }: { rating: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          className={cn(
-            "w-4 h-4",
-            star <= Math.round(rating)
-              ? "text-yellow-400 fill-yellow-400"
-              : "text-gray-300"
-          )}
-        />
-      ))}
-    </div>
-  );
-}
-
 export interface PlayerTabsHandle {
   switchToExercises: () => void;
 }
 
 /** Light-themed tabs below the video */
 export const PlayerTabs = forwardRef<PlayerTabsHandle, PlayerTabsProps>(
-  function PlayerTabs({ course, courseSlug, reviewCount, videoQuizzes = [], currentVideoTime = 0, onQuizClick }, ref) {
+  function PlayerTabs({ course, lessonQuizzes = [] }, ref) {
     const [activeTab, setActiveTab] = useState<TabKey>("overview");
+    // Số đánh giá THẬT (A5) — cùng query key với LessonReviewsPanel nên chỉ gọi API một lần.
+    const reviewsQuery = useCourseReviews(course.id);
+    const reviewTotal = reviewsQuery.data?.total;
 
     useImperativeHandle(ref, () => ({
       switchToExercises: () => setActiveTab("quiz"),
@@ -62,31 +53,9 @@ export const PlayerTabs = forwardRef<PlayerTabsHandle, PlayerTabsProps>(
     const tabs: { key: TabKey; label: string }[] = [
       { key: "overview", label: "Tổng quan" },
       { key: "resources", label: "Tài liệu học tập" },
-      { key: "quiz", label: "Quiz" },
-      { key: "reviews", label: `Đánh giá (${reviewCount ?? course.reviewCount})` },
-      { key: "qna", label: "Hỏi & Đáp" },
+      { key: "quiz", label: lessonQuizzes.length > 0 ? `Quiz (${lessonQuizzes.length})` : "Quiz" },
+      { key: "reviews", label: reviewTotal !== undefined ? `Đánh giá (${reviewTotal})` : "Đánh giá" },
     ];
-
-    const formatTimestamp = (seconds: number) => {
-      const mins = Math.floor(seconds / 60);
-      const secs = seconds % 60;
-      return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-    };
-
-    const getQuizStatusIcon = (quiz: VideoQuiz) => {
-      switch (quiz.status) {
-        case "correct":
-          return <Check className="w-5 h-5 text-green-500" />;
-        case "incorrect":
-          return <X className="w-5 h-5 text-red-500" />;
-        case "in_progress":
-          return <Circle className="w-5 h-5 text-primary-500 fill-primary-500" />;
-        case "locked":
-          return <Lock className="w-4 h-4 text-gray-400" />;
-        default:
-          return <Circle className="w-5 h-5 text-gray-300" />;
-      }
-    };
 
     return (
       <div className="mt-4">
@@ -138,10 +107,14 @@ export const PlayerTabs = forwardRef<PlayerTabsHandle, PlayerTabsProps>(
                   <div>
                     <p className="font-medium text-gray-900">{course.instructor.name}</p>
                     <p className="text-sm text-gray-500">{course.instructor.title}</p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                      <span>{course.instructor.rating} ★</span>
-                      <span>{course.instructor.studentCount.toLocaleString()} học viên</span>
-                      <span>{course.instructor.courseCount} khóa học</span>
+                    {/* A8: API khoá học không trả rating/số học viên/số khoá của giảng
+                        viên — trước đây hiện "0 ★ · 0 học viên · 0 khóa học". Chỉ hiện số có thật. */}
+                    <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-gray-500">
+                      {course.instructor.rating > 0 && <span>{course.instructor.rating} ★</span>}
+                      {course.instructor.studentCount > 0 && (
+                        <span>{course.instructor.studentCount.toLocaleString("vi-VN")} học viên</span>
+                      )}
+                      {course.instructor.courseCount > 0 && <span>{course.instructor.courseCount} khóa học</span>}
                     </div>
                   </div>
                 </div>
@@ -150,57 +123,35 @@ export const PlayerTabs = forwardRef<PlayerTabsHandle, PlayerTabsProps>(
           )}
 
           {activeTab === "quiz" && (
-            <div className="space-y-1">
-              {videoQuizzes.length === 0 ? (
-                <p className="text-sm text-gray-500 py-4">Bài học này chưa có câu hỏi quiz.</p>
+            <div className="space-y-2">
+              {lessonQuizzes.length === 0 ? (
+                <p className="text-sm text-gray-500 py-4">Bài học này chưa có bài kiểm tra.</p>
               ) : (
-                videoQuizzes.map((quiz) => {
-                  const isActive = quiz.status === "in_progress";
-                  const isLocked = quiz.status === "locked";
-                  const isClickable = !isLocked && quiz.status !== "in_progress";
-
-                  return (
-                    <button
-                      key={quiz.id}
-                      onClick={() => isClickable && onQuizClick?.(quiz)}
-                      disabled={isLocked}
-                      className={cn(
-                        "w-full flex items-center gap-4 px-4 py-3 rounded-lg text-left transition-colors",
-                        isActive && "bg-primary-50",
-                        isLocked ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-50"
-                      )}
-                    >
-                      <div className={cn(
-                        "flex items-center gap-1.5 text-sm font-mono shrink-0",
-                        isActive ? "text-primary-600" : "text-gray-500"
-                      )}>
-                        <Clock className="w-4 h-4" />
-                        <span>{formatTimestamp(quiz.timestamp)}</span>
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <p className={cn(
-                          "text-sm font-medium truncate",
-                          isActive ? "text-primary-600" : "text-gray-900"
-                        )}>
-                          {quiz.title}
-                          {isActive && (
-                            <span className="ml-2 text-primary-500 font-normal">(Đang trả lời...)</span>
-                          )}
-                        </p>
-                        {isActive && (
-                          <div className="mt-1 h-1 bg-gray-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-primary-500 rounded-full w-1/2 animate-pulse" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="shrink-0">
-                        {getQuizStatusIcon(quiz)}
-                      </div>
-                    </button>
-                  );
-                })
+                lessonQuizzes.map((quiz) => (
+                  <Link
+                    key={quiz.id}
+                    href={`/quizzes/${quiz.id}`}
+                    className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors"
+                  >
+                    <ClipboardCheck className="w-5 h-5 text-primary-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 break-words">{quiz.title}</p>
+                      <p className="text-xs text-gray-500">
+                        {[
+                          quiz.time_limit_minutes ? `${quiz.time_limit_minutes} phút` : null,
+                          quiz.max_attempts ? `Tối đa ${quiz.max_attempts} lần làm` : null,
+                          quiz.pass_percentage ? `Đạt từ ${Math.round(Number(quiz.pass_percentage))}%` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ") || "Bài kiểm tra"}
+                      </p>
+                    </div>
+                    <span className="text-sm font-medium text-primary-600 shrink-0 flex items-center">
+                      Làm bài
+                      <ChevronRight className="w-4 h-4" />
+                    </span>
+                  </Link>
+                ))
               )}
             </div>
           )}
@@ -233,38 +184,12 @@ export const PlayerTabs = forwardRef<PlayerTabsHandle, PlayerTabsProps>(
           )}
 
           {activeTab === "reviews" && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                <div className="text-center">
-                  <p className="text-4xl font-bold text-gray-900">{course.rating}</p>
-                  <StarRating rating={course.rating} />
-                  <p className="text-xs text-gray-500 mt-1">{course.reviewCount} đánh giá</p>
-                </div>
-              </div>
-              {course.reviews.map((review) => (
-                <div key={review.id} className="border-b border-gray-100 pb-4 last:border-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600 shrink-0">
-                      {review.user.name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{review.user.name}</p>
-                      <div className="flex items-center gap-2">
-                        <StarRating rating={review.rating} />
-                        <span className="text-xs text-gray-400">{review.createdAt}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 leading-relaxed">{review.content}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeTab === "qna" && (
-            <div className="text-center py-10">
-              <p className="text-sm text-gray-500">Chức năng Hỏi & Đáp sẽ sớm ra mắt.</p>
-            </div>
+            <LessonReviewsPanel
+              courseId={course.id}
+              data={reviewsQuery.data}
+              isLoading={reviewsQuery.isLoading}
+              isError={reviewsQuery.isError}
+            />
           )}
         </div>
       </div>

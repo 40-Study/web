@@ -20,9 +20,7 @@ import {
 } from "@/components/lesson/video-player";
 import { useVideoProgress } from "@/hooks/use-video-progress";
 import type { LessonProgressResponse } from "@/services/enrollment.service";
-import { courseKeys } from "@/hooks/queries/use-courses";
-import { sectionKeys } from "@/hooks/queries/use-sections";
-import { enrollmentKeys } from "@/hooks/queries/use-enrollments";
+import { invalidateAfterLessonProgress } from "./lesson-progress-sync";
 
 interface HeartbeatVideoProps {
   src: string;
@@ -74,15 +72,9 @@ export function HeartbeatVideo({
       // Chỉ refetch khi có gì đó thật sự đổi — heartbeat 10 giây/lần mà
       // invalidate mỗi lần thì sidebar nhấp nháy vô ích.
       if (progress.status === "completed" || progress.next_lesson_unlocked) {
-        if (courseId) {
-          void queryClient.invalidateQueries({ queryKey: sectionKeys.byCourse(courseId) });
-        }
-        void queryClient.invalidateQueries({ queryKey: courseKeys.enrolled() });
-        // Review PR #26 MAJOR #2 (regression S-P0-4): PlayerLessonSidebar đọc
-        // `%` tiến độ từ `useMyEnrollments()` (["enrollments"]) — thiếu dòng
-        // này thì hoàn thành bài xong sidebar vẫn đứng yên ở số % cũ tới khi
-        // remount trang hoặc hết `staleTime` 30s, y hệt họ lỗi S-P0-4 ban đầu.
-        void queryClient.invalidateQueries({ queryKey: enrollmentKeys.all });
+        // Review PR #26 MAJOR #2 (regression S-P0-4): gồm cả ["enrollments"] mà
+        // PlayerLessonSidebar đọc % tiến độ — xem invalidateAfterLessonProgress.
+        invalidateAfterLessonProgress(queryClient, courseId);
       }
     },
     [courseId, onProgressChange, queryClient]
