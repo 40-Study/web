@@ -51,7 +51,7 @@ vi.mock("@/hooks/queries/use-sections", () => ({
 }));
 
 vi.mock("@/hooks/queries/use-lessons", () => ({
-  useLessons: () => ({ data: [], isLoading: false }),
+  useLessons: () => ({ data: [{ id: "les-1", title: "QA-Bai 1", order: 1 }], isLoading: false }),
   useCreateLesson: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useReorderLessons: () => ({ mutate: vi.fn() }),
   useDeleteLesson: () => ({ mutate: vi.fn() }),
@@ -139,6 +139,11 @@ describe("/teacher/courses/[id] — gửi duyệt thay cho tự xuất bản (Ph
 
     expect(screen.queryByTestId("edit-course-info")).toBeNull();
     expect(screen.queryByRole("button", { name: /Thêm chương/ })).toBeNull();
+    // readOnly (review PR #79, W4): không còn nút kéo/xoá chương, bài, không "Thêm bài học".
+    expect(screen.getByText("QA-Bai 1")).toBeTruthy();
+    for (const name of [/Kéo để sắp xếp/, /Xoá chương/, /Xoá bài học/, /Thêm bài học/]) {
+      expect(screen.queryAllByRole("button", { name })).toHaveLength(0);
+    }
     fireEvent.click(screen.getByTestId("withdraw-review"));
     expect(mockWithdrawReview).toHaveBeenCalledWith("course-1");
   });
@@ -159,6 +164,10 @@ describe("/teacher/courses/[id] — gửi duyệt thay cho tự xuất bản (Ph
     setCourse({ status: "draft" });
     render(<TeacherCourseDetailPage />);
     expect(screen.getByTestId("edit-course-info")).toBeTruthy();
+    // Đối chứng cho test readOnly: khoá nháp có đủ nút kéo/xoá chương và bài.
+    for (const name of [/Kéo để sắp xếp chương/, /Xoá chương/, /Kéo để sắp xếp bài học/, /Xoá bài học/, /Thêm bài học/]) {
+      expect(screen.queryAllByRole("button", { name }).length).toBeGreaterThan(0);
+    }
   });
 
   it("khoá đã xuất bản: badge 'Đã xuất bản', không banner/nút gửi duyệt", () => {

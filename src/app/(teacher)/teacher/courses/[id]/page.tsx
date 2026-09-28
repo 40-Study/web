@@ -170,7 +170,7 @@ function SortableSectionCard({
           {/* Section header */}
           <div className="flex items-center gap-2 px-4 py-3 border-b bg-gray-50/80">
             {!readOnly && (
-              <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-gray-400 hover:text-gray-600">
+              <button {...attributes} {...listeners} aria-label="Kéo để sắp xếp chương" className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-gray-400 hover:text-gray-600">
                 <GripVertical className="w-4 h-4" />
               </button>
             )}
@@ -186,6 +186,7 @@ function SortableSectionCard({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 text-gray-400 hover:text-red-500"
+                aria-label="Xoá chương"
                 onClick={() => onDeleteSection(section.id)}
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -276,7 +277,7 @@ function SortableLessonRow({
       {/* Lesson header row */}
       <div className="flex items-center gap-2 rounded-lg px-2 py-2 group hover:bg-gray-50 transition-colors">
         {!readOnly && (
-          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-0.5 text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button {...attributes} {...listeners} aria-label="Kéo để sắp xếp bài học" className="cursor-grab active:cursor-grabbing p-0.5 text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
             <GripVertical className="w-3.5 h-3.5" />
           </button>
         )}
@@ -300,6 +301,7 @@ function SortableLessonRow({
         {!readOnly && (
           <button
             onClick={onDelete}
+            aria-label="Xoá bài học"
             className="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
           >
             <Trash2 className="w-3.5 h-3.5" />

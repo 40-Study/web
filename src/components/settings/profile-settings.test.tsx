@@ -47,7 +47,7 @@ describe("ProfileSettings", () => {
     expect(mockMutate.mock.calls[0][0]).toHaveProperty("bio", "");
   });
 
-  it("SĐT trống KHÔNG được gửi \"\" (backend e164 trả 400 làm hỏng cả lần lưu tiểu sử)", async () => {
+  it("xoá SĐT đang có: báo chưa hỗ trợ, KHÔNG gửi (không báo thành công giả)", async () => {
     render(<ProfileSettings />);
     await waitFor(() => expect((screen.getByLabelText("Tiểu sử") as HTMLTextAreaElement).value).toBe("Tiểu sử cũ"));
 
@@ -55,10 +55,25 @@ describe("ProfileSettings", () => {
     fireEvent.change(screen.getByLabelText("Tiểu sử"), { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
 
-    await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
-    const payload = mockMutate.mock.calls[0][0];
-    expect(payload.phone).toBeUndefined();
-    expect(payload).toHaveProperty("bio", "");
+    expect(await screen.findByText(/Chưa hỗ trợ xoá số điện thoại/)).toBeTruthy();
+    expect(mockMutate).not.toHaveBeenCalled();
+  });
+
+  it("tài khoản chưa có SĐT: không gửi phone \"\" (backend e164 trả 400 làm hỏng cả lần lưu tiểu sử)", async () => {
+    ME.data.phone = "";
+    try {
+      render(<ProfileSettings />);
+      await waitFor(() => expect((screen.getByLabelText("Tiểu sử") as HTMLTextAreaElement).value).toBe("Tiểu sử cũ"));
+      fireEvent.change(screen.getByLabelText("Tiểu sử"), { target: { value: "" } });
+      fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+
+      await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
+      const payload = mockMutate.mock.calls[0][0];
+      expect(payload.phone).toBeUndefined();
+      expect(payload).toHaveProperty("bio", "");
+    } finally {
+      ME.data.phone = "0900000000";
+    }
   });
 
   it("sửa tiểu sử -> gửi giá trị mới", async () => {
