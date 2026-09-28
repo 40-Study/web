@@ -22,6 +22,13 @@ import { useAuthStore } from "@/stores/auth.store";
 const APPLICANT_ROLE = "TEACHER_APPLICANT";
 const APPLICATION_ROUTE = "/teacher-application";
 
+/**
+ * Vai trò KHÔNG được thấy lối đăng ký: đã là giảng viên thì hết việc; SYSTEM_ADMIN/ORG_OWNER vào
+ * được /settings (qua (app)/layout) nhưng bấm nút sẽ tự tạo profile TEACHER_APPLICANT cho quản trị
+ * viên — sai nghiệp vụ. ORG_OWNER xét cả khi nó là role tổ chức trong danh sách roles.
+ */
+const INELIGIBLE_ROLES = new Set(["TEACHER", "SYSTEM_ADMIN", "ORG_OWNER"]);
+
 /** Backend trả lỗi này khi profile đã tồn tại — coi như thành công, đi tiếp sang switch-role. */
 function isAlreadyHaveProfileError(error: unknown): boolean {
   return error instanceof ApiError && /already have/i.test(error.message);
@@ -33,11 +40,12 @@ export function ApplyTeacherButton() {
   const switchRole = useSwitchRole();
   const [isWorking, setIsWorking] = useState(false);
 
-  const hasTeacher = roles.some((r) => normalizeRole(r.role_name) === "TEACHER");
+  const isIneligible =
+    INELIGIBLE_ROLES.has(normalizeRole(activeRole) ?? "") ||
+    roles.some((r) => INELIGIBLE_ROLES.has(normalizeRole(r.role_name) ?? ""));
   const applicantRole = roles.find((r) => normalizeRole(r.role_name) === APPLICANT_ROLE);
 
-  // Đã là giảng viên thì không còn gì để đăng ký.
-  if (hasTeacher) return null;
+  if (isIneligible) return null;
 
   /**
    * switch-role yêu cầu role_id = SystemRole.ID (UnifiedRole.id của role hệ thống chính là nó).

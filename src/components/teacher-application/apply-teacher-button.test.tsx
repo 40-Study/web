@@ -26,7 +26,13 @@ vi.mock("@/hooks/queries/use-auth", () => ({
 
 vi.mock("sonner", () => ({ toast: { error: (...a: unknown[]) => mockToastError(...a), success: vi.fn() } }));
 
-type Role = { id: string; type: "system"; role_name: string; display_name: string };
+type Role = {
+  id: string;
+  type: "system" | "organization";
+  role_name: string;
+  display_name: string;
+  organization_id?: string;
+};
 let authState: { roles: Role[]; activeRole: string | null } = { roles: [], activeRole: null };
 vi.mock("@/stores/auth.store", () => ({
   useAuthStore: (selector: (s: typeof authState) => unknown) => selector(authState),
@@ -111,5 +117,29 @@ describe("ApplyTeacherButton", () => {
     authState = { roles: [role("sr-teacher", "TEACHER")], activeRole: "TEACHER" };
     render(<ApplyTeacherButton />);
     expect(screen.queryByTestId("apply-teacher-button")).toBeNull();
+  });
+
+  it("SYSTEM_ADMIN: không hiện nút (tránh tự tạo profile ứng viên cho quản trị viên)", () => {
+    authState = { roles: [role("sr-admin", "SYSTEM_ADMIN")], activeRole: "SYSTEM_ADMIN" };
+    render(<ApplyTeacherButton />);
+    expect(screen.queryByTestId("apply-teacher-button")).toBeNull();
+  });
+
+  it("ORG_OWNER là role tổ chức trong danh sách roles (đang ở vai học viên): không hiện nút", () => {
+    authState = {
+      roles: [
+        role("sr-student", "STUDENT"),
+        { id: "or-owner", type: "organization", role_name: "ORG_OWNER", display_name: "Chủ", organization_id: "org-1" },
+      ],
+      activeRole: "STUDENT",
+    };
+    render(<ApplyTeacherButton />);
+    expect(screen.queryByTestId("apply-teacher-button")).toBeNull();
+  });
+
+  it("PARENT: vẫn hiện nút", () => {
+    authState = { roles: [role("sr-parent", "PARENT")], activeRole: "PARENT" };
+    render(<ApplyTeacherButton />);
+    expect(screen.queryByTestId("apply-teacher-button")).not.toBeNull();
   });
 });
