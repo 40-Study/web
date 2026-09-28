@@ -3,6 +3,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { CONTEST_PARTICIPANT_ROUTE_PATTERN } from "@/lib/routes";
+import { sanitizeRedirect } from "@/lib/safe-redirect";
 
 // Routes accessible without authentication. Đối chiếu `find src/app -name
 // page.tsx` (B-02, plans/reports/code-reviewer-260909-1412-web-review.md) —
@@ -20,6 +22,9 @@ const PUBLIC_ROUTES = [
   "/oauth",
   "/accept-invitation",
   "/courses",
+  // Cuộc thi (contract §7): khách xem danh sách + chi tiết. Làm bài/kết quả/chứng nhận vẫn cần
+  // đăng nhập — xem AUTH_SUBROUTE_PATTERNS.
+  "/contests",
   "/discussions",
   "/certificates/verify",
   "/terms",
@@ -39,8 +44,10 @@ const LEARN_ROUTE_PATTERN = /^\/courses\/[^/]+\/learn(?:\/|$)/;
 const EXERCISES_ROUTE_PATTERN = /^\/courses\/[^/]+\/exercises(?:\/|$)/;
 
 // Route con của các group cần đăng nhập nhưng lại khớp tiền tố public
-// "/courses" — PHẢI loại trừ khỏi isPublicRoute, xem isProtectedRoute bên dưới.
-const COURSES_AUTH_SUBROUTE_PATTERNS = [LEARN_ROUTE_PATTERN, EXERCISES_ROUTE_PATTERN];
+// "/courses" hoặc "/contests" — PHẢI loại trừ khỏi isPublicRoute, xem
+// isProtectedRoute bên dưới. Pattern cuộc thi lấy từ lib/routes.ts (dùng chung
+// với bảng chặn phụ huynh ROLE_SCOPED_PATTERNS).
+const AUTH_SUBROUTE_PATTERNS = [LEARN_ROUTE_PATTERN, EXERCISES_ROUTE_PATTERN, CONTEST_PARTICIPANT_ROUTE_PATTERN];
 
 // Tiền tố các route THẬT SỰ cần đăng nhập (đối chiếu `find src/app -name
 // page.tsx`). QA khách 260927 (P1): trước đây middleware coi MỌI path không
@@ -58,7 +65,6 @@ const PROTECTED_ROUTE_PREFIXES = [
   "/certificates",
   "/checkout",
   "/coins",
-  "/contests",
   "/friends",
   "/groups",
   "/help",
@@ -90,10 +96,10 @@ const REFRESH_TOKEN_COOKIE = "rfToken";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public routes (trừ các route con cần đăng nhập của "/courses" —
-  // xem COURSES_AUTH_SUBROUTE_PATTERNS)
+  // Allow public routes (trừ các route con cần đăng nhập của "/courses",
+  // "/contests" — xem AUTH_SUBROUTE_PATTERNS)
   const isPublicRoute =
-    !COURSES_AUTH_SUBROUTE_PATTERNS.some((pattern) => pattern.test(pathname)) &&
+    !AUTH_SUBROUTE_PATTERNS.some((pattern) => pattern.test(pathname)) &&
     PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 
   if (isPublicRoute) {
@@ -113,7 +119,7 @@ export function middleware(request: NextRequest) {
   // trên) — không phải "cần đăng nhập", mà là route không tồn tại. Để
   // Next.js tự xử lý (render app/not-found.tsx) thay vì ép về /login.
   const isProtectedRoute =
-    COURSES_AUTH_SUBROUTE_PATTERNS.some((pattern) => pattern.test(pathname)) ||
+    AUTH_SUBROUTE_PATTERNS.some((pattern) => pattern.test(pathname)) ||
     PROTECTED_ROUTE_PREFIXES.some(
       (route) => pathname === route || pathname.startsWith(`${route}/`)
     );
@@ -131,8 +137,11 @@ export function middleware(request: NextRequest) {
   const hasRefreshToken = request.cookies.has(REFRESH_TOKEN_COOKIE);
 
   if (!hasAccessToken && !hasRefreshToken) {
+    // Trang login chỉ đọc `?redirect=` (trước đây gắn `?next=` nên đăng nhập xong không quay lại
+    // được trang cũ). Đi qua sanitizeRedirect như chính trang login, và giữ cả query string.
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("next", pathname);
+    const redirectTo = sanitizeRedirect(`${pathname}${request.nextUrl.search}`);
+    if (redirectTo) loginUrl.searchParams.set("redirect", redirectTo);
     return NextResponse.redirect(loginUrl);
   }
 

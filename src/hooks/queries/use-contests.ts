@@ -1,30 +1,35 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  contestService,
-  type CreateContestDTO,
-  type CreateProblemDTO,
-  type SubmitAnswerDTO,
-} from "@/services/contest.service";
+import { contestService } from "@/services/contest.service";
+import { contestErrorMessage } from "@/lib/contest/contest-errors";
+import type { ContestListParams, ContestSubmitRequest } from "@/types/contest";
 
 export const contestKeys = {
   all: ["contests"] as const,
-  list: (params?: { status?: string }) => [...contestKeys.all, "list", params] as const,
+  list: (params?: ContestListParams) => [...contestKeys.all, "list", params ?? {}] as const,
+  mine: (params?: { page?: number; limit?: number }) => [...contestKeys.all, "mine", params ?? {}] as const,
   detail: (slug: string) => [...contestKeys.all, "detail", slug] as const,
-  problems: (contestId: string) => [...contestKeys.all, "problems", contestId] as const,
-  leaderboard: (contestId: string) => [...contestKeys.all, "leaderboard", contestId] as const,
-  mySubmissions: (contestId: string) => [...contestKeys.all, "my-submissions", contestId] as const,
-  myContests: () => [...contestKeys.all, "mine"] as const,
+  leaderboard: (contestId: string, page: number) => [...contestKeys.all, "leaderboard", contestId, page] as const,
+  myResult: (contestId: string) => [...contestKeys.all, "my-result", contestId] as const,
+  certificate: (contestId: string) => [...contestKeys.all, "certificate", contestId] as const,
 };
 
-export function useContests(params?: { status?: string; page?: number; limit?: number }) {
+export function usePublicContests(params?: ContestListParams) {
   return useQuery({
     queryKey: contestKeys.list(params),
     queryFn: () => contestService.list(params),
   });
 }
 
-export function useContest(slug: string) {
+export function useMyContests(params?: { page?: number; limit?: number }, enabled = true) {
+  return useQuery({
+    queryKey: contestKeys.mine(params),
+    queryFn: () => contestService.listMine(params),
+    enabled,
+  });
+}
+
+export function useContestDetail(slug: string) {
   return useQuery({
     queryKey: contestKeys.detail(slug),
     queryFn: () => contestService.getBySlug(slug),
@@ -32,120 +37,68 @@ export function useContest(slug: string) {
   });
 }
 
-export function useContestProblems(contestId: string) {
+export function useContestLeaderboard(contestId: string | undefined, page: number, enabled: boolean) {
   return useQuery({
-    queryKey: contestKeys.problems(contestId),
-    queryFn: () => contestService.getProblems(contestId),
+    queryKey: contestKeys.leaderboard(contestId ?? "", page),
+    queryFn: () => contestService.leaderboard(contestId as string, { page, limit: 20 }),
+    enabled: !!contestId && enabled,
+  });
+}
+
+export function useContestMyResult(contestId: string | undefined) {
+  return useQuery({
+    queryKey: contestKeys.myResult(contestId ?? ""),
+    queryFn: () => contestService.myResult(contestId as string),
     enabled: !!contestId,
+    retry: false,
   });
 }
 
-export function useContestLeaderboard(contestId: string) {
+export function useContestCertificate(contestId: string | undefined) {
   return useQuery({
-    queryKey: contestKeys.leaderboard(contestId),
-    queryFn: () => contestService.getLeaderboard(contestId),
+    queryKey: contestKeys.certificate(contestId ?? ""),
+    queryFn: () => contestService.certificate(contestId as string),
     enabled: !!contestId,
-    refetchInterval: 30000,
+    retry: false,
   });
 }
 
-export function useMyContestSubmissions(contestId: string) {
-  return useQuery({
-    queryKey: contestKeys.mySubmissions(contestId),
-    queryFn: () => contestService.getMySubmissions(contestId),
-    enabled: !!contestId,
-  });
-}
-
-export function useMyContests() {
-  return useQuery({
-    queryKey: contestKeys.myContests(),
-    queryFn: () => contestService.getMyContests(),
-  });
-}
-
-export function useCreateContest() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateContestDTO) => contestService.create(data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: contestKeys.all });
-      toast.success("Tạo cuộc thi thành công");
-    },
-    onError: () => toast.error("Không thể tạo cuộc thi"),
-  });
-}
-
-export function useUpdateContest() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<CreateContestDTO> }) =>
-      contestService.update(id, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: contestKeys.all });
-      toast.success("Cập nhật cuộc thi thành công");
-    },
-    onError: () => toast.error("Không thể cập nhật cuộc thi"),
-  });
-}
-
-export function useDeleteContest() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => contestService.delete(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: contestKeys.all });
-      toast.success("Xoá cuộc thi thành công");
-    },
-    onError: () => toast.error("Không thể xoá cuộc thi"),
-  });
-}
-
-export function usePublishContest() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => contestService.publish(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: contestKeys.all });
-      toast.success("Cuộc thi đã được công bố");
-    },
-    onError: () => toast.error("Không thể công bố cuộc thi"),
-  });
-}
-
-export function useCreateProblem(contestId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateProblemDTO) => contestService.createProblem(contestId, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: contestKeys.problems(contestId) });
-      toast.success("Thêm bài thi thành công");
-    },
-    onError: () => toast.error("Không thể thêm bài thi"),
-  });
-}
+// `onError` riêng ở mọi mutation dưới đây THAY toast mặc định của queryClient (vốn in message
+// tiếng Anh của backend): thông điệp lấy theo `code` qua contestErrorMessage.
 
 export function useJoinContest() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (contestId: string) => contestService.join(contestId),
-    onSuccess: (_, contestId) => {
-      qc.invalidateQueries({ queryKey: contestKeys.all });
-      toast.success("Tham gia cuộc thi thành công");
-    },
-    onError: () => toast.error("Không thể tham gia cuộc thi"),
+    onSuccess: () => toast.success("Đăng ký cuộc thi thành công"),
+    onError: (error) => toast.error("Không thể đăng ký", { description: contestErrorMessage(error) }),
+    onSettled: () => qc.invalidateQueries({ queryKey: contestKeys.all }),
   });
 }
 
-export function useSubmitAnswer(contestId: string, problemId: string) {
-  const qc = useQueryClient();
+/** Lỗi hiển thị thành khối thông báo trên trang làm bài (không toast). */
+export function useStartContest() {
   return useMutation({
-    mutationFn: (data: SubmitAnswerDTO) => contestService.submit(contestId, problemId, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: contestKeys.mySubmissions(contestId) });
-      qc.invalidateQueries({ queryKey: contestKeys.leaderboard(contestId) });
-      toast.success("Nộp bài thành công");
-    },
-    onError: () => toast.error("Không thể nộp bài"),
+    mutationFn: (contestId: string) => contestService.start(contestId),
+    onError: () => undefined,
   });
 }
+
+export function useSubmitContest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ contestId, body }: { contestId: string; body: ContestSubmitRequest }) =>
+      contestService.submit(contestId, body),
+    onError: (error) => toast.error("Nộp bài không thành công", { description: contestErrorMessage(error) }),
+    onSettled: () => qc.invalidateQueries({ queryKey: contestKeys.all }),
+  });
+}
+
+// LEGACY — trang giảng viên cũ (lane W2) còn import các hook này từ đây; xoá khi W2 merge.
+export {
+  useContests,
+  useCreateContest,
+  useDeleteContest,
+  usePublishContest,
+  useCreateProblem,
+} from "./use-contests-legacy";

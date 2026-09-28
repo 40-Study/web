@@ -1,196 +1,102 @@
+/**
+ * API công khai + học viên của "Cuộc thi" (contract §2.2 #1, #2, #7, #12–#17). Quản lý (giảng
+ * viên/admin) nằm ở `contest-manage.service.ts` của lane W2.
+ *
+ * TẠI SAO không dùng thẳng `apiClient`: interceptor dùng chung (`lib/api-client.ts`) đổi 403/404
+ * thành `ForbiddenError`/`NotFoundError` với code cứng "FORBIDDEN"/"NOT_FOUND", làm rơi mất
+ * `code` nghiệp vụ (`CONTEST_COURSE_REQUIRED`, `CONTEST_RESULT_NOT_FOUND`...) mà màn hình cần để
+ * nói đúng lý do. Ở đây tự nhận các status nghiệp vụ (400/403/404/409) bằng `validateStatus` rồi
+ * ném `ContestApiError` giữ nguyên `code`. 401 (refresh token), 429, 5xx và mất mạng vẫn đi qua
+ * interceptor như mọi request khác.
+ */
+import type { AxiosRequestConfig } from "axios";
 import { api } from "@/lib/api-client";
+import { ApiError } from "@/lib/errors";
+import type {
+  ContestCertificate,
+  ContestDetail,
+  ContestLeaderboardPage,
+  ContestListParams,
+  ContestMyResult,
+  ContestMySummary,
+  ContestPage,
+  ContestStartResult,
+  ContestSubmitRequest,
+  ContestSubmitResult,
+  ContestSummary,
+  MyParticipation,
+} from "@/types/contest";
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+/** Status nghiệp vụ backend trả `{message, code}` (§2.4) — service tự xử lý thay interceptor. */
+const BUSINESS_ERROR_STATUSES = new Set([400, 403, 404, 409]);
 
-export type ContestType = "CODING" | "QUIZ" | "MIXED";
-export type ContestStatus = "DRAFT" | "UPCOMING" | "ACTIVE" | "ENDED" | "CANCELLED";
-export type ProblemType = "CODE" | "MULTIPLE_CHOICE" | "SHORT_ANSWER";
-export type SubmissionStatus =
-  | "PENDING"
-  | "JUDGING"
-  | "ACCEPTED"
-  | "WRONG_ANSWER"
-  | "TIME_LIMIT"
-  | "MEMORY_LIMIT"
-  | "RUNTIME_ERROR"
-  | "COMPILATION_ERROR";
-
-export interface Contest {
-  id: string;
-  title: string;
-  slug: string;
-  description?: string;
-  banner_url?: string;
-  type: ContestType;
-  status: ContestStatus;
-  start_time: string;
-  end_time: string;
-  duration?: number;
-  max_participants: number;
-  participant_count: number;
-  is_public: boolean;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  problems?: ContestProblem[];
-  my_participation?: ContestParticipant;
-}
-
-export interface ContestProblem {
-  id: string;
-  contest_id: string;
-  title: string;
-  description: string;
-  type: ProblemType;
-  difficulty: "EASY" | "MEDIUM" | "HARD";
-  points: number;
-  display_order: number;
-  time_limit?: number;
-  memory_limit?: number;
-  input_format?: string;
-  output_format?: string;
-  sample_input?: string;
-  sample_output?: string;
-  options?: Record<string, string>;
-  created_at: string;
-}
-
-export interface ContestParticipant {
-  id: string;
-  contest_id: string;
-  user_id: string;
-  user_name?: string;
-  avatar_url?: string;
-  total_score: number;
-  rank?: number;
-  started_at?: string;
-  finished_at?: string;
-  created_at: string;
-}
-
-export interface ContestSubmission {
-  id: string;
-  contest_id: string;
-  problem_id: string;
-  user_id: string;
+interface ErrorBody {
+  message?: string;
   code?: string;
-  language?: string;
-  answer?: string;
-  score: number;
-  max_score: number;
-  status: SubmissionStatus;
-  execution_time?: number;
-  memory_used?: number;
-  output?: string;
-  created_at: string;
+  errors?: unknown[];
 }
 
-export interface CreateContestDTO {
-  title: string;
-  description?: string;
-  type: ContestType;
-  start_time: string;
-  end_time: string;
-  duration?: number;
-  max_participants?: number;
-  is_public?: boolean;
+type Envelope<T> = { message: string; data: T };
+
+export class ContestApiError extends ApiError {
+  constructor(status: number, code: string, message: string) {
+    super(status, code, message);
+    this.name = "ContestApiError";
+  }
 }
 
-export interface CreateProblemDTO {
-  title: string;
-  description: string;
-  type: ProblemType;
-  difficulty: "EASY" | "MEDIUM" | "HARD";
-  points: number;
-  time_limit?: number;
-  memory_limit?: number;
-  input_format?: string;
-  output_format?: string;
-  sample_input?: string;
-  sample_output?: string;
-  test_cases?: unknown;
-  options?: Record<string, string>;
-  correct_answer?: string;
+/** Mã thay thế khi body lỗi không có `code` (lỗi validate, 404 route không tồn tại). */
+function fallbackCode(status: number, body: ErrorBody | undefined): string {
+  if (status === 400 && Array.isArray(body?.errors)) return "VALIDATION_FAILED";
+  if (status === 403) return "FORBIDDEN";
+  if (status === 404) return "NOT_FOUND";
+  return "UNKNOWN";
 }
 
-export interface SubmitAnswerDTO {
-  code?: string;
-  language?: string;
-  answer?: string;
+async function request<T>(config: AxiosRequestConfig): Promise<T> {
+  const res = await api.request<Envelope<T> | ErrorBody>({
+    ...config,
+    validateStatus: (status) => (status >= 200 && status < 300) || BUSINESS_ERROR_STATUSES.has(status),
+  });
+  if (res.status >= 400) {
+    const body = res.data as ErrorBody | undefined;
+    throw new ContestApiError(res.status, body?.code ?? fallbackCode(res.status, body), body?.message ?? "");
+  }
+  return (res.data as Envelope<T>).data;
 }
-
-export interface ContestLeaderboard {
-  participants: ContestParticipant[];
-  total_count: number;
-}
-
-type R<T> = { message: string; data: T };
-
-// ─── Service ────────────────────────────────────────────────────────────────
 
 export const contestService = {
-  // Contest CRUD
-  list: (params?: { status?: string; page?: number; limit?: number }) =>
-    api
-      .get<R<{ contests: Contest[]; total_count: number }>>("/contests", { params })
-      .then((r) => r.data.data),
+  /** #1 — công khai, không middleware. */
+  list: (params?: ContestListParams) =>
+    request<ContestPage<ContestSummary>>({ method: "GET", url: "/contests", params }),
 
+  /** #2 — cuộc thi mình đã đăng ký. */
+  listMine: (params?: { page?: number; limit?: number }) =>
+    request<ContestPage<ContestMySummary>>({ method: "GET", url: "/contests/me", params }),
+
+  /** #7 — OptionalAuth: khách không có cookie nhận `viewer` của khách. */
   getBySlug: (slug: string) =>
-    api.get<R<Contest>>(`/contests/${slug}`).then((r) => r.data.data),
+    request<ContestDetail>({ method: "GET", url: `/contests/${encodeURIComponent(slug)}` }),
 
-  create: (data: CreateContestDTO) =>
-    api.post<R<Contest>>("/contests", data).then((r) => r.data.data),
-
-  update: (id: string, data: Partial<CreateContestDTO>) =>
-    api.put<R<Contest>>(`/contests/${id}`, data).then((r) => r.data.data),
-
-  delete: (id: string) => api.delete(`/contests/${id}`).then((r) => r.data),
-
-  publish: (id: string) =>
-    api.post<R<Contest>>(`/contests/${id}/publish`).then((r) => r.data.data),
-
-  // Problems
-  getProblems: (contestId: string) =>
-    api
-      .get<R<ContestProblem[]>>(`/contests/${contestId}/problems`)
-      .then((r) => r.data.data),
-
-  createProblem: (contestId: string, data: CreateProblemDTO) =>
-    api
-      .post<R<ContestProblem>>(`/contests/${contestId}/problems`, data)
-      .then((r) => r.data.data),
-
-  updateProblem: (contestId: string, problemId: string, data: Partial<CreateProblemDTO>) =>
-    api
-      .put<R<ContestProblem>>(`/contests/${contestId}/problems/${problemId}`, data)
-      .then((r) => r.data.data),
-
-  deleteProblem: (contestId: string, problemId: string) =>
-    api.delete(`/contests/${contestId}/problems/${problemId}`).then((r) => r.data),
-
-  // Participation
   join: (contestId: string) =>
-    api
-      .post<R<ContestParticipant>>(`/contests/${contestId}/join`)
-      .then((r) => r.data.data),
+    request<MyParticipation>({ method: "POST", url: `/contests/${contestId}/join` }),
 
-  getLeaderboard: (contestId: string, params?: { page?: number; limit?: number }) =>
-    api
-      .get<R<ContestLeaderboard>>(`/contests/${contestId}/leaderboard`, { params })
-      .then((r) => r.data.data),
+  /** Idempotent: đang làm dở thì backend trả lại ĐÚNG attempt cũ (§4.1). */
+  start: (contestId: string) =>
+    request<ContestStartResult>({ method: "POST", url: `/contests/${contestId}/start` }),
 
-  // Submissions
-  submit: (contestId: string, problemId: string, data: SubmitAnswerDTO) =>
-    api
-      .post<R<ContestSubmission>>(`/contests/${contestId}/problems/${problemId}/submit`, data)
-      .then((r) => r.data.data),
+  submit: (contestId: string, body: ContestSubmitRequest) =>
+    request<ContestSubmitResult>({ method: "POST", url: `/contests/${contestId}/submit`, data: body }),
 
-  getMySubmissions: (contestId: string) =>
-    api
-      .get<R<ContestSubmission[]>>(`/contests/${contestId}/submissions/me`)
-      .then((r) => r.data.data),
+  myResult: (contestId: string) =>
+    request<ContestMyResult>({ method: "GET", url: `/contests/${contestId}/my-result` }),
 
-  // My contests
-  getMyContests: () =>
-    api.get<R<Contest[]>>("/contests/me").then((r) => r.data.data),
+  leaderboard: (contestId: string, params?: { page?: number; limit?: number }) =>
+    request<ContestLeaderboardPage>({ method: "GET", url: `/contests/${contestId}/leaderboard`, params }),
+
+  certificate: (contestId: string) =>
+    request<ContestCertificate>({ method: "GET", url: `/contests/${contestId}/certificate` }),
 };
+
+// LEGACY — trang giảng viên cũ (lane W2) còn import các type này từ đây; xoá khi W2 merge.
+export type { Contest, CreateContestDTO, CreateProblemDTO } from "./contest-legacy.service";
