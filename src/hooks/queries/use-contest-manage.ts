@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { contestErrorMessage } from "@/lib/contest-manage/errors";
+import { parseVoucherGrantError } from "@/lib/contest-manage/voucher-grant-error";
 import { contestKeys } from "@/hooks/queries/use-contests";
 import { contestManageService, type ContestManageListParams } from "@/services/contest-manage.service";
 import { voucherService } from "@/services/voucher.service";
@@ -202,6 +203,11 @@ export function useFinalizeContest() {
         );
       }
     },
-    onError: (error) => toast.error(contestErrorMessage(error, "Không thể chốt kết quả, thử lại sau.")),
+    onError: (error) => {
+      // Voucher không phát được: trang chi tiết hiện alert CỐ ĐỊNH (người thắng, hạng, voucher, lý do)
+      // thay cho toast tự tắt — admin cần đọc kỹ để sửa giải rồi chốt lại.
+      if (parseVoucherGrantError(error)) return;
+      toast.error(contestErrorMessage(error, "Không thể chốt kết quả, thử lại sau."));
+    },
   });
 }

@@ -17,6 +17,7 @@ import { ContestSummary } from "@/components/contest-manage/contest-summary";
 import { ParticipantsTable } from "@/components/contest-manage/participants-table";
 import { PrizeEditor } from "@/components/contest-manage/prize-editor";
 import { ReasonDialog } from "@/components/contest-manage/reason-dialog";
+import { VoucherGrantAlert } from "@/components/contest-manage/voucher-grant-alert";
 import { Button } from "@/components/ui/button";
 import {
   useApproveContest,
@@ -31,6 +32,7 @@ import { getAdminContestActions } from "@/lib/contest-manage/actions";
 import { contestErrorMessage } from "@/lib/contest-manage/errors";
 import { formatVnDateTime } from "@/lib/contest-manage/format";
 import { prizeDraftsToInput, prizesToDrafts, validatePrizes, type PrizeDraft } from "@/lib/contest-manage/form";
+import { parseVoucherGrantError, type VoucherGrantError } from "@/lib/contest-manage/voucher-grant-error";
 import { useAuthStore } from "@/stores/auth.store";
 import type { ContestManage } from "@/types/contest";
 
@@ -56,6 +58,9 @@ function AdminContestActionsPanel({ contest }: { contest: ContestManage }) {
   const [prizes, setPrizes] = useState<PrizeDraft[]>(() => prizesToDrafts(contest));
   const [prizeError, setPrizeError] = useState<string | undefined>();
   const [dialog, setDialog] = useState<Dialog>(null);
+  // Lần chốt bị rollback vì voucher không phát được — giữ tới khi admin chốt lại hoặc sửa giải
+  // (lưu giải làm dữ liệu đổi → panel mount lại theo key `updated_at` → alert tự xoá).
+  const [grantError, setGrantError] = useState<VoucherGrantError | null>(null);
   const vouchers = useContestVoucherOptions(actions.canEditPrizes);
   const voucherOptions = useMemo(() => {
     const opts = (vouchers.data ?? []).map((v) => ({ id: v.id, label: `${v.name} (${v.code})` }));
@@ -84,8 +89,14 @@ function AdminContestActionsPanel({ contest }: { contest: ContestManage }) {
 
   return (
     <div className="space-y-6">
+      {grantError && <VoucherGrantAlert error={grantError} onDismiss={() => setGrantError(null)} />}
+
       {actions.canEditPrizes && (
-        <section className="space-y-3 rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+        <section
+          id="contest-prizes"
+          tabIndex={-1}
+          className="scroll-mt-24 space-y-3 rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-gray-950"
+        >
           <h2 className="font-semibold">Cơ cấu giải (gắn voucher)</h2>
           {vouchers.isError && (
             <p role="alert" className="text-sm text-red-600">
@@ -177,7 +188,13 @@ function AdminContestActionsPanel({ contest }: { contest: ContestManage }) {
         }
         confirmLabel="Chốt kết quả"
         isPending={finalize.isPending}
-        onConfirm={() => finalize.mutate(contest.id, { onSettled: close })}
+        onConfirm={() => {
+          setGrantError(null);
+          finalize.mutate(contest.id, {
+            onSettled: close,
+            onError: (error) => setGrantError(parseVoucherGrantError(error)),
+          });
+        }}
         onClose={close}
       />
       <ReasonDialog

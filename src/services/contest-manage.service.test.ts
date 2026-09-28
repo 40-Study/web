@@ -37,4 +37,16 @@ describe("contestManageService lỗi nghiệp vụ", () => {
     requestMock.mockResolvedValue({ status: 403, data: { message: "x", code: "CONTEST_FORBIDDEN" } });
     await expect(contestManageService.remove("c-1")).rejects.toMatchObject({ status: 403, code: "CONTEST_FORBIDDEN" });
   });
+
+  it("409 chốt lỗi voucher giữ `details` của body (ĐÍNH CHÍNH 3)", async () => {
+    const details = { user_id: "u-1", user_name: "Nguyễn An", rank: 2, voucher_id: "v-1", voucher_code: "GIAI1", reason: "hết lượt" };
+    requestMock.mockResolvedValue({
+      status: 409,
+      data: { message: "Không phát được voucher", code: "CONTEST_VOUCHER_UNAVAILABLE", details },
+    });
+    await expect(contestManageService.finalize("c-1")).rejects.toMatchObject({
+      code: "CONTEST_VOUCHER_UNAVAILABLE",
+      payload: details,
+    });
+  });
 });

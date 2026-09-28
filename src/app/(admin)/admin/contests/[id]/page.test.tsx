@@ -6,6 +6,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ContestApiError } from "@/services/contest.service";
 import type { ContestManage } from "@/types/contest";
 
 const mockUseManagedContest = vi.fn();
@@ -106,6 +107,42 @@ describe("/admin/contests/[id]", () => {
     const btn = screen.getByTestId("finalize-contest") as HTMLButtonElement;
     expect(btn.disabled).toBe(true);
     expect(screen.getByTestId("finalize-wait").textContent).toMatch(/60 giây sau khi kết thúc/);
+  });
+
+  it("chốt lỗi voucher (409 + details): alert cố định nêu người thắng, hạng, voucher, lý do, có link sửa giải", () => {
+    vi.setSystemTime(new Date("2026-10-01T10:01:05Z"));
+    withContest(buildContest());
+    mockFinalize.mockImplementation((_id: string, opts: { onError?: (e: unknown) => void; onSettled?: () => void }) => {
+      opts.onError?.(
+        new ContestApiError(409, "CONTEST_VOUCHER_UNAVAILABLE", "Không phát được voucher GIAI1 cho người thắng Nguyễn An, hạng 2", {
+          user_id: "u-1",
+          user_name: "Nguyễn An",
+          rank: 2,
+          voucher_id: "v-1",
+          voucher_code: "GIAI1",
+          reason: "đã hết tổng lượt dùng",
+        })
+      );
+      opts.onSettled?.();
+    });
+    render(<AdminContestDetailPage />);
+    fireEvent.click(screen.getByTestId("finalize-contest"));
+    fireEvent.click(screen.getByTestId("approve-confirm"));
+
+    const alert = screen.getByTestId("voucher-grant-alert");
+    expect(alert.getAttribute("role")).toBe("alert");
+    expect(screen.getByTestId("grant-user").textContent).toBe("Nguyễn An");
+    expect(screen.getByTestId("grant-rank").textContent).toBe("2");
+    expect(screen.getByTestId("grant-voucher").textContent).toBe("GIAI1");
+    expect(screen.getByTestId("grant-reason").textContent).toBe("đã hết tổng lượt dùng");
+    // Đường dẫn trỏ đúng phần sửa giải đang có trên trang.
+    expect(screen.getByTestId("grant-fix-prizes").getAttribute("href")).toBe("#contest-prizes");
+    expect(document.getElementById("contest-prizes")).not.toBeNull();
+    // Không tự biến mất theo thời gian (khác toast).
+    act(() => {
+      vi.advanceTimersByTime(60_000);
+    });
+    expect(screen.getByTestId("voucher-grant-alert")).toBeTruthy();
   });
 
   it("ENDED đã qua 60 giây: bấm chốt → xác nhận → gọi finalize", () => {

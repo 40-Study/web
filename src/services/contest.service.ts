@@ -34,14 +34,23 @@ interface ErrorBody {
   message?: string;
   code?: string;
   errors?: unknown[];
+  /** Chi tiết máy đọc được của lỗi nghiệp vụ (vd. voucher không phát được khi chốt, ĐÍNH CHÍNH 3). */
+  details?: unknown;
 }
 
 type Envelope<T> = { message: string; data: T };
 
 export class ContestApiError extends ApiError {
-  constructor(status: number, code: string, message: string) {
+  /**
+   * `details` thô từ body lỗi. Không dùng `ApiError.details` (kiểu `Record<string, string[]>` cho lỗi
+   * validate) vì shape khác nhau; nơi dùng tự kiểm shape trước khi đọc.
+   */
+  public readonly payload?: unknown;
+
+  constructor(status: number, code: string, message: string, payload?: unknown) {
     super(status, code, message);
     this.name = "ContestApiError";
+    this.payload = payload;
   }
 }
 
@@ -64,7 +73,12 @@ export async function contestRequest<T>(config: AxiosRequestConfig): Promise<T> 
   });
   if (res.status >= 400) {
     const body = res.data as ErrorBody | undefined;
-    throw new ContestApiError(res.status, body?.code ?? fallbackCode(res.status, body), body?.message ?? "");
+    throw new ContestApiError(
+      res.status,
+      body?.code ?? fallbackCode(res.status, body),
+      body?.message ?? "",
+      body?.details
+    );
   }
   return (res.data as Envelope<T>).data;
 }
