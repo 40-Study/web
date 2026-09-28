@@ -118,7 +118,8 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: strin
   // Nháp + bị từ chối là 2 trạng thái giáo viên còn phải sửa rồi (gửi) duyệt.
   const needsWork = isDraft || course.status === "rejected";
   const statusBadge = CARD_STATUS_BADGE[course.status];
-  const canDelete = isDraft || course.students === 0;
+  // Q5 (re-review PR #79): khoá đang chờ duyệt bị khoá sửa/xoá (backend 409) — ẩn nút xoá.
+  const canDelete = course.status !== "pending_review" && (isDraft || course.students === 0);
 
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();

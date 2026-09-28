@@ -38,11 +38,14 @@ import {
   formatWithdrawalAmount,
   getWithdrawalStatusLabel,
   getWithdrawalStatusVariant,
+  WITHDRAWAL_STATUS_LABELS,
 } from "@/lib/withdrawal-format";
 import type { AdminWithdrawalItem, WithdrawalStatus } from "@/services/wallet.service";
 
 const LIMIT = 20;
-const STATUS_LIST: WithdrawalStatus[] = ["pending", "approved", "rejected", "completed"];
+// Lấy từ bảng nhãn (Record<WithdrawalStatus, …> bắt buộc đủ mọi trạng thái): danh sách cứng cũ thiếu
+// "cancelled" nên admin không lọc được yêu cầu giảng viên đã tự huỷ (review PR #79).
+const STATUS_LIST = Object.keys(WITHDRAWAL_STATUS_LABELS) as WithdrawalStatus[];
 const REASON_MAX_LEN = 500;
 
 function formatDate(iso: string | null): string {

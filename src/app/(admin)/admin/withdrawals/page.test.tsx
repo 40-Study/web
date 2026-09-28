@@ -70,6 +70,13 @@ describe("AdminWithdrawalsPage", () => {
     } as Partial<ReturnType<typeof useAuthStore.getState>>);
   });
 
+  it("bộ lọc trạng thái có 'Đã huỷ' và gửi status=cancelled (review PR #79)", () => {
+    mockItems = [];
+    render(<AdminWithdrawalsPage />);
+    fireEvent.click(screen.getByText("Đã huỷ"));
+    expect(listParams).toHaveBeenLastCalledWith(expect.objectContaining({ status: "cancelled" }));
+  });
+
   it("yêu cầu 'pending' hiện nút Duyệt + Từ chối", () => {
     mockItems = [itemFixture({ id: "wd-pending", status: "pending" })];
     render(<AdminWithdrawalsPage />);

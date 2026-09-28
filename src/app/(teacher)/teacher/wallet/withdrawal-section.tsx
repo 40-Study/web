@@ -12,7 +12,6 @@ import { AlertTriangle, ChevronLeft, ChevronRight, Landmark, Loader2, Wallet } f
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -21,22 +20,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useTeacherWallet, useMyWithdrawals, useCreateWithdrawal } from "@/hooks/queries/use-wallet";
-import {
-  formatWithdrawalAmount,
-  getWithdrawalStatusLabel,
-  getWithdrawalStatusVariant,
-} from "@/lib/withdrawal-format";
+import { formatWithdrawalAmount } from "@/lib/withdrawal-format";
+import { WithdrawalHistoryTable } from "./withdrawal-history-table";
 
 const LIMIT = 10;
-
-function formatDate(iso: string | null): string {
-  return iso ? new Date(iso).toLocaleString("vi-VN") : "—";
-}
-
-/** Mã rút gọn — 8 ký tự đầu của uuid, đủ để phân biệt trong 1 trang lịch sử. */
-function shortId(id: string): string {
-  return id.slice(0, 8).toUpperCase();
-}
 
 export function WithdrawalSection() {
   const { data: wallet, isLoading: isWalletLoading, isError: isWalletError } = useTeacherWallet();
@@ -160,44 +147,7 @@ export function WithdrawalSection() {
             Bạn chưa có yêu cầu rút tiền nào.
           </p>
         ) : (
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-            <table className="w-full min-w-[640px]">
-              <thead>
-                <tr className="border-b text-left">
-                  <th className="p-3 text-xs font-medium text-muted-foreground">MÃ RÚT</th>
-                  <th className="p-3 text-xs font-medium text-muted-foreground text-right">SỐ TIỀN</th>
-                  <th className="p-3 text-xs font-medium text-muted-foreground">TRẠNG THÁI</th>
-                  <th className="p-3 text-xs font-medium text-muted-foreground">NGÀY TẠO</th>
-                  <th className="p-3 text-xs font-medium text-muted-foreground">NGÀY XỬ LÝ</th>
-                  <th className="p-3 text-xs font-medium text-muted-foreground">GHI CHÚ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((w) => (
-                  <tr key={w.id} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="p-3 text-sm font-medium">{shortId(w.id)}</td>
-                    <td className="p-3 text-sm text-right font-medium">
-                      {formatWithdrawalAmount(w.amount)}
-                    </td>
-                    <td className="p-3">
-                      <Badge variant={getWithdrawalStatusVariant(w.status)}>
-                        {getWithdrawalStatusLabel(w.status)}
-                      </Badge>
-                    </td>
-                    <td className="p-3 text-sm text-muted-foreground">{formatDate(w.created_at)}</td>
-                    <td className="p-3 text-sm text-muted-foreground">{formatDate(w.processed_at)}</td>
-                    <td className="p-3 text-sm text-muted-foreground">
-                      {w.status === "rejected" && w.rejection_reason
-                        ? `Lý do từ chối: ${w.rejection_reason}`
-                        : w.status === "completed" && w.transaction_id
-                          ? `Mã GD: ${w.transaction_id}`
-                          : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <WithdrawalHistoryTable items={items} />
         )}
 
         {/* Phân trang */}

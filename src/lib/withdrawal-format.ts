@@ -25,6 +25,7 @@ export const WITHDRAWAL_STATUS_LABELS: Record<WithdrawalStatus, string> = {
   approved: "Đã duyệt - chờ chuyển khoản",
   rejected: "Bị từ chối",
   completed: "Đã chuyển khoản",
+  cancelled: "Đã huỷ",
 };
 
 export const WITHDRAWAL_STATUS_VARIANT: Record<
@@ -35,6 +36,7 @@ export const WITHDRAWAL_STATUS_VARIANT: Record<
   approved: "default",
   rejected: "destructive",
   completed: "success",
+  cancelled: "default",
 };
 
 export function getWithdrawalStatusLabel(status: string): string {

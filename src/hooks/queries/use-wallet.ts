@@ -133,6 +133,28 @@ export function useCreateWithdrawal() {
   });
 }
 
+/**
+ * POST /wallet/teacher/withdrawals/:id/cancel — giảng viên tự huỷ yêu cầu còn pending (QA vòng 2,
+ * Q2). Làm mới cả ví: huỷ xong số dư khả dụng được trả lại và nút "Yêu cầu rút tiền" mở lại.
+ */
+export function useCancelWithdrawal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => walletService.cancelMyWithdrawal(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: walletKeys.teacherSummary() });
+      queryClient.invalidateQueries({ queryKey: withdrawalKeys.all });
+      toast.success("Đã huỷ yêu cầu rút tiền. Số dư đã được trả lại.");
+    },
+    onError: (error) => {
+      // Admin vừa duyệt/từ chối cùng lúc -> 409: làm mới để giáo viên thấy trạng thái thật.
+      queryClient.invalidateQueries({ queryKey: withdrawalKeys.all });
+      queryClient.invalidateQueries({ queryKey: walletKeys.teacherSummary() });
+      toast.error(withdrawalErrorMessage(error, "Không thể huỷ yêu cầu rút tiền, thử lại sau."));
+    },
+  });
+}
+
 // ─── Admin withdrawal hooks (quyền WALLET_WITHDRAWALS_MANAGE) ──────────────
 
 /** GET /admin/withdrawals — toàn bộ yêu cầu rút trên hệ thống. */
