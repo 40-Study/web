@@ -24,8 +24,16 @@ export interface TeacherStudent {
   student_id?: string;
   parent_name?: string;
   parent_phone?: string;
-  class_id: string;
-  class_name: string;
+  /**
+   * Review đối kháng backend PR #70 (MAJOR): backend `TeacherStudentDTO.ClassID`/`ClassName`
+   * đổi thành `*uuid.UUID`/`*string` với `omitempty` (`internal/dto/teacherDTO.go`) — học viên
+   * ghi danh thẳng vào khóa (không qua lớp) không còn bị bịa ra một lớp giả. Field này vắng
+   * mặt hẳn khỏi JSON khi không có lớp, nên KHÔNG được khai bắt buộc ở đây — khai bắt buộc sẽ
+   * đọc ra `undefined` mà TypeScript không cảnh báo, và mọi học viên "chưa có lớp" sẽ có
+   * `class_id === undefined` giống hệt nhau (xem `teacher/students/[id]/page.tsx`).
+   */
+  class_id?: string;
+  class_name?: string;
   course_id?: string;
   course_name?: string;
   status: string;

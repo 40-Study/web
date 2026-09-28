@@ -137,7 +137,14 @@ export default function TeacherWalletPage() {
               <p className="text-3xl font-bold text-blue-600 mb-2">
                 {wallet?.order_count ?? 0}
               </p>
-              <p className="text-xs text-muted-foreground">Tổng đơn học sinh đã mua</p>
+              {/*
+                P2 QA 260927 teacher: order_count chỉ đếm đơn status=completed
+                (backend/internal/repository/wallet_repository.go GetTeacherEarnings), trong khi
+                bảng "Tất cả giao dịch" bên dưới liệt kê MỌI trạng thái (kể cả "Đã huỷ") — 2 con
+                số khác định nghĩa nên khác nhau là ĐÚNG, chỉ cần chú thích rõ để không hiểu lầm
+                "0 đơn" nghĩa là chưa bán được gì.
+              */}
+              <p className="text-xs text-muted-foreground">Đơn đã thanh toán thành công</p>
             </CardContent>
           </Card>
 
@@ -216,7 +223,12 @@ export default function TeacherWalletPage() {
               <Loader2 className="animate-spin h-6 w-6 text-muted-foreground" />
             </div>
           ) : (
-            <table className="w-full">
+            // P2 QA 260927 teacher: bảng desktop 6 cột cố định tràn rộng hơn 390px, buộc
+            // cuộn cả trang thay vì chỉ bảng — bọc trong khung có cuộn ngang RIÊNG
+            // (overflow-x-auto) để phần còn lại của trang (thẻ tổng quan, tab) không bị kéo
+            // theo, và thu hẹp min-width từng cột để không quá thưa trên mobile.
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full min-w-[640px]">
               <thead>
                 <tr className="border-b text-left">
                   <th className="p-3 text-xs font-medium text-muted-foreground">MÃ GD</th>
@@ -239,7 +251,19 @@ export default function TeacherWalletPage() {
                 ) : (
                   filteredTransactions.map((tx) => {
                     const isRefund = tx.type === "expense";
+                    // P2 QA 260927 teacher: trước đây +/- và màu chỉ phụ thuộc `tx.type`, bỏ qua
+                    // hẳn `tx.status` — 1 đơn "Đã huỷ" vẫn hiện "+499.000 ₫" màu xanh y hệt thu
+                    // nhập thật, dễ khiến giáo viên tưởng đã nhận được tiền. Chỉ dấu "+"/màu xanh
+                    // khi giao dịch thật sự hoàn tất; các trạng thái khác (chờ xử lý, đã huỷ...)
+                    // hiện trung tính, không dấu.
+                    const isCompleted = tx.status === "completed";
                     const cfg = getStatusConfig(tx.status);
+                    const amountClassName = isRefund
+                      ? "text-red-500"
+                      : isCompleted
+                        ? "text-green-600"
+                        : "text-muted-foreground";
+                    const amountSign = isRefund ? "-" : isCompleted ? "+" : "";
                     return (
                       <tr key={`${tx.order_id}-${tx.course_id}`} className="border-b last:border-0 hover:bg-gray-50">
                         <td className="p-3 text-sm font-medium">{tx.order_number}</td>
@@ -248,10 +272,8 @@ export default function TeacherWalletPage() {
                         </td>
                         <td className="p-3 text-sm">{tx.course_name}</td>
                         <td className="p-3 text-sm text-muted-foreground">{tx.buyer_name}</td>
-                        <td
-                          className={`p-3 text-sm text-right font-medium ${isRefund ? "text-red-500" : "text-green-600"}`}
-                        >
-                          {isRefund ? "-" : "+"}
+                        <td className={`p-3 text-sm text-right font-medium ${amountClassName}`}>
+                          {amountSign}
                           {formatCurrency(tx.amount)}
                         </td>
                         <td className="p-3">
@@ -263,6 +285,7 @@ export default function TeacherWalletPage() {
                 )}
               </tbody>
             </table>
+            </div>
           )}
 
           {/* Pagination */}

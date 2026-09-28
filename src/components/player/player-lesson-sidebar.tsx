@@ -44,6 +44,14 @@ interface PlayerLessonSidebarProps {
   onSelectLesson?: (lessonId: string) => void;
   /** Lesson content data for "Nội dung bài học" tab */
   lessonContent?: LessonContentData;
+  /**
+   * `%` tiến độ khoá học từ SERVER (`enrollment.progress_percentage`, contract
+   * §2) — nguồn DUY NHẤT hiển thị "Tiến độ: N%" (S-P0-4). KHÔNG tự tính lại từ
+   * `chapters` ở client: trước đây gây lệch số % so với /courses/[slug] và
+   * /my-courses (2 nguồn số khác nhau cho cùng một khoá). `undefined` khi
+   * enrollment chưa tải xong -> hiển thị 0% tạm thời rồi tự cập nhật.
+   */
+  serverProgressPct?: number;
 }
 
 /** Numbered circle icon for each lesson in the sidebar with micro-interactions */
@@ -238,6 +246,7 @@ export function PlayerLessonSidebar({
   className,
   onSelectLesson,
   lessonContent,
+  serverProgressPct,
 }: PlayerLessonSidebarProps) {
   const [activeTab, setActiveTab] = useState<SidebarTab>("progress");
   // Sidebar 380px cố định chiếm gần hết viewport <1024px (H-10) — trên mobile
@@ -275,7 +284,9 @@ export function PlayerLessonSidebar({
     (acc, ch) => acc + ch.lessons.filter((l) => l.completed).length,
     0
   );
-  const progressPct = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  // S-P0-4: KHÔNG tự tính `progressPct` từ completed/total ở đây nữa — dùng
+  // thẳng số % server trả (xem docstring `serverProgressPct` ở trên).
+  const progressPct = Math.round(serverProgressPct ?? 0);
 
   return (
     <>

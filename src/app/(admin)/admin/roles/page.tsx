@@ -2,16 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  useSystemRoles,
+  useSystemRolesWithUserCounts,
   usePermissions,
   useCreateSystemRole,
   useUpdateSystemRole,
   useDeleteSystemRole,
+  useSystemRoleUsers,
+  useSystemRolePermissions,
+  useSetSystemRolePermissions,
+  useAssignSystemRoleToUser,
+  useRevokeSystemRoleFromUser,
 } from "@/hooks/queries/use-admin";
 import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
 import { getSystemRoleLabel } from "@/lib/role-labels";
-import type { SystemRole } from "@/services/role.service";
+import type { SystemRole, UserSystemRoleItem } from "@/services/role.service";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 
@@ -19,84 +24,69 @@ type RoleFormState = {
   id?: string;
   name: string;
   description: string;
+  // Tên (name) các quyền đã tick — khớp field permsData[].name, đổi sang permission_id khi gửi API.
   permissions: string[];
 };
 
-type RoleUser = {
-  id: string;
-  name: string;
-  email: string;
-  status: "ACTIVE" | "INACTIVE";
-};
-
-type UserFormState = {
-  id?: string;
-  name: string;
-  email: string;
-  status: "ACTIVE" | "INACTIVE";
-};
-
 const emptyRoleForm: RoleFormState = { name: "", description: "", permissions: [] };
-const emptyUserForm: UserFormState = { name: "", email: "", status: "ACTIVE" };
 
-function seedUsersForRole(role: SystemRole): RoleUser[] {
-  const count = Math.max(1, Math.min(3, 5));
-  return Array.from({ length: count }).map((_, index) => {
-    const order = index + 1;
-    const slug = role.name.toLowerCase().replace(/\s+/g, "-");
-    return {
-      id: `${role.id}-user-${order}`,
-      name: `${role.name} User ${order}`,
-      email: `${slug}.${order}@fortex.vn`,
-      status: order % 2 === 0 ? "INACTIVE" : "ACTIVE",
-    };
-  });
-}
+const USER_STATUS_LABEL: Record<UserSystemRoleItem["status"], string> = {
+  active: "Đang hoạt động",
+  suspended: "Tạm ngưng",
+  revoked: "Đã gỡ",
+};
+
+const formatDate = (iso: string) => new Date(iso).toLocaleString("vi-VN");
 
 export default function RolesPage() {
-  const { data: rolesData = [], isLoading: rolesLoading } = useSystemRoles();
+  const { roles: rolesWithCounts, isLoading: rolesLoading } = useSystemRolesWithUserCounts();
   const { data: permsData = [] } = usePermissions();
   const createRole = useCreateSystemRole();
   const updateRole = useUpdateSystemRole();
   const deleteRole = useDeleteSystemRole();
+  const setRolePermissions = useSetSystemRolePermissions();
 
   const [roleForm, setRoleForm] = useState<RoleFormState>(emptyRoleForm);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
-  const [roleUsersMap, setRoleUsersMap] = useState<Record<string, RoleUser[]>>({});
-  const [userForm, setUserForm] = useState<UserFormState>(emptyUserForm);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  // Xác nhận trước khi xóa (H-09) — xóa role/user không còn kích hoạt mutation ngay khi click.
+  // Xác nhận trước khi xóa (H-09) — xóa role/gỡ user không còn kích hoạt mutation ngay khi click.
   const [confirmDeleteRole, setConfirmDeleteRole] = useState<SystemRole | null>(null);
-  const [confirmDeleteUser, setConfirmDeleteUser] = useState<RoleUser | null>(null);
+  const [confirmRevoke, setConfirmRevoke] = useState<UserSystemRoleItem | null>(null);
+
+  // A-P1-1: không còn seedUsersForRole giả — gán vai trò cho user THẬT theo user_id (UUID).
+  // Chưa có API tìm-user-theo-tên/email (xem A-P1-6 trong báo cáo QA) nên admin phải biết UUID.
+  const [assignUserId, setAssignUserId] = useState("");
 
   useEffect(() => {
-    if (rolesData.length === 0) return;
-    setRoleUsersMap((prev) => {
-      const next = { ...prev };
-      rolesData.forEach((role) => {
-        if (!next[role.id]) next[role.id] = seedUsersForRole(role);
-      });
-      return next;
-    });
-    setSelectedRoleId((prev) => prev || rolesData[0].id);
-  }, [rolesData]);
+    setSelectedRoleId((prev) => prev || rolesWithCounts[0]?.id || null);
+  }, [rolesWithCounts]);
 
   const selectedRole = useMemo(
-    () => rolesData.find((item) => item.id === selectedRoleId) || null,
-    [rolesData, selectedRoleId]
+    () => rolesWithCounts.find((item) => item.id === selectedRoleId) || null,
+    [rolesWithCounts, selectedRoleId]
   );
 
-  const selectedRoleUsers = useMemo(
-    () => (selectedRoleId ? roleUsersMap[selectedRoleId] || [] : []),
-    [roleUsersMap, selectedRoleId]
-  );
+  const {
+    data: roleUsersPage,
+    isLoading: usersLoading,
+    isError: usersError,
+  } = useSystemRoleUsers(selectedRoleId);
+  const roleUsers = roleUsersPage?.user_system_roles ?? [];
 
-  const selectedUser = useMemo(
-    () => selectedRoleUsers.find((item) => item.id === selectedUserId) || null,
-    [selectedRoleUsers, selectedUserId]
-  );
+  const assignUser = useAssignSystemRoleToUser();
+  const revokeUser = useRevokeSystemRoleFromUser();
 
-  const submitRole = (e: React.FormEvent) => {
+  // A-P1-2: nạp lại đúng quyền hiện có của role khi mở "Sửa role" (trước đây luôn set []).
+  const { data: editingRolePermissions } = useSystemRolePermissions(roleForm.id ?? null);
+  useEffect(() => {
+    if (roleForm.id && editingRolePermissions) {
+      setRoleForm((prev) =>
+        prev.id === roleForm.id ? { ...prev, permissions: editingRolePermissions.map((p) => p.name) } : prev
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roleForm.id, editingRolePermissions]);
+
+  const submitRole = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!roleForm.name) return;
 
@@ -104,9 +94,21 @@ export default function RolesPage() {
       name: roleForm.name,
       description: roleForm.description || undefined,
     };
+    const permissionIds = permsData
+      .filter((perm) => roleForm.permissions.includes(perm.name))
+      .map((perm) => perm.id);
 
-    if (roleForm.id) updateRole.mutate({ roleId: roleForm.id, data: payload });
-    else createRole.mutate(payload);
+    if (roleForm.id) {
+      // Sửa role: PUT thông tin + PUT permissions (replace toàn bộ, kể cả khi bỏ tick hết).
+      await updateRole.mutateAsync({ roleId: roleForm.id, data: payload });
+      await setRolePermissions.mutateAsync({ roleId: roleForm.id, permissionIds });
+    } else {
+      // Tạo role: chỉ gọi thêm API gán quyền nếu có tick — tránh 1 request rỗng vô ích.
+      const created = await createRole.mutateAsync(payload);
+      if (permissionIds.length > 0) {
+        await setRolePermissions.mutateAsync({ roleId: created.id, permissionIds });
+      }
+    }
 
     setRoleForm(emptyRoleForm);
   };
@@ -121,70 +123,33 @@ export default function RolesPage() {
   };
 
   const startEditRole = (role: SystemRole) => {
-    setRoleForm({
-      id: role.id,
-      name: role.name,
-      description: role.description || "",
-      permissions: [],
-    });
+    // permissions để [] tạm thời — useEffect ở trên sẽ nạp lại quyền THẬT của role này khi
+    // useSystemRolePermissions(role.id) trả dữ liệu.
+    setRoleForm({ id: role.id, name: role.name, description: role.description || "", permissions: [] });
   };
 
   const removeRole = (roleId: string) => {
     deleteRole.mutate(roleId);
-    setRoleUsersMap((prev) => {
-      const next = { ...prev };
-      delete next[roleId];
-      return next;
-    });
-    if (selectedRoleId === roleId) {
-      setSelectedRoleId(null);
-      setSelectedUserId(null);
-      setUserForm(emptyUserForm);
-    }
+    if (selectedRoleId === roleId) setSelectedRoleId(null);
   };
 
-  const submitUser = (e: React.FormEvent) => {
+  const submitAssignUser = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedRoleId || !userForm.name || !userForm.email) return;
-
-    const payload: RoleUser = {
-      id: userForm.id || `${selectedRoleId}-${Date.now()}`,
-      name: userForm.name,
-      email: userForm.email,
-      status: userForm.status,
-    };
-
-    setRoleUsersMap((prev) => {
-      const current = prev[selectedRoleId] || [];
-      const updated = userForm.id
-        ? current.map((item) => (item.id === userForm.id ? payload : item))
-        : [payload, ...current];
-      return { ...prev, [selectedRoleId]: updated };
-    });
-
-    setSelectedUserId(payload.id);
-    setUserForm(emptyUserForm);
-  };
-
-  const startEditUser = (user: RoleUser) => {
-    setUserForm({ id: user.id, name: user.name, email: user.email, status: user.status });
-  };
-
-  const removeUser = (userId: string) => {
-    if (!selectedRoleId) return;
-    setRoleUsersMap((prev) => ({
-      ...prev,
-      [selectedRoleId]: (prev[selectedRoleId] || []).filter((item) => item.id !== userId),
-    }));
-    if (selectedUserId === userId) setSelectedUserId(null);
-    if (userForm.id === userId) setUserForm(emptyUserForm);
+    if (!selectedRoleId || !assignUserId.trim()) return;
+    assignUser.mutate(
+      { userId: assignUserId.trim(), roleId: selectedRoleId },
+      { onSuccess: () => setAssignUserId("") }
+    );
   };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Quản lý vai trò & user</h1>
-        <p className="mt-1 text-sm text-gray-500">Mỗi vai trò có user riêng, xem chi tiết user và CRUD đầy đủ ngay trong trang vai trò.</p>
+        <p className="mt-1 text-sm text-gray-500">
+          Số user và danh sách bên dưới lấy từ dữ liệu thật (GET /system-roles/:id/users). API chưa
+          trả tên/email user — chỉ có User ID, trạng thái và thời gian gán.
+        </p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
@@ -192,19 +157,25 @@ export default function RolesPage() {
           {rolesLoading ? (
             <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-200" />)}</div>
           ) : (
-            rolesData.map((role) => {
+            rolesWithCounts.map((role) => {
               const active = selectedRole?.id === role.id;
-              const users = roleUsersMap[role.id] || [];
 
               return (
                 <div key={role.id} className={`rounded-lg bg-white p-4 shadow-sm ${active ? "ring-2 ring-primary-200" : ""}`}>
-                  <button className="w-full text-left" onClick={() => { setSelectedRoleId(role.id); setSelectedUserId(null); }}>
+                  <button className="w-full text-left" onClick={() => setSelectedRoleId(role.id)}>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <h3 className="font-medium text-gray-900">{getSystemRoleLabel(role.name)}</h3>
                         <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">{role.name}</span>
                       </div>
-                      <span className="shrink-0 rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">{users.length} users</span>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-1 text-xs ${
+                          role.userCountError ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"
+                        }`}
+                        title={role.userCountError ? "Không tải được số user (thiếu quyền hoặc lỗi API)" : undefined}
+                      >
+                        {role.userCountError ? "lỗi" : role.userCount === null ? "…" : `${role.userCount} user`}
+                      </span>
                     </div>
                     <p className="mt-1 text-xs text-gray-500">{role.description || "Không có mô tả"}</p>
                   </button>
@@ -241,7 +212,13 @@ export default function RolesPage() {
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <button type="submit" className="rounded bg-primary-600 px-3 py-2 text-sm font-medium text-white">{roleForm.id ? "Lưu role" : "Tạo role"}</button>
+                  <button
+                    type="submit"
+                    disabled={updateRole.isPending || createRole.isPending || setRolePermissions.isPending}
+                    className="rounded bg-primary-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
+                  >
+                    {roleForm.id ? "Lưu role" : "Tạo role"}
+                  </button>
                   <button type="button" onClick={() => setRoleForm(emptyRoleForm)} className="rounded bg-gray-100 px-3 py-2 text-sm font-medium">Reset</button>
                 </div>
               </div>
@@ -249,54 +226,61 @@ export default function RolesPage() {
           </Can>
 
           <div className="rounded-lg bg-white p-4 shadow-sm">
-            <h2 className="text-base font-semibold text-gray-900">User theo vai trò</h2>
+            <h2 className="text-base font-semibold text-gray-900">
+              User theo vai trò{roleUsersPage ? ` — tổng ${roleUsersPage.total}` : ""}
+            </h2>
             {selectedRole ? (
               <div className="mt-3 space-y-3">
-                <div className="space-y-2">
-                  {selectedRoleUsers.map((user) => (
-                    <div key={user.id} className={`rounded border border-gray-100 p-2 ${selectedUser?.id === user.id ? "ring-2 ring-primary-200" : ""}`}>
-                      <button className="w-full text-left" onClick={() => setSelectedUserId(user.id)}>
-                        <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                        <p className="text-xs text-gray-500">{user.email}</p>
-                      </button>
-                      <div className="mt-2 flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => startEditUser(user)}>
-                          Sửa
-                        </Button>
-                        <Button size="sm" variant="destructiveGhost" onClick={() => setConfirmDeleteUser(user)}>
-                          Xóa
-                        </Button>
+                {usersLoading ? (
+                  <p className="text-xs text-gray-500">Đang tải…</p>
+                ) : usersError ? (
+                  <p className="text-xs text-red-600">Không tải được danh sách user.</p>
+                ) : roleUsers.length === 0 ? (
+                  <p className="text-xs text-gray-500">Chưa có user nào được gán vai trò này.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {roleUsers.map((u) => (
+                      <div key={u.id} className="rounded border border-gray-100 p-2">
+                        <p className="break-all font-mono text-xs text-gray-900">{u.user_id}</p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          {USER_STATUS_LABEL[u.status] ?? u.status} · Gán lúc {formatDate(u.granted_at)}
+                        </p>
+                        <Can permission={PERMISSIONS.MANAGE_ROLES}>
+                          <div className="mt-2">
+                            <Button size="sm" variant="destructiveGhost" onClick={() => setConfirmRevoke(u)}>
+                              Gỡ vai trò
+                            </Button>
+                          </div>
+                        </Can>
                       </div>
-                    </div>
-                  ))}
-                </div>
-
-                <form onSubmit={submitUser} className="space-y-2 rounded border border-gray-200 p-2">
-                  <input placeholder="Tên user" value={userForm.name} onChange={(e) => setUserForm((prev) => ({ ...prev, name: e.target.value }))} className="h-9 w-full rounded border border-gray-200 px-2 text-sm" />
-                  <input placeholder="Email user" value={userForm.email} onChange={(e) => setUserForm((prev) => ({ ...prev, email: e.target.value }))} className="h-9 w-full rounded border border-gray-200 px-2 text-sm" />
-                  <select value={userForm.status} onChange={(e) => setUserForm((prev) => ({ ...prev, status: e.target.value as RoleUser["status"] }))} className="h-9 w-full rounded border border-gray-200 px-2 text-sm">
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="INACTIVE">INACTIVE</option>
-                  </select>
-                  <div className="flex gap-2">
-                    <button type="submit" className="rounded bg-primary-600 px-2.5 py-1.5 text-xs font-medium text-white">{userForm.id ? "Lưu user" : "Thêm user"}</button>
-                    <button type="button" onClick={() => setUserForm(emptyUserForm)} className="rounded bg-gray-100 px-2.5 py-1.5 text-xs font-medium">Reset</button>
+                    ))}
                   </div>
-                </form>
+                )}
 
-                <div className="rounded border border-gray-200 p-2 text-sm">
-                  <p className="font-medium text-gray-900">Chi tiết user</p>
-                  {selectedUser ? (
-                    <div className="mt-2 space-y-1">
-                      <p><span className="text-gray-500">Tên:</span> {selectedUser.name}</p>
-                      <p><span className="text-gray-500">Email:</span> {selectedUser.email}</p>
-                      <p><span className="text-gray-500">Status:</span> {selectedUser.status}</p>
-                      <p><span className="text-gray-500">Role:</span> {selectedRole.name}</p>
-                    </div>
-                  ) : (
-                    <p className="mt-1 text-xs text-gray-500">Chọn user để xem chi tiết.</p>
-                  )}
-                </div>
+                <Can permission={PERMISSIONS.MANAGE_ROLES}>
+                  <form onSubmit={submitAssignUser} className="space-y-2 rounded border border-gray-200 p-2">
+                    <label className="block text-xs font-medium text-gray-700">
+                      Gán vai trò cho user (User ID)
+                    </label>
+                    <input
+                      placeholder="UUID của user"
+                      value={assignUserId}
+                      onChange={(e) => setAssignUserId(e.target.value)}
+                      className="h-9 w-full rounded border border-gray-200 px-2 font-mono text-xs"
+                    />
+                    <p className="text-[11px] text-gray-400">
+                      Hệ thống chưa có API tìm user theo tên/email — cần biết UUID (xem trang chi
+                      tiết user hoặc DB).
+                    </p>
+                    <button
+                      type="submit"
+                      disabled={assignUser.isPending}
+                      className="rounded bg-primary-600 px-2.5 py-1.5 text-xs font-medium text-white disabled:opacity-60"
+                    >
+                      Gán vai trò
+                    </button>
+                  </form>
+                </Can>
               </div>
             ) : (
               <p className="mt-2 text-sm text-gray-500">Chọn một vai trò để quản lý user.</p>
@@ -329,23 +313,27 @@ export default function RolesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Xác nhận xóa user (H-09) */}
-      <Dialog open={!!confirmDeleteUser} onOpenChange={(open) => !open && setConfirmDeleteUser(null)}>
+      {/* Xác nhận gỡ vai trò khỏi user (H-09) */}
+      <Dialog open={!!confirmRevoke} onOpenChange={(open) => !open && setConfirmRevoke(null)}>
         <DialogContent>
-          <DialogTitle>Xóa user &quot;{confirmDeleteUser?.name}&quot;?</DialogTitle>
-          <DialogDescription>Hành động này không thể hoàn tác.</DialogDescription>
+          <DialogTitle>Gỡ vai trò khỏi user này?</DialogTitle>
+          <DialogDescription className="break-all">
+            User ID: {confirmRevoke?.user_id}. Hành động này không thể hoàn tác.
+          </DialogDescription>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDeleteUser(null)}>
+            <Button variant="outline" onClick={() => setConfirmRevoke(null)}>
               Hủy
             </Button>
             <Button
               variant="destructive"
               onClick={() => {
-                if (confirmDeleteUser) removeUser(confirmDeleteUser.id);
-                setConfirmDeleteUser(null);
+                if (confirmRevoke && selectedRoleId) {
+                  revokeUser.mutate({ userId: confirmRevoke.user_id, roleId: selectedRoleId });
+                }
+                setConfirmRevoke(null);
               }}
             >
-              Xóa user
+              Gỡ vai trò
             </Button>
           </DialogFooter>
         </DialogContent>

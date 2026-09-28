@@ -29,6 +29,8 @@ import RecurrenceSelector, {
   DEFAULT_RECURRENCE,
   buildRRule,
 } from "./recurrence-selector";
+import { useMyCourses } from "@/hooks/queries/use-courses";
+import { useClasses } from "@/hooks/queries/use-classes";
 
 export interface EventFormData {
   title: string;
@@ -39,6 +41,16 @@ export interface EventFormData {
   meetingUrl: string;
   description: string;
   recurrenceRule?: string;
+  /**
+   * P1 QA 260927 teacher: bắt buộc khi TẠO MỚI — mỗi buổi học ở trang này giờ
+   * là một livestream session thật (POST /livestream), và backend đòi class_id
+   * hợp lệ. Trước bản vá này trang lịch chỉ lưu state React cục bộ, không gọi
+   * API nào cả, nên buổi học "tạo" ở đây không gắn với khóa/lớp nào và không
+   * bao giờ xuất hiện lại ở trang Bài tập (vốn liệt kê session theo course_id
+   * thật từ backend) — đây là nguyên nhân gốc khiến bài tập "không dùng được".
+   */
+  courseId: string;
+  classId: string;
 }
 
 interface ScheduleEventFormDialogProps {
@@ -83,6 +95,14 @@ export default function ScheduleEventFormDialog({
   const [dateStr, setDateStr] = useState("");
   const [recurrence, setRecurrence] = useState<RecurrenceConfig>(DEFAULT_RECURRENCE);
   const [showRecurrence, setShowRecurrence] = useState(false);
+  const [courseId, setCourseId] = useState("");
+  const [classId, setClassId] = useState("");
+
+  // P1 QA 260927 teacher: khóa/lớp thật của giáo viên — bắt buộc khi tạo mới.
+  const { data: apiCourses = [], isLoading: coursesLoading } = useMyCourses();
+  const { data: classes = [], isLoading: classesLoading } = useClasses(courseId, {
+    enabled: !isEditing && !!courseId,
+  });
 
   // Populate form when event or defaults change
   useEffect(() => {
@@ -97,6 +117,7 @@ export default function ScheduleEventFormDialog({
       setLocation(event.location || "");
       setMeetingUrl(event.meetingUrl || "");
       setDescription(event.description || "");
+      setCourseId(event.courseId || "");
     } else {
       setTitle("");
       setType("video");
@@ -105,6 +126,8 @@ export default function ScheduleEventFormDialog({
       setDescription("");
       setRecurrence(DEFAULT_RECURRENCE);
       setShowRecurrence(false);
+      setCourseId("");
+      setClassId("");
       if (defaultDate) {
         setDateStr(format(defaultDate, "yyyy-MM-dd"));
       }
@@ -116,8 +139,14 @@ export default function ScheduleEventFormDialog({
     }
   }, [event, defaultDate, defaultHour, defaultEndTime, open]);
 
+  // Đổi khóa học thì reset lớp đã chọn — lớp thuộc khóa cũ không còn hợp lệ.
+  useEffect(() => {
+    setClassId("");
+  }, [courseId]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isEditing && !classId) return;
     const [startH, startM] = startTime.split(":").map(Number);
     const [endH, endM] = endTime.split(":").map(Number);
     const base = new Date(dateStr);
@@ -134,6 +163,8 @@ export default function ScheduleEventFormDialog({
         meetingUrl,
         description,
         recurrenceRule: buildRRule(recurrence),
+        courseId,
+        classId,
       },
       event?.id
     );
@@ -167,6 +198,54 @@ export default function ScheduleEventFormDialog({
             />
           </div>
 
+          {/* Khóa học + Lớp — bắt buộc khi tạo mới, cố định sau khi tạo (backend
+              không hỗ trợ đổi lớp của một buổi live đã tồn tại). */}
+          {isEditing ? (
+            <div className="rounded-lg border bg-gray-50 p-3 text-xs text-muted-foreground">
+              Buổi học đã gắn với lớp học của bạn — không thể đổi khóa/lớp sau khi tạo.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="event-course">Khóa học *</Label>
+                <Select value={courseId} onValueChange={setCourseId}>
+                  <SelectTrigger id="event-course" disabled={coursesLoading}>
+                    <SelectValue placeholder={coursesLoading ? "Đang tải..." : "Chọn khóa học"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {apiCourses.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="event-class">Lớp *</Label>
+                <Select value={classId} onValueChange={setClassId}>
+                  <SelectTrigger id="event-class" disabled={!courseId || classesLoading}>
+                    <SelectValue
+                      placeholder={
+                        !courseId ? "Chọn khóa học trước" : classesLoading ? "Đang tải..." : "Chọn lớp"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes.map((cls) => (
+                      <SelectItem key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {courseId && !classesLoading && classes.length === 0 && (
+                  <p className="text-xs text-amber-600">Khóa học này chưa có lớp nào.</p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Event Type */}
           <div className="space-y-2">
             <Label>Loại buổi học</Label>
@@ -193,7 +272,10 @@ export default function ScheduleEventFormDialog({
             </div>
           </div>
 
-          {/* Date + Time */}
+          {/* Date + Time — chỉ đổi được lúc TẠO MỚI: PUT /livestream/:id
+              (dto.UpdateLivestreamDTO) chỉ nhận title/description/max_viewers,
+              không có lịch/giờ, nên sửa ở đây sau khi đã tạo sẽ chỉ đổi state
+              cục bộ rồi mất ngay khi trang tải lại — im lặng "thành công giả". */}
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label htmlFor="event-date">Ngày *</Label>
@@ -202,6 +284,7 @@ export default function ScheduleEventFormDialog({
                 type="date"
                 value={dateStr}
                 onChange={(e) => setDateStr(e.target.value)}
+                disabled={isEditing}
                 required
               />
             </div>
@@ -212,6 +295,7 @@ export default function ScheduleEventFormDialog({
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
+                disabled={isEditing}
                 required
               />
             </div>
@@ -222,10 +306,16 @@ export default function ScheduleEventFormDialog({
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
+                disabled={isEditing}
                 required
               />
             </div>
           </div>
+          {isEditing && (
+            <p className="-mt-2 text-xs text-muted-foreground">
+              Chưa hỗ trợ đổi lịch sau khi tạo — chỉ có thể sửa tiêu đề/mô tả.
+            </p>
+          )}
 
           {/* Location */}
           <div className="space-y-2">
@@ -307,7 +397,7 @@ export default function ScheduleEventFormDialog({
             >
               Hủy
             </Button>
-            <Button type="submit" disabled={!title || !dateStr}>
+            <Button type="submit" disabled={!title || !dateStr || (!isEditing && !classId)}>
               {isEditing ? "Cập nhật" : "Tạo buổi học"}
             </Button>
           </DialogFooter>

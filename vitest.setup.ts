@@ -24,7 +24,9 @@ vi.mock("next/navigation", () => ({
     forward: vi.fn(),
     prefetch: vi.fn(),
   }),
-  usePathname: () => "/",
+  // vi.fn() (không phải arrow thường) để test có thể override per-case bằng
+  // `vi.mocked(usePathname).mockReturnValue("/settings")` (A-P2-4 admin route test).
+  usePathname: vi.fn(() => "/"),
   useSearchParams: () => new URLSearchParams(),
   useParams: () => ({}),
   redirect: vi.fn(),
