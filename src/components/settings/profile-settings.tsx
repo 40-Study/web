@@ -95,7 +95,13 @@ export function ProfileSettings() {
     updateProfile.mutate({
       full_name: data.fullName,
       username: data.username || undefined,
-      bio: data.bio || undefined,
+      // D5 (QA vòng 2): gửi "" khi người dùng xoá trắng — `|| undefined` làm mất trường khỏi
+      // body nên backend (chỉ ghi khi field có mặt) giữ nguyên giá trị cũ. Backend nhận "" và
+      // ghi rỗng đúng (auth_service.go UpdateMe; DTO bio chỉ validate max=1000).
+      bio: data.bio ?? "",
+      // KHÔNG gửi phone rỗng: DTO backend validate `omitempty,e164` trên *string nên "" bị trả
+      // 400 và CẢ lần lưu hỏng (giảng viên chưa có SĐT không lưu được tiểu sử). Hệ quả đã biết:
+      // chưa xoá trắng được SĐT cho tới khi backend cho phép "" (ngoài phạm vi lane D).
       phone: data.phone || undefined,
     });
   };

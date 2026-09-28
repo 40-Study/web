@@ -99,7 +99,9 @@ export interface UpdateBankInfoRequest {
 
 // ─── Withdrawal types (Phase 4 — xem withdrawal-contract.md, SSOT chung backend + web) ────────
 
-export type WithdrawalStatus = "pending" | "approved" | "rejected" | "completed";
+// "cancelled" (QA vòng 2, Q2): giảng viên tự huỷ khi yêu cầu còn pending — khớp
+// model.PayoutStatusCancelled ở backend.
+export type WithdrawalStatus = "pending" | "approved" | "rejected" | "completed" | "cancelled";
 
 /** amount là number JSON (decimal.MarshalJSONWithoutQuotes ở backend). */
 export interface WithdrawalItem {
@@ -188,6 +190,15 @@ export const walletService = {
   createWithdrawal: (amount: number) =>
     api
       .post<Envelope<WithdrawalItem>>("/wallet/teacher/withdrawals", { amount })
+      .then((r) => r.data.data),
+
+  /**
+   * POST /wallet/teacher/withdrawals/:id/cancel — giảng viên tự huỷ yêu cầu CỦA MÌNH còn pending.
+   * 404 withdrawal_not_found (không phải của mình), 409 invalid_status_transition (admin đã xử lý).
+   */
+  cancelMyWithdrawal: (id: string) =>
+    api
+      .post<Envelope<WithdrawalActionResult>>(`/wallet/teacher/withdrawals/${id}/cancel`)
       .then((r) => r.data.data),
 
   /** GET /wallet/teacher/withdrawals — lịch sử yêu cầu rút của CHÍNH giáo viên đang đăng nhập. */

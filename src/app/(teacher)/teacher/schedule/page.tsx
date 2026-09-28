@@ -2,12 +2,12 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { addHours, differenceInMinutes } from "date-fns";
-import { Plus } from "lucide-react";
+import { CalendarCheck, Clock, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import WeekCalendarGrid from "@/components/schedule/week-calendar-grid";
 import ScheduleEventTooltip from "@/components/schedule/schedule-event-tooltip";
 import ScheduleEventFormDialog from "@/components/schedule/schedule-event-form-dialog";
-import type { ScheduleEvent } from "@/components/schedule/week-calendar-grid";
+import type { ScheduleEvent, ScheduleStat } from "@/components/schedule/week-calendar-grid";
 import type { EventFormData } from "@/components/schedule/schedule-event-form-dialog";
 import { useAuthStore } from "@/stores/auth.store";
 import {
@@ -73,7 +73,7 @@ export default function TeacherSchedulePage() {
   }, [sessionsData]);
 
   // Số giờ dạy thật trong các buổi đã lấy về — thay cho con số "18" cứng
-  // trước đây. Số liệu tasks/focus chưa có nguồn thật nên để 0 thay vì bịa.
+  // trước đây. Cộng trên MỌI buổi đã tải (không lọc theo tuần) nên nhãn không ghi "tuần này".
   const studyHours = useMemo(
     () =>
       Math.round(
@@ -85,6 +85,25 @@ export default function TeacherSchedulePage() {
     [events]
   );
 
+  // QA vòng 2 (D8): lịch giảng dạy từng hiện nhãn góc học sinh ("THỜI GIAN HỌC", "NHIỆM VỤ HOÀN
+  // THÀNH", "HIỆU SUẤT TẬP TRUNG") với 2 số luôn bằng 0. Chỉ giữ số liệu có nguồn thật.
+  const stats: ScheduleStat[] = useMemo(
+    () => [
+      {
+        key: "teaching-hours",
+        label: "TỔNG GIỜ DẠY ĐÃ LÊN LỊCH",
+        value: `${studyHours} giờ`,
+        icon: <Clock className="h-5 w-5 text-primary-500" />,
+      },
+      {
+        key: "sessions",
+        label: "SỐ BUỔI HỌC",
+        value: `${events.length} buổi`,
+        icon: <CalendarCheck className="h-5 w-5 text-green-500" />,
+      },
+    ],
+    [studyHours, events.length]
+  );
   const handleEventClick = useCallback((event: ScheduleEvent) => {
     setEditingEvent(event);
     setDefaultDate(undefined);
@@ -147,12 +166,7 @@ export default function TeacherSchedulePage() {
             Tạo buổi học
           </Button>
         }
-        stats={{
-          studyHours,
-          tasksCompleted: 0,
-          tasksTotal: 0,
-          focusPercent: 0,
-        }}
+        stats={stats}
       />
 
       <ScheduleEventFormDialog

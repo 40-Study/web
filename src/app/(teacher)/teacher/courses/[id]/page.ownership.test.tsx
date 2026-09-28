@@ -46,10 +46,12 @@ vi.mock("@/hooks/queries/use-courses", () => ({
 // Phase 3: nút "Gửi duyệt" (CourseReviewPanel) dùng useMutation — react-query bị mock ở trên.
 vi.mock("@/hooks/queries/use-course-approval", () => ({
   useSubmitCourseReview: () => ({ mutate: vi.fn(), isPending: false }),
+  useWithdrawCourseReview: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 vi.mock("@/hooks/queries/use-sections", () => ({
   useSections: () => ({ data: [], isLoading: false }),
+  sectionKeys: { byCourse: (id: string) => ["sections", id] },
   useCreateSection: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useReorderSections: () => ({ mutate: vi.fn() }),
   useDeleteSection: () => ({ mutate: vi.fn() }),

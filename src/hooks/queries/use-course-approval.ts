@@ -30,6 +30,22 @@ export function useSubmitCourseReview() {
   });
 }
 
+/** POST /courses/:id/withdraw-review — giáo viên rút yêu cầu duyệt để sửa tiếp (QA vòng 2, Q5). */
+export function useWithdrawCourseReview() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (courseId: string) => courseApprovalService.withdrawReview(courseId),
+    onSuccess: (_, courseId) => {
+      qc.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
+      qc.invalidateQueries({ queryKey: courseKeys.all });
+      toast.success("Đã rút yêu cầu duyệt. Khoá học trở về bản nháp, bạn có thể chỉnh sửa.");
+    },
+    onError: (error) => {
+      toast.error(approvalErrorMessage(error, "Không thể rút yêu cầu duyệt, thử lại sau."));
+    },
+  });
+}
+
 /** GET /admin/courses — danh sách khoá cần duyệt (admin). */
 export function useAdminCourses(params?: AdminCourseListParams) {
   return useQuery({

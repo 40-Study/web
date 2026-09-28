@@ -60,7 +60,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useCourse } from "@/hooks/queries/use-courses";
 import { CourseReviewPanel, CourseStatusBadge } from "@/components/teacher/course-review-status";
-import { useSections, useCreateSection, useReorderSections, useDeleteSection } from "@/hooks/queries/use-sections";
+import { useSections, useCreateSection, useReorderSections, useDeleteSection, sectionKeys } from "@/hooks/queries/use-sections";
 import { useLessons, useCreateLesson, useReorderLessons, useDeleteLesson } from "@/hooks/queries/use-lessons";
 import { useLessonContents, useCreateLessonContent, useDeleteLessonContent } from "@/hooks/queries/use-lesson-content";
 import type { LessonContent, CreateContentDTO } from "@/services/lesson-content.service";
@@ -124,6 +124,7 @@ function SortableSectionCard({
   onOpenAddModal,
   onEditContent,
   onViewVideo,
+  readOnly = false,
 }: {
   section: Section;
   courseId: string;
@@ -132,14 +133,20 @@ function SortableSectionCard({
   onOpenAddModal?: (lessonId: string) => void;
   onEditContent?: (content: LessonContent) => void;
   onViewVideo?: (content: LessonContent) => void;
+  /** Q5 (QA vòng 2): khoá đang chờ duyệt — ẩn mọi nút thêm/xoá/sửa/kéo thả, chỉ xem. */
+  readOnly?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: section.id,
+    disabled: readOnly,
   });
   const style = { transform: CSS.Transform.toString(transform), transition };
   const { data: lessons = [], isLoading } = useLessons(courseId, section.id);
   const reorderLessons = useReorderLessons(courseId, section.id);
   const deleteLesson = useDeleteLesson(courseId, section.id);
+  const queryClient = useQueryClient();
+  // Số bài của cả khoá (nút "Gửi duyệt", D2) đếm từ danh sách chương — xoá bài phải làm mới nó.
+  const refreshSections = () => queryClient.invalidateQueries({ queryKey: sectionKeys.byCourse(courseId) });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -162,9 +169,11 @@ function SortableSectionCard({
         <CardContent className="p-0">
           {/* Section header */}
           <div className="flex items-center gap-2 px-4 py-3 border-b bg-gray-50/80">
-            <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-gray-400 hover:text-gray-600">
-              <GripVertical className="w-4 h-4" />
-            </button>
+            {!readOnly && (
+              <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-gray-400 hover:text-gray-600">
+                <GripVertical className="w-4 h-4" />
+              </button>
+            )}
             <div className="flex-1 min-w-0">
               <h3 className="font-medium text-sm">{section.title}</h3>
               {section.description && (
@@ -172,14 +181,16 @@ function SortableSectionCard({
               )}
             </div>
             <span className="text-xs text-muted-foreground">{lessons.length} bài</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-gray-400 hover:text-red-500"
-              onClick={() => onDeleteSection(section.id)}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
+            {!readOnly && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-gray-400 hover:text-red-500"
+                onClick={() => onDeleteSection(section.id)}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            )}
           </div>
 
           {/* Lessons list */}
@@ -190,7 +201,7 @@ function SortableSectionCard({
               </div>
             ) : lessons.length === 0 ? (
               <p className="py-4 text-center text-sm text-muted-foreground">
-                Chưa có bài học. Nhấn nút bên dưới để thêm.
+                {readOnly ? "Chưa có bài học." : "Chưa có bài học. Nhấn nút bên dưới để thêm."}
               </p>
             ) : (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleLessonDragEnd}>
@@ -202,10 +213,11 @@ function SortableSectionCard({
                         lesson={lesson}
                         index={idx}
                         courseId={courseId}
-                        onDelete={() => deleteLesson.mutate(lesson.id)}
+                        onDelete={() => deleteLesson.mutate(lesson.id, { onSuccess: refreshSections })}
                         onOpenAddModal={onOpenAddModal}
                         onEditContent={onEditContent}
                         onViewVideo={onViewVideo}
+                        readOnly={readOnly}
                       />
                     ))}
                   </div>
@@ -215,14 +227,16 @@ function SortableSectionCard({
           </div>
 
           {/* Add lesson button */}
-          <div className="px-4 pb-3">
-            <button
-              onClick={() => onAddLesson(section.id)}
-              className="w-full py-2 border border-dashed rounded-lg text-sm text-muted-foreground hover:text-primary-600 hover:border-primary-300 transition-colors flex items-center justify-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" /> Thêm bài học
-            </button>
-          </div>
+          {!readOnly && (
+            <div className="px-4 pb-3">
+              <button
+                onClick={() => onAddLesson(section.id)}
+                className="w-full py-2 border border-dashed rounded-lg text-sm text-muted-foreground hover:text-primary-600 hover:border-primary-300 transition-colors flex items-center justify-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" /> Thêm bài học
+              </button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -239,6 +253,7 @@ function SortableLessonRow({
   onOpenAddModal,
   onEditContent,
   onViewVideo,
+  readOnly = false,
 }: {
   lesson: Lesson;
   index: number;
@@ -247,9 +262,11 @@ function SortableLessonRow({
   onOpenAddModal?: (lessonId: string) => void;
   onEditContent?: (content: LessonContent) => void;
   onViewVideo?: (content: LessonContent) => void;
+  readOnly?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: lesson.id,
+    disabled: readOnly,
   });
   const style = { transform: CSS.Transform.toString(transform), transition };
   const [expanded, setExpanded] = useState(false);
@@ -258,9 +275,11 @@ function SortableLessonRow({
     <div ref={setNodeRef} style={style} className={cn(isDragging && "opacity-50")}>
       {/* Lesson header row */}
       <div className="flex items-center gap-2 rounded-lg px-2 py-2 group hover:bg-gray-50 transition-colors">
-        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-0.5 text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
-          <GripVertical className="w-3.5 h-3.5" />
-        </button>
+        {!readOnly && (
+          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-0.5 text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+            <GripVertical className="w-3.5 h-3.5" />
+          </button>
+        )}
         <button onClick={() => setExpanded(!expanded)} className="p-0.5 text-gray-400 hover:text-gray-600">
           <ChevronRight className={cn("w-3.5 h-3.5 transition-transform", expanded && "rotate-90")} />
         </button>
@@ -278,12 +297,14 @@ function SortableLessonRow({
         {lesson.is_preview && (
           <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 shrink-0">Preview</Badge>
         )}
-        <button
-          onClick={onDelete}
-          className="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        {!readOnly && (
+          <button
+            onClick={onDelete}
+            className="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
       {/* Expanded: show contents */}
@@ -293,6 +314,7 @@ function SortableLessonRow({
           onOpenAddModal={onOpenAddModal}
           onEditContent={onEditContent}
           onViewVideo={onViewVideo}
+          readOnly={readOnly}
         />
       )}
     </div>
@@ -317,11 +339,13 @@ function LessonContentsPanel({
   onOpenAddModal,
   onEditContent,
   onViewVideo,
+  readOnly = false,
 }: {
   lessonId: string;
   onOpenAddModal?: (lessonId: string) => void;
   onEditContent?: (content: LessonContent) => void;
   onViewVideo?: (content: LessonContent) => void;
+  readOnly?: boolean;
 }) {
   const { data: contentsRaw, isLoading } = useLessonContents(lessonId);
   const contents: LessonContent[] = Array.isArray(contentsRaw) ? contentsRaw : [];
@@ -409,20 +433,24 @@ function LessonContentsPanel({
                           <Eye className="w-3 h-3" />
                         </button>
                       )}
-                      <button
-                        onClick={() => onEditContent?.(c)}
-                        className="p-0.5 text-gray-400 hover:text-primary-600"
-                        title="Chỉnh sửa"
-                      >
-                        <Pencil className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => deleteContent.mutate(c.id)}
-                        className="p-0.5 text-gray-300 hover:text-red-500"
-                        title="Xóa"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+                      {!readOnly && (
+                        <>
+                          <button
+                            onClick={() => onEditContent?.(c)}
+                            className="p-0.5 text-gray-400 hover:text-primary-600"
+                            title="Chỉnh sửa"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => deleteContent.mutate(c.id)}
+                            className="p-0.5 text-gray-300 hover:text-red-500"
+                            title="Xóa"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 );
@@ -435,12 +463,14 @@ function LessonContentsPanel({
           )}
 
           {/* ── Add button ── */}
-          <button
-            onClick={() => onOpenAddModal?.(lessonId)}
-            className="w-full flex items-center justify-center gap-1.5 py-2 text-[11px] text-primary-600 hover:text-primary-700 font-medium transition-colors border border-dashed border-primary-200 rounded-lg hover:bg-primary-50"
-          >
-            <Plus className="w-3.5 h-3.5" /> Thêm nội dung
-          </button>
+          {!readOnly && (
+            <button
+              onClick={() => onOpenAddModal?.(lessonId)}
+              className="w-full flex items-center justify-center gap-1.5 py-2 text-[11px] text-primary-600 hover:text-primary-700 font-medium transition-colors border border-dashed border-primary-200 rounded-lg hover:bg-primary-50"
+            >
+              <Plus className="w-3.5 h-3.5" /> Thêm nội dung
+            </button>
+          )}
         </>
       )}
     </div>
@@ -549,6 +579,8 @@ export default function CourseDetailPage() {
       is_preview: lessonPreview,
       is_mandatory: lessonMandatory,
     });
+    // D2: số bài của khoá (bật nút "Gửi duyệt") đếm từ danh sách chương — làm mới sau khi thêm bài.
+    queryClient.invalidateQueries({ queryKey: sectionKeys.byCourse(courseId) });
     setLessonTitle("");
     setLessonDesc("");
     setLessonDuration("");
@@ -868,6 +900,16 @@ export default function CourseDetailPage() {
     );
   }
 
+  // Q5 (QA vòng 2): khoá đang chờ duyệt bị khoá sửa ở backend (409 COURSE_PENDING_REVIEW) —
+  // trang chỉ còn xem; muốn sửa phải "Rút yêu cầu duyệt" ở banner.
+  const isLocked = course.status === "pending_review";
+  // D2: GET /courses/:id/sections trả kèm lessons của từng chương. Chưa tải xong -> undefined
+  // (không khoá nút sớm; backend vẫn chặn khoá rỗng bằng 422 COURSE_EMPTY).
+  const lessonCount = sectionsLoading
+    ? undefined
+    // services/section.service Section chưa khai báo `lessons` dù API có trả (dto.SectionResponseDTO).
+    : sections.reduce((total, s) => total + ((s as { lessons?: unknown[] }).lessons?.length ?? 0), 0);
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
@@ -903,7 +945,15 @@ export default function CourseDetailPage() {
           courseId={courseId}
           status={course.status}
           rejectionReason={course.rejection_reason}
+          lessonCount={lessonCount}
         />
+        {!isLocked && (
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/teacher/courses/${courseId}/edit`} data-testid="edit-course-info">
+              <Edit3 className="w-4 h-4 mr-1" /> Sửa thông tin
+            </Link>
+          </Button>
+        )}
         <Button variant="outline" size="sm" onClick={() => setClassDialog(true)}>
           <Users className="w-4 h-4 mr-1" /> Quản lý lớp
         </Button>
@@ -917,9 +967,11 @@ export default function CourseDetailPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground mb-3">Khóa học chưa có chương nào</p>
-            <Button onClick={() => setSectionDialog(true)}>
-              <Plus className="w-4 h-4 mr-1" /> Thêm chương đầu tiên
-            </Button>
+            {!isLocked && (
+              <Button onClick={() => setSectionDialog(true)}>
+                <Plus className="w-4 h-4 mr-1" /> Thêm chương đầu tiên
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -950,6 +1002,7 @@ export default function CourseDetailPage() {
                     setPreviewingVideo(content);
                     setVideoPreviewModal(true);
                   }}
+                  readOnly={isLocked}
                 />
               ))}
             </div>
@@ -958,12 +1011,14 @@ export default function CourseDetailPage() {
       )}
 
       {/* Add section — big button at bottom */}
-      <button
-        onClick={() => setSectionDialog(true)}
-        className="w-full py-4 border-2 border-dashed rounded-xl text-muted-foreground hover:text-primary-600 hover:border-primary-300 hover:bg-primary-50/30 transition-all flex items-center justify-center gap-2 text-sm font-medium"
-      >
-        <Plus className="w-5 h-5" /> Thêm chương mới
-      </button>
+      {!isLocked && (
+        <button
+          onClick={() => setSectionDialog(true)}
+          className="w-full py-4 border-2 border-dashed rounded-xl text-muted-foreground hover:text-primary-600 hover:border-primary-300 hover:bg-primary-50/30 transition-all flex items-center justify-center gap-2 text-sm font-medium"
+        >
+          <Plus className="w-5 h-5" /> Thêm chương mới
+        </button>
+      )}
 
       {/* ═══ Create Section Dialog ═══ */}
       <Dialog open={sectionDialog} onOpenChange={setSectionDialog}>

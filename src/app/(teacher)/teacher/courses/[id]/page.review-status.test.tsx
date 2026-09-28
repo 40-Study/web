@@ -27,6 +27,10 @@ vi.mock("@/stores/auth.store", () => ({
 let mockCourse: Record<string, unknown> | undefined;
 const mockUpdateCourse = vi.fn();
 const mockSubmitReview = vi.fn();
+const mockWithdrawReview = vi.fn();
+// Mặc định khoá có 1 chương / 1 bài: khoá rỗng bị khoá nút gửi duyệt (D2), xem test riêng bên dưới.
+const ONE_LESSON_SECTIONS = [{ id: "sec-1", title: "QA-Chuong 1", order: 1, lessons: [{ id: "les-1", title: "QA-Bai 1", order: 1 }] }];
+let mockSections: unknown[] = ONE_LESSON_SECTIONS;
 
 vi.mock("@/hooks/queries/use-courses", () => ({
   useCourse: () => ({ data: mockCourse, isLoading: false }),
@@ -35,10 +39,12 @@ vi.mock("@/hooks/queries/use-courses", () => ({
 
 vi.mock("@/hooks/queries/use-course-approval", () => ({
   useSubmitCourseReview: () => ({ mutate: mockSubmitReview, isPending: false }),
+  useWithdrawCourseReview: () => ({ mutate: mockWithdrawReview, isPending: false }),
 }));
 
 vi.mock("@/hooks/queries/use-sections", () => ({
-  useSections: () => ({ data: [], isLoading: false }),
+  useSections: () => ({ data: mockSections, isLoading: false }),
+  sectionKeys: { byCourse: (id: string) => ["sections", id] },
   useCreateSection: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useReorderSections: () => ({ mutate: vi.fn() }),
   useDeleteSection: () => ({ mutate: vi.fn() }),
@@ -89,6 +95,8 @@ describe("/teacher/courses/[id] — gửi duyệt thay cho tự xuất bản (Ph
   beforeEach(() => {
     mockUpdateCourse.mockReset();
     mockSubmitReview.mockReset();
+    mockWithdrawReview.mockReset();
+    mockSections = ONE_LESSON_SECTIONS;
   });
 
   it("khoá nháp: có 'Gửi duyệt' gọi submit-review, không còn 'Xuất bản', không PUT status published", () => {
@@ -123,6 +131,34 @@ describe("/teacher/courses/[id] — gửi duyệt thay cho tự xuất bản (Ph
     expect(screen.getByText(/Đang chờ quản trị viên duyệt/)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Gửi duyệt" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Gửi duyệt lại" })).toBeNull();
+  });
+
+  it("khoá chờ duyệt (Q5): khoá sửa — không có nút sửa/thêm chương; \"Rút yêu cầu duyệt\" gọi withdraw-review", () => {
+    setCourse({ status: "pending_review" });
+    render(<TeacherCourseDetailPage />);
+
+    expect(screen.queryByTestId("edit-course-info")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Thêm chương/ })).toBeNull();
+    fireEvent.click(screen.getByTestId("withdraw-review"));
+    expect(mockWithdrawReview).toHaveBeenCalledWith("course-1");
+  });
+
+  it("khoá nháp 0 bài học (D2): nút Gửi duyệt bị tắt kèm hướng dẫn, bấm không gọi API", () => {
+    mockSections = [{ id: "sec-1", title: "QA-Chuong rong", order: 1, lessons: [] }];
+    setCourse({ status: "draft" });
+    render(<TeacherCourseDetailPage />);
+
+    const btn = screen.getByRole("button", { name: "Gửi duyệt" }) as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+    expect(screen.getByTestId("submit-review-empty-hint")).toBeTruthy();
+    fireEvent.click(btn);
+    expect(mockSubmitReview).not.toHaveBeenCalled();
+  });
+
+  it("khoá nháp: có nút \"Sửa thông tin\" dẫn tới trang /edit (P1)", () => {
+    setCourse({ status: "draft" });
+    render(<TeacherCourseDetailPage />);
+    expect(screen.getByTestId("edit-course-info")).toBeTruthy();
   });
 
   it("khoá đã xuất bản: badge 'Đã xuất bản', không banner/nút gửi duyệt", () => {

@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { TiptapEditor } from "@/components/editor";
 import { useAuthStore } from "@/stores/auth.store";
 import { useMyCourses } from "@/hooks/queries/use-courses";
@@ -42,10 +42,13 @@ import type { AssignmentResponseDTO, AssignmentType, DifficultyLevel } from "@/s
  * "document" như bản mock cũ; map gần nhất: quiz/code → live_coding.
  */
 const ASSIGNMENT_TYPE_OPTIONS: { value: AssignmentType; label: string; icon: React.ReactNode }[] = [
-  { value: "live_coding", label: "Live coding", icon: <Code2 className="h-4 w-4" /> },
+  { value: "live_coding", label: "Lập trình trực tiếp", icon: <Code2 className="h-4 w-4" /> },
   { value: "homework", label: "Bài tập về nhà", icon: <FileText className="h-4 w-4" /> },
-  { value: "project", label: "Project", icon: <Layers3 className="h-4 w-4" /> },
+  { value: "project", label: "Dự án", icon: <Layers3 className="h-4 w-4" /> },
 ];
+
+/** QA vòng 2 (D8): badge từng in thẳng enum `LIVE_CODING`; nay dùng nhãn tiếng Việt cùng nguồn với ô chọn. */
+const TYPE_LABEL = Object.fromEntries(ASSIGNMENT_TYPE_OPTIONS.map((o) => [o.value, o.label])) as Record<AssignmentType, string>;
 
 const DIFFICULTY_OPTIONS: { value: DifficultyLevel; label: string }[] = [
   { value: "easy", label: "Dễ" },
@@ -187,7 +190,7 @@ export default function TeacherAssignmentsPage() {
       <div>
         <h1 className="text-2xl font-bold">Quản lí bài tập giáo viên</h1>
         <p className="text-sm text-muted-foreground">
-          Chọn khóa học → chọn buổi học (livestream) → giao bài tập live_coding / homework / project.
+          Chọn khóa học → chọn buổi học (livestream) → giao bài tập lập trình trực tiếp, bài tập về nhà hoặc dự án.
         </p>
       </div>
 
@@ -228,7 +231,7 @@ export default function TeacherAssignmentsPage() {
                     variant="outline"
                     className={course.status === "published" ? "mt-2 border-green-200 text-green-700" : "mt-2"}
                   >
-                    {course.status === "published" ? "Published" : "Draft"}
+                    {course.status === "published" ? "Đã xuất bản" : "Chưa xuất bản"}
                   </Badge>
                 </button>
               ))
@@ -301,8 +304,8 @@ export default function TeacherAssignmentsPage() {
 
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 <SummaryBox icon={<ClipboardList className="h-4 w-4" />} label="Tổng bài" value={stats.total} />
-                <SummaryBox icon={<CheckCircle2 className="h-4 w-4" />} label="Published" value={stats.published} />
-                <SummaryBox icon={<Calendar className="h-4 w-4" />} label="Draft" value={stats.draft} />
+                <SummaryBox icon={<CheckCircle2 className="h-4 w-4" />} label="Đã công bố" value={stats.published} />
+                <SummaryBox icon={<Calendar className="h-4 w-4" />} label="Bản nháp" value={stats.draft} />
               </div>
             </CardContent>
           </Card>
@@ -318,7 +321,7 @@ export default function TeacherAssignmentsPage() {
                   id="assignment-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="VD: Live coding: JSX nâng cao"
+                  placeholder="VD: Lập trình trực tiếp: JSX nâng cao"
                   disabled={!selectedSessionId}
                 />
               </div>
@@ -327,7 +330,8 @@ export default function TeacherAssignmentsPage() {
                 <Label>Loại bài tập</Label>
                 <Select value={type} onValueChange={(v) => setType(v as AssignmentType)}>
                   <SelectTrigger disabled={!selectedSessionId}>
-                    <SelectValue />
+                    {/* SelectValue dùng chung chỉ biết nhãn sau khi mở danh sách lần đầu -> tự in nhãn (QA T #4). */}
+                    <span>{TYPE_LABEL[type]}</span>
                   </SelectTrigger>
                   <SelectContent>
                     {ASSIGNMENT_TYPE_OPTIONS.map((opt) => (
@@ -346,7 +350,7 @@ export default function TeacherAssignmentsPage() {
                 <Label>Độ khó</Label>
                 <Select value={difficulty} onValueChange={(v) => setDifficulty(v as DifficultyLevel)}>
                   <SelectTrigger disabled={!selectedSessionId}>
-                    <SelectValue />
+                    <span>{DIFFICULTY_OPTIONS.find((o) => o.value === difficulty)?.label ?? difficulty}</span>
                   </SelectTrigger>
                   <SelectContent>
                     {DIFFICULTY_OPTIONS.map((opt) => (
@@ -453,7 +457,7 @@ export default function TeacherAssignmentsPage() {
                       <p className="text-sm font-medium">{assignment.title}</p>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className={TYPE_BADGE_CLASS[assignment.type]}>
-                          {assignment.type.toUpperCase()}
+                          {TYPE_LABEL[assignment.type] ?? assignment.type}
                         </Badge>
                         <Badge
                           variant="outline"
@@ -463,7 +467,7 @@ export default function TeacherAssignmentsPage() {
                               : "bg-gray-100 text-gray-700 border-gray-200"
                           }
                         >
-                          {assignment.is_published ? "PUBLISHED" : "DRAFT"}
+                          {assignment.is_published ? "Đã công bố" : "Bản nháp"}
                         </Badge>
                       </div>
                     </div>

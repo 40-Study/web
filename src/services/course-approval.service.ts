@@ -22,6 +22,16 @@ export const courseApprovalService = {
       .post<Envelope<SubmitCourseReviewResult>>(`/courses/${courseId}/submit-review`)
       .then((r) => r.data.data),
 
+  /**
+   * POST /courses/:id/withdraw-review — giáo viên chủ khoá rút yêu cầu duyệt (pending_review →
+   * draft). Khoá đang chờ duyệt bị khoá sửa (409 COURSE_PENDING_REVIEW); đây là đường duy nhất
+   * để sửa tiếp (QA vòng 2, Q5).
+   */
+  withdrawReview: (courseId: string) =>
+    api
+      .post<Envelope<CourseReviewDecisionResult>>(`/courses/${courseId}/withdraw-review`)
+      .then((r) => r.data.data),
+
   /** GET /admin/courses — danh sách khoá theo trạng thái (mặc định pending_review phía backend). */
   adminList: (params?: AdminCourseListParams) =>
     api

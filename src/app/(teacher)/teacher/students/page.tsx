@@ -26,6 +26,13 @@ import {
 } from "@/components/ui/table";
 import TeacherNotificationDialog from "@/components/teacher/teacher-notification-dialog";
 import { useMyStudents } from "@/hooks/queries/use-classes";
+import { courseFilterOptions, groupStudents, type GroupedStudent } from "./group-students";
+
+const STATUS_LABEL: Record<GroupedStudent["status"], string> = {
+  active: "ĐANG HỌC",
+  graduated: "HOÀN THÀNH",
+  inactive: "KHÔNG HOẠT ĐỘNG",
+};
 
 export default function TeacherStudentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,23 +43,20 @@ export default function TeacherStudentsPage() {
   const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false);
   const pageSize = 10;
 
-  const { data: students = [], isLoading } = useMyStudents();
-
-  const courseOptions = useMemo(
-    () =>
-      Array.from(
-        new Set(students.map((s) => s.class_name).filter((name): name is string => !!name))
-      ),
-    [students]
-  );
+  const { data: rows = [], isLoading } = useMyStudents();
+  // D6 (QA vòng 2): API trả 1 dòng/(học viên, khoá) — gộp về 1 dòng/học viên.
+  const students = useMemo(() => groupStudents(rows), [rows]);
+  const courseOptions = useMemo(() => courseFilterOptions(students), [students]);
 
   const filteredStudents = useMemo(() => {
+    const q = searchQuery.toLowerCase();
     return students.filter((student) => {
       const matchesSearch =
-        student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (student.student_id ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (student.parent_name ?? "").toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCourse = courseFilter === "all" || student.class_name === courseFilter;
+        student.name.toLowerCase().includes(q) ||
+        (student.studentId ?? "").toLowerCase().includes(q) ||
+        (student.parentName ?? "").toLowerCase().includes(q);
+      const matchesCourse =
+        courseFilter === "all" || student.courses.some((c) => c.courseName === courseFilter);
       const matchesStatus = statusFilter === "all" || student.status === statusFilter;
       return matchesSearch && matchesCourse && matchesStatus;
     });
@@ -75,20 +79,23 @@ export default function TeacherStudentsPage() {
   };
 
   const handleExportStudents = () => {
-    const rows = [
-      ["Mã học viên", "Họ tên", "Phụ huynh", "Số điện thoại", "Lớp học", "Trạng thái"],
+    const rowsCsv = [
+      ["Mã học viên", "Họ tên", "Phụ huynh", "Số điện thoại", "Khoá học", "Trạng thái"],
       ...filteredStudents.map((s) => [
-        s.student_id ?? "",
+        s.studentId ?? "",
         s.name,
-        s.parent_name ?? "",
-        s.parent_phone ?? "",
-        s.class_name ?? "",
-        s.status,
+        s.parentName ?? "",
+        s.parentPhone ?? "",
+        s.courses.map((c) => c.courseName).join("; "),
+        STATUS_LABEL[s.status],
       ]),
     ];
 
-    const csv = rows.map((row) => row.map((cell) => `"${cell}"`).join(",")).join("\n");
-    const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8;" });
+    // Nháy kép trong dữ liệu phải nhân đôi, nếu không 1 tên có dấu " làm lệch cả dòng CSV.
+    const csv = rowsCsv
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -104,9 +111,10 @@ export default function TeacherStudentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* D8 (QA vòng 2): tiêu đề + 2 nút trên 1 hàng tràn 3px ở 390px — cho xuống dòng. */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Quản lý học viên</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={handleExportStudents} disabled={isLoading}>
             <Download className="mr-2 h-4 w-4" />
             Xuất Excel
@@ -127,16 +135,25 @@ export default function TeacherStudentsPage() {
                 className="pl-9"
                 placeholder="Tìm theo Mã HS, Tên, Phụ huynh..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
 
-            <Select value={courseFilter} onValueChange={setCourseFilter}>
-              <SelectTrigger className="w-[240px]">
-                <SelectValue placeholder="Tất cả Lớp học" />
+            <Select
+              value={courseFilter}
+              onValueChange={(v) => {
+                setCourseFilter(v);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-full md:w-[240px]">
+                <SelectValue placeholder="Tất cả khoá học" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tất cả Lớp học</SelectItem>
+                <SelectItem value="all">Tất cả khoá học</SelectItem>
                 {courseOptions.map((name) => (
                   <SelectItem key={name} value={name}>
                     {name}
@@ -145,8 +162,14 @@ export default function TeacherStudentsPage() {
               </SelectContent>
             </Select>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => {
+                setStatusFilter(v);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
               <SelectContent>
@@ -160,91 +183,102 @@ export default function TeacherStudentsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={selectedIds.length === filteredStudents.length && filteredStudents.length > 0}
-                    onCheckedChange={toggleSelectAll}
-                  />
-                </TableHead>
-                <TableHead>HỌC VIÊN</TableHead>
-                <TableHead>PHỤ HUYNH LIÊN HỆ</TableHead>
-                <TableHead>LỚP HỌC</TableHead>
-                <TableHead>TRẠNG THÁI</TableHead>
-                <TableHead>THAO TÁC</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pagedStudents.length === 0 ? (
+          <div className="overflow-x-auto">
+            <Table className="min-w-[760px]">
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-                    Không tìm thấy học viên phù hợp.
-                  </TableCell>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedIds.length === filteredStudents.length && filteredStudents.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label="Chọn tất cả học viên"
+                    />
+                  </TableHead>
+                  <TableHead>HỌC VIÊN</TableHead>
+                  <TableHead>PHỤ HUYNH LIÊN HỆ</TableHead>
+                  <TableHead>KHOÁ HỌC</TableHead>
+                  <TableHead>TRẠNG THÁI</TableHead>
+                  <TableHead>THAO TÁC</TableHead>
                 </TableRow>
-              ) : (
-                pagedStudents.map((student) => (
-                  <TableRow key={student.id}>
-                    <TableCell>
-                      <Checkbox checked={selectedIds.includes(student.id)} onCheckedChange={() => toggleSelect(student.id)} />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar fallback={student.name.charAt(0)} size="sm" className="bg-primary-100 text-primary-700" />
-                        <div>
-                          <p className="font-medium">{student.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Mã HS: {student.student_id ?? "—"}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <a
-                        href={student.parent_phone ? `tel:${student.parent_phone}` : undefined}
-                        className="text-sm text-primary-600 hover:underline"
-                      >
-                        {student.parent_name ?? "—"}
-                      </a>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">{student.class_name ?? "—"}</span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={student.status === "active" ? "success" : "secondary"}
-                        className="text-xs"
-                      >
-                        {student.status === "active"
-                          ? "ĐANG HỌC"
-                          : student.status === "graduated"
-                            ? "HOÀN THÀNH"
-                            : "KHÔNG HĐ"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Link href={`/teacher/students/${student.id}`} className="text-sm text-primary-600 hover:underline">
-                        Hồ sơ
-                      </Link>
+              </TableHeader>
+              <TableBody>
+                {pagedStudents.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                      {students.length === 0 ? "Chưa có học viên nào ghi danh khoá học của bạn." : "Không tìm thấy học viên phù hợp."}
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  pagedStudents.map((student) => (
+                    <TableRow key={student.id} data-testid="student-row">
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.includes(student.id)}
+                          onCheckedChange={() => toggleSelect(student.id)}
+                          aria-label={`Chọn ${student.name}`}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar fallback={student.name.charAt(0)} size="sm" className="bg-primary-100 text-primary-700" />
+                          <div>
+                            <p className="font-medium">{student.name}</p>
+                            <p className="text-xs text-muted-foreground">Mã HS: {student.studentId ?? "—"}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {student.parentName ? (
+                          <a
+                            href={student.parentPhone ? `tel:${student.parentPhone}` : undefined}
+                            className="text-sm text-primary-600 hover:underline"
+                          >
+                            {student.parentName}
+                          </a>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <ul className="space-y-0.5 text-sm">
+                          {student.courses.map((c) => (
+                            <li key={`${c.courseId ?? c.courseName}-${c.className ?? ""}`}>
+                              {c.courseName}
+                              {c.className && c.className !== c.courseName && (
+                                <span className="text-xs text-muted-foreground"> · Lớp {c.className}</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={student.status === "active" ? "success" : "secondary"} className="text-xs">
+                          {STATUS_LABEL[student.status]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Link href={`/teacher/students/${student.id}`} className="text-sm text-primary-600 hover:underline">
+                          Hồ sơ
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </Card>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
-          Hiển thị {Math.min(pageSize, totalStudents)} trong tổng số {totalStudents.toLocaleString()} học viên
+          Hiển thị {pagedStudents.length} trong tổng số {totalStudents.toLocaleString("vi-VN")} học viên
         </p>
         <div className="flex items-center gap-1">
           <Button
@@ -252,24 +286,19 @@ export default function TeacherStudentsPage() {
             size="sm"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(currentPage - 1)}
+            aria-label="Trang trước"
           >
             ‹
           </Button>
-          {Array.from({ length: Math.min(3, totalPages) }, (_, i) => i + 1).map((page) => (
-            <Button
-              key={page}
-              variant={currentPage === page ? "default" : "outline"}
-              size="sm"
-              onClick={() => setCurrentPage(page)}
-            >
-              {page}
-            </Button>
-          ))}
+          <span className="px-2 text-sm text-muted-foreground">
+            {currentPage}/{totalPages}
+          </span>
           <Button
             variant="outline"
             size="sm"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(currentPage + 1)}
+            aria-label="Trang sau"
           >
             ›
           </Button>
@@ -281,7 +310,7 @@ export default function TeacherStudentsPage() {
         onOpenChange={setIsNotifyDialogOpen}
         recipients={students
           .filter((s) => selectedIds.includes(s.id))
-          .map((s) => ({ id: s.id, name: s.name, phone: s.parent_phone }))}
+          .map((s) => ({ id: s.id, name: s.name, phone: s.parentPhone }))}
         contextLabel="Quản lý học viên"
       />
     </div>
