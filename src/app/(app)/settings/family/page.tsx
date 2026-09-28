@@ -5,18 +5,18 @@
  */
 
 import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import {
   UserPlus, Eye, Bell, MessageCircle, Mail, Users, HeartHandshake, Loader2,
-  ChevronRight, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { InviteParentModal, SentInvitationsList, PendingInvitationsCard } from "@/components/parent";
+import {
+  InviteParentModal, SentInvitationsList, PendingInvitationsCard, LinkChildForm, SentLinkRequests,
+  LinkedChildrenList, IncomingLinkRequestsCard, LinkedParentsList,
+} from "@/components/parent";
 import { useSentInvitations } from "@/hooks/queries/use-invitation";
-import { useChildren } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth.store";
 import { normalizeRole } from "@/lib/routes";
+import { siteConfig } from "@/lib/constants";
 
 const features = [
   {
@@ -49,9 +49,6 @@ const features = [
  * link "Xem tất cả" trỏ về chính /settings/family — vòng lặp nếu đặt tại đây).
  */
 function ParentFamilyView() {
-  const { data: childrenData, isLoading } = useChildren();
-  const children = childrenData?.children ?? [];
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Hero Section */}
@@ -64,7 +61,7 @@ function ParentFamilyView() {
               </h1>
               <p className="text-slate-600 text-lg leading-relaxed mb-6">
                 Theo dõi tiến độ học tập, điểm số và chuyên cần của con — kết nối cùng
-                hành trình học tập tại Fortex.
+                hành trình học tập tại {siteConfig.name}.
               </p>
             </div>
 
@@ -87,78 +84,17 @@ function ParentFamilyView() {
 
       {/* Lời mời từ con đang chờ chấp nhận — PendingInvitationsCard tự chỉ fetch
           khi vai trò là PARENT (usePendingInvitations), giữ nguyên như cũ. */}
-      <div className="max-w-4xl mx-auto px-6 pt-10 lg:pt-12">
-        <PendingInvitationsCard className="mb-6" />
+      <div className="max-w-4xl mx-auto px-6 pt-10 lg:pt-12 space-y-6">
+        <PendingInvitationsCard />
+        {/* Q4 (QA vòng 2): phụ huynh tự gửi yêu cầu liên kết, con xác nhận. */}
+        <LinkChildForm />
+        <SentLinkRequests />
       </div>
 
       {/* Danh sách con đã liên kết */}
-      <div className="max-w-4xl mx-auto px-6 pb-12">
+      <div className="max-w-4xl mx-auto px-6 pt-8 pb-12">
         <h2 className="text-xl font-semibold text-slate-900 mb-4">Danh sách con</h2>
-
-        {isLoading ? (
-          <div className="bg-white rounded-2xl border border-slate-100 p-12">
-            <div className="flex items-center justify-center">
-              <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-            </div>
-          </div>
-        ) : children.length === 0 ? (
-          <div className="bg-gradient-to-b from-slate-50 to-white rounded-3xl border border-slate-100 p-10 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="relative w-28 h-28 mx-auto mb-6">
-                <div className="absolute inset-0 bg-primary-100 rounded-full" />
-                <div className="absolute inset-3 bg-primary-50 rounded-full flex items-center justify-center">
-                  <Users className="w-10 h-10 text-primary-500" />
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                Chưa liên kết với con nào
-              </h3>
-              <p className="text-slate-500 leading-relaxed">
-                Khi con của bạn gửi lời mời phụ huynh từ tài khoản học sinh của con (trang
-                &quot;Gia đình&quot; của con), lời mời sẽ hiện ở đây để bạn chấp nhận.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="grid sm:grid-cols-2 gap-4">
-            {children.map((child) => {
-              const displayName = child.full_name || child.username;
-              return (
-                <Link
-                  key={child.id}
-                  href={`/parent/children/${child.id}`}
-                  className="group flex items-center gap-4 bg-white rounded-2xl border border-slate-100 p-5 hover:border-primary-200 hover:shadow-md transition-all"
-                >
-                  {child.avatar_url ? (
-                    <Image
-                      src={child.avatar_url}
-                      alt={displayName}
-                      width={48}
-                      height={48}
-                      className="rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-                      <span className="text-lg font-medium text-primary-700">
-                        {displayName.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-slate-900 truncate group-hover:text-primary-600">
-                      {displayName}
-                    </p>
-                    <p className="text-sm text-slate-500 flex items-center gap-1">
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-                      Đã liên kết
-                    </p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-primary-500 shrink-0" />
-                </Link>
-              );
-            })}
-          </div>
-        )}
+        <LinkedChildrenList />
       </div>
     </div>
   );
@@ -187,7 +123,7 @@ function StudentFamilyView() {
                 Gia đình
               </h1>
               <p className="text-slate-600 text-lg leading-relaxed mb-6">
-                Kết nối cha mẹ với hành trình học tập của bạn. Chia sẻ tiến độ, nhận sự khích lệ và cùng nhau xây dựng lộ trình thành công tại Fortex.
+                Kết nối cha mẹ với hành trình học tập của bạn. Chia sẻ tiến độ, nhận sự khích lệ và cùng nhau xây dựng lộ trình thành công tại {siteConfig.name}.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                 <Button
@@ -258,6 +194,10 @@ function StudentFamilyView() {
       {/* Pending Invitations for Parents */}
       <div className="max-w-4xl mx-auto px-6">
         <PendingInvitationsCard className="mb-6" />
+        {/* Q4: yêu cầu liên kết phụ huynh gửi tới — con tự xác nhận/từ chối; và phụ huynh đang
+            liên kết (có huỷ liên kết). */}
+        <IncomingLinkRequestsCard className="mb-6" />
+        <LinkedParentsList className="mb-6" />
       </div>
 
       {/* Invitations Section */}

@@ -207,6 +207,10 @@ export const courseService = {
       total_lessons: number;
       completed_lessons: number;
       watched_seconds?: number;
+      // Lane A (QA vòng 2) đã thêm vào EnrollmentResponseDTO; phải chép sang ApiCourse bên dưới,
+      // nếu không mapApiCourse dựng instructor.id = "" và "Tin nhắn mới" lọc mất mọi khoá (E1/N12).
+      instructor_id?: string;
+      instructor?: ApiInstructor;
     };
 
     const pageSize = 100;
@@ -234,6 +238,8 @@ export const courseService = {
       total_lessons: e.total_lessons,
       completed_lessons: e.completed_lessons,
       watched_seconds: e.watched_seconds,
+      instructor_id: e.instructor_id,
+      instructor: e.instructor,
       // Defaults for required ApiCourse fields
       price: "0",
       level: "beginner",

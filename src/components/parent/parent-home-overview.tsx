@@ -23,6 +23,7 @@ import {
   useChildAttendance,
 } from "@/hooks/queries/use-parent-dashboard";
 import type { Child } from "@/services/auth.service";
+import { inProgressCourseCount } from "./child-stats";
 
 function formatMinutes(totalMinutes: number): string {
   if (totalMinutes <= 0) return "0 phút";
@@ -87,7 +88,7 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
         <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>
       ) : overview ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-          <StatPill icon={BookOpen} label="Đang học" value={overview.enrolled_courses} />
+          <StatPill icon={BookOpen} label="Đang học" value={inProgressCourseCount(overview)} />
           <StatPill icon={GraduationCap} label="Hoàn thành" value={overview.completed_courses} />
           <StatPill icon={Clock} label="Thời gian học" value={formatMinutes(overview.total_study_minutes)} />
           <StatPill icon={Flame} label="Chuỗi ngày học" value={overview.current_streak} />
@@ -173,7 +174,8 @@ export function ParentHomeOverview() {
             <Users className="h-10 w-10 mx-auto mb-3 text-gray-300" />
             <p className="text-gray-700 font-medium mb-1">Chưa liên kết với con nào</p>
             <p className="text-gray-500 text-sm mb-4">
-              Khi con gửi lời mời phụ huynh, hãy vào &quot;Con của tôi&quot; để chấp nhận và bắt đầu theo dõi.
+              Vào &quot;Con của tôi&quot; để gửi yêu cầu liên kết theo email của con (con cần xác nhận),
+              hoặc chấp nhận lời mời con đã gửi cho bạn.
             </p>
             <Link href="/settings/family">
               <Button variant="outline" size="sm">

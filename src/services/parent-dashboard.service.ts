@@ -24,6 +24,8 @@ export interface ChildCourse {
   course_name: string;
   course_thumbnail?: string;
   instructor_name: string;
+  /** E2 (QA vòng 2): id giảng viên để phụ huynh mở hội thoại; vắng khi khoá chưa gắn giảng viên. */
+  instructor_id?: string;
   progress_percent: number;
   last_accessed_at?: string;
   completed_at?: string;

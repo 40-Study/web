@@ -27,6 +27,8 @@ import {
   useChildAssignments,
 } from "@/hooks/queries/use-parent-dashboard";
 import type { TimetableEntry } from "@/services/parent-dashboard.service";
+import { ChildCoursesTab } from "@/components/parent/child-courses-tab";
+import { ChildOverviewTab } from "@/components/parent/child-overview-tab";
 
 type TabType = "overview" | "courses" | "grades" | "schedule" | "attendance" | "assignments";
 
@@ -197,8 +199,10 @@ export default function ChildDetailPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{displayName}</h1>
             <p className="text-sm text-gray-500">{overview.email}</p>
+            {/* E4: `relationship` là quan hệ của NGƯỜI XEM với con (parent/guardian/...), gắn
+                "Phụ huynh" dưới tên con đọc như thể con là phụ huynh. Nhãn đúng: "Con của bạn". */}
             <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-primary-100 text-primary-700 rounded-full">
-              {overview.relationship === "parent" ? "Phụ huynh" : overview.relationship}
+              Con của bạn
             </span>
           </div>
         </div>
@@ -228,6 +232,7 @@ export default function ChildDetailPage() {
           <p className="text-2xl font-bold">
             {overview.completed_courses}/{overview.enrolled_courses}
           </p>
+          <p className="text-xs text-gray-500">hoàn thành</p>
         </div>
         <div className="bg-white rounded-xl p-4 shadow-sm border">
           <div className="flex items-center gap-2 text-green-500 mb-2">
@@ -240,13 +245,17 @@ export default function ChildDetailPage() {
 
       {/* Tabs */}
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <div className="flex border-b overflow-x-auto">
+        {/* E6: 390px chỉ thấy 3/6 tab và không có dấu hiệu cuộn — mobile xếp lưới 3×2 cho thấy
+            đủ 6 tab, từ sm trở lên giữ một hàng như cũ. */}
+        <div role="tablist" className="grid grid-cols-3 sm:flex border-b sm:overflow-x-auto">
           {TABS.map((tab) => (
             <button
               key={tab.id}
+              role="tab"
+              aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors",
+                "flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors",
                 activeTab === tab.id
                   ? "text-primary-600 border-b-2 border-primary-600 bg-primary-50"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
@@ -261,77 +270,17 @@ export default function ChildDetailPage() {
         <div className="p-4">
           {/* Overview Tab */}
           {activeTab === "overview" && (
-            <div className="space-y-4">
-              <p className="text-gray-600">
-                Xem tổng quan tiến độ học tập của {displayName}. Chọn các tab khác để xem chi tiết.
-              </p>
-              {!overview.can_view_progress && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
-                  Bạn không có quyền xem tiến độ học tập
-                </div>
-              )}
-              {!overview.can_view_grades && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
-                  Bạn không có quyền xem điểm số
-                </div>
-              )}
-              {!overview.can_view_attendance && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
-                  Bạn không có quyền xem điểm danh
-                </div>
-              )}
-            </div>
+            <ChildOverviewTab
+              overview={overview}
+              courses={coursesData?.courses ?? []}
+              assignments={assignmentsData?.assignments ?? []}
+              attendance={attendanceData?.records ?? []}
+            />
           )}
 
           {/* Courses Tab */}
           {activeTab === "courses" && (
-            <div>
-              {loadingCourses ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                </div>
-              ) : coursesData?.courses.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">Chưa đăng ký khóa học nào</p>
-              ) : (
-                <div className="space-y-3">
-                  {coursesData?.courses.map((course) => (
-                    <div
-                      key={course.id}
-                      className="flex items-center gap-4 p-3 rounded-lg border hover:bg-gray-50"
-                    >
-                      {course.course_thumbnail ? (
-                        <Image
-                          src={course.course_thumbnail}
-                          alt={course.course_name}
-                          width={80}
-                          height={45}
-                          className="rounded object-cover"
-                        />
-                      ) : (
-                        <div className="w-20 h-11 rounded bg-gray-200 flex items-center justify-center">
-                          <BookOpen className="w-5 h-5 text-gray-400" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 truncate">{course.course_name}</h3>
-                        <p className="text-sm text-gray-500">{course.instructor_name}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-medium text-primary-600">
-                          {course.progress_percent.toFixed(0)}%
-                        </div>
-                        <div className="w-20 h-2 bg-gray-200 rounded-full mt-1">
-                          <div
-                            className="h-full bg-primary-500 rounded-full"
-                            style={{ width: `${course.progress_percent}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ChildCoursesTab courses={coursesData?.courses} isLoading={loadingCourses} />
           )}
 
           {/* Grades Tab */}
