@@ -30,11 +30,32 @@ export function ScrollReveal({
   threshold = 0.15,
 }: ScrollRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  // Mặc định HIỂN THỊ — chỉ ẩn đi để chờ observer SAU KHI đã xác nhận sẽ có
+  // observer thật sự theo dõi. Trước đây mặc định `false` khiến nội dung
+  // trắng hoàn toàn cho tới khi cuộn tới, kể cả khi JS chưa kịp chạy, trình
+  // duyệt không hỗ trợ IntersectionObserver, hoặc HTML tĩnh được bot/crawler
+  // đọc (QA khách P2, 260927).
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+    if (typeof IntersectionObserver === "undefined" || prefersReducedMotion) {
+      // Không hỗ trợ / người dùng yêu cầu giảm chuyển động — giữ hiển thị,
+      // bỏ hẳn hiệu ứng thay vì có nguy cơ đứng yên ở trạng thái ẩn.
+      setIsVisible(true);
+      return;
+    }
+
+    // Chỉ ẩn đi (chờ cuộn tới) SAU KHI chắc chắn sẽ có observer bắt lại —
+    // tránh trường hợp effect không chạy được vì lý do nào đó mà nội dung kẹt
+    // ở trạng thái ẩn vĩnh viễn.
+    setIsVisible(false);
 
     const observer = new IntersectionObserver(
       ([entry]) => {

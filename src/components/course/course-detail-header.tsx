@@ -11,9 +11,16 @@ import { CourseDetail } from "@/types/course";
 
 interface CourseDetailHeaderProps {
   course: CourseDetail;
+  /** Số liệu đánh giá THẬT từ GET /courses/:id/reviews — xem page.tsx. */
+  reviewsSummary?: { average: number; total: number };
 }
 
-export function CourseDetailHeader({ course }: CourseDetailHeaderProps) {
+export function CourseDetailHeader({ course, reviewsSummary }: CourseDetailHeaderProps) {
+  // course.rating/reviewCount là cột lưu sẵn trên bảng courses, có thể lệch
+  // với reviews thật (QA khách+học sinh P2, 260927) — ưu tiên số liệu thật từ
+  // reviewsSummary khi đã tải xong.
+  const rating = reviewsSummary?.average ?? 0;
+  const reviewCount = reviewsSummary?.total ?? 0;
   const discountPct =
     course.originalPrice && course.originalPrice > course.price
       ? Math.round((1 - course.price / course.originalPrice) * 100)
@@ -63,9 +70,9 @@ export function CourseDetailHeader({ course }: CourseDetailHeaderProps) {
 
           <div className="flex items-center gap-1">
             <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-            <span className="font-medium text-black">{course.rating.toFixed(1)}</span>
+            <span className="font-medium text-black">{rating.toFixed(1)}</span>
             <span className="text-neutral-500">
-              ({course.reviewCount.toLocaleString()} đánh giá)
+              ({reviewCount.toLocaleString()} đánh giá)
             </span>
           </div>
 

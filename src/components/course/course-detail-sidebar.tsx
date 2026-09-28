@@ -6,14 +6,21 @@
  * Contains video preview, price, CTAs, course includes, voucher input
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 import { Play, ShoppingCart, Clock, BookOpen, Award, Infinity, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VoucherInput } from "@/components/checkout/voucher-input";
 import { CheckoutModal } from "@/components/checkout/checkout-modal";
+import { OrderPaymentDialog } from "@/components/checkout/order-payment-dialog";
 import { cn, formatCurrency } from "@/lib/utils";
-import { useCartStore } from "@/stores/cart.store";
+import { useAuthStore } from "@/stores/auth.store";
+import { useAddToCart, useRemoveFromCart, useIsInCart } from "@/hooks/queries/use-cart";
+import { useCreateOrder } from "@/hooks/queries/use-orders";
 import { CourseDetail } from "@/types/course";
+import type { Order } from "@/services/order.service";
 
 interface CourseDetailSidebarProps {
   course: CourseDetail;
@@ -45,10 +52,31 @@ export function CourseDetailSidebar({
   onStartLearning,
   onTrial,
 }: CourseDetailSidebarProps) {
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const { addItem, removeItem, isInCart } = useCartStore();
+  const router = useRouter();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  const inCart = isInCart(String(course.id));
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [activeOrder, setActiveOrder] = useState<Order | null>(null);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+
+  // Review PR #25 (BLOCKER #1): idempotency_key phải CỐ ĐỊNH theo 1 phiên
+  // checkout, không sinh mới mỗi lần handleCheckoutConfirm chạy — trước đây
+  // `uuidv4()` gọi inline trong hàm khiến 2 lần bấm "Thanh toán" liên tiếp
+  // (double-click, hoặc click trước khi Dialog kịp unmount) tạo 2 key khác
+  // nhau -> backend không nhận ra là cùng 1 yêu cầu -> tạo 2 đơn hàng thật
+  // độc lập. Key chỉ đổi khi đóng modal (huỷ, hoặc đơn đã tạo xong) — xem
+  // resetIdempotencyKey() + handleCheckoutOpenChange().
+  const idempotencyKeyRef = useRef<string>(uuidv4());
+
+  const courseId = String(course.id);
+  const addToCartMutation = useAddToCart();
+  const removeFromCartMutation = useRemoveFromCart();
+  const { data: inCartServer } = useIsInCart(courseId);
+  const createOrderMutation = useCreateOrder();
+
+  // Server là nguồn duy nhất cho trạng thái giỏ hàng — khách chưa đăng nhập
+  // không có giỏ nào để đọc nên luôn coi là chưa thêm (S-P0-1).
+  const inCart = isAuthenticated ? Boolean(inCartServer) : false;
   const isFree = course.price === 0;
   const courseHasTrial = hasTrial(course);
 
@@ -57,18 +85,84 @@ export function CourseDetailSidebar({
       ? Math.round((1 - course.price / course.originalPrice) * 100)
       : 0;
 
+  /** Khách chưa đăng nhập bấm mua/thêm giỏ → sang login, quay lại đúng khóa học sau khi đăng nhập. */
+  function goToLoginWithReturn() {
+    router.push(`/login?redirect=${encodeURIComponent(`/courses/${course.slug}`)}`);
+  }
+
   function handleCartToggle() {
-    if (inCart) {
-      removeItem(String(course.id));
-    } else {
-      addItem({
-        courseId: String(course.id),
-        title: course.title,
-        price: course.price,
-        thumbnail: course.thumbnail,
-        instructorName: course.instructor.name,
-      });
+    if (!isAuthenticated) {
+      goToLoginWithReturn();
+      return;
     }
+    if (inCart) {
+      removeFromCartMutation.mutate(courseId);
+    } else {
+      addToCartMutation.mutate(courseId);
+    }
+  }
+
+  function handleBuyNowClick() {
+    if (!isAuthenticated) {
+      goToLoginWithReturn();
+      return;
+    }
+    setCheckoutOpen(true);
+  }
+
+  /**
+   * Đóng/mở CheckoutModal. Khi ĐÓNG (huỷ, hoặc do handleCheckoutConfirm tự
+   * đóng sau khi tạo đơn xong) -> sinh idempotency_key MỚI cho phiên checkout
+   * tiếp theo, để lần mua sau không vô tình tái dùng key của lần mua trước.
+   */
+  function handleCheckoutOpenChange(nextOpen: boolean) {
+    if (!nextOpen) {
+      idempotencyKeyRef.current = uuidv4();
+    }
+    setCheckoutOpen(nextOpen);
+  }
+
+  /** onConfirm thật của CheckoutModal — tạo đơn qua API order (source=buy_now). */
+  async function handleCheckoutConfirm(_paymentMethod: string, voucherCode?: string) {
+    try {
+      const order = await createOrderMutation.mutateAsync({
+        source: "buy_now",
+        course_ids: [courseId],
+        coupon_code: voucherCode,
+        idempotency_key: idempotencyKeyRef.current,
+      });
+
+      // Đơn tạo THÀNH CÔNG -> đóng modal (đồng thời sinh key mới cho lần
+      // mua tiếp theo qua handleCheckoutOpenChange). Lỗi thì KHÔNG đóng — xem
+      // catch bên dưới, giữ nguyên key để bấm lại (retry) không tạo đơn trùng.
+      handleCheckoutOpenChange(false);
+
+      if (Number(order.total_amount) <= 0) {
+        // Đơn 0đ (voucher giảm 100%) — cùng cơ chế với app/(app)/checkout/page.tsx:
+        // backend hiện chưa tự hoàn tất đơn 0đ, điều hướng thẳng sang trang thành công.
+        toast.success("Đặt hàng thành công!");
+        router.push(`/checkout/success?order_id=${order.id}`);
+        return;
+      }
+
+      setActiveOrder(order);
+      setPaymentDialogOpen(true);
+    } catch (error) {
+      // Lỗi tạo đơn đã có toast riêng trong useCreateOrder.onError. Modal vẫn
+      // MỞ, idempotency_key GIỮ NGUYÊN — bấm lại (retry) dùng đúng key cũ,
+      // backend coi là cùng 1 yêu cầu trong TTL, không tạo đơn thứ 2.
+      console.error("Buy now checkout error:", error);
+    }
+  }
+
+  function handleRetryExpiredOrder() {
+    setPaymentDialogOpen(false);
+    setActiveOrder(null);
+    // Đơn cũ đã hết hạn (khác hẳn lỗi tạo đơn ở trên) — idempotency_key hiện
+    // tại ĐÃ được đổi mới ngay sau khi đơn cũ tạo thành công (xem
+    // handleCheckoutOpenChange trong handleCheckoutConfirm), nên mở lại modal
+    // ở đây chắc chắn dùng key mới, tránh backend trả lại đúng đơn cũ đã hết hạn.
+    setCheckoutOpen(true);
   }
 
   const courseIncludes = [
@@ -83,8 +177,25 @@ export function CourseDetailSidebar({
     <>
       <CheckoutModal
         open={checkoutOpen}
-        onOpenChange={setCheckoutOpen}
+        onOpenChange={handleCheckoutOpenChange}
         course={course}
+        onConfirm={handleCheckoutConfirm}
+        isConfirming={createOrderMutation.isPending}
+      />
+
+      <OrderPaymentDialog
+        orderId={activeOrder?.id ?? null}
+        amount={activeOrder ? Number(activeOrder.total_amount) : course.price}
+        open={paymentDialogOpen}
+        onOpenChange={setPaymentDialogOpen}
+        onPaid={() => {
+          setPaymentDialogOpen(false);
+          if (activeOrder) {
+            toast.success("Thanh toán thành công!");
+            router.push(`/checkout/success?order_id=${activeOrder.id}`);
+          }
+        }}
+        onRetryExpired={handleRetryExpiredOrder}
       />
 
       <div className="sticky top-28 space-y-4">
@@ -177,6 +288,7 @@ export function CourseDetailSidebar({
                     )}
                     size="lg"
                     onClick={handleCartToggle}
+                    disabled={addToCartMutation.isPending || removeFromCartMutation.isPending}
                   >
                     <ShoppingCart className="h-4 w-4" />
                     {inCart ? "Đã thêm vào giỏ hàng" : "Thêm vào giỏ hàng"}
@@ -185,7 +297,7 @@ export function CourseDetailSidebar({
                     variant="outline"
                     className="w-full border-primary-300 text-primary-700 hover:bg-primary-50"
                     size="lg"
-                    onClick={() => setCheckoutOpen(true)}
+                    onClick={handleBuyNowClick}
                   >
                     Mua ngay
                   </Button>

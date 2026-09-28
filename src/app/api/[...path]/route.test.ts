@@ -126,4 +126,71 @@ describe("same-origin API proxy", () => {
     expect(config).not.toMatch(/async\s+rewrites\s*\(/);
     expect(config).not.toContain("destination: 'http://localhost:5000/api");
   });
+
+  // Review PR #25 vòng 2 (contract với lane backend): Next.js 14.2.20 KHÔNG
+  // điền `request.ip` cho route handler runtime nodejs — nhưng Next tự đặt
+  // `x-forwarded-for ??= socket.remoteAddress` lên request thô TRƯỚC khi tới
+  // route handler (base-server.js:529). Hop này chỉ CHUYỂN TIẾP nguyên giá
+  // trị header Next đã có, không xoá, không tự bịa thêm bằng `request.ip`
+  // (luôn undefined ở runtime nodejs, dùng nó chỉ để phá vỡ giá trị đúng).
+  describe("X-Forwarded-For tới backend", () => {
+    beforeEach(() => {
+      requestMock.mockResolvedValue({
+        data: bytes("ok"),
+        status: 200,
+        statusText: "OK",
+        headers: {},
+      });
+    });
+
+    it("Next đã tự set x-forwarded-for = socket.remoteAddress -> chuyển tiếp nguyên văn", async () => {
+      // Mô phỏng đúng những gì Next base-server làm trước khi vào route
+      // handler khi client không tự gửi XFF: gán socket.remoteAddress.
+      const request = new NextRequest("http://localhost/api/health", {
+        headers: { "x-forwarded-for": "127.0.0.1" },
+      });
+
+      await proxyRequest(request, ["health"]);
+
+      const config = requestMock.mock.calls[0][0];
+      expect((config.headers as Record<string, string>)["x-forwarded-for"]).toBe("127.0.0.1");
+    });
+
+    it("client tự gửi XFF, Next đã append IP của mình -> chuyển tiếp nguyên văn, không sửa/không nối thêm", async () => {
+      const request = new NextRequest("http://localhost/api/health", {
+        headers: { "x-forwarded-for": "198.51.100.5, 203.0.113.9" },
+      });
+
+      await proxyRequest(request, ["health"]);
+
+      const config = requestMock.mock.calls[0][0];
+      expect((config.headers as Record<string, string>)["x-forwarded-for"]).toBe(
+        "198.51.100.5, 203.0.113.9"
+      );
+    });
+
+    it("request.ip (nếu có, ví dụ nền tảng khác cắm sẵn) KHÔNG được dùng để ghi đè/nối thêm", async () => {
+      // Dù test-harness của NextRequest cho phép set `ip` qua init option,
+      // hàm resolveForwardedFor không còn đọc field này — chỉ header mới có
+      // giá trị. Test này khoá lại hành vi cũ (đã gây xoá mất header đúng).
+      const request = new NextRequest("http://localhost/api/health", {
+        headers: { "x-forwarded-for": "127.0.0.1" },
+        ip: "9.9.9.9",
+      });
+
+      await proxyRequest(request, ["health"]);
+
+      const config = requestMock.mock.calls[0][0];
+      expect((config.headers as Record<string, string>)["x-forwarded-for"]).toBe("127.0.0.1");
+    });
+
+    it("không có x-forwarded-for nào cả (trường hợp lý thuyết) -> không tự bịa, không gửi header", async () => {
+      const request = new NextRequest("http://localhost/api/health");
+
+      await proxyRequest(request, ["health"]);
+
+      const config = requestMock.mock.calls[0][0];
+      expect(config.headers as Record<string, string>).not.toHaveProperty("x-forwarded-for");
+    });
+  });
 });

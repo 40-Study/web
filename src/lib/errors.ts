@@ -44,7 +44,10 @@ export class NotFoundError extends ApiError {
 
 export class NetworkError extends Error {
   constructor() {
-    super("Network connection lost. Please check your internet.");
+    // Review PR #25 (item 3): mất mạng/timeout không có response từ backend
+    // để đọc chi tiết — luôn dùng đúng 1 thông báo chung tiếng Việt, khớp với
+    // nhánh 5xx trong api-client.ts's GENERIC_SERVER_ERROR_MESSAGE.
+    super("Có lỗi xảy ra, vui lòng thử lại");
     this.name = "NetworkError";
   }
 }

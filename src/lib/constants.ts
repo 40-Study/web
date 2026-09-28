@@ -18,6 +18,11 @@ export const ROLE_NAME_MAP: Record<string, string> = {
 export const STORAGE_KEYS = {
   DEVICE_ID: "device_id",
   REGISTER_EMAIL: "register_email",
+  // Lưu tạm password/confirm_password/user_name/full_name (KHÔNG lưu OTP) để
+  // trang /otp gọi lại POST /auth/register/request khi người dùng bấm "Gửi
+  // lại mã" — backend không có endpoint resend riêng, chỉ có request lại với
+  // đầy đủ payload (QA khách P1, 260927).
+  REGISTER_PAYLOAD: "register_payload",
   RESET_PASSWORD_EMAIL: "reset_password_email",
 } as const;
 
