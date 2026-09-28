@@ -16,7 +16,7 @@ const CODE_MESSAGES: Record<string, string> = {
   // QA vòng 2 (D2, Q5)
   COURSE_EMPTY: "Khoá học cần có ít nhất 1 bài học trước khi gửi duyệt.",
   COURSE_PENDING_REVIEW:
-    "Khoá học đang chờ duyệt nên không thể chỉnh sửa. Hãy rút yêu cầu duyệt trước.",
+    "Khoá học đang chờ duyệt nên không thể chỉnh sửa hay xoá. Hãy rút yêu cầu duyệt trước.",
   APPLICATION_NOT_PENDING: "Hồ sơ không còn ở trạng thái chờ duyệt. Vui lòng tải lại trang.",
   APPLICATION_NOT_REJECTED: "Chỉ có thể nộp lại hồ sơ đang bị từ chối.",
   RESUBMISSION_LIMIT_REACHED:

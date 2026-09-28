@@ -11,6 +11,7 @@ import {
   type CreateCourseDTO,
   type UpdateCourseDTO,
 } from "@/services/course.service";
+import { approvalErrorMessage } from "@/lib/approval-errors";
 
 export const courseKeys = {
   all: ["courses"] as const,
@@ -110,7 +111,8 @@ export function useDeleteCourse() {
       qc.invalidateQueries({ queryKey: courseKeys.all });
       toast.success("Xóa khóa học thành công");
     },
-    onError: () => toast.error("Không thể xóa khóa học"),
+    // 409 COURSE_PENDING_REVIEW (khoá đang chờ duyệt) -> câu tiếng Việt rõ nghĩa thay vì lỗi chung.
+    onError: (error) => toast.error(approvalErrorMessage(error, "Không thể xóa khóa học")),
   });
 }
 

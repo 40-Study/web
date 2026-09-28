@@ -57,8 +57,10 @@ vi.mock("@/hooks/queries/use-lessons", () => ({
   useDeleteLesson: () => ({ mutate: vi.fn() }),
 }));
 
+// 1 nội dung trong bài: test W4b/W4c mở bài ra để kiểm nút sửa/xoá/thêm nội dung.
+const ONE_CONTENT = [{ id: "ct-1", lesson_id: "les-1", title: "QA-Noi dung 1", type: "document", order: 1 }];
 vi.mock("@/hooks/queries/use-lesson-content", () => ({
-  useLessonContents: () => ({ data: [], isLoading: false }),
+  useLessonContents: () => ({ data: ONE_CONTENT, isLoading: false }),
   useCreateLessonContent: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useDeleteLessonContent: () => ({ mutate: vi.fn() }),
   lessonContentKeys: { contents: (id: string) => ["lesson-content", id] },
@@ -146,6 +148,21 @@ describe("/teacher/courses/[id] — gửi duyệt thay cho tự xuất bản (Ph
     }
     fireEvent.click(screen.getByTestId("withdraw-review"));
     expect(mockWithdrawReview).toHaveBeenCalledWith("course-1");
+  });
+
+  // Re-review PR #79 (W4b/W4c): nội dung TRONG bài cũng phải chỉ đọc khi chờ duyệt — trước đây
+  // bỏ readOnly ở LessonContentsPanel (hoặc bỏ điều kiện !readOnly) vẫn không test nào đỏ.
+  it.each([
+    ["pending_review", 0],
+    ["draft", 1],
+  ])("khoá %s: nút Chỉnh sửa/Xóa/Thêm nội dung trong bài có %i", (status, expected) => {
+    setCourse({ status });
+    render(<TeacherCourseDetailPage />);
+    fireEvent.click(screen.getByText("QA-Bai 1"));
+    expect(screen.getByText("QA-Noi dung 1")).toBeTruthy();
+    expect(screen.queryAllByTitle("Chỉnh sửa")).toHaveLength(expected);
+    expect(screen.queryAllByTitle("Xóa")).toHaveLength(expected);
+    expect(screen.queryAllByRole("button", { name: /Thêm nội dung/ })).toHaveLength(expected);
   });
 
   it("khoá nháp 0 bài học (D2): nút Gửi duyệt bị tắt kèm hướng dẫn, bấm không gọi API", () => {
