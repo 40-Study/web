@@ -21,7 +21,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { useCreatePaymentIntent, useCheckPayment, usePaymentStatus } from "@/hooks/queries/use-orders";
+import {
+  isOrderExpiredError,
+  useCreatePaymentIntent,
+  useCheckPayment,
+  usePaymentStatus,
+} from "@/hooks/queries/use-orders";
 import type { PaymentIntent } from "@/services/order.service";
 import { BankTransferDialog, type BankTransferDialogStatus } from "@/components/payment/bank-transfer-dialog";
 
@@ -52,6 +57,9 @@ export function OrderPaymentDialog({
   // Lỗi tạo payment-intent (vd đơn đã "processing") → hiện trạng thái lỗi
   // và mở khóa ref để đóng/mở lại dialog có thể thử lại.
   const [intentError, setIntentError] = useState(false);
+  // Backend từ chối vì đơn quá hạn giữ (409 ERR_ORDER_EXPIRED): lưu câu tiếng Việt của backend để
+  // hiện ở màn "hết hạn" kèm nút tạo đơn mới, thay vì màn lỗi chung "Giao dịch không thành công".
+  const [expiredMessage, setExpiredMessage] = useState<string | null>(null);
   const requestedForOrderId = useRef<string | null>(null);
 
   const createIntent = useCreatePaymentIntent();
@@ -63,6 +71,11 @@ export function OrderPaymentDialog({
     if (!open || !orderId) return;
     if (requestedForOrderId.current === orderId) return;
     requestedForOrderId.current = orderId;
+    // Đổi sang đơn khác (vd "Tạo đơn mới" sau khi đơn cũ hết hạn) mà dialog không đóng qua
+    // handleOpenChange: xoá trạng thái của đơn cũ, nếu không màn "hết hạn" cũ vẫn hiện cho đơn mới.
+    setIntent(null);
+    setIntentError(false);
+    setExpiredMessage(null);
 
     createIntent.mutate(
       { id: orderId, data: { payment_method: "bank_transfer", idempotency_key: uuidv4() } },
@@ -71,7 +84,11 @@ export function OrderPaymentDialog({
           setIntentError(false);
           setIntent(result);
         },
-        onError: () => {
+        onError: (error) => {
+          if (isOrderExpiredError(error)) {
+            setExpiredMessage(error.message);
+            return;
+          }
           setIntentError(true);
           requestedForOrderId.current = null;
         },
@@ -94,16 +111,21 @@ export function OrderPaymentDialog({
     if (!next) {
       setIntent(null);
       setIntentError(false);
+      setExpiredMessage(null);
       requestedForOrderId.current = null;
     }
     onOpenChange(next);
   };
 
+  // Poll ra "expired" (backend chốt đơn hết hạn) cũng là màn hết hạn, không phải "đang chờ".
+  const isOrderExpired = expiredMessage !== null || status === "expired";
   const dialogStatus: BankTransferDialogStatus = isCompleted
     ? "success"
-    : intentError || status === "cancelled" || status === "refunded"
-      ? "error"
-      : "pending";
+    : isOrderExpired
+      ? "expired"
+      : intentError || status === "cancelled" || status === "refunded"
+        ? "error"
+        : "pending";
 
   if (!orderId) return null;
 
@@ -123,6 +145,11 @@ export function OrderPaymentDialog({
       onCheckNow={orderId ? () => checkPayment.mutate(orderId) : undefined}
       isCheckingNow={checkPayment.isPending}
       onRetryExpired={onRetryExpired}
+      expiredTitle="Đơn hàng đã hết hạn"
+      expiredDescription={
+        expiredMessage ?? "Đơn đã hết hạn giữ chỗ. Tạo đơn mới để thanh toán theo giá hiện tại."
+      }
+      retryExpiredLabel="Tạo đơn mới"
     />
   );
 }

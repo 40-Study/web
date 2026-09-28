@@ -16,6 +16,16 @@ function orderErrorMessage(error: unknown, fallback: string): string {
 /** 409 ERR_ORDER_IN_PROGRESS: đã có đơn còn hạn cho khóa này (backend B4). */
 export const ORDER_IN_PROGRESS_CODE = "ERR_ORDER_IN_PROGRESS";
 
+/**
+ * 409 ERR_ORDER_EXPIRED: đơn đã quá hạn giữ, backend từ chối mở phiên thanh toán và chuyển đơn
+ * sang "expired" (review backend #76 MAJOR 2). Hộp thanh toán hiện màn "hết hạn" + "Tạo đơn mới".
+ */
+export const ORDER_EXPIRED_CODE = "ERR_ORDER_EXPIRED";
+
+export function isOrderExpiredError(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 409 && error.code === ORDER_EXPIRED_CODE;
+}
+
 export interface MyOrdersParams {
   page?: number;
   limit?: number;
@@ -111,10 +121,17 @@ export function useCancelOrder() {
 
 /** Tạo phiên thanh toán (bank_transfer/qr_transfer) cho một order — chỉ gọi được 1 lần khi order còn "pending". */
 export function useCreatePaymentIntent() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: PaymentIntentDTO }) =>
       orderService.createPaymentIntent(id, data),
     onError: (error) => {
+      // Đơn hết hạn: backend vừa chuyển đơn sang "expired" nên làm mới danh sách; hộp thanh toán
+      // tự hiện thông báo + nút "Tạo đơn mới", không toast thêm cho trùng lặp.
+      if (isOrderExpiredError(error)) {
+        qc.invalidateQueries({ queryKey: orderKeys.mine() });
+        return;
+      }
       toast.error(orderErrorMessage(error, "Không thể tạo phiên thanh toán"));
     },
   });

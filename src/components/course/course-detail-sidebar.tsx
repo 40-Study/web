@@ -74,9 +74,13 @@ export function CourseDetailSidebar({
   useEffect(() => {
     const el = purchaseCardRef.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(([entry]) => setIsPurchaseCardVisible(entry.isIntersecting), {
-      threshold: 0.2,
-    });
+    // Review #34 MINOR: trên mobile thẻ giá nằm cuối nội dung, ngay trên footer. Khi thẻ đã cuộn
+    // qua phía trên (top < 0) thì người dùng đang ở vùng footer và đã thấy nút mua, nên ẩn thanh
+    // cố định luôn; trước đây thanh hiện lại ở đó và che ~70px cuối footer.
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsPurchaseCardVisible(entry.isIntersecting || entry.boundingClientRect.top < 0),
+      { threshold: 0.2 }
+    );
     observer.observe(el);
     return () => observer.disconnect();
   }, []);

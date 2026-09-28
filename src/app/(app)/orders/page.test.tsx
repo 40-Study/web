@@ -3,13 +3,14 @@
  * xong/đã quá hạn thì không còn nút hành động.
  */
 
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Order } from "@/services/order.service";
 import MyOrdersPage from "./page";
 
 const mockCancel = vi.fn();
 const mockRefetch = vi.fn();
+const mockCreateOrder = vi.fn();
 let mockOrders: Order[] = [];
 
 vi.mock("next/navigation", () => ({
@@ -25,6 +26,7 @@ vi.mock("@/hooks/queries/use-orders", () => ({
     refetch: mockRefetch,
   }),
   useCancelOrder: () => ({ mutate: mockCancel, isPending: false }),
+  useCreateOrder: () => ({ mutate: mockCreateOrder, isPending: false }),
 }));
 
 // Hộp thanh toán thật gọi API — ở đây chỉ cần biết trang mở nó cho ĐÚNG đơn.
@@ -56,7 +58,31 @@ describe("MyOrdersPage", () => {
   beforeEach(() => {
     mockCancel.mockReset();
     mockRefetch.mockReset();
+    mockCreateOrder.mockReset();
     mockOrders = [];
+  });
+
+  // Review backend #76 MAJOR 2: đơn hết hạn (đã "expired" hoặc quá hạn giữ) → "Tạo đơn mới" cho
+  // đúng các khóa của đơn đó, rồi mở thanh toán cho ĐƠN MỚI.
+  it("đơn hết hạn có nút Tạo đơn mới: tạo đơn cho đúng khóa rồi mở thanh toán đơn mới", () => {
+    mockOrders = [
+      makeOrder({ id: "old-expired", status: "expired", expires_at: null }),
+      makeOrder({ id: "done", order_number: "ORD-QA-2", status: "completed", expires_at: null }),
+    ];
+    render(<MyOrdersPage />);
+
+    const buttons = screen.getAllByRole("button", { name: "Tạo đơn mới" });
+    expect(buttons).toHaveLength(1);
+    expect(screen.getByText(/Đơn đã hết hạn giữ chỗ/)).toBeTruthy();
+
+    fireEvent.click(buttons[0]);
+    expect(mockCreateOrder).toHaveBeenCalledTimes(1);
+    const [dto, callbacks] = mockCreateOrder.mock.calls[0];
+    expect(dto).toMatchObject({ source: "buy_now", course_ids: ["course-1"] });
+    expect(typeof dto.idempotency_key).toBe("string");
+
+    act(() => callbacks.onSuccess(makeOrder({ id: "order-new", status: "pending" })));
+    expect(screen.getByTestId("payment-dialog").textContent).toBe("order-new");
   });
 
   it("hiện tên khóa, ngày tạo và 2 hành động cho đơn đang chờ", () => {

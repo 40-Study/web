@@ -64,8 +64,16 @@ function AdminOrdersContent() {
   const searchParams = useSearchParams();
   const status = parseStatus(searchParams.get("status"));
   const page = parsePage(searchParams.get("page"));
-  const [search, setSearch] = useState(searchParams.get("q") ?? "");
+  const urlQuery = searchParams.get("q") ?? "";
+  const [search, setSearch] = useState(urlQuery);
   const debouncedSearch = useDebouncedValue(search, 300);
+
+  // Back/Forward đổi ?q= thì ô tìm kiếm phải theo URL (review #34 MINOR). Bỏ qua khi URL vừa được
+  // CHÍNH ô này ghi (urlQuery === debouncedSearch), nếu không phím gõ sau lúc debounce sẽ bị ghi đè.
+  useEffect(() => {
+    if (urlQuery !== debouncedSearch) setSearch(urlQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlQuery]);
   const limit = 20;
 
   const updateQuery = (patch: Record<string, string | number | null>) => {

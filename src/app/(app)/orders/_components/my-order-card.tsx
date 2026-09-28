@@ -24,14 +24,18 @@ interface MyOrderCardProps {
   order: Order;
   onPay: (order: Order) => void;
   onCancel: (order: Order) => void;
+  /** Đơn hết hạn: tạo đơn mới cho đúng các khóa này theo giá hiện tại. */
+  onReorder: (order: Order) => void;
+  isReordering?: boolean;
 }
 
 /** Một đơn trong "Đơn hàng của tôi": khóa học, tổng tiền, ngày tạo, hạn giữ đơn và hành động. */
-export function MyOrderCard({ order, onPay, onCancel }: MyOrderCardProps) {
+export function MyOrderCard({ order, onPay, onCancel, onReorder, isReordering }: MyOrderCardProps) {
   const open = isOrderOpen(order);
   // Đơn pending/processing đã quá hạn nhưng backend chưa kịp quét sang "expired": hiện đúng là
   // hết hạn thay vì cho bấm thanh toán rồi nhận lỗi.
   const heldButExpired = !open && (order.status === "pending" || order.status === "processing");
+  const isExpired = heldButExpired || order.status === "expired";
   const statusLabel = heldButExpired ? ORDER_STATUS_LABEL.expired : ORDER_STATUS_LABEL[order.status];
   const variant = heldButExpired ? STATUS_VARIANT.expired : STATUS_VARIANT[order.status];
 
@@ -79,6 +83,15 @@ export function MyOrderCard({ order, onPay, onCancel }: MyOrderCardProps) {
             Hủy đơn
           </Button>
           <Button onClick={() => onPay(order)}>Tiếp tục thanh toán</Button>
+        </div>
+      )}
+
+      {isExpired && (
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-gray-500">Đơn đã hết hạn giữ chỗ. Bạn có thể tạo đơn mới theo giá hiện tại.</p>
+          <Button className="shrink-0" isLoading={isReordering} onClick={() => onReorder(order)}>
+            Tạo đơn mới
+          </Button>
         </div>
       )}
     </article>

@@ -45,6 +45,10 @@ export interface BankTransferDialogProps {
   onCheckNow?: () => void;
   isCheckingNow?: boolean;
   onRetryExpired?: () => void;
+  /** Chữ riêng cho màn hết hạn (đơn khóa học khác mua xu: phải tạo ĐƠN mới, không chỉ mã mới). */
+  expiredTitle?: string;
+  expiredDescription?: React.ReactNode;
+  retryExpiredLabel?: string;
 }
 
 function CopyRow({ label, value }: { label: string; value: string }) {
@@ -108,6 +112,9 @@ export function BankTransferDialog({
   onCheckNow,
   isCheckingNow,
   onRetryExpired,
+  expiredTitle = "Đã hết hạn chuyển khoản",
+  expiredDescription = "Vui lòng tạo lại giao dịch để nhận mã chuyển khoản mới.",
+  retryExpiredLabel = "Tạo lại",
 }: BankTransferDialogProps) {
   const remainingMs = useCountdown(expiresAt);
   const isExpired = status === "pending" && remainingMs !== null && remainingMs <= 0;
@@ -134,17 +141,15 @@ export function BankTransferDialog({
         ) : effectiveStatus === "expired" ? (
           <div className="flex flex-col items-center gap-3 py-6 text-center">
             <Clock className="h-14 w-14 text-amber-500" />
-            <p className="text-lg font-semibold">Đã hết hạn chuyển khoản</p>
-            <p className="text-sm text-muted-foreground">
-              Vui lòng tạo lại giao dịch để nhận mã chuyển khoản mới.
-            </p>
+            <p className="text-lg font-semibold">{expiredTitle}</p>
+            <p className="text-sm text-muted-foreground">{expiredDescription}</p>
             <div className="flex w-full gap-2">
               <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
                 Đóng
               </Button>
               {onRetryExpired && (
                 <Button className="flex-1" onClick={onRetryExpired}>
-                  Tạo lại
+                  {retryExpiredLabel}
                 </Button>
               )}
             </div>

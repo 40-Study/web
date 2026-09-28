@@ -7,16 +7,20 @@
  * - "Tiếp tục thanh toán": mở lại OrderPaymentDialog. Backend trả lại ĐÚNG mã chuyển khoản cũ nếu
  *   đơn đã "processing" và mã còn hạn, hoặc tạo phiên mới nếu đơn còn "pending".
  * - "Hủy đơn": xác nhận rồi POST /orders/:id/cancel.
+ * Đơn hết hạn (backend trả 409 ERR_ORDER_EXPIRED khi mở thanh toán, hoặc đã "expired"): "Tạo đơn
+ * mới" gọi POST /orders (buy_now) cho đúng các khóa của đơn đó, giá tính lại theo hiện tại, rồi mở
+ * hộp thanh toán cho đơn mới.
  */
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 import { QueryState } from "@/components/common/query-state";
 import { OrderPaymentDialog } from "@/components/checkout/order-payment-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
-import { useCancelOrder, useMyOrders } from "@/hooks/queries/use-orders";
+import { useCancelOrder, useCreateOrder, useMyOrders } from "@/hooks/queries/use-orders";
 import { ORDER_STATUS_LABEL, type Order, type OrderStatus } from "@/services/order.service";
 import { MyOrderCard } from "./_components/my-order-card";
 
@@ -33,9 +37,11 @@ export default function MyOrdersPage() {
     status: status || undefined,
   });
   const cancelMutation = useCancelOrder();
+  const createOrderMutation = useCreateOrder();
 
   const [payingOrder, setPayingOrder] = useState<Order | null>(null);
   const [cancellingOrder, setCancellingOrder] = useState<Order | null>(null);
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
 
   const orders = data?.orders ?? [];
 
@@ -43,6 +49,32 @@ export default function MyOrdersPage() {
     setPayingOrder(null);
     // Mở phiên thanh toán chuyển đơn pending -> processing: tải lại để trạng thái/hạn hiện đúng.
     refetch();
+  };
+
+  // Lỗi (409 đơn đang mở, đã ghi danh...) đã được useCreateOrder toast sẵn.
+  const reorder = (order: Order) => {
+    setReorderingId(order.id);
+    createOrderMutation.mutate(
+      { source: "buy_now", course_ids: order.items.map((item) => item.course_id), idempotency_key: uuidv4() },
+      {
+        onSuccess: (created) => {
+          refetch();
+          if (created.status === "completed") {
+            // Khóa đã chuyển miễn phí: backend hoàn tất đơn 0đ và ghi danh ngay.
+            toast.success("Đã ghi danh khóa học");
+            return;
+          }
+          setPayingOrder(created);
+        },
+        onSettled: () => setReorderingId(null),
+      }
+    );
+  };
+
+  const retryExpiredPayment = () => {
+    const expired = payingOrder;
+    setPayingOrder(null);
+    if (expired) reorder(expired);
   };
 
   const confirmCancel = () => {
@@ -87,7 +119,14 @@ export default function MyOrdersPage() {
       >
         <div className="space-y-4">
           {orders.map((order) => (
-            <MyOrderCard key={order.id} order={order} onPay={setPayingOrder} onCancel={setCancellingOrder} />
+            <MyOrderCard
+              key={order.id}
+              order={order}
+              onPay={setPayingOrder}
+              onCancel={setCancellingOrder}
+              onReorder={reorder}
+              isReordering={reorderingId === order.id}
+            />
           ))}
         </div>
 
@@ -121,7 +160,7 @@ export default function MyOrdersPage() {
           toast.success("Thanh toán thành công!");
           if (paidId) router.push(`/checkout/success?order_id=${paidId}`);
         }}
-        onRetryExpired={closePayment}
+        onRetryExpired={retryExpiredPayment}
       />
 
       <Dialog open={!!cancellingOrder} onOpenChange={(next) => !next && setCancellingOrder(null)}>
