@@ -36,7 +36,7 @@ const statusConfig: Record<
     bgColor: "bg-blue-50",
   },
   accepted: {
-    label: "Đã chấp nhận",
+    label: "Phụ huynh đã chấp nhận",
     color: "text-green-600",
     icon: <CheckCircle className="w-4 h-4" />,
     bgColor: "bg-green-50",
@@ -234,11 +234,12 @@ export function SentInvitationsList({ onInviteClick }: SentInvitationsListProps)
     );
   }
 
-  // Group by status
+  // Review #38 W1: lời mời "accepted" KHÔNG còn được coi là "đang liên kết" — liên kết có thể đã
+  // bị huỷ, hoặc được tạo qua yêu cầu của phụ huynh. Ai đang liên kết chỉ lấy từ /family/parents
+  // (LinkedParentsList); lời mời đã chấp nhận chỉ còn là lịch sử.
   const pending = invitations.filter((i) => ["pending", "invited"].includes(i.status));
-  const accepted = invitations.filter((i) => i.status === "accepted");
   const others = invitations.filter((i) =>
-    ["rejected", "expired", "revoked"].includes(i.status)
+    ["accepted", "rejected", "expired", "revoked"].includes(i.status)
   );
 
   return (
@@ -270,25 +271,6 @@ export function SentInvitationsList({ onInviteClick }: SentInvitationsListProps)
           </p>
           <div className="space-y-3">
             {pending.map((invitation) => (
-              <InvitationCard
-                key={invitation.id}
-                invitation={invitation}
-                onRevoke={handleRevoke}
-                isRevoking={revokeMutation.isPending}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Accepted */}
-      {accepted.length > 0 && (
-        <div>
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">
-            Đã liên kết ({accepted.length})
-          </p>
-          <div className="space-y-3">
-            {accepted.map((invitation) => (
               <InvitationCard
                 key={invitation.id}
                 invitation={invitation}

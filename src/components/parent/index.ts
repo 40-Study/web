@@ -3,3 +3,8 @@ export { SentInvitationsList } from "./sent-invitations-list";
 export { PendingInvitationsCard } from "./pending-invitations-card";
 export { FamilyConnectionCard } from "./family-connection-card";
 export { ParentHomeOverview } from "./parent-home-overview";
+export { LinkChildForm } from "./link-child-form";
+export { SentLinkRequests } from "./sent-link-requests";
+export { LinkedChildrenList } from "./linked-children-list";
+export { IncomingLinkRequestsCard } from "./incoming-link-requests-card";
+export { LinkedParentsList } from "./linked-parents-list";
