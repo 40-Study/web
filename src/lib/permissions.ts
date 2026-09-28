@@ -28,6 +28,10 @@ export const PERMISSIONS = {
   // % phí ở /admin/reports.
   MANAGE_PAYMENTS: "PAYMENTS_MANAGE",
   MANAGE_PLATFORM_FEE: "SYSTEM_SETTINGS_MANAGE",
+  // Phase 3 duyệt khoá học (28/09/2026) — tên permission thật đã seed ở backend. BẮT BUỘC có
+  // trong bảng này: auth-session.ts lọc bỏ mọi permission server trả về mà không nằm ở đây,
+  // thiếu thì <Can> không bao giờ hiện nút Duyệt/Từ chối.
+  COURSES_APPROVE_ALL: "COURSES_APPROVE_ALL",
   // Phase 4 (rút tiền giảng viên, 28/09/2026) — gate trang /admin/withdrawals + nút
   // duyệt/từ chối/đánh dấu đã chuyển. Giá trị PHẢI khớp tên permission thật ở backend
   // (data/permissions/system_admin_permissions.json), theo đúng withdrawal-contract.md.

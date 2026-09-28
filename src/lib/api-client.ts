@@ -16,6 +16,7 @@ import {
   RateLimitError,
   NotFoundError,
 } from "./errors";
+import { AUTH_ROLE_CHANGED_EVENT, type AuthRoleChangedDetail } from "./auth-events";
 
 function resolveApiBaseUrl(): string {
   if (typeof window !== "undefined") {
@@ -46,13 +47,30 @@ export const api = axios.create({
 let refreshPromise: Promise<void> | null = null;
 let isRefreshing = false;
 
+type RefreshResponseBody = {
+  data?: { role_changed?: boolean; active_role?: string };
+};
+
 async function doRefresh(): Promise<void> {
   // Gọi refresh — cookies tự gửi, backend set cookie mới
-  await axios.post(
+  const res = await axios.post<RefreshResponseBody>(
     `${API_BASE_URL}/auth/refresh-token`,
     {},
     { withCredentials: true, timeout: 10_000 }
   );
+
+  // Phase 3 (contract mục C): admin duyệt hồ sơ giảng viên → access token cũ bị 401
+  // ROLE_CHANGED, refresh vẫn thành công và trả role_changed + active_role mới. Phát event
+  // NGAY TẠI ĐÂY (không phải sau `await refreshPromise`) để nhiều request 401 đồng thời dùng
+  // chung 1 lần refresh chỉ phát đúng 1 event.
+  const payload = res?.data?.data;
+  if (payload?.role_changed === true && typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent<AuthRoleChangedDetail>(AUTH_ROLE_CHANGED_EVENT, {
+        detail: { activeRole: payload.active_role ?? null },
+      })
+    );
+  }
 }
 
 // ─── Response interceptor: 401 → refresh → retry ───────────────────────────

@@ -57,6 +57,10 @@ export interface ApiCourse {
   is_free?: boolean;
   status?: string;
   published_at?: string;
+  // Phase 3 duyệt khoá (omitempty phía backend => có thể vắng mặt, coi như null).
+  submitted_at?: string | null;
+  rejection_reason?: string | null;
+  reviewed_at?: string | null;
   created_at?: string;
   updated_at?: string;
   // Enrollment-specific fields (when fetched via /enrollments)

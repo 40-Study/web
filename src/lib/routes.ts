@@ -22,6 +22,8 @@ export const ROLE_HOME_ROUTES: Record<string, string> = {
   PARENT: "/home",
   SYSTEM_ADMIN: "/admin",
   ORG_OWNER: "/admin",
+  // Phase 3: ứng viên chưa có quyền giảng dạy — trang duy nhất có ý nghĩa là hồ sơ ứng tuyển.
+  TEACHER_APPLICANT: "/teacher-application",
 } as const;
 
 const ROLE_ALIASES: Record<string, string> = {
