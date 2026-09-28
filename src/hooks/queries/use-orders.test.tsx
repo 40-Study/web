@@ -12,7 +12,7 @@ import { ApiError } from "@/lib/errors";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock("@/services/order.service", () => ({
-  orderService: { createOrder: vi.fn(), createPaymentIntent: vi.fn() },
+  orderService: { createOrder: vi.fn(), createPaymentIntent: vi.fn(), cancelOrder: vi.fn() },
 }));
 
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ import {
   PAYMENT_FINAL_CHECK_WINDOW_MS,
   nextPaymentPollDelay,
   orderKeys,
+  useCancelOrder,
   useCreateOrder,
   useCreatePaymentIntent,
 } from "./use-orders";
@@ -59,6 +60,22 @@ describe("useCreateOrder — lỗi 409", () => {
     options.action!.onClick();
     expect(assign).toHaveBeenCalledWith("/orders");
     vi.unstubAllGlobals();
+  });
+
+  // Review #76 vòng 3 (chặn đơn trùng khi đơn cũ đang đối chiếu): checkout/page.tsx và nút "Mua ngay"
+  // ở course-detail-sidebar.tsx đều gọi mutateAsync KHÔNG kèm onError riêng, toast đến từ hook.
+  it("mutateAsync (cách checkout và Mua ngay gọi): vẫn toast đúng 1 lần kèm 'Xem đơn hàng'", async () => {
+    vi.mocked(orderService.createOrder).mockRejectedValue(new ApiError(409, "ERR_ORDER_IN_PROGRESS", IN_PROGRESS_MSG));
+    const { wrapper } = setup();
+    const { result } = renderHook(() => useCreateOrder(), { wrapper });
+
+    await act(async () => {
+      await expect(result.current.mutateAsync({ source: "cart", course_ids: ["c1"], idempotency_key: "k" })).rejects.toThrow();
+    });
+    expect(toast.error).toHaveBeenCalledTimes(1);
+    const [message, options] = vi.mocked(toast.error).mock.calls[0] as [string, { action?: { label: string } }];
+    expect(message).toBe(IN_PROGRESS_MSG);
+    expect(options?.action?.label).toBe("Xem đơn hàng");
   });
 
   it("lỗi khác: chỉ toast message, không có nút", async () => {
@@ -104,5 +121,42 @@ describe("useCreatePaymentIntent — 409 ERR_ORDER_EXPIRED", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(toast.error).not.toHaveBeenCalled();
     expect(invalidate).toHaveBeenCalledWith({ queryKey: orderKeys.mine() });
+  });
+
+  it.each([
+    ["ERR_ORDER_ALREADY_PAID", "Đơn hàng đã được thanh toán."],
+    ["ERR_PAYMENT_VERIFYING", "Đơn hàng đang được đối chiếu thanh toán với ngân hàng."],
+  ])("%s: hộp thanh toán tự hiện màn riêng, không toast", async (code, msg) => {
+    vi.mocked(orderService.createPaymentIntent).mockRejectedValue(new ApiError(409, code, msg));
+    const { wrapper, invalidate } = setup();
+    const { result } = renderHook(() => useCreatePaymentIntent(), { wrapper });
+
+    act(() => result.current.mutate({ id: "o1", data: { payment_method: "bank_transfer" } }));
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: orderKeys.mine() });
+  });
+});
+
+// Review #76 vòng 3: backend đối chiếu ngân hàng trước khi huỷ đơn processing có mã.
+describe("useCancelOrder — 409 do đối chiếu", () => {
+  beforeEach(() => {
+    vi.mocked(toast.error).mockReset();
+    vi.mocked(orderService.cancelOrder).mockReset();
+  });
+
+  it.each([
+    ["ERR_PAYMENT_VERIFYING", "Đơn hàng đang được đối chiếu thanh toán với ngân hàng. Vui lòng không chuyển khoản lại và thử lại sau ít phút."],
+    ["ERR_ORDER_ALREADY_PAID", "Đơn hàng đã được thanh toán, khóa học đã được thêm vào tài khoản của bạn."],
+  ])("%s: toast câu của backend và làm mới đơn", async (code, msg) => {
+    vi.mocked(orderService.cancelOrder).mockRejectedValue(new ApiError(409, code, msg));
+    const { wrapper, invalidate } = setup();
+    const { result } = renderHook(() => useCancelOrder(), { wrapper });
+
+    act(() => result.current.mutate("o1"));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(toast.error).mock.calls[0]).toEqual([msg]);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: orderKeys.mine() });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: orderKeys.detail("o1") });
   });
 });

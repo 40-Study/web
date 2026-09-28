@@ -22,7 +22,11 @@
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import {
+  PAYMENT_FINAL_CHECK_WINDOW_MS,
+  PAYMENT_RECONCILING_NOTICE,
+  isOrderAlreadyPaidError,
   isOrderExpiredError,
+  isPaymentVerifyingError,
   useCreatePaymentIntent,
   useCheckPayment,
   usePaymentStatus,
@@ -60,6 +64,12 @@ export function OrderPaymentDialog({
   // Backend từ chối vì đơn quá hạn giữ (409 ERR_ORDER_EXPIRED): lưu câu tiếng Việt của backend để
   // hiện ở màn "hết hạn" kèm nút tạo đơn mới, thay vì màn lỗi chung "Giao dịch không thành công".
   const [expiredMessage, setExpiredMessage] = useState<string | null>(null);
+  // Review #76 vòng 3: 409 ERR_ORDER_ALREADY_PAID = đơn đã thanh toán xong → coi như thành công.
+  const [alreadyPaid, setAlreadyPaid] = useState(false);
+  // 409 ERR_PAYMENT_VERIFYING = backend đang đối chiếu ngân hàng (ân hạn 30 phút / ngân hàng lỗi).
+  const [verifyingMessage, setVerifyingMessage] = useState<string | null>(null);
+  // Quá hạn mã + cửa sổ poll mà server vẫn chưa có kết quả cuối → màn "đang đối chiếu".
+  const [finalWindowOver, setFinalWindowOver] = useState(false);
   const requestedForOrderId = useRef<string | null>(null);
 
   const createIntent = useCreatePaymentIntent();
@@ -76,6 +86,8 @@ export function OrderPaymentDialog({
     setIntent(null);
     setIntentError(false);
     setExpiredMessage(null);
+    setAlreadyPaid(false);
+    setVerifyingMessage(null);
 
     createIntent.mutate(
       { id: orderId, data: { payment_method: "bank_transfer", idempotency_key: uuidv4() } },
@@ -89,6 +101,14 @@ export function OrderPaymentDialog({
             setExpiredMessage(error.message);
             return;
           }
+          if (isOrderAlreadyPaidError(error)) {
+            setAlreadyPaid(true);
+            return;
+          }
+          if (isPaymentVerifyingError(error)) {
+            setVerifyingMessage(error.message);
+            return;
+          }
           setIntentError(true);
           requestedForOrderId.current = null;
         },
@@ -98,9 +118,27 @@ export function OrderPaymentDialog({
   }, [open, orderId]);
 
   const { data: polled } = usePaymentStatus(orderId ?? "", open && !!intent, intent?.expired_at);
+  // Khi đang đối chiếu (không có intent nên không poll), kết quả "Kiểm tra lại" lấy từ check-payment.
+  const checked = checkPayment.variables === orderId ? checkPayment.data : undefined;
+  const latest = polled ?? checked;
 
-  const status = polled?.status;
-  const isCompleted = status === "completed" || status === "paid";
+  const status = latest?.status;
+  const isCompleted = alreadyPaid || status === "completed" || status === "paid";
+
+  // Hết poll (quá hạn mã + PAYMENT_FINAL_CHECK_WINDOW_MS) mà chưa có kết quả cuối: không để hộp
+  // đứng mãi ở "đang kiểm tra lần cuối", báo đang đối chiếu và chỉ chỗ xem lại (review vòng 3 MINOR).
+  const expiredAt = intent?.expired_at;
+  useEffect(() => {
+    setFinalWindowOver(false);
+    if (!expiredAt) return;
+    const remaining = new Date(expiredAt).getTime() + PAYMENT_FINAL_CHECK_WINDOW_MS - Date.now();
+    if (remaining <= 0) {
+      setFinalWindowOver(true);
+      return;
+    }
+    const timer = setTimeout(() => setFinalWindowOver(true), remaining);
+    return () => clearTimeout(timer);
+  }, [expiredAt]);
 
   useEffect(() => {
     if (isCompleted) onPaid();
@@ -112,6 +150,8 @@ export function OrderPaymentDialog({
       setIntent(null);
       setIntentError(false);
       setExpiredMessage(null);
+      setAlreadyPaid(false);
+      setVerifyingMessage(null);
       requestedForOrderId.current = null;
     }
     onOpenChange(next);
@@ -121,14 +161,17 @@ export function OrderPaymentDialog({
   const isOrderExpired = expiredMessage !== null || status === "expired";
   // Re-review #76 vòng 2: backend đã nhận tiền cho mã này nhưng SAU hạn → không mời "Tạo đơn mới"
   // (dễ trả lần 2); báo bộ phận hỗ trợ sẽ hoàn tiền.
-  const latePaymentReceived = status === "expired" && polled?.late_payment_received === true;
+  const latePaymentReceived = status === "expired" && latest?.late_payment_received === true;
+  const isReconciling = verifyingMessage !== null || finalWindowOver;
   const dialogStatus: BankTransferDialogStatus = isCompleted
     ? "success"
     : isOrderExpired
       ? "expired"
       : intentError || status === "cancelled" || status === "refunded"
         ? "error"
-        : "pending";
+        : isReconciling
+          ? "reconciling"
+          : "pending";
 
   if (!orderId) return null;
 
@@ -157,6 +200,12 @@ export function OrderPaymentDialog({
       retryExpiredLabel="Tạo đơn mới"
       // Hết giờ trên đồng hồ chưa phải hết hạn thật: chờ server đối chiếu giao dịch lần cuối.
       awaitServerAfterExpiry
+      reconcilingDescription={
+        <>
+          {verifyingMessage && <p>{verifyingMessage}</p>}
+          <p>{PAYMENT_RECONCILING_NOTICE}</p>
+        </>
+      }
     />
   );
 }

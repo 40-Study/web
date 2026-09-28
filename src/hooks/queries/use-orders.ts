@@ -26,6 +26,27 @@ export function isOrderExpiredError(error: unknown): error is ApiError {
   return error instanceof ApiError && error.status === 409 && error.code === ORDER_EXPIRED_CODE;
 }
 
+/** 409 ERR_ORDER_ALREADY_PAID: đơn đã thanh toán xong (review backend #76 vòng 3). Coi như thành công. */
+export const ORDER_ALREADY_PAID_CODE = "ERR_ORDER_ALREADY_PAID";
+
+export function isOrderAlreadyPaidError(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 409 && error.code === ORDER_ALREADY_PAID_CODE;
+}
+
+/**
+ * 409 ERR_PAYMENT_VERIFYING: đơn có mã chuyển khoản đang được đối chiếu với ngân hàng (trong ân hạn
+ * 30 phút sau hạn mã, hoặc ngân hàng tạm lỗi). Không mở phiên mới, không huỷ được, không tạo đơn mới.
+ */
+export const PAYMENT_VERIFYING_CODE = "ERR_PAYMENT_VERIFYING";
+
+export function isPaymentVerifyingError(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 409 && error.code === PAYMENT_VERIFYING_CODE;
+}
+
+/** Câu hiện khi đơn còn đang đối chiếu mà hộp thanh toán đã hết cửa sổ chờ. */
+export const PAYMENT_RECONCILING_NOTICE =
+  "Đơn đang được đối chiếu, bạn có thể đóng cửa sổ và xem lại tại Đơn hàng của tôi.";
+
 export interface MyOrdersParams {
   page?: number;
   limit?: number;
@@ -121,7 +142,14 @@ export function useCancelOrder() {
       qc.invalidateQueries({ queryKey: orderKeys.detail(id) });
       toast.success("Đã hủy đơn hàng");
     },
-    onError: (error) => {
+    onError: (error, id) => {
+      // Backend đối chiếu ngân hàng trước khi huỷ (review #76 vòng 3): đơn có thể vừa được hoàn tất
+      // (ERR_ORDER_ALREADY_PAID) hoặc đang đối chiếu (ERR_PAYMENT_VERIFYING). Làm mới để thẻ đơn
+      // hiện đúng trạng thái; message tiếng Việt của backend nói rõ lý do.
+      if (isOrderAlreadyPaidError(error) || isPaymentVerifyingError(error)) {
+        qc.invalidateQueries({ queryKey: orderKeys.mine() });
+        qc.invalidateQueries({ queryKey: orderKeys.detail(id) });
+      }
       toast.error(orderErrorMessage(error, "Không thể hủy đơn hàng"));
     },
   });
@@ -136,7 +164,8 @@ export function useCreatePaymentIntent() {
     onError: (error) => {
       // Đơn hết hạn: backend vừa chuyển đơn sang "expired" nên làm mới danh sách; hộp thanh toán
       // tự hiện thông báo + nút "Tạo đơn mới", không toast thêm cho trùng lặp.
-      if (isOrderExpiredError(error)) {
+      // Review #76 vòng 3: đã thanh toán / đang đối chiếu cũng do hộp thanh toán tự hiện màn riêng.
+      if (isOrderExpiredError(error) || isOrderAlreadyPaidError(error) || isPaymentVerifyingError(error)) {
         qc.invalidateQueries({ queryKey: orderKeys.mine() });
         return;
       }

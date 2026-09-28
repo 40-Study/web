@@ -24,7 +24,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 
-export type BankTransferDialogStatus = "pending" | "success" | "error" | "expired";
+/**
+ * "reconciling" (review backend #76 vòng 3, chỉ đơn khóa học): server chưa có kết quả đối chiếu ngân
+ * hàng cuối cùng. Không cho tạo lại / tạo đơn mới, chỉ giải thích và cho kiểm tra lại.
+ */
+export type BankTransferDialogStatus = "pending" | "success" | "error" | "expired" | "reconciling";
 
 export interface BankTransferDialogProps {
   open: boolean;
@@ -54,6 +58,8 @@ export interface BankTransferDialogProps {
    * khóa học). Hiện "đang kiểm tra" cho tới khi `status` do server trả đổi sang expired/success.
    */
   awaitServerAfterExpiry?: boolean;
+  /** Nội dung màn "reconciling". */
+  reconcilingDescription?: React.ReactNode;
 }
 
 function CopyRow({ label, value }: { label: string; value: string }) {
@@ -121,6 +127,7 @@ export function BankTransferDialog({
   expiredDescription = "Vui lòng tạo lại giao dịch để nhận mã chuyển khoản mới.",
   retryExpiredLabel = "Tạo lại",
   awaitServerAfterExpiry = false,
+  reconcilingDescription,
 }: BankTransferDialogProps) {
   const remainingMs = useCountdown(expiresAt);
   const countdownOver = status === "pending" && remainingMs !== null && remainingMs <= 0;
@@ -158,6 +165,25 @@ export function BankTransferDialog({
               {onRetryExpired && (
                 <Button className="flex-1" onClick={onRetryExpired}>
                   {retryExpiredLabel}
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : effectiveStatus === "reconciling" ? (
+          <div className="flex flex-col items-center gap-3 py-6 text-center">
+            <Loader2 className="h-14 w-14 animate-spin text-amber-500" />
+            <p className="text-lg font-semibold">Đang đối chiếu thanh toán</p>
+            {reconcilingDescription && (
+              <div className="text-sm text-muted-foreground">{reconcilingDescription}</div>
+            )}
+            <div className="flex w-full gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
+                Đóng
+              </Button>
+              {onCheckNow && (
+                <Button className="flex-1" onClick={onCheckNow} disabled={isCheckingNow}>
+                  {isCheckingNow ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Kiểm tra lại
                 </Button>
               )}
             </div>

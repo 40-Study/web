@@ -131,6 +131,11 @@ export interface PaymentStatus {
    * hoàn tiền). Web báo "bộ phận hỗ trợ sẽ liên hệ hoàn tiền", không mời tạo đơn mới rồi trả lần 2.
    */
   late_payment_received?: boolean;
+  /**
+   * Đơn "processing" chưa có kết quả đối chiếu cuối: mã đã hết hạn nhưng còn trong ân hạn 30 phút,
+   * hoặc ngân hàng tạm lỗi (review backend #76 vòng 3). Không huỷ, không tạo đơn mới cho đơn này.
+   */
+  reconciling?: boolean;
 }
 
 // ─── Service ────────────────────────────────────────────────────────────────

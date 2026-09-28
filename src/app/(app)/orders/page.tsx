@@ -20,7 +20,13 @@ import { QueryState } from "@/components/common/query-state";
 import { OrderPaymentDialog } from "@/components/checkout/order-payment-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
-import { useCancelOrder, useCheckPayment, useCreateOrder, useMyOrders } from "@/hooks/queries/use-orders";
+import {
+  PAYMENT_RECONCILING_NOTICE,
+  useCancelOrder,
+  useCheckPayment,
+  useCreateOrder,
+  useMyOrders,
+} from "@/hooks/queries/use-orders";
 import { ORDER_STATUS_LABEL, type Order, type OrderStatus } from "@/services/order.service";
 import { MyOrderCard } from "./_components/my-order-card";
 
@@ -101,6 +107,30 @@ export default function MyOrdersPage() {
     );
   };
 
+  // Review #76 vòng 3: đơn "Đang đối chiếu" chỉ có nút kiểm tra. Backend đối chiếu ngân hàng rồi trả
+  // completed / expired / vẫn processing; tải lại danh sách để thẻ hiện đúng trạng thái mới.
+  const [checkingId, setCheckingId] = useState<string | null>(null);
+  const checkReconciling = async (order: Order) => {
+    setCheckingId(order.id);
+    try {
+      const checked = await checkPaymentMutation.mutateAsync(order.id);
+      if (checked.status === "completed" || checked.status === "paid") {
+        toast.success("Đơn này đã được thanh toán, khóa học đã được thêm vào tài khoản của bạn.");
+      } else if (checked.late_payment_received) {
+        toast.info("Hệ thống đã nhận tiền cho đơn này sau khi hết hạn. Bộ phận hỗ trợ sẽ liên hệ hoàn tiền, vui lòng không chuyển khoản lại.");
+      } else if (checked.status === "expired") {
+        toast.info("Không tìm thấy giao dịch cho đơn này, đơn đã hết hạn. Bạn có thể tạo đơn mới.");
+      } else {
+        toast.info(PAYMENT_RECONCILING_NOTICE);
+      }
+      refetch();
+    } catch {
+      // Lỗi gọi API đã được useCheckPayment toast.
+    } finally {
+      setCheckingId(null);
+    }
+  };
+
   const retryExpiredPayment = () => {
     const expired = payingOrder;
     setPayingOrder(null);
@@ -156,6 +186,8 @@ export default function MyOrdersPage() {
               onCancel={setCancellingOrder}
               onReorder={reorder}
               isReordering={reorderingId === order.id}
+              onCheckPayment={checkReconciling}
+              isCheckingPayment={checkingId === order.id}
             />
           ))}
         </div>

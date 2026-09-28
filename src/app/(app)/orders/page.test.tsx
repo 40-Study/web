@@ -29,6 +29,7 @@ vi.mock("@/hooks/queries/use-orders", () => ({
   useCancelOrder: () => ({ mutate: mockCancel, isPending: false }),
   useCreateOrder: () => ({ mutate: mockCreateOrder, isPending: false }),
   useCheckPayment: () => ({ mutateAsync: mockCheckPayment, isPending: false }),
+  PAYMENT_RECONCILING_NOTICE: "Đơn đang được đối chiếu, bạn có thể đóng cửa sổ và xem lại tại Đơn hàng của tôi.",
 }));
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
@@ -97,15 +98,33 @@ describe("MyOrdersPage", () => {
     ["đã thanh toán trong hạn", { status: "completed" }],
     ["nhận tiền sau hạn (chờ hoàn tiền)", { status: "expired", late_payment_received: true }],
     ["chưa xác minh được", { status: "processing" }],
-  ])("đơn từng có mã, backend báo %s → KHÔNG tạo đơn mới", async (_label, checked) => {
+  ])("đơn hết hạn từng có mã, backend báo %s → KHÔNG tạo đơn mới", async (_label, checked) => {
     mockCheckPayment.mockResolvedValue({ order_id: "had-code", amount: 499000, ...checked });
-    mockOrders = [makeOrder({ id: "had-code", status: "processing", expires_at: new Date(Date.now() - 60_000).toISOString() })];
+    mockOrders = [makeOrder({ id: "had-code", status: "expired", expires_at: null })];
     render(<MyOrdersPage />);
 
     fireEvent.click(screen.getByRole("button", { name: "Tạo đơn mới" }));
     await waitFor(() => expect(mockCheckPayment).toHaveBeenCalledWith("had-code"));
     await act(async () => {});
     expect(mockCreateOrder).not.toHaveBeenCalled();
+  });
+
+  // Review #76 vòng 3: đơn processing quá hạn mã = đang đối chiếu. Chỉ có "Kiểm tra thanh toán":
+  // hỏi backend rồi tải lại danh sách, TUYỆT ĐỐI không tạo đơn mới hay huỷ.
+  it("đơn đang đối chiếu: Kiểm tra thanh toán gọi check-payment, tải lại, không tạo đơn / không huỷ", async () => {
+    mockCheckPayment.mockResolvedValue({ order_id: "reconciling", status: "processing", amount: 499000, reconciling: true });
+    mockOrders = [makeOrder({ id: "reconciling", status: "processing", expires_at: new Date(Date.now() - 60_000).toISOString() })];
+    render(<MyOrdersPage />);
+
+    expect(screen.getByText("Đang đối chiếu")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Hủy đơn" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Tạo đơn mới" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra thanh toán" }));
+    await waitFor(() => expect(mockCheckPayment).toHaveBeenCalledWith("reconciling"));
+    await waitFor(() => expect(mockRefetch).toHaveBeenCalled());
+    expect(mockCreateOrder).not.toHaveBeenCalled();
+    expect(mockCancel).not.toHaveBeenCalled();
   });
 
   it("hiện tên khóa, ngày tạo và 2 hành động cho đơn đang chờ", () => {
