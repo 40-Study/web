@@ -107,14 +107,18 @@ function StudentFamilyView() {
   const { data: sentInvitations = [], isLoading: isLoadingInvitations } = useSentInvitations();
   // Review #38 W1: "đang liên kết" lấy từ quan hệ active (/family/parents), không suy từ lời mời
   // "accepted" — lời mời không biết liên kết đã bị huỷ hay được tạo qua yêu cầu của phụ huynh.
-  const { data: linkedParents = [], isLoading: isLoadingParents } = useLinkedParents();
+  const {
+    data: linkedParents = [], isLoading: isLoadingParents, isError: isParentsError,
+  } = useLinkedParents();
   const isLoading = isLoadingInvitations || isLoadingParents;
 
   const pendingInvitations = sentInvitations.filter((inv) =>
     ["pending", "invited"].includes(inv.status)
   );
-  // Empty state chỉ khi thật sự chưa có ai liên kết VÀ không có lời mời nào đang chờ.
-  const isEmpty = linkedParents.length === 0 && pendingInvitations.length === 0;
+  // Empty state chỉ khi thật sự chưa có ai liên kết VÀ không có lời mời nào đang chờ. Khi không
+  // đọc được /family/parents thì KHÔNG biết có ai liên kết hay không, nên không được khẳng định
+  // "chưa kết nối" (review #38 vòng 2, W-a) — LinkedParentsList đã hiện lỗi kèm "Thử lại".
+  const isEmpty = !isParentsError && linkedParents.length === 0 && pendingInvitations.length === 0;
   const hasInvitations = sentInvitations.length > 0;
 
   return (

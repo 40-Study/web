@@ -53,10 +53,11 @@ describe("useUnlinkChild", () => {
 });
 
 describe("useUnlinkParent", () => {
-  it("invalidate phụ huynh đang liên kết và lời mời đã gửi", async () => {
+  it("invalidate phụ huynh đang liên kết, lời mời đã gửi và yêu cầu đến", async () => {
     const { client, wrapper } = setup();
     client.setQueryData(parentLinkKeys.parents(), []);
     client.setQueryData(invitationKeys.sent(), []);
+    client.setQueryData(parentLinkKeys.incoming(), []);
 
     const { result } = renderHook(() => useUnlinkParent(), { wrapper });
     await act(() => result.current.mutateAsync("p-1"));
@@ -64,5 +65,7 @@ describe("useUnlinkParent", () => {
     expect(mockApi.delete).toHaveBeenCalledWith("/family/parents/p-1");
     expect(client.getQueryState(parentLinkKeys.parents())?.isInvalidated).toBe(true);
     expect(client.getQueryState(invitationKeys.sent())?.isInvalidated).toBe(true);
+    // W-b (vòng 2): backend huỷ kèm yêu cầu còn chờ của cặp.
+    expect(client.getQueryState(parentLinkKeys.incoming())?.isInvalidated).toBe(true);
   });
 });

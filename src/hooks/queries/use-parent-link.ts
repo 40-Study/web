@@ -104,8 +104,10 @@ export function useUnlinkParent() {
     onSuccess: () => {
       toast.success("Đã huỷ liên kết với phụ huynh.");
       qc.invalidateQueries({ queryKey: parentLinkKeys.parents() });
-      // Backend thu hồi luôn lời mời còn chờ của cặp này (review #81 MAJOR-2) — làm mới danh sách.
+      // Backend thu hồi luôn lời mời và huỷ yêu cầu còn chờ của cặp này (review #81 MAJOR-2) —
+      // làm mới cả hai danh sách, kẻo thẻ "yêu cầu đến" còn hiện yêu cầu đã bị huỷ (#38 vòng 2, W-b).
       qc.invalidateQueries({ queryKey: invitationKeys.sent() });
+      qc.invalidateQueries({ queryKey: parentLinkKeys.incoming() });
     },
     onError: (e) => toast.error(parentLinkErrorMessage(e, "Không huỷ được liên kết, vui lòng thử lại.")),
   });

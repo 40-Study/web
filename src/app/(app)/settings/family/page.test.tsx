@@ -72,6 +72,10 @@ describe("/settings/family — học sinh: nguồn sự thật của liên kết
     });
     renderWithProviders(<FamilySettingsPage />);
     expect(await screen.findByText(/Không tải được danh sách phụ huynh đang liên kết/)).toBeTruthy();
+    // W-a (vòng 2): không đọc được thì không được khẳng định "chưa kết nối với ai".
+    await waitFor(() => expect(mockApi.get).toHaveBeenCalledWith("/invitations/sent"));
+    expect(screen.queryByText("Chưa có lời mời nào")).toBeNull();
+    expect(screen.queryByText(/chưa kết nối với thành viên gia đình nào/)).toBeNull();
   });
 
   it("lỗi tải yêu cầu đến hiện báo lỗi (học sinh phải biết có thể đang có yêu cầu chờ)", async () => {
