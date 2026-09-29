@@ -8,7 +8,11 @@ name: Discord Notify
 on:
   push:
     branches: [ main ]
-  # Repo chưa có workflow CI; khi thêm CI, bổ sung trigger workflow_run như repo backend
+  workflow_run:
+    # Tên workflow CI cần báo kết quả (khớp field `name:` của workflow đó)
+    workflows: [ "Web CI" ]
+    types: [ completed ]
+    branches: [ main ]
 
 # Chỉ đọc: tra PR gắn với commit (tiêu đề, mô tả, review, commit của PR)
 permissions:
