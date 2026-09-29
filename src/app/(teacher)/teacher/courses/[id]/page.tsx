@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
@@ -63,7 +63,10 @@ import { CourseReviewPanel, CourseStatusBadge } from "@/components/teacher/cours
 import { useSections, useCreateSection, useReorderSections, useDeleteSection, sectionKeys } from "@/hooks/queries/use-sections";
 import { useLessons, useCreateLesson, useReorderLessons, useDeleteLesson } from "@/hooks/queries/use-lessons";
 import { useLessonContents, useCreateLessonContent, useDeleteLessonContent } from "@/hooks/queries/use-lesson-content";
-import type { LessonContent, CreateContentDTO } from "@/services/lesson-content.service";
+import { lessonContentService, type LessonContent, type CreateContentDTO } from "@/services/lesson-content.service";
+import { useHlsSource } from "@/hooks/use-hls-source";
+import { useLessonVideoSource } from "@/hooks/use-lesson-video-source";
+import { pickVideoSource, VIDEO_PROCESSING_MESSAGE } from "@/lib/hls-playback";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Section } from "@/types/section";
@@ -1332,93 +1335,6 @@ function VideoPreviewModal({
   onOpenChange: (open: boolean) => void;
   content: LessonContent | null;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const hlsRef = useRef<any>(null);
-
-  // Construct full video URL: prefer HLS URL, fallback to video_url (original)
-  const videoUrl = useMemo(() => {
-    // Try HLS URL first (might still be processing, but we handle errors)
-    const url = content?.video_hls_url ?? content?.video_url;
-    if (!url) return "";
-    // Normalize legacy absolute API URLs to same-origin for stable cookies/CORS.
-    if (/^https?:\/\/127.0.0.1:5000\/api\//i.test(url)) {
-      return url.replace(/^https?:\/\/127.0.0.1:5000\/api/i, "/api");
-    }
-    if (/^https?:\/\/api\.fortex\.ai\.vn\/api\//i.test(url)) {
-      return url.replace(/^https?:\/\/api\.fortex\.ai\.vn\/api/i, "/api");
-    }
-    return url;
-  }, [content?.video_hls_url, content?.video_url]);
-
-  // Fallback URL for when HLS fails (video still processing)
-  const fallbackUrl = useMemo(() => {
-    if (!content?.video_url) return "";
-    return content.video_url;
-  }, [content?.video_url]);
-
-  const isHls = videoUrl.includes(".m3u8");
-
-  const [videoError, setVideoError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open || !videoUrl || !videoRef.current) return;
-
-    setVideoError(null);
-    const video = videoRef.current;
-
-    if (isHls) {
-      // Use hls.js for HLS streams
-      import("hls.js").then(({ default: Hls }) => {
-        if (Hls.isSupported()) {
-          const hls = new Hls({
-            maxBufferLength: 30,        // Max 30 giây buffer
-            maxMaxBufferLength: 60,     // Max 60 giây total
-            maxBufferSize: 10 * 1000 * 1000, // 10MB max buffer (giảm bandwidth)
-            startLevel: 0,              // Bắt đầu với quality thấp nhất
-            abrMaxWithRealBitrate: true, // Sử dụng bitrate thực
-            abrBandWidthFactor: 0.7,    // Conservative bandwidth estimate
-          });
-          hlsRef.current = hls;
-          hls.loadSource(videoUrl);
-          hls.attachMedia(video);
-          hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            video.play().catch(() => {});
-          });
-          hls.on(Hls.Events.ERROR, (_, data) => {
-            if (data.fatal) {
-              console.error("HLS Error:", data);
-              hls.destroy();
-              hlsRef.current = null;
-              // Fallback to original video when HLS not ready
-              if (fallbackUrl && fallbackUrl !== videoUrl) {
-                video.src = fallbackUrl;
-                video.play().catch(() => {});
-              } else {
-                setVideoError("Video đang được xử lý, vui lòng thử lại sau.");
-              }
-            }
-          });
-        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-          // Safari native HLS support
-          video.src = videoUrl;
-          video.play().catch(() => {});
-        }
-      });
-    } else {
-      // Regular video
-      video.src = videoUrl;
-      video.onerror = () => setVideoError("Không thể tải video");
-      video.play().catch(() => {});
-    }
-
-    return () => {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-    };
-  }, [open, videoUrl, isHls, fallbackUrl]);
-
   if (!content) return null;
 
   return (
@@ -1429,45 +1345,94 @@ function VideoPreviewModal({
           <DialogDescription>Xem trước video bài giảng</DialogDescription>
         </DialogHeader>
 
-        <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
-          {videoUrl ? (
-            <>
-              <video
-                ref={videoRef}
-                controls
-                className="w-full h-full"
-              >
-                Trình duyệt không hỗ trợ video.
-              </video>
-              {videoError && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/80 text-white text-center p-4">
-                  <div>
-                    <p className="text-red-400 mb-2">{videoError}</p>
-                    <p className="text-sm text-gray-400">URL: {videoUrl}</p>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-white">
-              <p>Video chưa được upload hoặc đang xử lý</p>
-            </div>
-          )}
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Đóng
-          </Button>
-          {videoUrl && (
-            <Button onClick={() => window.open(videoUrl, "_blank")}>
-              <Eye className="w-4 h-4 mr-2" />
-              Mở trong tab mới
-            </Button>
-          )}
-        </DialogFooter>
+        {/* Radix chỉ mount phần thân khi hộp thoại mở: các hook tải video (query /info, hls.js) không
+            chạy khi modal đóng. */}
+        <VideoPreviewBody content={content} onClose={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function VideoPreviewBody({ content, onClose }: { content: LessonContent; onClose: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const queryClient = useQueryClient();
+
+  // S1: /api/hls/* chỉ phục vụ URL KÝ do API cấp. Giảng viên sở hữu khoá còn có `video_url` (file
+  // gốc ký) để xem tạm khi HLS chưa xử lý xong — API chỉ cấp field này cho chủ khoá/admin.
+  const { source, src, isChecking } = useLessonVideoSource(content, true);
+
+  // URL ký hết hạn giữa chừng (403): lấy lại nội dung bài học để có URL mới, không tự dựng URL.
+  const refreshSource = useCallback(async () => {
+    const contents = await queryClient.fetchQuery({
+      queryKey: lessonContentKeys.contents(content.lesson_id),
+      queryFn: () => lessonContentService.getContents(content.lesson_id),
+      staleTime: 0,
+    });
+    const next = pickVideoSource(contents.find((c) => c.id === content.id), true);
+    return next.state === "ready" ? next.src : null;
+  }, [content.id, content.lesson_id, queryClient]);
+
+  const { error: playbackError } = useHlsSource(videoRef, src, {
+    autoPlay: true,
+    refreshSource,
+    hlsConfig: {
+      maxBufferLength: 30, // Max 30 giây buffer
+      maxMaxBufferLength: 60, // Max 60 giây total
+      maxBufferSize: 10 * 1000 * 1000, // 10MB max buffer (giảm bandwidth)
+      startLevel: 0, // Bắt đầu với quality thấp nhất
+      abrMaxWithRealBitrate: true, // Sử dụng bitrate thực
+      abrBandWidthFactor: 0.7, // Conservative bandwidth estimate
+    },
+  });
+
+  const emptyMessage =
+    source.state === "processing" ? VIDEO_PROCESSING_MESSAGE : "Video chưa được upload hoặc đang xử lý";
+
+  return (
+    <>
+      <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
+        {isChecking ? (
+          <div className="absolute inset-0 flex items-center justify-center text-white">
+            <Loader2 className="w-8 h-8 animate-spin" />
+          </div>
+        ) : src ? (
+          <>
+            <video
+              ref={videoRef}
+              controls
+              className="w-full h-full"
+            >
+              Trình duyệt không hỗ trợ video.
+            </video>
+            {playbackError && (
+              <div
+                role="alert"
+                className="absolute inset-0 flex items-center justify-center bg-black text-white text-center p-4"
+              >
+                <p className="text-red-400 mb-2">{playbackError}</p>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center p-4 text-center text-white">
+            <p>{emptyMessage}</p>
+          </div>
+        )}
+      </div>
+
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>
+          Đóng
+        </Button>
+        {/* Chỉ file gốc (mp4) mới mở được ở tab mới; playlist .m3u8 không xem được trực tiếp. */}
+        {src && !src.includes(".m3u8") && (
+          <Button onClick={() => window.open(src, "_blank")}>
+            <Eye className="w-4 h-4 mr-2" />
+            Mở trong tab mới
+          </Button>
+        )}
+      </DialogFooter>
+    </>
   );
 }
 

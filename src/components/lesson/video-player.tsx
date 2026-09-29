@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback, type MutableRefObject } from "react";
-import Hls from "hls.js";
 import {
   Play,
   Pause,
@@ -16,6 +15,7 @@ import {
   PictureInPicture2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useHlsSource } from "@/hooks/use-hls-source";
 
 export interface CaptionTrack {
   lang: string;
@@ -49,6 +49,12 @@ interface VideoPlayerProps {
    */
   controlRef?: MutableRefObject<VideoPlayerHandle | null>;
   initialTime?: number;
+  /**
+   * URL video là URL KÝ ngắn hạn (S1): hết hạn giữa chừng backend trả 403. Player gọi hàm này đúng
+   * một lần để lấy URL ký mới (thường refetch nội dung bài học) rồi nạp lại đúng vị trí; không xin
+   * được thì hiện thông báo lỗi tiếng Việt thay vì khung trắng.
+   */
+  onSourceExpired?: () => Promise<string | null | undefined>;
   className?: string;
 }
 
@@ -82,11 +88,11 @@ export function VideoPlayer({
   onToggleShortcutsHelp,
   controlRef,
   initialTime = 0,
+  onSourceExpired,
   className,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const hlsRef = useRef<Hls | null>(null);
   const progressSaveInterval = useRef<NodeJS.Timeout | null>(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -106,32 +112,11 @@ export function VideoPlayer({
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [showCaptionMenu, setShowCaptionMenu] = useState(false);
 
-  // Initialize HLS or native video
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    if (src.includes(".m3u8") && Hls.isSupported()) {
-      const hls = new Hls({
-        startPosition: initialTime,
-      });
-      hls.loadSource(src);
-      hls.attachMedia(video);
-      hlsRef.current = hls;
-
-      return () => {
-        hls.destroy();
-      };
-    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      // Native HLS support (Safari)
-      video.src = src;
-      if (initialTime > 0) video.currentTime = initialTime;
-    } else {
-      // Regular video
-      video.src = src;
-      if (initialTime > 0) video.currentTime = initialTime;
-    }
-  }, [src, initialTime]);
+  // Nạp HLS / video thường; tự xin URL ký mới một lần khi bị 403 (hết hạn) — xem useHlsSource.
+  const { error: sourceError } = useHlsSource(videoRef, src, {
+    startPosition: initialTime,
+    refreshSource: onSourceExpired,
+  });
 
   // Progress save interval (every 10s)
   useEffect(() => {
@@ -482,6 +467,17 @@ export function VideoPlayer({
           />
         ))}
       </video>
+
+      {/* Lỗi nguồn video (URL hết hạn không xin lại được, video chưa sẵn sàng, mất mạng): luôn có
+          thông báo tiếng Việt, không để khung phát trắng. */}
+      {sourceError && (
+        <div
+          role="alert"
+          className="absolute inset-0 z-20 flex items-center justify-center bg-black p-6 text-center text-white"
+        >
+          <p className="max-w-md text-sm">{sourceError}</p>
+        </div>
+      )}
 
       {/* Controls overlay */}
       <div

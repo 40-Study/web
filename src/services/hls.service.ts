@@ -1,6 +1,10 @@
 /**
  * HLS streaming service
  * Backend endpoints: /api/hls/:uploadId/*
+ *
+ * Mọi endpoint HLS đòi URL KÝ (query `exp/uid/sig`) do API nội dung bài học cấp trong
+ * `video_hls_url` — xem `lib/hls-playback.ts`. Service này KHÔNG tự dựng URL playlist/segment/file
+ * gốc nữa: URL không chữ ký luôn bị 403, và file gốc không được cấp cho học viên.
  */
 
 function resolveApiBaseUrl(): string {
@@ -25,17 +29,30 @@ export interface VideoInfo {
   qualities?: { id: string; label: string; playlist: string }[];
   status: string;
   hls_ready?: boolean;
-  fallback_url?: string; // URL video gốc khi HLS chưa sẵn sàng
   master_url?: string;
   message?: string;
+}
+
+/** Backend từ chối chữ ký (thiếu/sai/hết hạn) — người gọi nên xin URL ký mới. */
+export class HlsAuthError extends Error {
+  constructor() {
+    super("HLS signed URL rejected");
+    this.name = "HlsAuthError";
+  }
 }
 
 // ─── Service ────────────────────────────────────────────────────────────────
 
 export const hlsService = {
-  /** GET /api/hls/:uploadId/info — video info */
-  getInfo: async (uploadId: string): Promise<VideoInfo> => {
-    const res = await fetch(`${API_BASE_URL}/hls/${uploadId}/info`);
+  /**
+   * GET /api/hls/:uploadId/info?{signedQuery} — trạng thái HLS của video.
+   * `signedQuery` lấy từ `video_hls_url` (`signedQueryOf`).
+   */
+  getInfo: async (uploadId: string, signedQuery: string): Promise<VideoInfo> => {
+    const res = await fetch(`${API_BASE_URL}/hls/${uploadId}/info?${signedQuery}`);
+    if (res.status === 403) {
+      throw new HlsAuthError();
+    }
     if (!res.ok) {
       throw new Error(`Failed to fetch video info: ${res.status}`);
     }
@@ -43,26 +60,10 @@ export const hlsService = {
     return data.data || data;
   },
 
-  /** Build master playlist URL (for HLS player) */
-  getMasterPlaylistUrl: (uploadId: string) =>
-    `${API_BASE_URL}/hls/${uploadId}/master.m3u8`,
-
-  /** Build fallback video URL (original video when HLS not ready) */
-  getFallbackVideoUrl: (uploadId: string) =>
-    `${API_BASE_URL}/hls/${uploadId}/video.mp4`,
-
-  /** Build quality playlist URL */
-  getQualityPlaylistUrl: (uploadId: string, quality: string) =>
-    `${API_BASE_URL}/hls/${uploadId}/${quality}/index.m3u8`,
-
-  /** Build segment URL */
-  getSegmentUrl: (uploadId: string, quality: string, segment: string) =>
-    `${API_BASE_URL}/hls/${uploadId}/${quality}/${segment}`,
-
   /** Check if video is ready for streaming */
-  isVideoReady: async (uploadId: string): Promise<boolean> => {
+  isVideoReady: async (uploadId: string, signedQuery: string): Promise<boolean> => {
     try {
-      const info = await hlsService.getInfo(uploadId);
+      const info = await hlsService.getInfo(uploadId, signedQuery);
       return info.hls_ready === true || info.status === "ready";
     } catch {
       return false;

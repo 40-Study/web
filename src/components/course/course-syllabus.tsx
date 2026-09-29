@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -29,6 +29,9 @@ import {
 import { Section, Lesson } from "@/types/course";
 import { useLessonContents } from "@/hooks/queries/use-lesson-content";
 import { usePreviewLessonContents } from "@/hooks/queries/use-preview-lesson-contents";
+import { useHlsSource } from "@/hooks/use-hls-source";
+import { useLessonVideoSource } from "@/hooks/use-lesson-video-source";
+import { pickVideoSource, VIDEO_PROCESSING_MESSAGE } from "@/lib/hls-playback";
 import type { LessonContent } from "@/services/lesson-content.service";
 
 interface CourseSyllabusProps {
@@ -124,7 +127,7 @@ function LessonContentsPanel({
   isFreePreview: boolean;
   courseSlug?: string;
   showTrialLinks?: boolean;
-  onViewVideo: (content: LessonContent) => void;
+  onViewVideo: (previewing: PreviewingVideo) => void;
 }) {
   const canAccess = isEnrolled || isFreePreview;
   // F1 (QA vòng 2): bài xem thử của người CHƯA ghi danh (kể cả khách chưa đăng nhập) đi qua
@@ -134,8 +137,19 @@ function LessonContentsPanel({
   const usePublicPreview = !isEnrolled && isFreePreview;
   const enrolledQuery = useLessonContents(isEnrolled ? lessonId : "");
   const previewQuery = usePreviewLessonContents(courseSlug, lessonId, usePublicPreview);
-  const { data: contentsRaw, isLoading, isError } = usePublicPreview ? previewQuery : enrolledQuery;
+  const activeQuery = usePublicPreview ? previewQuery : enrolledQuery;
+  const { data: contentsRaw, isLoading, isError } = activeQuery;
   const contents: LessonContent[] = Array.isArray(contentsRaw) ? contentsRaw : [];
+
+  // URL video là URL KÝ ngắn hạn (S1): hết hạn thì player gọi lại đây để lấy URL mới (refetch cùng
+  // endpoint đã kiểm quyền) — không bao giờ tự dựng URL.
+  const makeViewing = (content: LessonContent): PreviewingVideo => ({
+    content,
+    refreshContent: async () => {
+      const { data } = await activeQuery.refetch();
+      return (Array.isArray(data) ? data : []).find((c) => c.id === content.id);
+    },
+  });
 
   if (!canAccess) {
     return (
@@ -176,7 +190,7 @@ function LessonContentsPanel({
         const handleClick = () => {
           if (!canAccess) return;
           if (content.type === "video" && (content.video_hls_url || content.video_url)) {
-            onViewVideo(content);
+            onViewVideo(makeViewing(content));
           } else if (content.type === "exercise" && content.exercise_id) {
             window.open(`/exercises/${content.exercise_id}`, "_blank");
           }
@@ -218,7 +232,7 @@ function LessonContentsPanel({
                   className="text-primary-600 hover:text-primary-700 h-7 px-2"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onViewVideo(content);
+                    onViewVideo(makeViewing(content));
                   }}
                 >
                   <Eye className="h-3.5 w-3.5 mr-1" />
@@ -246,7 +260,7 @@ function ExpandableLessonRow({
   isEnrolled: boolean;
   courseSlug?: string;
   showTrialLinks?: boolean;
-  onViewVideo: (content: LessonContent) => void;
+  onViewVideo: (previewing: PreviewingVideo) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const LessonIcon = getLessonIcon(lesson.type);
@@ -320,138 +334,50 @@ function ExpandableLessonRow({
 
 // ─── Video Preview Modal ────────────────────────────────────────────────────
 
+/** Nội dung đang xem thử + hàm lấy lại nội dung mới (URL ký mới) khi URL hiện tại hết hạn. */
+interface PreviewingVideo {
+  content: LessonContent;
+  refreshContent: () => Promise<LessonContent | undefined>;
+}
+
 function VideoPreviewModal({
   open,
   onOpenChange,
-  content,
+  previewing,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  content: LessonContent | null;
+  previewing: PreviewingVideo | null;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const hlsRef = useRef<any>(null);
+  const content = previewing?.content ?? null;
 
-  const [videoError, setVideoError] = useState<string | null>(null);
-  const [resolvedVideoUrl, setResolvedVideoUrl] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
+  // S1: video HLS chỉ phát được bằng URL KÝ do API cấp (`video_hls_url`); học viên/khách không còn
+  // nhận file gốc, nên khi HLS chưa xong chỉ có thể báo "đang xử lý".
+  const { source, src, isChecking } = useLessonVideoSource(content, open);
 
-  // Extract upload ID from HLS URL pattern: /api/hls/{uploadId}/master.m3u8
-  const extractUploadId = (url: string): string | null => {
-    const match = url.match(/\/hls\/([a-f0-9-]+)\//i);
-    return match ? match[1] : null;
-  };
+  const refreshContent = previewing?.refreshContent;
+  const refreshSource = useCallback(async () => {
+    const fresh = await refreshContent?.();
+    const next = pickVideoSource(fresh, true);
+    return next.state === "ready" ? next.src : null;
+  }, [refreshContent]);
 
-  // Normalize URL
-  const normalizeUrl = (url: string): string => {
-    if (/^https?:\/\/127.0.0.1:5000\/api\//i.test(url)) {
-      return url.replace(/^https?:\/\/127.0.0.1:5000\/api/i, "/api");
-    }
-    if (/^https?:\/\/api\.fortex\.ai\.vn\/api\//i.test(url)) {
-      return url.replace(/^https?:\/\/api\.fortex\.ai\.vn\/api/i, "/api");
-    }
-    return url;
-  };
+  const { error: playbackError } = useHlsSource(videoRef, src, {
+    autoPlay: true,
+    refreshSource,
+    hlsConfig: {
+      maxBufferLength: 30,
+      maxMaxBufferLength: 60,
+      maxBufferSize: 10 * 1000 * 1000,
+      startLevel: 0,
+      abrMaxWithRealBitrate: true,
+      abrBandWidthFactor: 0.7,
+    },
+  });
 
-  // Resolve video URL - check HLS availability and use fallback if needed
-  useEffect(() => {
-    if (!open || !content) {
-      setResolvedVideoUrl("");
-      return;
-    }
-
-    const url = content.video_hls_url ?? content.video_url;
-    if (!url) {
-      setResolvedVideoUrl("");
-      return;
-    }
-
-    const normalizedUrl = normalizeUrl(url);
-    const uploadId = extractUploadId(normalizedUrl);
-
-    // If it's an HLS URL, check if HLS is ready
-    if (uploadId && normalizedUrl.includes(".m3u8")) {
-      setIsLoading(true);
-      fetch(`/api/hls/${uploadId}/info`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.hls_ready === true) {
-            // HLS ready - use HLS URL
-            setResolvedVideoUrl(normalizedUrl);
-          } else if (data.fallback_url) {
-            // HLS not ready - use fallback (original video)
-            setResolvedVideoUrl(data.fallback_url);
-          } else {
-            // No fallback available
-            setVideoError("Video đang được xử lý, vui lòng thử lại sau.");
-          }
-        })
-        .catch(() => {
-          // API error - try original video_url as fallback
-          if (content.video_url && content.video_url !== url) {
-            setResolvedVideoUrl(normalizeUrl(content.video_url));
-          } else {
-            setVideoError("Không thể tải thông tin video.");
-          }
-        })
-        .finally(() => setIsLoading(false));
-    } else {
-      // Not an HLS URL - use directly
-      setResolvedVideoUrl(normalizedUrl);
-    }
-  }, [open, content]);
-
-  const isHls = resolvedVideoUrl.includes(".m3u8");
-
-  useEffect(() => {
-    if (!open || !resolvedVideoUrl || !videoRef.current || isLoading) return;
-
-    setVideoError(null);
-    const video = videoRef.current;
-
-    if (isHls) {
-      // Use hls.js for HLS streams
-      import("hls.js").then(({ default: Hls }) => {
-        if (Hls.isSupported()) {
-          const hls = new Hls({
-            maxBufferLength: 30,
-            maxMaxBufferLength: 60,
-            maxBufferSize: 10 * 1000 * 1000,
-            startLevel: 0,
-            abrMaxWithRealBitrate: true,
-            abrBandWidthFactor: 0.7,
-          });
-          hlsRef.current = hls;
-          hls.loadSource(resolvedVideoUrl);
-          hls.attachMedia(video);
-          hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            video.play().catch(() => {});
-          });
-          hls.on(Hls.Events.ERROR, (_, data) => {
-            if (data.fatal) {
-              console.error("HLS Error:", data);
-              setVideoError("Lỗi phát video HLS");
-            }
-          });
-        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-          video.src = resolvedVideoUrl;
-          video.play().catch(() => {});
-        }
-      });
-    } else {
-      // Regular video (mp4, etc.)
-      video.src = resolvedVideoUrl;
-      video.onerror = () => setVideoError("Không thể tải video");
-      video.play().catch(() => {});
-    }
-
-    return () => {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-    };
-  }, [open, resolvedVideoUrl, isHls, isLoading]);
+  const emptyMessage =
+    source.state === "processing" ? VIDEO_PROCESSING_MESSAGE : "Video chưa được upload hoặc đang xử lý";
 
   if (!content) return null;
 
@@ -464,14 +390,14 @@ function VideoPreviewModal({
         </DialogHeader>
 
         <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
-          {isLoading ? (
+          {isChecking ? (
             <div className="absolute inset-0 flex items-center justify-center text-white">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
                 <p className="text-sm text-gray-400">Đang tải video...</p>
               </div>
             </div>
-          ) : resolvedVideoUrl ? (
+          ) : src ? (
             <>
               <video
                 ref={videoRef}
@@ -480,17 +406,18 @@ function VideoPreviewModal({
               >
                 Trình duyệt không hỗ trợ video.
               </video>
-              {videoError && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/80 text-white text-center p-4">
-                  <div>
-                    <p className="text-red-400 mb-2">{videoError}</p>
-                  </div>
+              {playbackError && (
+                <div
+                  role="alert"
+                  className="absolute inset-0 flex items-center justify-center bg-black/80 text-white text-center p-4"
+                >
+                  <p className="text-red-400 mb-2">{playbackError}</p>
                 </div>
               )}
             </>
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-white">
-              <p>Video chưa được upload hoặc đang xử lý</p>
+            <div className="w-full h-full flex items-center justify-center p-4 text-center text-white">
+              <p>{emptyMessage}</p>
             </div>
           )}
         </div>
@@ -499,12 +426,6 @@ function VideoPreviewModal({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Đóng
           </Button>
-          {resolvedVideoUrl && (
-            <Button onClick={() => window.open(resolvedVideoUrl, "_blank")}>
-              <Eye className="w-4 h-4 mr-2" />
-              Mở trong tab mới
-            </Button>
-          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -524,7 +445,7 @@ export function CourseSyllabus({
     sections.length > 0 ? [sections[0].id.toString()] : []
   );
   const [videoPreviewModal, setVideoPreviewModal] = useState(false);
-  const [previewingVideo, setPreviewingVideo] = useState<LessonContent | null>(null);
+  const [previewingVideo, setPreviewingVideo] = useState<PreviewingVideo | null>(null);
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections((prev) =>
@@ -542,8 +463,8 @@ export function CourseSyllabus({
     setExpandedSections([]);
   };
 
-  const handleViewVideo = (content: LessonContent) => {
-    setPreviewingVideo(content);
+  const handleViewVideo = (previewing: PreviewingVideo) => {
+    setPreviewingVideo(previewing);
     setVideoPreviewModal(true);
   };
 
@@ -637,7 +558,7 @@ export function CourseSyllabus({
       <VideoPreviewModal
         open={videoPreviewModal}
         onOpenChange={setVideoPreviewModal}
-        content={previewingVideo}
+        previewing={previewingVideo}
       />
     </div>
   );
