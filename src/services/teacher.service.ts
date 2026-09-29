@@ -19,7 +19,6 @@ export interface Teacher {
 export interface TeacherStudent {
   id: string;
   name: string;
-  email: string;
   avatar?: string;
   student_id?: string;
   parent_name?: string;

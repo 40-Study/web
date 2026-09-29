@@ -43,17 +43,16 @@ export interface ClassTeacher {
   email?: string;
 }
 
+/** Không có email: email học viên chỉ chính chủ và admin được thấy (Lane S2). */
 export interface ClassStudent {
   student_id: string;
   name?: string;
-  email?: string;
 }
 
 interface ClassStudentApiResponse {
   student_id: string;
   user_name: string;
   full_name?: string;
-  email?: string;
 }
 
 interface ClassStudentListApiResponse {
@@ -67,7 +66,6 @@ function mapClassStudents(response: ClassStudentListApiResponse): ClassStudent[]
   return response.students.map((student) => ({
     student_id: student.student_id,
     name: student.full_name?.trim() || student.user_name,
-    email: student.email,
   }));
 }
 

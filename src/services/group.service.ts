@@ -24,7 +24,6 @@ export interface GroupMember {
   id: string;
   user_id: string;
   user_name: string;
-  email: string;
   avatar_url?: string;
   role: string;
   status: string;
@@ -37,7 +36,6 @@ export interface JoinRequest {
   group_id: string;
   user_id: string;
   user_name: string;
-  email: string;
   avatar_url?: string;
   message?: string;
   status: string;
@@ -55,6 +53,14 @@ export interface CreateGroupDTO {
 type R<T> = { message: string; data: T };
 
 // ─── Service ────────────────────────────────────────────────────────────────
+
+/** Mã lỗi backend trả khi người được mời không có quan hệ hợp lệ với người mời. */
+export const GROUP_INVITE_NOT_ALLOWED = "GROUP_INVITE_NOT_ALLOWED";
+
+export interface InviteMembersResult {
+  invited: string[];
+  rejected: { user_id: string; code: string }[];
+}
 
 export const groupService = {
   list: (params?: { keyword?: string; privacy?: string; page?: number; limit?: number }) =>
@@ -89,8 +95,11 @@ export const groupService = {
   listMembers: (id: string, params?: { page?: number; limit?: number }) =>
     api.get<R<{ members: GroupMember[]; total_count: number }>>(`/groups/${id}/members`, { params }).then((r) => r.data.data),
 
+  /** 200 kèm `rejected` khi mời được một phần; 403 GROUP_INVITE_NOT_ALLOWED khi không ai được mời. */
   inviteMembers: (id: string, userIds: string[]) =>
-    api.post(`/groups/${id}/members/invite`, { user_ids: userIds }).then((r) => r.data),
+    api
+      .post<{ message: string; data: InviteMembersResult }>(`/groups/${id}/members/invite`, { user_ids: userIds })
+      .then((r) => r.data),
 
   updateMemberRole: (groupId: string, userId: string, role: string) =>
     api.put(`/groups/${groupId}/members/${userId}/role`, { role }).then((r) => r.data),

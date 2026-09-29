@@ -53,7 +53,6 @@ type DisplayStatus = "submitted" | "graded" | "late";
 interface SubmissionRow {
   studentId: string;
   studentName: string;
-  email?: string;
   status: DisplayStatus;
   submittedAt?: string;
   score?: number;
@@ -119,7 +118,6 @@ export default function AssignmentSubmissionsPage() {
     return submissionData.data.map((sub) => ({
       studentId: sub.user_id,
       studentName: sub.user?.username || sub.user_id,
-      email: sub.user?.email,
       status: deriveDisplayStatus(sub, assignment?.end_time ?? undefined),
       submittedAt: sub.created_at,
       score: sub.score,
@@ -398,10 +396,7 @@ export default function AssignmentSubmissionsPage() {
                     <tr key={`${submission.studentId}-expanded`} className="bg-muted/20">
                       <td colSpan={6} className="p-4 pl-16">
                         <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Email:</span>{" "}
-                            <span>{submission.email || "-"}</span>
-                          </div>
+
                           <div>
                             <span className="text-muted-foreground">Verdict:</span>{" "}
                             <span className="font-medium">{submission.verdict}</span>

@@ -52,9 +52,6 @@ export function AttendanceTable({
             <tr key={row.studentId} className="hover:bg-gray-50/60">
               <td className="px-4 py-3">
                 <p className="font-medium text-gray-900">{row.name}</p>
-                {row.email && (
-                  <p className="text-xs text-gray-500">{row.email}</p>
-                )}
               </td>
 
               <td className="px-4 py-3">

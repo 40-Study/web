@@ -198,7 +198,7 @@ export default function ChildDetailPage() {
           )}
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{displayName}</h1>
-            <p className="text-sm text-gray-500">{overview.email}</p>
+
             {/* E4: `relationship` là quan hệ của NGƯỜI XEM với con (parent/guardian/...), gắn
                 "Phụ huynh" dưới tên con đọc như thể con là phụ huynh. Nhãn đúng: "Con của bạn". */}
             <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-primary-100 text-primary-700 rounded-full">
