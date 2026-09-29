@@ -67,12 +67,18 @@ interface WeekCalendarGridProps {
   onSelectMore?: (start: Date, end: Date) => void;
   renderEventTooltip?: (event: ScheduleEvent) => React.ReactNode;
   headerActions?: React.ReactNode;
-  stats?: {
-    studyHours?: number;
-    tasksCompleted?: number;
-    tasksTotal?: number;
-    focusPercent?: number;
-  };
+  /**
+   * Thẻ thống kê dưới lịch. Trang gọi tự đặt nhãn theo vai trò (QA vòng 2, D8): trước đây lưới
+   * cứng nhãn góc học sinh ("THỜI GIAN HỌC", "NHIỆM VỤ", "HIỆU SUẤT") ngay cả ở lịch giảng dạy.
+   */
+  stats?: ScheduleStat[];
+}
+
+export interface ScheduleStat {
+  key: string;
+  label: string;
+  value: string;
+  icon?: React.ReactNode;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -293,23 +299,11 @@ export default function WeekCalendarGrid({
         />
       </div>
 
-      {stats && (
-        <div className="grid grid-cols-3 gap-4">
-          <StatCard
-            icon={<Clock className="h-5 w-5 text-primary-500" />}
-            label="THỜI GIAN HỌC TUẦN NÀY"
-            value={`${stats.studyHours ?? 0} Giờ`}
-          />
-          <StatCard
-            icon={<CheckCircle className="h-5 w-5 text-green-500" />}
-            label="NHIỆM VỤ HOÀN THÀNH"
-            value={`${stats.tasksCompleted ?? 0} / ${stats.tasksTotal ?? 0}`}
-          />
-          <StatCard
-            icon={<TrendingUp className="h-5 w-5 text-purple-500" />}
-            label="HIỆU SUẤT TẬP TRUNG"
-            value={`${stats.focusPercent ?? 0}%`}
-          />
+      {stats && stats.length > 0 && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {stats.map((s) => (
+            <StatCard key={s.key} icon={s.icon} label={s.label} value={s.value} />
+          ))}
         </div>
       )}
 
@@ -331,10 +325,10 @@ export default function WeekCalendarGrid({
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function StatCard({ icon, label, value }: { icon?: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3 bg-white rounded-2xl border px-5 py-4 shadow-sm">
-      <div className="p-2 bg-gray-50 rounded-xl">{icon}</div>
+    <div className="flex items-center gap-3 bg-white rounded-2xl border px-5 py-4 shadow-sm" data-testid="schedule-stat">
+      {icon && <div className="p-2 bg-gray-50 rounded-xl">{icon}</div>}
       <div>
         <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
         <p className="text-xl font-bold text-gray-900">{value}</p>

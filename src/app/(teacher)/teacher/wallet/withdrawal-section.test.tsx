@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TeacherWalletResponse, WithdrawalItem } from "@/services/wallet.service";
 
 const mockMutate = vi.fn();
+const mockCancel = vi.fn();
 
 let mockWallet: TeacherWalletResponse;
 let mockHistoryItems: WithdrawalItem[] = [];
@@ -30,6 +31,7 @@ vi.mock("@/hooks/queries/use-wallet", () => ({
     refetch: vi.fn(),
   }),
   useCreateWithdrawal: () => ({ mutate: mockMutate, isPending: false }),
+  useCancelWithdrawal: () => ({ mutate: mockCancel, isPending: false }),
 }));
 
 // eslint-disable-next-line import/first
@@ -60,6 +62,7 @@ function requestButton() {
 describe("WithdrawalSection", () => {
   beforeEach(() => {
     mockMutate.mockReset();
+    mockCancel.mockReset();
     mockHistoryItems = [];
     mockHistoryError = false;
   });
@@ -178,5 +181,46 @@ describe("WithdrawalSection", () => {
     render(<WithdrawalSection />);
     expect(screen.getByText(/Không tải được lịch sử/i)).toBeTruthy();
     expect(screen.queryByText(/chưa có yêu cầu rút tiền nào/i)).toBeNull();
+  });
+
+  // QA vòng 2, Q2: giảng viên tự huỷ yêu cầu còn pending.
+  describe("huỷ yêu cầu rút", () => {
+    const base = { currency: "VND", rejection_reason: null, transaction_id: null, bank_name: null, bank_account_number: null, bank_account_name: null, created_at: "2026-09-28T01:00:00Z" };
+
+    it("chỉ dòng pending có nút 'Huỷ yêu cầu'; xác nhận gọi API với đúng id", () => {
+      mockWallet = walletFixture({ has_open_withdrawal: true });
+      mockHistoryItems = [
+        { ...base, id: "pending-1", amount: 150000, status: "pending", processed_at: null },
+        { ...base, id: "approved-2", amount: 200000, status: "approved", processed_at: "2026-09-28T02:00:00Z" },
+      ];
+      render(<WithdrawalSection />);
+      expect(screen.getAllByRole("button", { name: "Huỷ yêu cầu" })).toHaveLength(1);
+      expect(screen.queryByTestId("cancel-withdrawal-approved-2")).toBeNull();
+
+      fireEvent.click(screen.getByTestId("cancel-withdrawal-pending-1"));
+      expect(screen.getByText("Huỷ yêu cầu rút tiền?")).toBeTruthy();
+      expect(mockCancel).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: "Xác nhận huỷ" }));
+      expect(mockCancel).toHaveBeenCalledTimes(1);
+      expect(mockCancel.mock.calls[0][0]).toBe("pending-1");
+    });
+
+    it("bấm 'Giữ yêu cầu' thì không gọi API", () => {
+      mockWallet = walletFixture({ has_open_withdrawal: true });
+      mockHistoryItems = [{ ...base, id: "pending-1", amount: 150000, status: "pending", processed_at: null }];
+      render(<WithdrawalSection />);
+      fireEvent.click(screen.getByTestId("cancel-withdrawal-pending-1"));
+      fireEvent.click(screen.getByRole("button", { name: "Giữ yêu cầu" }));
+      expect(mockCancel).not.toHaveBeenCalled();
+    });
+
+    it("yêu cầu đã huỷ hiện nhãn 'Đã huỷ', không còn nút huỷ", () => {
+      mockWallet = walletFixture({});
+      mockHistoryItems = [{ ...base, id: "cancelled-1", amount: 150000, status: "cancelled", processed_at: "2026-09-28T02:00:00Z" }];
+      render(<WithdrawalSection />);
+      expect(screen.getByText("Đã huỷ")).toBeTruthy();
+      expect(screen.getByText("Bạn đã huỷ yêu cầu này")).toBeTruthy();
+      expect(screen.queryByRole("button", { name: "Huỷ yêu cầu" })).toBeNull();
+    });
   });
 });

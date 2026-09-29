@@ -14,6 +14,8 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { normalizeRole } from "@/lib/routes";
+import { useAuthStore } from "@/stores/auth.store";
 
 export type SettingsSection =
   | "account"
@@ -53,6 +55,7 @@ export function SettingsSidebar({
   className,
 }: SettingsSidebarProps) {
   const logoutMutation = useLogout();
+  const isParent = normalizeRole(useAuthStore((s) => s.activeRole)) === "PARENT";
 
   return (
     <nav className={cn("w-full md:w-72 shrink-0", className)}>
@@ -107,7 +110,8 @@ export function SettingsSidebar({
             </div>
             <div className="min-w-0">
               <p className="font-medium">Gia đình</p>
-              <p className="text-xs text-gray-400">Liên kết phụ huynh</p>
+              {/* E7 (QA vòng 2): phụ huynh thấy "Liên kết phụ huynh" là copy của học sinh. */}
+              <p className="text-xs text-gray-400">{isParent ? "Con của tôi" : "Liên kết phụ huynh"}</p>
             </div>
           </Link>
           <Link
