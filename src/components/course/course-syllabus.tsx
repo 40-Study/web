@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { Section, Lesson } from "@/types/course";
 import { useLessonContents } from "@/hooks/queries/use-lesson-content";
+import { usePreviewLessonContents } from "@/hooks/queries/use-preview-lesson-contents";
 import type { LessonContent } from "@/services/lesson-content.service";
 
 interface CourseSyllabusProps {
@@ -125,14 +126,37 @@ function LessonContentsPanel({
   showTrialLinks?: boolean;
   onViewVideo: (content: LessonContent) => void;
 }) {
-  const { data: contentsRaw, isLoading } = useLessonContents(lessonId);
-  const contents: LessonContent[] = Array.isArray(contentsRaw) ? contentsRaw : [];
   const canAccess = isEnrolled || isFreePreview;
+  // F1 (QA vòng 2): bài xem thử của người CHƯA ghi danh (kể cả khách chưa đăng nhập) đi qua
+  // endpoint công khai; người đã ghi danh dùng route đầy đủ như cũ. Bài khoá (không ghi danh,
+  // không preview) không gọi API nào — trước đây vẫn gọi và nhận 401/403 rồi hiện nhầm "Chưa có
+  // nội dung".
+  const usePublicPreview = !isEnrolled && isFreePreview;
+  const enrolledQuery = useLessonContents(isEnrolled ? lessonId : "");
+  const previewQuery = usePreviewLessonContents(courseSlug, lessonId, usePublicPreview);
+  const { data: contentsRaw, isLoading, isError } = usePublicPreview ? previewQuery : enrolledQuery;
+  const contents: LessonContent[] = Array.isArray(contentsRaw) ? contentsRaw : [];
+
+  if (!canAccess) {
+    return (
+      <div className="py-3 pl-16 pr-4 text-sm text-muted-foreground">
+        Đăng ký khóa học để xem nội dung bài học này.
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
       <div className="py-3 pl-16 pr-4 flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" /> Đang tải nội dung...
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="py-3 pl-16 pr-4 text-sm text-muted-foreground" role="alert">
+        Không tải được nội dung bài học. Vui lòng thử lại sau.
       </div>
     );
   }

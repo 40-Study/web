@@ -13,6 +13,15 @@ import { useState } from "react";
 import { GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { siteConfig } from "@/lib/constants";
 import { useSwitchRole } from "@/hooks/queries/use-auth";
 import { ApiError } from "@/lib/errors";
 import { normalizeRole } from "@/lib/routes";
@@ -39,6 +48,7 @@ export function ApplyTeacherButton() {
   const activeRole = useAuthStore((s) => s.activeRole);
   const switchRole = useSwitchRole();
   const [isWorking, setIsWorking] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const isIneligible =
     INELIGIBLE_ROLES.has(normalizeRole(activeRole) ?? "") ||
@@ -84,7 +94,7 @@ export function ApplyTeacherButton() {
     return targetId;
   };
 
-  const handleClick = async () => {
+  const run = async () => {
     setIsWorking(true);
     try {
       if (applicantRole && normalizeRole(activeRole) === APPLICANT_ROLE) {
@@ -98,6 +108,25 @@ export function ApplyTeacherButton() {
     }
   };
 
+  /**
+   * Bấm lần đầu (chưa có hồ sơ) là tạo hồ sơ ứng viên VÀ đổi vai trò đang dùng sang ứng viên —
+   * trang chủ đổi theo, menu học viên biến mất (QA vòng 2, F8). Một cú click không được làm
+   * chừng đó việc: hỏi xác nhận trước. "Xem hồ sơ ứng tuyển" (đã có hồ sơ) chỉ điều hướng nên
+   * không cần hỏi.
+   */
+  const handleClick = () => {
+    if (applicantRole) {
+      void run();
+      return;
+    }
+    setConfirmOpen(true);
+  };
+
+  const handleConfirm = () => {
+    setConfirmOpen(false);
+    void run();
+  };
+
   const label = applicantRole ? "Xem hồ sơ ứng tuyển" : "Đăng ký làm giảng viên";
 
   return (
@@ -108,7 +137,7 @@ export function ApplyTeacherButton() {
             <GraduationCap className="h-5 w-5 text-emerald-600" />
           </div>
           <div>
-            <p className="font-medium text-gray-900">Giảng dạy trên 40Study</p>
+            <p className="font-medium text-gray-900">Giảng dạy trên {siteConfig.name}</p>
             <p className="text-sm text-gray-500">
               {applicantRole
                 ? "Bạn đã có hồ sơ ứng tuyển — xem trạng thái duyệt."
@@ -126,6 +155,27 @@ export function ApplyTeacherButton() {
           {label}
         </Button>
       </div>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Đăng ký làm giảng viên?</DialogTitle>
+            <DialogDescription>
+              Hệ thống sẽ tạo hồ sơ ứng tuyển và chuyển bạn sang vai trò ứng viên giảng viên để điền
+              hồ sơ. Hồ sơ cần quản trị viên duyệt. Bạn vẫn có thể quay lại vai trò hiện tại từ trang
+              hồ sơ ứng tuyển.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)} data-testid="apply-teacher-cancel">
+              Để sau
+            </Button>
+            <Button onClick={handleConfirm} data-testid="apply-teacher-confirm">
+              Xác nhận đăng ký
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

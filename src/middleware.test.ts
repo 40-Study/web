@@ -152,3 +152,17 @@ describe("middleware — tham số quay lại sau đăng nhập", () => {
     expect(location.searchParams.get("redirect")).toBe("/my-courses?tab=done");
   });
 });
+
+describe("middleware — Trợ giúp công khai (F2, QA vòng 2)", () => {
+  // Đưa "/help" về PROTECTED_ROUTE_PREFIXES (như trước) làm test này ĐỎ.
+  it.each(["/help", "/help?q=mat-khau"])("khách vào %s -> KHÔNG bị đá về /login", (url) => {
+    expect(isRedirectToLogin(run(url))).toBe(false);
+  });
+
+  it("trang trợ giúp nằm ở route group (main), không phải (app)", () => {
+    const main = findPageFiles(path.join(APP_ROOT, "(main)")).map(fileToRoute);
+    const app = findPageFiles(path.join(APP_ROOT, "(app)")).map(fileToRoute);
+    expect(main).toContain("/help");
+    expect(app).not.toContain("/help");
+  });
+});

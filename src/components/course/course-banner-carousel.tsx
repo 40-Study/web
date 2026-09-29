@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,42 +18,37 @@ interface BannerSlide {
   href: string;
 }
 
-const BANNERS: BannerSlide[] = [
+// Mỗi banner CHỈ hứa những gì có thật và trỏ tới route công khai đang tồn tại (F4, QA vòng 2).
+// Bản cũ dùng 3 slug khoá học không có trong dữ liệu (web-fullstack, ui-ux-figma,
+// python-data-science → 404), một banner "Flash Sale giảm 50%" trong khi hệ thống không có cơ chế
+// đó, và nút CTA là <button> không có href/onClick nên bấm không làm gì.
+export const BANNERS: BannerSlide[] = [
   {
-    id: "featured",
-    title: "Lập trình Web Full-Stack",
-    subtitle: "Từ zero đến hero với React, Node.js và PostgreSQL",
+    id: "contests",
+    title: "Cuộc thi học tập",
+    subtitle: "Thử sức với các cuộc thi và xem bảng xếp hạng",
     gradient: "from-violet-600 via-primary-600 to-indigo-700",
     accentColor: "bg-white/20",
-    cta: "Bắt đầu học",
-    href: "/courses/web-fullstack",
+    cta: "Xem cuộc thi",
+    href: "/contests",
   },
   {
-    id: "new",
-    title: "Thiết kế UI/UX với Figma",
-    subtitle: "Học tư duy thiết kế và tạo sản phẩm thực tế",
-    gradient: "from-pink-600 via-rose-500 to-orange-500",
-    accentColor: "bg-white/15",
-    cta: "Khám phá ngay",
-    href: "/courses/ui-ux-figma",
-  },
-  {
-    id: "popular",
-    title: "Python cho Data Science",
-    subtitle: "Phân tích dữ liệu, Machine Learning và AI",
+    id: "certificate",
+    title: "Chứng chỉ hoàn thành",
+    subtitle: "Hoàn thành khóa học để nhận chứng chỉ, tra cứu công khai bằng mã",
     gradient: "from-emerald-600 via-teal-600 to-cyan-600",
     accentColor: "bg-white/15",
-    cta: "Tìm hiểu thêm",
-    href: "/courses/python-data-science",
+    cta: "Tra cứu chứng chỉ",
+    href: "/certificates/verify",
   },
   {
-    id: "sale",
-    title: "Flash Sale cuối tuần",
-    subtitle: "Giảm đến 50% tất cả khóa học premium",
-    gradient: "from-amber-500 via-orange-500 to-red-500",
-    accentColor: "bg-white/20",
-    cta: "Xem ưu đãi",
-    href: "/courses?filter=sale",
+    id: "help",
+    title: "Cần hỗ trợ khi học?",
+    subtitle: "Câu hỏi thường gặp và cách liên hệ đội hỗ trợ",
+    gradient: "from-pink-600 via-rose-500 to-orange-500",
+    accentColor: "bg-white/15",
+    cta: "Mở trang trợ giúp",
+    href: "/help",
   },
 ];
 
@@ -159,9 +155,14 @@ export function CourseBannerCarousel() {
                   <p className="text-white/80 text-sm md:text-base mb-5">
                     {banner.subtitle}
                   </p>
-                  <button className="px-6 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-sm font-semibold rounded-xl border border-white/20 transition-all duration-300 hover:scale-[1.02]">
+                  <Link
+                    href={banner.href}
+                    // Kéo/vuốt không được coi là bấm nhầm CTA.
+                    draggable={false}
+                    className="inline-block px-6 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-sm font-semibold rounded-xl border border-white/20 transition-all duration-300 hover:scale-[1.02]"
+                  >
                     {banner.cta}
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

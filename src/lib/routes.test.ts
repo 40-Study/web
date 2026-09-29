@@ -68,6 +68,13 @@ describe("isRouteAllowedForRole — ma trận role x route (ROLE_SCOPED_ROUTES)"
     expect(isRouteAllowedForRole("/leaderboard", "STUDENT")).toBe(true);
   });
 
+  // Bỏ entry "/friends" khỏi ROLE_SCOPED_ROUTES làm test này ĐỎ (phụ huynh lại vào được).
+  it("/friends: phụ huynh bị chặn và được đưa về /home, học viên vẫn vào", () => {
+    expect(isRouteAllowedForRole("/friends", "PARENT")).toBe(false);
+    expect(isRouteAllowedForRole("/friends", "STUDENT")).toBe(true);
+    expect(getRoleRestrictedRedirect("/friends", "PARENT")).toBe("/home");
+  });
+
   it("/settings/family và /messages cho cả STUDENT lẫn PARENT (không phải route học sinh-only)", () => {
     expect(isRouteAllowedForRole("/settings/family", "STUDENT")).toBe(true);
     expect(isRouteAllowedForRole("/settings/family", "PARENT")).toBe(true);

@@ -6,6 +6,7 @@ import { Bell, Search, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore } from "@/stores/auth.store";
+import { siteConfig } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -19,7 +20,7 @@ export function DashboardHeader() {
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
           <ForteXLogoIcon size={32} className="text-primary-500" />
-          <span className="text-lg font-bold hidden sm:inline">ForteX</span>
+          <span className="text-lg font-bold hidden sm:inline">{siteConfig.name}</span>
         </Link>
 
         {/* Desktop Search */}

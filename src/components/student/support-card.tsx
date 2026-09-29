@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { MessageCircle, Sparkles } from "lucide-react";
+import { HelpCircle, LifeBuoy } from "lucide-react";
 
 interface SupportCardProps {
   variant?: "default" | "gradient";
 }
 
+/**
+ * Thẻ "Cần hỗ trợ". Trước đây trỏ tới /ai-chat (route đã redirect về trang chủ — sản phẩm không
+ * làm AI) và hứa "chat với AI hoặc mentor" dù không có kênh chat nào (F3/F4, QA vòng 2). Nay dẫn
+ * tới trang Trợ giúp (/help) — nơi có câu hỏi thường gặp và email hỗ trợ thật.
+ */
 export function SupportCard({ variant = "gradient" }: SupportCardProps) {
   if (variant === "gradient") {
     return (
@@ -18,7 +23,7 @@ export function SupportCard({ variant = "gradient" }: SupportCardProps) {
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
+              <LifeBuoy className="w-4 h-4 text-white" />
             </div>
           </div>
 
@@ -26,15 +31,15 @@ export function SupportCard({ variant = "gradient" }: SupportCardProps) {
             Cần hỗ trợ?
           </p>
           <p className="text-sm font-semibold text-white mb-4">
-            Hỏi đáp trực tiếp với mentor về lộ trình học
+            Xem câu hỏi thường gặp hoặc liên hệ đội hỗ trợ
           </p>
 
           <Link
-            href="/ai-chat"
+            href="/help"
             className="inline-flex items-center gap-2 px-4 py-2 bg-white text-primary-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors"
           >
-            <MessageCircle className="w-4 h-4" />
-            Bắt đầu chat
+            <HelpCircle className="w-4 h-4" />
+            Mở trang trợ giúp
           </Link>
         </div>
       </div>
@@ -45,7 +50,7 @@ export function SupportCard({ variant = "gradient" }: SupportCardProps) {
     <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
       <div className="flex items-center gap-2 mb-3">
         <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-          <MessageCircle className="w-4 h-4 text-primary-600" />
+          <HelpCircle className="w-4 h-4 text-primary-600" />
         </div>
         <span className="text-xs font-bold text-gray-900 uppercase tracking-wide">
           Hỗ trợ
@@ -53,14 +58,14 @@ export function SupportCard({ variant = "gradient" }: SupportCardProps) {
       </div>
 
       <p className="text-sm text-gray-600 mb-4">
-        Có thắc mắc? Chat với AI hoặc mentor ngay.
+        Có thắc mắc? Xem câu hỏi thường gặp hoặc liên hệ đội hỗ trợ.
       </p>
 
       <Link
-        href="/ai-chat"
+        href="/help"
         className="block w-full text-center px-4 py-2.5 bg-primary-600 text-white text-sm font-semibold rounded-xl hover:bg-primary-700 transition-colors"
       >
-        Bắt đầu chat
+        Mở trang trợ giúp
       </Link>
     </div>
   );
