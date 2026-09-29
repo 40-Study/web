@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error-messages";
 import {
   assignmentService,
   type CreateAssignmentDTO,
@@ -65,11 +66,16 @@ export function useCreateAssignment() {
       qc.invalidateQueries({ queryKey: assignmentKeys.detail(data.id) });
       toast.success("Đã tạo bài tập");
     },
-    onError: () => toast.error("Không thể tạo bài tập"),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể tạo bài tập")),
   });
 }
 
-/** Update an existing assignment */
+/**
+ * Update an existing assignment.
+ * Các thao tác ghi (tạo/sửa/xóa/công bố) chỉ dành cho giảng viên chủ khoá (hoặc admin): backend trả 403
+ * khi bạn thấy bài tập nhưng không phải chủ, 404 khi không xem được. getErrorMessage đổi cả hai sang
+ * câu tiếng Việt rõ ràng thay vì câu chung "Không thể ...".
+ */
 export function useUpdateAssignment() {
   const qc = useQueryClient();
   return useMutation({
@@ -80,7 +86,7 @@ export function useUpdateAssignment() {
       qc.invalidateQueries({ queryKey: assignmentKeys.detail(data.id) });
       toast.success("Đã cập nhật bài tập");
     },
-    onError: () => toast.error("Không thể cập nhật bài tập"),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể cập nhật bài tập")),
   });
 }
 
@@ -93,7 +99,7 @@ export function useDeleteAssignment() {
       qc.invalidateQueries({ queryKey: assignmentKeys.bySession(variables.sessionId) });
       toast.success("Đã xóa bài tập");
     },
-    onError: () => toast.error("Không thể xóa bài tập"),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể xóa bài tập")),
   });
 }
 
@@ -108,7 +114,7 @@ export function usePublishAssignment() {
       qc.invalidateQueries({ queryKey: assignmentKeys.detail(data.id) });
       toast.success("Bài tập đã được công bố");
     },
-    onError: () => toast.error("Không thể công bố bài tập"),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể công bố bài tập")),
   });
 }
 
@@ -121,6 +127,6 @@ export function useUnpublishAssignment() {
       qc.invalidateQueries({ queryKey: assignmentKeys.bySession(variables.sessionId) });
       toast.success("Đã hủy công bố bài tập");
     },
-    onError: () => toast.error("Không thể hủy công bố bài tập"),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể hủy công bố bài tập")),
   });
 }
