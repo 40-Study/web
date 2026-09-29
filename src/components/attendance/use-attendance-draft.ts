@@ -10,7 +10,6 @@ import type {
 export interface AttendanceRow {
   studentId: string;
   name: string;
-  email?: string;
   /** id bản ghi điểm danh — undefined = buổi này chưa điểm danh HS đó */
   attendanceId?: string;
   status?: AttendanceStatus;
@@ -59,8 +58,7 @@ export function useAttendanceDraft(
 
       return {
         studentId: s.student_id,
-        name: s.name || s.email || s.student_id,
-        email: s.email,
+        name: s.name || s.student_id,
         attendanceId: existing?.id,
         status: draft?.status ?? existing?.status,
         note: draft?.note ?? existing?.note,

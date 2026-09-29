@@ -40,7 +40,6 @@ describe("getStudentsByClassId", () => {
       {
         student_id: "u1",
         name: "Nguyễn Văn A",
-        email: "student@example.com",
       },
     ]);
   });

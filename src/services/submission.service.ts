@@ -20,7 +20,6 @@ export type SubmissionVerdict =
 export interface SubmissionUserDTO {
   id: string;
   username: string;
-  email?: string;
 }
 
 export interface SubmissionResponseDTO {

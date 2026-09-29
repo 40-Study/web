@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error-messages";
 import { groupService, type CreateGroupDTO } from "@/services/group.service";
 
 export const groupKeys = {
@@ -79,6 +80,35 @@ export function useJoinGroup() {
       toast.success("Đã gửi yêu cầu tham gia");
     },
     onError: () => toast.error("Không thể tham gia nhóm"),
+  });
+}
+
+/** Câu báo lỗi mời thành viên: giữ thông điệp tiếng Việt của backend (403 GROUP_INVITE_NOT_ALLOWED). */
+export function inviteErrorMessage(err: unknown): string {
+  return getErrorMessage(err, "Không thể mời thành viên");
+}
+
+/** Kết quả mời một phần (có người bị từ chối) cần cảnh báo, không phải thành công trơn. */
+export function isPartialInvite(res: { data?: { rejected?: unknown[] } }): boolean {
+  return (res.data?.rejected?.length ?? 0) > 0;
+}
+
+export function useInviteGroupMembers() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ groupId, userIds }: { groupId: string; userIds: string[] }) =>
+      groupService.inviteMembers(groupId, userIds),
+    onSuccess: (res, { groupId }) => {
+      qc.invalidateQueries({ queryKey: groupKeys.members(groupId) });
+      if (isPartialInvite(res)) {
+        // Mời được một phần: báo rõ ai không được mời, dùng thông điệp của backend.
+        toast.warning(res.message);
+      } else {
+        toast.success("Đã mời thành viên");
+      }
+    },
+    // 403 GROUP_INVITE_NOT_ALLOWED mang thông điệp tiếng Việt của backend; getErrorMessage giữ nguyên.
+    onError: (err) => toast.error(inviteErrorMessage(err)),
   });
 }
 

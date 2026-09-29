@@ -6,7 +6,6 @@ export interface ChildOverview {
   username: string;
   full_name?: string;
   avatar_url?: string;
-  email: string;
   relationship: string;
   total_xp: number;
   current_streak: number;

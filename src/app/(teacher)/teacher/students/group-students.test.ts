@@ -5,7 +5,6 @@ import { courseFilterOptions, groupStudents } from "./group-students";
 const row = (over: Partial<TeacherStudent>): TeacherStudent => ({
   id: "s1",
   name: "QA Hoc Vien",
-  email: "qa@40study.test",
   status: "active",
   enrolled_at: "2026-09-01T00:00:00Z",
   ...over,

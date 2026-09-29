@@ -15,7 +15,7 @@ import type { SessionAttendance } from "@/services/session.service";
 import { useAttendanceDraft } from "../use-attendance-draft";
 
 const STUDENTS: ClassStudent[] = [
-  { student_id: "u1", name: "An", email: "an@example.com" },
+  { student_id: "u1", name: "An" },
   { student_id: "u2", name: "Bình" },
 ];
 
@@ -35,7 +35,7 @@ describe("gộp roster với bản ghi đã có", () => {
     expect(result.current.rows[1].status).toBeUndefined();
   });
 
-  it("HS không có tên thì hiện email, không có email thì hiện id", () => {
+  it("HS không có tên thì hiện id (không bao giờ hiện email)", () => {
     const { result } = renderHook(() =>
       useAttendanceDraft([{ student_id: "u9" }], [])
     );

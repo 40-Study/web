@@ -18,7 +18,6 @@ export interface StudentCourse {
 export interface GroupedStudent {
   id: string;
   name: string;
-  email: string;
   studentId?: string;
   parentName?: string;
   parentPhone?: string;
@@ -41,7 +40,6 @@ export function groupStudents(rows: TeacherStudent[]): GroupedStudent[] {
       student = {
         id: row.id,
         name: row.name,
-        email: row.email,
         studentId: row.student_id,
         parentName: row.parent_name,
         parentPhone: row.parent_phone,
