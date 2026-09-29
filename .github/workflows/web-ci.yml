@@ -1,0 +1,50 @@
+# CI cho web: lint, typecheck, unit test và build Next.js.
+# Tên workflow ("Web CI") được discord-notify.yml tham chiếu qua workflow_run, đừng đổi tên nếu chưa sửa file đó.
+name: Web CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Huỷ run cũ của cùng ref khi có commit mới
+concurrency:
+  group: web-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # Repo không có .nvmrc/engines; Dockerfile dùng Node 20 nhưng jsdom/vitest hiện tại cần >= 20.19, chọn 22 LTS
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Cài dependency
+        run: npm ci
+
+      # Lint không dùng --max-warnings=0: repo còn 17 cảnh báo cũ (no-img-element, alt-text), chỉ chặn khi có error
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit test
+        run: npm test
+
+      # Build không cần biến môi trường: .env.production đã commit sẵn (NEXT_PUBLIC_API_URL=/api)
+      - name: Build
+        run: npm run build
