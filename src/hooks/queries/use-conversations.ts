@@ -57,7 +57,7 @@ export function useCreateDirectConversation() {
 
 /**
  * Backend chặn tạo hội thoại trực tiếp giữa 2 người chưa có quan hệ (học viên-giảng viên,
- * phụ huynh-con, bạn bè, admin): 403 + code CONVERSATION_NOT_ALLOWED + message tiếng Việt.
+ * phụ huynh-con, admin): 403 + code CONVERSATION_NOT_ALLOWED + message tiếng Việt.
  * api-client biến mọi 403 thành ForbiddenError (giữ nguyên message backend, mất `code`), nên
  * nhận diện theo lớp lỗi. Chỉ dùng message backend cho 403; lỗi khác giữ câu chung để không lộ
  * message tiếng Anh của tầng khác.

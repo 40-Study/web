@@ -4,7 +4,7 @@ import { createDirectErrorMessage } from "./use-conversations";
 
 describe("createDirectErrorMessage", () => {
   it("hiện đúng message tiếng Việt của backend khi bị chặn 403", () => {
-    const msg = "Bạn và người này chưa có quan hệ nên chưa thể nhắn tin trực tiếp";
+    const msg = "Bạn chỉ có thể nhắn tin với giảng viên của khoá bạn đang học, phụ huynh hoặc con đã liên kết, hoặc quản trị viên";
     expect(createDirectErrorMessage(new ForbiddenError(msg))).toBe(msg);
   });
 
