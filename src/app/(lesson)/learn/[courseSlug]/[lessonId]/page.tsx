@@ -30,7 +30,14 @@ import { useCourseBySlug } from "@/hooks/queries/use-courses";
 import { useMyEnrollments } from "@/hooks/queries/use-enrollments";
 import { useSections } from "@/hooks/queries/use-sections";
 import { useLessonContents } from "@/hooks/queries/use-lesson-content";
-import { useHlsInfo, getVideoUrl } from "@/hooks/use-hls";
+import { useHlsInfo } from "@/hooks/use-hls";
+import { HlsAuthError } from "@/services/hls.service";
+import {
+  extractUploadId,
+  pickVideoSource,
+  signedQueryOf,
+  VIDEO_PROCESSING_MESSAGE,
+} from "@/lib/hls-playback";
 import {
   useStartQuiz,
   useSubmitQuiz,
@@ -159,6 +166,8 @@ function findRawLesson(sections: Section[], lessonId: string): Lesson | undefine
 
 function VideoLessonContent({
   videoSrc,
+  videoUnavailableMessage,
+  onSourceExpired,
   currentLesson,
   course,
   next,
@@ -171,6 +180,10 @@ function VideoLessonContent({
   onProgress,
 }: {
   videoSrc: string | null;
+  /** Lý do chưa phát được (vd video đang được xử lý) — hiện thay cho "Video không khả dụng". */
+  videoUnavailableMessage?: string | null;
+  /** Xin URL video ký mới khi URL hiện tại hết hạn (403). */
+  onSourceExpired?: () => Promise<string | null | undefined>;
   currentLesson: PlayerLesson | undefined;
   course: PlayerCourse;
   next: PlayerLesson | undefined;
@@ -257,10 +270,11 @@ function VideoLessonContent({
             onProgressChange={onProgress}
             onClockTick={setCurrentTime}
             onToggleShortcutsHelp={() => setShortcutsOpen(true)}
+            onSourceExpired={onSourceExpired}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-white">
-            <p>Video không khả dụng</p>
+          <div className="w-full h-full flex items-center justify-center p-6 text-center text-white">
+            <p>{videoUnavailableMessage ?? "Video không khả dụng"}</p>
           </div>
         )}
       </div>
@@ -373,7 +387,9 @@ export default function CourseLessonPage() {
   // dựng xong. Truyền lessonId rỗng để mỗi hook tự vô hiệu hoá qua `enabled`
   // sẵn có của nó — không cần thêm tham số `enabled` mới.
   const isLessonLocked = isLessonLockedInSections(sections, lessonId);
-  const { data: lessonContents } = useLessonContents(isLessonLocked ? "" : lessonId);
+  const { data: lessonContents, refetch: refetchLessonContents } = useLessonContents(
+    isLessonLocked ? "" : lessonId
+  );
   const lessonVideo = lessonContents?.find((c) => c.type === "video");
   const lessonKind = resolveLessonKind(lessonContents);
 
@@ -406,10 +422,33 @@ export default function CourseLessonPage() {
   } = useQuizAttemptDetail(lessonQuiz?.id, submittedAttemptId ?? undefined);
 
   // Get video upload ID - prefer direct field, fallback to parsing URL
-  const videoId = lessonVideo?.video_upload_id
-    ?? lessonVideo?.video_hls_url?.split("/hls/")?.[1]?.split("/")?.[0]
-    ?? null;
-  const { data: hlsInfo, isLoading: hlsLoading } = useHlsInfo(videoId, true);
+  const videoId = lessonVideo?.video_upload_id ?? extractUploadId(lessonVideo?.video_hls_url);
+  // S1: /api/hls/* chỉ phục vụ URL KÝ ngắn hạn do API nội dung bài học cấp (`video_hls_url`).
+  const signedQuery = signedQueryOf(lessonVideo?.video_hls_url);
+  const {
+    data: hlsInfo,
+    isLoading: hlsLoading,
+    error: hlsInfoError,
+  } = useHlsInfo(videoId, signedQuery, true);
+
+  /**
+   * Xin URL video ký mới: refetch nội dung bài học rồi lấy lại nguồn phát. Player gọi khi URL bị 403
+   * giữa chừng (hết hạn); trang cũng gọi khi `/info` bị 403 lúc mở bài từ cache cũ. Trả `null` nếu
+   * bài không còn video/URL ký để player báo lỗi thay vì lặp vô hạn.
+   */
+  const refreshVideoSource = useCallback(async (): Promise<string | null> => {
+    const { data: fresh } = await refetchLessonContents();
+    const next = pickVideoSource(fresh?.find((c) => c.type === "video"), true);
+    return next.state === "ready" ? next.src : null;
+  }, [refetchLessonContents]);
+
+  const infoAuthFailed = hlsInfoError instanceof HlsAuthError;
+  const infoRefreshTriedRef = useRef(false);
+  useEffect(() => {
+    if (!infoAuthFailed || infoRefreshTriedRef.current) return;
+    infoRefreshTriedRef.current = true;
+    void refreshVideoSource().catch(() => {});
+  }, [infoAuthFailed, refreshVideoSource]);
 
   const isLoading = courseLoading || sectionsLoading;
 
@@ -460,15 +499,18 @@ export default function CourseLessonPage() {
     </div>
   ) : null;
 
-  // Get video URL: HLS if ready, fallback to original video.mp4 endpoint
-  const videoSrc = videoId && hlsInfo
-    ? getVideoUrl(hlsInfo, videoId)
-    : videoId
-      ? `/api/hls/${videoId}/video.mp4`
-      : lessonVideo?.video_url ?? null;
+  // Nguồn phát: URL HLS ký khi HLS đã sẵn sàng. Học viên KHÔNG còn được phát file gốc khi HLS chưa
+  // xong (trước đây fallback /video.mp4 công khai) — họ thấy "đang xử lý". Chủ khoá/admin vẫn có
+  // `video_url` (file gốc ký) để xem tạm. `/info` lỗi (không phải 403) thì thử phát thẳng URL HLS,
+  // player tự báo lỗi nếu không được.
+  const hlsReady = hlsInfo ? hlsInfo.hls_ready === true || hlsInfo.status === "ready" : hlsInfoError ? true : undefined;
+  const videoSource = pickVideoSource(lessonVideo, videoId ? hlsReady : true);
+  const videoSrc = videoSource.state === "ready" ? videoSource.src : null;
+  const videoUnavailableMessage =
+    videoSource.state === "processing" ? VIDEO_PROCESSING_MESSAGE : null;
 
   // Show loading state while HLS info is loading for video lessons
-  const isVideoLoading = !!(lessonVideo && videoId && hlsLoading);
+  const isVideoLoading = !!(lessonVideo && videoId && (hlsLoading || videoSource.state === "checking"));
 
   const exerciseCount = course.chapters
     .flatMap((ch) => ch.lessons)
@@ -688,6 +730,8 @@ export default function CourseLessonPage() {
         next={next}
         courseSlug={courseSlug}
         isLoading={isVideoLoading}
+        videoUnavailableMessage={videoUnavailableMessage}
+        onSourceExpired={refreshVideoSource}
         subtitleUrl={lessonVideo?.subtitle_url}
         durationSeconds={lessonVideo?.duration}
         studentCount={apiCourse.total_students ?? 0}

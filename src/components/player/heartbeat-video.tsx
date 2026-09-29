@@ -46,6 +46,8 @@ interface HeartbeatVideoProps {
   controlRef?: MutableRefObject<VideoPlayerHandle | null>;
   /** `?` — mở bảng phím tắt; player bắt phím, trang quyết định hiện gì. */
   onToggleShortcutsHelp?: () => void;
+  /** Xin URL video ký mới khi URL hiện tại hết hạn (403) — chuyển thẳng cho player. */
+  onSourceExpired?: () => Promise<string | null | undefined>;
   className?: string;
 }
 
@@ -62,6 +64,7 @@ export function HeartbeatVideo({
   onPlayingChange,
   controlRef,
   onToggleShortcutsHelp,
+  onSourceExpired,
   className,
 }: HeartbeatVideoProps) {
   const queryClient = useQueryClient();
@@ -119,6 +122,7 @@ export function HeartbeatVideo({
       }}
       controlRef={controlRef}
       onToggleShortcutsHelp={onToggleShortcutsHelp}
+      onSourceExpired={onSourceExpired}
     />
   );
 }
