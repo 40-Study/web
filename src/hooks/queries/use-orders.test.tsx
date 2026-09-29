@@ -10,18 +10,20 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/errors";
 
-vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
 vi.mock("@/services/order.service", () => ({
-  orderService: { createOrder: vi.fn(), createPaymentIntent: vi.fn(), cancelOrder: vi.fn() },
+  orderService: { createOrder: vi.fn(), createPaymentIntent: vi.fn(), cancelOrder: vi.fn(), checkPayment: vi.fn() },
 }));
 
 import { toast } from "sonner";
 import { orderService } from "@/services/order.service";
 import {
+  BANK_UNAVAILABLE_NOTICE,
   PAYMENT_FINAL_CHECK_WINDOW_MS,
   nextPaymentPollDelay,
   orderKeys,
   useCancelOrder,
+  useCheckPayment,
   useCreateOrder,
   useCreatePaymentIntent,
 } from "./use-orders";
@@ -172,5 +174,31 @@ describe("useCancelOrder — 409 do đối chiếu", () => {
     expect(vi.mocked(toast.error).mock.calls[0]).toEqual([msg]);
     expect(invalidate).toHaveBeenCalledWith({ queryKey: orderKeys.mine() });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: orderKeys.detail("o1") });
+  });
+});
+
+// Review #76 final: ngân hàng lỗi ≠ chưa có giao dịch. useCheckPayment là chỗ DUY NHẤT toast "ngân
+// hàng lỗi, thử lại sau" cho cả hộp thanh toán lẫn trang đơn hàng.
+describe("useCheckPayment — bank_unavailable", () => {
+  beforeEach(() => {
+    vi.mocked(toast.warning).mockReset();
+    vi.mocked(orderService.checkPayment).mockReset();
+  });
+
+  it("backend báo bank_unavailable: toast ngân hàng lỗi", async () => {
+    vi.mocked(orderService.checkPayment).mockResolvedValue({ order_id: "o1", status: "processing", amount: 1, bank_unavailable: true });
+    const { wrapper } = setup();
+    const { result } = renderHook(() => useCheckPayment(), { wrapper });
+    act(() => result.current.mutate("o1"));
+    await waitFor(() => expect(toast.warning).toHaveBeenCalledWith(BANK_UNAVAILABLE_NOTICE));
+  });
+
+  it("ngân hàng trả lời bình thường: không toast ngân hàng lỗi", async () => {
+    vi.mocked(orderService.checkPayment).mockResolvedValue({ order_id: "o1", status: "cancelled", amount: 1 });
+    const { wrapper } = setup();
+    const { result } = renderHook(() => useCheckPayment(), { wrapper });
+    act(() => result.current.mutate("o1"));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(toast.warning).not.toHaveBeenCalled();
   });
 });

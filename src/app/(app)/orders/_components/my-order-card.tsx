@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { REFUND_NEEDED_NOTICE } from "@/hooks/queries/use-orders";
 import { formatCurrency } from "@/lib/utils";
 import {
   ORDER_STATUS_LABEL,
@@ -49,13 +50,17 @@ export function MyOrderCard({
   // còn đối chiếu ngân hàng (ân hạn 30 phút, hoặc ngân hàng tạm lỗi), không cho huỷ, không cho tạo
   // đơn trùng. Hiện "Đang đối chiếu" + nút kiểm tra, không có "Hủy đơn" / "Tạo đơn mới".
   const isReconciling = !open && order.status === "processing";
-  // Review #76 vòng 4 (phương án b): đơn đã cấp mã rồi bị huỷ vẫn được backend đối chiếu; tiền chuyển
-  // trong hạn thì đơn được khôi phục "Hoàn tất", về muộn thì bộ phận hỗ trợ hoàn tiền.
-  const cancelledWithCode = order.status === "cancelled" && order.payment_code_issued === true;
+  // Quyết định chủ dự án (review #76 final): đơn đã huỷ/hết hạn KHÔNG BAO GIỜ được khôi phục. Có tiền
+  // về cho mã của nó thì backend gắn cờ refund_needed: hiện dòng hoàn tiền, bỏ nút kiểm tra (đã có kết
+  // quả) và bỏ "Tạo đơn mới" (luồng đặt lại dừng ở đơn đã nhận tiền).
+  const isClosed = order.status === "cancelled" || order.status === "expired";
+  const refundNeeded = isClosed && order.refund_needed === true;
+  // Đơn đóng từng được cấp mã, chưa có cờ: có thể tiền đang về. Cho kiểm tra trước khi mua lại.
+  const closedWithCode = isClosed && !refundNeeded && order.payment_code_issued === true;
   // Đơn pending đã quá hạn nhưng backend chưa kịp quét sang "expired": hiện đúng là hết hạn thay vì
   // cho bấm thanh toán rồi nhận lỗi.
   const heldButExpired = !open && order.status === "pending";
-  const isExpired = heldButExpired || order.status === "expired";
+  const isExpired = !refundNeeded && (heldButExpired || order.status === "expired");
   const statusLabel = isReconciling
     ? RECONCILING_LABEL
     : heldButExpired
@@ -122,10 +127,16 @@ export function MyOrderCard({
         </div>
       )}
 
-      {cancelledWithCode && (
+      {refundNeeded && (
+        <p className="mt-4 text-sm font-medium text-amber-700 dark:text-amber-400">{REFUND_NEEDED_NOTICE}</p>
+      )}
+
+      {closedWithCode && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-gray-500">
-            Nếu bạn đã chuyển khoản cho đơn này trước khi hủy, hãy kiểm tra để hệ thống đối chiếu với ngân hàng.
+            {order.status === "expired"
+              ? "Nếu bạn đã chuyển khoản cho đơn này, hãy kiểm tra thanh toán trước khi tạo đơn mới để không phải trả hai lần."
+              : "Nếu bạn đã chuyển khoản cho đơn này, hãy kiểm tra để hệ thống đối chiếu với ngân hàng."}
           </p>
           <Button variant="outline" className="shrink-0" isLoading={isCheckingPayment} onClick={() => onCheckPayment(order)}>
             Kiểm tra thanh toán

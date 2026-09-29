@@ -22,8 +22,10 @@
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import {
+  BANK_UNAVAILABLE_NOTICE,
   PAYMENT_FINAL_CHECK_WINDOW_MS,
   PAYMENT_RECONCILING_NOTICE,
+  REFUND_NEEDED_NOTICE,
   isOrderAlreadyPaidError,
   isOrderExpiredError,
   isPaymentVerifyingError,
@@ -194,7 +196,7 @@ export function OrderPaymentDialog({
       expiredTitle={latePaymentReceived ? "Đã nhận tiền sau khi đơn hết hạn" : "Đơn hàng đã hết hạn"}
       expiredDescription={
         latePaymentReceived
-          ? "Hệ thống đã nhận khoản chuyển của bạn nhưng sau thời hạn thanh toán. Bộ phận hỗ trợ sẽ liên hệ hoàn tiền, vui lòng không chuyển khoản lại."
+          ? `${REFUND_NEEDED_NOTICE}. Vui lòng không chuyển khoản lại.`
           : expiredMessage ?? "Đơn đã hết hạn giữ chỗ. Tạo đơn mới để thanh toán theo giá hiện tại."
       }
       retryExpiredLabel="Tạo đơn mới"
@@ -203,6 +205,9 @@ export function OrderPaymentDialog({
       reconcilingDescription={
         <>
           {verifyingMessage && <p>{verifyingMessage}</p>}
+          {/* Ngân hàng lỗi ≠ chưa có giao dịch (review #76 final). Chỉ ở màn đối chiếu: khi mã còn
+              hạn, một lần lỗi ngân hàng không được che mất mã QR. */}
+          {latest?.bank_unavailable && <p>{BANK_UNAVAILABLE_NOTICE}</p>}
           <p>{PAYMENT_RECONCILING_NOTICE}</p>
         </>
       }

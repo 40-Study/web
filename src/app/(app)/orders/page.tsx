@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import {
   PAYMENT_RECONCILING_NOTICE,
+  REFUND_NEEDED_NOTICE,
   useCancelOrder,
   useCheckPayment,
   useCreateOrder,
@@ -79,8 +80,13 @@ export default function MyOrdersPage() {
         return;
       }
       if (checked.late_payment_received) {
-        toast.info("Hệ thống đã nhận tiền cho đơn này sau khi hết hạn. Bộ phận hỗ trợ sẽ liên hệ hoàn tiền, vui lòng không chuyển khoản lại.");
+        toast.info(`${REFUND_NEEDED_NOTICE}. Vui lòng không chuyển khoản lại.`);
         refetch();
+        setReorderingId(null);
+        return;
+      }
+      // Ngân hàng lỗi: chưa biết tiền đã về hay chưa, không tạo đơn mới (useCheckPayment đã toast).
+      if (checked.bank_unavailable) {
         setReorderingId(null);
         return;
       }
@@ -117,7 +123,9 @@ export default function MyOrdersPage() {
       if (checked.status === "completed" || checked.status === "paid") {
         toast.success("Đơn này đã được thanh toán, khóa học đã được thêm vào tài khoản của bạn.");
       } else if (checked.late_payment_received) {
-        toast.info("Hệ thống đã nhận tiền cho đơn này sau khi hết hạn. Bộ phận hỗ trợ sẽ liên hệ hoàn tiền, vui lòng không chuyển khoản lại.");
+        toast.info(`${REFUND_NEEDED_NOTICE}. Vui lòng không chuyển khoản lại.`);
+      } else if (checked.bank_unavailable) {
+        // Ngân hàng lỗi ≠ chưa có giao dịch: useCheckPayment đã toast "thử lại sau", không báo thêm.
       } else if (checked.status === "expired") {
         toast.info("Không tìm thấy giao dịch cho đơn này, đơn đã hết hạn. Bạn có thể tạo đơn mới.");
       } else if (checked.status === "cancelled") {

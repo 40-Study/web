@@ -47,6 +47,19 @@ export function isPaymentVerifyingError(error: unknown): error is ApiError {
 export const PAYMENT_RECONCILING_NOTICE =
   "Đơn đang được đối chiếu, bạn có thể đóng cửa sổ và xem lại tại Đơn hàng của tôi.";
 
+/**
+ * Backend không đối chiếu được với ngân hàng (lỗi/timeout, `bank_unavailable`). Khác hẳn "chưa có
+ * giao dịch": học viên có thể đã chuyển khoản, không được mời chuyển lại hay tạo đơn mới.
+ */
+export const BANK_UNAVAILABLE_NOTICE =
+  "Ngân hàng đang gặp sự cố nên chưa kiểm tra được giao dịch. Nếu bạn đã chuyển khoản, đừng chuyển lại; vui lòng thử lại sau ít phút.";
+
+/**
+ * Quyết định chủ dự án (review #76 final): tiền về cho đơn đã huỷ/hết hạn KHÔNG khôi phục đơn, chỉ
+ * gắn cờ cần hoàn tiền (`refund_needed` trên đơn, `late_payment_received` khi kiểm tra).
+ */
+export const REFUND_NEEDED_NOTICE = "Đã nhận tiền sau khi đơn đóng, ForteX sẽ hoàn tiền cho bạn";
+
 export interface MyOrdersParams {
   page?: number;
   limit?: number;
@@ -189,6 +202,9 @@ export function useCheckPayment() {
       // Làm mới ngay trạng thái thanh toán để dialog chuyển màn thành công
       // mà không phải chờ nhịp poll kế tiếp.
       qc.invalidateQueries({ queryKey: orderKeys.paymentStatus(id) });
+      // Toast ở đây (một chỗ cho cả hộp thanh toán lẫn trang đơn hàng): caller thấy bank_unavailable
+      // thì không báo thêm "chưa có giao dịch".
+      if (data.bank_unavailable) toast.warning(BANK_UNAVAILABLE_NOTICE);
       if (data.status === "completed" || data.status === "paid") {
         qc.invalidateQueries({ queryKey: orderKeys.detail(id) });
         qc.invalidateQueries({ queryKey: orderKeys.mine() });

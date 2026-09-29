@@ -102,7 +102,16 @@ export default function AdminOrderDetailPage() {
               <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
                 <h2 className="mb-3 text-base font-semibold">Thông tin đơn</h2>
                 <div className="space-y-2 text-sm">
-                  <Row label="Trạng thái" value={<Badge>{ORDER_STATUS_LABEL[order.status] ?? order.status}</Badge>} />
+                  <Row
+                    label="Trạng thái"
+                    value={
+                      <span className="inline-flex flex-wrap justify-end gap-1">
+                        <Badge>{ORDER_STATUS_LABEL[order.status] ?? order.status}</Badge>
+                        {/* Tiền về cho đơn đã huỷ/hết hạn: không khôi phục, hoàn tiền tay (review #76 final). */}
+                        {order.refund_needed && <Badge variant="destructive">Cần hoàn tiền</Badge>}
+                      </span>
+                    }
+                  />
                   <Row label="Phương thức" value={PAYMENT_METHOD_LABEL[order.payment_method ?? ""] ?? order.payment_method ?? "-"} />
                   <Row label="Ngày tạo" value={formatOrderDateTime(order.created_at)} />
                   {order.paid_at && <Row label="Ngày thanh toán" value={formatOrderDateTime(order.paid_at)} />}

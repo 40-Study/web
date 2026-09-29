@@ -9,13 +9,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/errors";
 
-vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
 vi.mock("@/services/order.service", () => ({
   orderService: { createPaymentIntent: vi.fn(), getPaymentStatus: vi.fn(), checkPayment: vi.fn() },
 }));
 
 import { orderService } from "@/services/order.service";
-import { PAYMENT_FINAL_CHECK_WINDOW_MS, PAYMENT_RECONCILING_NOTICE } from "@/hooks/queries/use-orders";
+import { BANK_UNAVAILABLE_NOTICE, PAYMENT_FINAL_CHECK_WINDOW_MS, PAYMENT_RECONCILING_NOTICE } from "@/hooks/queries/use-orders";
 import { OrderPaymentDialog } from "./order-payment-dialog";
 
 const EXPIRED_MSG = "Đơn hàng đã hết hạn giữ chỗ. Vui lòng tạo đơn mới để thanh toán theo giá hiện tại.";
@@ -88,6 +88,21 @@ describe("OrderPaymentDialog — đối chiếu ngân hàng", () => {
     expect(screen.queryByText(/đang kiểm tra lần cuối/)).toBeNull();
     expect(screen.queryByRole("button", { name: "Tạo đơn mới" })).toBeNull();
   });
+
+  // Review #76 final: ngân hàng lỗi ≠ chưa có giao dịch — màn đối chiếu nói rõ ngân hàng đang lỗi.
+  it("đang đối chiếu, 'Kiểm tra lại' mà ngân hàng lỗi: hiện câu ngân hàng lỗi", async () => {
+    vi.mocked(orderService.createPaymentIntent).mockRejectedValue(new ApiError(409, "ERR_PAYMENT_VERIFYING", VERIFYING_MSG));
+    vi.mocked(orderService.checkPayment).mockResolvedValue({
+      order_id: "order-bank", status: "processing", amount: 499000, reconciling: true, bank_unavailable: true,
+    });
+    renderDialog("order-bank");
+
+    await waitFor(() => expect(screen.getByText("Đang đối chiếu thanh toán")).toBeTruthy());
+    expect(screen.queryByText(BANK_UNAVAILABLE_NOTICE)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra lại" }));
+    await waitFor(() => expect(screen.getByText(BANK_UNAVAILABLE_NOTICE)).toBeTruthy());
+    expect(screen.queryByRole("button", { name: "Tạo đơn mới" })).toBeNull();
+  });
 });
 
 describe("OrderPaymentDialog — đơn hết hạn", () => {
@@ -154,7 +169,7 @@ describe("OrderPaymentDialog — đơn hết hạn", () => {
     renderDialog("order-late2");
 
     await waitFor(() => expect(screen.getByText("Đã nhận tiền sau khi đơn hết hạn")).toBeTruthy());
-    expect(screen.getByText(/Bộ phận hỗ trợ sẽ liên hệ hoàn tiền/)).toBeTruthy();
+    expect(screen.getByText(/ForteX sẽ hoàn tiền cho bạn/)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Tạo đơn mới" })).toBeNull();
   });
 

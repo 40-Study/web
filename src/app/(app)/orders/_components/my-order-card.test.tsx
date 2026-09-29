@@ -69,6 +69,41 @@ describe("MyOrderCard — đơn đang đối chiếu", () => {
     expect(screen.queryByRole("button", { name: "Kiểm tra thanh toán" })).toBeNull();
   });
 
+  // Review #76 final: đơn hết hạn từng có mã (chưa có cờ) có thể đang có tiền về → cho kiểm tra trước,
+  // và câu "Tạo đơn mới" nhắc kiểm tra trước để không trả hai lần.
+  it("đơn hết hạn từng có mã, chưa có cờ: Kiểm tra thanh toán + nhắc kiểm tra trước khi Tạo đơn mới", () => {
+    const order = makeOrder({ status: "expired", expires_at: null, payment_code_issued: true });
+    const { onCheckPayment, onReorder } = renderCard(order);
+    expect(screen.getByText(/kiểm tra thanh toán trước khi tạo đơn mới/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra thanh toán" }));
+    expect(onCheckPayment).toHaveBeenCalledWith(order);
+    fireEvent.click(screen.getByRole("button", { name: "Tạo đơn mới" }));
+    expect(onReorder).toHaveBeenCalledWith(order);
+  });
+
+  it("đơn hết hạn chưa từng có mã: không có Kiểm tra thanh toán", () => {
+    renderCard(makeOrder({ status: "expired", expires_at: null }));
+    expect(screen.queryByRole("button", { name: "Kiểm tra thanh toán" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Tạo đơn mới" })).toBeTruthy();
+  });
+});
+
+// Quyết định chủ dự án (review #76 final): tiền về cho đơn đã đóng KHÔNG khôi phục đơn, chỉ gắn cờ.
+describe("MyOrderCard — đơn đã đóng có cờ cần hoàn tiền", () => {
+  it.each(["cancelled", "expired"] as const)("%s có refund_needed: dòng hoàn tiền, không nút kiểm tra", (status) => {
+    renderCard(makeOrder({ status, expires_at: null, payment_code_issued: true, refund_needed: true }));
+    expect(screen.getByText("Đã nhận tiền sau khi đơn đóng, ForteX sẽ hoàn tiền cho bạn")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Kiểm tra thanh toán" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Tạo đơn mới" })).toBeNull();
+  });
+
+  it("đơn chưa có cờ không hiện dòng hoàn tiền", () => {
+    renderCard(makeOrder({ status: "cancelled", expires_at: null, payment_code_issued: true }));
+    expect(screen.queryByText(/ForteX sẽ hoàn tiền/)).toBeNull();
+  });
+});
+
+describe("MyOrderCard — pending", () => {
   it("pending quá hạn giữ (chưa từng có mã): vẫn là hết hạn + Tạo đơn mới", () => {
     const { onReorder } = renderCard(makeOrder({ status: "pending", expires_at: past() }));
     expect(screen.queryByText("Đang đối chiếu")).toBeNull();

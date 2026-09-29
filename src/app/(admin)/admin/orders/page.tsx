@@ -35,6 +35,7 @@ const STATUS_VARIANT: Record<OrderStatus, "success" | "warning" | "destructive" 
 };
 
 const STATUS_LABEL = ORDER_STATUS_LABEL;
+const REFUND_NEEDED_BADGE = "Cần hoàn tiền";
 
 function parseStatus(value: string | null): StatusFilter {
   return value && (STATUS_LIST as string[]).includes(value) ? (value as OrderStatus) : "";
@@ -176,9 +177,14 @@ function AdminOrdersContent() {
                     </td>
                     <td className="px-4 py-3 font-medium">{formatCurrency(order.total_amount)}</td>
                     <td className="px-4 py-3">
-                      <Badge variant={STATUS_VARIANT[order.status]}>
-                        {STATUS_LABEL[order.status]}
-                      </Badge>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant={STATUS_VARIANT[order.status]}>
+                          {STATUS_LABEL[order.status]}
+                        </Badge>
+                        {/* Tiền về cho đơn đã huỷ/hết hạn: đơn không khôi phục, admin hoàn tiền tay
+                            (quyết định chủ dự án, review #76 final). */}
+                        {order.refund_needed && <Badge variant="destructive">{REFUND_NEEDED_BADGE}</Badge>}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-gray-500">{formatDate(order.created_at)}</td>
                     <td className="px-4 py-3">

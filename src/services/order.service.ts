@@ -82,6 +82,12 @@ export interface Order {
    * tiền về. Thẻ đơn đã huỷ có cờ này hiện nút "Kiểm tra thanh toán".
    */
   payment_code_issued?: boolean;
+  /**
+   * Đơn đã huỷ/hết hạn nhưng hệ thống nhận tiền cho mã của nó (quyết định chủ dự án, review #76
+   * final): đơn KHÔNG được khôi phục, ForteX hoàn tiền thủ công. Thẻ đơn hiện dòng hoàn tiền, không
+   * hiện nút "Kiểm tra thanh toán".
+   */
+  refund_needed?: boolean;
   /** Chỉ có khi đơn đã hoàn tiền (quyết định #1: ghi lý do + mã giao dịch chuyển khoản). */
   refund_reason?: string | null;
   refund_transaction_ref?: string | null;
@@ -133,7 +139,8 @@ export interface PaymentStatus {
   amount: number;
   /**
    * Đơn "expired" nhưng hệ thống đã nhận tiền cho mã này sau hạn (backend ghi history để admin
-   * hoàn tiền). Web báo "bộ phận hỗ trợ sẽ liên hệ hoàn tiền", không mời tạo đơn mới rồi trả lần 2.
+   * hoàn tiền; cũng có với đơn đã huỷ). Đơn không được khôi phục: web báo "ForteX sẽ hoàn tiền cho
+   * bạn", không mời tạo đơn mới rồi trả lần 2.
    */
   late_payment_received?: boolean;
   /**
@@ -141,6 +148,11 @@ export interface PaymentStatus {
    * hoặc ngân hàng tạm lỗi (review backend #76 vòng 3). Không huỷ, không tạo đơn mới cho đơn này.
    */
   reconciling?: boolean;
+  /**
+   * Backend không đối chiếu được với ngân hàng (lỗi/timeout). Web báo "ngân hàng lỗi, thử lại sau",
+   * không báo "chưa có giao dịch".
+   */
+  bank_unavailable?: boolean;
 }
 
 // ─── Service ────────────────────────────────────────────────────────────────

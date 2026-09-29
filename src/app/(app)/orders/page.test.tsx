@@ -5,6 +5,7 @@
 
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
 import type { Order } from "@/services/order.service";
 import MyOrdersPage from "./page";
 
@@ -30,6 +31,7 @@ vi.mock("@/hooks/queries/use-orders", () => ({
   useCreateOrder: () => ({ mutate: mockCreateOrder, isPending: false }),
   useCheckPayment: () => ({ mutateAsync: mockCheckPayment, isPending: false }),
   PAYMENT_RECONCILING_NOTICE: "Đơn đang được đối chiếu, bạn có thể đóng cửa sổ và xem lại tại Đơn hàng của tôi.",
+  REFUND_NEEDED_NOTICE: "Đã nhận tiền sau khi đơn đóng, ForteX sẽ hoàn tiền cho bạn",
 }));
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
@@ -65,6 +67,7 @@ describe("MyOrdersPage", () => {
     mockRefetch.mockReset();
     mockCreateOrder.mockReset();
     mockCheckPayment.mockReset();
+    vi.mocked(toast.info).mockClear();
     mockOrders = [];
   });
 
@@ -98,6 +101,9 @@ describe("MyOrdersPage", () => {
     ["đã thanh toán trong hạn", { status: "completed" }],
     ["nhận tiền sau hạn (chờ hoàn tiền)", { status: "expired", late_payment_received: true }],
     ["chưa xác minh được", { status: "processing" }],
+    // Review #76 final: đơn đã expired (vd chốt khi ngân hàng lỗi 24h) mà lần kiểm này ngân hàng vẫn
+    // lỗi: chưa biết tiền đã về chưa, không được tạo đơn mới.
+    ["ngân hàng lỗi (đơn expired)", { status: "expired", bank_unavailable: true }],
   ])("đơn hết hạn từng có mã, backend báo %s → KHÔNG tạo đơn mới", async (_label, checked) => {
     mockCheckPayment.mockResolvedValue({ order_id: "had-code", amount: 499000, ...checked });
     mockOrders = [makeOrder({ id: "had-code", status: "expired", expires_at: null })];
@@ -125,6 +131,31 @@ describe("MyOrdersPage", () => {
     await waitFor(() => expect(mockRefetch).toHaveBeenCalled());
     expect(mockCreateOrder).not.toHaveBeenCalled();
     expect(mockCancel).not.toHaveBeenCalled();
+  });
+
+  // Review #76 final: ngân hàng lỗi ≠ chưa có giao dịch. useCheckPayment đã toast "ngân hàng lỗi,
+  // thử lại sau"; trang không được báo thêm "Chưa ghi nhận giao dịch".
+  it.each([
+    ["cancelled", /Chưa ghi nhận giao dịch/],
+    ["expired", /Không tìm thấy giao dịch/],
+  ] as const)("kiểm tra đơn %s khi ngân hàng lỗi: không báo 'chưa có giao dịch'", async (status, notFoundText) => {
+    mockCheckPayment.mockResolvedValue({ order_id: "closed", status, amount: 499000, bank_unavailable: true });
+    mockOrders = [makeOrder({ id: "closed", status, expires_at: null, payment_code_issued: true })];
+    render(<MyOrdersPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra thanh toán" }));
+    await waitFor(() => expect(mockRefetch).toHaveBeenCalled());
+    const infoTexts = vi.mocked(toast.info).mock.calls.map((c) => String(c[0]));
+    expect(infoTexts.some((t) => notFoundText.test(t))).toBe(false);
+  });
+
+  it("kiểm tra đơn đã hủy, ngân hàng trả không có giao dịch: báo chưa ghi nhận giao dịch", async () => {
+    mockCheckPayment.mockResolvedValue({ order_id: "closed", status: "cancelled", amount: 499000 });
+    mockOrders = [makeOrder({ id: "closed", status: "cancelled", expires_at: null, payment_code_issued: true })];
+    render(<MyOrdersPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra thanh toán" }));
+    await waitFor(() => expect(toast.info).toHaveBeenCalledWith("Chưa ghi nhận giao dịch nào cho đơn đã hủy này."));
   });
 
   it("hiện tên khóa, ngày tạo và 2 hành động cho đơn đang chờ", () => {

@@ -31,6 +31,8 @@ export interface AdminOrderListItem {
   created_at: string;
   paid_at?: string | null;
   items: AdminOrderItemBrief[];
+  /** Đơn đã huỷ/hết hạn có tiền về cho mã của nó: admin cần hoàn tiền thủ công (không khôi phục). */
+  refund_needed?: boolean;
 }
 
 export interface AdminOrderListResponse {
