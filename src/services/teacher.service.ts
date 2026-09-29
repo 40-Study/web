@@ -11,7 +11,7 @@ export interface Teacher {
   id: string;
   user_id: string;
   name?: string;
-  email?: string;
+  /** Không có email: API công khai /teachers không trả email giảng viên (Lane S3). */
   avatar_url?: string;
   created_at?: string;
 }

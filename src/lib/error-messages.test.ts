@@ -29,6 +29,19 @@ describe("getErrorMessage — ánh xạ lỗi backend sang tiếng Việt", () =
     );
   });
 
+  // Lane S3: backend trả 403 khi người dùng thấy bài tập nhưng không phải chủ, 404 khi không xem được.
+  it("assignment: 403 'forbidden: only the owning teacher...' và 404 'assignment not found'", () => {
+    expect(
+      getErrorMessage(
+        new ForbiddenError("forbidden: only the owning teacher or an admin can modify this assignment"),
+        "Không thể cập nhật bài tập"
+      )
+    ).toBe("Bạn không có quyền thực hiện thao tác này");
+    expect(getErrorMessage(new NotFoundError("assignment not found"), "Không thể cập nhật bài tập")).toBe(
+      "Không tìm thấy dữ liệu, có thể đã bị xoá"
+    );
+  });
+
   it("mẫu 'x not found' / 'forbidden: ...' / 'please login again'", () => {
     expect(getErrorMessage(new NotFoundError("lesson not found"))).toBe(
       "Không tìm thấy dữ liệu, có thể đã bị xoá"

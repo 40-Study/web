@@ -40,7 +40,7 @@ export interface ClassTeacher {
   teacher_id: string;
   role: string;
   name?: string;
-  email?: string;
+  /** Không có email: học viên trong lớp không được thấy email giảng viên (Lane S3). */
 }
 
 /** Không có email: email học viên chỉ chính chủ và admin được thấy (Lane S2). */
