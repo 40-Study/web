@@ -97,7 +97,9 @@ interface RoleScopedRoute {
  * bảng "menu item nào tồn tại".
  */
 export const ROLE_SCOPED_ROUTES: RoleScopedRoute[] = [
-  { href: "/contests", roles: ["GUEST", "STUDENT"] },
+  // Cuộc thi (contract §7, chủ dự án 28/09): phụ huynh XEM được danh sách + chi tiết (chỉ đọc).
+  // Ba route con làm bài/kết quả/chứng nhận do ROLE_SCOPED_PATTERNS bên dưới chặn riêng.
+  { href: "/contests", roles: ["GUEST", "STUDENT", "PARENT"] },
   { href: "/my-courses", roles: ["STUDENT"] },
   { href: "/schedule", roles: ["STUDENT"] },
   { href: "/my-attendance", roles: ["STUDENT"] },
@@ -111,13 +113,53 @@ export const ROLE_SCOPED_ROUTES: RoleScopedRoute[] = [
 ];
 
 /**
+ * Route con của cuộc thi mà chỉ THÍ SINH dùng: làm bài, kết quả, chứng nhận (contract §7).
+ * Dùng chung bởi `middleware.ts` (cần đăng nhập dù "/contests" là public) và bảng
+ * ROLE_SCOPED_PATTERNS (phụ huynh bị chặn) — một regex, không lặp ở hai nơi.
+ */
+export const CONTEST_PARTICIPANT_ROUTE_PATTERN = /^\/contests\/[^/]+\/(?:play|result|certificate)(?:\/|$)/;
+
+interface RoleScopedPattern {
+  pattern: RegExp;
+  roles: NavRole[];
+  /** Một đường dẫn mẫu khớp `pattern` — test ma trận role dùng. */
+  example: string;
+  /** Nơi đưa người không đủ quyền về (thay vì trang chủ của vai trò). */
+  fallback: (pathname: string) => string;
+}
+
+/**
+ * Route có tham số động không biểu diễn được bằng tiền tố `href` ở bảng trên. Được kiểm TRƯỚC
+ * ROLE_SCOPED_ROUTES vì cụ thể hơn: "/contests/x/play" khớp cả tiền tố "/contests" (phụ huynh
+ * được phép) lẫn pattern này (chỉ học viên) — pattern phải thắng.
+ * TEACHER cũng được quy về nav role STUDENT (resolveNavRole) nên vẫn vào được; backend trả 403
+ * `CONTEST_ROLE_NOT_ALLOWED` và trang hiện thông báo, đúng bảng route §7.
+ */
+export const ROLE_SCOPED_PATTERNS: RoleScopedPattern[] = [
+  {
+    pattern: CONTEST_PARTICIPANT_ROUTE_PATTERN,
+    roles: ["STUDENT"],
+    example: "/contests/demo/play",
+    fallback: (pathname) => pathname.replace(/\/(?:play|result|certificate)(?:\/.*)?$/, ""),
+  },
+];
+
+/**
  * `pathname` không khớp entry nào => route này không do bảng trên quản lý
  * (vd `/notifications`, `/checkout`, `/cart`...) => luôn cho qua ở tầng này.
  */
 export function isRouteAllowedForRole(pathname: string, role: NavRole): boolean {
+  const scopedPattern = ROLE_SCOPED_PATTERNS.find((p) => p.pattern.test(pathname));
+  if (scopedPattern) return scopedPattern.roles.includes(role);
   const entry = ROLE_SCOPED_ROUTES.find(
     (r) => pathname === r.href || pathname.startsWith(`${r.href}/`)
   );
   if (!entry) return true;
   return entry.roles.includes(role);
+}
+
+/** Đích chuyển hướng khi route bị chặn theo vai trò: pattern có đích riêng, còn lại về home. */
+export function getRoleRestrictedRedirect(pathname: string, role?: string | null): string {
+  const scopedPattern = ROLE_SCOPED_PATTERNS.find((p) => p.pattern.test(pathname));
+  return scopedPattern ? scopedPattern.fallback(pathname) : getRoleHomeRoute(role);
 }

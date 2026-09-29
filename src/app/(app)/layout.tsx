@@ -10,7 +10,8 @@ import {
   AUTH_ROUTES,
   resolveNavRole,
   isRouteAllowedForRole,
-  getRoleHomeRoute,
+  getRoleRestrictedRedirect,
+  CONTEST_PARTICIPANT_ROUTE_PATTERN,
 } from "@/lib/routes";
 
 export default function AppLayout({
@@ -24,14 +25,18 @@ export default function AppLayout({
   const normalizedRole = normalizeRole(activeRole);
   const isAdminRole = normalizedRole === "SYSTEM_ADMIN" || normalizedRole === "ORG_OWNER";
 
+  const isContestRoute = pathname === "/contests" || pathname.startsWith("/contests/");
+  // Làm bài/kết quả/chứng nhận cần đăng nhập (middleware.ts cũng chặn) — không coi là public để
+  // nhánh mất phiên bên dưới đưa về /login thay vì render trang rỗng.
+  const isContestParticipantRoute = CONTEST_PARTICIPANT_ROUTE_PATTERN.test(pathname);
+
   const isPublicRoute =
     pathname === "/courses" ||
     pathname.startsWith("/courses/") ||
     pathname === "/discussions" ||
     pathname.startsWith("/discussions/") ||
     pathname.startsWith("/profile/") ||
-    pathname === "/contests" ||
-    pathname.startsWith("/contests/");
+    (isContestRoute && !isContestParticipantRoute);
 
   // A-P2-4 (QA 260927 admin): admin bị ép về /admin ngay cả khi chỉ muốn vào
   // trang tài khoản cá nhân (đổi mật khẩu, thiết bị, thông báo, tin nhắn, hồ
@@ -43,8 +48,10 @@ export default function AppLayout({
   // "/settings/family", trang chỉ dành cho học sinh/phụ huynh mà admin
   // không có lý do vào).
   const ADMIN_ALLOWED_EXACT_ROUTES = ["/settings", "/settings/devices", "/notifications", "/messages"];
+  // Cuộc thi (contract §7): admin xem danh sách/chi tiết ở chế độ chỉ đọc. Route con làm bài/kết
+  // quả để backend trả 403/404 và trang hiện thông báo, không đẩy admin về /admin im lặng.
   const isAdminAllowedRoute =
-    ADMIN_ALLOWED_EXACT_ROUTES.includes(pathname) || pathname.startsWith("/profile/");
+    ADMIN_ALLOWED_EXACT_ROUTES.includes(pathname) || pathname.startsWith("/profile/") || isContestRoute;
 
   // Review PR #26 MAJOR #1: menu ẩn "Cuộc thi"/"Nhóm"/"Xu"/"Thành tích"/
   // "Bảng xếp hạng"... với phụ huynh (`sidebar.tsx`/`bottom-nav.tsx`) nhưng
@@ -54,11 +61,10 @@ export default function AppLayout({
   // Chỉ áp cho STUDENT/PARENT: ADMIN đã có cơ chế riêng ở trên
   // (ADMIN_ALLOWED_EXACT_ROUTES), GUEST/no-role không chạy qua nhánh này.
   //
-  // CỐ Ý không loại trừ theo `isPublicRoute`: "/contests" nằm trong
-  // `isPublicRoute` (để khách chưa đăng nhập xem được) NHƯNG với vai PHỤ
-  // HUYNH đã đăng nhập vẫn phải bị chặn — coordinator liệt kê rõ "/contests"
-  // là 1 trong 5 route phụ huynh không được vào. Nếu thêm `!isPublicRoute`
-  // vào đây thì "/contests" lại lọt y hệt lỗi review vừa sửa.
+  // CỐ Ý không loại trừ theo `isPublicRoute`: route public với khách vẫn có
+  // thể bị chặn với một vai đã đăng nhập. Từ MVP "Cuộc thi" (contract §7, chủ
+  // dự án 28/09) phụ huynh XEM được "/contests" và trang chi tiết, nhưng bị
+  // chặn ở làm bài/kết quả/chứng nhận (ROLE_SCOPED_PATTERNS, lib/routes.ts).
   const navRole = resolveNavRole(isAuthenticated, normalizedRole);
   const isRoleRestrictedRoute =
     isAuthenticated &&
@@ -96,9 +102,10 @@ export default function AppLayout({
     }
 
     // Route không dành cho role hiện tại (vd phụ huynh gõ thẳng /achievements)
-    // → về home của role đó, không phải màn trắng vô thời hạn.
+    // → về home của role đó, không phải màn trắng vô thời hạn. Riêng route con cuộc thi
+    // (phụ huynh mở /contests/x/play) về trang chi tiết cuộc thi đó (contract §7).
     if (isRoleRestrictedRoute) {
-      router.replace(getRoleHomeRoute(normalizedRole));
+      router.replace(getRoleRestrictedRedirect(pathname, normalizedRole));
       return;
     }
 
@@ -116,6 +123,7 @@ export default function AppLayout({
     isRoleRestrictedRoute,
     normalizedRole,
     isPublicRoute,
+    pathname,
     router,
   ]);
 

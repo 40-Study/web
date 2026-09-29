@@ -7,7 +7,13 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { ROLE_SCOPED_ROUTES, isRouteAllowedForRole, type NavRole } from "./routes";
+import {
+  ROLE_SCOPED_PATTERNS,
+  ROLE_SCOPED_ROUTES,
+  getRoleRestrictedRedirect,
+  isRouteAllowedForRole,
+  type NavRole,
+} from "./routes";
 
 const ALL_ROLES: NavRole[] = ["GUEST", "STUDENT", "PARENT", "ADMIN"];
 
@@ -20,6 +26,32 @@ describe("isRouteAllowedForRole — ma trận role x route (ROLE_SCOPED_ROUTES)"
       });
     }
   }
+
+  for (const entry of ROLE_SCOPED_PATTERNS) {
+    for (const role of ALL_ROLES) {
+      const expected = entry.roles.includes(role);
+      it(`pattern ${entry.example} x ${role} -> ${expected ? "CHO PHÉP" : "TỪ CHỐI"}`, () => {
+        expect(isRouteAllowedForRole(entry.example, role)).toBe(expected);
+      });
+    }
+  }
+
+  it("cuộc thi: phụ huynh xem danh sách + chi tiết, bị chặn làm bài/kết quả/chứng nhận", () => {
+    expect(isRouteAllowedForRole("/contests", "PARENT")).toBe(true);
+    expect(isRouteAllowedForRole("/contests/thi-git", "PARENT")).toBe(true);
+    for (const sub of ["play", "result", "certificate"]) {
+      expect(isRouteAllowedForRole(`/contests/thi-git/${sub}`, "PARENT")).toBe(false);
+      expect(isRouteAllowedForRole(`/contests/thi-git/${sub}`, "STUDENT")).toBe(true);
+    }
+    // Slug trùng tên route con KHÔNG bị coi là route con (chỉ segment thứ 3 mới tính)
+    expect(isRouteAllowedForRole("/contests/play", "PARENT")).toBe(true);
+  });
+
+  it("cuộc thi: phụ huynh bị chặn route con -> về trang chi tiết cuộc thi, không về /home", () => {
+    expect(getRoleRestrictedRedirect("/contests/thi-git/play", "PARENT")).toBe("/contests/thi-git");
+    expect(getRoleRestrictedRedirect("/contests/thi-git/certificate/", "PARENT")).toBe("/contests/thi-git");
+    expect(getRoleRestrictedRedirect("/achievements", "PARENT")).toBe("/home");
+  });
 
   it("route con (vd /achievements/detail) thừa hưởng quyền của route cha", () => {
     expect(isRouteAllowedForRole("/achievements/detail", "PARENT")).toBe(false);

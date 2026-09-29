@@ -1,363 +1,167 @@
 "use client";
 
-import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+/**
+ * Chi tiết cuộc thi (contract §7, #7 `GET /contests/:slug`, OptionalAuth). Mọi quyết định "được
+ * làm gì" lấy từ `viewer` backend trả về (resolveContestCta), đồng hồ theo `server_time`.
+ */
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { ArrowLeft, Award, CalendarClock, Clock, HelpCircle, Lock, Trophy, User, Users } from "lucide-react";
+import { useContestDetail } from "@/hooks/queries/use-contests";
+import { contestErrorCode } from "@/lib/contest/contest-errors";
 import {
-  Trophy,
-  Clock,
-  Users,
-  Code,
-  CheckCircle,
-  XCircle,
-  ArrowLeft,
-  Play,
-  Loader2,
-  Medal,
-  Send,
-} from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { sanitizeHtml } from "@/lib/sanitize-html";
-import {
-  useContest,
-  useContestProblems,
-  useContestLeaderboard,
-  useJoinContest,
-  useSubmitAnswer,
-  useMyContestSubmissions,
-} from "@/hooks/queries/use-contests";
+  formatContestDateTime,
+  formatContestPercent,
+  formatContestPrize,
+  formatContestScore,
+  formatCountdown,
+} from "@/lib/contest/contest-format";
+import { normalizeRole } from "@/lib/routes";
 import { useAuthStore } from "@/stores/auth.store";
-import type { ContestProblem, ContestSubmission } from "@/services/contest.service";
-
-const DIFFICULTY_COLORS: Record<string, string> = {
-  EASY: "bg-green-100 text-green-700",
-  MEDIUM: "bg-yellow-100 text-yellow-700",
-  HARD: "bg-red-100 text-red-700",
-};
-
-const DIFFICULTY_LABELS: Record<string, string> = {
-  EASY: "Dễ",
-  MEDIUM: "Trung bình",
-  HARD: "Khó",
-};
-
-const SUBMISSION_STATUS_LABELS: Record<string, string> = {
-  PENDING: "Đang chờ",
-  JUDGING: "Đang chấm",
-  ACCEPTED: "Đúng",
-  WRONG_ANSWER: "Sai",
-  TIME_LIMIT: "Quá thời gian",
-  MEMORY_LIMIT: "Quá bộ nhớ",
-  RUNTIME_ERROR: "Lỗi chạy",
-  COMPILATION_ERROR: "Lỗi biên dịch",
-};
-
-function ProblemCard({
-  problem,
-  contestId,
-  submissions,
-}: {
-  problem: ContestProblem;
-  contestId: string;
-  submissions: ContestSubmission[];
-}) {
-  const [answer, setAnswer] = useState("");
-  const [selectedOption, setSelectedOption] = useState("");
-  const submitMutation = useSubmitAnswer(contestId, problem.id);
-
-  const bestSubmission = submissions.find(
-    (s) => s.problem_id === problem.id && s.status === "ACCEPTED"
-  );
-
-  const handleSubmit = () => {
-    if (problem.type === "CODE") {
-      submitMutation.mutate({ code: answer, language: "python" });
-    } else if (problem.type === "MULTIPLE_CHOICE") {
-      submitMutation.mutate({ answer: selectedOption });
-    } else {
-      submitMutation.mutate({ answer });
-    }
-  };
-
-  return (
-    <Card className="p-5 space-y-4">
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold">{problem.title}</h3>
-            <Badge className={cn("text-xs", DIFFICULTY_COLORS[problem.difficulty])}>
-              {DIFFICULTY_LABELS[problem.difficulty]}
-            </Badge>
-            {bestSubmission && (
-              <Badge className="bg-green-100 text-green-700 text-xs">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Đã giải
-              </Badge>
-            )}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {problem.points} điểm
-            {problem.time_limit ? ` | Giới hạn: ${problem.time_limit}s` : ""}
-          </p>
-        </div>
-      </div>
-
-      <div className="prose prose-sm max-w-none">
-        <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(problem.description.replace(/\n/g, "<br>")) }} />
-      </div>
-
-      {problem.sample_input && (
-        <div className="space-y-2">
-          <p className="text-sm font-medium">Input mẫu:</p>
-          <pre className="bg-muted p-3 rounded text-sm">{problem.sample_input}</pre>
-        </div>
-      )}
-      {problem.sample_output && (
-        <div className="space-y-2">
-          <p className="text-sm font-medium">Output mẫu:</p>
-          <pre className="bg-muted p-3 rounded text-sm">{problem.sample_output}</pre>
-        </div>
-      )}
-
-      {/* Answer input */}
-      {problem.type === "MULTIPLE_CHOICE" && problem.options ? (
-        <div className="space-y-2">
-          {Object.entries(problem.options as Record<string, string>).map(([key, value]) => (
-            <label
-              key={key}
-              className={cn(
-                "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
-                selectedOption === key
-                  ? "border-primary bg-primary/5"
-                  : "hover:bg-muted/50"
-              )}
-            >
-              <input
-                type="radio"
-                name={`problem-${problem.id}`}
-                value={key}
-                checked={selectedOption === key}
-                onChange={() => setSelectedOption(key)}
-                className="accent-primary"
-              />
-              <span className="text-sm">
-                <strong>{key}.</strong> {value}
-              </span>
-            </label>
-          ))}
-        </div>
-      ) : (
-        <Textarea
-          placeholder={
-            problem.type === "CODE"
-              ? "Viết code của bạn ở đây..."
-              : "Nhập câu trả lời..."
-          }
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          rows={problem.type === "CODE" ? 10 : 3}
-          className={problem.type === "CODE" ? "font-mono text-sm" : ""}
-        />
-      )}
-
-      <Button
-        onClick={handleSubmit}
-        disabled={submitMutation.isPending}
-        className="w-full"
-      >
-        {submitMutation.isPending ? (
-          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-        ) : (
-          <Send className="h-4 w-4 mr-2" />
-        )}
-        Nộp bài
-      </Button>
-    </Card>
-  );
-}
+import type { ContestDetail } from "@/types/contest";
+import { ContestPhaseBadge } from "../_components/contest-card";
+import { ContestCtaPanel } from "../_components/contest-cta-panel";
+import { ContestLeaderboard } from "../_components/contest-leaderboard";
+import { ContestErrorState, ContestLoading } from "../_components/contest-states";
+import { useServerCountdown } from "../_components/use-server-countdown";
 
 export default function ContestDetailPage() {
   const params = useParams<{ slug: string }>();
-  const router = useRouter();
-  const { user } = useAuthStore();
+  const slug = params?.slug ?? "";
+  const { activeRole } = useAuthStore();
+  const query = useContestDetail(slug);
 
-  const { data: contest, isLoading } = useContest(params.slug);
-  const { data: problems } = useContestProblems(contest?.id ?? "");
-  const { data: leaderboard } = useContestLeaderboard(contest?.id ?? "");
-  const { data: mySubmissions } = useMyContestSubmissions(contest?.id ?? "");
-  const joinMutation = useJoinContest();
-
-  // useState must be called before any early returns
-  const isParticipating = !!contest?.my_participation;
-  const [tab, setTab] = useState(isParticipating ? "problems" : "leaderboard");
-
-  if (isLoading) {
+  if (query.isLoading) return <ContestLoading />;
+  if (query.error || !query.data) {
+    const notFound = contestErrorCode(query.error) === "CONTEST_NOT_FOUND";
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="px-4 py-10">
+        <ContestErrorState
+          error={query.error}
+          title={notFound ? "Không tìm thấy cuộc thi" : "Không tải được cuộc thi"}
+          onRetry={notFound ? undefined : () => query.refetch()}
+        />
       </div>
     );
   }
 
-  if (!contest) {
-    return (
-      <div className="text-center py-20 text-muted-foreground">
-        Không tìm thấy cuộc thi
-      </div>
-    );
-  }
+  // Tải lại khi đồng hồ chạm mốc mở/đóng. Trễ 1,5 giây: đồng hồ web và server lệch vài trăm ms,
+  // gọi đúng giây 0 có thể nhận lại phase cũ và đồng hồ đứng ở 00:00:00.
+  const refreshSoon = () => window.setTimeout(() => query.refetch(), 1500);
+  return <ContestDetailView detail={query.data} receivedAt={query.dataUpdatedAt} activeRole={normalizeRole(activeRole)} onRefresh={refreshSoon} />;
+}
 
-  const isActive = contest.status === "ACTIVE";
-  const canJoin = (isActive || contest.status === "UPCOMING") && !isParticipating;
+function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { detail: ContestDetail; receivedAt: number; activeRole: string | null; onRefresh: () => void }) {
+  const boundary = detail.phase === "UPCOMING" ? detail.start_time : detail.phase === "ACTIVE" ? detail.end_time : null;
+  const remaining = useServerCountdown(boundary, detail.server_time, onRefresh, receivedAt);
+  const mine = detail.viewer.my_participation;
+  const seats = detail.max_participants > 0 ? `${detail.participant_count}/${detail.max_participants}` : `${detail.participant_count}`;
 
   return (
-    <div className="container max-w-5xl mx-auto py-6 space-y-6">
-      {/* Back button */}
-      <Button variant="ghost" size="sm" onClick={() => router.push("/contests")}>
-        <ArrowLeft className="h-4 w-4 mr-2" />
+    <div className="mx-auto w-full max-w-5xl space-y-5 px-4 py-6 sm:px-6">
+      <Link href="/contests" className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         Tất cả cuộc thi
-      </Button>
+      </Link>
 
-      {/* Contest header */}
-      <div className="space-y-4">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">{contest.title}</h1>
-            {contest.description && (
-              <p className="text-muted-foreground mt-2">{contest.description}</p>
-            )}
+      {detail.banner_url && (
+        // eslint-disable-next-line @next/next/no-img-element -- banner do người dùng nhập, domain tuỳ ý
+        <img src={detail.banner_url} alt="" className="aspect-[3/1] w-full rounded-2xl object-cover" />
+      )}
+
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
+        <section className="min-w-0 space-y-5">
+          <div className="space-y-2">
+            <ContestPhaseBadge phase={detail.phase} />
+            <h1 className="break-words text-2xl font-bold text-gray-900">{detail.title}</h1>
+            {detail.description && <p className="whitespace-pre-line break-words text-gray-700">{detail.description}</p>}
           </div>
-          {canJoin && (
-            <Button
-              onClick={() => joinMutation.mutate(contest.id)}
-              disabled={joinMutation.isPending}
-              size="lg"
-            >
-              <Play className="h-4 w-4 mr-2" />
-              Tham gia
-            </Button>
-          )}
-        </div>
 
-        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-          <Badge variant="outline" className="gap-1">
-            <Clock className="h-3.5 w-3.5" />
-            {new Date(contest.start_time).toLocaleString("vi-VN")} -{" "}
-            {new Date(contest.end_time).toLocaleString("vi-VN")}
-          </Badge>
-          <Badge variant="outline" className="gap-1">
-            <Users className="h-3.5 w-3.5" />
-            {contest.participant_count} thí sinh
-          </Badge>
-          {contest.duration && (
-            <Badge variant="outline" className="gap-1">
-              <Clock className="h-3.5 w-3.5" />
-              {contest.duration} phút
-            </Badge>
-          )}
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="problems" className="gap-1">
-            <Code className="h-4 w-4" />
-            Bài thi ({problems?.length ?? 0})
-          </TabsTrigger>
-          <TabsTrigger value="leaderboard" className="gap-1">
-            <Trophy className="h-4 w-4" />
-            Bảng xếp hạng
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="problems" className="space-y-4 mt-4">
-          {!isParticipating ? (
-            <Card className="p-8 text-center text-muted-foreground">
-              <Trophy className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p>Hãy tham gia cuộc thi để xem đề bài</p>
-            </Card>
-          ) : problems && problems.length > 0 ? (
-            problems.map((problem) => (
-              <ProblemCard
-                key={problem.id}
-                problem={problem}
-                contestId={contest.id}
-                submissions={mySubmissions ?? []}
+          <dl className="grid grid-cols-1 gap-3 rounded-2xl border border-gray-200 bg-white p-4 text-sm sm:grid-cols-2">
+            <InfoRow icon={CalendarClock} label="Mở lúc" value={formatContestDateTime(detail.start_time)} />
+            <InfoRow icon={CalendarClock} label="Đóng lúc" value={formatContestDateTime(detail.end_time)} />
+            <InfoRow icon={Clock} label="Thời gian làm bài" value={`${detail.duration_minutes} phút`} />
+            <InfoRow icon={HelpCircle} label="Đề thi" value={`${detail.question_count} câu · ${formatContestScore(detail.total_points)} điểm`} />
+            <InfoRow icon={Users} label="Người tham gia" value={seats} />
+            <InfoRow icon={User} label="Người tạo" value={detail.creator_name} />
+            {detail.course && (
+              <InfoRow
+                icon={Lock}
+                label="Dành cho học viên khoá"
+                value={
+                  <Link href={`/courses/${encodeURIComponent(detail.course.slug)}`} className="text-primary-700 hover:underline">
+                    {detail.course.title}
+                  </Link>
+                }
               />
-            ))
-          ) : (
-            <p className="text-center text-muted-foreground py-8">Chưa có bài thi nào</p>
-          )}
-        </TabsContent>
+            )}
+          </dl>
 
-        <TabsContent value="leaderboard" className="mt-4">
-          <Card>
-            <div className="divide-y">
-              {/* Header */}
-              <div className="grid grid-cols-12 gap-2 px-4 py-3 text-xs font-medium text-muted-foreground bg-muted/50">
-                <div className="col-span-1">#</div>
-                <div className="col-span-7">Thí sinh</div>
-                <div className="col-span-2 text-right">Điểm</div>
-                <div className="col-span-2 text-right">Thời gian</div>
+          <section className="space-y-2 rounded-2xl border border-gray-200 bg-white p-4">
+            <h2 className="flex items-center gap-2 font-semibold text-gray-900">
+              <Award className="h-5 w-5 text-violet-600" aria-hidden="true" />
+              Giải thưởng
+            </h2>
+            {detail.prizes.length === 0 && detail.certificate_min_percentage === null ? (
+              <p className="text-sm text-gray-600">Cuộc thi này không có giải thưởng.</p>
+            ) : (
+              <ul className="space-y-1 text-sm text-gray-700">
+                {detail.prizes.map((p) => (
+                  <li key={p.id}>• {formatContestPrize(p)}</li>
+                ))}
+                {detail.certificate_min_percentage !== null && (
+                  <li>• Đạt từ {formatContestPercent(detail.certificate_min_percentage)} số điểm trở lên: Chứng nhận</li>
+                )}
+              </ul>
+            )}
+            <p className="text-xs text-gray-500">Giải được trao sau khi quản trị viên chốt kết quả.</p>
+          </section>
+
+          <section className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
+            <h2 className="flex items-center gap-2 font-semibold text-gray-900">
+              <Trophy className="h-5 w-5 text-amber-500" aria-hidden="true" />
+              Bảng xếp hạng
+            </h2>
+            <ContestLeaderboard contestId={detail.id} phase={detail.phase} endTime={detail.end_time} serverTime={detail.server_time} receivedAt={receivedAt} />
+          </section>
+        </section>
+
+        <aside className="space-y-3 lg:sticky lg:top-20 lg:self-start">
+          <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            {remaining !== null && (
+              <div className="text-center">
+                <p className="text-xs uppercase tracking-wide text-gray-500">{detail.phase === "UPCOMING" ? "Mở sau" : "Kết thúc sau"}</p>
+                <p className="font-mono text-2xl font-bold text-gray-900" role="timer">
+                  {formatCountdown(remaining)}
+                </p>
               </div>
+            )}
+            <ContestCtaPanel detail={detail} receivedAt={receivedAt} activeRole={activeRole} onPhaseBoundary={onRefresh} />
+          </div>
 
-              {leaderboard?.participants?.length ? (
-                leaderboard.participants.map((p, i) => (
-                  <div
-                    key={p.id}
-                    className={cn(
-                      "grid grid-cols-12 gap-2 px-4 py-3 items-center",
-                      p.user_id === user?.id && "bg-primary/5"
-                    )}
-                  >
-                    <div className="col-span-1 font-bold">
-                      {i < 3 ? (
-                        <Medal
-                          className={cn(
-                            "h-5 w-5",
-                            i === 0
-                              ? "text-yellow-500"
-                              : i === 1
-                                ? "text-gray-400"
-                                : "text-orange-400"
-                          )}
-                        />
-                      ) : (
-                        <span className="text-muted-foreground">{i + 1}</span>
-                      )}
-                    </div>
-                    <div className="col-span-7 flex items-center gap-2">
-                      <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-                        {(p.user_name ?? "?")[0].toUpperCase()}
-                      </div>
-                      <span className="text-sm font-medium truncate">
-                        {p.user_name ?? "Unknown"}
-                      </span>
-                    </div>
-                    <div className="col-span-2 text-right font-semibold text-primary">
-                      {p.total_score}
-                    </div>
-                    <div className="col-span-2 text-right text-xs text-muted-foreground">
-                      {p.finished_at
-                        ? new Date(p.finished_at).toLocaleTimeString("vi-VN")
-                        : "—"}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-8 text-center text-muted-foreground">
-                  Chưa có thí sinh nào
-                </div>
-              )}
+          {mine && mine.attempt_status === "SUBMITTED" && (
+            <div className="space-y-1 rounded-2xl border border-gray-200 bg-white p-4 text-sm">
+              <p className="font-semibold text-gray-900">Kết quả của bạn</p>
+              <p>
+                {formatContestScore(mine.score)}/{formatContestScore(mine.total_points)} điểm ({formatContestPercent(mine.percentage)})
+              </p>
+              {mine.rank !== null && <p>Hạng chính thức: {mine.rank}</p>}
             </div>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          )}
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ icon: Icon, label, value }: { icon: typeof Clock; label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex min-w-0 items-start gap-2">
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
+      <div className="min-w-0">
+        <dt className="text-xs text-gray-500">{label}</dt>
+        <dd className="break-words font-medium text-gray-900">{value}</dd>
+      </div>
     </div>
   );
 }
