@@ -34,6 +34,8 @@ export const APP_VERSION = "1.0.0";
 
 export const siteConfig = {
     name: "ForteX",
+    // Email hỗ trợ chính thức (chủ dự án chốt 29/09) — SSOT cho footer, /help, điều khoản, bảo mật.
+    supportEmail: "support@fortex.edu.vn",
     tagline: "Learn Leap Lead",
     description: "ForteX - Learn Leap Lead | Nền tảng học tập và quản lý hiện đại",
     url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",

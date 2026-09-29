@@ -6,7 +6,7 @@
 
 import { siteConfig } from "@/lib/constants";
 
-export const SUPPORT_EMAIL = "support@fortex.edu.vn";
+export const SUPPORT_EMAIL = siteConfig.supportEmail;
 
 export interface FAQ {
   question: string;

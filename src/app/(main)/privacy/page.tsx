@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { siteConfig } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Chính sách bảo mật",
@@ -49,8 +50,8 @@ export default function PrivacyPage() {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">5. Liên hệ</h2>
           <p className="mt-2">
             Mọi thắc mắc về chính sách bảo mật vui lòng liên hệ{" "}
-            <a href="mailto:contact@40study.com" className="text-primary-600 hover:underline">
-              contact@40study.com
+            <a href={`mailto:${siteConfig.supportEmail}`} className="text-primary-600 hover:underline">
+              {siteConfig.supportEmail}
             </a>
             .
           </p>

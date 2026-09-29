@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Mail, Phone } from "lucide-react";
+import { Mail } from "lucide-react";
 import { siteConfig } from "@/lib/constants";
 
 // Chỉ liệt kê route CÓ THẬT và công khai (không bị RoleGuard chặn) — footer hiển thị
@@ -36,19 +36,13 @@ export function Footer() {
               Nền tảng đào tạo STEAM & AI thế hệ mới, cam kết mang lại kiến thức thực tế và chuẩn quốc tế cho học viên Việt Nam.
             </p>
             <div className="flex gap-3">
+              {/* Số điện thoại đã gỡ vì số cũ là số giả. Chỉ thêm lại khi có số thật. */}
               <a
-                href="mailto:contact@40study.com"
+                href={`mailto:${siteConfig.supportEmail}`}
                 aria-label={`Gửi email cho ${siteConfig.name}`}
                 className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
               >
                 <Mail className="w-4 h-4 text-gray-600" aria-hidden="true" />
-              </a>
-              <a
-                href="tel:+84123456789"
-                aria-label={`Gọi điện cho ${siteConfig.name}`}
-                className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-              >
-                <Phone className="w-4 h-4 text-gray-600" aria-hidden="true" />
               </a>
             </div>
           </div>
