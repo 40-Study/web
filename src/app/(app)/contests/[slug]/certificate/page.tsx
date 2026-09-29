@@ -9,6 +9,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Award, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useContestCertificate, useContestDetail } from "@/hooks/queries/use-contests";
+import { siteConfig } from "@/lib/constants";
 import { contestPath } from "@/lib/contest/contest-cta";
 import { contestErrorCode } from "@/lib/contest/contest-errors";
 import { formatContestDateTime } from "@/lib/contest/contest-format";
@@ -53,7 +54,7 @@ export default function ContestCertificatePage() {
 
       <article className="rounded-2xl border-4 border-double border-amber-400 bg-gradient-to-b from-amber-50 to-white px-5 py-10 text-center shadow-sm sm:px-10 print:shadow-none">
         <Award className="mx-auto h-14 w-14 text-amber-500" aria-hidden="true" />
-        <p className="mt-3 text-xs font-semibold uppercase tracking-[0.3em] text-amber-700">40Study</p>
+        <p className="mt-3 text-xs font-semibold uppercase tracking-[0.3em] text-amber-700">{siteConfig.name}</p>
         <h1 className="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl">Chứng nhận cuộc thi</h1>
         <p className="mt-6 text-sm text-gray-600">Chứng nhận</p>
         <p className="mt-1 break-words text-2xl font-bold text-primary-800 sm:text-3xl">{cert.user_name}</p>

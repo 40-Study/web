@@ -66,6 +66,7 @@ describe("ApplyTeacherButton", () => {
     expect(btn.textContent).toContain("Đăng ký làm giảng viên");
 
     fireEvent.click(btn);
+    fireEvent.click(await screen.findByTestId("apply-teacher-confirm"));
 
     await waitFor(() => expect(mockSwitchRole).toHaveBeenCalledTimes(1));
     expect(mockGetAllSystemRoles).toHaveBeenCalledTimes(1);
@@ -81,6 +82,7 @@ describe("ApplyTeacherButton", () => {
     render(<ApplyTeacherButton />);
 
     fireEvent.click(screen.getByTestId("apply-teacher-button"));
+    fireEvent.click(await screen.findByTestId("apply-teacher-confirm"));
 
     await waitFor(() => expect(mockSwitchRole).toHaveBeenCalledTimes(1));
     expect(mockToastError).not.toHaveBeenCalled();
@@ -91,8 +93,33 @@ describe("ApplyTeacherButton", () => {
     render(<ApplyTeacherButton />);
 
     fireEvent.click(screen.getByTestId("apply-teacher-button"));
+    fireEvent.click(await screen.findByTestId("apply-teacher-confirm"));
 
     await waitFor(() => expect(mockToastError).toHaveBeenCalledTimes(1));
+    expect(mockSwitchRole).not.toHaveBeenCalled();
+  });
+
+  // F8: một click không được tự tạo hồ sơ + đổi vai. Bỏ hộp xác nhận (gọi run() ngay trong
+  // handleClick) làm hai test dưới ĐỎ.
+  it("bấm 'Đăng ký làm giảng viên' chỉ mở hộp xác nhận, CHƯA gọi API nào", async () => {
+    render(<ApplyTeacherButton />);
+
+    fireEvent.click(screen.getByTestId("apply-teacher-button"));
+
+    expect(await screen.findByTestId("apply-teacher-confirm")).toBeTruthy();
+    expect(mockGetAllSystemRoles).not.toHaveBeenCalled();
+    expect(mockCreateProfile).not.toHaveBeenCalled();
+    expect(mockSwitchRole).not.toHaveBeenCalled();
+  });
+
+  it("bấm 'Để sau' trong hộp xác nhận: không tạo hồ sơ, không đổi vai", async () => {
+    render(<ApplyTeacherButton />);
+
+    fireEvent.click(screen.getByTestId("apply-teacher-button"));
+    fireEvent.click(await screen.findByTestId("apply-teacher-cancel"));
+
+    await waitFor(() => expect(screen.queryByTestId("apply-teacher-confirm")).toBeNull());
+    expect(mockCreateProfile).not.toHaveBeenCalled();
     expect(mockSwitchRole).not.toHaveBeenCalled();
   });
 

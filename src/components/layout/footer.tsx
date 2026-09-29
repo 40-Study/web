@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { Mail, Phone } from "lucide-react";
+import { Mail } from "lucide-react";
 import { siteConfig } from "@/lib/constants";
 
 // Chỉ liệt kê route CÓ THẬT và công khai (không bị RoleGuard chặn) — footer hiển thị
@@ -18,15 +17,9 @@ const exploreLinks = [
 ];
 
 export function Footer() {
-  const [subscribed, setSubscribed] = useState(false);
-
-  const handleNewsletterSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    // TODO: nối API đăng ký nhận tin khi backend sẵn sàng (M-09) — hiện chỉ xác nhận
-    // trên UI để tránh reload toàn trang và mất state SPA.
-    setSubscribed(true);
-  };
-
+  // Khối "Đăng ký nhận tin" đã gỡ (F5, QA vòng 2): backend chưa có API nhận tin, form cũ chỉ đổi
+  // state cục bộ rồi báo "Cảm ơn bạn đã đăng ký" — thành công giả, email không đi đâu cả. Chỉ đưa
+  // khối này trở lại khi có endpoint thật.
   return (
     <footer className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
       <div className="container mx-auto px-8 py-12">
@@ -43,19 +36,13 @@ export function Footer() {
               Nền tảng đào tạo STEAM & AI thế hệ mới, cam kết mang lại kiến thức thực tế và chuẩn quốc tế cho học viên Việt Nam.
             </p>
             <div className="flex gap-3">
+              {/* Số điện thoại đã gỡ vì số cũ là số giả. Chỉ thêm lại khi có số thật. */}
               <a
-                href="mailto:contact@40study.com"
-                aria-label="Gửi email cho ForteX"
+                href={`mailto:${siteConfig.supportEmail}`}
+                aria-label={`Gửi email cho ${siteConfig.name}`}
                 className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
               >
                 <Mail className="w-4 h-4 text-gray-600" aria-hidden="true" />
-              </a>
-              <a
-                href="tel:+84123456789"
-                aria-label="Gọi điện cho ForteX"
-                className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-              >
-                <Phone className="w-4 h-4 text-gray-600" aria-hidden="true" />
               </a>
             </div>
           </div>
@@ -74,35 +61,16 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Newsletter */}
+          {/* Hỗ trợ — thay khối newsletter giả bằng lối vào trang trợ giúp thật */}
           <div>
-            <h3 className="font-semibold text-gray-900 mb-4">Đăng ký nhận tin</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Nhận thông báo về các khóa học mới nhất và chương trình ưu đãi hấp dẫn.
-            </p>
-            {subscribed ? (
-              <p className="text-sm font-medium text-primary-600">Cảm ơn bạn đã đăng ký nhận tin!</p>
-            ) : (
-              <form className="flex gap-2" onSubmit={handleNewsletterSubmit}>
-                <label htmlFor="footer-newsletter-email" className="sr-only">
-                  Email của bạn
-                </label>
-                <input
-                  id="footer-newsletter-email"
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="Email của bạn"
-                  className="flex-1 h-10 px-4 rounded-xl border border-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-                <button
-                  type="submit"
-                  className="h-10 px-4 bg-primary-500 text-white text-sm font-medium rounded-xl hover:bg-primary-600 transition-colors"
-                >
-                  Gửi
-                </button>
-              </form>
-            )}
+            <h3 className="font-semibold text-gray-900 mb-4">Hỗ trợ</h3>
+            <ul className="space-y-3">
+              <li>
+                <Link href="/help" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                  Trung tâm trợ giúp
+                </Link>
+              </li>
+            </ul>
           </div>
         </div>
 

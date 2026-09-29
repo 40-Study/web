@@ -29,6 +29,8 @@ const PUBLIC_ROUTES = [
   "/certificates/verify",
   "/terms",
   "/privacy",
+  // Trợ giúp/FAQ công khai (F2, QA vòng 2): khách cũng cần đọc; trước đây nằm ở (app)/help.
+  "/help",
   "/403",
 ];
 
@@ -67,7 +69,6 @@ const PROTECTED_ROUTE_PREFIXES = [
   "/coins",
   "/friends",
   "/groups",
-  "/help",
   "/home",
   "/leaderboard",
   "/learn",

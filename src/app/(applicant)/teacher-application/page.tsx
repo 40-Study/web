@@ -10,6 +10,7 @@ import {
 import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
 import { ApplicationForm } from "@/components/teacher-application/application-form";
+import { siteConfig } from "@/lib/constants";
 import { getRoleHomeRoute } from "@/lib/routes";
 import { formatDate } from "@/lib/utils";
 import type { MyTeacherApplication } from "@/types/approval";
@@ -55,7 +56,7 @@ function ApplicationStatus({ application }: { application: MyTeacherApplication 
     return (
       <Banner tone="success" icon={<CheckCircle2 className="h-5 w-5" />} testId="application-approved">
         <p className="font-semibold">Hồ sơ đã được duyệt</p>
-        <p className="mt-1">Bạn đã là giảng viên của 40Study.</p>
+        <p className="mt-1">Bạn đã là giảng viên của {siteConfig.name}.</p>
         <Button asChild size="sm" className="mt-3">
           <Link href={getRoleHomeRoute("TEACHER")}>Vào khu giảng viên</Link>
         </Button>

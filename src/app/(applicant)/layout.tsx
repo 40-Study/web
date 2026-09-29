@@ -20,6 +20,7 @@ import { LogOut, Undo2 } from "lucide-react";
 import { RoleGuard } from "@/components/guards/role-guard";
 import { Button } from "@/components/ui/button";
 import { useLogout, useSwitchRole } from "@/hooks/queries/use-auth";
+import { siteConfig } from "@/lib/constants";
 import { getSystemRoleLabel } from "@/lib/role-labels";
 import { normalizeRole } from "@/lib/routes";
 import type { UnifiedRole } from "@/services/auth.service";
@@ -67,7 +68,7 @@ export default function ApplicantLayout({ children }: { children: React.ReactNod
         <header className="border-b bg-white dark:border-gray-800 dark:bg-gray-950">
           <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-4">
             <Link href="/" className="text-lg font-bold text-primary-600">
-              40Study
+              {siteConfig.name}
             </Link>
             <div className="flex items-center gap-3 text-sm">
               <span className="hidden text-gray-600 sm:inline dark:text-gray-300">{user?.name}</span>

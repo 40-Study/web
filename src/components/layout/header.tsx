@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { ForteXLogoIcon } from "@/components/landing/fortex-logo-icon";
 import { useState, useRef, useEffect } from "react";
-import { Bell, FileText, Settings, LogOut, Menu, X, Ticket, ChevronDown, Check, UserCircle, Coins, Users } from "lucide-react";
+import { Bell, FileText, Settings, LogOut, Menu, X, Ticket, ChevronDown, Check, UserCircle, Coins, Users, Receipt } from "lucide-react";
+import { siteConfig } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { AuthModal } from "@/components/auth/auth-modal";
@@ -42,6 +43,10 @@ const studentMenuItems: MenuItem[] = [
   { label: "Bài tập", href: "/my-assignments", icon: FileText, badge: true },
   { label: "Voucher của tôi", href: "/my-vouchers", icon: Ticket },
 ];
+
+// "Đơn hàng của tôi" (lane B vòng 2 đã có trang /orders): chỉ vai học viên/phụ huynh thấy —
+// giảng viên không mua khoá, còn admin bị (app)/layout chuyển về /admin nên link sẽ chết.
+export const ordersMenuItem: MenuItem = { label: "Đơn hàng của tôi", href: "/orders", icon: Receipt };
 
 // Common menu items for all roles
 const commonMenuItems: MenuItem[] = [
@@ -94,8 +99,14 @@ export function Header() {
   const isStudent = normalizedRole === "STUDENT";
   const homeHref = isAuthenticated ? getRoleHomeRoute(normalizedRole) : "/";
 
-  // Students: Bài tập + Cài đặt; Teachers/Admins: only Cài đặt
-  const userMenuItems = [...(isStudent ? studentMenuItems : []), ...commonMenuItems];
+  const canSeeOrders = isStudent || normalizedRole === "PARENT";
+
+  // Students: Bài tập + Đơn hàng + Cài đặt; Parents: Đơn hàng + Cài đặt; Teachers/Admins: only Cài đặt
+  const userMenuItems = [
+    ...(isStudent ? studentMenuItems : []),
+    ...(canSeeOrders ? [ordersMenuItem] : []),
+    ...commonMenuItems,
+  ];
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -131,7 +142,7 @@ export function Header() {
         <div className="flex items-center gap-6 lg:gap-12">
           <Link href={homeHref} className="flex items-center gap-2">
             <ForteXLogoIcon size={32} className="text-black" />
-            <span className="text-xl font-light text-black tracking-tight">ForteX</span>
+            <span className="text-xl font-light text-black tracking-tight">{siteConfig.name}</span>
           </Link>
 
           <GlobalSearch />

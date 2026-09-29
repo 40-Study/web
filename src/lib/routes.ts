@@ -108,6 +108,9 @@ export const ROLE_SCOPED_ROUTES: RoleScopedRoute[] = [
   { href: "/coins", roles: ["STUDENT"] },
   { href: "/achievements", roles: ["STUDENT"] },
   { href: "/leaderboard", roles: ["STUDENT"] },
+  // Bạn bè (QA vòng 2): trang xã hội của học sinh, phụ huynh không có lý do vào. Menu đã bỏ mục này
+  // (sidebar.tsx) nhưng gõ thẳng URL vẫn mở được — (app)/layout.tsx đọc bảng này để chuyển về home.
+  { href: "/friends", roles: ["STUDENT"] },
   { href: "/settings/family", roles: ["STUDENT", "PARENT"] },
   { href: "/messages", roles: ["STUDENT", "PARENT"] },
 ];

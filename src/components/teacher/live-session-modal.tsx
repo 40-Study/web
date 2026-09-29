@@ -22,6 +22,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { siteConfig } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -311,7 +312,7 @@ export function LiveSessionModal({
               <div className="grid grid-cols-3 gap-3 mt-3">
                 <PlatformCard
                   icon={<Video className="h-6 w-6" />}
-                  label="40Study Native"
+                  label={`${siteConfig.name} Native`}
                   sublabel="Khuyến dùng"
                   selected={form.platform === "40study"}
                   onClick={() => updateForm("platform", "40study")}

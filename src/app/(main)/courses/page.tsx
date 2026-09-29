@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { toast } from "sonner";
 import { CourseGrid } from "@/components/course/course-grid";
 import { CourseFiltersComponent } from "@/components/course/course-filters";
 import { CourseSearch } from "@/components/course/course-search";
@@ -133,20 +132,9 @@ export default function CoursesPage() {
           </section>
         )}
 
-        {/* Load More */}
-        {filteredCourses.length > 0 && filteredCourses.length >= 12 && (
-          <ScrollReveal direction="fade">
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => toast.info("Đang tải thêm...")}
-                className="px-8 py-3 bg-white rounded-full font-medium text-black transition-all duration-200 hover:bg-neutral-50"
-                style={{ boxShadow: 'rgba(0,0,0,0.4) 0px 0px 1px, rgba(0,0,0,0.04) 0px 4px 4px' }}
-              >
-                Xem thêm khóa học
-              </button>
-            </div>
-          </ScrollReveal>
-        )}
+        {/* Đã gỡ nút "Xem thêm khóa học" (F4, QA vòng 2): useCourses tải TOÀN BỘ danh sách một lần và
+            lọc phía client, không có trang kế tiếp để tải — nút cũ chỉ bật toast "Đang tải thêm..."
+            rồi không làm gì. */}
       </div>
     </div>
   );
