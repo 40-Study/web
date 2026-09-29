@@ -17,10 +17,12 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import type { RefundMethod } from "@/services/admin-order.service";
+import { ORDER_STATUS_LABEL, formatOrderDateTime } from "@/services/order.service";
 
 const REASON_MAX_LEN = 500;
+const TRANSACTION_REF_MAX_LEN = 100;
 
 export default function AdminOrderDetailPage() {
   const params = useParams();
@@ -31,6 +33,8 @@ export default function AdminOrderDetailPage() {
 
   const [refundOpen, setRefundOpen] = useState(false);
   const [reason, setReason] = useState("");
+  // B6 (QA vòng 2 N-13): quyết định #1 yêu cầu "kèm mã giao dịch" để đối soát sao kê.
+  const [transactionRef, setTransactionRef] = useState("");
   // Chỉ 1 hình thức hợp lệ (quyết định #1: chuyển khoản thủ công, KHÔNG ví xu) — không cần state
   // chọn, hằng số REFUND_METHOD dưới đây là giá trị DUY NHẤT backend chấp nhận.
   const REFUND_METHOD: RefundMethod = "manual_bank_transfer";
@@ -38,14 +42,22 @@ export default function AdminOrderDetailPage() {
   const closeDialog = () => {
     setRefundOpen(false);
     setReason("");
+    setTransactionRef("");
   };
 
-  const canSubmit = reason.trim().length > 0 && reason.length <= REASON_MAX_LEN;
+  const canSubmit =
+    reason.trim().length > 0 &&
+    reason.length <= REASON_MAX_LEN &&
+    transactionRef.trim().length > 0 &&
+    transactionRef.length <= TRANSACTION_REF_MAX_LEN;
 
   const onConfirmRefund = () => {
     if (!canSubmit) return;
     refundMutation.mutate(
-      { id, dto: { reason: reason.trim(), refund_method: REFUND_METHOD } },
+      {
+        id,
+        dto: { reason: reason.trim(), refund_method: REFUND_METHOD, transaction_ref: transactionRef.trim() },
+      },
       { onSuccess: closeDialog }
     );
   };
@@ -74,7 +86,7 @@ export default function AdminOrderDetailPage() {
               <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 {order.items.map((item) => (
                   <div key={item.id} className="flex items-center justify-between py-2 text-sm">
-                    <span>{item.course_name || item.course_id}</span>
+                    <span>{item.course_name || "Khóa học không còn tồn tại"}</span>
                     <span className="font-medium">{formatCurrency(item.final_price)}</span>
                   </div>
                 ))}
@@ -90,11 +102,23 @@ export default function AdminOrderDetailPage() {
               <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
                 <h2 className="mb-3 text-base font-semibold">Thông tin đơn</h2>
                 <div className="space-y-2 text-sm">
-                  <Row label="Trạng thái" value={<Badge>{order.status}</Badge>} />
-                  <Row label="Phương thức" value={order.payment_method ?? "-"} />
-                  <Row label="Ngày tạo" value={formatDate(order.created_at)} />
-                  {order.paid_at && <Row label="Ngày thanh toán" value={formatDate(order.paid_at)} />}
+                  <Row
+                    label="Trạng thái"
+                    value={
+                      <span className="inline-flex flex-wrap justify-end gap-1">
+                        <Badge>{ORDER_STATUS_LABEL[order.status] ?? order.status}</Badge>
+                        {/* Tiền về cho đơn đã huỷ/hết hạn: không khôi phục, hoàn tiền tay (review #76 final). */}
+                        {order.refund_needed && <Badge variant="destructive">Cần hoàn tiền</Badge>}
+                      </span>
+                    }
+                  />
+                  <Row label="Phương thức" value={PAYMENT_METHOD_LABEL[order.payment_method ?? ""] ?? order.payment_method ?? "-"} />
+                  <Row label="Ngày tạo" value={formatOrderDateTime(order.created_at)} />
+                  {order.paid_at && <Row label="Ngày thanh toán" value={formatOrderDateTime(order.paid_at)} />}
                   {order.notes && <Row label="Ghi chú" value={order.notes} />}
+                  {order.refunded_at && <Row label="Ngày hoàn tiền" value={formatOrderDateTime(order.refunded_at)} />}
+                  {order.refund_transaction_ref && <Row label="Mã giao dịch hoàn" value={order.refund_transaction_ref} />}
+                  {order.refund_reason && <Row label="Lý do hoàn" value={order.refund_reason} />}
                 </div>
               </div>
 
@@ -142,6 +166,20 @@ export default function AdminOrderDetailPage() {
               </p>
             </div>
 
+            <div>
+              <label htmlFor="refund-transaction-ref" className="mb-1 block font-medium text-gray-700 dark:text-gray-300">
+                Mã giao dịch chuyển khoản <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="refund-transaction-ref"
+                value={transactionRef}
+                onChange={(e) => setTransactionRef(e.target.value)}
+                maxLength={TRANSACTION_REF_MAX_LEN}
+                placeholder="VD: FT26271123456789 (mã trên sao kê ngân hàng)"
+                className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+              />
+            </div>
+
             <div className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:bg-gray-900 dark:text-gray-400">
               Hình thức hoàn tiền: <strong>chuyển khoản thủ công</strong> — bạn tự chuyển khoản cho
               học viên NGOÀI hệ thống trước, sau đó bấm xác nhận bên dưới để ghi nhận đã hoàn.
@@ -167,6 +205,11 @@ export default function AdminOrderDetailPage() {
     </div>
   );
 }
+
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  bank_transfer: "Chuyển khoản ngân hàng",
+  qr_transfer: "Chuyển khoản QR",
+};
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (

@@ -2,7 +2,7 @@
  * React Query hooks for order operations
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { orderService, type CreateOrderDTO, type PaymentIntentDTO } from "@/services/order.service";
 import { ApiError } from "@/lib/errors";
@@ -13,18 +13,73 @@ function orderErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+/** 409 ERR_ORDER_IN_PROGRESS: đã có đơn còn hạn cho khóa này (backend B4). */
+export const ORDER_IN_PROGRESS_CODE = "ERR_ORDER_IN_PROGRESS";
+
+/**
+ * 409 ERR_ORDER_EXPIRED: đơn đã quá hạn giữ, backend từ chối mở phiên thanh toán và chuyển đơn
+ * sang "expired" (review backend #76 MAJOR 2). Hộp thanh toán hiện màn "hết hạn" + "Tạo đơn mới".
+ */
+export const ORDER_EXPIRED_CODE = "ERR_ORDER_EXPIRED";
+
+export function isOrderExpiredError(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 409 && error.code === ORDER_EXPIRED_CODE;
+}
+
+/** 409 ERR_ORDER_ALREADY_PAID: đơn đã thanh toán xong (review backend #76 vòng 3). Coi như thành công. */
+export const ORDER_ALREADY_PAID_CODE = "ERR_ORDER_ALREADY_PAID";
+
+export function isOrderAlreadyPaidError(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 409 && error.code === ORDER_ALREADY_PAID_CODE;
+}
+
+/**
+ * 409 ERR_PAYMENT_VERIFYING: đơn có mã chuyển khoản đang được đối chiếu với ngân hàng (trong ân hạn
+ * 30 phút sau hạn mã, hoặc ngân hàng tạm lỗi). Không mở phiên mới, không huỷ được, không tạo đơn mới.
+ */
+export const PAYMENT_VERIFYING_CODE = "ERR_PAYMENT_VERIFYING";
+
+export function isPaymentVerifyingError(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 409 && error.code === PAYMENT_VERIFYING_CODE;
+}
+
+/** Câu hiện khi đơn còn đang đối chiếu mà hộp thanh toán đã hết cửa sổ chờ. */
+export const PAYMENT_RECONCILING_NOTICE =
+  "Đơn đang được đối chiếu, bạn có thể đóng cửa sổ và xem lại tại Đơn hàng của tôi.";
+
+/**
+ * Backend không đối chiếu được với ngân hàng (lỗi/timeout, `bank_unavailable`). Khác hẳn "chưa có
+ * giao dịch": học viên có thể đã chuyển khoản, không được mời chuyển lại hay tạo đơn mới.
+ */
+export const BANK_UNAVAILABLE_NOTICE =
+  "Ngân hàng đang gặp sự cố nên chưa kiểm tra được giao dịch. Nếu bạn đã chuyển khoản, đừng chuyển lại; vui lòng thử lại sau ít phút.";
+
+/**
+ * Quyết định chủ dự án (review #76 final): tiền về cho đơn đã huỷ/hết hạn KHÔNG khôi phục đơn, chỉ
+ * gắn cờ cần hoàn tiền (`refund_needed` trên đơn, `late_payment_received` khi kiểm tra).
+ */
+export const REFUND_NEEDED_NOTICE = "Đã nhận tiền sau khi đơn đóng, ForteX sẽ hoàn tiền cho bạn";
+
+export interface MyOrdersParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+}
+
 export const orderKeys = {
   all: ["orders"] as const,
   mine: () => [...orderKeys.all, "mine"] as const,
+  mineList: (params: MyOrdersParams) => [...orderKeys.mine(), params] as const,
   detail: (id: string) => [...orderKeys.all, "detail", id] as const,
   paymentStatus: (id: string) => [...orderKeys.all, "payment-status", id] as const,
 };
 
-/** Fetch all orders for the current user */
-export function useMyOrders() {
+/** Đơn hàng của user hiện tại (phân trang, lọc trạng thái) — trang /orders. */
+export function useMyOrders(params: MyOrdersParams = {}) {
   return useQuery({
-    queryKey: orderKeys.mine(),
-    queryFn: () => orderService.getMyOrders(),
+    queryKey: orderKeys.mineList(params),
+    queryFn: () => orderService.getMyOrders(params),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -39,24 +94,32 @@ export function useOrder(id: string) {
 
 const PAYMENT_STATUS_POLL_INTERVAL_MS = 5_000;
 const PAYMENT_TERMINAL_STATUSES = new Set(["completed", "paid", "cancelled", "refunded", "expired"]);
+/**
+ * Re-review #76 vòng 2: hết hạn mã KHÔNG phải kết quả cuối. Backend đối chiếu ngân hàng lần cuối rồi
+ * mới chốt completed/expired (và giữ nguyên trạng thái nếu chưa xác minh được), nên vẫn poll thêm
+ * một khoảng sau hạn để nhận đúng kết quả đó thay vì tự coi là hết hạn.
+ */
+export const PAYMENT_FINAL_CHECK_WINDOW_MS = 10 * 60_000;
 
 /**
  * Poll GET /orders/:id/payment-status mỗi 5s cho tới khi có kết quả cuối
- * (completed/cancelled/refunded/expired) hoặc quá hạn `expiresAt`
+ * (completed/cancelled/refunded/expired), hoặc quá `expiresAt` + PAYMENT_FINAL_CHECK_WINDOW_MS
  * (ISO string từ PaymentIntent.expired_at — mục 13 trong plans/reports/
  * web-core-developer-260909-1412-web-logic-fixes.md).
  */
+/** Nhịp poll kế tiếp (ms) hoặc false để dừng: dừng khi có kết quả cuối hoặc quá hạn + cửa sổ đối chiếu. */
+export function nextPaymentPollDelay(status: string | undefined, expiresAt?: string | null, now = Date.now()): number | false {
+  if (status && PAYMENT_TERMINAL_STATUSES.has(status)) return false;
+  if (expiresAt && now > new Date(expiresAt).getTime() + PAYMENT_FINAL_CHECK_WINDOW_MS) return false;
+  return PAYMENT_STATUS_POLL_INTERVAL_MS;
+}
+
 export function usePaymentStatus(id: string, enabled = false, expiresAt?: string | null) {
   return useQuery({
     queryKey: orderKeys.paymentStatus(id),
     queryFn: () => orderService.getPaymentStatus(id),
     enabled: !!id && enabled,
-    refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      if (status && PAYMENT_TERMINAL_STATUSES.has(status)) return false;
-      if (expiresAt && Date.now() > new Date(expiresAt).getTime()) return false;
-      return PAYMENT_STATUS_POLL_INTERVAL_MS;
-    },
+    refetchInterval: (query) => nextPaymentPollDelay(query.state.data?.status, expiresAt),
   });
 }
 
@@ -69,6 +132,20 @@ export function useCreateOrder() {
       qc.invalidateQueries({ queryKey: orderKeys.mine() });
     },
     onError: (error) => {
+      // Đơn trùng khóa đang chờ chuyển khoản: chỉ user tự quyết tiếp tục hay hủy đơn cũ, nên
+      // dẫn thẳng sang "Đơn hàng của tôi" thay vì để user bấm lại "Mua ngay" vô ích.
+      // Review #76 vòng 4: đơn trước cùng khoá đã cấp mã và đang đối chiếu (kể cả vừa huỷ) → 409
+      // ERR_PAYMENT_VERIFYING, cũng dẫn về "Đơn hàng của tôi" để kiểm tra thanh toán.
+      if (
+        error instanceof ApiError &&
+        error.status === 409 &&
+        (error.code === ORDER_IN_PROGRESS_CODE || error.code === PAYMENT_VERIFYING_CODE)
+      ) {
+        toast.error(error.message, {
+          action: { label: "Xem đơn hàng", onClick: () => window.location.assign("/orders") },
+        });
+        return;
+      }
       toast.error(orderErrorMessage(error, "Không thể tạo đơn hàng"));
     },
   });
@@ -84,18 +161,33 @@ export function useCancelOrder() {
       qc.invalidateQueries({ queryKey: orderKeys.detail(id) });
       toast.success("Đã hủy đơn hàng");
     },
-    onError: () => {
-      toast.error("Không thể hủy đơn hàng");
+    onError: (error, id) => {
+      // Backend đối chiếu ngân hàng trước khi huỷ (review #76 vòng 3): đơn có thể vừa được hoàn tất
+      // (ERR_ORDER_ALREADY_PAID) hoặc đang đối chiếu (ERR_PAYMENT_VERIFYING). Làm mới để thẻ đơn
+      // hiện đúng trạng thái; message tiếng Việt của backend nói rõ lý do.
+      if (isOrderAlreadyPaidError(error) || isPaymentVerifyingError(error)) {
+        qc.invalidateQueries({ queryKey: orderKeys.mine() });
+        qc.invalidateQueries({ queryKey: orderKeys.detail(id) });
+      }
+      toast.error(orderErrorMessage(error, "Không thể hủy đơn hàng"));
     },
   });
 }
 
 /** Tạo phiên thanh toán (bank_transfer/qr_transfer) cho một order — chỉ gọi được 1 lần khi order còn "pending". */
 export function useCreatePaymentIntent() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: PaymentIntentDTO }) =>
       orderService.createPaymentIntent(id, data),
     onError: (error) => {
+      // Đơn hết hạn: backend vừa chuyển đơn sang "expired" nên làm mới danh sách; hộp thanh toán
+      // tự hiện thông báo + nút "Tạo đơn mới", không toast thêm cho trùng lặp.
+      // Review #76 vòng 3: đã thanh toán / đang đối chiếu cũng do hộp thanh toán tự hiện màn riêng.
+      if (isOrderExpiredError(error) || isOrderAlreadyPaidError(error) || isPaymentVerifyingError(error)) {
+        qc.invalidateQueries({ queryKey: orderKeys.mine() });
+        return;
+      }
       toast.error(orderErrorMessage(error, "Không thể tạo phiên thanh toán"));
     },
   });
@@ -110,6 +202,9 @@ export function useCheckPayment() {
       // Làm mới ngay trạng thái thanh toán để dialog chuyển màn thành công
       // mà không phải chờ nhịp poll kế tiếp.
       qc.invalidateQueries({ queryKey: orderKeys.paymentStatus(id) });
+      // Toast ở đây (một chỗ cho cả hộp thanh toán lẫn trang đơn hàng): caller thấy bank_unavailable
+      // thì không báo thêm "chưa có giao dịch".
+      if (data.bank_unavailable) toast.warning(BANK_UNAVAILABLE_NOTICE);
       if (data.status === "completed" || data.status === "paid") {
         qc.invalidateQueries({ queryKey: orderKeys.detail(id) });
         qc.invalidateQueries({ queryKey: orderKeys.mine() });

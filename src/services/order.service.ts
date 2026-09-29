@@ -21,6 +21,35 @@ export type OrderStatus =
   | "expired";
 export type OrderSource = "buy_now" | "cart";
 
+/** Nhãn tiếng Việt DUY NHẤT cho trạng thái đơn (trang học viên + admin dùng chung). */
+export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  pending: "Chờ thanh toán",
+  processing: "Đang chờ chuyển khoản",
+  completed: "Hoàn tất",
+  cancelled: "Đã hủy",
+  refunded: "Đã hoàn tiền",
+  expired: "Hết hạn",
+};
+
+/** "14:05 28/09/2026" (định dạng vi-VN) theo giờ Việt Nam — ngày tạo/hạn đơn cần cả giờ, không chỉ ngày. */
+export function formatOrderDateTime(iso: string): string {
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(new Date(iso));
+}
+
+/** Đơn còn mở (chưa thanh toán) — được tiếp tục thanh toán hoặc hủy nếu chưa quá hạn. */
+export function isOrderOpen(order: Pick<Order, "status" | "expires_at">, now = Date.now()): boolean {
+  if (order.status !== "pending" && order.status !== "processing") return false;
+  return !order.expires_at || new Date(order.expires_at).getTime() > now;
+}
+
 export interface OrderItem {
   id: string;
   course_id: string;
@@ -46,7 +75,23 @@ export interface Order {
   notes?: string | null;
   items: OrderItem[];
   created_at: string;
+  /** Hạn giữ đơn còn mở — backend tính từ dữ liệu đã lưu (không tự gia hạn khi đọc lại). */
   expires_at?: string | null;
+  /**
+   * Đơn chưa hoàn tất từng được cấp mã chuyển khoản (review backend #76 vòng 4), nên có thể đã có
+   * tiền về. Thẻ đơn đã huỷ có cờ này hiện nút "Kiểm tra thanh toán".
+   */
+  payment_code_issued?: boolean;
+  /**
+   * Đơn đã huỷ/hết hạn nhưng hệ thống nhận tiền cho mã của nó (quyết định chủ dự án, review #76
+   * final): đơn KHÔNG được khôi phục, ForteX hoàn tiền thủ công. Thẻ đơn hiện dòng hoàn tiền, không
+   * hiện nút "Kiểm tra thanh toán".
+   */
+  refund_needed?: boolean;
+  /** Chỉ có khi đơn đã hoàn tiền (quyết định #1: ghi lý do + mã giao dịch chuyển khoản). */
+  refund_reason?: string | null;
+  refund_transaction_ref?: string | null;
+  refunded_at?: string | null;
 }
 
 export interface OrderListResponse {
@@ -92,6 +137,22 @@ export interface PaymentStatus {
   status: string;
   paid_at?: string | null;
   amount: number;
+  /**
+   * Đơn "expired" nhưng hệ thống đã nhận tiền cho mã này sau hạn (backend ghi history để admin
+   * hoàn tiền; cũng có với đơn đã huỷ). Đơn không được khôi phục: web báo "ForteX sẽ hoàn tiền cho
+   * bạn", không mời tạo đơn mới rồi trả lần 2.
+   */
+  late_payment_received?: boolean;
+  /**
+   * Đơn "processing" chưa có kết quả đối chiếu cuối: mã đã hết hạn nhưng còn trong ân hạn 30 phút,
+   * hoặc ngân hàng tạm lỗi (review backend #76 vòng 3). Không huỷ, không tạo đơn mới cho đơn này.
+   */
+  reconciling?: boolean;
+  /**
+   * Backend không đối chiếu được với ngân hàng (lỗi/timeout). Web báo "ngân hàng lỗi, thử lại sau",
+   * không báo "chưa có giao dịch".
+   */
+  bank_unavailable?: boolean;
 }
 
 // ─── Service ────────────────────────────────────────────────────────────────

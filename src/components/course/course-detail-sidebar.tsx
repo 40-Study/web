@@ -6,7 +6,7 @@
  * Contains video preview, price, CTAs, course includes, voucher input
  */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -67,6 +67,35 @@ export function CourseDetailSidebar({
   // độc lập. Key chỉ đổi khi đóng modal (huỷ, hoặc đơn đã tạo xong) — xem
   // resetIdempotencyKey() + handleCheckoutOpenChange().
   const idempotencyKeyRef = useRef<string>(uuidv4());
+
+  // B8: theo dõi thẻ giá chính để ẩn thanh mua mobile khi thẻ đang hiện (tránh 2 nút mua cùng lúc).
+  const purchaseCardRef = useRef<HTMLDivElement>(null);
+  const [isPurchaseCardVisible, setIsPurchaseCardVisible] = useState(false);
+  useEffect(() => {
+    const el = purchaseCardRef.current;
+    if (!el || typeof window === "undefined") return;
+    // Thanh mua chỉ hiện khi thẻ giá còn nằm HẲN phía dưới màn hình. Thẻ đang hiện, hoặc đã cuộn qua
+    // phía trên (trên mobile thẻ nằm ngay trên footer, review #34 MINOR: thanh từng che ~70px cuối
+    // footer) thì ẩn. Re-review vòng 2 (MINOR): tính lại theo vị trí thật ở mỗi lần scroll/resize
+    // thay vì IntersectionObserver, vì IO không báo khi thẻ nhảy thẳng từ "trên" xuống "dưới"
+    // viewport (chạm thanh trạng thái iOS, phím Home) nên thanh bị kẹt ẩn.
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      setIsPurchaseCardVisible(el.getBoundingClientRect().top < window.innerHeight);
+    };
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
 
   const courseId = String(course.id);
   const addToCartMutation = useAddToCart();
@@ -198,8 +227,29 @@ export function CourseDetailSidebar({
         onRetryExpired={handleRetryExpiredOrder}
       />
 
+      {/* B8 (QA vòng 2, mobile): trên màn hẹp sidebar xếp xuống cuối trang (giá + "Mua ngay" ở
+          y≈2358px) nên thêm thanh mua cố định ở đáy; ẩn khi thẻ giá chính đang trong màn hình.
+          bottom-24: nằm TRÊN thanh điều hướng nổi của mobile (layout/bottom-nav.tsx: fixed bottom-4,
+          cao ~72px), đặt bottom-0 thì bị nó đè mất nút mua. */}
+      {!isEnrolled && !isFree && !isPurchaseCardVisible && (
+        <div
+          data-testid="mobile-buy-bar"
+          className="fixed bottom-24 left-4 right-4 z-40 flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-lg lg:hidden"
+        >
+          <div className="min-w-0">
+            <p className="text-lg font-bold text-gray-900">{formatCurrency(course.price)}</p>
+            {discountPct > 0 && course.originalPrice && (
+              <p className="text-xs text-gray-400 line-through">{formatCurrency(course.originalPrice)}</p>
+            )}
+          </div>
+          <Button className="shrink-0 bg-primary-600 text-white hover:bg-primary-700" onClick={handleBuyNowClick}>
+            Mua khóa học
+          </Button>
+        </div>
+      )}
+
       <div className="sticky top-28 space-y-4">
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md">
+        <div ref={purchaseCardRef} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md">
           {/* Video preview thumbnail */}
           <div className="relative aspect-video cursor-pointer overflow-hidden bg-gray-900">
             <img
@@ -305,10 +355,11 @@ export function CourseDetailSidebar({
               )}
             </div>
 
-            {/* Refund notice - only for paid unenrolled */}
+            {/* B5 (QA vòng 2 N4, chủ dự án chốt Q9): bỏ cam kết "hoàn tiền trong 7 ngày" vì
+                không có chính sách/nút nào thực hiện nó; hoàn tiền là admin xử lý thủ công. */}
             {!isEnrolled && !isFree && (
               <p className="mt-3 text-center text-xs text-gray-500">
-                Hoàn tiền trong 7 ngày nếu không hài lòng
+                Cần hỗ trợ hoặc hoàn tiền? Vui lòng liên hệ bộ phận hỗ trợ.
               </p>
             )}
           </div>

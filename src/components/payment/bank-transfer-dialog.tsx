@@ -24,7 +24,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 
-export type BankTransferDialogStatus = "pending" | "success" | "error" | "expired";
+/**
+ * "reconciling" (review backend #76 vòng 3, chỉ đơn khóa học): server chưa có kết quả đối chiếu ngân
+ * hàng cuối cùng. Không cho tạo lại / tạo đơn mới, chỉ giải thích và cho kiểm tra lại.
+ */
+export type BankTransferDialogStatus = "pending" | "success" | "error" | "expired" | "reconciling";
 
 export interface BankTransferDialogProps {
   open: boolean;
@@ -45,6 +49,17 @@ export interface BankTransferDialogProps {
   onCheckNow?: () => void;
   isCheckingNow?: boolean;
   onRetryExpired?: () => void;
+  /** Chữ riêng cho màn hết hạn (đơn khóa học khác mua xu: phải tạo ĐƠN mới, không chỉ mã mới). */
+  expiredTitle?: string;
+  expiredDescription?: React.ReactNode;
+  retryExpiredLabel?: string;
+  /**
+   * Đồng hồ về 0 KHÔNG tự chuyển sang màn "hết hạn": server còn đối chiếu giao dịch lần cuối (đơn
+   * khóa học). Hiện "đang kiểm tra" cho tới khi `status` do server trả đổi sang expired/success.
+   */
+  awaitServerAfterExpiry?: boolean;
+  /** Nội dung màn "reconciling". */
+  reconcilingDescription?: React.ReactNode;
 }
 
 function CopyRow({ label, value }: { label: string; value: string }) {
@@ -108,9 +123,16 @@ export function BankTransferDialog({
   onCheckNow,
   isCheckingNow,
   onRetryExpired,
+  expiredTitle = "Đã hết hạn chuyển khoản",
+  expiredDescription = "Vui lòng tạo lại giao dịch để nhận mã chuyển khoản mới.",
+  retryExpiredLabel = "Tạo lại",
+  awaitServerAfterExpiry = false,
+  reconcilingDescription,
 }: BankTransferDialogProps) {
   const remainingMs = useCountdown(expiresAt);
-  const isExpired = status === "pending" && remainingMs !== null && remainingMs <= 0;
+  const countdownOver = status === "pending" && remainingMs !== null && remainingMs <= 0;
+  const isExpired = countdownOver && !awaitServerAfterExpiry;
+  const isFinalChecking = countdownOver && awaitServerAfterExpiry;
   const effectiveStatus: BankTransferDialogStatus = isExpired ? "expired" : status;
 
   return (
@@ -134,17 +156,34 @@ export function BankTransferDialog({
         ) : effectiveStatus === "expired" ? (
           <div className="flex flex-col items-center gap-3 py-6 text-center">
             <Clock className="h-14 w-14 text-amber-500" />
-            <p className="text-lg font-semibold">Đã hết hạn chuyển khoản</p>
-            <p className="text-sm text-muted-foreground">
-              Vui lòng tạo lại giao dịch để nhận mã chuyển khoản mới.
-            </p>
+            <p className="text-lg font-semibold">{expiredTitle}</p>
+            <p className="text-sm text-muted-foreground">{expiredDescription}</p>
             <div className="flex w-full gap-2">
               <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
                 Đóng
               </Button>
               {onRetryExpired && (
                 <Button className="flex-1" onClick={onRetryExpired}>
-                  Tạo lại
+                  {retryExpiredLabel}
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : effectiveStatus === "reconciling" ? (
+          <div className="flex flex-col items-center gap-3 py-6 text-center">
+            <Loader2 className="h-14 w-14 animate-spin text-amber-500" />
+            <p className="text-lg font-semibold">Đang đối chiếu thanh toán</p>
+            {reconcilingDescription && (
+              <div className="text-sm text-muted-foreground">{reconcilingDescription}</div>
+            )}
+            <div className="flex w-full gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
+                Đóng
+              </Button>
+              {onCheckNow && (
+                <Button className="flex-1" onClick={onCheckNow} disabled={isCheckingNow}>
+                  {isCheckingNow ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Kiểm tra lại
                 </Button>
               )}
             </div>
@@ -185,10 +224,17 @@ export function BankTransferDialog({
               </p>
             )}
 
-            {remainingMs !== null && (
-              <p className="text-center text-xs text-muted-foreground">
-                Hết hạn sau <span className="font-medium">{formatCountdown(remainingMs)}</span>
+            {isFinalChecking ? (
+              <p className="text-center text-xs text-amber-600">
+                Đã hết thời gian chuyển khoản. Hệ thống đang kiểm tra lần cuối các giao dịch đã nhận,
+                vui lòng không chuyển khoản lại.
               </p>
+            ) : (
+              remainingMs !== null && (
+                <p className="text-center text-xs text-muted-foreground">
+                  Hết hạn sau <span className="font-medium">{formatCountdown(remainingMs)}</span>
+                </p>
+              )
             )}
 
             <div className="flex items-center justify-center gap-2 rounded-lg border border-dashed py-3 text-sm text-muted-foreground">

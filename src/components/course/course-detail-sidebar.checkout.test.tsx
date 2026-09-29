@@ -41,7 +41,11 @@ vi.mock("@/services/cart.service", () => ({
   },
 }));
 
+vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() } }));
+
 import { orderService } from "@/services/order.service";
+import { toast } from "sonner";
+import { ApiError } from "@/lib/errors";
 
 const mockCourse: CourseDetail = {
   id: "course-1",
@@ -179,5 +183,25 @@ describe("CourseDetailSidebar — idempotency_key khi Mua ngay (PR #25 BLOCKER #
 
     const calls = vi.mocked(orderService.createOrder).mock.calls as [CreateOrderDTO][];
     expect(calls[0][0].idempotency_key).not.toBe(calls[1][0].idempotency_key);
+  });
+
+  // Review #76 vòng 3: đơn cũ cùng khoá đang đối chiếu ngân hàng → backend 409 ERR_ORDER_IN_PROGRESS.
+  // Nút "Mua ngay" phải toast câu backend kèm "Xem đơn hàng", đúng 1 lần, không mở hộp thanh toán.
+  it("409 ERR_ORDER_IN_PROGRESS: toast đúng 1 lần kèm 'Xem đơn hàng'", async () => {
+    const msg = "Bạn đang có đơn hàng chưa thanh toán cho khoá học này. Hãy tiếp tục thanh toán hoặc huỷ đơn đó trong mục Đơn hàng của tôi.";
+    vi.mocked(toast.error).mockReset();
+    vi.mocked(orderService.createOrder).mockRejectedValue(new ApiError(409, "ERR_ORDER_IN_PROGRESS", msg));
+
+    renderSidebar();
+    clickBuyNow();
+    await waitFor(() => screen.getByText("Xác nhận mua khóa học"));
+    clickConfirmPayment();
+    await waitSettledAfterConfirm(1);
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
+    const [message, options] = vi.mocked(toast.error).mock.calls[0] as [string, { action?: { label: string } }];
+    expect(message).toBe(msg);
+    expect(options?.action?.label).toBe("Xem đơn hàng");
+    expect(orderService.createPaymentIntent).not.toHaveBeenCalled();
   });
 });
