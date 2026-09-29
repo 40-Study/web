@@ -8,7 +8,8 @@ import { api } from "@/lib/api-client";
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export type TriggerType = "manual" | "scheduled" | "video_checkpoint" | "ai_triggered";
-export type QuestionType = "single_choice" | "multiple_choice" | "true_false" | "short_answer";
+// `fill_blank` (điền khuyết) khớp backend (dto/quizDTO.go oneof); form cuộc thi (W2) tạo loại này.
+export type QuestionType = "single_choice" | "multiple_choice" | "true_false" | "short_answer" | "fill_blank";
 
 /**
  * Chế độ làm bài (contract §6).
