@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ForbiddenError } from "@/lib/errors";
 import { conversationService } from "@/services/conversation.service";
 
 export const conversationKeys = {
@@ -50,8 +51,20 @@ export function useCreateDirectConversation() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: conversationKeys.all });
     },
-    onError: () => toast.error("Không thể tạo cuộc trò chuyện"),
+    onError: (error) => toast.error(createDirectErrorMessage(error)),
   });
+}
+
+/**
+ * Backend chặn tạo hội thoại trực tiếp giữa 2 người chưa có quan hệ (học viên-giảng viên,
+ * phụ huynh-con, admin): 403 + code CONVERSATION_NOT_ALLOWED + message tiếng Việt.
+ * api-client biến mọi 403 thành ForbiddenError (giữ nguyên message backend, mất `code`), nên
+ * nhận diện theo lớp lỗi. Chỉ dùng message backend cho 403; lỗi khác giữ câu chung để không lộ
+ * message tiếng Anh của tầng khác.
+ */
+export function createDirectErrorMessage(error: unknown): string {
+  if (error instanceof ForbiddenError && error.message.trim()) return error.message;
+  return "Không thể tạo cuộc trò chuyện";
 }
 
 export function useSendMessage(convId: string) {
