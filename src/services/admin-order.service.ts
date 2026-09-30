@@ -33,6 +33,8 @@ export interface AdminOrderListItem {
   items: AdminOrderItemBrief[];
   /** Đơn đã huỷ/hết hạn có tiền về cho mã của nó: admin cần hoàn tiền thủ công (không khôi phục). */
   refund_needed?: boolean;
+  /** Admin đã ghi nhận hoàn xong khoản tiền về muộn: badge "Cần hoàn tiền" đổi thành "Đã hoàn tiền". */
+  late_refunded_at?: string | null;
 }
 
 export interface AdminOrderListResponse {
@@ -71,6 +73,20 @@ export interface RefundOrderResult {
   refunded_at: string;
 }
 
+/** POST /orders/admin/:id/late-refund — cả hai trường đều tuỳ chọn (ghi chú, mã giao dịch chuyển khoản hoàn). */
+export interface LateRefundDTO {
+  note?: string;
+  transaction_ref?: string;
+}
+
+export interface LateRefundResult {
+  id: string;
+  refund_needed: boolean;
+  late_refunded_at: string;
+  /** true khi đơn đã được ghi nhận hoàn từ trước (gọi lại không tạo thêm bản ghi). */
+  already_recorded: boolean;
+}
+
 type Envelope<T> = { message: string; data: T };
 
 // ─── Service ────────────────────────────────────────────────────────────────
@@ -93,5 +109,14 @@ export const adminOrderService = {
   refund: (id: string, dto: RefundOrderDTO) =>
     api
       .post<Envelope<RefundOrderResult>>(`/orders/admin/${id}/refund`, dto)
+      .then((r) => r.data.data),
+
+  /**
+   * POST /orders/admin/:id/late-refund — ghi nhận ĐÃ chuyển khoản hoàn khoản tiền về muộn của đơn đã
+   * đóng (cờ refund_needed). Idempotent: gọi lại vẫn 200 với already_recorded = true.
+   */
+  markLateRefunded: (id: string, dto: LateRefundDTO) =>
+    api
+      .post<Envelope<LateRefundResult>>(`/orders/admin/${id}/late-refund`, dto)
       .then((r) => r.data.data),
 };

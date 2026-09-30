@@ -40,6 +40,8 @@ export interface IssueCertificateDTO {
 /** Khớp VerifyCertificateResponseDTO — field phẳng, không có object lồng */
 export interface VerifyCertificateResponse {
   valid: boolean;
+  /** omitempty — chỉ có (true) khi chứng chỉ có thật nhưng đã bị thu hồi do hoàn tiền; khi đó valid = false */
+  revoked?: boolean;
   certificate_number: string;
   /** omitempty — vắng khi valid = false */
   user_name?: string;

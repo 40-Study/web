@@ -103,6 +103,21 @@ describe("MyOrderCard — đơn đã đóng có cờ cần hoàn tiền", () => 
   });
 });
 
+// Lane P: admin đã chuyển khoản hoàn khoản tiền về muộn -> backend tắt refund_needed, trả late_refunded_at.
+describe("MyOrderCard — đã hoàn tiền cho khoản tiền về muộn", () => {
+  it.each(["cancelled", "expired"] as const)("%s có late_refunded_at: báo đã hoàn, không nút kiểm tra thanh toán, không còn dòng chờ hoàn", (status) => {
+    renderCard(makeOrder({ status, expires_at: null, payment_code_issued: true, refund_needed: false, late_refunded_at: "2026-09-30T08:00:00Z" }));
+    expect(screen.getByText(/Đã hoàn tiền cho khoản chuyển khoản của đơn này vào/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Kiểm tra thanh toán" })).toBeNull();
+    expect(screen.queryByText(/ForteX sẽ hoàn tiền/)).toBeNull();
+  });
+
+  it("chưa có late_refunded_at: không hiện dòng đã hoàn", () => {
+    renderCard(makeOrder({ status: "cancelled", expires_at: null, payment_code_issued: true }));
+    expect(screen.queryByText(/Đã hoàn tiền cho khoản/)).toBeNull();
+  });
+});
+
 describe("MyOrderCard — pending", () => {
   it("pending quá hạn giữ (chưa từng có mã): vẫn là hết hạn + Tạo đơn mới", () => {
     const { onReorder } = renderCard(makeOrder({ status: "pending", expires_at: past() }));

@@ -12,6 +12,30 @@ import { useAuthStore } from "@/stores/auth.store";
 import AdminOrderDetailPage from "./page";
 
 const mockMutate = vi.fn();
+const mockLateRefundMutate = vi.fn();
+
+const COMPLETED_ORDER = {
+  id: "order-1",
+  order_number: "ORD-TEST-1",
+  status: "completed",
+  total_amount: 699000,
+  currency: "VND",
+  payment_method: "bank_transfer",
+  created_at: "2026-09-28T00:00:00Z",
+  paid_at: "2026-09-28T00:01:00Z",
+  items: [
+    {
+      id: "item-1",
+      course_id: "course-1",
+      course_name: "Khóa test",
+      price: 699000,
+      discount_amount: 0,
+      final_price: 699000,
+    },
+  ],
+};
+// Mỗi test đặt lại đơn cần hiển thị (mặc định: đơn đã hoàn tất, dùng cho các test hoàn tiền gốc).
+let mockOrder: Record<string, unknown> = COMPLETED_ORDER;
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: "order-1" }),
@@ -19,26 +43,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/hooks/queries/use-admin-orders", () => ({
   useAdminOrder: () => ({
-    data: {
-      id: "order-1",
-      order_number: "ORD-TEST-1",
-      status: "completed",
-      total_amount: 699000,
-      currency: "VND",
-      payment_method: "bank_transfer",
-      created_at: "2026-09-28T00:00:00Z",
-      paid_at: "2026-09-28T00:01:00Z",
-      items: [
-        {
-          id: "item-1",
-          course_id: "course-1",
-          course_name: "Khóa test",
-          price: 699000,
-          discount_amount: 0,
-          final_price: 699000,
-        },
-      ],
-    },
+    data: mockOrder,
     isLoading: false,
     isError: false,
     error: null,
@@ -48,11 +53,17 @@ vi.mock("@/hooks/queries/use-admin-orders", () => ({
     mutate: mockMutate,
     isPending: false,
   }),
+  useMarkLateRefunded: () => ({
+    mutate: mockLateRefundMutate,
+    isPending: false,
+  }),
 }));
 
 describe("AdminOrderDetailPage — refund dialog", () => {
   beforeEach(() => {
     mockMutate.mockReset();
+    mockLateRefundMutate.mockReset();
+    mockOrder = COMPLETED_ORDER;
     useAuthStore.setState({
       sessionStatus: "authenticated",
       permissions: ["PAYMENTS_MANAGE"],
@@ -121,5 +132,71 @@ describe("AdminOrderDetailPage — refund dialog", () => {
     render(<AdminOrderDetailPage />);
 
     expect(screen.queryByRole("button", { name: "Hoàn tiền" })).toBeNull();
+  });
+});
+
+// Lane P: đơn đã huỷ/hết hạn nhận tiền về muộn (refund_needed): admin chuyển khoản hoàn tay rồi ghi nhận.
+describe("AdminOrderDetailPage — đánh dấu đã hoàn tiền (tiền về muộn)", () => {
+  const FLAGGED = { ...COMPLETED_ORDER, status: "cancelled", refund_needed: true };
+
+  beforeEach(() => {
+    mockLateRefundMutate.mockReset();
+    mockOrder = FLAGGED;
+    useAuthStore.setState({
+      sessionStatus: "authenticated",
+      permissions: ["PAYMENTS_MANAGE"],
+    } as Partial<ReturnType<typeof useAuthStore.getState>>);
+  });
+
+  it("đơn có cờ: badge 'Cần hoàn tiền' + nút đánh dấu, KHÔNG có nút hoàn tiền đơn đã thanh toán", () => {
+    render(<AdminOrderDetailPage />);
+    expect(screen.getByText("Cần hoàn tiền")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Đánh dấu đã hoàn tiền" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Hoàn tiền" })).toBeNull();
+  });
+
+  it("phải xác nhận trong hộp thoại, ghi chú và mã giao dịch tuỳ chọn, gửi đúng payload đã trim", () => {
+    render(<AdminOrderDetailPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Đánh dấu đã hoàn tiền" }));
+    // Mới mở hộp thoại: chưa gọi backend.
+    expect(mockLateRefundMutate).not.toHaveBeenCalled();
+    const confirmBtn = screen.getByRole("button", { name: "Xác nhận đã hoàn tiền" }) as HTMLButtonElement;
+    expect(confirmBtn.disabled).toBe(false); // hai trường đều không bắt buộc
+
+    fireEvent.change(screen.getByLabelText(/Mã giao dịch hoàn/i), { target: { value: "  FT-LATE-1 " } });
+    fireEvent.change(screen.getByLabelText(/Ghi chú/i), { target: { value: " Đã CK lại " } });
+    fireEvent.click(confirmBtn);
+
+    expect(mockLateRefundMutate).toHaveBeenCalledTimes(1);
+    const [payload] = mockLateRefundMutate.mock.calls[0] as [{ id: string; dto: { note: string; transaction_ref: string } }];
+    expect(payload).toEqual({ id: "order-1", dto: { note: "Đã CK lại", transaction_ref: "FT-LATE-1" } });
+  });
+
+  it("có thể xác nhận không cần ghi chú hay mã giao dịch", () => {
+    render(<AdminOrderDetailPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Đánh dấu đã hoàn tiền" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận đã hoàn tiền" }));
+    expect(mockLateRefundMutate.mock.calls[0][0]).toEqual({ id: "order-1", dto: { note: "", transaction_ref: "" } });
+  });
+
+  it("không có quyền PAYMENTS_MANAGE thì không thấy nút", () => {
+    useAuthStore.setState({ sessionStatus: "authenticated", permissions: [] } as Partial<ReturnType<typeof useAuthStore.getState>>);
+    render(<AdminOrderDetailPage />);
+    expect(screen.queryByRole("button", { name: "Đánh dấu đã hoàn tiền" })).toBeNull();
+  });
+
+  it("đã ghi nhận hoàn: badge đổi thành 'Đã hoàn tiền', hết nút", () => {
+    mockOrder = { ...FLAGGED, refund_needed: false, late_refunded_at: "2026-09-30T08:00:00Z" };
+    render(<AdminOrderDetailPage />);
+    expect(screen.getByText("Đã hoàn tiền")).toBeTruthy();
+    expect(screen.queryByText("Cần hoàn tiền")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Đánh dấu đã hoàn tiền" })).toBeNull();
+  });
+
+  it("đơn huỷ không có cờ thì không có nút", () => {
+    mockOrder = { ...COMPLETED_ORDER, status: "cancelled" };
+    render(<AdminOrderDetailPage />);
+    expect(screen.queryByRole("button", { name: "Đánh dấu đã hoàn tiền" })).toBeNull();
   });
 });
