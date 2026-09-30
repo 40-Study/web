@@ -214,6 +214,8 @@ export interface PublicProfileResponse {
   featured_achievements: PublicProfileAchievement[];
   activity: PublicProfileActivity[];
   completed_courses: PublicProfileCompletedCourse[];
+  /** true khi chủ hồ sơ đặt riêng tư: backend chỉ trả tên và ảnh đại diện, các số liệu là giá trị rỗng. */
+  is_private?: boolean;
 }
 
 export interface TokenResponse {

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { reviewService, CreateReviewDTO, UpdateReviewDTO } from "@/services/review.service";
+import { getErrorMessage } from "@/lib/error-messages";
 
 // ─── Query keys ────────────────────────────────────────────────────────────
 
@@ -30,8 +31,9 @@ export function useCreateReview(courseId: string) {
       queryClient.invalidateQueries({ queryKey: reviewKeys.list(courseId) });
       toast.success("Đã gửi đánh giá");
     },
-    onError: () => {
-      toast.error("Không thể gửi đánh giá");
+    // S6: backend trả 403 khi chưa ghi danh (hoặc đơn đã hoàn tiền) và 409 khi đã đánh giá; hiện đúng lý do.
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Không thể gửi đánh giá"));
     },
   });
 }
