@@ -22,8 +22,8 @@ const badgeVariants = cva(
         xp: "bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/50 dark:text-green-300",
         streak:
           "bg-orange-100 text-orange-700 border border-orange-200 dark:bg-orange-900/50 dark:text-orange-300",
-        level: "bg-primary-500 text-white",
-        achievement: "bg-yellow-400 text-white",
+        level: "bg-primary-600 text-white",
+        achievement: "bg-yellow-400 text-yellow-950",
 
         // League badges
         bronze: "bg-orange-100 text-orange-800 border border-orange-300",

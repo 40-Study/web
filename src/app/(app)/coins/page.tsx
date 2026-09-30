@@ -105,7 +105,7 @@ function PackageCard({
       )}
     >
       {pkg.is_featured && (
-        <Badge className="absolute top-2 right-2 bg-primary text-xs gap-1">
+        <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs gap-1">
           <Sparkles className="h-3 w-3" />
           Phổ biến
         </Badge>

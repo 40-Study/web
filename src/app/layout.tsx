@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -11,6 +11,14 @@ const inter = Inter({
     subsets: ["latin", "vietnamese"],
     variable: "--font-inter",
     display: "swap", // Prevent FOIT - show fallback font immediately, swap when loaded
+});
+
+// Font heading (h1-h3, CardTitle, .font-heading). Variable font nên không cần khai báo weight;
+// subset "vietnamese" bắt buộc để dấu chồng (ẩ, ỗ, ự...) không rơi về font dự phòng.
+const plusJakartaSans = Plus_Jakarta_Sans({
+    subsets: ["latin", "vietnamese"],
+    variable: "--font-heading",
+    display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -47,7 +55,7 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="vi" suppressHydrationWarning>
-            <body className={`${inter.variable} font-sans antialiased`}>
+            <body className={`${inter.variable} ${plusJakartaSans.variable} font-sans antialiased`}>
                 {/*
                   Chống nháy màn hình (FOUC) dark mode (H-01): script chạy TRƯỚC khi
                   React hydrate, đọc theme đã lưu và gắn class .dark lên <html> ngay

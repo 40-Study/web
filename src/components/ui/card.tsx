@@ -11,12 +11,12 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
         <div
             ref={ref}
             className={cn(
-                "rounded-[20px] bg-white text-card-foreground",
-                "transition-[box-shadow,transform] duration-200",
-                "shadow-[rgba(0,0,0,0.06)_0px_0px_0px_1px,rgba(0,0,0,0.04)_0px_1px_2px,rgba(0,0,0,0.04)_0px_2px_4px]",
-                "dark:bg-neutral-900 dark:shadow-[rgba(255,255,255,0.06)_0px_0px_0px_1px]",
+                // 16px + viền 1px + shadow-card. Nâng (lift + shadow-raised) chỉ khi hoverable.
+                "rounded-2xl border border-slate-200 bg-white text-card-foreground shadow-card",
+                "transition-[box-shadow,transform,border-color] duration-200 motion-reduce:transition-none",
+                "dark:border-slate-800 dark:bg-slate-900",
                 hoverable &&
-                    "cursor-pointer hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none",
+                    "cursor-pointer hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-raised dark:hover:border-slate-700 motion-reduce:transform-none",
                 className
             )}
             {...props}
@@ -44,7 +44,7 @@ const CardTitle = React.forwardRef<
     <h3
         ref={ref}
         className={cn(
-            "text-2xl font-light leading-tight tracking-tight",
+            "font-heading text-2xl font-semibold leading-snug tracking-tight",
             className
         )}
         {...props}

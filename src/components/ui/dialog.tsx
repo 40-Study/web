@@ -152,7 +152,7 @@ export function DialogContent({
         aria-labelledby={hasTitle ? titleId : undefined}
         tabIndex={-1}
         className={cn(
-          "relative z-50 w-full max-w-lg mx-4 bg-white dark:bg-gray-900 rounded-2xl shadow-xl",
+          "relative z-50 w-full max-w-lg mx-4 bg-white dark:bg-gray-900 rounded-3xl shadow-overlay",
           "animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4",
           "duration-200",
           className
@@ -184,7 +184,7 @@ export function DialogTitle({ children, className, ...props }: DialogTitleProps)
   return (
     <h2
       id={titleId}
-      className={cn("text-lg font-semibold text-gray-900 dark:text-white", className)}
+      className={cn("font-heading text-lg font-semibold text-gray-900 dark:text-white", className)}
       {...props}
     >
       {children}
