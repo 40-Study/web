@@ -13,6 +13,8 @@ import { AuthError } from "@/lib/errors";
 import { VoucherInput } from "@/components/checkout/voucher-input";
 import type { VoucherValidateResponse } from "@/types/voucher";
 import { cn } from "@/lib/utils";
+import { sumCartItemPrices } from "@/lib/cart-pricing";
+import { CartItemPrice } from "@/components/cart/cart-item-price";
 
 function formatPrice(price: number | string | null | undefined): string {
   // Phòng thủ: backend decimal có thể serialize thành number hoặc chuỗi tùy phiên bản.
@@ -35,10 +37,11 @@ export default function CartPage() {
   // để chịu được trường hợp API cũ trả chuỗi.
   const total = Number(cartData?.total ?? 0);
 
-  // Calculate selected total
-  const selectedTotal = items
-    .filter((item) => selectedIds.includes(item.course_id))
-    .reduce((sum, item) => sum + Number(item.course?.price ?? 0), 0);
+  // Tổng các dòng đã chọn theo GIÁ BÁN — cùng quy tắc backend dùng cho `total` và cho đơn hàng
+  // (Course.EffectivePrice); cộng giá niêm yết sẽ hiện cao hơn số tiền thật sự bị tính.
+  const selectedTotal = sumCartItemPrices(
+    items.filter((item) => selectedIds.includes(item.course_id))
+  );
 
   const effectiveSubtotal = selectedIds.length > 0 ? selectedTotal : total;
   const discount = voucherResult?.discount_amount ?? 0;
@@ -211,7 +214,7 @@ export default function CartPage() {
                     {/* Price & remove */}
                     <div className="text-right flex-shrink-0">
                       <p className="text-lg font-bold text-primary-600">
-                        {formatPrice(item.course?.price ?? 0)}
+                        <CartItemPrice item={item} />
                       </p>
                       <button
                         className={cn(

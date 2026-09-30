@@ -7,6 +7,7 @@ import { ShoppingCart, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart, useRemoveFromCart } from "@/hooks/queries/use-cart";
 import { useCartStore } from "@/stores/cart.store";
+import { CartItemPrice } from "@/components/cart/cart-item-price";
 import { cn } from "@/lib/utils";
 
 function formatPrice(price: number): string {
@@ -130,7 +131,7 @@ export function CartDropdown() {
                         {item.course?.title || "Khóa học"}
                       </Link>
                       <p className="text-sm font-semibold text-primary-600 mt-0.5">
-                        {formatPrice(item.course?.price ?? 0)}
+                        <CartItemPrice item={item} />
                       </p>
                     </div>
 

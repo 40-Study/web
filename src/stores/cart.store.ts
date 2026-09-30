@@ -7,6 +7,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartItem } from "@/services/cart.service";
+import { getCartItemPrices } from "@/lib/cart-pricing";
 
 interface CartState {
   /** Cached items from last API response */
@@ -45,7 +46,7 @@ export const useCartStore = create<CartState>()(
         set((s) => ({
           items: [...(s.items ?? []), item],
           item_count: (s.item_count ?? 0) + 1,
-          total: (s.total ?? 0) + (item.course?.price ?? 0),
+          total: (s.total ?? 0) + getCartItemPrices(item).price,
         }));
       },
 
@@ -55,7 +56,7 @@ export const useCartStore = create<CartState>()(
         set((s) => ({
           items: (s.items ?? []).filter((i) => i.course_id !== courseId),
           item_count: Math.max(0, (s.item_count ?? 0) - 1),
-          total: Math.max(0, (s.total ?? 0) - (existing?.course?.price ?? 0)),
+          total: Math.max(0, (s.total ?? 0) - (existing ? getCartItemPrices(existing).price : 0)),
         }));
       },
 
