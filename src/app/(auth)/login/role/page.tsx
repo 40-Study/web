@@ -88,15 +88,15 @@ export default function LoginRolePage() {
 
   return (
     <AuthCard>
-      <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">{title}</h2>
-      <p className="mb-6 text-center text-sm text-gray-500">{subtitle}</p>
+      <h2 className="mb-1 text-center text-xl font-semibold text-foreground">{title}</h2>
+      <p className="mb-6 text-center text-sm text-muted-foreground">{subtitle}</p>
 
       <div className="space-y-3" role="radiogroup" aria-label="Chọn vai trò">
         {isNewRoleMode ? (
           // Mode chọn system role mới
           loadingRoles ? (
             <div className="flex justify-center py-4">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-200 border-t-primary-600" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
             </div>
           ) : availableNewRoles.length > 0 ? (
             availableNewRoles.map((role) => (
@@ -111,7 +111,7 @@ export default function LoginRolePage() {
               />
             ))
           ) : (
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-muted-foreground">
               {showAddRole ? "Bạn đã có tất cả vai trò." : "Không tìm thấy vai trò nào."}
             </p>
           )

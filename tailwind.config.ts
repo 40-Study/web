@@ -11,13 +11,21 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ["var(--font-inter)", "Inter", "system-ui", "sans-serif"],
-        display: ["var(--font-inter)", "Inter", "system-ui", "sans-serif"], // Light weight for display
-        code: ["'Geist Mono'", "ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
+        // Heading/display: Plus Jakarta Sans (có subset vietnamese), rơi về Inter nếu font chưa nạp.
+        heading: ["var(--font-heading)", "var(--font-inter)", "Inter", "system-ui", "sans-serif"],
+        display: ["var(--font-heading)", "var(--font-inter)", "Inter", "system-ui", "sans-serif"],
+        // 'Geist Mono' chưa từng được nạp -> dùng system mono stack (không thêm package).
+        code: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
+        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
         ui: ["-apple-system", "BlinkMacSystemFont", "'SF Pro Text'", "system-ui", "sans-serif"],
       },
       colors: {
         // Educational Platform - Clean Blue & White
         primary: {
+          // DEFAULT đọc từ --primary (blue-600, trắng/blue-600 = 5.17:1 đạt AA);
+          // <alpha-value> để dùng được ring-primary/40, bg-primary/10...
+          DEFAULT: "hsl(var(--primary) / <alpha-value>)",
+          foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
           50: "#eff6ff",
           100: "#dbeafe",
           200: "#bfdbfe",
@@ -57,16 +65,17 @@ const config: Config = {
           900: "#0f172a",
           950: "#020617",
         },
-        // Gamification colors
+        // Gamification colors — DEFAULT dùng được làm chữ/nền chip có chữ trắng:
+        // green-700 (5.02:1) / orange-700 (5.18:1) trên trắng. `light` dành cho nền tối.
         xp: {
-          DEFAULT: "#22c55e",
+          DEFAULT: "#15803d",
           light: "#86efac",
-          dark: "#16a34a",
+          dark: "#166534",
         },
         streak: {
-          DEFAULT: "#f97316",
+          DEFAULT: "#c2410c",
           light: "#fdba74",
-          dark: "#ea580c",
+          dark: "#9a3412",
         },
         achievement: {
           gold: "#fbbf24",
@@ -86,7 +95,6 @@ const config: Config = {
         destructive: "hsl(var(--destructive))",
         "destructive-foreground": "hsl(var(--destructive-foreground))",
         info: "#0EA5E9",
-        // Surface colors - ElevenLabs style
         surface: "#f5f5f5",
 
         // Design-system tokens — đọc từ biến CSS trong globals.css (:root / .dark)
@@ -114,40 +122,42 @@ const config: Config = {
         border: "hsl(var(--border))",
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-        // ElevenLabs style
+        // Thang radius: control 10px (lg) · card 16px (2xl / card) · modal 24px (3xl) · pill.
+        lg: "var(--radius)", // 10px — Button, Input, Select, Textarea
+        md: "calc(var(--radius) - 2px)", // 8px
+        sm: "calc(var(--radius) - 4px)", // 6px
         pill: "9999px",
-        "warm-btn": "30px",
-        card: "16px",
-        "card-lg": "20px",
-        section: "24px",
+        // Key cũ giữ lại cho tương thích, giá trị đã căn theo thang mới.
+        "warm-btn": "var(--radius)",
+        card: "1rem", // 16px
+        "card-lg": "1.5rem", // 24px
+        section: "1.5rem", // 24px
       },
+      // 4 cấp elevation duy nhất (giá trị ở globals.css, tự đổi theo dark mode):
+      // xs (input/nút) · card · raised (hover card, popover) · overlay (modal).
       boxShadow: {
-        // ElevenLabs multi-layer shadow system
-        "inset-border": "rgba(0,0,0,0.075) 0px 0px 0px 0.5px inset",
-        "outline-ring": "rgba(0,0,0,0.06) 0px 0px 0px 1px",
-        "soft-elevation": "rgba(0,0,0,0.04) 0px 4px 4px",
-        "card": "rgba(0,0,0,0.4) 0px 0px 1px, rgba(0,0,0,0.04) 0px 4px 4px",
-        "warm": "rgba(78,50,23,0.04) 0px 6px 16px",
-        "warm-lg": "rgba(78,50,23,0.06) 0px 8px 24px",
-        "subtle": "rgba(0,0,0,0.06) 0px 0px 0px 1px, rgba(0,0,0,0.04) 0px 1px 2px, rgba(0,0,0,0.04) 0px 2px 4px",
+        xs: "var(--shadow-xs)",
+        card: "var(--shadow-card)",
+        raised: "var(--shadow-raised)",
+        overlay: "var(--shadow-overlay)",
+        // Alias giữ cho 2 chỗ dùng ở header.tsx.
+        subtle: "var(--shadow-card)",
       },
       letterSpacing: {
         "body": "0.16px",
         "body-wide": "0.18px",
       },
       fontSize: {
-        xs: ["0.75rem", { lineHeight: "1rem" }],
-        sm: ["0.875rem", { lineHeight: "1.25rem" }],
+        // Tiếng Việt có dấu chồng: body >= 1.5, heading >= 1.15 (tránh cắt dấu).
+        xs: ["0.75rem", { lineHeight: "1.125rem" }], // 12/18
+        sm: ["0.875rem", { lineHeight: "1.375rem" }], // 14/22
         base: ["1rem", { lineHeight: "1.5rem" }],
         lg: ["1.125rem", { lineHeight: "1.75rem" }],
         xl: ["1.25rem", { lineHeight: "1.75rem" }],
         "2xl": ["1.5rem", { lineHeight: "2rem" }],
         "3xl": ["1.875rem", { lineHeight: "2.25rem" }],
-        "4xl": ["2.25rem", { lineHeight: "2.5rem" }],
-        "5xl": ["3rem", { lineHeight: "1" }],
+        "4xl": ["2.25rem", { lineHeight: "2.75rem" }], // 36/44 (trước 40 = 1.11)
+        "5xl": ["3rem", { lineHeight: "3.5rem" }], // 48/56 (trước 1 = 1.0)
       },
       animation: {
         "float-up": "float-up 1s ease-out forwards",

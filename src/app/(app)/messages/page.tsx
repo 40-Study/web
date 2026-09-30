@@ -88,7 +88,7 @@ function ConversationItem({
             {conversation.last_message?.content ?? "Chưa có tin nhắn"}
           </p>
           {conversation.unread_count > 0 && (
-            <Badge className="ml-1 h-5 min-w-[20px] px-1.5 text-[10px] bg-primary">
+            <Badge className="ml-1 h-5 min-w-[20px] px-1.5 text-[10px] bg-primary text-primary-foreground">
               {conversation.unread_count}
             </Badge>
           )}

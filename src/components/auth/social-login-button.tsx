@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   GoogleIcon,
   FacebookIcon,
@@ -22,7 +23,7 @@ const providerConfig: Record<SocialProvider, { label: string; icon: React.ReactN
   google: { label: "Google", icon: <GoogleIcon /> },
   facebook: { label: "Facebook", icon: <FacebookIcon /> },
   apple: { label: "Apple", icon: <AppleIcon /> },
-  github: { label: "Github", icon: <GithubIcon /> },
+  github: { label: "GitHub", icon: <GithubIcon /> },
   email: { label: "Email", icon: <MailIcon /> },
 };
 
@@ -31,32 +32,29 @@ export function SocialLoginButton({ provider, onClick, className, iconOnly }: So
 
   if (iconOnly) {
     return (
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="icon"
         aria-label={`Đăng nhập với ${config.label}`}
         onClick={onClick}
-        className={cn(
-          "flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 bg-white transition-colors hover:bg-gray-50",
-          className
-        )}
+        className={cn("h-12 w-12 rounded-full", className)}
       >
         <span className="flex h-6 w-6 items-center justify-center">{config.icon}</span>
-      </button>
+      </Button>
     );
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
       aria-label={`Đăng nhập với ${config.label}`}
       onClick={onClick}
-      className={cn(
-        "flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50",
-        className
-      )}
+      className={cn("h-12 w-full gap-3 px-4 text-sm", className)}
     >
       <span className="flex h-6 w-6 items-center justify-center">{config.icon}</span>
       <span>{config.label}</span>
-    </button>
+    </Button>
   );
 }

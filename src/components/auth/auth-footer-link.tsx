@@ -10,9 +10,9 @@ interface AuthFooterLinkProps {
 
 export function AuthFooterLink({ text, linkText, href, className }: AuthFooterLinkProps) {
   return (
-    <p className={cn("text-center text-sm text-gray-500", className)}>
+    <p className={cn("text-center text-sm text-muted-foreground", className)}>
       {text}{" "}
-      <Link href={href} className="font-medium text-primary-600 hover:text-primary-700">
+      <Link href={href} className="font-medium text-primary hover:text-primary">
         {linkText}
       </Link>
     </p>

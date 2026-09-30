@@ -1,13 +1,14 @@
 "use client";
 
-import { Calendar } from "lucide-react";
+import { Calendar, Check, Gift, Star } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface DayReward {
   xp: number;
-  icon: string;
+  /** Giữ trường để tương thích prop cũ; hiển thị bằng icon Star, không dùng emoji. */
+  icon?: string;
   bonusXP?: number; // For day 7
 }
 
@@ -20,13 +21,13 @@ interface DailyCheckinProps {
 }
 
 const DEFAULT_REWARDS: DayReward[] = [
-  { xp: 10, icon: "⭐" },
-  { xp: 15, icon: "⭐" },
-  { xp: 20, icon: "✨" },
-  { xp: 25, icon: "✨" },
-  { xp: 30, icon: "💫" },
-  { xp: 40, icon: "💫" },
-  { xp: 50, icon: "🌟", bonusXP: 100 },
+  { xp: 10 },
+  { xp: 15 },
+  { xp: 20 },
+  { xp: 25 },
+  { xp: 30 },
+  { xp: 40 },
+  { xp: 50, bonusXP: 100 },
 ];
 
 /**
@@ -41,63 +42,59 @@ export function DailyCheckin({
   className,
 }: DailyCheckinProps) {
   return (
-    <Card className={cn("p-6", className)}>
-      <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
-        <Calendar className="h-5 w-5 text-primary-500" />
-        Daily Check-In
+    <Card className={cn("p-4 md:p-5 lg:p-6", className)}>
+      <h2 className="text-h3 mb-4 flex items-center gap-2 text-slate-900 dark:text-slate-50">
+        <Calendar className="h-5 w-5 text-primary-600 dark:text-primary-400" aria-hidden="true" />
+        Điểm danh hằng ngày
       </h2>
 
       {/* Days grid */}
-      <div className="grid grid-cols-7 gap-2 mb-4">
+      <ul className="mb-4 grid grid-cols-7 gap-2">
         {rewards.map((day, idx) => {
           const dayNum = idx + 1;
-          const isClaimed = dayNum < currentDay;
+          const isDone = dayNum < currentDay || (dayNum === currentDay && hasCheckedInToday);
           const isToday = dayNum === currentDay;
-          const isLocked = dayNum > currentDay;
 
           return (
-            <div
+            <li
               key={dayNum}
+              aria-current={isToday ? "date" : undefined}
               className={cn(
-                "aspect-square rounded-lg flex flex-col items-center justify-center p-1 sm:p-2 border-2 transition-all",
-                isClaimed && "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700",
-                isToday && !hasCheckedInToday && "border-primary-500 bg-primary-50 dark:bg-primary-900/20 animate-pulse",
-                isToday && hasCheckedInToday && "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700",
-                isLocked && "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+                "flex aspect-square flex-col items-center justify-center rounded-lg border p-1 sm:p-2",
+                isDone
+                  ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-900/30 dark:text-green-300"
+                  : isToday
+                    ? "border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-950 dark:text-primary-300"
+                    : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
               )}
             >
-              <span className="text-[10px] sm:text-xs font-medium text-gray-600 dark:text-gray-400">
-                Day {dayNum}
-              </span>
-              <span className="text-lg sm:text-xl">
-                {isClaimed || (isToday && hasCheckedInToday) ? "✓" : day.icon}
-              </span>
-              <span className="text-[10px] sm:text-xs text-muted-foreground">
-                {day.xp} XP
-              </span>
-            </div>
+              <span className="text-xs font-medium">Ngày {dayNum}</span>
+              {isDone ? (
+                <Check className="my-0.5 h-5 w-5" aria-label="Đã điểm danh" />
+              ) : (
+                <Star className="my-0.5 h-5 w-5" aria-hidden="true" />
+              )}
+              <span className="text-xs tabular-nums">{day.xp} XP</span>
+            </li>
           );
         })}
-      </div>
+      </ul>
 
       {/* Day 7 bonus highlight */}
-      <div className="bg-purple-100 dark:bg-purple-900/30 rounded-lg p-3 flex items-center gap-3 mb-4">
-        <div className="text-3xl">🎁</div>
+      <div className="mb-4 flex items-center gap-3 rounded-lg bg-secondary-50 p-3 dark:bg-secondary-950">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-secondary-700 dark:bg-slate-900 dark:text-secondary-300">
+          <Gift className="h-5 w-5" aria-hidden="true" />
+        </div>
         <div className="flex-1">
-          <p className="font-medium text-gray-900 dark:text-white">7-Day Bonus</p>
-          <p className="text-sm text-muted-foreground">
-            Complete all 7 days for {rewards[6]?.bonusXP || 100} bonus XP!
+          <p className="font-medium text-slate-900 dark:text-slate-50">Thưởng 7 ngày</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Điểm danh đủ 7 ngày để nhận thêm {rewards[6]?.bonusXP || 100} XP.
           </p>
         </div>
       </div>
 
-      <Button
-        onClick={onCheckin}
-        disabled={hasCheckedInToday}
-        className="w-full"
-        size="lg"
-      >
-        {hasCheckedInToday ? "✓ Checked In Today" : "Check In Now"}
+      <Button onClick={onCheckin} disabled={hasCheckedInToday} className="w-full" size="lg">
+        {hasCheckedInToday ? "Hôm nay bạn đã điểm danh" : "Điểm danh ngay"}
       </Button>
     </Card>
   );
@@ -120,21 +117,18 @@ export function DailyCheckinCompact({
   className,
 }: DailyCheckinCompactProps) {
   return (
-    <button
+    <Button
+      type="button"
+      variant={hasCheckedInToday ? "ghost" : "secondary"}
+      size="sm"
       onClick={onCheckin}
       disabled={hasCheckedInToday}
-      className={cn(
-        "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
-        hasCheckedInToday
-          ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
-          : "bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-900/50 animate-pulse",
-        className
-      )}
+      className={cn("gap-2", className)}
     >
-      <Calendar className="h-4 w-4" />
+      <Calendar className="h-4 w-4" aria-hidden="true" />
       <span className="text-sm font-medium">
-        {hasCheckedInToday ? `Day ${currentDay} ✓` : "Check In!"}
+        {hasCheckedInToday ? `Ngày ${currentDay} đã xong` : "Điểm danh"}
       </span>
-    </button>
+    </Button>
   );
 }

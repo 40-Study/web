@@ -75,15 +75,15 @@ export function RoleCard({ role, selected, onClick, className, label, subtitle }
       className={cn(
         "flex w-full items-center gap-4 rounded-xl border-2 px-5 py-4 text-left transition-all",
         selected
-          ? "border-primary-500 bg-primary-50 text-primary-700"
-          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50",
+          ? "border-primary bg-primary/10 text-primary"
+          : "border-border bg-card text-muted-foreground hover:border-muted-foreground hover:bg-muted",
         className
       )}
     >
       <div
         className={cn(
           "flex h-12 w-12 shrink-0 items-center justify-center rounded-lg",
-          selected ? "bg-primary-100 text-primary-600" : "bg-gray-100 text-gray-500"
+          selected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
         )}
       >
         {config.icon}
@@ -91,7 +91,7 @@ export function RoleCard({ role, selected, onClick, className, label, subtitle }
       <div className="min-w-0">
         <p className="text-sm font-semibold">{displayLabel}</p>
         {displayDesc && (
-          <p className={cn("text-xs", selected ? "text-primary-600" : "text-gray-500")}>
+          <p className={cn("text-xs", selected ? "text-primary" : "text-muted-foreground")}>
             {displayDesc}
           </p>
         )}
@@ -100,7 +100,7 @@ export function RoleCard({ role, selected, onClick, className, label, subtitle }
         <div
           className={cn(
             "flex h-5 w-5 items-center justify-center rounded-full border-2",
-            selected ? "border-primary-500 bg-primary-500 text-white" : "border-gray-300"
+            selected ? "border-primary bg-primary text-primary-foreground" : "border-border"
           )}
         >
           {selected && <SmallCheckIcon />}

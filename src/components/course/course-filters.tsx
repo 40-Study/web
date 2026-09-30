@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Filter, X } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { Category, CourseFilters } from "@/types/course";
 import { PriceRangeSlider } from "./price-range-slider";
 
@@ -79,76 +80,79 @@ export function CourseFiltersComponent({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Category Pills */}
-      <div className="flex flex-wrap gap-2 items-center">
-        <div className="flex gap-2 overflow-x-auto pb-2 flex-wrap">
-          <button
+      {/* Category chips: cuộn ngang ở 390 (fade mép), nút Bộ lọc cố định bên phải */}
+      <div className="flex items-center gap-3">
+        <div className="relative min-w-0 flex-1">
+        <div
+          role="group"
+          aria-label="Danh mục khóa học"
+          className="-mx-1 flex gap-2 overflow-x-auto px-1 py-1 pr-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <Button
+            type="button"
+            size="sm"
+            variant={!filters.category ? "secondary" : "outline"}
+            aria-pressed={!filters.category}
             onClick={() => handleCategoryChange(undefined)}
-            className={cn(
-              "px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150",
-              !filters.category
-                ? "bg-primary-600 text-white border border-transparent"
-                : "border border-slate-200 text-slate-700 hover:border-primary-300 hover:text-primary-700 hover:bg-primary-50 dark:border-border dark:text-foreground dark:hover:border-primary-700"
-            )}
+            className="shrink-0 rounded-pill"
           >
             Tất cả
-          </button>
+          </Button>
           {categories.map((cat) => (
-            <button
+            <Button
               key={cat.id}
+              type="button"
+              size="sm"
+              variant={filters.category === cat.slug ? "secondary" : "outline"}
+              aria-pressed={filters.category === cat.slug}
               onClick={() => handleCategoryChange(cat.slug)}
-              className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150",
-                filters.category === cat.slug
-                  ? "bg-primary-600 text-white border border-transparent"
-                  : "border border-slate-200 text-slate-700 hover:border-primary-300 hover:text-primary-700 hover:bg-primary-50 dark:border-border dark:text-foreground dark:hover:border-primary-700"
-              )}
+              className="shrink-0 rounded-pill"
             >
               {cat.name}
-            </button>
+            </Button>
           ))}
         </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent"
+          />
+        </div>
 
-        {/* Filter Toggle Button */}
-        <button
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          aria-expanded={showFilters}
           onClick={() => setShowFilters(!showFilters)}
-          className={cn(
-            "ml-auto flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150 border",
-            showFilters
-              ? "bg-primary-50 text-primary-700 border-primary-300"
-              : "border-slate-200 text-slate-700 hover:border-slate-300 dark:border-border dark:text-foreground dark:hover:border-neutral-600"
-          )}
+          className="shrink-0 gap-2"
         >
-          <Filter className="h-4 w-4" />
+          <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
           Bộ lọc
           {activeFilterCount > 0 && (
-            <span className="bg-primary-600 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+            <span className="min-w-[20px] rounded-full bg-primary-600 px-1.5 py-0.5 text-center text-xs text-white">
               {activeFilterCount}
             </span>
           )}
-        </button>
+        </Button>
       </div>
 
       {/* Expanded Filters */}
       {showFilters && (
-        <div className="p-5 border border-slate-200/60 rounded-2xl bg-white shadow-sm shadow-slate-100 space-y-4">
+        <div className="p-4 md:p-5 border border-slate-200 rounded-2xl bg-white shadow-card space-y-4 dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center justify-between">
-            <h3 className="font-medium">Bộ lọc nâng cao</h3>
+            <h3 className="text-h4">Bộ lọc nâng cao</h3>
             {activeFilterCount > 0 && (
-              <button
-                onClick={clearFilters}
-                className="flex items-center gap-1 text-sm text-slate-500 hover:text-rose-600 transition-colors"
-              >
-                <X className="h-4 w-4" />
+              <Button type="button" variant="ghost" size="sm" onClick={clearFilters} className="gap-1">
+                <X className="h-4 w-4" aria-hidden="true" />
                 Xóa bộ lọc
-              </button>
+              </Button>
             )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Level Filter */}
             <div>
-              <p className="text-sm font-medium mb-2">Trình độ</p>
+              <p className="text-label mb-2">Trình độ</p>
               <div className="space-y-2">
                 {LEVELS.map((level) => (
                   <label
@@ -169,7 +173,7 @@ export function CourseFiltersComponent({
 
             {/* Price Range Filter */}
             <div>
-              <p className="text-sm font-medium mb-3">Khoảng giá</p>
+              <p className="text-label mb-3">Khoảng giá</p>
               <PriceRangeSlider
                 min={0}
                 max={PRICE_SLIDER_MAX}
@@ -184,13 +188,14 @@ export function CourseFiltersComponent({
 
             {/* Sort Filter */}
             <div>
-              <p className="text-sm font-medium mb-2">Sắp xếp theo</p>
+              <label htmlFor="course-sort" className="text-label mb-2 block">Sắp xếp theo</label>
               <select
+                id="course-sort"
                 value={filters.sortBy || "popular"}
                 onChange={(e) =>
                   handleSortChange(e.target.value as CourseFilters["sortBy"])
                 }
-                className="w-full h-9 rounded-xl border border-gray-200 bg-white px-3 text-sm"
+                className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
               >
                 {SORT_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>

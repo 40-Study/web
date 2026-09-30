@@ -152,7 +152,7 @@ export function DialogContent({
         aria-labelledby={hasTitle ? titleId : undefined}
         tabIndex={-1}
         className={cn(
-          "relative z-50 w-full max-w-lg mx-4 bg-white dark:bg-gray-900 rounded-2xl shadow-xl",
+          "relative z-50 w-full max-w-lg mx-4 bg-white dark:bg-slate-900 rounded-3xl shadow-overlay",
           "animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4",
           "duration-200",
           className
@@ -162,10 +162,10 @@ export function DialogContent({
         {showCloseButton && (
           <button
             onClick={() => onOpenChange(false)}
-            className="absolute right-4 top-4 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors z-10"
+            className="absolute right-4 top-4 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors z-10 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             aria-label="Đóng hộp thoại"
           >
-            <X className="h-4 w-4 text-gray-500" aria-hidden="true" />
+            <X className="h-4 w-4 text-slate-500" aria-hidden="true" />
           </button>
         )}
         <div className={cn("p-6", hasFlex && "flex flex-col flex-1 min-h-0")}>{children}</div>
@@ -184,7 +184,7 @@ export function DialogTitle({ children, className, ...props }: DialogTitleProps)
   return (
     <h2
       id={titleId}
-      className={cn("text-lg font-semibold text-gray-900 dark:text-white", className)}
+      className={cn("font-heading text-lg font-semibold text-slate-900 dark:text-white", className)}
       {...props}
     >
       {children}
@@ -199,7 +199,7 @@ export function DialogDescription({
 }: DialogDescriptionProps) {
   return (
     <p
-      className={cn("text-sm text-gray-500 dark:text-gray-400 mt-1", className)}
+      className={cn("text-sm text-slate-500 dark:text-slate-400 mt-1", className)}
       {...props}
     >
       {children}

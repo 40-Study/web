@@ -45,7 +45,7 @@ export default function ForgotPasswordOtpPage() {
     <AuthCard>
       <div className="flex flex-col items-center py-4">
         <AuthIconHeader
-          icon={<MailIcon size={32} className="text-primary-500" />}
+          icon={<MailIcon size={32} className="text-primary" />}
           title="Xác thực OTP"
           description="Nhập mã 6 chữ số đã được gửi đến email của bạn"
           className="mb-8"

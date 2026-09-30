@@ -16,21 +16,21 @@ const badgeVariants = cva(
           "bg-amber-50 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
         destructive:
           "bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-300",
-        outline: "border border-neutral-200 bg-transparent text-black dark:border-neutral-700 dark:text-white",
+        outline: "border border-slate-200 bg-transparent text-slate-900 dark:border-slate-700 dark:text-slate-50",
 
         // Gamification variants
         xp: "bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/50 dark:text-green-300",
         streak:
           "bg-orange-100 text-orange-700 border border-orange-200 dark:bg-orange-900/50 dark:text-orange-300",
-        level: "bg-primary-500 text-white",
-        achievement: "bg-yellow-400 text-white",
+        level: "bg-primary-600 text-white",
+        achievement: "bg-yellow-400 text-yellow-950",
 
         // League badges
-        bronze: "bg-orange-100 text-orange-800 border border-orange-300",
-        silver: "bg-gray-100 text-gray-700 border border-gray-300",
-        gold: "bg-yellow-100 text-yellow-800 border border-yellow-300",
-        diamond: "bg-cyan-100 text-cyan-700 border border-cyan-300",
-        champion: "bg-purple-100 text-purple-700 border border-purple-300",
+        bronze: "bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-900/50 dark:text-orange-200 dark:border-orange-800",
+        silver: "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600",
+        gold: "bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-900/50 dark:text-yellow-200 dark:border-yellow-800",
+        diamond: "bg-cyan-100 text-cyan-700 border border-cyan-300 dark:bg-cyan-900/50 dark:text-cyan-200 dark:border-cyan-800",
+        champion: "bg-purple-100 text-purple-700 border border-purple-300 dark:bg-purple-900/50 dark:text-purple-200 dark:border-purple-800",
       },
       size: {
         default: "px-2.5 py-0.5 text-xs",

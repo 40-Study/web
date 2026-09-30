@@ -79,7 +79,7 @@ export function BottomNav({ role = "student", className }: BottomNavProps) {
   return (
     <nav
       className={cn(
-        "fixed bottom-4 left-4 right-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border border-gray-100 dark:border-gray-800 rounded-2xl shadow-lg lg:hidden z-50",
+        "fixed bottom-4 left-4 right-4 bg-card/95 backdrop-blur-md border border-border rounded-2xl shadow-raised lg:hidden z-50",
         className
       )}
     >
@@ -97,14 +97,14 @@ export function BottomNav({ role = "student", className }: BottomNavProps) {
               key={tab.href}
               href={tab.href}
               className={cn(
-                "flex flex-col items-center gap-1 px-3 py-2 min-w-[64px] rounded-xl transition-colors",
+                "flex flex-col items-center gap-1 px-2 py-2 min-w-[56px] rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                 isActive
-                  ? "text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20"
+                  ? "text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
               {tab.icon}
-              <span className="text-xs font-medium">{tab.label}</span>
+              <span className="whitespace-nowrap text-[11px] font-medium leading-none">{tab.label}</span>
             </Link>
           );
         })}

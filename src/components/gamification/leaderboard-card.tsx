@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,13 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
+/** Huy hiệu hạng 1-3: chữ số trong vòng tròn, màu phân biệt kèm số nên không chỉ dựa vào màu. */
+const RANK_BADGE: Record<number, string> = {
+  1: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
+  2: "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-100",
+  3: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200",
+};
+
 /**
  * Individual leaderboard entry card
  * Displays user rank, avatar, name, level, weekly XP and trend
@@ -43,31 +51,32 @@ export function LeaderboardCard({
   isCurrentUser = false,
   className,
 }: LeaderboardCardProps) {
-  const getRankDisplay = () => {
-    if (rank === 1) return { emoji: "🥇", bg: "bg-yellow-100 dark:bg-yellow-900/30" };
-    if (rank === 2) return { emoji: "🥈", bg: "bg-gray-100 dark:bg-gray-800" };
-    if (rank === 3) return { emoji: "🥉", bg: "bg-orange-100 dark:bg-orange-900/30" };
-    return { emoji: null, bg: "" };
-  };
-
-  const rankDisplay = getRankDisplay();
+  const TrendIcon = entry.trend > 0 ? ArrowUp : entry.trend < 0 ? ArrowDown : Minus;
+  const trendLabel =
+    entry.trend > 0
+      ? `Tăng ${entry.trend} hạng`
+      : entry.trend < 0
+        ? `Giảm ${Math.abs(entry.trend)} hạng`
+        : "Giữ nguyên hạng";
 
   return (
     <div
       className={cn(
-        "flex items-center gap-4 px-4 py-3 transition-colors",
-        isCurrentUser && "bg-primary-50 dark:bg-primary-900/20",
-        rank <= 3 && !isCurrentUser && rankDisplay.bg,
+        "flex items-center gap-3 px-4 py-3 transition-colors md:gap-4",
+        isCurrentUser && "bg-primary-50 dark:bg-primary-950/60",
         className
       )}
     >
       {/* Rank */}
-      <div className="w-8 text-center shrink-0">
-        {rankDisplay.emoji ? (
-          <span className="text-xl">{rankDisplay.emoji}</span>
-        ) : (
-          <span className="text-lg font-bold text-muted-foreground">{rank}</span>
-        )}
+      <div className="flex w-8 shrink-0 justify-center">
+        <span
+          className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold tabular-nums",
+            RANK_BADGE[rank] ?? "text-slate-600 dark:text-slate-400"
+          )}
+        >
+          {rank}
+        </span>
       </div>
 
       {/* User avatar */}
@@ -79,39 +88,43 @@ export function LeaderboardCard({
       />
 
       {/* User info */}
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <p
           className={cn(
-            "font-medium truncate",
+            "truncate text-sm font-medium",
             isCurrentUser
-              ? "text-primary-600 dark:text-primary-400"
-              : "text-gray-900 dark:text-white"
+              ? "text-primary-700 dark:text-primary-300"
+              : "text-slate-900 dark:text-slate-50"
           )}
         >
-          {entry.name} {isCurrentUser && "(You)"}
+          {entry.name} {isCurrentUser && "(Bạn)"}
         </p>
-        <p className="text-xs text-muted-foreground">Level {entry.level}</p>
+        <p className="text-xs text-slate-600 dark:text-slate-400">Cấp {entry.level}</p>
       </div>
 
       {/* XP this week */}
-      <div className="text-right shrink-0">
-        <p className="font-bold text-xp">+{formatNumber(entry.weeklyXP)}</p>
-        <p className="text-xs text-muted-foreground">XP this week</p>
+      <div className="shrink-0 text-right">
+        <p className="font-bold tabular-nums text-xp dark:text-xp-light">
+          +{formatNumber(entry.weeklyXP)}
+        </p>
+        <p className="text-xs text-slate-600 dark:text-slate-400">XP tuần này</p>
       </div>
 
       {/* Trend indicator */}
       <div
         className={cn(
-          "w-8 text-center shrink-0 font-medium",
+          "flex w-10 shrink-0 items-center justify-center gap-0.5 text-xs font-medium tabular-nums",
           entry.trend > 0
-            ? "text-green-500"
+            ? "text-green-700 dark:text-green-400"
             : entry.trend < 0
-            ? "text-red-500"
-            : "text-muted-foreground"
+              ? "text-red-700 dark:text-red-400"
+              : "text-slate-600 dark:text-slate-400"
         )}
+        title={trendLabel}
       >
-        {entry.trend > 0 ? "↑" : entry.trend < 0 ? "↓" : "−"}
-        {Math.abs(entry.trend) > 0 && Math.abs(entry.trend)}
+        <TrendIcon className="h-4 w-4" aria-hidden="true" />
+        <span className="sr-only">{trendLabel}</span>
+        {entry.trend !== 0 && <span aria-hidden="true">{Math.abs(entry.trend)}</span>}
       </div>
     </div>
   );
@@ -137,7 +150,7 @@ export function LeaderboardList({
   const isCurrentUserInTop = entries.some((e) => e.userId === currentUserId);
 
   return (
-    <Card className={cn("divide-y divide-gray-100 dark:divide-gray-800", className)}>
+    <Card className={cn("divide-y divide-slate-100 overflow-hidden dark:divide-slate-800", className)}>
       {entries.map((entry, idx) => (
         <LeaderboardCard
           key={entry.userId}
@@ -150,7 +163,7 @@ export function LeaderboardList({
       {/* Show current user if not in top entries */}
       {!isCurrentUserInTop && currentUserEntry && (
         <>
-          <div className="px-4 py-2 text-center text-muted-foreground text-sm">
+          <div className="px-4 py-2 text-center text-sm text-slate-600 dark:text-slate-400" aria-hidden="true">
             • • •
           </div>
           <LeaderboardCard

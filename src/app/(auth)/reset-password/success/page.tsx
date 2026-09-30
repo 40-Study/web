@@ -10,8 +10,8 @@ export default function ResetPasswordSuccessPage() {
     <AuthCard>
       <div className="flex flex-col items-center py-4">
         <AuthIconHeader
-          icon={<ShieldCheckIcon size={40} className="text-green-500" />}
-          iconBgClassName="bg-green-100 h-20 w-20"
+          icon={<ShieldCheckIcon size={40} className="text-green-600 dark:text-green-400" />}
+          iconBgClassName="bg-green-100 dark:bg-green-950 h-20 w-20"
           title="Đổi mật khẩu thành công!"
           description="Mật khẩu của bạn đã được thay đổi. Hãy đăng nhập với mật khẩu mới."
           className="mb-8"
