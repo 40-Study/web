@@ -47,7 +47,7 @@ const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
         />
         <div
           className={cn(
-            "relative h-2 w-full cursor-pointer overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700",
+            "relative h-2 w-full cursor-pointer overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700",
             disabled && "cursor-not-allowed opacity-50"
           )}
           onClick={(e) => {
