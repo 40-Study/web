@@ -10,6 +10,7 @@ import {
   Loader2,
   Search,
   UserPlus,
+  EyeOff,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ import {
   useJoinGroup,
 } from "@/hooks/queries/use-groups";
 import type { Group } from "@/services/group.service";
+import { PRIVACY_DESCRIPTIONS, PRIVACY_LABELS, roleLabel } from "@/components/groups/group-labels";
 
 function GroupCard({ group, showJoin = false }: { group: Group; showJoin?: boolean }) {
   const joinGroup = useJoinGroup();
@@ -61,12 +63,12 @@ function GroupCard({ group, showJoin = false }: { group: Group; showJoin?: boole
               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                 {group.privacy === "PUBLIC" ? (
                   <Globe className="h-3 w-3" />
+                ) : group.privacy === "SECRET" ? (
+                  <EyeOff className="h-3 w-3" />
                 ) : (
                   <Lock className="h-3 w-3" />
                 )}
-                <span>
-                  {group.privacy === "PUBLIC" ? "Công khai" : "Riêng tư"}
-                </span>
+                <span>{PRIVACY_LABELS[group.privacy] ?? group.privacy}</span>
                 <span>|</span>
                 <span>{group.member_count} thành viên</span>
               </div>
@@ -74,11 +76,7 @@ function GroupCard({ group, showJoin = false }: { group: Group; showJoin?: boole
           </div>
           {group.my_role && (
             <Badge variant="outline" className="text-xs shrink-0">
-              {group.my_role === "OWNER"
-                ? "Trưởng nhóm"
-                : group.my_role === "ADMIN"
-                  ? "Quản trị"
-                  : "Thành viên"}
+              {roleLabel(group.my_role)}
             </Badge>
           )}
         </div>
@@ -144,8 +142,9 @@ function CreateGroupDialog() {
             <Select value={privacy} onValueChange={setPrivacy}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="PUBLIC">Công khai - ai cũng tham gia được</SelectItem>
-                <SelectItem value="PRIVATE">Riêng tư - cần được duyệt</SelectItem>
+                <SelectItem value="PUBLIC">{PRIVACY_DESCRIPTIONS.PUBLIC}</SelectItem>
+                <SelectItem value="PRIVATE">{PRIVACY_DESCRIPTIONS.PRIVATE}</SelectItem>
+                <SelectItem value="SECRET">{PRIVACY_DESCRIPTIONS.SECRET}</SelectItem>
               </SelectContent>
             </Select>
           </div>

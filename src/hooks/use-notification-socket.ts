@@ -7,6 +7,9 @@ import { useEffect, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth.store";
+import { getWsUrl } from "@/lib/ws-url";
+import { getNotificationHref, isFriendNotification } from "@/lib/notification-route";
+import { friendKeys } from "./queries/use-friends";
 import { notificationKeys } from "./queries/use-notifications";
 
 interface WebSocketMessage {
@@ -24,30 +27,6 @@ interface NotificationPayload {
   created_at: string;
 }
 
-// WebSocket URL — H6 fix: prod đi qua Next same-origin proxy (route.ts dùng
-// axios, không thể upgrade WebSocket) nên phải trỏ THẲNG backend qua biến
-// môi trường NEXT_PUBLIC_WS_URL, không đi qua /api same-origin nữa.
-function getWsUrl(): string {
-  if (typeof window === "undefined") return "";
-
-  if (process.env.NEXT_PUBLIC_WS_URL) {
-    return process.env.NEXT_PUBLIC_WS_URL;
-  }
-
-  // Dev fallback: kết nối thẳng backend local khi chưa cấu hình env.
-  if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-    return "ws://localhost:5000/api/ws";
-  }
-
-  // Không có NEXT_PUBLIC_WS_URL ở production — không thể kết nối qua same-origin
-  // proxy (route.ts dùng axios, không upgrade WS được). Báo rõ thay vì âm thầm
-  // dùng một URL chắc chắn treo.
-  console.error(
-    "[WS] NEXT_PUBLIC_WS_URL chưa được cấu hình — realtime notification sẽ không hoạt động ở production."
-  );
-  return "";
-}
-
 export function useNotificationSocket() {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -59,15 +38,19 @@ export function useNotificationSocket() {
 
   const handleNotification = useCallback(
     (payload: NotificationPayload) => {
+      // Thông báo bạn bè/nhóm có đích riêng (lib/notification-route); loại cũ dùng reference_type.
+      const href = getNotificationHref(payload);
       // Show toast notification with icon based on type
       toast(payload.title, {
         description: payload.content,
         duration: 5000,
-        action: payload.reference_type
+        action: payload.reference_type || href
           ? {
               label: "Xem",
               onClick: () => {
-                if (payload.reference_type === "course") {
+                if (href) {
+                  window.location.href = href;
+                } else if (payload.reference_type === "course") {
                   window.location.href = `/courses/${payload.reference_id}`;
                 } else if (payload.reference_type === "class") {
                   window.location.href = `/classes/${payload.reference_id}`;
@@ -81,6 +64,10 @@ export function useNotificationSocket() {
 
       // Invalidate notification queries to refresh the list and count
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+      // Lời mời mới / vừa được chấp nhận: làm mới badge lời mời và danh sách bạn.
+      if (isFriendNotification(payload.notification_type)) {
+        queryClient.invalidateQueries({ queryKey: friendKeys.all });
+      }
     },
     [queryClient]
   );

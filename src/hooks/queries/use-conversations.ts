@@ -28,11 +28,20 @@ export function useConversation(id: string) {
   });
 }
 
-export function useMessages(convId: string, params?: { page?: number; limit?: number }) {
+/**
+ * `options.refetchInterval`: chat realtime tắt polling khi WebSocket đang mở và bật lại khi rớt
+ * (xem `components/chat/conversation-chat.tsx`). Không truyền = không polling như trước.
+ */
+export function useMessages(
+  convId: string,
+  params?: { page?: number; limit?: number },
+  options?: { refetchInterval?: number | false }
+) {
   return useQuery({
     queryKey: conversationKeys.messages(convId, params?.page),
     queryFn: () => conversationService.getMessages(convId, params),
     enabled: !!convId,
+    refetchInterval: options?.refetchInterval,
   });
 }
 

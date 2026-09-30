@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Camera, Pencil, UserPlus } from "lucide-react";
+import { Camera, Pencil } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ProfileFriendAction } from "@/components/friends/profile-friend-action";
 import { cn, formatDate } from "@/lib/utils";
 
 export interface User {
@@ -114,13 +115,9 @@ export function ProfileHeader({
               Chỉnh sửa hồ sơ
             </Button>
           ) : (
-            <Button
-              variant="outline"
-              className="text-white border-white hover:bg-white/20"
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              Theo dõi
-            </Button>
+            // Nút "Theo dõi" cũ không có hành vi nào (không có backend) nên đã thay bằng kết bạn thật.
+            // Chỉ STUDENT thấy; logic theo vai nằm trong ProfileFriendAction.
+            <ProfileFriendAction userId={user.id} name={user.fullName} />
           )}
         </div>
 

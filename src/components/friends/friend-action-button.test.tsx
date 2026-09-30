@@ -1,0 +1,129 @@
+/**
+ * FriendActionButton: đúng MỘT nút theo `relationship` và gọi đúng API. Xoá nhánh hoặc đổi trạng thái
+ * trong switch thì ô tương ứng đỏ.
+ */
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { BusinessApiError } from "@/services/business-request";
+import { renderWithQuery } from "@/test-utils/query-wrapper";
+
+vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
+
+import { toast } from "sonner";
+import { friendService } from "@/services/friend.service";
+import { FriendActionButton } from "./friend-action-button";
+
+const user = { user_id: "u1", user_name: "lan" };
+
+describe("FriendActionButton — một nút theo relationship", () => {
+  beforeEach(() => {
+    vi.mocked(toast.error).mockReset();
+    vi.mocked(toast.success).mockReset();
+  });
+
+  it("NONE: 'Kết bạn' gửi lời mời", async () => {
+    const send = vi.spyOn(friendService, "sendRequest").mockResolvedValue({ id: "r1", status: "PENDING", user });
+    renderWithQuery(<FriendActionButton userId="u1" status="NONE" name="Lan" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Kết bạn với Lan" }));
+
+    await waitFor(() => expect(send).toHaveBeenCalledWith("u1"));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Đã gửi lời mời kết bạn"));
+  });
+
+  it("NONE nhưng đối phương đã gửi từ trước (server tự chấp nhận): toast 'trở thành bạn bè'", async () => {
+    vi.spyOn(friendService, "sendRequest").mockResolvedValue({ id: "r1", status: "ACCEPTED", user });
+    renderWithQuery(<FriendActionButton userId="u1" status="NONE" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Kết bạn" }));
+
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Hai bạn đã trở thành bạn bè"));
+  });
+
+  it("PENDING_OUT có requestId: 'Huỷ lời mời' gọi cancel, không có nút Kết bạn", async () => {
+    const cancel = vi.spyOn(friendService, "cancel").mockResolvedValue(null);
+    renderWithQuery(<FriendActionButton userId="u1" status="PENDING_OUT" requestId="r7" />);
+
+    expect(screen.queryByRole("button", { name: /Kết bạn/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Huỷ lời mời" }));
+
+    await waitFor(() => expect(cancel).toHaveBeenCalledWith("r7"));
+  });
+
+  it("PENDING_OUT thiếu requestId (kết quả tìm kiếm không có id): tự tra relationship, khoá nút tới khi có id", async () => {
+    let resolve!: (v: { status: "PENDING_OUT"; request_id: string }) => void;
+    const lookup = vi.spyOn(friendService, "relationship").mockReturnValue(new Promise((r) => (resolve = r)));
+    const cancel = vi.spyOn(friendService, "cancel").mockResolvedValue(null);
+    renderWithQuery(<FriendActionButton userId="u1" status="PENDING_OUT" />);
+
+    const button = screen.getByRole("button", { name: "Huỷ lời mời" }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(lookup).toHaveBeenCalledWith("u1");
+
+    resolve({ status: "PENDING_OUT", request_id: "r-looked-up" });
+    await waitFor(() => expect(button.disabled).toBe(false));
+    fireEvent.click(button);
+
+    await waitFor(() => expect(cancel).toHaveBeenCalledWith("r-looked-up"));
+  });
+
+  it("PENDING_IN: 'Chấp nhận' gọi accept", async () => {
+    const accept = vi.spyOn(friendService, "accept").mockResolvedValue({ id: "r2", status: "ACCEPTED", user });
+    renderWithQuery(<FriendActionButton userId="u1" status="PENDING_IN" requestId="r2" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Chấp nhận" }));
+
+    await waitFor(() => expect(accept).toHaveBeenCalledWith("r2"));
+  });
+
+  it("FRIENDS: 'Bạn bè' chỉ mở xác nhận; huỷ kết bạn chỉ chạy sau khi xác nhận", async () => {
+    const unfriend = vi.spyOn(friendService, "unfriend").mockResolvedValue(null);
+    renderWithQuery(<FriendActionButton userId="u1" status="FRIENDS" name="Lan" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Bạn bè với Lan" }));
+    expect(unfriend).not.toHaveBeenCalled();
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Huỷ kết bạn" }));
+
+    await waitFor(() => expect(unfriend).toHaveBeenCalledWith("u1"));
+  });
+
+  it("BLOCKED_BY_ME: 'Bỏ chặn' gọi unblock", async () => {
+    const unblock = vi.spyOn(friendService, "unblock").mockResolvedValue(null);
+    renderWithQuery(<FriendActionButton userId="u1" status="BLOCKED_BY_ME" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Bỏ chặn" }));
+
+    await waitFor(() => expect(unblock).toHaveBeenCalledWith("u1"));
+  });
+
+  it("SELF: không có nút nào", () => {
+    const { container } = renderWithQuery(<FriendActionButton userId="me" status="SELF" />);
+    expect(container.querySelector("button")).toBeNull();
+  });
+
+  it.each([
+    [409, "FRIEND_REQUEST_COOLDOWN", "Bạn chưa thể gửi lời mời cho người này lúc này."],
+    [403, "FRIEND_REQUEST_NOT_ALLOWED", "Không thể gửi lời mời cho người này."],
+    [429, "FRIEND_DAILY_LIMIT_REACHED", "Hôm nay bạn đã gửi đủ lời mời, hãy thử lại vào ngày mai."],
+    [429, "FRIEND_PENDING_LIMIT_REACHED", "Bạn đang có quá nhiều lời mời chờ phản hồi. Hãy đợi hoặc huỷ bớt lời mời cũ."],
+    [409, "FRIEND_LIMIT_REACHED", "Một trong hai bạn đã đạt số lượng bạn bè tối đa"],
+  ])("gửi lời mời lỗi %i %s -> toast tiếng Việt đúng lý do", async (status, code, expected) => {
+    vi.spyOn(friendService, "sendRequest").mockRejectedValue(new BusinessApiError(status, code, "english"));
+    renderWithQuery(<FriendActionButton userId="u1" status="NONE" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Kết bạn" }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(expected));
+  });
+
+  it("lỗi 'lời mời không còn chờ' vẫn làm mới dữ liệu (màn hình đang cũ so với server)", async () => {
+    vi.spyOn(friendService, "accept").mockRejectedValue(new BusinessApiError(409, "FRIEND_REQUEST_NOT_PENDING", ""));
+    const { client } = renderWithQuery(<FriendActionButton userId="u1" status="PENDING_IN" requestId="r2" />);
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+
+    fireEvent.click(screen.getByRole("button", { name: "Chấp nhận" }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Lời mời này đã được xử lý, vui lòng tải lại trang"));
+    await waitFor(() => expect(invalidate).toHaveBeenCalled());
+  });
+});

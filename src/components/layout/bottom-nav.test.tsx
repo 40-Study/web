@@ -10,9 +10,14 @@
  */
 
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { BottomNav } from "./bottom-nav";
 import { isRouteAllowedForRole, type NavRole } from "@/lib/routes";
+
+// Badge lời mời đọc /friends/summary qua React Query; test này không dựng QueryClientProvider.
+vi.mock("@/hooks/queries/use-friends", () => ({
+  useFriendSummary: () => ({ data: { friends_count: 0, incoming_requests: 2, outgoing_requests: 0 } }),
+}));
 
 describe("BottomNav — bộ tab guest", () => {
   it("guest: chỉ Trang chủ(/), Khóa học(/courses), Đăng nhập(/login)", () => {
@@ -32,12 +37,22 @@ describe("BottomNav — bộ tab guest", () => {
     expect(screen.queryByText("Xếp hạng")).toBeNull();
   });
 
-  it("student: vẫn giữ nguyên 5 mục cũ (Trang chủ trỏ /home, không phải /)", () => {
+  it("student: Trang chủ trỏ /home (không phải /), có Bạn bè -> /friends kèm badge lời mời", () => {
     render(<BottomNav role="student" />);
 
     const home = screen.getByRole("link", { name: /Trang chủ/i });
     expect(home.getAttribute("href")).toBe("/home");
     expect(screen.getByText("Xếp hạng")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Bạn bè/ }).getAttribute("href")).toBe("/friends");
+    expect(screen.getByRole("status", { name: "2 lời mời kết bạn mới" })).toBeTruthy();
+  });
+
+  it("chỉ student có Bạn bè: parent, teacher, guest, admin không có", () => {
+    for (const role of ["parent", "teacher", "guest", "admin"] as const) {
+      const { unmount } = render(<BottomNav role={role} />);
+      expect(screen.queryByText("Bạn bè")).toBeNull();
+      unmount();
+    }
   });
 
   it("parent: nhãn Con của tôi trỏ /settings/family", () => {

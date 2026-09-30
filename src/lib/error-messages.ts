@@ -47,6 +47,28 @@ const CODE_MESSAGES: Record<string, string> = {
   APPLICATION_NOT_REJECTED: "Chỉ có thể nộp lại hồ sơ đang bị từ chối.",
   APPLICATION_UNDER_REVIEW: "Hồ sơ của bạn đang chờ duyệt.",
   RESUBMISSION_LIMIT_REACHED: "Bạn đã nộp lại quá số lần cho phép. Vui lòng liên hệ hỗ trợ.",
+  // ── Nhóm (plans/260930-groups-friends/contract-api.md §2) ──
+  GROUP_ALREADY_MEMBER: "Bạn đã là thành viên của nhóm này",
+  GROUP_BANNED: "Bạn đã bị cấm khỏi nhóm này",
+  GROUP_FULL: "Nhóm đã đủ thành viên",
+  GROUP_JOIN_REQUEST_EXISTS: "Bạn đã gửi yêu cầu tham gia nhóm này, đang chờ duyệt",
+  GROUP_MEMBER_BANNED: "Người này đang bị cấm khỏi nhóm",
+  GROUP_INVITE_NOT_ALLOWED: "Bạn chưa có quan hệ hợp lệ để mời người này vào nhóm",
+  // ── Bạn bè (contract §1) ──
+  // FRIEND_REQUEST_NOT_ALLOWED / FRIEND_REQUEST_COOLDOWN cố ý mơ hồ: không được lộ "bị chặn" hay "bị từ chối".
+  FRIEND_SELF_REQUEST: "Bạn không thể kết bạn với chính mình",
+  FRIEND_ROLE_NOT_ALLOWED: "Tính năng bạn bè chỉ dành cho học viên",
+  FRIEND_REQUEST_NOT_ALLOWED: "Không thể gửi lời mời cho người này.",
+  FRIEND_USER_NOT_FOUND: "Không tìm thấy người dùng này",
+  FRIEND_REQUEST_NOT_FOUND: "Lời mời không còn tồn tại",
+  FRIEND_NOT_FOUND: "Hai bạn chưa là bạn bè",
+  FRIEND_ALREADY_FRIENDS: "Hai bạn đã là bạn bè",
+  FRIEND_REQUEST_EXISTS: "Bạn đã gửi lời mời cho người này, đang chờ phản hồi",
+  FRIEND_REQUEST_NOT_PENDING: "Lời mời này đã được xử lý, vui lòng tải lại trang",
+  FRIEND_REQUEST_COOLDOWN: "Bạn chưa thể gửi lời mời cho người này lúc này.",
+  FRIEND_LIMIT_REACHED: "Một trong hai bạn đã đạt số lượng bạn bè tối đa",
+  FRIEND_DAILY_LIMIT_REACHED: "Hôm nay bạn đã gửi đủ lời mời, hãy thử lại vào ngày mai.",
+  FRIEND_PENDING_LIMIT_REACHED: "Bạn đang có quá nhiều lời mời chờ phản hồi. Hãy đợi hoặc huỷ bớt lời mời cũ.",
 };
 
 // Code chỉ nói LOẠI lỗi, message mới nói lý do (vd. ERR_NOT_FOUND + "Voucher not found",
@@ -91,6 +113,8 @@ const EXACT_MESSAGES: Record<string, string> = {
   "student is already enrolled in this class": "Học viên này đã có trong lớp",
   "already a member of this group": "Bạn đã là thành viên của nhóm này",
   "you are banned from this group": "Bạn đã bị chặn khỏi nhóm này",
+  // Backend chưa gắn `code` GROUP_JOIN_REQUEST_EXISTS (phase 02): tới lúc đó khớp theo câu.
+  "you already have a pending join request": "Bạn đã gửi yêu cầu tham gia nhóm này, đang chờ duyệt",
   "contest is full": "Cuộc thi đã đủ người tham gia",
   "contest is not accepting participants": "Cuộc thi hiện không nhận thêm người tham gia",
   "already joined this contest": "Bạn đã tham gia cuộc thi này",

@@ -2,8 +2,8 @@
  * QA 260927 M-19/S-P1-4/H8 — sidebar menu data-driven theo role.
  *
  * Proves: phụ huynh KHÔNG thấy Nhóm/Xu/Bạn bè/AI Chat (nhưng thấy Cuộc thi), học sinh vẫn
- * thấy đủ; "Gia đình" đổi nhãn "Con của tôi" khi xem bằng vai phụ huynh; mục
- * "Bạn bè"/"AI Chat" đã bỏ khỏi menu MỌI vai trò (không chỉ phụ huynh).
+ * thấy đủ; "Gia đình" đổi nhãn "Con của tôi" khi xem bằng vai phụ huynh; "AI Chat" đã bỏ
+ * khỏi menu MỌI vai trò. "Bạn bè" (plans/260930-groups-friends Q1) CHỈ học sinh thấy, kèm badge lời mời chờ.
  *
  * Dự án chưa cài `@testing-library/jest-dom` (không có trong `vitest.setup.ts`),
  * nên dùng thẳng `queryByText`/`getByText` trả về `null` hay `HTMLElement`
@@ -11,15 +11,24 @@
  */
 
 import { render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Sidebar } from "./sidebar";
 import { useAuthStore } from "@/stores/auth.store";
+
+// Badge lời mời đọc /friends/summary qua React Query; sidebar test không dựng QueryClientProvider.
+const summary = vi.hoisted(() => ({ incoming: 0 }));
+vi.mock("@/hooks/queries/use-friends", () => ({
+  useFriendSummary: () => ({ data: { friends_count: 0, incoming_requests: summary.incoming, outgoing_requests: 0 } }),
+}));
 
 function setRole(role: string | null, isAuthenticated: boolean) {
   useAuthStore.setState({ isAuthenticated, activeRole: role });
 }
 
 describe("Sidebar — menu data-driven theo role", () => {
+  beforeEach(() => {
+    summary.incoming = 0;
+  });
   afterEach(() => {
     useAuthStore.setState({ isAuthenticated: false, activeRole: null });
   });
@@ -47,7 +56,7 @@ describe("Sidebar — menu data-driven theo role", () => {
     expect(screen.getByText("Cuộc thi")).toBeTruthy();
   });
 
-  it("học sinh: vẫn thấy Cuộc thi/Nhóm/Xu, nhưng KHÔNG còn Bạn bè/AI Chat", () => {
+  it("học sinh: thấy Cuộc thi/Nhóm/Xu/Bạn bè, nhưng KHÔNG có AI Chat", () => {
     setRole("STUDENT", true);
     render(<Sidebar />);
 
@@ -56,10 +65,31 @@ describe("Sidebar — menu data-driven theo role", () => {
     expect(screen.getByText("Cuộc thi")).toBeTruthy();
     expect(screen.getByText("Nhóm")).toBeTruthy();
     expect(screen.getByText("Xu")).toBeTruthy();
-    // S-P1-4: bỏ hẳn khỏi menu mọi vai trò, không riêng phụ huynh
-    expect(screen.queryByText("Bạn bè")).toBeNull();
+    // Bạn bè đã có backend thật: mục quay lại cho học sinh, trỏ /friends.
+    expect(screen.getByText("Bạn bè")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Bạn bè/ }).getAttribute("href")).toBe("/friends");
     // H8: sản phẩm không làm AI
     expect(screen.queryByText("AI Chat")).toBeNull();
+  });
+
+  it("học sinh: badge hiện số lời mời kết bạn đang chờ, ẩn khi không có", () => {
+    setRole("STUDENT", true);
+    const { unmount } = render(<Sidebar />);
+    expect(screen.queryByRole("status")).toBeNull();
+    unmount();
+
+    summary.incoming = 3;
+    render(<Sidebar />);
+    expect(screen.getByRole("status", { name: "3 lời mời kết bạn mới" })).toBeTruthy();
+  });
+
+  it("mọi vai KHÁC học sinh không thấy Bạn bè (khách, admin)", () => {
+    for (const [role, authed] of [[null, false], ["ADMIN", true]] as const) {
+      setRole(role, authed);
+      const { unmount } = render(<Sidebar />);
+      expect(screen.queryByText("Bạn bè")).toBeNull();
+      unmount();
+    }
   });
 
   it("khách chưa đăng nhập: chỉ thấy mục public, không có Gia đình/Tin nhắn", () => {

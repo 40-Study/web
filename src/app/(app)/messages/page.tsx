@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   MessageSquare,
-  Send,
   Search,
   Loader2,
   Plus,
@@ -19,18 +18,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import {
-  useConversations,
-  useMessages,
-  useSendMessage,
-  useMarkAsRead,
-} from "@/hooks/queries/use-conversations";
+import { useConversations } from "@/hooks/queries/use-conversations";
 import { useAuthStore } from "@/stores/auth.store";
 import { normalizeRole } from "@/lib/routes";
 import { QueryState } from "@/components/common/query-state";
 import { AuthError } from "@/lib/errors";
-import type { Conversation, Message } from "@/services/conversation.service";
-import { useMarkConversationRead } from "./use-mark-conversation-read";
+import type { Conversation } from "@/services/conversation.service";
+import { ConversationChat } from "@/components/chat/conversation-chat";
 import { NewConversationDialog } from "./new-conversation-dialog";
 
 /** Query `?conversation=<id>` — nút "Nhắn giảng viên" ở trang chi tiết con mở thẳng hội thoại vừa tạo. */
@@ -98,52 +92,6 @@ function ConversationItem({
   );
 }
 
-function MessageBubble({
-  message,
-  isOwn,
-}: {
-  message: Message;
-  isOwn: boolean;
-}) {
-  return (
-    <div className={cn("flex gap-2 mb-3", isOwn ? "flex-row-reverse" : "")}>
-      {!isOwn && (
-        <Avatar
-          src={message.sender_avatar ?? undefined}
-          fallback={message.sender_name?.[0]?.toUpperCase() ?? "?"}
-          size="xs"
-          className="mt-1 shrink-0"
-        />
-      )}
-
-      <div className={cn("max-w-[70%] space-y-1", isOwn ? "items-end" : "")}>
-        {!isOwn && (
-          <p className="text-xs text-muted-foreground">{message.sender_name}</p>
-        )}
-        <div
-          className={cn(
-            "px-3 py-2 rounded-2xl text-sm",
-            isOwn
-              ? "bg-primary text-primary-foreground rounded-br-md"
-              : "bg-muted rounded-bl-md"
-          )}
-        >
-          {message.content}
-          {message.is_edited && (
-            <span className="text-[10px] opacity-70 ml-1">(đã sửa)</span>
-          )}
-        </div>
-        <p className={cn("text-[10px] text-muted-foreground", isOwn && "text-right")}>
-          {new Date(message.created_at).toLocaleTimeString("vi-VN", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export default function MessagesPage() {
   const { user, activeRole } = useAuthStore();
   const role = normalizeRole(activeRole);
@@ -156,10 +104,8 @@ export default function MessagesPage() {
     const fromUrl = new URLSearchParams(window.location.search).get(CONVERSATION_PARAM);
     if (fromUrl) setSelectedConvId(fromUrl);
   }, []);
-  const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [isNewConvOpen, setIsNewConvOpen] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
     data: convData,
@@ -168,51 +114,21 @@ export default function MessagesPage() {
     error: convErr,
     refetch: refetchConversations,
   } = useConversations();
-  const {
-    data: msgData,
-    isLoading: msgLoading,
-    isError: msgError,
-    error: msgErr,
-    refetch: refetchMessages,
-  } = useMessages(selectedConvId ?? "", {
-    page: 1,
-    limit: 100,
-  });
-  const sendMessage = useSendMessage(selectedConvId ?? "");
-  const { mutate: markAsRead } = useMarkAsRead();
-
   const conversations = useMemo(() => convData?.conversations ?? [], [convData?.conversations]);
-  const messages = useMemo(() => msgData?.messages ?? [], [msgData?.messages]);
   const currentUserId = user?.id ?? "";
 
   // MEDIUM (Phase 0 review #5): React Query v5 vẫn bật `isError` khi refetch nền
-  // thất bại trong khi `data` cũ còn trong cache — lấy `isError` trần sẽ xoá sạch
-  // danh sách đang hiển thị. Chỉ hiện màn lỗi khi không còn gì để hiển thị.
-  // MEDIUM #10: 401 (AuthError) là nhịp đăng xuất — bỏ qua để không nháy khung đỏ
-  // trước khi app điều hướng.
+  // thất bại trong khi `data` cũ còn trong cache — chỉ hiện màn lỗi khi không còn gì để hiển thị.
+  // MEDIUM #10: 401 (AuthError) là nhịp đăng xuất — bỏ qua để không nháy khung đỏ.
+  // (Phần lỗi/tải của tin nhắn nằm trong components/chat/conversation-chat.tsx.)
   const showConvError = convError && conversations.length === 0 && !(convErr instanceof AuthError);
-  const showMsgError = msgError && messages.length === 0 && !(msgErr instanceof AuthError);
   const showConvBanner = convError && conversations.length > 0 && !(convErr instanceof AuthError);
-  const showMsgBanner = msgError && messages.length > 0 && !(msgErr instanceof AuthError);
 
   // L-2: 401 khi chưa có cache. Nhánh lỗi bị loại ở trên nên trước đây hộp thư rơi
   // xuống "Chưa có cuộc trò chuyện" / khung chat trống trong nhịp chờ điều hướng —
   // đọc thành "không có ai nhắn" thay vì "phiên đã hết hạn". Giữ spinner, để
   // RoleGuard/redirect xử lý điều hướng.
   const awaitingConvAuth = convError && conversations.length === 0 && convErr instanceof AuthError;
-  const awaitingMsgAuth = msgError && messages.length === 0 && msgErr instanceof AuthError;
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  useMarkConversationRead(selectedConvId, markAsRead);
-
-  const handleSend = () => {
-    if (!messageInput.trim() || !selectedConvId) return;
-    sendMessage.mutate({ content: messageInput.trim() });
-    setMessageInput("");
-  };
 
   const selectedConv = conversations.find((c) => c.id === selectedConvId);
 
@@ -347,64 +263,7 @@ export default function MessagesPage() {
                 </div>
               </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4">
-                {msgLoading || awaitingMsgAuth ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  </div>
-                ) : showMsgError ? (
-                  // Phase 0: lỗi tải tin nhắn trước đây hiển thị như khung chat trống.
-                  <QueryState
-                    isError
-                    error={msgErr}
-                    onRetry={() => refetchMessages()}
-                    className="border-none bg-transparent py-6"
-                  >
-                    {null}
-                  </QueryState>
-                ) : (
-                  <>
-                    {showMsgBanner && (
-                      /* L-5: xem comment ở banner danh sách hội thoại phía trên. */
-                      <div
-                        role="alert"
-                        className="mb-3 w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
-                      >
-                        <button onClick={() => refetchMessages()} className="w-full text-left">
-                          Không làm mới được tin nhắn — bấm để thử lại.
-                        </button>
-                      </div>
-                    )}
-                    {[...messages].reverse().map((msg) => (
-                      <MessageBubble
-                        key={msg.id}
-                        message={msg}
-                        isOwn={msg.sender_id === currentUserId}
-                      />
-                    ))}
-                  </>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Message input */}
-              <div className="border-t p-3 flex gap-2">
-                <Input
-                  placeholder="Nhập tin nhắn..."
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-                  className="flex-1"
-                />
-                <Button
-                  size="icon"
-                  onClick={handleSend}
-                  disabled={!messageInput.trim() || sendMessage.isPending}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
+              <ConversationChat conversationId={selectedConvId} currentUserId={currentUserId} />
             </>
           )}
         </div>
