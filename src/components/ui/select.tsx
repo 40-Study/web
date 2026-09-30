@@ -63,7 +63,7 @@ const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps>(
         ref={ref}
         type="button"
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-lg border border-slate-200 bg-card px-3 py-2 text-sm ring-offset-background transition-colors duration-150 hover:border-slate-300 focus:outline-none focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-border dark:hover:border-slate-600",
+          "flex h-10 w-full items-center justify-between rounded-lg border border-input bg-card px-3 py-2 text-sm ring-offset-background transition-colors duration-150 hover:border-slate-400 focus:outline-none focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-input dark:hover:border-slate-500",
           className
         )}
         onClick={() => setOpen(!open)}
