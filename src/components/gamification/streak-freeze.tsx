@@ -131,7 +131,7 @@ export function StreakAtRiskWarning({
             <div className="flex gap-2">
               <Button
                 size="sm"
-                className="bg-orange-500 hover:bg-orange-600 text-white"
+                className="bg-orange-700 hover:bg-orange-800 text-white"
                 onClick={onLearnNow}
               >
                 Learn Now
@@ -188,7 +188,7 @@ export function StreakCard({
       className={cn(
         "p-6 relative overflow-hidden",
         hasCompletedToday
-          ? "bg-orange-500 text-white"
+          ? "bg-orange-700 text-white"
           : "bg-orange-100 dark:bg-orange-900/30",
         className
       )}
@@ -236,7 +236,7 @@ export function StreakCard({
                   isCompleted
                     ? hasCompletedToday
                       ? "bg-white/30 text-white"
-                      : "bg-green-500 text-white"
+                      : "bg-green-700 text-white"
                     : isToday
                     ? "border-2 border-dashed border-current"
                     : hasCompletedToday
@@ -273,7 +273,7 @@ export function StreakCard({
 
         {/* CTA if not completed today */}
         {!hasCompletedToday && (
-          <Button className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white">
+          <Button className="w-full mt-4 bg-orange-700 hover:bg-orange-800 text-white">
             <Flame className="h-4 w-4 mr-2" />
             Complete a lesson to extend your streak!
           </Button>
