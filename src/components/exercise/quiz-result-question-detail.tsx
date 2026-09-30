@@ -65,7 +65,7 @@ function OptionRow({ label, text, isCorrect, isSelected }: OptionRowProps) {
                             isCorrect ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                         )}
                     >
-                        Your choice
+                        Lựa chọn của bạn
                     </span>
                 )}
                 {isCorrect && (
@@ -144,7 +144,7 @@ export function QuizResultQuestionDetail({
                 <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-bold flex-shrink-0">
                     {index + 1}
                 </span>
-                <span className="text-sm font-semibold text-gray-600">Question Details</span>
+                <span className="text-sm font-semibold text-gray-600">Chi tiết câu hỏi</span>
                 <span className={cn("ml-auto px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide", statusStyle)}>
                     {statusLabel}
                 </span>
@@ -190,7 +190,7 @@ export function QuizResultQuestionDetail({
                             onClick={() => onGoTo(nextIncorrectIndex)}
                             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
                         >
-                            Next Incorrect
+                            Câu sai tiếp theo
                             <ArrowRight className="w-4 h-4" />
                         </button>
                     )}

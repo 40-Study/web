@@ -163,7 +163,7 @@ function TrafficLights({ onClose, onMinimize, onMaximize, isMaximized }: Traffic
       {/* Close - Red */}
       <button
         onClick={onClose}
-        title="Close"
+        title="Đóng"
         style={{
           width: 12,
           height: 12,
@@ -185,7 +185,7 @@ function TrafficLights({ onClose, onMinimize, onMaximize, isMaximized }: Traffic
       {/* Minimize - Yellow */}
       <button
         onClick={onMinimize}
-        title="Minimize"
+        title="Thu nhỏ"
         style={{
           width: 12,
           height: 12,
@@ -245,7 +245,7 @@ function ActivityBar({ sidebarOpen, onToggle }: { sidebarOpen: boolean; onToggle
     }}>
       <button
         onClick={onToggle}
-        title="Explorer (Ctrl+B)"
+        title="Trình quản lý tệp (Ctrl+B)"
         style={{
           width: 36,
           height: 36,
@@ -429,7 +429,7 @@ const Sidebar = memo(({ tabs, activeTabId, width, onSelectTab, onNewFile, onDele
             marginLeft: 2,
             letterSpacing: 0.5,
           }}>
-            Open Editors
+            Trình soạn thảo đang mở
           </span>
           <div style={{ flex: 1 }} />
           <button
@@ -444,7 +444,7 @@ const Sidebar = memo(({ tabs, activeTabId, width, onSelectTab, onNewFile, onDele
               alignItems: 'center',
               opacity: 0.7,
             }}
-            title="New File (Ctrl+N)"
+            title="Tệp mới (Ctrl+N)"
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 4v8M4 8h8" fill="none" stroke="currentColor" strokeWidth="1.5"/>
@@ -541,7 +541,7 @@ const Sidebar = memo(({ tabs, activeTabId, width, onSelectTab, onNewFile, onDele
             })}
             {tabs.length === 0 && (
               <div style={{ padding: '20px 12px', textAlign: 'center', color: VS.textMuted, fontSize: 12 }}>
-                Right-click to create a file
+                Nhấp chuột phải để tạo tệp
               </div>
             )}
           </div>
@@ -555,11 +555,11 @@ const Sidebar = memo(({ tabs, activeTabId, width, onSelectTab, onNewFile, onDele
           y={contextMenu.y}
           onClose={() => setContextMenu(null)}
           items={contextMenu.tabId ? [
-            { label: 'Rename', icon: '✏️', onClick: () => handleStartRename(contextMenu.tabId) },
-            { label: 'Duplicate', icon: '📋', onClick: () => onDuplicateTab(contextMenu.tabId) },
-            { label: 'Delete', icon: '🗑️', onClick: () => onDeleteTab(contextMenu.tabId), danger: true },
+            { label: 'Đổi tên', icon: '✏️', onClick: () => handleStartRename(contextMenu.tabId) },
+            { label: 'Nhân bản', icon: '📋', onClick: () => onDuplicateTab(contextMenu.tabId) },
+            { label: 'Xóa', icon: '🗑️', onClick: () => onDeleteTab(contextMenu.tabId), danger: true },
           ] : [
-            { label: 'New File', icon: '📄', onClick: onNewFile },
+            { label: 'Tệp mới', icon: '📄', onClick: onNewFile },
           ]}
         />
       )}
@@ -752,7 +752,7 @@ const Panel = memo(({
         )}
         <button
           onClick={onClear}
-          title="Clear Output"
+          title="Xóa kết quả"
           style={{
             background: VS.surfaceHigh,
             border: 'none',
@@ -814,12 +814,12 @@ const Panel = memo(({
             textTransform: 'uppercase',
             borderBottom: `1px solid ${VS.border}`,
           }}>
-            Input (stdin)
+            Dữ liệu vào (stdin)
           </div>
           <textarea
             value={stdin}
             onChange={(e) => setStdin(e.target.value)}
-            placeholder="Enter input..."
+            placeholder="Nhập dữ liệu vào..."
             spellCheck={false}
             style={{
               flex: 1,

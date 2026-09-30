@@ -59,7 +59,7 @@ export function LevelUpModal({
         </div>
 
         <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
-          Level Up!
+          Lên cấp!
         </h2>
         <p className="text-muted-foreground mb-6">
           Congratulations! You&apos;ve reached level {newLevel}!
@@ -88,7 +88,7 @@ export function LevelUpModal({
 
         <Button onClick={handleContinue} className="w-full" size="lg">
           <Sparkles className="h-4 w-4 mr-2" />
-          Continue Learning
+          Tiếp tục học
         </Button>
       </DialogContent>
     </Dialog>

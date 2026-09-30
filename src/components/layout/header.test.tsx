@@ -23,7 +23,7 @@ vi.mock("@/hooks/queries/use-auth", () => ({
   useSwitchRole: () => ({ mutate: vi.fn(), isPending: false }),
   useMyRoles: () => ({ data: undefined }),
 }));
-vi.mock("@/hooks/queries/use-coins", () => ({ useCoinWallet: () => ({ data: undefined }) }));
+vi.mock("@/hooks/queries/use-coins", () => ({ useCoinWallet: () => ({ data: { balance: 0 } }) }));
 vi.mock("@/hooks/queries/use-notifications", () => ({
   useNotifications: () => ({ data: undefined }),
   useUnreadCount: () => ({ data: undefined }),
@@ -77,5 +77,38 @@ describe("Header — menu tài khoản", () => {
   it("logo dùng siteConfig.name", () => {
     render(<Header />);
     expect(screen.getAllByText(siteConfig.name).length).toBeGreaterThan(0);
+  });
+});
+
+// Lane U (UX-5): phụ huynh không học -> không hiện xu, nút chính trỏ về nơi có tổng quan các con
+// (/home) thay vì "Khóa học của tôi" (/my-courses, route chỉ dành cho học viên).
+describe("Header — vai phụ huynh", () => {
+  beforeEach(() => {
+    authState = {
+      isAuthenticated: true,
+      user: { name: "Phụ Huynh", email: "ph@demo.com" },
+      activeRole: "PARENT",
+      activeUnifiedRole: null,
+      roles: [],
+    };
+  });
+
+  it("không hiện số dư xu", () => {
+    render(<Header />);
+    expect(document.querySelector('a[href="/coins"]')).toBeNull();
+  });
+
+  it("nút chính là 'Con của tôi' -> /home, không có 'Khóa học của tôi'", () => {
+    render(<Header />);
+    const link = screen.getAllByRole("link", { name: "Con của tôi" })[0];
+    expect(link.getAttribute("href")).toBe("/home");
+    expect(screen.queryByText("Khóa học của tôi")).toBeNull();
+  });
+
+  it("học viên vẫn thấy xu và 'Khóa học của tôi'", () => {
+    authState.activeRole = "STUDENT";
+    render(<Header />);
+    expect(document.querySelector('a[href="/coins"]')).not.toBeNull();
+    expect(screen.getAllByRole("link", { name: "Khóa học của tôi" })[0].getAttribute("href")).toBe("/my-courses");
   });
 });

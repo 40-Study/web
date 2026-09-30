@@ -67,7 +67,7 @@ function getTypeLabel(type: ContentItemType) {
     case "document":
       return "Tai lieu";
     case "exercise":
-      return "Bai tap";
+      return "Bài tập";
   }
 }
 
@@ -142,21 +142,21 @@ export function LessonContentEditor({
           <Video className="h-5 w-5 text-primary-600" />
           <div>
             <h3 className="font-semibold">{lessonTitle}</h3>
-            <p className="text-sm text-muted-foreground">Quan ly noi dung bai hoc</p>
+            <p className="text-sm text-muted-foreground">Quản lý nội dung bài học</p>
           </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => {}}>
             Huy
           </Button>
-          <Button onClick={handleSave}>Luu bai hoc</Button>
+          <Button onClick={handleSave}>Lưu bài học</Button>
         </div>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
         <TabsList>
-          <TabsTrigger value="content">Noi dung bai hoc</TabsTrigger>
+          <TabsTrigger value="content">Nội dung bài học</TabsTrigger>
           <TabsTrigger value="documents">
             Tai lieu {documents.length > 0 && `(${documents.length})`}
           </TabsTrigger>
@@ -185,7 +185,7 @@ export function LessonContentEditor({
           <div className="flex items-center gap-3 pt-4 border-t">
             <Button variant="outline" onClick={onAddVideo} className="gap-2">
               <Video className="h-4 w-4" />
-              Them Video
+              Thêm video
             </Button>
             <Button
               variant="outline"
@@ -193,7 +193,7 @@ export function LessonContentEditor({
               className="gap-2"
             >
               <Calendar className="h-4 w-4" />
-              Len lich Live
+              Lên lịch học trực tuyến
             </Button>
             <Button
               variant="outline"
@@ -201,7 +201,7 @@ export function LessonContentEditor({
               className="gap-2"
             >
               <FileText className="h-4 w-4" />
-              Bai tap
+              Bài tập
             </Button>
           </div>
         </TabsContent>
@@ -233,14 +233,14 @@ export function LessonContentEditor({
           {exercises.length === 0 ? (
             <div className="text-center py-8 border-2 border-dashed rounded-xl">
               <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Chua co bai tap nao</p>
+              <p className="text-muted-foreground">Chưa có bài tập nào</p>
               <Button
                 variant="outline"
                 onClick={() => setExerciseModalOpen(true)}
                 className="mt-3 gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Them bai tap
+                Thêm bài tập
               </Button>
             </div>
           ) : (
@@ -259,7 +259,7 @@ export function LessonContentEditor({
                 className="w-full gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Them bai tap moi
+                Thêm bài tập mới
               </Button>
             </div>
           )}

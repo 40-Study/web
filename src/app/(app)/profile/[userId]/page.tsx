@@ -260,7 +260,7 @@ export default function PublicProfilePage() {
                       <Badge variant="level">Cấp {user.level}</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Streak</span>
+                      <span className="text-muted-foreground">Chuỗi ngày học</span>
                       <Badge variant="streak">{stats.streak} ngày</Badge>
                     </div>
                     <div className="flex items-center justify-between">

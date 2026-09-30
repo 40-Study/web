@@ -610,7 +610,7 @@ export function AddContentModal({
                 <div className="text-center text-sm text-muted-foreground">hoặc</div>
 
                 <Input
-                  label="URL Video (YouTube, Vimeo...)"
+                  label="Đường dẫn video (YouTube, Vimeo...)"
                   placeholder="https://..."
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}

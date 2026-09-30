@@ -119,7 +119,7 @@ export function TiptapToolbar({ editor, onImageUpload, onFileUpload }: TiptapToo
             <ToolbarButton onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive("strike")} title="Gạch ngang">
                 <Strikethrough className="h-4 w-4" />
             </ToolbarButton>
-            <ToolbarButton onClick={() => editor.chain().focus().toggleCode().run()} active={editor.isActive("code")} title="Code inline">
+            <ToolbarButton onClick={() => editor.chain().focus().toggleCode().run()} active={editor.isActive("code")} title="Mã trong dòng">
                 <Code className="h-4 w-4" />
             </ToolbarButton>
 
@@ -145,7 +145,7 @@ export function TiptapToolbar({ editor, onImageUpload, onFileUpload }: TiptapToo
             <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive("orderedList")} title="Danh sách số">
                 <ListOrdered className="h-4 w-4" />
             </ToolbarButton>
-            <ToolbarButton onClick={() => editor.chain().focus().toggleTaskList().run()} active={editor.isActive("taskList")} title="Checklist">
+            <ToolbarButton onClick={() => editor.chain().focus().toggleTaskList().run()} active={editor.isActive("taskList")} title="Danh sách công việc">
                 <ListChecks className="h-4 w-4" />
             </ToolbarButton>
 

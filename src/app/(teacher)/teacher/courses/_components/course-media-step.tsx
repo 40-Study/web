@@ -157,7 +157,7 @@ export function CourseMediaStep({
           <div className="relative rounded-xl overflow-hidden border bg-gray-100 aspect-video max-w-md">
             <Image
               src={formData.thumbnail_preview}
-              alt="Thumbnail preview"
+              alt="Xem trước ảnh bìa"
               fill
               className="object-cover"
             />

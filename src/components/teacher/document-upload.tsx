@@ -341,7 +341,7 @@ export function DocumentUploadInline({
         ))}
         <label className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 hover:underline cursor-pointer">
           <Paperclip className="h-3.5 w-3.5" />
-          Dinh kem File
+          Đính kèm tệp
           <input
             ref={inputRef}
             type="file"

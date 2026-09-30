@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X, Loader2 } from "lucide-react";
-import { cn, debounce } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { CourseSearchResult } from "@/types/course";
 
@@ -15,15 +15,31 @@ interface CourseSearchProps {
   isLoading?: boolean;
 }
 
+// Mặc định phải là hằng ổn định: `= []` trong tham số tạo mảng mới mỗi lần render, làm effect lọc
+// gợi ý (phụ thuộc `suggestions`) chạy lại và setState liên tục -> render vô hạn khi không truyền.
+const NO_SUGGESTIONS: CourseSearchResult[] = [];
+
 export function CourseSearch({
   onSearch,
-  suggestions = [],
+  suggestions = NO_SUGGESTIONS,
   className,
   placeholder = "Tìm trong danh sách…",
   isLoading = false,
 }: CourseSearchProps) {
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const searchParams = useSearchParams();
+  // URL là nguồn sự thật cho từ khóa: điền sẵn khi tải trang và cập nhật khi back/forward.
+  const urlQuery = searchParams.get("q") ?? "";
+  const [query, setQuery] = useState(urlQuery);
+  const onSearchRef = useRef(onSearch);
+  onSearchRef.current = onSearch;
+  const lastNotifiedRef = useRef(urlQuery);
+
+  // Đồng bộ khi URL đổi (back/forward, link tìm kiếm ở header). Chỉ chạy khi `q` trên URL đổi,
+  // nên không ghi đè thứ người dùng đang gõ dở.
+  useEffect(() => {
+    setQuery(urlQuery);
+  }, [urlQuery]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState<CourseSearchResult[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -60,13 +76,18 @@ export function CourseSearch({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Debounced search callback
+  // Báo từ khóa cho trang cha sau 300ms. Khóa theo `query` (onSearch lấy qua ref) để một lần
+  // render lại của cha không kích hoạt lại và không reset "Tải thêm". Từ khóa < 2 ký tự coi như
+  // rỗng: nếu không, xóa ô/xóa từ khóa sẽ để lại kết quả đã lọc cũ.
   useEffect(() => {
-    if (onSearch && query.length >= 2) {
-      const debouncedSearch = debounce(() => onSearch(query), 300);
-      debouncedSearch();
-    }
-  }, [query, onSearch]);
+    const effective = query.length >= 2 ? query : "";
+    if (effective === lastNotifiedRef.current) return;
+    const timer = setTimeout(() => {
+      lastNotifiedRef.current = effective;
+      onSearchRef.current?.(effective);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const handleSelect = (course: CourseSearchResult) => {
     setQuery("");
@@ -84,6 +105,8 @@ export function CourseSearch({
 
   const clearSearch = () => {
     setQuery("");
+    // Bỏ luôn `q` trên URL, nếu không tải lại trang sẽ điền lại từ khóa cũ.
+    if (urlQuery) router.replace("/courses");
     setShowSuggestions(false);
     inputRef.current?.focus();
   };

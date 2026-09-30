@@ -239,11 +239,11 @@ export function QuizWidget({
         <div className="flex gap-2">
           {isSubmitted && (
             <Button variant="outline" onClick={handleRetry}>
-              Lam lai
+              Làm lại
             </Button>
           )}
           {isSubmitted && passed && onComplete && (
-            <Button onClick={onComplete}>Tiep tuc</Button>
+            <Button onClick={onComplete}>Tiếp tục</Button>
           )}
         </div>
 
@@ -257,7 +257,7 @@ export function QuizWidget({
             onClick={handleSubmit}
             disabled={answeredCount < totalQuestions}
           >
-            Nop bai
+            Nộp bài
           </Button>
         ) : (
           <div className="w-20" /> // Spacer
@@ -290,7 +290,7 @@ export function QuizWidget({
                 isCorrectAnswer && "bg-green-500",
                 isWrongAnswer && "bg-red-500"
               )}
-              aria-label={`Cau hoi ${idx + 1}`}
+              aria-label={`Câu hỏi ${idx + 1}`}
             />
           );
         })}

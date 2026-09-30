@@ -85,7 +85,7 @@ export function LessonNotes({
       <div className="space-y-3">
         {notes.length === 0 ? (
           <p className="text-center text-muted-foreground text-sm py-8">
-            Chua co ghi chu nao. Bat dau ghi chu ngay!
+            Chưa có ghi chú nào. Hãy bắt đầu ghi chú ngay!
           </p>
         ) : (
           notes.map((note) => (
@@ -118,7 +118,7 @@ export function LessonNotes({
                   variant="ghost"
                   className="h-7 w-7 flex-shrink-0"
                   onClick={() => onDeleteNote(note.id)}
-                  aria-label="Xoa ghi chu"
+                  aria-label="Xóa ghi chú"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

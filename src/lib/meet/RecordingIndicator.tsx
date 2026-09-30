@@ -12,7 +12,7 @@ export function RecordingIndicator() {
     if (isRecording !== wasRecordingRef.current) {
       wasRecordingRef.current = isRecording;
       if (isRecording) {
-        toast('This meeting is being recorded', {
+        toast('Buổi học đang được ghi hình', {
           duration: 3000,
           icon: '🎥',
           position: 'top-center',

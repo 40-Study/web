@@ -85,7 +85,7 @@ export function NotificationSettings() {
         </div>
         <div className="w-16 text-center flex flex-col items-center gap-1">
           <Smartphone className="h-4 w-4" />
-          <span>Push</span>
+          <span>Thông báo đẩy</span>
         </div>
       </div>
 

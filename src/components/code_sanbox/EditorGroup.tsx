@@ -141,7 +141,7 @@ const EditorGroup = memo(({  T, dark, paneId, state, setState,
             <rect x="3" y="3" width="50" height="50" rx="4" stroke="currentColor" strokeWidth="2" strokeDasharray="6 3" />
             <path d="M14 18h28M14 28h18M14 38h22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
-          <div style={{ fontSize: 15, color: T.text, marginBottom: 8, fontWeight: 500 }}>No editor is open</div>
+          <div style={{ fontSize: 15, color: T.text, marginBottom: 8, fontWeight: 500 }}>Chưa mở trình soạn thảo nào</div>
           <div style={{ fontSize: 12, marginBottom: 20 }}>Open a file from the explorer or create a new one</div>
           <button
             onClick={newTab}
@@ -230,7 +230,7 @@ const EditorGroup = memo(({  T, dark, paneId, state, setState,
               </span>
               <span
                 onClick={(e) => closeTab(e, tab.id)}
-                title="Close"
+                title="Đóng"
                 style={{
                   color: T.textMuted, cursor: "pointer",
                   fontSize: 15, lineHeight: 1,

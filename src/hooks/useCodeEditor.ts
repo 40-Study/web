@@ -82,7 +82,7 @@ export function useCodeEditor() {
       const data: SubmissionResult = await res.json();
       setResult(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      setError(err instanceof Error ? err.message : "Lỗi không xác định");
     } finally {
       setRunning(false);
     }

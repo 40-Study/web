@@ -30,7 +30,7 @@ const SaveDialog = memo(
         }}
       >
         <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 10, fontFamily: "var(--font-mono)" }}>
-          Save to MinIO
+          Lưu lên MinIO
         </div>
         <div style={{ fontSize: 11, color: T.textMuted, marginBottom: 8 }}>
           /{currentPath || "root"}/

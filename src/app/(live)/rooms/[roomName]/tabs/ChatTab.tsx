@@ -153,7 +153,7 @@ export default function ChatTab({ sessionId, onClose, broadcast, onChatMessage }
             : 'Bạn không có quyền gửi tin nhắn trong buổi live này.'
         );
       } else {
-        alert(err instanceof Error ? err.message : 'Failed to send message');
+        alert(err instanceof Error ? err.message : 'Không gửi được tin nhắn');
       }
     } finally {
       setSending(false);

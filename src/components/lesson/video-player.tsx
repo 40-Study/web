@@ -503,7 +503,7 @@ export function VideoPlayer({
         </button>
 
         {/* Bottom controls */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3">
+        <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4 space-y-2 sm:space-y-3">
           {/* Progress bar */}
           <div
             className="h-1 bg-white/30 rounded-full cursor-pointer group/progress"
@@ -524,8 +524,8 @@ export function VideoPlayer({
           </div>
 
           {/* Control buttons */}
-          <div className="flex items-center justify-between text-white">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-white">
+            <div className="flex items-center gap-1 sm:gap-3">
               <button
                 onClick={togglePlay}
                 className="hover:bg-white/20 p-1.5 rounded"
@@ -574,17 +574,17 @@ export function VideoPlayer({
                   step="0.1"
                   value={isMuted ? 0 : volume}
                   onChange={(e) => changeVolume(parseFloat(e.target.value))}
-                  className="w-20 h-1 accent-white cursor-pointer"
+                  className="hidden sm:block w-20 h-1 accent-white cursor-pointer"
                   aria-label="Âm lượng"
                 />
               </div>
 
-              <span className="text-sm tabular-nums">
+              <span className="whitespace-nowrap text-xs sm:text-sm tabular-nums">
                 {formatTime(currentTime)} / {formatTime(duration)}
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               {/* Captions */}
               {captions.length > 0 && (
                 <div className="relative">
@@ -614,7 +614,7 @@ export function VideoPlayer({
                           !activeCaption && "text-primary-400"
                         )}
                       >
-                        Off
+                        Tắt
                       </button>
                       {captions.map((track) => (
                         <button
@@ -660,7 +660,7 @@ export function VideoPlayer({
                           playbackRate === rate && "text-primary-400"
                         )}
                       >
-                        {rate}x {rate === 1 && "(Normal)"}
+                        {rate}x {rate === 1 && "(Bình thường)"}
                       </button>
                     ))}
                   </div>
@@ -704,7 +704,7 @@ export function VideoPlayer({
               {/* PiP */}
               <button
                 onClick={togglePiP}
-                className="hover:bg-white/20 p-1.5 rounded"
+                className="hidden sm:block hover:bg-white/20 p-1.5 rounded"
                 aria-label="Thu nhỏ màn hình (Picture in Picture)"
               >
                 <PictureInPicture2 className="h-5 w-5" />

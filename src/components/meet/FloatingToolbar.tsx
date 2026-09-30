@@ -104,18 +104,18 @@ interface ToolItem {
 }
 
 const tools: ToolItem[] = [
-  { id: 'cursor', label: 'Select', icon: icons.cursor },
-  { id: 'area-select', label: 'Area Select', icon: icons['area-select'] },
+  { id: 'cursor', label: 'Chọn', icon: icons.cursor },
+  { id: 'area-select', label: 'Chọn vùng', icon: icons['area-select'] },
   { id: 'pen', label: 'Pen', icon: icons.pen },
-  { id: 'eraser', label: 'Eraser', icon: icons.eraser },
-  { id: 'text', label: 'Text', icon: icons.text },
+  { id: 'eraser', label: 'Tẩy', icon: icons.eraser },
+  { id: 'text', label: 'Văn bản', icon: icons.text },
   { id: 'scissors', label: 'Cut', icon: icons.scissors },
-  { id: 'delete', label: 'Delete', icon: icons.delete },
-  { id: 'shape', label: 'Shape', icon: icons.shape },
-  { id: 'edit', label: 'Edit', icon: icons.edit },
-  { id: 'comment', label: 'Comment', icon: icons.comment },
-  { id: 'upload', label: 'Share', icon: icons.upload },
-  { id: 'users', label: 'Users', icon: icons.users },
+  { id: 'delete', label: 'Xóa', icon: icons.delete },
+  { id: 'shape', label: 'Hình', icon: icons.shape },
+  { id: 'edit', label: 'Sửa', icon: icons.edit },
+  { id: 'comment', label: 'Bình luận', icon: icons.comment },
+  { id: 'upload', label: 'Chia sẻ', icon: icons.upload },
+  { id: 'users', label: 'Người dùng', icon: icons.users },
 ];
 
 interface FloatingToolbarProps {

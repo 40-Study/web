@@ -29,7 +29,7 @@ export function DashboardHeader() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search courses, lessons..."
+              placeholder="Tìm khóa học, bài học..."
               className="w-full h-10 pl-10 pr-4 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
@@ -79,7 +79,7 @@ export function DashboardHeader() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search courses, lessons..."
+            placeholder="Tìm khóa học, bài học..."
             className="w-full h-10 pl-10 pr-4 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>

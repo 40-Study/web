@@ -26,8 +26,8 @@ export function SettingsMenu(props: SettingsMenuProps) {
 
   const settings = React.useMemo(() => {
     return {
-      media: { camera: true, microphone: true, label: 'Media Devices', speaker: true },
-      recording: recordingEndpoint ? { label: 'Recording' } : undefined,
+      media: { camera: true, microphone: true, label: 'Thiết bị', speaker: true },
+      recording: recordingEndpoint ? { label: 'Ghi hình' } : undefined,
     };
   }, [recordingEndpoint]);
 
@@ -106,7 +106,7 @@ export function SettingsMenu(props: SettingsMenuProps) {
             )}
             {settings.media && settings.media.microphone && (
               <>
-                <h3>Microphone</h3>
+                <h3>Micro</h3>
                 <section>
                   <MicrophoneSettings />
                 </section>
@@ -114,9 +114,9 @@ export function SettingsMenu(props: SettingsMenuProps) {
             )}
             {settings.media && settings.media.speaker && (
               <>
-                <h3>Speaker & Headphones</h3>
+                <h3>Loa và tai nghe</h3>
                 <section className="lk-button-group">
-                  <span className="lk-button">Audio Output</span>
+                  <span className="lk-button">Đầu ra âm thanh</span>
                   <div className="lk-button-group-menu">
                     <MediaDeviceMenu kind="audiooutput"></MediaDeviceMenu>
                   </div>
@@ -127,7 +127,7 @@ export function SettingsMenu(props: SettingsMenuProps) {
         )}
         {activeTab === 'recording' && (
           <>
-            <h3>Record Meeting</h3>
+            <h3>Ghi hình buổi học</h3>
             <section>
               <p>
                 {isRecording

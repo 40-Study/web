@@ -39,7 +39,7 @@ export function XPEarnAnimation({
       )}
       style={{ left: position.x, top: position.y }}
       aria-live="polite"
-      aria-label={`Earned ${amount} XP`}
+      aria-label={`Nhận được ${amount} XP`}
     >
       <span className="text-2xl font-bold text-xp drop-shadow-lg">
         +{amount} XP

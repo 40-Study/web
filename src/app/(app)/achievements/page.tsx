@@ -36,10 +36,10 @@ function deriveRarity(points: number): AchievementRarity {
 
 function getRarityConfig(rarity: AchievementRarity) {
   const configs = {
-    common: { label: "CORE BRONZE", color: "bg-orange-500", textColor: "text-orange-600" },
-    rare: { label: "ELITE SILVER", color: "bg-gray-400", textColor: "text-gray-600" },
-    epic: { label: "EPIC PURPLE", color: "bg-purple-500", textColor: "text-purple-600" },
-    legendary: { label: "LEGENDARY GOLD", color: "bg-yellow-500", textColor: "text-yellow-600" },
+    common: { label: "PHỔ THÔNG", color: "bg-orange-500", textColor: "text-orange-600" },
+    rare: { label: "HIẾM", color: "bg-gray-400", textColor: "text-gray-600" },
+    epic: { label: "SỬ THI", color: "bg-purple-500", textColor: "text-purple-600" },
+    legendary: { label: "HUYỀN THOẠI", color: "bg-yellow-500", textColor: "text-yellow-600" },
   };
   return configs[rarity];
 }
@@ -163,7 +163,7 @@ function ProfileBanner({
           <div className="flex items-center gap-2 mb-4">
             <span className="text-cyan-400">—</span>
             <span className="text-cyan-400 text-sm font-medium tracking-wider">
-              THE MICROSERVICES PIONEER
+              THÀNH TÍCH CỦA BẠN
             </span>
           </div>
 
@@ -191,7 +191,7 @@ function ProfileBanner({
           </div>
 
           <div className="text-right mb-2">
-            <span className="text-gray-400 text-xs">EXPERIENCE POINTS</span>
+            <span className="text-gray-400 text-xs">ĐIỂM KINH NGHIỆM</span>
             <span className="text-white ml-2 font-semibold">
               {totalXp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP
             </span>
@@ -572,21 +572,21 @@ export default function AchievementsPage() {
           <StatCard
             icon={<Zap className="w-6 h-6 text-blue-500" />}
             iconBg="bg-blue-100"
-            label="TOTAL XP"
+            label="TỔNG XP"
             value={totalXp.toLocaleString()}
           />
 
           <StatCard
             icon={<Flame className="w-6 h-6 text-orange-500" />}
             iconBg="bg-orange-100"
-            label="LONGEST STREAK"
+            label="CHUỖI DÀI NHẤT"
             value={`${longestStreak} Days`}
           />
 
           <StatCard
             icon={<CheckCircle className="w-6 h-6 text-green-500" />}
             iconBg="bg-green-100"
-            label="CERTIFICATES"
+            label="CHỨNG CHỈ"
             value={certificateCount > 0 ? `${certificateCount} Active` : "0"}
           />
         </div>

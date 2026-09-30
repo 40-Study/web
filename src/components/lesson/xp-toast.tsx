@@ -54,7 +54,7 @@ export function XPToast({
         <button
           onClick={handleClose}
           className="absolute top-2 right-2 p-1 hover:bg-white/20 rounded"
-          aria-label="Dong"
+          aria-label="Đóng"
         >
           <X className="h-4 w-4" />
         </button>

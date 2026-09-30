@@ -12,7 +12,7 @@ const CodeEditor = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex-1 flex items-center justify-center bg-gray-900 text-gray-400 text-sm">
-        Dang tai trinh soan thao...
+        Đang tải trình soạn thảo...
       </div>
     ),
   }
@@ -236,17 +236,17 @@ export function FloatingSandbox({ isOpen, onClose }: FloatingSandboxProps) {
           <button
             onClick={onClose}
             className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 transition-colors"
-            aria-label="Dong"
+            aria-label="Đóng"
           />
           <button
             onClick={() => setIsExpanded(false)}
             className="w-3 h-3 rounded-full bg-yellow-400 hover:bg-yellow-500 transition-colors"
-            aria-label="Thu nho"
+            aria-label="Thu nhỏ"
           />
           <button
             onClick={handleToggleExpand}
             className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 transition-colors"
-            aria-label="Phong to"
+            aria-label="Phóng to"
           />
           <div className="ml-3 flex items-center gap-2">
             <GripHorizontal className="w-4 h-4 text-gray-500" />
@@ -260,7 +260,7 @@ export function FloatingSandbox({ isOpen, onClose }: FloatingSandboxProps) {
             className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
-            RUN CODE
+            CHẠY CODE
           </button>
 
           {/* Expand / collapse */}
@@ -280,7 +280,7 @@ export function FloatingSandbox({ isOpen, onClose }: FloatingSandboxProps) {
           <button
             onClick={onClose}
             className="p-1.5 rounded hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
-            aria-label="Dong"
+            aria-label="Đóng"
           >
             <X className="w-4 h-4" />
           </button>

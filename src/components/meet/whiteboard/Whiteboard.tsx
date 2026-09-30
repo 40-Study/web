@@ -108,7 +108,7 @@ export default function Whiteboard({
         {/* Clear button */}
         <button
           onClick={handleClear}
-          title="Clear canvas"
+          title="Xóa bảng"
           className="
             w-10 h-10 flex items-center justify-center rounded-xl
             bg-[#0b0b0b]/90 text-white/50 hover:text-white/80
@@ -125,7 +125,7 @@ export default function Whiteboard({
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
           <div className="flex items-center gap-2 px-4 py-2 bg-[#0b0b0b]/90 backdrop-blur-xl rounded-full border border-white/[0.06] shadow-lg">
             <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-            <span className="text-sm text-white/60">Canvas locked</span>
+            <span className="text-sm text-white/60">Bảng đã bị khóa</span>
           </div>
         </div>
       )}

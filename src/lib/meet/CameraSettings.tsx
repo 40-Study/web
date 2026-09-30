@@ -83,7 +83,7 @@ export function CameraSettings() {
       </section>
 
       <div style={{ marginTop: '10px' }}>
-        <div style={{ marginBottom: '8px' }}>Background Effects</div>
+        <div style={{ marginBottom: '8px' }}>Hiệu ứng nền</div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button
             onClick={() => selectBackground('none')}

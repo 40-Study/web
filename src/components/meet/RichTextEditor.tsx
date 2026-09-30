@@ -222,7 +222,7 @@ export default function RichTextEditor({
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleBold().run()}
             active={editor.isActive('bold')}
-            title="Bold (Ctrl+B)"
+            title="In đậm (Ctrl+B)"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>
@@ -233,7 +233,7 @@ export default function RichTextEditor({
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleItalic().run()}
             active={editor.isActive('italic')}
-            title="Italic (Ctrl+I)"
+            title="In nghiêng (Ctrl+I)"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="19" y1="4" x2="10" y2="4"/>
@@ -245,7 +245,7 @@ export default function RichTextEditor({
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleStrike().run()}
             active={editor.isActive('strike')}
-            title="Strikethrough"
+            title="Gạch ngang"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M17.3 4.9c-2.3-.6-4.4-1-6.2-.9-2.7 0-5.3.7-5.3 3.6 0 1.5 1.1 2.4 3.5 3"/>
@@ -257,7 +257,7 @@ export default function RichTextEditor({
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleCode().run()}
             active={editor.isActive('code')}
-            title="Code"
+            title="Mã"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="16 18 22 12 16 6"/>
@@ -271,7 +271,7 @@ export default function RichTextEditor({
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
             active={editor.isActive('heading', { level: 1 })}
-            title="Heading 1"
+            title="Tiêu đề 1"
           >
             <span style={{ fontSize: '12px', fontWeight: 700 }}>H1</span>
           </ToolbarButton>
@@ -279,7 +279,7 @@ export default function RichTextEditor({
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
             active={editor.isActive('heading', { level: 2 })}
-            title="Heading 2"
+            title="Tiêu đề 2"
           >
             <span style={{ fontSize: '12px', fontWeight: 700 }}>H2</span>
           </ToolbarButton>
@@ -287,7 +287,7 @@ export default function RichTextEditor({
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
             active={editor.isActive('heading', { level: 3 })}
-            title="Heading 3"
+            title="Tiêu đề 3"
           >
             <span style={{ fontSize: '12px', fontWeight: 700 }}>H3</span>
           </ToolbarButton>
@@ -298,7 +298,7 @@ export default function RichTextEditor({
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             active={editor.isActive('bulletList')}
-            title="Bullet List"
+            title="Danh sách chấm"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="9" y1="6" x2="20" y2="6"/>
@@ -313,7 +313,7 @@ export default function RichTextEditor({
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
             active={editor.isActive('orderedList')}
-            title="Numbered List"
+            title="Danh sách số"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="10" y1="6" x2="21" y2="6"/>
@@ -328,7 +328,7 @@ export default function RichTextEditor({
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleCodeBlock().run()}
             active={editor.isActive('codeBlock')}
-            title="Code Block"
+            title="Khối mã"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -340,7 +340,7 @@ export default function RichTextEditor({
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
             active={editor.isActive('blockquote')}
-            title="Quote"
+            title="Trích dẫn"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/>
@@ -353,7 +353,7 @@ export default function RichTextEditor({
           <ToolbarButton
             onClick={addLink}
             active={editor.isActive('link')}
-            title="Add Link"
+            title="Thêm liên kết"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
@@ -374,7 +374,7 @@ export default function RichTextEditor({
               <ToolbarButton
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                title="Upload Image"
+                title="Tải ảnh lên"
               >
                 {uploading ? (
                   <div style={{
@@ -402,7 +402,7 @@ export default function RichTextEditor({
           <ToolbarButton
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().undo()}
-            title="Undo"
+            title="Hoàn tác"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 7v6h6"/>
@@ -413,7 +413,7 @@ export default function RichTextEditor({
           <ToolbarButton
             onClick={() => editor.chain().focus().redo().run()}
             disabled={!editor.can().redo()}
-            title="Redo"
+            title="Làm lại"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 7v6h-6"/>

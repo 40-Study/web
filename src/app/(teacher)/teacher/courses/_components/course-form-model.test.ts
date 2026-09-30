@@ -37,12 +37,20 @@ describe("course-form-model (D1: trang /edit sửa được thông tin khoá)", 
     expect(payload?.price).toBe(1200000);
   });
 
-  it("không cho xoá giá khuyến mãi đã có (backend không hỗ trợ) — báo lỗi thay vì lưu giả", () => {
-    const original = course({ discount_price: "900000" } as Partial<ApiCourse>);
+  it("xoá trắng giá khuyến mãi đang có -> payload GỬI discount_price null (backend xoá), không gửi hạn", () => {
+    const original = course({ discount_price: "900000", discount_expires_at: "2026-12-01T00:00:00Z" } as Partial<ApiCourse>);
     const f = { ...courseToFormData(original), discount_price: "" };
     const res = buildCourseUpdatePayload(f, original);
-    expect(res.payload).toBeUndefined();
-    expect(res.error).toMatch(/khuyến mãi/);
+    expect(res.error).toBeUndefined();
+    expect(res.payload).toHaveProperty("discount_price", null);
+    expect(res.payload).not.toHaveProperty("discount_expires_at");
+  });
+
+  it("khoá vốn không có khuyến mãi và ô để trống -> không gửi discount_price (giữ nguyên)", () => {
+    const original = course();
+    const res = buildCourseUpdatePayload({ ...courseToFormData(original), discount_price: "" }, original);
+    expect(res.error).toBeUndefined();
+    expect(res.payload).not.toHaveProperty("discount_price");
   });
 
   it("giá khuyến mãi >= giá bán hoặc giá bán trống bị từ chối", () => {

@@ -30,7 +30,7 @@ export function StreakFreeze({
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-cyan-500" />
           <h3 className="font-semibold text-gray-900 dark:text-white">
-            Streak Freezes
+            Thẻ bảo vệ chuỗi
           </h3>
         </div>
         <span className="text-sm text-muted-foreground">
@@ -56,7 +56,7 @@ export function StreakFreeze({
       </div>
 
       <p className="text-sm text-muted-foreground mb-4">
-        Use a freeze to protect your streak when you miss a day.
+        Dùng thẻ bảo vệ để giữ chuỗi ngày học khi bạn bỏ lỡ một ngày.
       </p>
 
       <div className="flex gap-2">
@@ -68,7 +68,7 @@ export function StreakFreeze({
             disabled={streakFreezes === 0}
             className="flex-1"
           >
-            Use Freeze
+            Dùng thẻ
           </Button>
         )}
         {onBuyFreeze && (
@@ -79,7 +79,7 @@ export function StreakFreeze({
             disabled={streakFreezes >= maxFreezes}
             className="flex-1"
           >
-            Get More
+            Nhận thêm
           </Button>
         )}
       </div>
@@ -122,7 +122,7 @@ export function StreakAtRiskWarning({
           <div className="text-3xl animate-pulse">🔥</div>
           <div className="flex-1">
             <p className="font-semibold text-orange-800 dark:text-orange-200">
-              Your streak is at risk!
+              Chuỗi ngày học của bạn sắp bị đứt!
             </p>
             <p className="text-sm text-orange-700 dark:text-orange-300 mb-3">
               Complete a lesson in the next {hoursRemaining} hours to keep your{" "}
@@ -134,12 +134,12 @@ export function StreakAtRiskWarning({
                 className="bg-orange-700 hover:bg-orange-800 text-white"
                 onClick={onLearnNow}
               >
-                Learn Now
+                Học ngay
               </Button>
               {streakFreezes > 0 && (
                 <Button size="sm" variant="outline" onClick={onUseFreeze}>
                   <Shield className="h-3 w-3 mr-1" />
-                  Use Freeze
+                  Dùng thẻ
                 </Button>
               )}
             </div>
@@ -275,7 +275,7 @@ export function StreakCard({
         {!hasCompletedToday && (
           <Button className="w-full mt-4 bg-orange-700 hover:bg-orange-800 text-white">
             <Flame className="h-4 w-4 mr-2" />
-            Complete a lesson to extend your streak!
+            Hoàn thành một bài học để nối dài chuỗi!
           </Button>
         )}
       </div>
