@@ -123,7 +123,7 @@ export function OtpInput({
             aria-label={`Chữ số OTP ${index + 1}`}
             onChange={(e) => handleChange(index, e.target.value)}
             onKeyDown={(e) => handleKeyDown(index, e)}
-            className="h-12 w-12 rounded-lg border border-gray-300 text-center text-lg font-semibold focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 sm:h-14 sm:w-14"
+            className="h-12 w-12 rounded-lg border border-border bg-card text-foreground text-center text-lg font-semibold focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary sm:h-14 sm:w-14"
             autoFocus={index === 0}
           />
         ))}
@@ -131,15 +131,15 @@ export function OtpInput({
 
       <div className="text-center">
         {timeLeft > 0 ? (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Gửi lại mã sau{" "}
-            <span className="font-medium text-primary-600">{formatTime(timeLeft)}</span>
+            <span className="font-medium text-primary">{formatTime(timeLeft)}</span>
           </p>
         ) : (
           <button
             type="button"
             onClick={handleResend}
-            className="text-sm font-medium text-primary-600 hover:text-primary-700"
+            className="text-sm font-medium text-primary hover:text-primary"
           >
             Gửi lại mã
           </button>

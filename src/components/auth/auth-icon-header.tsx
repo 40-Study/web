@@ -10,7 +10,7 @@ interface AuthIconHeaderProps {
 
 export function AuthIconHeader({
   icon,
-  iconBgClassName = "bg-primary-100",
+  iconBgClassName = "bg-primary/10",
   title,
   description,
   className,
@@ -25,8 +25,8 @@ export function AuthIconHeader({
       >
         {icon}
       </div>
-      <h2 className="mb-1 text-xl font-semibold text-gray-900">{title}</h2>
-      <p className="text-center text-sm text-gray-500">{description}</p>
+      <h2 className="mb-1 text-xl font-semibold text-foreground">{title}</h2>
+      <p className="text-center text-sm text-muted-foreground">{description}</p>
     </div>
   );
 }

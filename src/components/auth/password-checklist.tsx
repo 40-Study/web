@@ -30,12 +30,12 @@ export function PasswordChecklist({ password, className }: PasswordChecklistProp
             <div
               className={cn(
                 "flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-white",
-                passed ? "bg-green-500" : "bg-gray-300"
+                passed ? "bg-green-500" : "bg-border"
               )}
             >
               <SmallCheckIcon size={8} />
             </div>
-            <span className={passed ? "text-green-700" : "text-gray-500"}>{rule.label}</span>
+            <span className={passed ? "text-green-700 dark:text-green-400" : "text-muted-foreground"}>{rule.label}</span>
           </li>
         );
       })}

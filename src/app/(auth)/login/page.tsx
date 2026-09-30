@@ -78,8 +78,8 @@ export default function LoginPage() {
 
   return (
     <AuthCard>
-      <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">Đăng nhập</h2>
-      <p className="mb-6 text-center text-sm text-gray-500">Chào mừng bạn quay trở lại</p>
+      <h2 className="mb-1 text-center text-xl font-semibold text-foreground">Đăng nhập</h2>
+      <p className="mb-6 text-center text-sm text-muted-foreground">Chào mừng bạn quay trở lại</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
@@ -102,18 +102,18 @@ export default function LoginPage() {
         />
 
         <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 text-sm text-gray-600">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
             <input
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
             />
             Nhớ mật khẩu
           </label>
           <Link
             href={AUTH_ROUTES.FORGOT_PASSWORD}
-            className="text-sm font-medium text-primary-600 hover:text-primary-700"
+            className="text-sm font-medium text-primary hover:text-primary"
           >
             Quên mật khẩu?
           </Link>
@@ -130,9 +130,9 @@ export default function LoginPage() {
       </form>
 
       <div className="my-6 flex items-center gap-3">
-        <div className="h-px flex-1 bg-gray-200" />
-        <span className="text-xs text-gray-400">hoặc đăng nhập với</span>
-        <div className="h-px flex-1 bg-gray-200" />
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-xs text-muted-foreground">hoặc đăng nhập với</span>
+        <div className="h-px flex-1 bg-border" />
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

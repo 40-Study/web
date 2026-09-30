@@ -55,7 +55,7 @@ const REGISTER_STEPS = [
 function StepProgress({ currentStep }: { currentStep: number }) {
     return (
         <div className="mb-8">
-            <p className="text-center text-sm text-gray-500 mb-5">3 bước dễ dàng</p>
+            <p className="text-center text-sm text-muted-foreground mb-5">3 bước dễ dàng</p>
             <div className="flex items-start">
                 {REGISTER_STEPS.map(({ label, icon: Icon }, i) => {
                     const isDone = i < currentStep;
@@ -67,9 +67,9 @@ function StepProgress({ currentStep }: { currentStep: number }) {
                             <div className="flex flex-col items-center flex-1">
                                 <div className={cn(
                                     "flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-300",
-                                    isDone && "bg-primary-500 text-white",
-                                    isActive && "bg-primary-500 text-white ring-4 ring-primary-100",
-                                    !isDone && !isActive && "bg-gray-100 text-gray-400",
+                                    isDone && "bg-primary text-primary-foreground",
+                                    isActive && "bg-primary text-primary-foreground ring-4 ring-primary/20",
+                                    !isDone && !isActive && "bg-muted text-muted-foreground",
                                 )}>
                                     {isDone ? (
                                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -81,7 +81,7 @@ function StepProgress({ currentStep }: { currentStep: number }) {
                                 </div>
                                 <span className={cn(
                                     "mt-2 text-[11px] font-medium",
-                                    (isDone || isActive) ? "text-primary-600" : "text-gray-400",
+                                    (isDone || isActive) ? "text-primary" : "text-muted-foreground",
                                 )}>
                                     {label}
                                 </span>
@@ -92,7 +92,7 @@ function StepProgress({ currentStep }: { currentStep: number }) {
                                 <div className="flex-shrink-0 w-8 mt-5">
                                     <div className={cn(
                                         "h-0.5 w-full rounded-full transition-all duration-500",
-                                        i < currentStep ? "bg-primary-500" : "bg-gray-200",
+                                        i < currentStep ? "bg-primary" : "bg-border",
                                     )} />
                                 </div>
                             )}
@@ -180,9 +180,9 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
             {showConfirm && (
                 <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/30" />
-                    <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full text-center">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Thoát đăng ký?</h3>
-                        <p className="text-sm text-gray-500 mb-6">Các lựa chọn của bạn sẽ không được lưu.</p>
+                    <div className="relative bg-card rounded-2xl border border-border shadow-overlay p-6 max-w-sm w-full text-center">
+                        <h3 className="text-lg font-semibold text-foreground mb-2">Thoát đăng ký?</h3>
+                        <p className="text-sm text-muted-foreground mb-6">Các lựa chọn của bạn sẽ không được lưu.</p>
                         <div className="flex gap-3">
                             <Button
                                 variant="outline"
@@ -204,26 +204,26 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
             )}
 
             {/* Modal */}
-            <div className="relative w-full max-w-[546px] bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+            <div className="relative w-full max-w-[546px] bg-card rounded-3xl border border-border shadow-overlay max-h-[90vh] overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
                 {/* Header buttons */}
-                <div className="sticky top-0 z-10 flex items-center justify-between px-8 pt-6 bg-white rounded-t-2xl">
+                <div className="sticky top-0 z-10 flex items-center justify-between px-8 pt-6 bg-card rounded-t-3xl">
                     {canGoBack ? (
                         <button
                             onClick={() => setView(backMap[view]!)}
-                            className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
+                            className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors"
                             aria-label="Quay lại"
                         >
-                            <ArrowLeft className="w-5 h-5 text-gray-500" />
+                            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
                         </button>
                     ) : (
                         <div />
                     )}
                     <button
                         onClick={handleRequestClose}
-                        className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors"
+                        className="p-2 -mr-2 rounded-full hover:bg-muted transition-colors"
                         aria-label="Đóng"
                     >
-                        <X className="w-5 h-5 text-gray-500" />
+                        <X className="w-5 h-5 text-muted-foreground" />
                     </button>
                 </div>
 
@@ -231,7 +231,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                 <div className="px-10 pb-8 pt-2">
                     {/* Logo */}
                     <div className={cn("text-center", isRegisterFlow ? "mb-4" : "mb-6")}>
-                        <h1 className="text-3xl font-bold text-primary-600">ForteX</h1>
+                        <h1 className="text-3xl font-bold text-primary">ForteX</h1>
                         <p className="text-xs tracking-[0.2em] text-muted-foreground mt-1 uppercase">
                             Learn · Leap · Lead
                         </p>
@@ -366,8 +366,8 @@ function LoginView({
 
     return (
         <>
-            <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">Đăng nhập</h2>
-            <p className="mb-6 text-center text-sm text-gray-500">Chào mừng bạn quay trở lại</p>
+            <h2 className="mb-1 text-center text-xl font-semibold text-foreground">Đăng nhập</h2>
+            <p className="mb-6 text-center text-sm text-muted-foreground">Chào mừng bạn quay trở lại</p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <Input
@@ -389,18 +389,18 @@ function LoginView({
                     required
                 />
                 <div className="flex items-center justify-between">
-                    <label className="flex items-center gap-2 text-sm text-gray-600">
+                    <label className="flex items-center gap-2 text-sm text-muted-foreground">
                         <input
                             type="checkbox"
                             checked={rememberMe}
                             onChange={(e) => setRememberMe(e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                            className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                         />
                         Nhớ mật khẩu
                     </label>
                     <Link
                         href={AUTH_ROUTES.FORGOT_PASSWORD}
-                        className="text-sm font-medium text-primary-600 hover:text-primary-700"
+                        className="text-sm font-medium text-primary hover:underline"
                         onClick={onClose}
                     >
                         Quên mật khẩu?
@@ -412,9 +412,9 @@ function LoginView({
             </form>
 
             <div className="my-6 flex items-center gap-3">
-                <div className="h-px flex-1 bg-gray-200" />
-                <span className="text-xs text-gray-400">hoặc đăng nhập với</span>
-                <div className="h-px flex-1 bg-gray-200" />
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground">hoặc đăng nhập với</span>
+                <div className="h-px flex-1 bg-border" />
             </div>
 
             {/* Social icons only - no text */}
@@ -425,9 +425,9 @@ function LoginView({
                 <SocialLoginButton provider="apple" onClick={showComingSoon} iconOnly />
             </div>
 
-            <p className="mt-6 text-center text-sm text-gray-500">
+            <p className="mt-6 text-center text-sm text-muted-foreground">
                 Chưa có tài khoản?{" "}
-                <button type="button" onClick={onSwitchToRegister} className="font-medium text-primary-600 hover:text-primary-700">
+                <button type="button" onClick={onSwitchToRegister} className="font-medium text-primary hover:underline">
                     Đăng ký
                 </button>
             </p>
@@ -508,14 +508,14 @@ function LoginRoleView({ onNext: _onNext, onComplete }: { onNext: () => void; on
 
     return (
         <>
-            <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">{title}</h2>
-            <p className="mb-6 text-center text-sm text-gray-500">{subtitle}</p>
+            <h2 className="mb-1 text-center text-xl font-semibold text-foreground">{title}</h2>
+            <p className="mb-6 text-center text-sm text-muted-foreground">{subtitle}</p>
 
             <div className="space-y-3" role="radiogroup" aria-label="Chọn vai trò">
                 {isNewRoleMode ? (
                     loadingRoles ? (
                         <div className="flex justify-center py-4">
-                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-200 border-t-primary-600" />
+                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
                         </div>
                     ) : availableNewRoles.length > 0 ? (
                         availableNewRoles.map((role) => (
@@ -527,7 +527,7 @@ function LoginRoleView({ onNext: _onNext, onComplete }: { onNext: () => void; on
                             />
                         ))
                     ) : (
-                        <p className="text-center text-sm text-gray-500">
+                        <p className="text-center text-sm text-muted-foreground">
                             {showAddRole ? "Bạn đã có tất cả vai trò." : "Không tìm thấy vai trò nào."}
                         </p>
                     )
@@ -587,7 +587,7 @@ function LoginOrgView({ onClose }: { onClose: () => void }) {
 
     return (
         <div className="flex justify-center py-8">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-200 border-t-primary-600" />
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
         </div>
     );
 }
@@ -603,10 +603,10 @@ function RegisterMethodView({
 }) {
     return (
         <>
-            <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">
+            <h2 className="mb-1 text-center text-xl font-semibold text-foreground">
                 Đăng ký tài khoản
             </h2>
-            <p className="mb-6 text-center text-sm text-gray-500">Chọn phương thức đăng ký</p>
+            <p className="mb-6 text-center text-sm text-muted-foreground">Chọn phương thức đăng ký</p>
 
             <div className="space-y-3">
                 <SocialLoginButton provider="google" onClick={() => startOAuthFlow("google")} />
@@ -616,9 +616,9 @@ function RegisterMethodView({
                 <SocialLoginButton provider="email" onClick={onEmailSelected} />
             </div>
 
-            <p className="mt-6 text-center text-sm text-gray-500">
+            <p className="mt-6 text-center text-sm text-muted-foreground">
                 Bạn đã có tài khoản?{" "}
-                <button type="button" onClick={onSwitchToLogin} className="font-medium text-primary-600 hover:text-primary-700">
+                <button type="button" onClick={onSwitchToLogin} className="font-medium text-primary hover:underline">
                     Đăng nhập
                 </button>
             </p>
@@ -682,10 +682,10 @@ function RegisterFormView({
 
     return (
         <>
-            <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">
+            <h2 className="mb-1 text-center text-xl font-semibold text-foreground">
                 Đăng ký tài khoản
             </h2>
-            <p className="mb-6 text-center text-sm text-gray-500">Điền thông tin của bạn</p>
+            <p className="mb-6 text-center text-sm text-muted-foreground">Điền thông tin của bạn</p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <Input
@@ -749,9 +749,9 @@ function RegisterFormView({
                 </Button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-gray-500">
+            <p className="mt-6 text-center text-sm text-muted-foreground">
                 Bạn đã có tài khoản?{" "}
-                <button type="button" onClick={onSwitchToLogin} className="font-medium text-primary-600 hover:text-primary-700">
+                <button type="button" onClick={onSwitchToLogin} className="font-medium text-primary hover:underline">
                     Đăng nhập
                 </button>
             </p>
@@ -780,7 +780,7 @@ function RegisterOtpView({ email, onSuccess }: { email: string; onSuccess: () =>
     return (
         <div className="flex flex-col items-center py-4">
             <AuthIconHeader
-                icon={<MailIcon size={32} className="text-primary-500" />}
+                icon={<MailIcon size={32} className="text-primary" />}
                 title="Xác thực OTP"
                 description={`Nhập mã 6 chữ số đã được gửi đến ${email}`}
                 className="mb-8"
@@ -798,13 +798,13 @@ function RegisterOtpView({ email, onSuccess }: { email: string; onSuccess: () =>
 function RegisterSuccessView({ onLogin, onClose }: { onLogin: () => void; onClose: () => void }) {
     return (
         <div className="flex flex-col items-center py-8">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-950">
+                <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
             </div>
-            <h2 className="mb-1 text-xl font-semibold text-gray-900">Đăng ký thành công!</h2>
-            <p className="mb-6 text-center text-sm text-gray-500">
+            <h2 className="mb-1 text-xl font-semibold text-foreground">Đăng ký thành công!</h2>
+            <p className="mb-6 text-center text-sm text-muted-foreground">
                 Tài khoản của bạn đã được tạo. Hãy đăng nhập để bắt đầu.
             </p>
             <Button onClick={onLogin} className="h-12 w-full">
