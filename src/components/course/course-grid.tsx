@@ -49,7 +49,7 @@ export function CourseGrid({
 }: CourseGridProps) {
   if (loading) {
     return (
-      <div className={cn(GRID_CLASS, className)} aria-busy="true" aria-label="Đang tải khóa học">
+      <div className={cn(GRID_CLASS, className)} aria-busy="true" role="status" aria-label="Đang tải khóa học">
         {Array.from({ length: 8 }).map((_, i) => (
           <CourseCardSkeleton key={i} />
         ))}
