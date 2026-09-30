@@ -52,6 +52,11 @@ export function CourseCard({ course, className, priority = false }: CourseCardPr
     .filter(Boolean)
     .join(" · ");
 
+  // Dữ liệu có thể thiếu (vd. khóa đã ghi danh): chỉ hiện khi có giá trị thật.
+  const instructorName = course.instructor?.name?.trim();
+  const hasRating = (course.reviewCount ?? 0) > 0 && (course.rating ?? 0) > 0;
+  const hasStudents = (course.studentCount ?? 0) > 0;
+
   return (
     <Link
       href={`/courses/${course.slug}`}
@@ -97,25 +102,36 @@ export function CourseCard({ course, className, priority = false }: CourseCardPr
             {course.title}
           </h3>
 
-          <p className="text-body-sm mt-1 text-slate-600 dark:text-slate-400">
-            {course.instructor.name}
-          </p>
+          {instructorName && (
+            <p className="text-body-sm mt-1 text-slate-600 dark:text-slate-400">
+              {instructorName}
+            </p>
+          )}
 
-          <div className="mb-4 mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm">
-            <Star
-              className="h-4 w-4 fill-amber-400 text-amber-400"
-              aria-hidden="true"
-            />
-            <span className="font-semibold text-slate-900 dark:text-slate-50">
-              {course.rating.toFixed(1)}
-            </span>
-            <span className="text-xs text-slate-600 dark:text-slate-400">
-              ({course.reviewCount.toLocaleString("vi-VN")})
-            </span>
-            <span className="text-xs text-slate-600 dark:text-slate-400">
-              · {course.studentCount.toLocaleString("vi-VN")} học viên
-            </span>
-          </div>
+          {(hasRating || hasStudents) && (
+            <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm">
+              {hasRating && (
+                <>
+                  <Star
+                    className="h-4 w-4 fill-amber-400 text-amber-400"
+                    aria-hidden="true"
+                  />
+                  <span className="font-semibold text-slate-900 dark:text-slate-50">
+                    {(course.rating as number).toFixed(1)}
+                  </span>
+                  <span className="text-xs text-slate-600 dark:text-slate-400">
+                    ({(course.reviewCount as number).toLocaleString("vi-VN")})
+                  </span>
+                </>
+              )}
+              {hasStudents && (
+                <span className="text-xs text-slate-600 dark:text-slate-400">
+                  {hasRating ? "· " : ""}
+                  {(course.studentCount as number).toLocaleString("vi-VN")} học viên
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="mt-auto border-t border-slate-100 pt-3 dark:border-slate-800">
             <div>

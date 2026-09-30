@@ -64,4 +64,38 @@ describe("CourseCard", () => {
     expect(h3.textContent).toBe(base.title);
     expect(h3.className).toContain("line-clamp-2");
   });
+
+  it("đã ghi danh thiếu rating/giảng viên/học viên: không hiện placeholder", () => {
+    const enrolled = {
+      ...base,
+      instructor: undefined,
+      rating: undefined,
+      reviewCount: undefined,
+      studentCount: undefined,
+      progress: 10,
+      completedLessons: 1,
+      totalLessons: 10,
+      enrolledAt: "2026-02-01",
+      watchedSeconds: 0,
+    } as unknown as EnrolledCourse;
+    const { container } = render(<CourseCard course={enrolled} />);
+    expect(screen.queryByText("Chưa cập nhật")).toBeNull();
+    expect(container.textContent).not.toContain("0.0");
+    expect(container.textContent).not.toContain("học viên");
+    expect(container.querySelector("a button")).toBeNull();
+  });
+
+  it("reviewCount = 0 thì ẩn hàng rating", () => {
+    const { container } = render(
+      <CourseCard course={{ ...base, rating: 0, reviewCount: 0, studentCount: 0 }} />
+    );
+    expect(container.textContent).not.toContain("(0)");
+    expect(container.querySelector("svg.fill-amber-400")).toBeNull();
+  });
+
+  it("có rating thật thì hiện điểm, số đánh giá và học viên", () => {
+    render(<CourseCard course={base} />);
+    expect(screen.getByText("4.6")).toBeTruthy();
+    expect(screen.getByText(/3\.400 học viên/)).toBeTruthy();
+  });
 });
