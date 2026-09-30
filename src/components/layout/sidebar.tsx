@@ -95,11 +95,11 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      "fixed left-0 top-16 bottom-0 bg-white border-r border-gray-100 z-40 hidden lg:flex flex-col transition-all duration-200",
+      "fixed left-0 top-16 bottom-0 bg-card border-r border-border z-40 hidden lg:flex flex-col transition-all duration-200 motion-reduce:transition-none",
       isExpanded ? "w-48" : "w-[60px]",
     )}>
       {/* Nav items */}
-      <nav className="flex-1 flex flex-col gap-0.5 px-1.5 py-3 overflow-y-auto overflow-x-hidden">
+      <nav aria-label="Điều hướng chính" className="flex-1 flex flex-col gap-1 px-2 py-3 overflow-y-auto overflow-x-hidden">
         {navItems.map((item) => {
           const isActive = item.href !== "#" && (pathname === item.href || pathname.startsWith(`${item.href}/`));
           const Icon = item.icon;
@@ -107,19 +107,16 @@ export function Sidebar() {
 
           const inner = (
             <div className={cn(
-              "flex items-center gap-2.5 px-2 py-2 rounded-lg transition-colors w-full",
-              "hover:bg-gray-50",
-              isActive && "bg-blue-50 text-blue-600",
-              !isActive && "text-gray-600",
+              "flex items-center gap-3 h-10 px-3 rounded-lg transition-colors w-full",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+              !isExpanded && "justify-center px-0",
+              isActive
+                ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}>
-              <div className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                isActive ? "bg-blue-100" : "bg-gray-50",
-              )}>
-                <Icon className={cn("w-4 h-4", isActive ? "text-blue-600" : "text-gray-500")} />
-              </div>
+              <Icon className="w-5 h-5 shrink-0" aria-hidden="true" />
               {isExpanded && (
-                <span className={cn("text-xs font-medium truncate", isActive ? "text-blue-600" : "text-gray-600")}>
+                <span className="text-sm font-medium truncate">
                   {item.label}
                 </span>
               )}
@@ -129,7 +126,16 @@ export function Sidebar() {
           return isAction ? (
             <button key={item.label} onClick={(item as any).onClick} title={item.label}>{inner}</button>
           ) : (
-            <Link key={item.href} href={item.href} title={item.label}>{inner}</Link>
+            <Link
+              key={item.href}
+              href={item.href}
+              title={item.label}
+              aria-label={isExpanded ? undefined : item.label}
+              aria-current={isActive ? "page" : undefined}
+              className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              {inner}
+            </Link>
           );
         })}
       </nav>
@@ -139,10 +145,11 @@ export function Sidebar() {
         onClick={toggle}
         className={cn(
           "absolute top-1/2 -translate-y-1/2 -right-3 z-50",
-          "w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm",
+          "w-6 h-6 rounded-full bg-card border border-border shadow-xs",
           "flex items-center justify-center",
-          "hover:bg-gray-50 hover:shadow transition-all",
-          "text-gray-400 hover:text-gray-600",
+          "hover:bg-muted transition-colors",
+          "text-muted-foreground hover:text-foreground",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         )}
         title={isExpanded ? "Thu gọn" : "Mở rộng"}
         aria-label={isExpanded ? "Thu gọn menu" : "Mở rộng menu"}

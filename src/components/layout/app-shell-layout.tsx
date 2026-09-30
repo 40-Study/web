@@ -32,7 +32,7 @@ export function AppShellLayout({ children }: AppShellLayoutProps) {
         : "student";
 
   return (
-    <div className="min-h-screen bg-gray-50/50 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
       <div className="flex flex-1 pt-16 min-h-0">
         <Sidebar />

@@ -64,14 +64,14 @@ export default function ApplicantLayout({ children }: { children: React.ReactNod
 
   return (
     <RoleGuard roles={["TEACHER_APPLICANT", "TEACHER"]}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <header className="border-b bg-white dark:border-gray-800 dark:bg-gray-950">
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border bg-card">
           <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-4">
-            <Link href="/" className="text-lg font-bold text-primary-600">
+            <Link href="/" className="font-heading text-lg font-bold text-primary-600 dark:text-primary-400">
               {siteConfig.name}
             </Link>
             <div className="flex items-center gap-3 text-sm">
-              <span className="hidden text-gray-600 sm:inline dark:text-gray-300">{user?.name}</span>
+              <span className="hidden text-muted-foreground sm:inline">{user?.name}</span>
               {fallbackRole && (
                 <Button
                   variant="outline"
