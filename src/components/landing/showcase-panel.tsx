@@ -46,9 +46,9 @@ export function ShowcasePanel() {
             <div className="mt-3 flex aspect-video items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-900">
               <BookOpen className="h-10 w-10 text-slate-300 dark:text-slate-700" />
             </div>
-            <h3 className="mt-4 font-heading text-lg font-semibold text-slate-900 dark:text-slate-50 md:text-xl">
+            <p className="mt-4 font-heading text-lg font-semibold text-slate-900 dark:text-slate-50 md:text-xl">
               Lập trình Web với React
-            </h3>
+            </p>
             <div className="mt-3 flex items-center gap-3">
               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                 <div className="h-full w-[42%] rounded-full bg-primary-600 dark:bg-primary-400" />
