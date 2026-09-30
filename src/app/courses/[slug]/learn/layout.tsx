@@ -36,7 +36,7 @@ export default async function CourseLearnLayout({ children, params }: CourseLear
   const { slug } = await params;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-background">
       <LearnRouteGuard slug={slug}>
         <Suspense fallback={<LessonContentSkeleton />}>
           {children}

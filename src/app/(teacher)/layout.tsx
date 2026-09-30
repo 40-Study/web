@@ -11,7 +11,7 @@ export default function TeacherRouteLayout({
   return (
     // Mất phiên giữa chừng: đăng nhập lại xong quay về đúng trang giảng viên đang xem (C3).
     <RoleGuard roles={[...DOMAIN_ACCESS_POLICY.teacher]} returnToCurrentPath>
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-background">
         <Header />
         <div className="flex flex-1 pt-16">
           <TeacherSidebar />

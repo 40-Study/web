@@ -38,10 +38,10 @@ export default function LoginChildrenPage() {
   if (isLoading) {
     return (
       <AuthCard>
-        <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">
+        <h2 className="mb-1 text-center text-xl font-semibold text-foreground">
           Xin chào, phụ huynh!
         </h2>
-        <p className="mb-6 text-center text-sm text-gray-500">Đang tải danh sách...</p>
+        <p className="mb-6 text-center text-sm text-muted-foreground">Đang tải danh sách...</p>
         <div className="space-y-3">
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
@@ -53,7 +53,7 @@ export default function LoginChildrenPage() {
   if (error) {
     return (
       <AuthCard>
-        <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">
+        <h2 className="mb-1 text-center text-xl font-semibold text-foreground">
           Xin chào, phụ huynh!
         </h2>
         <p className="mb-6 text-center text-sm text-red-500">
@@ -68,10 +68,10 @@ export default function LoginChildrenPage() {
 
   return (
     <AuthCard>
-      <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">
+      <h2 className="mb-1 text-center text-xl font-semibold text-foreground">
         Xin chào, phụ huynh!
       </h2>
-      <p className="mb-6 text-center text-sm text-gray-500">Chọn tài khoản con để tiếp tục</p>
+      <p className="mb-6 text-center text-sm text-muted-foreground">Chọn tài khoản con để tiếp tục</p>
 
       <div className="space-y-3" role="radiogroup" aria-label="Chọn tài khoản con">
         {children.length > 0 ? (
@@ -87,7 +87,7 @@ export default function LoginChildrenPage() {
             />
           ))
         ) : (
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-muted-foreground">
             Không tìm thấy tài khoản con nào.
           </p>
         )}

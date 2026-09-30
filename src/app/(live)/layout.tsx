@@ -10,7 +10,7 @@ export default function LiveLayout({
 }) {
   return (
     <RoleGuard roles={[...DOMAIN_ACCESS_POLICY.classroom]}>
-      <div className="h-screen w-screen overflow-hidden bg-[#0e0e0e]">
+      <div className="h-screen w-screen overflow-hidden bg-slate-950">
         {children}
       </div>
     </RoleGuard>

@@ -161,14 +161,14 @@ export function GlobalSearch() {
       {/* Search input - always visible */}
       <div
         className={cn(
-          "flex items-center gap-2 bg-slate-100 rounded-full px-4 py-2 w-64 lg:w-96 transition-colors",
-          open ? "ring-2 ring-primary-500 bg-white" : "hover:bg-slate-200"
+          "flex items-center gap-2 bg-card border border-input rounded-lg px-3 h-10 w-64 lg:w-96 transition-colors",
+          open ? "ring-2 ring-primary border-transparent" : "hover:border-slate-300 dark:hover:border-slate-600"
         )}
       >
         {loading ? (
-          <Loader2 className="w-4 h-4 text-slate-400 animate-spin flex-shrink-0" />
+          <Loader2 className="w-4 h-4 text-muted-foreground animate-spin flex-shrink-0" />
         ) : (
-          <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
         )}
         <input
           ref={inputRef}
@@ -182,18 +182,18 @@ export function GlobalSearch() {
           }}
           onKeyDown={handleInputKeyDown}
           placeholder="Tìm kiếm khóa học..."
-          className="flex-1 bg-transparent border-none outline-none text-sm text-slate-700 placeholder:text-slate-400"
+          className="flex-1 bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground"
         />
         {open ? (
           <button
             onClick={closeModal}
-            className="p-0.5 rounded text-slate-400 hover:text-slate-600 transition-colors"
+            className="p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Đóng"
           >
             <X className="w-4 h-4" />
           </button>
         ) : (
-          <kbd className="hidden lg:inline-flex items-center gap-0.5 text-[10px] text-slate-400 bg-white border border-slate-200 rounded px-1.5 py-0.5">
+          <kbd className="hidden lg:inline-flex items-center gap-0.5 text-[10px] text-muted-foreground bg-muted border border-border rounded px-1.5 py-0.5">
             <span>⌘</span>K
           </kbd>
         )}
@@ -201,11 +201,11 @@ export function GlobalSearch() {
 
       {/* Dropdown results */}
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-popover rounded-2xl shadow-raised border border-border overflow-hidden z-50">
           {/* Results list */}
           {results.length > 0 && (
             <div className="py-2 max-h-80 overflow-y-auto">
-              <p className="px-4 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+              <p className="px-4 py-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
                 Khóa học
               </p>
               {results.map((item, idx) => (
@@ -215,15 +215,15 @@ export function GlobalSearch() {
                   onMouseEnter={() => setActiveIndex(idx)}
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
-                    idx === activeIndex ? "bg-primary-50" : "hover:bg-slate-50"
+                    idx === activeIndex ? "bg-primary-50 dark:bg-primary-900/30" : "hover:bg-muted"
                   )}
                 >
-                  <div className="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
                     <BookOpen className="w-4 h-4 text-primary-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-800 truncate">{item.title}</p>
-                    <p className="text-xs text-slate-500 truncate">{item.subtitle}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{item.subtitle}</p>
                   </div>
                 </button>
               ))}
@@ -232,13 +232,13 @@ export function GlobalSearch() {
 
           {/* Empty state */}
           {!loading && query.trim() && results.length === 0 && (
-            <div className="py-8 text-center text-sm text-slate-400">
+            <div className="py-8 text-center text-sm text-muted-foreground">
               Không tìm thấy kết quả cho &ldquo;{query}&rdquo;
             </div>
           )}
 
           {/* Footer hint */}
-          <div className="flex items-center gap-4 px-4 py-2 border-t border-gray-100 text-[11px] text-slate-400">
+          <div className="flex items-center gap-4 px-4 py-2 border-t border-border text-[11px] text-muted-foreground">
             <span><kbd className="font-mono">↑↓</kbd> điều hướng</span>
             <span><kbd className="font-mono">↵</kbd> chọn</span>
             <span><kbd className="font-mono">Esc</kbd> đóng</span>

@@ -64,11 +64,11 @@ export function CartDropdown() {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-12 w-80 bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 z-50 overflow-hidden">
+        <div className="absolute right-0 top-12 w-80 bg-popover rounded-2xl shadow-raised border border-border z-50 overflow-hidden">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+          <div className="px-4 py-3 border-b border-border">
             <div className="flex items-center justify-between">
-              <p className="font-semibold text-gray-900 dark:text-white">
+              <p className="font-semibold text-foreground">
                 Giỏ hàng ({itemCount})
               </p>
               {itemCount > 0 && (
@@ -91,8 +91,8 @@ export function CartDropdown() {
               </div>
             ) : items.length === 0 ? (
               <div className="py-8 text-center">
-                <ShoppingCart className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                <p className="text-sm text-gray-500">Giỏ hàng trống</p>
+                <ShoppingCart className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+                <p className="text-sm text-muted-foreground">Giỏ hàng trống</p>
                 <Link href="/courses" onClick={() => setIsOpen(false)}>
                   <Button variant="link" className="mt-2 text-primary-600">
                     Khám phá khóa học
@@ -100,14 +100,14 @@ export function CartDropdown() {
                 </Link>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              <div className="divide-y divide-border">
                 {items.slice(0, 5).map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-start gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    className="flex items-start gap-3 p-3 hover:bg-muted transition-colors"
                   >
                     {/* Thumbnail */}
-                    <div className="relative w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                    <div className="relative w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
                       {item.course?.thumbnail ? (
                         <Image
                           src={item.course.thumbnail}
@@ -124,7 +124,7 @@ export function CartDropdown() {
                     <div className="flex-1 min-w-0">
                       <Link
                         href={`/courses/${item.course_id}`}
-                        className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 hover:text-primary-600 transition-colors"
+                        className="text-sm font-medium text-foreground line-clamp-2 hover:text-primary-600 transition-colors"
                         onClick={() => setIsOpen(false)}
                       >
                         {item.course?.title || "Khóa học"}
@@ -137,7 +137,7 @@ export function CartDropdown() {
                     {/* Remove button */}
                     <button
                       className={cn(
-                        "p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors",
+                        "p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors",
                         removeFromCart.isPending && "opacity-50 pointer-events-none"
                       )}
                       onClick={() => removeFromCart.mutate(item.course_id)}
@@ -150,7 +150,7 @@ export function CartDropdown() {
 
                 {items.length > 5 && (
                   <div className="px-4 py-2 text-center">
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       +{items.length - 5} khóa học khác
                     </p>
                   </div>
@@ -161,10 +161,10 @@ export function CartDropdown() {
 
           {/* Footer */}
           {items.length > 0 && (
-            <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+            <div className="p-4 border-t border-border bg-muted">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Tổng cộng:</span>
-                <span className="text-lg font-bold text-gray-900 dark:text-white">
+                <span className="text-sm text-muted-foreground">Tổng cộng:</span>
+                <span className="text-lg font-bold text-foreground">
                   {formatPrice(total)}
                 </span>
               </div>

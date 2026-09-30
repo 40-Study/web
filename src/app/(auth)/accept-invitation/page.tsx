@@ -28,8 +28,8 @@ function AcceptInvitationContent() {
     return (
       <AuthCard>
         <div className="text-center">
-          <h2 className="mb-2 text-xl font-semibold text-gray-900">Liên kết không hợp lệ</h2>
-          <p className="mb-6 text-sm text-gray-500">
+          <h2 className="mb-2 text-xl font-semibold text-foreground">Liên kết không hợp lệ</h2>
+          <p className="mb-6 text-sm text-muted-foreground">
             Không tìm thấy mã lời mời. Vui lòng kiểm tra lại liên kết trong email.
           </p>
           <Button onClick={() => router.push("/")} className="h-12 w-full">
@@ -45,8 +45,8 @@ function AcceptInvitationContent() {
     return (
       <AuthCard>
         <div className="flex flex-col items-center gap-4 py-8">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
-          <p className="text-sm text-gray-500">Đang xác thực lời mời...</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/25 border-t-primary" />
+          <p className="text-sm text-muted-foreground">Đang xác thực lời mời...</p>
         </div>
       </AuthCard>
     );
@@ -62,8 +62,8 @@ function AcceptInvitationContent() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h2 className="mb-2 text-xl font-semibold text-gray-900">Lời mời không hợp lệ</h2>
-          <p className="mb-6 text-sm text-gray-500">
+          <h2 className="mb-2 text-xl font-semibold text-foreground">Lời mời không hợp lệ</h2>
+          <p className="mb-6 text-sm text-muted-foreground">
             Lời mời đã hết hạn, đã được sử dụng, hoặc không tồn tại.
           </p>
           <Button onClick={() => router.push("/")} className="h-12 w-full">
@@ -81,8 +81,8 @@ function AcceptInvitationContent() {
     return (
       <AuthCard>
         <div className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-100">
-            <svg className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+            <svg className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -91,14 +91,14 @@ function AcceptInvitationContent() {
               />
             </svg>
           </div>
-          <h2 className="mb-2 text-xl font-semibold text-gray-900">Lời mời từ {data.student_name}</h2>
-          <p className="mb-1 text-sm text-gray-500">
+          <h2 className="mb-2 text-xl font-semibold text-foreground">Lời mời từ {data.student_name}</h2>
+          <p className="mb-1 text-sm text-muted-foreground">
             Bạn được mời làm{" "}
-            <span className="font-medium text-gray-700">
+            <span className="font-medium text-muted-foreground">
               {relationshipLabels[data.relationship ?? ""] ?? data.relationship}
             </span>
           </p>
-          <p className="mb-6 text-sm text-gray-500">
+          <p className="mb-6 text-sm text-muted-foreground">
             Vui lòng đăng nhập hoặc tạo tài khoản để tiếp tục.
           </p>
 
@@ -157,8 +157,8 @@ function AcceptInvitationContent() {
   return (
     <AuthCard>
       <div className="text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-100">
-          <svg className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+          <svg className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -167,11 +167,11 @@ function AcceptInvitationContent() {
             />
           </svg>
         </div>
-        <h2 className="mb-2 text-xl font-semibold text-gray-900">Lời mời phụ huynh</h2>
-        <p className="mb-1 text-sm text-gray-500">
-          <span className="font-medium text-gray-700">{data.student_name}</span> đã mời bạn làm
+        <h2 className="mb-2 text-xl font-semibold text-foreground">Lời mời phụ huynh</h2>
+        <p className="mb-1 text-sm text-muted-foreground">
+          <span className="font-medium text-muted-foreground">{data.student_name}</span> đã mời bạn làm
         </p>
-        <p className="mb-6 text-lg font-medium text-primary-600">
+        <p className="mb-6 text-lg font-medium text-primary">
           {relationshipLabels[data.relationship ?? ""] ?? data.relationship}
         </p>
 
@@ -203,8 +203,8 @@ export default function AcceptInvitationPage() {
       fallback={
         <AuthCard>
           <div className="flex flex-col items-center gap-4 py-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
-            <p className="text-sm text-gray-500">Đang tải...</p>
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/25 border-t-primary" />
+            <p className="text-sm text-muted-foreground">Đang tải...</p>
           </div>
         </AuthCard>
       }

@@ -70,13 +70,13 @@ export default function AdminLayout({
     // tổ chức của ORG_OWNER, nên không giữ riêng trang nào cho vai này.
     // Mất phiên giữa chừng: quay lại đúng trang admin đang xem sau khi đăng nhập lại (C3).
     <RoleGuard roles={["SYSTEM_ADMIN"]} redirectTo={`/login?redirect=${encodeURIComponent(pathname)}`}>
-      <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-        <aside className="hidden w-72 shrink-0 border-r bg-white md:flex md:flex-col dark:border-gray-800 dark:bg-gray-950">
-          <div className="border-b px-5 py-4 dark:border-gray-800">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <div className="flex min-h-screen bg-background">
+        <aside className="hidden w-72 shrink-0 border-r border-border bg-card md:flex md:flex-col">
+          <div className="border-b border-border px-5 py-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Hệ thống quản trị
             </p>
-            <h2 className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">ForteX Admin</h2>
+            <h2 className="mt-1 font-heading text-lg font-semibold text-foreground">ForteX Admin</h2>
           </div>
           <nav className="space-y-2 p-3" aria-label="Menu quản trị">
             {adminMenu.map((item) => {
@@ -89,11 +89,11 @@ export default function AdminLayout({
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                      ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
+                  <item.icon className="h-5 w-5" aria-hidden="true" />
                   {item.label}
                 </Link>
               );
@@ -102,23 +102,23 @@ export default function AdminLayout({
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-40 border-b bg-white dark:border-gray-800 dark:bg-gray-950">
+          <header className="sticky top-0 z-40 border-b border-border bg-card">
             <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 md:px-6">
               <div>
-                <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">Trang quản trị</h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Quản lý vai trò, tổ chức và phân quyền</p>
+                <h1 className="font-heading text-base font-semibold text-foreground">Trang quản trị</h1>
+                <p className="text-xs text-muted-foreground">Quản lý vai trò, tổ chức và phân quyền</p>
               </div>
               <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={() => setIsProfileOpen((v) => !v)}
-                  className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <Avatar src={user?.avatar} fallback={user?.name || "AD"} size="sm" />
                   <span className="hidden text-sm font-medium md:inline">{user?.name || "Administrator"}</span>
                 </button>
 
                 {isProfileOpen && (
-                  <div className="absolute right-0 top-11 w-52 rounded-xl border bg-white py-2 shadow-lg dark:border-gray-800 dark:bg-gray-900">
+                  <div className="absolute right-0 top-11 w-52 rounded-2xl border border-border bg-popover py-2 shadow-raised">
                     {/*
                       A-P2-4: đã BỎ link "/settings" ở đây (trước đó bấm vào bị đá ngầm về /admin,
                       không có thông báo gì). Root cause thật KHÔNG nằm ở RoleGuard của khu vực
@@ -138,7 +138,7 @@ export default function AdminLayout({
                         logoutMutation.mutate();
                       }}
                       disabled={logoutMutation.isPending}
-                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60 dark:hover:bg-red-950/40"
+                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-950/40"
                     >
                       <LogOut className="h-4 w-4" />
                       Đăng xuất
@@ -147,7 +147,7 @@ export default function AdminLayout({
                 )}
               </div>
             </div>
-            <nav className="flex gap-2 overflow-x-auto border-t px-4 py-2 md:hidden dark:border-gray-800">
+            <nav className="flex gap-2 overflow-x-auto border-t border-border px-4 py-2 md:hidden">
               {adminMenu.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
@@ -156,10 +156,10 @@ export default function AdminLayout({
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium",
+                      "whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium",
                       isActive
-                        ? "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
-                        : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                        ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+                        : "bg-muted text-muted-foreground"
                     )}
                   >
                     {item.label}

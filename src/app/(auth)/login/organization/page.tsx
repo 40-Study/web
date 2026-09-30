@@ -18,7 +18,7 @@ export default function LoginOrganizationPage() {
 
   return (
     <div className="flex min-h-[200px] items-center justify-center">
-      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-200 border-t-primary-600" />
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
     </div>
   );
 }

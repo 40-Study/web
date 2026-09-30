@@ -32,7 +32,7 @@ export function AppShellLayout({ children }: AppShellLayoutProps) {
         : "student";
 
   return (
-    <div className="min-h-screen bg-gray-50/50 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
       <div className="flex flex-1 pt-16 min-h-0">
         <Sidebar />
@@ -41,7 +41,7 @@ export function AppShellLayout({ children }: AppShellLayoutProps) {
           isExpanded ? "lg:pl-48" : "lg:pl-[60px]",
         )}>
           {/* id="main-content": đích của skip link trong layout.tsx (H-04) */}
-          <main id="main-content" className="flex-1 pb-24 lg:pb-0">{children}</main>
+          <main id="main-content" className="flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</main>
           <Footer />
           <BottomNav role={bottomNavRole} />
         </div>
