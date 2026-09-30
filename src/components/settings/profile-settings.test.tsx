@@ -47,16 +47,16 @@ describe("ProfileSettings", () => {
     expect(mockMutate.mock.calls[0][0]).toHaveProperty("bio", "");
   });
 
-  it("xoá SĐT đang có: báo chưa hỗ trợ, KHÔNG gửi (không báo thành công giả)", async () => {
+  it("xoá SĐT đang có: gửi phone null để backend xoá (không còn chặn, không bỏ trường)", async () => {
     render(<ProfileSettings />);
     await waitFor(() => expect((screen.getByLabelText("Tiểu sử") as HTMLTextAreaElement).value).toBe("Tiểu sử cũ"));
 
     fireEvent.change(screen.getByLabelText("Số điện thoại"), { target: { value: "" } });
-    fireEvent.change(screen.getByLabelText("Tiểu sử"), { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
 
-    expect(await screen.findByText(/Chưa hỗ trợ xoá số điện thoại/)).toBeTruthy();
-    expect(mockMutate).not.toHaveBeenCalled();
+    await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
+    expect(mockMutate.mock.calls[0][0]).toHaveProperty("phone", null);
+    expect(screen.queryByText(/Chưa hỗ trợ xoá số điện thoại/)).toBeNull();
   });
 
   it("tài khoản chưa có SĐT: không gửi phone \"\" (backend e164 trả 400 làm hỏng cả lần lưu tiểu sử)", async () => {

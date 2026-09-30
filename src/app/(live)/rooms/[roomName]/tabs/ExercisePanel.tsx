@@ -1305,7 +1305,7 @@ export default function ExercisePanel({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <label style={{ ...labelStyle, marginBottom: 0 }}>
-                  Test Cases
+                  Ca kiểm thử
                   <span style={{
                     marginLeft: '6px',
                     padding: '2px 6px',
@@ -1351,7 +1351,7 @@ export default function ExercisePanel({
                       }}>
                         {i + 1}
                       </span>
-                      Test case
+                      Ca kiểm thử
                     </span>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <label style={{
@@ -1398,7 +1398,7 @@ export default function ExercisePanel({
                     </div>
                   </div>
                   <div style={{ marginBottom: '10px' }}>
-                    <label style={{ fontSize: '10px', color: COLORS.textDim, display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Input</label>
+                    <label style={{ fontSize: '10px', color: COLORS.textDim, display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Đầu vào</label>
                     <textarea
                       value={tc.input}
                       onChange={(e) => updateTestCase(i, 'input', e.target.value)}
@@ -1408,7 +1408,7 @@ export default function ExercisePanel({
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '10px', color: COLORS.textDim, display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Output</label>
+                    <label style={{ fontSize: '10px', color: COLORS.textDim, display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Đầu ra</label>
                     <textarea
                       value={tc.expected_output}
                       onChange={(e) => updateTestCase(i, 'expected_output', e.target.value)}

@@ -126,9 +126,10 @@ export type CourseUpdateResult = { payload: UpdateCourseDTO; error?: undefined }
  * Chuỗi rỗng được GỬI (không `|| undefined`): người dùng xoá trắng mô tả thì phải lưu rỗng —
  * cùng lớp lỗi với D5 (tiểu sử). Backend coi field vắng mặt là "giữ nguyên".
  *
- * Giá khuyến mãi: backend chỉ bỏ qua `null` (con trỏ nil = giữ nguyên) và tính giá phải trả theo
- * discount_price bất kể ngày hết hạn, nên KHÔNG có cách xoá khuyến mãi qua API hiện tại (gửi 0
- * sẽ biến khoá thành miễn phí). Trả lỗi rõ ràng thay vì lưu "thành công" mà khuyến mãi vẫn còn.
+ * Giá khuyến mãi có 3 trạng thái ở backend: vắng mặt = giữ nguyên, `null` = XOÁ (kèm hạn khuyến
+ * mãi), số = đặt giá mới. Ô trống khi khoá ĐANG có khuyến mãi (hoặc chuyển sang miễn phí) => gửi
+ * `null`; ô trống khi vốn không có khuyến mãi => không gửi gì. Không dùng 0 để "xoá": nó biến giá
+ * phải trả thành 0đ.
  */
 export function buildCourseUpdatePayload(form: CourseFormData, original: ApiCourse): CourseUpdateResult {
   const title = form.title.trim();
@@ -141,12 +142,7 @@ export function buildCourseUpdatePayload(form: CourseFormData, original: ApiCour
 
   const hadDiscount = numberText(original.discount_price) !== "";
   const discountText = form.is_free ? "" : form.discount_price.trim();
-  if (hadDiscount && discountText === "") {
-    return {
-      error:
-        "Hệ thống chưa hỗ trợ bỏ giá khuyến mãi đã đặt. Hãy nhập giá khuyến mãi mới hoặc liên hệ hỗ trợ.",
-    };
-  }
+  const clearDiscount = hadDiscount && discountText === "";
   let discountPrice: number | undefined;
   if (discountText !== "") {
     discountPrice = Number(discountText);
@@ -170,7 +166,9 @@ export function buildCourseUpdatePayload(form: CourseFormData, original: ApiCour
     target_audience: form.target_audience.map((s) => s.trim()).filter(Boolean),
   };
   if (form.category_id) payload.category_id = form.category_id;
-  if (discountPrice !== undefined) payload.discount_price = discountPrice;
-  if (form.discount_expires_at) payload.discount_expires_at = new Date(form.discount_expires_at).toISOString();
+  if (clearDiscount) payload.discount_price = null;
+  else if (discountPrice !== undefined) payload.discount_price = discountPrice;
+  // Đang xoá khuyến mãi thì bỏ luôn hạn (backend xoá cả hai); hạn không gắn với giá nào vô nghĩa.
+  if (form.discount_expires_at && !clearDiscount) payload.discount_expires_at = new Date(form.discount_expires_at).toISOString();
   return { payload };
 }

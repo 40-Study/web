@@ -40,7 +40,7 @@ export function LessonNavigation({
           >
             <ChevronLeft className="h-4 w-4" />
             <div className="text-left">
-              <p className="text-xs text-muted-foreground">Truoc</p>
+              <p className="text-xs text-muted-foreground">Trước</p>
               <p className="text-sm font-medium line-clamp-1 max-w-[150px]">
                 {prevLesson.title}
               </p>
@@ -58,7 +58,7 @@ export function LessonNavigation({
             className="flex items-center gap-2"
           >
             <div className="text-right">
-              <p className="text-xs opacity-80">Tiep theo</p>
+              <p className="text-xs opacity-80">Tiếp theo</p>
               <p className="text-sm font-medium line-clamp-1 max-w-[150px]">
                 {nextLesson.title}
               </p>
@@ -67,7 +67,7 @@ export function LessonNavigation({
           </Link>
         </Button>
       ) : (
-        <Button onClick={onCompleteCourse}>Hoan thanh khoa hoc</Button>
+        <Button onClick={onCompleteCourse}>Hoàn thành khóa học</Button>
       )}
     </div>
   );

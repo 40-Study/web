@@ -15,15 +15,15 @@ interface ScheduleEventDetailDialogProps {
 }
 
 const STATUS_CONFIG = {
-  completed: { label: "DA HOAN THANH", className: "bg-green-100 text-green-700" },
-  ongoing: { label: "DANG DIEN RA", className: "bg-red-100 text-red-700" },
-  upcoming: { label: "SAP DIEN RA", className: "bg-blue-100 text-blue-700" },
+  completed: { label: "ĐÃ HOÀN THÀNH", className: "bg-green-100 text-green-700" },
+  ongoing: { label: "ĐANG DIỄN RA", className: "bg-red-100 text-red-700" },
+  upcoming: { label: "SẮP DIỄN RA", className: "bg-blue-100 text-blue-700" },
 } as const;
 
 const TYPE_CONFIG = {
   video: { label: "Video", icon: Video },
   livestream: { label: "Livestream", icon: Radio },
-  hybrid: { label: "Hybrid", icon: Layers },
+  hybrid: { label: "Kết hợp", icon: Layers },
 } as const;
 
 export default function ScheduleEventDetailDialog({

@@ -100,7 +100,7 @@ export function LessonSidebar({
     >
       {/* Header */}
       <div className="p-4 border-b">
-        <h2 className="font-semibold">Noi dung khoa hoc</h2>
+        <h2 className="font-semibold">Nội dung khóa học</h2>
         <p className="text-sm text-muted-foreground mt-1">
           {completedLessons}/{totalLessons} bai hoc hoan thanh
         </p>

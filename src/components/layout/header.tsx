@@ -100,7 +100,15 @@ export function Header() {
   const isStudent = normalizedRole === "STUDENT";
   const homeHref = isAuthenticated ? getRoleHomeRoute(normalizedRole) : "/";
 
-  const canSeeOrders = isStudent || normalizedRole === "PARENT";
+  const isParent = normalizedRole === "PARENT";
+  const canSeeOrders = isStudent || isParent;
+
+  // Phụ huynh không học: /coins và /my-courses chỉ dành cho học viên (ROLE_SCOPED_ROUTES) nên link
+  // tới đó sẽ bị chuyển hướng. Nút chính của phụ huynh trỏ về /home — nơi đang hiển thị tổng quan
+  // các con (ParentHomeOverview); chưa có route danh sách con riêng nên không bịa thêm.
+  const primaryNav = isParent
+    ? { label: "Con của tôi", href: "/home" }
+    : { label: "Khóa học của tôi", href: "/my-courses" };
 
   // Students: Bài tập + Đơn hàng + Cài đặt; Parents: Đơn hàng + Cài đặt; Teachers/Admins: only Cài đặt
   const userMenuItems = [
@@ -151,7 +159,7 @@ export function Header() {
 
         <div className="flex items-center gap-3 lg:gap-4">
           {/* Coin balance */}
-          {isAuthenticated && (
+          {isAuthenticated && !isParent && (
             <Link href="/coins" className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/30 dark:hover:bg-amber-900/50 transition-colors">
               <Coins className="h-4 w-4 text-amber-500" />
               <span className="text-xs font-bold text-amber-700 dark:text-amber-300">{coinBalance.toLocaleString("vi-VN")}</span>
@@ -258,9 +266,9 @@ export function Header() {
           <div className="hidden sm:flex items-center gap-2" ref={dropdownRef}>
             {isAuthenticated ? (
               <>
-                <Link href="/my-courses">
+                <Link href={primaryNav.href}>
                   <Button variant="outline" className="font-medium text-sm">
-                    Khóa học của tôi
+                    {primaryNav.label}
                   </Button>
                 </Link>
 
@@ -415,9 +423,9 @@ export function Header() {
                 {isAuthenticated ? (
                   <>
                     <div className="px-3 pt-3">
-                      <Link href="/my-courses" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Link href={primaryNav.href} onClick={() => setIsMobileMenuOpen(false)}>
                         <Button variant="outline" className="w-full justify-start font-medium">
-                          Khóa học của tôi
+                          {primaryNav.label}
                         </Button>
                       </Link>
                     </div>

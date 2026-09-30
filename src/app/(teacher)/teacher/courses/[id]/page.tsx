@@ -299,7 +299,7 @@ function SortableLessonRow({
           </p>
         </button>
         {lesson.is_preview && (
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 shrink-0">Preview</Badge>
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 shrink-0">Xem thử</Badge>
         )}
         {!readOnly && (
           <button
@@ -1528,7 +1528,7 @@ function EditContentModal({
 
           {content.type === "video" && (
             <div className="space-y-2">
-              <Label htmlFor="edit-video-url">URL Video</Label>
+              <Label htmlFor="edit-video-url">Đường dẫn video</Label>
               <Input
                 id="edit-video-url"
                 value={videoUrl}

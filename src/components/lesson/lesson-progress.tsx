@@ -24,7 +24,7 @@ export function LessonProgress({
       {/* Overall course progress */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between text-sm mb-1">
-          <span className="text-muted-foreground">Tien trinh khoa hoc</span>
+          <span className="text-muted-foreground">Tiến trình khóa học</span>
           <span className="font-medium">
             {completedLessons}/{totalLessons}
           </span>
@@ -36,7 +36,7 @@ export function LessonProgress({
       {currentLessonProgress > 0 && (
         <div className="w-24">
           <div className="text-xs text-muted-foreground mb-1 text-center">
-            Bai hien tai
+            Bài hiện tại
           </div>
           <ProgressBar value={currentLessonProgress} size="sm" />
         </div>

@@ -40,11 +40,11 @@ interface ToolbarProps {
 }
 
 const tools: ToolDef[] = [
-  { id: 'select', label: 'Select', icon: icons.cursor, shortcut: 'V' },
+  { id: 'select', label: 'Chọn', icon: icons.cursor, shortcut: 'V' },
   { id: 'hand', label: 'Pan', icon: icons.hand, shortcut: 'H' },
-  { id: 'rect', label: 'Rectangle', icon: icons.rect, shortcut: 'R' },
-  { id: 'diamond', label: 'Diamond', icon: icons.diamond, shortcut: 'D' },
-  { id: 'circle', label: 'Circle', icon: icons.circle, shortcut: 'C' },
+  { id: 'rect', label: 'Hình chữ nhật', icon: icons.rect, shortcut: 'R' },
+  { id: 'diamond', label: 'Hình thoi', icon: icons.diamond, shortcut: 'D' },
+  { id: 'circle', label: 'Hình tròn', icon: icons.circle, shortcut: 'C' },
 ];
 
 export default function Toolbar({ activeTool, onToolChange }: ToolbarProps) {

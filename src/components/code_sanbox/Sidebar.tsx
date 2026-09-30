@@ -265,7 +265,7 @@ export default function Sidebar({
                 {isHov && !isRenaming && f.isFolder && (
                   <span style={{ display: "flex", gap: 1, flexShrink: 0 }}>
                     <button
-                      title="New file here"
+                      title="Tạo tệp tại đây"
                       onClick={(e) => { e.stopPropagation(); startCreate(fullPath, "file"); }}
                       style={{ background:"none", border:"none", cursor:"pointer", color: T.textDim, padding:"1px 3px", borderRadius:3, display:"flex", alignItems:"center" }}
                     >
@@ -275,7 +275,7 @@ export default function Sidebar({
                       </svg>
                     </button>
                     <button
-                      title="New folder here"
+                      title="Tạo thư mục tại đây"
                       onClick={(e) => { e.stopPropagation(); startCreate(fullPath, "folder"); }}
                       style={{ background:"none", border:"none", cursor:"pointer", color: T.textDim, padding:"1px 3px", borderRadius:3, display:"flex", alignItems:"center" }}
                     >
@@ -300,25 +300,25 @@ export default function Sidebar({
   const ctxItems: CtxItemDef[] = ctxMenu
     ? ctxMenu.fullPath === null
       ? [
-          { label: "New File",   action: () => startCreate("", "file")   },
-          { label: "New Folder", action: () => startCreate("", "folder") },
+          { label: "Tệp mới",   action: () => startCreate("", "file")   },
+          { label: "Thư mục mới", action: () => startCreate("", "folder") },
         ]
       : ctxMenu.isFolder
       ? [
-          { label: "New File",   action: () => startCreate(ctxMenu.fullPath!, "file")   },
-          { label: "New Folder", action: () => startCreate(ctxMenu.fullPath!, "folder") },
+          { label: "Tệp mới",   action: () => startCreate(ctxMenu.fullPath!, "file")   },
+          { label: "Thư mục mới", action: () => startCreate(ctxMenu.fullPath!, "folder") },
           { separator: true },
-          { label: "Rename",     action: () => startRename(ctxMenu.fullPath!, ctxMenu.name) },
+          { label: "Đổi tên",     action: () => startRename(ctxMenu.fullPath!, ctxMenu.name) },
           { separator: true },
-          { label: "Delete",  danger: true, action: () => handleDelete(ctxMenu.fullPath!, ctxMenu.name, true) },
+          { label: "Xóa",  danger: true, action: () => handleDelete(ctxMenu.fullPath!, ctxMenu.name, true) },
         ]
       : [
-          { label: "New File",   action: () => startCreate(ctxMenu.parentPath, "file")   },
-          { label: "New Folder", action: () => startCreate(ctxMenu.parentPath, "folder") },
+          { label: "Tệp mới",   action: () => startCreate(ctxMenu.parentPath, "file")   },
+          { label: "Thư mục mới", action: () => startCreate(ctxMenu.parentPath, "folder") },
           { separator: true },
-          { label: "Rename",     action: () => startRename(ctxMenu.fullPath!, ctxMenu.name) },
+          { label: "Đổi tên",     action: () => startRename(ctxMenu.fullPath!, ctxMenu.name) },
           { separator: true },
-          { label: "Delete",  danger: true, action: () => handleDelete(ctxMenu.fullPath!, ctxMenu.name, false) },
+          { label: "Xóa",  danger: true, action: () => handleDelete(ctxMenu.fullPath!, ctxMenu.name, false) },
         ]
     : [];
 
@@ -342,9 +342,9 @@ export default function Sidebar({
           </span>
           <span style={{ display: "flex", gap: 0 }}>
             {[
-              { title: "New File",   icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M9 7H7V5H6v2H4v1h2v2h1V8h2V7z"/><path d="M2 2a2 2 0 012-2h6l4 4v10a2 2 0 01-2 2H4a2 2 0 01-2-2V2zm10 0H8v4h4V2z" opacity=".55"/></svg>, action: () => startCreate("", "file") },
-              { title: "New Folder", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M9.828 3h3.982a2 2 0 011.992 2.181l-.637 7A2 2 0 0113.174 14H2.826a2 2 0 01-1.991-1.819l-.637-7A2 2 0 012.19 3H5v-.5a1.5 1.5 0 011.5-1.5h3A1.5 1.5 0 0111 2.5V3zm-5-1v1h4V2H4.828zM9 8H7V6H6v2H4v1h2v2h1V9h2V8z"/></svg>, action: () => startCreate("", "folder") },
-              { title: "Refresh",    icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path fillRule="evenodd" d="M8 3a5 5 0 104.546 2.914.5.5 0 00-.908-.417A4 4 0 118 4v1L6 3l2-2v1z"/></svg>, action: () => loadFolder("", true) },
+              { title: "Tệp mới",   icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M9 7H7V5H6v2H4v1h2v2h1V8h2V7z"/><path d="M2 2a2 2 0 012-2h6l4 4v10a2 2 0 01-2 2H4a2 2 0 01-2-2V2zm10 0H8v4h4V2z" opacity=".55"/></svg>, action: () => startCreate("", "file") },
+              { title: "Thư mục mới", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M9.828 3h3.982a2 2 0 011.992 2.181l-.637 7A2 2 0 0113.174 14H2.826a2 2 0 01-1.991-1.819l-.637-7A2 2 0 012.19 3H5v-.5a1.5 1.5 0 011.5-1.5h3A1.5 1.5 0 0111 2.5V3zm-5-1v1h4V2H4.828zM9 8H7V6H6v2H4v1h2v2h1V9h2V8z"/></svg>, action: () => startCreate("", "folder") },
+              { title: "Làm mới",    icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path fillRule="evenodd" d="M8 3a5 5 0 104.546 2.914.5.5 0 00-.908-.417A4 4 0 118 4v1L6 3l2-2v1z"/></svg>, action: () => loadFolder("", true) },
             ].map((btn) => (
               <button
                 key={btn.title}
@@ -377,7 +377,7 @@ export default function Sidebar({
         {/* ── Storage bar ──────────────────────────────────────── */}
         <div style={{ padding: "7px 14px", borderTop: `1px solid ${T.border}`, flexShrink: 0 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-            <span style={{ fontSize: 10, color: T.textMuted, fontFamily: "-apple-system, system-ui, sans-serif" }}>Storage</span>
+            <span style={{ fontSize: 10, color: T.textMuted, fontFamily: "-apple-system, system-ui, sans-serif" }}>Dung lượng</span>
             <span style={{ fontSize: 10, color: T.textMuted, fontFamily: "-apple-system, system-ui, sans-serif" }}>3.4 / 10 GB</span>
           </div>
           <div style={{ height: 3, background: T.border, borderRadius: 99 }}>

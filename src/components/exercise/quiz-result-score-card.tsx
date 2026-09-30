@@ -176,25 +176,25 @@ export function ScoreCardSection({
                     {/* Stats grid */}
                     <div className="grid grid-cols-2 gap-x-8 gap-y-4 flex-1">
                         <StatItem
-                            label="Correct"
+                            label="Đúng"
                             value={correct}
                             icon={<CheckCircle2 className="w-3 h-3" />}
                             color="text-green-500"
                         />
                         <StatItem
-                            label="Incorrect"
+                            label="Sai"
                             value={incorrect}
                             icon={<XCircle className="w-3 h-3" />}
                             color="text-red-500"
                         />
                         <StatItem
-                            label="Skipped"
+                            label="Bỏ qua"
                             value={skipped}
                             icon={<SkipForward className="w-3 h-3" />}
                             color="text-gray-400"
                         />
                         <StatItem
-                            label="Time"
+                            label="Thời gian"
                             value={formatTime(timeSpent)}
                             icon={<Clock className="w-3 h-3" />}
                             color="text-gray-700"
@@ -225,13 +225,13 @@ export function ScoreCardSection({
                         onClick={onReview}
                         className="px-5 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
                     >
-                        Review Answers
+                        Xem lại đáp án
                     </button>
                     <button
                         onClick={onRetry}
                         className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors"
                     >
-                        Retry Quiz
+                        Làm lại bài
                     </button>
                 </div>
             </div>

@@ -165,7 +165,8 @@ export interface SystemRoleOption {
 export interface UpdateProfileDTO {
   username?: string;
   full_name?: string;
-  phone?: string;
+  /** null = xoá số điện thoại; bỏ trường = giữ nguyên. */
+  phone?: string | null;
   date_of_birth?: string;
   bio?: string;
   avatar_url?: string;

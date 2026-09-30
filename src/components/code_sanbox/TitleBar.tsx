@@ -79,7 +79,7 @@ const TitleBar = memo(({
     <Sep T={T} />
 
     {/* Sidebar toggle */}
-    <IconBtn title="Toggle Explorer (Ctrl+B)" onClick={() => setSidebarOpen((v) => !v)} active={sidebarOpen} T={T} dark={dark}>
+    <IconBtn title="Bật/tắt trình quản lý tệp (Ctrl+B)" onClick={() => setSidebarOpen((v) => !v)} active={sidebarOpen} T={T} dark={dark}>
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
         <rect x="3" y="3" width="18" height="18" rx="2"/>
         <path d="M9 3v18"/>
@@ -149,7 +149,7 @@ const TitleBar = memo(({
     <Sep T={T} />
 
     {/* Save */}
-    <IconBtn title="Save (Ctrl+S)" onClick={() => { setSaveFileName(currentFile || `untitled${lang.ext}`); setSaveDialog(true); }} T={T} dark={dark}>
+    <IconBtn title="Lưu (Ctrl+S)" onClick={() => { setSaveFileName(currentFile || `untitled${lang.ext}`); setSaveDialog(true); }} T={T} dark={dark}>
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
         <polyline points="17,21 17,13 7,13 7,21"/>

@@ -35,7 +35,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: 'Request failed' }));
+    const error = await res.json().catch(() => ({ message: 'Yêu cầu thất bại' }));
     throw new Error(error.message ?? error.error ?? `HTTP ${res.status}`);
   }
 

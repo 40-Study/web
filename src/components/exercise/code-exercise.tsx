@@ -112,7 +112,7 @@ export function CodeExercise({ exercise, onSubmit, onRun }: CodeExerciseProps) {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-gray-300 text-sm font-medium hover:bg-gray-50 transition-colors"
           >
             <Play className="h-3.5 w-3.5" />
-            Chay thu
+            Chạy thử
           </button>
 
           {/* Submit button */}
@@ -121,7 +121,7 @@ export function CodeExercise({ exercise, onSubmit, onRun }: CodeExerciseProps) {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition-colors"
           >
             <Send className="h-3.5 w-3.5" />
-            Nop bai
+            Nộp bài
           </button>
         </div>
 

@@ -46,7 +46,6 @@ export function ProfileSettings() {
     handleSubmit,
     watch,
     reset,
-    setError,
     formState: { errors, isDirty },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -93,14 +92,6 @@ export function ProfileSettings() {
   };
 
   const onSubmit = async (data: ProfileFormData) => {
-    // Review PR #79: backend chưa cho xoá SĐT (validate e164 từ chối ""). Không gửi rồi báo
-    // "Cập nhật thành công" trong khi SĐT cũ vẫn còn — chặn ngay và nói rõ lý do.
-    if (!data.phone && profileData?.phone) {
-      setError("phone", {
-        message: "Chưa hỗ trợ xoá số điện thoại. Hãy nhập số mới dạng +84912345678 hoặc giữ số cũ.",
-      });
-      return;
-    }
     updateProfile.mutate({
       full_name: data.fullName,
       username: data.username || undefined,
@@ -108,10 +99,10 @@ export function ProfileSettings() {
       // body nên backend (chỉ ghi khi field có mặt) giữ nguyên giá trị cũ. Backend nhận "" và
       // ghi rỗng đúng (auth_service.go UpdateMe; DTO bio chỉ validate max=1000).
       bio: data.bio ?? "",
-      // KHÔNG gửi phone rỗng: DTO backend validate `omitempty,e164` trên *string nên "" bị trả
-      // 400 và CẢ lần lưu hỏng (giảng viên chưa có SĐT không lưu được tiểu sử). Tới đây phone
-      // rỗng chỉ khi tài khoản vốn chưa có SĐT (xoá SĐT đang có đã bị chặn ở trên).
-      phone: data.phone || undefined,
+      // Backend phân biệt 3 trạng thái: vắng mặt = giữ nguyên, null = XOÁ, chuỗi = đặt số mới.
+      // Xoá trắng ô khi đang có SĐT -> gửi null. Tài khoản vốn chưa có SĐT mà ô trống thì không
+      // gửi gì (không có gì để xoá, và "" không phải số hợp lệ).
+      phone: data.phone ? data.phone : profileData?.phone ? null : undefined,
     });
   };
 

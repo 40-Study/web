@@ -55,7 +55,7 @@ const TiptapMentionList = forwardRef<MentionListRef, MentionListProps>(
         if (!items.length) {
             return (
                 <div className="rounded-lg border border-border bg-background p-2 text-sm text-muted-foreground shadow-md">
-                    No results
+                    Không có kết quả
                 </div>
             );
         }

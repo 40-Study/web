@@ -152,7 +152,7 @@ export function LiveSessionModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Cai dat phong hoc Truc tuyen</DialogTitle>
+          <DialogTitle>Cài đặt phòng học trực tuyến</DialogTitle>
           <DialogDescription>Len lich buoi Live Session cho khoa hoc cua ban</DialogDescription>
         </DialogHeader>
 
@@ -160,15 +160,15 @@ export function LiveSessionModal({
           <TabsList className="grid w-full grid-cols-3 mb-4">
             <TabsTrigger value="basic" className="gap-2">
               <Info className="h-4 w-4" />
-              Thong tin co ban
+              Thông tin cơ bản
             </TabsTrigger>
             <TabsTrigger value="schedule" className="gap-2">
               <Calendar className="h-4 w-4" />
-              Lich trinh
+              Lịch trình
             </TabsTrigger>
             <TabsTrigger value="settings" className="gap-2">
               <Settings className="h-4 w-4" />
-              Cai dat phong live
+              Cài đặt phòng học
             </TabsTrigger>
           </TabsList>
 
@@ -176,7 +176,7 @@ export function LiveSessionModal({
           <TabsContent value="basic" className="space-y-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Tieu de buoi live
+                Tiêu đề buổi học
               </label>
               <Input
                 placeholder="VD: Q&A: Giải đáp lỗi cài đặt Go Compiler & VS Code"
@@ -189,11 +189,11 @@ export function LiveSessionModal({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                  Mo ta & chuan bi
+                  Mô tả và chuẩn bị
                 </label>
                 <label className="flex items-center gap-2 text-sm text-primary-600 cursor-pointer hover:underline">
                   <Paperclip className="h-4 w-4" />
-                  Dinh kem File
+                  Đính kèm tệp
                   <input
                     type="file"
                     multiple
@@ -238,7 +238,7 @@ export function LiveSessionModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                  Ngay phat song
+                  Ngày phát sóng
                 </label>
                 <div className="relative mt-2">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -252,7 +252,7 @@ export function LiveSessionModal({
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                  Gio bat dau
+                  Giờ bắt đầu
                 </label>
                 <div className="relative mt-2">
                   <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -268,7 +268,7 @@ export function LiveSessionModal({
 
             <div>
               <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Thoi luong
+                Thời lượng
               </label>
               <Select
                 value={String(form.duration)}
@@ -343,7 +343,7 @@ export function LiveSessionModal({
             {/* Additional options */}
             <div className="space-y-4">
               <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Tuy chon bo sung
+                Tùy chọn bổ sung
               </label>
 
               <div className="flex items-center justify-between p-3 border rounded-xl">

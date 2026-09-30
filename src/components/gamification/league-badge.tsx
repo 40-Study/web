@@ -19,11 +19,11 @@ export interface League {
 }
 
 export const LEAGUES: League[] = [
-  { id: "bronze", name: "Bronze", icon: "🥉", color: "bg-orange-700", minXP: 0 },
-  { id: "silver", name: "Silver", icon: "🥈", color: "bg-slate-600", minXP: 1000 },
-  { id: "gold", name: "Gold", icon: "🥇", color: "bg-amber-700", minXP: 5000 },
-  { id: "diamond", name: "Diamond", icon: "💎", color: "bg-primary-600", minXP: 15000 },
-  { id: "champion", name: "Champion", icon: "👑", color: "bg-purple-700", minXP: 50000 },
+  { id: "bronze", name: "Đồng", icon: "🥉", color: "bg-orange-700", minXP: 0 },
+  { id: "silver", name: "Bạc", icon: "🥈", color: "bg-slate-600", minXP: 1000 },
+  { id: "gold", name: "Vàng", icon: "🥇", color: "bg-amber-700", minXP: 5000 },
+  { id: "diamond", name: "Kim cương", icon: "💎", color: "bg-primary-600", minXP: 15000 },
+  { id: "champion", name: "Vô địch", icon: "👑", color: "bg-purple-700", minXP: 50000 },
 ];
 
 const LEAGUE_ICON: Record<LeagueType, LucideIcon> = {

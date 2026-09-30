@@ -126,3 +126,26 @@ describe("MyOrderCard — pending", () => {
     expect(onReorder).toHaveBeenCalledTimes(1);
   });
 });
+
+// Lane U (UX-10): lý do hoàn tiền là ghi chú nội bộ của admin; học viên chỉ thấy câu chung.
+describe("MyOrderCard — đơn đã hoàn tiền", () => {
+  it("hiện câu chung 'Đơn đã được hoàn tiền' và KHÔNG lộ refund_reason", () => {
+    renderCard(
+      makeOrder({
+        status: "refunded",
+        expires_at: null,
+        refund_reason: "Khiếu nại của học viên Nguyễn Văn A (NỘI BỘ)",
+        refund_transaction_ref: "FT26271123456789",
+        refunded_at: "2026-09-29T00:00:00Z",
+      }),
+    );
+    expect(screen.getByText("Đơn đã được hoàn tiền")).toBeTruthy();
+    expect(screen.queryByText(/Khiếu nại/)).toBeNull();
+    expect(screen.queryByText(/NỘI BỘ/)).toBeNull();
+  });
+
+  it("đơn chưa hoàn tiền không có câu hoàn tiền", () => {
+    renderCard(makeOrder({ status: "completed", expires_at: null }));
+    expect(screen.queryByText("Đơn đã được hoàn tiền")).toBeNull();
+  });
+});

@@ -34,6 +34,7 @@ interface MyOrderCardProps {
 }
 
 const RECONCILING_LABEL = "Đang đối chiếu";
+const REFUNDED_NOTICE = "Đơn đã được hoàn tiền";
 
 /** Một đơn trong "Đơn hàng của tôi": khóa học, tổng tiền, ngày tạo, hạn giữ đơn và hành động. */
 export function MyOrderCard({
@@ -138,6 +139,12 @@ export function MyOrderCard({
         <p className="mt-4 text-sm font-medium text-green-700 dark:text-green-400">
           Đã hoàn tiền cho khoản chuyển khoản của đơn này vào {formatOrderDateTime(lateRefundedAt)}.
         </p>
+      )}
+
+      {/* Học viên chỉ thấy câu chung. `refund_reason` là ghi chú đối soát nội bộ của admin (backend đã
+          bỏ khỏi phản hồi học viên) nên KHÔNG bao giờ render ở đây dù có mặt trong dữ liệu. */}
+      {order.status === "refunded" && (
+        <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">{REFUNDED_NOTICE}</p>
       )}
 
       {closedWithCode && (

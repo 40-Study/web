@@ -97,46 +97,46 @@ export function useVideoKeyboardShortcuts({
 }) {
   const shortcuts: KeyboardShortcut[] = [
     ...(onPlayPause
-      ? [{ key: "Space", action: onPlayPause, description: "Play/Pause" }]
+      ? [{ key: "Space", action: onPlayPause, description: "Phát/Tạm dừng" }]
       : []),
     ...(onSkipBack
-      ? [{ key: "ArrowLeft", action: onSkipBack, description: "Rewind 10s" }]
+      ? [{ key: "ArrowLeft", action: onSkipBack, description: "Tua lùi 10 giây" }]
       : []),
     ...(onSkipForward
       ? [
           {
             key: "ArrowRight",
             action: onSkipForward,
-            description: "Forward 10s",
+            description: "Tua tới 10 giây",
           },
         ]
       : []),
     ...(onVolumeUp
-      ? [{ key: "ArrowUp", action: onVolumeUp, description: "Volume up" }]
+      ? [{ key: "ArrowUp", action: onVolumeUp, description: "Tăng âm lượng" }]
       : []),
     ...(onVolumeDown
-      ? [{ key: "ArrowDown", action: onVolumeDown, description: "Volume down" }]
+      ? [{ key: "ArrowDown", action: onVolumeDown, description: "Giảm âm lượng" }]
       : []),
     ...(onMute
-      ? [{ key: "KeyM", action: onMute, description: "Mute/Unmute" }]
+      ? [{ key: "KeyM", action: onMute, description: "Bật/tắt tiếng" }]
       : []),
     ...(onFullscreen
-      ? [{ key: "KeyF", action: onFullscreen, description: "Fullscreen" }]
+      ? [{ key: "KeyF", action: onFullscreen, description: "Toàn màn hình" }]
       : []),
     ...(onToggleCaptions
       ? [
           {
             key: "KeyC",
             action: onToggleCaptions,
-            description: "Toggle captions",
+            description: "Bật/tắt phụ đề",
           },
         ]
       : []),
     ...(onNextLesson
-      ? [{ key: "KeyN", action: onNextLesson, description: "Next lesson" }]
+      ? [{ key: "KeyN", action: onNextLesson, description: "Bài tiếp theo" }]
       : []),
     ...(onPrevLesson
-      ? [{ key: "KeyP", action: onPrevLesson, description: "Previous lesson" }]
+      ? [{ key: "KeyP", action: onPrevLesson, description: "Bài trước" }]
       : []),
   ];
 

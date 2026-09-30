@@ -70,7 +70,7 @@ interface ScheduleEventFormDialogProps {
 const EVENT_TYPES = [
   { value: "video", label: "Video bài giảng", icon: Video, color: "text-blue-500" },
   { value: "livestream", label: "Livestream", icon: Radio, color: "text-red-500" },
-  { value: "hybrid", label: "Hybrid", icon: Video, color: "text-purple-500" },
+  { value: "hybrid", label: "Kết hợp", icon: Video, color: "text-purple-500" },
 ] as const;
 
 export default function ScheduleEventFormDialog({
@@ -335,7 +335,7 @@ export default function ScheduleEventFormDialog({
           {/* Meeting URL (for livestream/hybrid) */}
           {(type === "livestream" || type === "hybrid") && (
             <div className="space-y-2">
-              <Label htmlFor="event-url">Link meeting</Label>
+              <Label htmlFor="event-url">Liên kết buổi họp</Label>
               <Input
                 id="event-url"
                 type="url"

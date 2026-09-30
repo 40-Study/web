@@ -61,7 +61,7 @@ const OutputPanel = memo(({
                 {result.memory && <span style={{ color: T.textMuted, fontWeight: 400 }}>{" "}· {(result.memory / 1024).toFixed(1)}MB</span>}
               </span>
             )}
-            <button className="ibtn" onClick={() => setResult(null)} title="Clear"
+            <button className="ibtn" onClick={() => setResult(null)} title="Xóa"
               style={{ background: "none", border: "none", color: T.textMuted, cursor: "pointer", padding: "1px 6px", borderRadius: 2, fontSize: 13 }}>
               ⊗
             </button>
@@ -90,7 +90,7 @@ const OutputPanel = memo(({
         {/* ── Stdin resize handle ───────────────────────────────── */}
         <div
           onMouseDown={startDragStdin}
-          title="Drag to resize stdin"
+          title="Kéo để đổi kích thước ô nhập"
           style={{
             width: 4, cursor: "col-resize", flexShrink: 0,
             background: "transparent", transition: "background .15s",

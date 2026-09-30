@@ -59,7 +59,7 @@ export function showAchievementUnlockToast(achievement: Achievement) {
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="h-4 w-4 text-yellow-500" />
           <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400 uppercase tracking-wide">
-            Achievement Unlocked!
+            Mở khóa thành tích!
           </span>
         </div>
         <AchievementToastContent achievement={achievement} />

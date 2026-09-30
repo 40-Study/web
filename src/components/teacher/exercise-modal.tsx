@@ -322,7 +322,7 @@ export function ExerciseModal({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                  Soan thao cau hoi trac nghiem
+                  Soạn thảo câu hỏi trắc nghiệm
                 </h3>
                 <span className="text-sm text-muted-foreground">
                   Tong cong: {quizForm.questions.length} cau hoi
@@ -387,7 +387,7 @@ export function ExerciseModal({
                           className="text-primary-600"
                         >
                           <Plus className="h-4 w-4 mr-1" />
-                          Them phuong an
+                          Thêm phương án
                         </Button>
                       </div>
                     </div>
@@ -397,7 +397,7 @@ export function ExerciseModal({
 
               <Button variant="outline" onClick={addQuestion} className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
-                Them cau hoi moi
+                Thêm câu hỏi mới
               </Button>
             </div>
           </div>
@@ -409,7 +409,7 @@ export function ExerciseModal({
             <div className="flex items-center gap-4">
               <div className="flex-1">
                 <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                  Cau hinh bai tap sandbox
+                  Cấu hình bài tập sandbox
                 </label>
               </div>
               <Select
@@ -448,10 +448,10 @@ export function ExerciseModal({
               rows={4}
             />
 
-            {/* Test Cases */}
+            {/* Ca kiểm thử */}
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Test Cases
+                Ca kiểm thử
               </h3>
               {codeForm.testCases.map((tc, idx) => (
                 <div key={tc.id} className="border rounded-xl p-4 space-y-3">
@@ -505,7 +505,7 @@ export function ExerciseModal({
               ))}
               <Button variant="outline" onClick={addTestCase} className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
-                Add New Test Case
+                Thêm ca kiểm thử mới
               </Button>
             </div>
 
@@ -513,11 +513,11 @@ export function ExerciseModal({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                  Giai phap (Solution)
+                  Lời giải
                 </label>
                 <button className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
                   <EyeOff className="h-4 w-4" />
-                  An giai phap
+                  Ẩn lời giải
                 </button>
               </div>
               <div className="bg-[#1e1e1e] rounded-xl p-4 font-mono text-sm">
@@ -586,7 +586,7 @@ export function ExerciseModal({
 
             <div>
               <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Thoi gian lam bai (phut)
+                Thời gian làm bài (phút)
               </label>
               <Select
                 value={String(essayForm.timeLimit / 60)}
@@ -614,14 +614,14 @@ export function ExerciseModal({
         {exerciseType && (
           <DialogFooter className="flex items-center justify-between sm:justify-between">
             <Button variant="ghost" onClick={handleBack}>
-              Quay lai
+              Quay lại
             </Button>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Huy
               </Button>
               <Button onClick={handleSubmit} isLoading={isLoading}>
-                Luu bai tap
+                Lưu bài tập
               </Button>
             </div>
           </DialogFooter>

@@ -112,15 +112,15 @@ function getDifficultyConfig(difficulty: ExerciseData["difficulty"]) {
 function getStatusConfig(status: SubmitResult["status"]) {
   switch (status) {
     case "accepted":
-      return { label: "Accepted", color: "text-green-600", icon: CheckCircle };
+      return { label: "Chính xác", color: "text-green-600", icon: CheckCircle };
     case "wrong_answer":
-      return { label: "Wrong Answer", color: "text-red-600", icon: XCircle };
+      return { label: "Sai kết quả", color: "text-red-600", icon: XCircle };
     case "time_limit":
-      return { label: "Time Limit Exceeded", color: "text-orange-600", icon: Clock };
+      return { label: "Quá thời gian", color: "text-orange-600", icon: Clock };
     case "runtime_error":
-      return { label: "Runtime Error", color: "text-red-600", icon: XCircle };
+      return { label: "Lỗi khi chạy", color: "text-red-600", icon: XCircle };
     case "compile_error":
-      return { label: "Compile Error", color: "text-red-600", icon: XCircle };
+      return { label: "Lỗi biên dịch", color: "text-red-600", icon: XCircle };
   }
 }
 
@@ -326,7 +326,7 @@ function CodeEditorPanel({
                 : "text-gray-500 hover:text-gray-700"
             )}
           >
-            TEST RESULTS
+            KẾT QUẢ CHẠY THỬ
           </button>
         </div>
 
@@ -365,7 +365,7 @@ function CodeEditorPanel({
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                      Expected Output
+                      Kết quả mong đợi
                     </label>
                     <div className="mt-1 p-3 bg-gray-50 rounded-lg font-mono text-sm text-gray-700">
                       {exercise.testCases[selectedCase].expectedOutput}

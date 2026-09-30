@@ -127,7 +127,7 @@ export function EditProfileForm({ user, onSubmit, onCancel }: EditProfileFormPro
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
           >
-            Upload Photo
+            Tải ảnh lên
           </Button>
           <input
             type="file"
@@ -137,7 +137,7 @@ export function EditProfileForm({ user, onSubmit, onCancel }: EditProfileFormPro
             className="hidden"
           />
           <p className="text-xs text-muted-foreground mt-1">
-            JPG, PNG or WebP. Max 2MB.
+            JPG, PNG hoặc WebP. Tối đa 2MB.
           </p>
           {avatarError && (
             <p className="text-xs text-destructive mt-1">{avatarError}</p>
@@ -147,18 +147,18 @@ export function EditProfileForm({ user, onSubmit, onCancel }: EditProfileFormPro
 
       {/* Full Name */}
       <div className="space-y-2">
-        <Label htmlFor="fullName">Full Name</Label>
+        <Label htmlFor="fullName">Họ và tên</Label>
         <Input
           id="fullName"
           {...register("fullName")}
           error={errors.fullName?.message}
-          placeholder="Your full name"
+          placeholder="Nhập họ và tên của bạn"
         />
       </div>
 
       {/* Username */}
       <div className="space-y-2">
-        <Label htmlFor="username">Username</Label>
+        <Label htmlFor="username">Tên người dùng</Label>
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
             @
@@ -183,7 +183,7 @@ export function EditProfileForm({ user, onSubmit, onCancel }: EditProfileFormPro
           id="bio"
           {...register("bio")}
           error={errors.bio?.message}
-          placeholder="Tell us about yourself"
+          placeholder="Giới thiệu đôi nét về bạn"
           maxLength={160}
           rows={3}
         />
@@ -198,7 +198,7 @@ export function EditProfileForm({ user, onSubmit, onCancel }: EditProfileFormPro
           Cancel
         </Button>
         <Button type="submit" isLoading={isSubmitting} loadingText="Saving...">
-          Save Changes
+          Lưu thay đổi
         </Button>
       </div>
     </form>

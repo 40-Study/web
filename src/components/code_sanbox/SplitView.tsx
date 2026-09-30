@@ -103,7 +103,7 @@ const SplitView = memo(({
         }}
         onMouseEnter={(e) => (e.currentTarget.style.background = T.accent)}
         onMouseLeave={(e) => (e.currentTarget.style.background = T.border)}
-        title="Drag to resize"
+        title="Kéo để đổi kích thước"
       >
         {/* Grip dots */}
         <div style={{
@@ -136,7 +136,7 @@ const SplitView = memo(({
         {onClose && (
           <button
             onClick={onClose}
-            title="Close split"
+            title="Đóng chia đôi"
             style={{
               position: "absolute",
               top: 4,
