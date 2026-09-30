@@ -146,7 +146,7 @@ export function PopoverContent({
     <div
       ref={contentRef}
       className={cn(
-        "fixed z-50 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700",
+        "fixed z-50 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700",
         "animate-in fade-in-0 zoom-in-95",
         className
       )}

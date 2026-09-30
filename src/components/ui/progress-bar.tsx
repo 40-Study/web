@@ -11,11 +11,11 @@ interface ProgressBarProps {
 }
 
 const variants = {
-  default: "bg-primary-500",
-  xp: "bg-green-500",
-  streak: "bg-orange-500",
-  course: "bg-primary-500",
-  level: "bg-primary-600",
+  default: "bg-primary-600 dark:bg-primary-400",
+  xp: "bg-green-500 dark:bg-green-400",
+  streak: "bg-orange-500 dark:bg-orange-400",
+  course: "bg-primary-600 dark:bg-primary-400",
+  level: "bg-primary-600 dark:bg-primary-400",
 };
 
 const sizes = {
@@ -37,7 +37,7 @@ export function ProgressBar({
     <div className={cn("w-full", className)}>
       <div
         className={cn(
-          "w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden",
+          "w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden",
           sizes[size]
         )}
       >

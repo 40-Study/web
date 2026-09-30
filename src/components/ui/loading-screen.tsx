@@ -8,10 +8,10 @@ interface LoadingScreenProps {
   className?: string;
   fullScreen?: boolean;
   /**
-   * Nền tối cho route group `(live)` (phòng học dùng `bg-gray-950`).
+   * Nền tối cho route group `(live)` (phòng học dùng `bg-slate-950`).
    *
    * Phải là prop chứ không thể truyền class từ ngoài: `cn` là `twMerge`, và
-   * `bg-gradient-to-br` (nhóm `bg-image`) với `bg-gray-950` (nhóm `bg-color`)
+   * `bg-gradient-to-br` (nhóm `bg-image`) với `bg-slate-950` (nhóm `bg-color`)
    * khác nhóm nên **cả hai cùng sống sót** — gradient vẫn vẽ đè lên nền tối.
    * Chữ cũng vậy: `<p>` con tự mang `text-muted-foreground`, class truyền từ
    * cha không thắng được (Phase 0 vòng 3, M-3).
@@ -33,9 +33,9 @@ export function LoadingScreen({
       className={cn(
         "flex items-center justify-center",
         isDark
-          ? // `bg-none` đứng trước `bg-gray-950` để xoá hẳn `background-image` của
+          ? // `bg-none` đứng trước `bg-slate-950` để xoá hẳn `background-image` của
             // gradient — `background-image` luôn vẽ đè lên `background-color`.
-            "bg-none bg-gray-950"
+            "bg-none bg-slate-950"
           : "bg-gradient-to-br from-background via-background to-primary/5",
         fullScreen && "min-h-screen",
         className
@@ -51,7 +51,7 @@ export function LoadingScreen({
           <p
             className={cn(
               "text-sm font-medium animate-pulse",
-              isDark ? "text-gray-300" : "text-muted-foreground"
+              isDark ? "text-slate-300" : "text-muted-foreground"
             )}
           >
             {text}
