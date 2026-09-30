@@ -10,6 +10,7 @@ import { AUTH_CONFIG, STORAGE_KEYS } from "@/lib/constants";
 import { showComingSoon } from "@/lib/toast-helpers";
 import { startOAuthFlow } from "@/services/auth.service";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { SocialLoginButton } from "@/components/auth/social-login-button";
 import { RoleCard, roleNameToRoleType } from "@/components/auth/role-card";
@@ -389,15 +390,10 @@ function LoginView({
                     required
                 />
                 <div className="flex items-center justify-between">
-                    <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <input
-                            type="checkbox"
-                            checked={rememberMe}
-                            onChange={(e) => setRememberMe(e.target.checked)}
-                            className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                        />
-                        Nhớ mật khẩu
-                    </label>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Checkbox id="auth-modal-remember-me" checked={rememberMe} onCheckedChange={setRememberMe} />
+                        <label htmlFor="auth-modal-remember-me" className="cursor-pointer">Nhớ mật khẩu</label>
+                    </div>
                     <Link
                         href={AUTH_ROUTES.FORGOT_PASSWORD}
                         className="text-sm font-medium text-primary hover:underline"

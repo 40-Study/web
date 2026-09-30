@@ -7,6 +7,7 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { SocialLoginButton } from "@/components/auth/social-login-button";
 import { AuthFooterLink } from "@/components/auth/auth-footer-link";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { AUTH_ROUTES, getRoleHomeRoute } from "@/lib/routes";
 import { getRoleFromToken } from "@/lib/jwt";
@@ -102,15 +103,10 @@ export default function LoginPage() {
         />
 
         <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-            />
-            Nhớ mật khẩu
-          </label>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={setRememberMe} />
+            <label htmlFor="remember-me" className="cursor-pointer">Nhớ mật khẩu</label>
+          </div>
           <Link
             href={AUTH_ROUTES.FORGOT_PASSWORD}
             className="text-sm font-medium text-primary hover:text-primary"
