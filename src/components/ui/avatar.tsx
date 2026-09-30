@@ -38,7 +38,7 @@ const statusSizes = {
 
 const statusColors = {
   online: "bg-green-500",
-  offline: "bg-gray-400",
+  offline: "bg-slate-400",
   busy: "bg-red-500",
   streak: "bg-orange-500",
 };
@@ -76,7 +76,7 @@ export function Avatar({
       {status && (
         <div
           className={cn(
-            "absolute bottom-0 right-0 rounded-full border-2 border-white dark:border-gray-900 flex items-center justify-center",
+            "absolute bottom-0 right-0 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center",
             statusSizes[size],
             status !== "streak" && statusColors[status]
           )}
