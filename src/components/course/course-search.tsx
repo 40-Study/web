@@ -19,7 +19,7 @@ export function CourseSearch({
   onSearch,
   suggestions = [],
   className,
-  placeholder = "Tìm kiếm khóa học...",
+  placeholder = "Tìm trong danh sách…",
   isLoading = false,
 }: CourseSearchProps) {
   const router = useRouter();
@@ -99,9 +99,10 @@ export function CourseSearch({
           )}
           <Input
             ref={inputRef}
+            aria-label="Tìm khóa học"
             type="text"
             placeholder={placeholder}
-            className="h-12 pl-10 pr-10 text-base rounded-2xl border border-slate-200 bg-card shadow-sm hover:border-slate-300 dark:border-border dark:bg-card"
+            className="h-11 pl-10 pr-11 text-base rounded-lg border-slate-300 bg-white hover:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => query.length >= 2 && setShowSuggestions(true)}
@@ -110,7 +111,8 @@ export function CourseSearch({
             <button
               type="button"
               onClick={clearSearch}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Xóa từ khóa tìm kiếm"
+              className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-slate-400 dark:hover:text-slate-50"
             >
               <X className="h-4 w-4" />
             </button>
@@ -120,33 +122,35 @@ export function CourseSearch({
 
       {/* Autocomplete dropdown */}
       {showSuggestions && isLoading && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 p-4 flex items-center justify-center">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-raised z-50 p-4 flex items-center justify-center dark:bg-slate-900 dark:border-slate-800">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          <span className="ml-2 text-sm text-gray-500">Đang tìm kiếm...</span>
+          <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">Đang tìm kiếm...</span>
         </div>
       )}
       {showSuggestions && !isLoading && filteredSuggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-raised z-50 overflow-hidden dark:bg-slate-900 dark:border-slate-800">
           {filteredSuggestions.map((course) => (
             <button
               key={course.id}
               onClick={() => handleSelect(course)}
-              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 text-left transition-colors"
+              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"
             >
               <img
                 src={course.thumbnail}
                 alt={course.title}
-                className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
+                width={48}
+                height={48}
+                className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
               />
               <div className="min-w-0">
-                <p className="font-medium text-gray-900 line-clamp-1">{course.title}</p>
-                <p className="text-xs text-gray-500">{course.instructor}</p>
+                <p className="font-medium text-slate-900 dark:text-slate-50 line-clamp-1">{course.title}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400">{course.instructor}</p>
               </div>
             </button>
           ))}
           <button
             onClick={handleSubmit}
-            className="w-full px-4 py-3 text-sm font-medium text-primary-600 hover:bg-primary-50 text-left border-t border-gray-100 transition-colors"
+            className="w-full px-4 py-3 text-sm font-medium text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-slate-800 text-left border-t border-slate-100 dark:border-slate-800 transition-colors"
           >
             Xem tất cả kết quả cho &quot;{query}&quot;
           </button>
