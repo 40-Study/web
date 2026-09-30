@@ -18,6 +18,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { clockTimeToMinutes, formatClockTime } from "@/lib/schedule-time";
 import {
   useChildOverview,
   useChildCourses,
@@ -43,11 +44,6 @@ const TABS: { id: TabType; label: string; icon: React.ElementType }[] = [
 
 const DAY_NAMES = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 - 20:00
-
-function timeToMinutes(time: string): number {
-  const [h, m] = time.split(":").map(Number);
-  return h * 60 + m;
-}
 
 function ScheduleGrid({ entries }: { entries: TimetableEntry[] }) {
   // Group entries by day
@@ -100,8 +96,10 @@ function ScheduleGrid({ entries }: { entries: TimetableEntry[] }) {
           {/* Render entries */}
           {[1, 2, 3, 4, 5, 6, 0].map((day, colIndex) =>
             entriesByDay[day]?.map((entry, idx) => {
-              const startMins = timeToMinutes(entry.start_time);
-              const endMins = timeToMinutes(entry.end_time);
+              // API trả timestamp ISO đầy đủ; giờ không đọc được thì bỏ khối, không vẽ NaN.
+              const startMins = clockTimeToMinutes(entry.start_time);
+              const endMins = clockTimeToMinutes(entry.end_time);
+              if (startMins === null || endMins === null) return null;
               const top = ((startMins - 7 * 60) / 60) * 64; // 64px per hour
               const height = ((endMins - startMins) / 60) * 64;
 
@@ -121,7 +119,7 @@ function ScheduleGrid({ entries }: { entries: TimetableEntry[] }) {
                 >
                   <div className="font-medium truncate">{entry.class_name}</div>
                   <div className="truncate">
-                    {entry.start_time} - {entry.end_time}
+                    {formatClockTime(entry.start_time)} - {formatClockTime(entry.end_time)}
                   </div>
                   {entry.room && <div className="truncate text-[10px]">P.{entry.room}</div>}
                 </div>
@@ -489,7 +487,9 @@ export default function ChildDetailPage() {
                             <div>
                               <p className="font-medium">{assignment.title}</p>
                               <p className="text-sm text-gray-500">
-                                {assignment.class_name} | {assignment.type} |{" "}
+                                {/* /parent/children/:id/assignments không trả class_name — chỉ hiện khi có */}
+                                {assignment.class_name && <>{assignment.class_name} | </>}
+                                {assignment.type} |{" "}
                                 <span className="capitalize">{assignment.difficulty}</span>
                               </p>
                             </div>

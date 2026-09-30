@@ -64,9 +64,10 @@ function AssignmentCard({ item }: { item: Assignment }) {
       {/* Bottom row */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         {/* Language */}
-        {item.language && (
+        {/* Backend trả language là mảng (vd ["python"]) */}
+        {item.language?.length > 0 && (
           <span className="text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full">
-            {item.language}
+            {item.language.join(", ")}
           </span>
         )}
 

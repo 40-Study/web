@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { parseClockTime } from "@/lib/schedule-time";
 import { useMySchedules } from "@/hooks/queries/use-class-schedule";
 import type { ClassSchedule } from "@/types/class-schedule";
 
@@ -97,14 +98,17 @@ function fmtHour(h: number) {
 }
 
 function toEvents(schedules: ClassSchedule[]): CalEvent[] {
-  return schedules.map((s, i) => {
-    const [sh, sm] = s.start_time.split(":").map(Number);
-    const [eh, em] = s.end_time.split(":").map(Number);
-    return {
+  return schedules.flatMap((s, i) => {
+    // /me/timetable trả timestamp ISO đầy đủ, không phải "HH:MM" — xem lib/schedule-time.
+    const start = parseClockTime(s.start_time);
+    const end = parseClockTime(s.end_time);
+    // Giờ không đọc được thì bỏ mục đó, không vẽ khối lịch ở toạ độ NaN.
+    if (!start || !end) return [];
+    return [{
       id: s.id, title: s.title || "Buổi học", dow: s.day_of_week,
-      startH: sh, startM: sm, endH: eh, endM: em,
+      startH: start.hours, startM: start.minutes, endH: end.hours, endM: end.minutes,
       colorIdx: i % EVENT_COLORS.length, teacher: s.teacher_name, room: s.room,
-    };
+    }];
   });
 }
 

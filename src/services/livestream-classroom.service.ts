@@ -4,6 +4,14 @@
  */
 
 import { api } from "@/lib/api-client";
+import { livestreamService } from "@/services/livestream.service";
+import { assignmentService, type AssignmentResponseDTO } from "@/services/assignment.service";
+
+/**
+ * Backend mặc định page_size=20; lấy rộng hơn để trang tổng hợp bài tập không mất buổi
+ * cũ. Đã thử GET /livestream?page_size=100 trên backend local → 200.
+ */
+const SESSION_PAGE_SIZE = 100;
 
 export interface LivestreamSession {
   id: string;
@@ -38,17 +46,12 @@ export interface ChatMessage {
   created_at: string;
 }
 
-export interface Assignment {
-  id: string;
-  session_id: string;
-  title: string;
-  description?: string;
-  language: string;
-  starter_code?: string;
-  test_cases: TestCase[];
-  time_limit?: number;
-  is_published: boolean;
-}
+/**
+ * Bài tập của buổi live — đúng shape backend trả (SSOT ở assignment.service).
+ * Interface cũ ở đây tự bịa `language: string` + `test_cases`, backend trả
+ * `language: string[]` và không kèm test case trong danh sách.
+ */
+export type Assignment = AssignmentResponseDTO;
 
 export interface TestCase {
   id: string;
@@ -88,12 +91,15 @@ export interface CreateAssignmentDTO {
 
 export const livestreamClassroomService = {
   // Sessions
+  /**
+   * GET /livestream trả raw `{data: [...], total, page, page_size}` — KHÔNG có `data.sessions`
+   * (đọc sai khiến "Bài tập của tôi" luôn rỗng). Dùng chung `livestreamService.list` để khỏi
+   * lặp logic parse. Backend bỏ qua `class_id` nên lọc theo lớp ở client.
+   */
   listSessions: (classId?: string) =>
-    api
-      .get<{ message: string; data: { sessions: LivestreamSession[] } }>("/livestream", {
-        params: classId ? { class_id: classId } : {},
-      })
-      .then((r) => r.data.data.sessions),
+    livestreamService
+      .list({ pageSize: SESSION_PAGE_SIZE })
+      .then((r) => (r.data ?? []).filter((s) => !classId || s.class_id === classId)),
 
   getSession: (id: string) =>
     api
@@ -172,12 +178,12 @@ export const livestreamClassroomService = {
       .then((r) => r.data),
 
   // Assignments
-  getAssignments: (sessionId: string) =>
-    api
-      .get<{ message: string; data: { assignments: Assignment[] } }>("/assignments", {
-        params: { session_id: sessionId },
-      })
-      .then((r) => r.data.data.assignments),
+  /**
+   * GET /assignments?session_id= trả raw `{data: [...], total, page, page_size}` — KHÔNG có
+   * `data.assignments`. Dùng chung `assignmentService.getBySession` (trang giáo viên dùng đúng).
+   */
+  getAssignments: (sessionId: string): Promise<Assignment[]> =>
+    assignmentService.getBySession(sessionId).then((r) => r.data ?? []),
 
   createAssignment: (sessionId: string, data: CreateAssignmentDTO) =>
     api

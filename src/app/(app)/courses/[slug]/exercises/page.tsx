@@ -2,50 +2,42 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Code2, HelpCircle, Lock, Clock, CheckCircle, Loader2 } from "lucide-react";
+import { useQueries } from "@tanstack/react-query";
+import { ChevronLeft, Code2, Lock, Clock, CheckCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCourseBySlug } from "@/hooks/queries/use-courses";
 import { useSections } from "@/hooks/queries/use-sections";
+import { lessonContentKeys } from "@/hooks/queries/use-lesson-content";
+import { lessonContentService, type LessonContent } from "@/services/lesson-content.service";
+import { mapSectionsToExercises } from "@/lib/course-exercises";
 import type { Section } from "@/types/section";
-import type { Lesson } from "@/types/lesson";
-
-interface ExerciseItem {
-  id: string;
-  title: string;
-  type: "exercise" | "quiz";
-  duration: string;
-  completed: boolean;
-  locked: boolean;
-  chapterTitle: string;
-  chapterIndex: number;
-}
-
-function mapSectionsToExercises(sections: Section[]): ExerciseItem[] {
-  return sections.flatMap((section, sIdx) =>
-    (section.lessons ?? [])
-      .filter((l: Lesson) => l.type === "quiz")
-      .map((l: Lesson) => ({
-        id: l.id,
-        title: l.title,
-        type: "quiz" as const,
-        duration: l.duration
-          ? `${Math.floor(l.duration / 60)}:${String(l.duration % 60).padStart(2, "0")}`
-          : "00:00",
-        completed: false,
-        locked: !l.is_preview,
-        chapterTitle: section.title,
-        chapterIndex: sIdx + 1,
-      }))
-  );
-}
 
 export default function CourseExercisesPage() {
   const { slug } = useParams<{ slug: string }>();
 
   const { data: course, isLoading: courseLoading } = useCourseBySlug(slug);
-  const { data: sections = [], isLoading: sectionsLoading } = useSections(course?.id ?? "");
+  const { data: rawSections = [], isLoading: sectionsLoading } = useSections(course?.id ?? "");
+  // GET /courses/:id/sections có kèm `lessons`, nhưng type của section.service chưa khai báo.
+  const sections: Section[] = rawSections;
 
-  const isLoading = courseLoading || sectionsLoading;
+  // Sections không mang loại nội dung → lấy content từng bài để biết bài nào là bài tập.
+  // Dùng chung query key với useLessonContents nên trang học tái dùng cache.
+  const lessonIds = sections.flatMap((s) => (s.lessons ?? []).map((l) => l.id));
+  const contentQueries = useQueries({
+    queries: lessonIds.map((id) => ({
+      queryKey: lessonContentKeys.contents(id),
+      queryFn: () => lessonContentService.getContents(id),
+      staleTime: 30 * 1000,
+    })),
+  });
+
+  const contentsByLesson: Record<string, LessonContent[] | undefined> = {};
+  lessonIds.forEach((id, i) => {
+    contentsByLesson[id] = contentQueries[i]?.data;
+  });
+
+  const isLoading =
+    courseLoading || sectionsLoading || contentQueries.some((q) => q.isLoading);
 
   if (isLoading) {
     return (
@@ -55,7 +47,7 @@ export default function CourseExercisesPage() {
     );
   }
 
-  const exercises = mapSectionsToExercises(sections);
+  const exercises = mapSectionsToExercises(sections, contentsByLesson);
   const completedCount = exercises.filter((e) => e.completed).length;
   const pendingCount = exercises.filter((e) => !e.completed && !e.locked).length;
 
@@ -101,17 +93,8 @@ export default function CourseExercisesPage() {
               >
                 <div className="flex items-center gap-4">
                   {/* Icon */}
-                  <div
-                    className={cn(
-                      "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
-                      ex.type === "quiz" ? "bg-orange-100" : "bg-blue-100"
-                    )}
-                  >
-                    {ex.type === "quiz" ? (
-                      <HelpCircle className="w-6 h-6 text-orange-600" />
-                    ) : (
-                      <Code2 className="w-6 h-6 text-blue-600" />
-                    )}
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-blue-100">
+                    <Code2 className="w-6 h-6 text-blue-600" />
                   </div>
 
                   {/* Content */}
@@ -121,11 +104,8 @@ export default function CourseExercisesPage() {
                       Chương {ex.chapterIndex}: {ex.chapterTitle}
                     </p>
                     <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-400">
-                      <span className={cn(
-                        "px-2 py-0.5 rounded-full font-medium",
-                        ex.type === "quiz" ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"
-                      )}>
-                        {ex.type === "quiz" ? "Trắc nghiệm" : "Thực hành"}
+                      <span className="px-2 py-0.5 rounded-full font-medium bg-blue-100 text-blue-700">
+                        Thực hành
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />

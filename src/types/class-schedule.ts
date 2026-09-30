@@ -7,8 +7,10 @@ export interface ClassSchedule {
   class_id: string;
   title?: string;
   day_of_week: number; // 0 = Sunday, 6 = Saturday
-  start_time: string;  // HH:mm
-  end_time: string;    // HH:mm
+  /** "HH:mm" hoặc timestamp ISO (/me/timetable trả ISO) — đọc qua `lib/schedule-time`. */
+  start_time: string;
+  /** "HH:mm" hoặc timestamp ISO (/me/timetable trả ISO) — đọc qua `lib/schedule-time`. */
+  end_time: string;
   room?: string;
   teacher_id?: string;
   teacher_name?: string;
