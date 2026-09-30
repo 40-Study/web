@@ -10,38 +10,11 @@ interface ForteXLogoIconProps {
 }
 
 /**
- * ForteX "X" particle logo - Rebuilt to perfectly match the 1-3-3-1 matrix image.
- * The dots follow a strict checkerboard grid (x+y = even) with empty main axes.
- * Format: [cx, cy, radius]
+ * ForteX "folded X" logo — hai dải chéo cắt đầu ngang kiểu chữ in (viewBox 100x100).
+ * Phần giao nhau được tô đậm hơn (clip theo dải "\") để tạo cảm giác một dải giấy gấp chéo.
  */
-const DOTS: [number, number, number][] = [
-  // ═══ CENTER ═══
-  [50, 50, 8],
-
-  // ═══ TOP-LEFT ARM ═══
-  [41.5, 41.5, 6], // Inner 1
-  [33, 33, 5], [41.5, 24.5, 3.5], [24.5, 41.5, 3.5], // Group 3 (Spine + Flanks)
-  [24.5, 24.5, 3.5], [33, 16, 2.5], [16, 33, 2.5], // Group 3 (Spine + Flanks)
-  [16, 16, 1.8], // Tip 1
-
-  // ═══ TOP-RIGHT ARM ═══
-  [58.5, 41.5, 6],
-  [67, 33, 5], [58.5, 24.5, 3.5], [75.5, 41.5, 3.5],
-  [75.5, 24.5, 3.5], [67, 16, 2.5], [84, 33, 2.5],
-  [84, 16, 1.8],
-
-  // ═══ BOTTOM-LEFT ARM ═══
-  [41.5, 58.5, 6],
-  [33, 67, 5], [41.5, 75.5, 3.5], [24.5, 58.5, 3.5],
-  [24.5, 75.5, 3.5], [33, 84, 2.5], [16, 67, 2.5],
-  [16, 84, 1.8],
-
-  // ═══ BOTTOM-RIGHT ARM ═══
-  [58.5, 58.5, 6],
-  [67, 67, 5], [58.5, 75.5, 3.5], [75.5, 58.5, 3.5],
-  [75.5, 75.5, 3.5], [67, 84, 2.5], [84, 67, 2.5],
-  [84, 84, 1.8],
-];
+const BAND_BACKSLASH = "M14 12H36L86 88H64Z";
+const BAND_SLASH = "M64 12H86L36 88H14Z";
 
 export function ForteXLogoIcon({
   size = 32,
@@ -50,6 +23,12 @@ export function ForteXLogoIcon({
   className,
 }: ForteXLogoIconProps) {
   const uid = useId().replace(/:/g, "");
+
+  // Bám theo tailwind.config.ts: primary blue-400/500/700, secondary sky-300/500, nếp gấp blue-800.
+  // gradient=false → đơn sắc theo currentColor, nếp gấp phân biệt bằng opacity.
+  const backslashFill = gradient ? `url(#fx-p-${uid})` : "currentColor";
+  const slashFill = gradient ? `url(#fx-s-${uid})` : "currentColor";
+  const foldFill = gradient ? "#1e40af" : "currentColor";
 
   return (
     <svg
@@ -60,47 +39,39 @@ export function ForteXLogoIcon({
       className={cn("flex-shrink-0", className)}
       aria-label="ForteX logo"
     >
-      {gradient && (
-        <defs>
-          <radialGradient id={`fg-${uid}`} cx="50%" cy="50%" r="55%">
-            <stop offset="0%" stopColor="#7C3AED" />
-            <stop offset="100%" stopColor="#4F46E5" />
-          </radialGradient>
-          {animated && (
-            <style>{`
-              @keyframes dp-${uid} {
-                0%, 100% { opacity: var(--o); transform: scale(1); }
-                50% { opacity: calc(var(--o) * 0.65); transform: scale(0.88); }
-              }
-            `}</style>
-          )}
-        </defs>
-      )}
-      <g fill={gradient ? `url(#fg-${uid})` : "currentColor"}>
-        {DOTS.map(([cx, cy, r], i) => {
-          const dist = Math.sqrt((cx - 50) ** 2 + (cy - 50) ** 2);
-          // Giữ nguyên logic tính opacity (nếu bạn muốn các hạt ngoài cùng đậm hơn, có thể thay số 65 thành 80 hoặc 90)
-          const opacity = Math.max(0.25, 1 - dist / 65);
-          return (
-            <circle
-              key={i}
-              cx={cx}
-              cy={cy}
-              r={r}
-              opacity={opacity}
-              style={
-                animated
-                  ? ({
-                    "--o": opacity,
-                    transformOrigin: `${cx}px ${cy}px`,
-                    animation: `dp-${uid} ${2.2 + (i % 4) * 0.5}s ease-in-out ${(i % 7) * 0.18}s infinite`,
-                  } as React.CSSProperties)
-                  : undefined
-              }
-            />
-          );
-        })}
-      </g>
+      <defs>
+        {gradient && (
+          <>
+            <linearGradient id={`fx-p-${uid}`} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#60a5fa" />
+              <stop offset="50%" stopColor="#3b82f6" />
+              <stop offset="100%" stopColor="#1d4ed8" />
+            </linearGradient>
+            <linearGradient id={`fx-s-${uid}`} x1="1" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#7dd3fc" />
+              <stop offset="100%" stopColor="#0ea5e9" />
+            </linearGradient>
+          </>
+        )}
+        <clipPath id={`fx-c-${uid}`}>
+          <path d={BAND_BACKSLASH} />
+        </clipPath>
+        {animated && (
+          <style>{`
+            @keyframes fx-fold-${uid} { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+            .fx-fold-${uid} { animation: fx-fold-${uid} 2.4s ease-in-out infinite; }
+            @media (prefers-reduced-motion: reduce) { .fx-fold-${uid} { animation: none; } }
+          `}</style>
+        )}
+      </defs>
+      <path d={BAND_BACKSLASH} fill={backslashFill} />
+      <path d={BAND_SLASH} fill={slashFill} opacity={gradient ? 1 : 0.55} />
+      <path
+        d={BAND_SLASH}
+        fill={foldFill}
+        clipPath={`url(#fx-c-${uid})`}
+        className={animated ? `fx-fold-${uid}` : undefined}
+      />
     </svg>
   );
 }
