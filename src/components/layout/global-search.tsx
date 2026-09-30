@@ -182,19 +182,23 @@ export function GlobalSearch() {
           }}
           onKeyDown={handleInputKeyDown}
           placeholder="Tìm kiếm khóa học..."
-          className="flex-1 bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground"
+          // Khung ngoài đã có vòng focus; tắt box-shadow focus-visible toàn cục của input để không hiện vòng thứ hai khi click.
+          className="flex-1 min-w-0 p-0 bg-transparent border-none outline-none shadow-none focus:ring-0 focus-visible:shadow-none text-sm text-foreground placeholder:text-muted-foreground"
         />
         {open ? (
           <button
             onClick={closeModal}
-            className="p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center justify-center w-5 h-5 rounded text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
             aria-label="Đóng"
           >
             <X className="w-4 h-4" />
           </button>
         ) : (
-          <kbd className="hidden lg:inline-flex items-center gap-0.5 text-[10px] text-muted-foreground bg-muted border border-border rounded px-1.5 py-0.5">
-            <span>⌘</span>K
+          <kbd
+            className="hidden lg:inline-flex items-center h-5 text-[10px] leading-none text-muted-foreground bg-muted border border-border rounded px-1.5 flex-shrink-0"
+            title="Phím tắt mở tìm kiếm"
+          >
+            Ctrl K
           </kbd>
         )}
       </div>
