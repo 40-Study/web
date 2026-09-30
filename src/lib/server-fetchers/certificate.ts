@@ -20,7 +20,9 @@ export async function verifyCertificateServer(
   try {
     const res = await fetch(
       `${getPublicApiBaseUrl()}/certificates/verify/${encodeURIComponent(certificateNumber)}`,
-      { next: { revalidate: 300 } }
+      // Không cache: chứng chỉ có thể bị thu hồi (hoàn tiền) bất cứ lúc nào, bản "hợp lệ" cũ kèm tên
+      // học viên không được sống thêm phút nào ở data cache. Backend đã có cache redis riêng (xoá khi thu hồi).
+      { cache: "no-store" }
     );
 
     if (!res.ok) return null;

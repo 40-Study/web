@@ -18,6 +18,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const result = await verifyCertificateServer(params.number);
 
+  if (result?.revoked) {
+    return {
+      title: "Chứng chỉ đã bị thu hồi",
+      robots: { index: false, follow: false },
+    };
+  }
+
   if (!result?.valid) {
     return {
       title: "Không tìm thấy chứng chỉ",
