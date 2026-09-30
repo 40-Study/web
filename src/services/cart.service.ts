@@ -13,7 +13,13 @@ export interface CartItem {
   course?: {
     id: string;
     title: string;
-    price: number;
+    /** Giá niêm yết. */
+    price: number | string;
+    /**
+     * GIÁ BÁN khi đang giảm giá (backend CartCourseInfoDTO.discount_price). Giá phải trả =
+     * `getCartItemPrices(item).price` (lib/cart-pricing.ts) — không tự chọn giữa price/discount_price.
+     */
+    discount_price?: number | string | null;
     thumbnail?: string;
     instructor?: { id: string; name: string };
   };

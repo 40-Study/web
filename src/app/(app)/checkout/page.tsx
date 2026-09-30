@@ -21,6 +21,8 @@ import { OrderPaymentDialog } from "@/components/checkout/order-payment-dialog";
 import type { VoucherValidateResponse } from "@/types/voucher";
 import type { Order } from "@/services/order.service";
 import { v4 as uuidv4 } from "uuid";
+import { sumCartItemPrices } from "@/lib/cart-pricing";
+import { CartItemPrice } from "@/components/cart/cart-item-price";
 
 function formatPrice(price: number | string | null | undefined): string {
   return new Intl.NumberFormat("vi-VN", {
@@ -57,7 +59,8 @@ export default function CheckoutPage() {
     return allItems.filter((item) => ids.includes(item.course_id));
   }, [cartData?.items, selectedItemsParam]);
 
-  const subtotal = items.reduce((sum, item) => sum + Number(item.course?.price ?? 0), 0);
+  // Theo GIÁ BÁN — order_service tính subtotal bằng Course.EffectivePrice, không phải giá niêm yết.
+  const subtotal = sumCartItemPrices(items);
   const discount = voucherResult?.discount_amount ?? 0;
   const total = Math.max(0, subtotal - discount);
 
@@ -210,7 +213,7 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <p className="font-medium text-black flex-shrink-0">
-                      {formatPrice(item.course?.price ?? 0)}
+                      <CartItemPrice item={item} />
                     </p>
                   </div>
                 ))}

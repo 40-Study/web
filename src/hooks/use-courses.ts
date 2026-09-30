@@ -10,6 +10,7 @@ import {
 import { categoryService } from "@/services/category.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { NotFoundError } from "@/lib/errors";
+import { resolveEffectivePrice } from "@/lib/course-pricing";
 import {
   Course,
   CourseDetail,
@@ -46,24 +47,6 @@ function mapApiInstructor(
   };
 }
 
-/**
- * `discount_price` của backend là GIÁ BÁN (không phải giá gốc). Quy tắc khớp
- * `Course.EffectivePrice` (backend/internal/model/course_pricing.go) — nơi giỏ hàng và đơn hàng
- * tính tiền: giảm giá hợp lệ khi 0 <= discount < price. Khi đó `price` = giá phải trả,
- * `originalPrice` = giá niêm yết (để UI gạch giá + badge "-x%"); ngược lại chỉ có `price`.
- */
-function resolveCoursePrices(c: ApiCourse): Pick<Course, "price" | "originalPrice"> {
-  const listPrice = Number(c.price) || 0;
-  const raw = c.discount_price;
-  // Number("") === 0 và Number(null) === 0 sẽ biến "không có giảm giá" thành "giảm còn 0đ".
-  if (raw === undefined || raw === null || raw === "") return { price: listPrice };
-  const salePrice = Number(raw);
-  if (!Number.isFinite(salePrice) || salePrice < 0 || salePrice >= listPrice) {
-    return { price: listPrice };
-  }
-  return { price: salePrice, originalPrice: listPrice };
-}
-
 export function mapApiCourse(c: ApiCourse): Course {
   return {
     id: c.id,
@@ -71,7 +54,7 @@ export function mapApiCourse(c: ApiCourse): Course {
     slug: c.slug ?? c.id,
     description: c.short_description || c.description || "",
     thumbnail: c.thumbnail_url ?? "",
-    ...resolveCoursePrices(c),
+    ...resolveEffectivePrice(c.price, c.discount_price),
     rating: Number(c.average_rating) || 0,
     reviewCount: c.total_reviews ?? 0,
     studentCount: c.total_students ?? 0,
