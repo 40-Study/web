@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   adminOrderService,
   type AdminOrderListParams,
+  type LateRefundDTO,
   type RefundOrderDTO,
 } from "@/services/admin-order.service";
 import { ApiError } from "@/lib/errors";
@@ -60,6 +61,34 @@ export function useRefundOrder() {
     },
     onError: (error) => {
       toast.error(refundErrorMessage(error));
+    },
+  });
+}
+
+/** Thông điệp cho lỗi đánh dấu đã hoàn tiền muộn: 400 = đơn không có cờ tiền về muộn, 404 = không có đơn. */
+function lateRefundErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.status === 400) return "Đơn này không có khoản tiền về muộn cần hoàn.";
+    if (error.status === 404) return "Không tìm thấy đơn hàng.";
+    if (error.message) return error.message;
+  }
+  return "Không thể ghi nhận hoàn tiền, thử lại sau.";
+}
+
+/** POST /orders/admin/:id/late-refund — ghi nhận đã hoàn khoản tiền về muộn (đơn đã huỷ/hết hạn). */
+export function useMarkLateRefunded() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, dto }: { id: string; dto: LateRefundDTO }) =>
+      adminOrderService.markLateRefunded(id, dto),
+    onSuccess: (result, { id }) => {
+      qc.invalidateQueries({ queryKey: adminOrderKeys.all });
+      // Học viên cũng thấy trạng thái này ở "Đơn hàng của tôi" (orderKeys).
+      qc.invalidateQueries({ queryKey: orderKeys.detail(id) });
+      toast.success(result.already_recorded ? "Đơn này đã được ghi nhận hoàn tiền trước đó" : "Đã ghi nhận hoàn tiền");
+    },
+    onError: (error) => {
+      toast.error(lateRefundErrorMessage(error));
     },
   });
 }

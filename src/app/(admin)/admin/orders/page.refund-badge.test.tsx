@@ -32,6 +32,8 @@ function item(overrides: Partial<AdminOrderListItem>): AdminOrderListItem {
 const mockItems: AdminOrderListItem[] = [
   item({ id: "flagged", order_number: "ORD-FLAGGED", refund_needed: true }),
   item({ id: "plain", order_number: "ORD-PLAIN", status: "expired" }),
+  // Admin đã ghi nhận chuyển khoản hoàn: cờ tắt, có mốc late_refunded_at.
+  item({ id: "done", order_number: "ORD-DONE", refund_needed: false, late_refunded_at: "2026-09-30T08:00:00Z" }),
 ];
 
 vi.mock("@/hooks/queries/use-admin-orders", () => ({
@@ -51,5 +53,15 @@ describe("AdminOrdersPage — badge Cần hoàn tiền", () => {
     const plainRow = screen.getByText("ORD-PLAIN").closest("tr")!;
     expect(within(flaggedRow).getByText("Cần hoàn tiền")).toBeTruthy();
     expect(within(plainRow).queryByText("Cần hoàn tiền")).toBeNull();
+  });
+
+  it("đơn admin đã ghi nhận hoàn: badge đổi thành Đã hoàn tiền, không còn Cần hoàn tiền", () => {
+    render(<AdminOrdersPage />);
+    const doneRow = screen.getByText("ORD-DONE").closest("tr")!;
+    expect(within(doneRow).getByText("Đã hoàn tiền")).toBeTruthy();
+    expect(within(doneRow).queryByText("Cần hoàn tiền")).toBeNull();
+    // Đơn có cờ hoặc chưa từng có tiền về không mang nhãn "Đã hoàn tiền".
+    expect(within(screen.getByText("ORD-FLAGGED").closest("tr")!).queryByText("Đã hoàn tiền")).toBeNull();
+    expect(within(screen.getByText("ORD-PLAIN").closest("tr")!).queryByText("Đã hoàn tiền")).toBeNull();
   });
 });

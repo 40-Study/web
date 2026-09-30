@@ -20,6 +20,7 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import type { RefundMethod } from "@/services/admin-order.service";
 import { ORDER_STATUS_LABEL, formatOrderDateTime } from "@/services/order.service";
+import { LateRefundDialog } from "./_components/late-refund-dialog";
 
 const REASON_MAX_LEN = 500;
 const TRANSACTION_REF_MAX_LEN = 100;
@@ -109,6 +110,8 @@ export default function AdminOrderDetailPage() {
                         <Badge>{ORDER_STATUS_LABEL[order.status] ?? order.status}</Badge>
                         {/* Tiền về cho đơn đã huỷ/hết hạn: không khôi phục, hoàn tiền tay (review #76 final). */}
                         {order.refund_needed && <Badge variant="destructive">Cần hoàn tiền</Badge>}
+                        {/* Admin đã ghi nhận chuyển khoản hoàn: cờ tắt, badge đổi thành "Đã hoàn tiền". */}
+                        {!order.refund_needed && order.late_refunded_at && <Badge variant="success">Đã hoàn tiền</Badge>}
                       </span>
                     }
                   />
@@ -117,6 +120,9 @@ export default function AdminOrderDetailPage() {
                   {order.paid_at && <Row label="Ngày thanh toán" value={formatOrderDateTime(order.paid_at)} />}
                   {order.notes && <Row label="Ghi chú" value={order.notes} />}
                   {order.refunded_at && <Row label="Ngày hoàn tiền" value={formatOrderDateTime(order.refunded_at)} />}
+                  {order.late_refunded_at && (
+                    <Row label="Đã hoàn khoản tiền về muộn" value={formatOrderDateTime(order.late_refunded_at)} />
+                  )}
                   {order.refund_transaction_ref && <Row label="Mã giao dịch hoàn" value={order.refund_transaction_ref} />}
                   {order.refund_reason && <Row label="Lý do hoàn" value={order.refund_reason} />}
                 </div>
@@ -129,6 +135,17 @@ export default function AdminOrderDetailPage() {
                   <Button variant="destructive" className="w-full" onClick={() => setRefundOpen(true)}>
                     Hoàn tiền
                   </Button>
+                </Can>
+              )}
+
+              {/* Đơn đã huỷ/hết hạn nhận tiền về muộn: sau khi admin chuyển khoản hoàn, ghi nhận ở đây. */}
+              {order.refund_needed && (
+                <Can permission={PERMISSIONS.MANAGE_PAYMENTS}>
+                  <LateRefundDialog
+                    orderId={order.id}
+                    orderNumber={order.order_number}
+                    totalAmount={Number(order.total_amount)}
+                  />
                 </Can>
               )}
             </section>

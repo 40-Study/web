@@ -88,3 +88,31 @@ describe("chứng chỉ không hợp lệ — không được lộ dữ liệu",
     expect(screen.getAllByText("—").length).toBeGreaterThan(0);
   });
 });
+
+describe("chứng chỉ đã bị thu hồi (hoàn tiền)", () => {
+  it("revoked=true -> báo 'đã bị thu hồi', không phải 'không tìm thấy', không hiện dấu hợp lệ", () => {
+    render(
+      <CertificateVerifyResult
+        result={{ valid: false, revoked: true, certificate_number: "CERT-2026-0001" }}
+        certificateNumber="CERT-2026-0001"
+      />
+    );
+
+    expect(screen.getByText(/Chứng chỉ đã bị thu hồi/)).toBeDefined();
+    expect(screen.getByText("CERT-2026-0001")).toBeDefined();
+    expect(screen.queryByText(/Không tìm thấy chứng chỉ/)).toBeNull();
+    expect(screen.queryByText(/Chứng chỉ hợp lệ/)).toBeNull();
+  });
+
+  it("mã không tồn tại vẫn báo 'không tìm thấy', không nhầm sang 'thu hồi'", () => {
+    render(
+      <CertificateVerifyResult
+        result={{ valid: false, certificate_number: "SAI" }}
+        certificateNumber="SAI"
+      />
+    );
+
+    expect(screen.getByText(/Không tìm thấy chứng chỉ/)).toBeDefined();
+    expect(screen.queryByText(/đã bị thu hồi/)).toBeNull();
+  });
+});

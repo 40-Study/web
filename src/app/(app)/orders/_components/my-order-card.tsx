@@ -56,7 +56,10 @@ export function MyOrderCard({
   const isClosed = order.status === "cancelled" || order.status === "expired";
   const refundNeeded = isClosed && order.refund_needed === true;
   // Đơn đóng từng được cấp mã, chưa có cờ: có thể tiền đang về. Cho kiểm tra trước khi mua lại.
-  const closedWithCode = isClosed && !refundNeeded && order.payment_code_issued === true;
+  // Admin đã chuyển khoản hoàn khoản tiền về muộn (refund_needed tắt): hiện "Đã hoàn tiền" và bỏ nút
+  // kiểm tra thanh toán, vì khoản tiền đã được xử lý xong.
+  const lateRefundedAt = isClosed ? order.late_refunded_at : null;
+  const closedWithCode = isClosed && !refundNeeded && !lateRefundedAt && order.payment_code_issued === true;
   // Đơn pending đã quá hạn nhưng backend chưa kịp quét sang "expired": hiện đúng là hết hạn thay vì
   // cho bấm thanh toán rồi nhận lỗi.
   const heldButExpired = !open && order.status === "pending";
@@ -129,6 +132,12 @@ export function MyOrderCard({
 
       {refundNeeded && (
         <p className="mt-4 text-sm font-medium text-amber-700 dark:text-amber-400">{REFUND_NEEDED_NOTICE}</p>
+      )}
+
+      {lateRefundedAt && (
+        <p className="mt-4 text-sm font-medium text-green-700 dark:text-green-400">
+          Đã hoàn tiền cho khoản chuyển khoản của đơn này vào {formatOrderDateTime(lateRefundedAt)}.
+        </p>
       )}
 
       {closedWithCode && (

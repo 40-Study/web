@@ -88,6 +88,11 @@ export interface Order {
    * hiện nút "Kiểm tra thanh toán".
    */
   refund_needed?: boolean;
+  /**
+   * Admin đã xác nhận hoàn xong khoản tiền về muộn của đơn đã đóng (khi đó refund_needed = false).
+   * Khác `refunded_at`: đơn không đổi sang trạng thái "refunded", chỉ ghi nhận đã hoàn tiền.
+   */
+  late_refunded_at?: string | null;
   /** Chỉ có khi đơn đã hoàn tiền (quyết định #1: ghi lý do + mã giao dịch chuyển khoản). */
   refund_reason?: string | null;
   refund_transaction_ref?: string | null;

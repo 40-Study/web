@@ -21,6 +21,26 @@ export function CertificateVerifyResult({
 }) {
   const isValid = result?.valid === true;
 
+  // Chứng chỉ có thật nhưng bị thu hồi (đơn mua khoá đã hoàn tiền): nói rõ "đã thu hồi" thay vì "không
+  // tìm thấy". Backend không trả tên người học / khoá học cho mã đã thu hồi và trang này cũng không hiện.
+  if (!isValid && result?.revoked === true) {
+    return (
+      <div className="mx-auto max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
+        <h1 className="text-lg font-semibold text-amber-800">Chứng chỉ đã bị thu hồi</h1>
+        <p className="mt-2 text-sm text-amber-700">
+          Mã <span className="font-mono font-medium">{certificateNumber}</span> từng được cấp nhưng đã bị thu
+          hồi nên không còn giá trị.
+        </p>
+        <Link
+          href="/certificates/verify"
+          className="mt-4 inline-block rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100"
+        >
+          Tra cứu mã khác
+        </Link>
+      </div>
+    );
+  }
+
   if (!isValid) {
     return (
       <div className="mx-auto max-w-xl rounded-xl border border-red-200 bg-red-50 p-6 text-center">
