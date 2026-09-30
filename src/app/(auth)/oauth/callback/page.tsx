@@ -75,8 +75,8 @@ function OAuthCallbackContent() {
   return (
     <AuthCard>
       <div className="flex flex-col items-center gap-4 py-8">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
-        <p className="text-sm text-gray-500">Đang xử lý đăng nhập...</p>
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/25 border-t-primary" />
+        <p className="text-sm text-muted-foreground">Đang xử lý đăng nhập...</p>
       </div>
     </AuthCard>
   );
@@ -88,8 +88,8 @@ export default function OAuthCallbackPage() {
       fallback={
         <AuthCard>
           <div className="flex flex-col items-center gap-4 py-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
-            <p className="text-sm text-gray-500">Đang tải...</p>
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/25 border-t-primary" />
+            <p className="text-sm text-muted-foreground">Đang tải...</p>
           </div>
         </AuthCard>
       }

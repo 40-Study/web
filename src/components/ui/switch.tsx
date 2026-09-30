@@ -18,7 +18,7 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
       <label
         className={cn(
           "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors",
-          checked ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700",
+          checked ? "bg-primary-600" : "bg-slate-200 dark:bg-slate-700",
           disabled && "cursor-not-allowed opacity-50",
           className
         )}

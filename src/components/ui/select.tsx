@@ -63,7 +63,7 @@ const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps>(
         ref={ref}
         type="button"
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-xl border border-slate-200 bg-card px-3 py-2 text-sm ring-offset-background transition-colors duration-150 hover:border-slate-300 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-border dark:hover:border-neutral-600",
+          "flex h-10 w-full items-center justify-between rounded-lg border border-input bg-card px-3 py-2 text-sm ring-offset-background transition-colors duration-150 hover:border-slate-400 focus:outline-none focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-input dark:hover:border-slate-500",
           className
         )}
         onClick={() => setOpen(!open)}
@@ -131,7 +131,7 @@ const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
       <div
         ref={contentRef}
         className={cn(
-          "absolute z-50 mt-1 min-w-[8rem] w-full overflow-hidden rounded-xl border bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-xl animate-in fade-in-0 zoom-in-95",
+          "absolute z-50 mt-1 min-w-[8rem] w-full overflow-hidden rounded-lg border bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-raised animate-in fade-in-0 zoom-in-95",
           !open && "hidden",
           className
         )}
@@ -167,7 +167,7 @@ const SelectItem = React.forwardRef<HTMLDivElement, SelectItemProps>(
       <div
         ref={ref}
         className={cn(
-          "relative flex w-full cursor-pointer select-none items-center rounded-lg py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+          "relative flex w-full cursor-pointer select-none items-center rounded-md py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
           isSelected && "bg-accent",
           className
         )}

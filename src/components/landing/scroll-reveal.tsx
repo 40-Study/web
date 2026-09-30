@@ -6,22 +6,25 @@ import { cn } from "@/lib/utils";
 interface ScrollRevealProps {
   children: React.ReactNode;
   className?: string;
-  /** Animation delay in ms */
+  /** Độ trễ (ms) — dùng để stagger 60ms giữa các phần tử cùng nhóm. */
   delay?: number;
-  /** slide-up (default), slide-left, slide-right, fade, scale */
+  /**
+   * Giữ lại cho tương thích với nơi gọi cũ (/courses, discussions).
+   * Mọi hướng đều là fade + trượt lên 12px; riêng "fade" chỉ fade.
+   */
   direction?: "up" | "left" | "right" | "fade" | "scale";
-  /** IntersectionObserver threshold (0-1) */
+  /** Ngưỡng IntersectionObserver (0-1). */
   threshold?: number;
 }
 
-const directionStyles = {
-  up: { hidden: "translate-y-8 opacity-0", visible: "translate-y-0 opacity-100" },
-  left: { hidden: "-translate-x-8 opacity-0", visible: "translate-x-0 opacity-100" },
-  right: { hidden: "translate-x-8 opacity-0", visible: "translate-x-0 opacity-100" },
-  fade: { hidden: "opacity-0", visible: "opacity-100" },
-  scale: { hidden: "scale-95 opacity-0", visible: "scale-100 opacity-100" },
-};
-
+/**
+ * Fade + translate-y 12px, 400ms, chạy một lần.
+ *
+ * Không pre-hide khi tắt JS: HTML server-render luôn ở trạng thái HIỂN THỊ.
+ * Chỉ sau khi effect chạy (tức JS đã hoạt động) và chắc chắn có observer theo
+ * dõi, phần tử mới được ẩn để chờ cuộn tới. Người dùng bật reduced-motion hoặc
+ * trình duyệt không có IntersectionObserver luôn thấy nội dung ngay.
+ */
 export function ScrollReveal({
   children,
   className,
@@ -30,11 +33,6 @@ export function ScrollReveal({
   threshold = 0.15,
 }: ScrollRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
-  // Mặc định HIỂN THỊ — chỉ ẩn đi để chờ observer SAU KHI đã xác nhận sẽ có
-  // observer thật sự theo dõi. Trước đây mặc định `false` khiến nội dung
-  // trắng hoàn toàn cho tới khi cuộn tới, kể cả khi JS chưa kịp chạy, trình
-  // duyệt không hỗ trợ IntersectionObserver, hoặc HTML tĩnh được bot/crawler
-  // đọc (QA khách P2, 260927).
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
@@ -46,15 +44,18 @@ export function ScrollReveal({
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
     if (typeof IntersectionObserver === "undefined" || prefersReducedMotion) {
-      // Không hỗ trợ / người dùng yêu cầu giảm chuyển động — giữ hiển thị,
-      // bỏ hẳn hiệu ứng thay vì có nguy cơ đứng yên ở trạng thái ẩn.
       setIsVisible(true);
       return;
     }
 
-    // Chỉ ẩn đi (chờ cuộn tới) SAU KHI chắc chắn sẽ có observer bắt lại —
-    // tránh trường hợp effect không chạy được vì lý do nào đó mà nội dung kẹt
-    // ở trạng thái ẩn vĩnh viễn.
+    // Phần tử đã nằm trong viewport lúc mount: không ẩn rồi hiện lại (tránh
+    // nháy nội dung above-the-fold).
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      setIsVisible(true);
+      return;
+    }
+
     setIsVisible(false);
 
     const observer = new IntersectionObserver(
@@ -71,17 +72,18 @@ export function ScrollReveal({
     return () => observer.disconnect();
   }, [threshold]);
 
-  const styles = directionStyles[direction];
+  const hidden = direction === "fade" ? "opacity-0" : "translate-y-3 opacity-0";
+  const visible = direction === "fade" ? "opacity-100" : "translate-y-0 opacity-100";
 
   return (
     <div
       ref={ref}
       className={cn(
-        "transition-all duration-700 ease-out",
-        isVisible ? styles.visible : styles.hidden,
+        "transition-[opacity,transform] duration-[400ms] ease-out motion-reduce:transition-none",
+        isVisible ? visible : hidden,
         className
       )}
-      style={{ transitionDelay: `${delay}ms` }}
+      style={delay ? { transitionDelay: `${delay}ms` } : undefined}
     >
       {children}
     </div>

@@ -10,8 +10,8 @@ export default function RegisterSuccessPage() {
     <AuthCard>
       <div className="flex flex-col items-center py-4">
         <AuthIconHeader
-          icon={<CheckIcon size={40} className="text-green-500" />}
-          iconBgClassName="bg-green-100 h-20 w-20"
+          icon={<CheckIcon size={40} className="text-green-600 dark:text-green-400" />}
+          iconBgClassName="bg-green-100 dark:bg-green-950 h-20 w-20"
           title="Bạn đã tạo tài khoản thành công!"
           description="Tài khoản của bạn đã được tạo. Bạn có thể đăng nhập ngay bây giờ."
           className="mb-8"

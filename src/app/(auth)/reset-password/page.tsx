@@ -52,7 +52,7 @@ export default function ResetPasswordPage() {
   return (
     <AuthCard>
       <AuthIconHeader
-        icon={<UnlockIcon size={32} className="text-primary-500" />}
+        icon={<UnlockIcon size={32} className="text-primary" />}
         title="Thiết lập mật khẩu mới"
         description="Tạo mật khẩu mới cho tài khoản của bạn"
         className="mb-6"

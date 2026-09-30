@@ -98,10 +98,10 @@ export default function RegisterFormPage() {
 
   return (
     <AuthCard>
-      <h2 className="mb-1 text-center text-xl font-semibold text-gray-900">
+      <h2 className="mb-1 text-center text-xl font-semibold text-foreground">
         Đăng ký tài khoản
       </h2>
-      <p className="mb-6 text-center text-sm text-gray-500">Điền thông tin của bạn</p>
+      <p className="mb-6 text-center text-sm text-muted-foreground">Điền thông tin của bạn</p>
 
       {/* noValidate: để validate() tự chạy và hiện lỗi tiếng Việt thay vì
           tooltip validate mặc định tiếng Anh của trình duyệt cho input

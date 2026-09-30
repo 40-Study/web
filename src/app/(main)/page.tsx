@@ -2,31 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
-import Image from "next/image";
-import { ForteXLogoIcon } from "@/components/landing/fortex-logo-icon";
-import {
-  MessageSquare,
-  Code,
-  Activity,
-  Cpu,
-  BarChart,
-  Target,
-  Smartphone,
-  CheckCircle2,
-  ArrowRight,
-  Sparkles,
-} from "lucide-react";
+import { HeroSection } from "@/components/landing/hero-section";
+import { ShowcasePanel } from "@/components/landing/showcase-panel";
+import { FeatureBento } from "@/components/landing/feature-bento";
+import { FeaturedCourses } from "@/components/landing/featured-courses";
+import { StatsStrip } from "@/components/landing/stats-strip";
+import { FinalCta } from "@/components/landing/final-cta";
 import { useAuthStore } from "@/stores/auth.store";
-import { AnimatedShowcasePanel } from "@/components/landing/animated-showcase-panel";
-import { ScrollReveal } from "@/components/landing/scroll-reveal";
-import { AnimatedCounterOnScroll } from "@/components/landing/animated-counter-on-scroll";
-import { AnimatedProgressBarOnScroll } from "@/components/landing/animated-progress-bar-on-scroll";
-import { AnimatedBarChartOnScroll } from "@/components/landing/animated-bar-chart-on-scroll";
-import { ParticleWaveBackground } from "@/components/landing/particle-wave-background";
-import { FloatingDecorativeShapes } from "@/components/landing/floating-decorative-shapes";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 
 export default function LandingPage() {
@@ -34,7 +16,7 @@ export default function LandingPage() {
   const { isAuthenticated, hasHydrated, activeRole } = useAuthStore();
   const normalizedRole = normalizeRole(activeRole);
 
-  // Redirect authenticated users to their home page
+  // Người đã đăng nhập chuyển thẳng về trang chủ theo vai trò
   useEffect(() => {
     if (!hasHydrated) return;
     if (isAuthenticated && normalizedRole) {
@@ -42,379 +24,21 @@ export default function LandingPage() {
     }
   }, [hasHydrated, isAuthenticated, normalizedRole, router]);
 
-  // Show nothing while redirecting (avoid flash)
+  // Không render gì khi đang chuyển hướng (tránh nháy nội dung)
   if (hasHydrated && isAuthenticated && normalizedRole) {
     return null;
   }
 
   return (
-    <div className="w-full overflow-x-hidden">
-      {/* 3. Hero Section */}
-          <section className="relative px-6 py-16 md:py-24 lg:py-32 max-w-7xl mx-auto flex flex-col items-center text-center overflow-hidden">
-            {/* Particle wave background — follows mouse */}
-            <ParticleWaveBackground
-              particleCount={120}
-              color="99, 102, 241"
-              maxSize={4}
-              mouseRadius={150}
-              className="rounded-3xl"
-            />
-
-            {/* Floating decorative shapes — idle animation */}
-            <FloatingDecorativeShapes />
-
-            {/* Background glows — idle pulse */}
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 scale-150 bg-primary-400/20 blur-3xl rounded-full pointer-events-none -z-10 animate-[pulse_6s_ease-in-out_infinite]" />
-            
-            <ScrollReveal direction="fade">
-              <Badge variant="outline" className="mb-6 px-4 py-1.5 border-primary-200 bg-primary-50/50 text-primary-700 text-xs font-bold tracking-wider rounded-full backdrop-blur-sm">
-                NỀN TẢNG HỌC TẬP THÍCH ỨNG
-              </Badge>
-            </ScrollReveal>
-
-            <ScrollReveal delay={150}>
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 text-center">
-                <span className="block text-slate-900 leading-[1.15]">Khai phóng Tiềm năng</span>
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400 leading-[1.15] -mt-2 md:-mt-4">Công nghệ của bạn</span>
-              </h1>
-            </ScrollReveal>
-
-            <ScrollReveal delay={300}>
-              <p className="max-w-2xl text-lg md:text-xl text-slate-500 mb-10 leading-relaxed text-center">
-                Hệ thống giáo dục cá nhân hóa với trợ lý ảo AI, giúp bạn làm chủ lập trình và thiết kế thông qua các dự án thực tế.
-              </p>
-            </ScrollReveal>
-
-            <ScrollReveal delay={450}>
-            <div className="flex flex-col sm:flex-row gap-4 mb-20 w-full sm:w-auto">
-              <Button
-                size="lg"
-                asChild
-                className="group bg-primary-600 hover:bg-primary-700 text-white px-8 h-14 text-base font-semibold shadow-lg shadow-primary-500/20 rounded-xl transition-all duration-200 hover:shadow-xl hover:shadow-primary-500/30"
-              >
-                <Link href="/courses" className="inline-flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  Khám phá các khóa học
-                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                asChild
-                className="group px-8 h-14 text-base font-semibold border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl transition-all duration-200 hover:border-primary-300 hover:text-primary-700"
-              >
-                <Link href="#student-projects" className="inline-flex items-center gap-2">
-                  Xem dự án học viên
-                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
-                </Link>
-              </Button>
-            </div>
-            </ScrollReveal>
-
-            {/* Animated Showcase Panel */}
-            <ScrollReveal delay={100} direction="scale">
-              <AnimatedShowcasePanel />
-            </ScrollReveal>
-          </section>
-
-          {/* 4. Student Outcomes Section */}
-          <section id="student-projects" className="py-20 px-6 max-w-7xl mx-auto">
-            <div className="bg-white rounded-3xl p-8 lg:p-12 shadow-sm border border-slate-100 flex flex-col lg:flex-row items-center gap-12">
-              <ScrollReveal direction="left" className="lg:w-1/3 space-y-6">
-                <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 leading-tight">
-                  Học viên ForteX đã tự xây dựng:
-                </h2>
-                <p className="text-slate-500 text-lg">
-                  Từ những ứng dụng nhỏ đầu tiên đến các nền tảng phức tạp có hàng nghìn người dùng thực tế.
-                </p>
-                <div className="flex items-center gap-4 pt-4">
-                  <div className="flex -space-x-3">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-200" />
-                    ))}
-                  </div>
-                  <span className="text-sm font-medium text-slate-600">+10,000 học viên</span>
-                </div>
-              </ScrollReveal>
-
-              <ScrollReveal direction="right" delay={200} className="lg:w-2/3 w-full bg-primary-600 rounded-2xl p-6 lg:p-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary-400 rounded-full blur-3xl opacity-50 mix-blend-screen animate-[float_10s_ease-in-out_infinite]" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary-400 rounded-full blur-3xl opacity-50 mix-blend-screen animate-[float_12s_ease-in-out_infinite_2s]" />
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
-                  {/* Mobile App Mockup */}
-                  <div className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col" style={{ aspectRatio: '9/16' }}>
-                    <div className="bg-slate-100 h-12 w-full flex items-center justify-between px-4">
-                      <div className="w-1/3 h-3 bg-slate-200 rounded-full" />
-                      <div className="w-6 h-6 rounded-full bg-slate-200" />
-                    </div>
-                    <div className="p-4 flex-1 space-y-4">
-                      <div className="w-full h-32 bg-slate-100 rounded-lg" />
-                      <div className="w-3/4 h-4 bg-slate-200 rounded-full" />
-                      <div className="w-1/2 h-4 bg-slate-200 rounded-full" />
-                    </div>
-                  </div>
-                  
-                  {/* Dashboard Mockup */}
-                  <div className="bg-slate-900 rounded-xl shadow-xl overflow-hidden flex flex-col transform md:translate-y-8" style={{ aspectRatio: '9/16' }}>
-                    <div className="p-4 flex items-center gap-2 border-b border-slate-800">
-                      <Activity className="w-4 h-4 text-primary-400" />
-                      <div className="w-20 h-2 bg-slate-700 rounded-full" />
-                    </div>
-                    <div className="p-4 space-y-4">
-                      <div className="flex items-end gap-2 h-24">
-                        <div className="flex-1 bg-primary-500/20 rounded-t-sm h-1/3" />
-                        <div className="flex-1 bg-primary-500/40 rounded-t-sm h-2/3" />
-                        <div className="flex-1 bg-primary-500 rounded-t-sm h-full" />
-                        <div className="flex-1 bg-primary-500/60 rounded-t-sm h-3/4" />
-                      </div>
-                      <div className="w-full h-12 bg-slate-800 rounded-lg" />
-                    </div>
-                  </div>
-                  
-                  {/* Game Mockup */}
-                  <div className="bg-indigo-950 rounded-xl shadow-xl overflow-hidden border-2 border-indigo-500/30 flex flex-col" style={{ aspectRatio: '9/16' }}>
-                    <div className="flex-1 p-4 flex flex-col items-center justify-center gap-4">
-                      <div className="w-16 h-16 bg-pink-500 rounded-lg shadow-lg shadow-pink-500/50 rotate-12" />
-                      <div className="w-24 h-6 bg-indigo-800 rounded-full" />
-                    </div>
-                    <div className="h-16 bg-indigo-900/50 flex items-center justify-center gap-4">
-                      <div className="w-8 h-8 rounded-full bg-indigo-800" />
-                      <div className="w-8 h-8 rounded-full bg-indigo-800" />
-                    </div>
-                  </div>
-                </div>
-              </ScrollReveal>
-            </div>
-          </section>
-
-          {/* 5. Feature Cards */}
-          <section className="py-20 px-6 max-w-7xl mx-auto">
-            <ScrollReveal>
-              <div className="text-center max-w-2xl mx-auto mb-16">
-                <h2 className="text-3xl font-bold text-slate-900 mb-4">Hệ sinh thái học tập toàn diện</h2>
-                <p className="text-slate-500">Mọi công cụ bạn cần để tiến xa hơn trên con đường phát triển sự nghiệp.</p>
-              </div>
-            </ScrollReveal>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Card 1: Dark */}
-              <ScrollReveal delay={0}>
-              <div className="bg-slate-900 rounded-3xl p-8 lg:p-10 text-white relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-6">
-                  <div className="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center text-primary-400 group-hover:scale-110 transition-transform duration-300">
-                    <MessageSquare className="w-6 h-6" />
-                  </div>
-                </div>
-                <div className="relative z-10 w-2/3 pt-4">
-                  <h3 className="text-2xl font-bold mb-4">Trợ giảng ảo<br />AI 24/7</h3>
-                  <p className="text-slate-400 mb-8">Giải đáp thắc mắc, sửa lỗi code và gợi ý hướng đi lập tức.</p>
-                </div>
-                
-                {/* Chat Mockup */}
-                <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 mt-4 space-y-3 relative z-10 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                  <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-700 flex-shrink-0" />
-                    <div className="bg-slate-700 rounded-2xl rounded-tl-none p-3 text-sm text-slate-300">
-                      Làm sao để center một div bằng Tailwind?
-                    </div>
-                  </div>
-                  <div className="flex gap-3 flex-row-reverse">
-                    <div className="w-8 h-8 rounded-full bg-primary-600 flex-shrink-0 flex items-center justify-center">
-                      <Cpu className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="bg-primary-600 rounded-2xl rounded-tr-none p-3 text-sm text-white">
-                      Bạn có thể dùng `flex items-center justify-center` trên thẻ cha.
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </ScrollReveal>
-
-              {/* Card 2: Light */}
-              <ScrollReveal delay={150}>
-              <div className="bg-white border border-slate-200 rounded-3xl p-8 lg:p-10 relative overflow-hidden group shadow-sm">
-                <div className="absolute top-0 right-0 p-6">
-                  <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform duration-300">
-                    <BarChart className="w-6 h-6" />
-                  </div>
-                </div>
-                <div className="relative z-10 w-2/3 pt-4">
-                  <h3 className="text-2xl font-bold text-slate-900 mb-4">Tối ưu<br />Nhịp độ học</h3>
-                  <p className="text-slate-500 mb-8">Phân tích dữ liệu học tập để đưa ra gợi ý phù hợp với khả năng.</p>
-                </div>
-                
-                {/* Chart Mockup — animated on scroll */}
-                <div className="mt-12 relative z-10">
-                  <AnimatedBarChartOnScroll
-                    bars={[
-                      { height: 40 },
-                      { height: 70 },
-                      { height: 45 },
-                      { height: 90, highlight: true },
-                      { height: 60 },
-                      { height: 100, highlight: true },
-                      { height: 80 },
-                    ]}
-                  />
-                </div>
-              </div>
-              </ScrollReveal>
-
-              {/* Card 3: Light Blue */}
-              <ScrollReveal delay={300}>
-              <div className="bg-primary-50 border border-primary-100 rounded-3xl p-8 lg:p-10 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-6">
-                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-primary-600 shadow-sm group-hover:scale-110 transition-transform duration-300">
-                    <Target className="w-6 h-6" />
-                  </div>
-                </div>
-                <div className="relative z-10 w-2/3 pt-4">
-                  <h3 className="text-2xl font-bold text-slate-900 mb-4 uppercase tracking-tight">LỘ TRÌNH THÍCH ỨNG</h3>
-                  <p className="text-slate-600 mb-8">Nội dung tự động điều chỉnh theo kết quả của từng bài kiểm tra.</p>
-                </div>
-                
-                {/* Tracker Mockup */}
-                <div className="bg-white rounded-xl p-5 shadow-sm mt-4 space-y-4">
-                  <div className="flex items-center gap-4">
-                    <CheckCircle2 className="w-6 h-6 text-green-500" />
-                    <div className="flex-1">
-                      <div className="w-1/2 h-3 bg-slate-200 rounded-full mb-2" />
-                      <div className="w-1/3 h-2 bg-slate-100 rounded-full" />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-6 h-6 rounded-full border-2 border-orange-500 flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-orange-500" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="w-3/4 h-3 bg-slate-800 rounded-full mb-2" />
-                      <div className="w-1/2 h-2 bg-slate-200 rounded-full" />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 opacity-50">
-                    <div className="w-6 h-6 rounded-full border-2 border-slate-300" />
-                    <div className="flex-1">
-                      <div className="w-2/3 h-3 bg-slate-200 rounded-full mb-2" />
-                      <div className="w-1/4 h-2 bg-slate-100 rounded-full" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </ScrollReveal>
-
-              {/* Card 4: White */}
-              <ScrollReveal delay={450}>
-              <div className="bg-white border border-slate-200 rounded-3xl p-8 lg:p-10 relative overflow-hidden group shadow-sm">
-                <div className="absolute top-0 right-0 p-6">
-                  <div className="w-12 h-12 bg-secondary-100 rounded-2xl flex items-center justify-center text-secondary-600 group-hover:scale-110 transition-transform duration-300">
-                    <Smartphone className="w-6 h-6" />
-                  </div>
-                </div>
-                <div className="relative z-10 w-2/3 pt-4">
-                  <h3 className="text-2xl font-bold text-slate-900 mb-4">Đồng hành cùng<br />Phụ huynh</h3>
-                  <p className="text-slate-500 mb-8">Theo dõi tiến độ, nhận thông báo ngay trên ứng dụng di động.</p>
-                </div>
-                
-                {/* Notification Mockup — slides up on hover */}
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mt-8 translate-y-4 group-hover:translate-y-0 transition-transform duration-500 ease-out">
-                  <div className="flex gap-4 items-start">
-                    <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center flex-shrink-0 text-primary-600">
-                      <ForteXLogoIcon size={24} />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-900 text-sm">Cập nhật tiến độ</h4>
-                      <p className="text-slate-500 text-sm mt-1">Minh đã hoàn thành dự án &quot;Web Portfolio&quot; với điểm số xuất sắc!</p>
-                      <span className="text-xs text-slate-400 mt-2 block">Vài giây trước</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </ScrollReveal>
-            </div>
-          </section>
-
-          {/* 6. Instructor CTA Section */}
-          <section className="py-20 px-6 max-w-7xl mx-auto">
-            <div className="bg-slate-900 rounded-3xl relative overflow-hidden p-10 md:p-16 lg:p-20 flex flex-col md:flex-row items-center gap-12">
-              {/* Background Shapes — idle floating animation */}
-              <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary-600 rounded-full blur-3xl opacity-40 scale-150 animate-[float_12s_ease-in-out_infinite]" />
-                <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-secondary-600 rounded-full blur-3xl opacity-30 scale-150 animate-[float_10s_ease-in-out_infinite_2s]" />
-                <div className="absolute top-1/4 right-1/4 w-32 h-32 border border-slate-700 rotate-45 rounded-xl opacity-20 animate-[float_8s_ease-in-out_infinite_1s]" />
-                <div className="absolute bottom-1/4 right-10 w-16 h-16 border-2 border-primary-500/20 rounded-full animate-[float_9s_ease-in-out_infinite_3s]" />
-              </div>
-
-              <ScrollReveal direction="left" className="flex-1 relative z-10">
-                <Badge variant="outline" className="mb-6 px-4 py-1.5 border-slate-700 bg-slate-800 text-slate-300 text-xs font-bold tracking-wider rounded-full">
-                  DÀNH CHO CHUYÊN GIA
-                </Badge>
-                <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
-                  Trở thành<br />
-                  Giảng viên Cộng tác.
-                </h2>
-                <p className="text-slate-400 text-lg mb-10 max-w-md">
-                  Chia sẻ kiến thức, mở rộng tầm ảnh hưởng và tạo nguồn thu nhập thụ động cùng nền tảng giáo dục thế hệ mới.
-                </p>
-                <Button size="lg" className="bg-white hover:bg-slate-100 text-slate-900 px-8 h-14 text-base font-semibold rounded-xl">
-                  Đăng ký Hồ sơ ngay
-                </Button>
-              </ScrollReveal>
-
-              <ScrollReveal direction="right" delay={200} className="flex-1 w-full max-w-sm relative z-10">
-                <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl">
-                  <div className="flex items-center justify-between mb-6">
-                    <span className="text-white font-medium">Thu nhập tháng này</span>
-                    <span className="text-green-400 text-sm font-semibold">+24.5%</span>
-                  </div>
-                  <div className="text-4xl font-bold text-white mb-8">
-                    <AnimatedCounterOnScroll
-                      target={18500000}
-                      duration={2000}
-                      formatter={(v) => v.toLocaleString("vi-VN")}
-                    />
-                    <span className="text-xl text-slate-400 font-normal ml-1">đ</span>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between text-sm mb-2 text-slate-300">
-                        <span>Lượt đăng ký mới</span>
-                        <AnimatedCounterOnScroll
-                          target={142}
-                          duration={1500}
-                          className="text-white font-medium"
-                        />
-                      </div>
-                      <AnimatedProgressBarOnScroll
-                        targetPercent={66}
-                        barClassName="bg-primary-400"
-                        trackClassName="bg-slate-800"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-2 text-slate-300">
-                        <span>Đánh giá 5 sao</span>
-                        <AnimatedCounterOnScroll
-                          target={98}
-                          duration={1500}
-                          className="text-white font-medium"
-                          suffix="%"
-                        />
-                      </div>
-                      <AnimatedProgressBarOnScroll
-                        targetPercent={92}
-                        barClassName="bg-yellow-400"
-                        trackClassName="bg-slate-800"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </ScrollReveal>
-            </div>
-          </section>
-
+    <div className="w-full overflow-x-hidden bg-background">
+      <HeroSection />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <ShowcasePanel />
+      </div>
+      <FeatureBento />
+      <FeaturedCourses />
+      <StatsStrip />
+      <FinalCta />
     </div>
   );
 }
