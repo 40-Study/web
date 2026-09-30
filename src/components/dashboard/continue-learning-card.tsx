@@ -59,7 +59,7 @@ export function ContinueLearningCard({ course, className }: ContinueLearningCard
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <BookOpen
-              className="h-10 w-10 text-slate-300 dark:text-slate-600"
+              className="h-12 w-12 text-slate-300 dark:text-slate-600"
               aria-hidden="true"
             />
           </div>
