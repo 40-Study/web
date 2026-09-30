@@ -1,5 +1,6 @@
 "use client";
 
+import { Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -27,26 +28,26 @@ interface AchievementCardProps {
 
 const rarityStyles: Record<
   AchievementRarity,
-  { bg: string; border: string; badge: "default" | "secondary" | "achievement" }
+  { label: string; tile: string; badge: "default" | "secondary" | "achievement" }
 > = {
   common: {
-    bg: "bg-gray-50 dark:bg-gray-800",
-    border: "border-gray-200 dark:border-gray-700",
+    label: "Thường",
+    tile: "bg-slate-100 dark:bg-slate-800",
     badge: "default",
   },
   rare: {
-    bg: "bg-blue-50 dark:bg-blue-900/20",
-    border: "border-blue-200 dark:border-blue-800",
+    label: "Hiếm",
+    tile: "bg-primary-50 dark:bg-primary-950",
     badge: "default",
   },
   epic: {
-    bg: "bg-purple-50 dark:bg-purple-900/20",
-    border: "border-purple-200 dark:border-purple-800",
+    label: "Sử thi",
+    tile: "bg-secondary-50 dark:bg-secondary-950",
     badge: "secondary",
   },
   legendary: {
-    bg: "bg-yellow-50 dark:bg-yellow-900/20",
-    border: "border-yellow-200 dark:border-yellow-700",
+    label: "Huyền thoại",
+    tile: "bg-amber-100 dark:bg-amber-900/40",
     badge: "achievement",
   },
 };
@@ -64,48 +65,33 @@ export function AchievementCard({
   const styles = rarityStyles[achievement.rarity];
 
   return (
-    <Card
-      className={cn(
-        "p-4 relative overflow-hidden transition-all border-2",
-        isUnlocked ? styles.bg : "bg-gray-100 dark:bg-gray-800/50",
-        isUnlocked ? styles.border : "border-gray-200 dark:border-gray-700",
-        !isUnlocked && "grayscale",
-        className
-      )}
-    >
-      {/* Legendary glow effect */}
-      {isUnlocked && achievement.rarity === "legendary" && (
-        <div className="absolute inset-0 bg-yellow-400/10 animate-pulse-glow" />
-      )}
-
-      <div className="relative z-10 flex items-center gap-4">
+    <Card className={cn("relative overflow-hidden p-4 md:p-5", className)}>
+      <div className="flex items-center gap-4">
         {/* Badge icon */}
         <div
           className={cn(
-            "w-16 h-16 rounded-xl flex items-center justify-center text-3xl shrink-0",
-            isUnlocked
-              ? "bg-yellow-500 shadow-lg"
-              : "bg-gray-200 dark:bg-gray-700"
+            "flex h-16 w-16 shrink-0 items-center justify-center rounded-lg text-3xl",
+            isUnlocked ? styles.tile : "bg-slate-100 dark:bg-slate-800"
           )}
         >
-          {isUnlocked ? achievement.icon : "🔒"}
+          {isUnlocked ? (
+            achievement.icon
+          ) : (
+            <Lock className="h-6 w-6 text-slate-600 dark:text-slate-400" aria-label="Chưa mở khóa" />
+          )}
         </div>
 
         {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <h3 className="truncate text-base font-semibold text-slate-900 dark:text-slate-50">
               {achievement.name}
             </h3>
-            <Badge
-              variant={styles.badge}
-              size="sm"
-              className="capitalize shrink-0"
-            >
-              {achievement.rarity}
+            <Badge variant={styles.badge} size="sm" className="shrink-0">
+              {styles.label}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+          <p className="mb-2 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">
             {achievement.description}
           </p>
 
@@ -113,7 +99,7 @@ export function AchievementCard({
           {!isUnlocked && progress !== undefined && (
             <div className="flex items-center gap-2">
               <ProgressBar value={progress} size="sm" className="flex-1" />
-              <span className="text-xs text-muted-foreground shrink-0">
+              <span className="shrink-0 text-xs tabular-nums text-slate-600 dark:text-slate-400">
                 {Math.round(progress)}%
               </span>
             </div>
@@ -121,16 +107,16 @@ export function AchievementCard({
 
           {/* Unlock date */}
           {isUnlocked && achievement.unlockedAt && (
-            <p className="text-xs text-muted-foreground">
-              Unlocked {formatDate(achievement.unlockedAt)}
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              Mở khóa {formatDate(achievement.unlockedAt)}
             </p>
           )}
         </div>
 
         {/* XP reward */}
         {isUnlocked && (
-          <div className="text-center shrink-0">
-            <Badge variant="xp" size="lg">
+          <div className="shrink-0 text-center">
+            <Badge variant="xp" size="lg" className="tabular-nums">
               +{achievement.xpReward} XP
             </Badge>
           </div>

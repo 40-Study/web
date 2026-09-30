@@ -1,81 +1,105 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { Play, Clock } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { cn } from "@/lib/utils";
 
-interface Course {
-  id: string;
+export interface ContinueLearningCourse {
   slug: string;
-  currentLessonId: string;
   title: string;
-  thumbnail: string;
-  currentLesson: number;
+  thumbnail?: string;
+  category?: string;
+  completedLessons: number;
   totalLessons: number;
+  /** Phần trăm 0-100. */
   progress: number;
-  estimatedTime?: number;
 }
 
 interface ContinueLearningCardProps {
-  course: Course;
+  course: ContinueLearningCourse;
   className?: string;
 }
 
-export function ContinueLearningCard({
-  course,
-  className,
-}: ContinueLearningCardProps) {
+/** Bài đang học = bài kế tiếp sau số bài đã hoàn thành, không vượt tổng số bài. */
+export function getCurrentLessonNumber(completed: number, total: number): number {
+  if (total <= 0) return 0;
+  return Math.min(completed + 1, total);
+}
+
+/**
+ * Thẻ "Tiếp tục học" — hành động chính duy nhất above the fold.
+ * Cả thẻ là vùng bấm (stretched link trên tiêu đề); nút CTA nằm trên lớp phủ.
+ */
+export function ContinueLearningCard({ course, className }: ContinueLearningCardProps) {
+  const progress = Math.round(course.progress);
+  const current = getCurrentLessonNumber(course.completedLessons, course.totalLessons);
+  const href = `/courses/${course.slug}`;
+
   return (
-    <Card className={cn("p-4 flex gap-4", className)}>
-      {/* Course Thumbnail */}
-      <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+    <Card
+      hoverable
+      className={cn(
+        "relative flex flex-col overflow-hidden rounded-3xl md:flex-row",
+        className
+      )}
+    >
+      <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-slate-100 dark:bg-slate-800 md:w-72 md:self-stretch">
         {course.thumbnail ? (
-          <Image
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             src={course.thumbnail}
-            alt={course.title}
-            fill
-            className="object-cover"
+            alt=""
+            width={640}
+            height={360}
+            className="h-full w-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-primary-500 flex items-center justify-center">
-            <Play className="w-8 h-8 text-white" />
+          <div className="flex h-full w-full items-center justify-center">
+            <BookOpen
+              className="h-10 w-10 text-slate-300 dark:text-slate-600"
+              aria-hidden="true"
+            />
           </div>
         )}
       </div>
 
-      {/* Course Info */}
-      <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-lg line-clamp-1">{course.title}</h3>
-
-        <div className="flex items-center gap-2 mt-1">
-          <p className="text-sm text-muted-foreground">
-            Lesson {course.currentLesson}/{course.totalLessons}
+      <div className="flex min-w-0 flex-1 flex-col gap-4 p-4 md:p-5 lg:p-6">
+        <div className="space-y-2">
+          <p className="text-sm font-semibold text-primary-600 dark:text-primary-400">
+            Đang học gần đây
           </p>
-          {course.estimatedTime && (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="w-3 h-3" />
-              {course.estimatedTime}m
-            </span>
+          <h2 className="text-h3 line-clamp-2 text-slate-900 dark:text-slate-50">
+            <Link
+              href={href}
+              className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-primary focus-visible:after:rounded-3xl"
+            >
+              {course.title}
+            </Link>
+          </h2>
+          {course.category && (
+            <p className="text-body-sm text-slate-600 dark:text-slate-400">{course.category}</p>
           )}
         </div>
 
-        <div className="flex items-center gap-2 my-2">
-          <ProgressBar value={course.progress} variant="course" size="sm" className="flex-1" />
-          <span className="text-xs text-muted-foreground font-medium">
-            {course.progress}%
-          </span>
+        <div className="space-y-2">
+          <ProgressBar value={progress} variant="course" size="md" />
+          <p className="text-body-sm tabular-nums text-slate-600 dark:text-slate-400">
+            Bài {current}/{course.totalLessons} · {progress}%
+          </p>
         </div>
 
-        <Button size="sm" className="mt-1" asChild>
-          <Link href={`/learn/${course.slug}/${course.currentLessonId}`}>
-            <Play className="w-4 h-4 mr-1" />
-            Continue
+        <div className="mt-auto">
+          <Link
+            href={href}
+            className={cn(buttonVariants({ size: "lg" }), "relative z-10 w-full sm:w-auto")}
+          >
+            Tiếp tục học
+            <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
           </Link>
-        </Button>
+        </div>
       </div>
     </Card>
   );
