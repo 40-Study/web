@@ -159,6 +159,26 @@ export default function PublicProfilePage() {
     );
   }
 
+  // S6: hồ sơ riêng tư chỉ có tên + ảnh; không hiện số liệu 0 như thể người đó chưa học gì.
+  if (data.is_private && !isOwnProfile) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
+        <Card className="p-8 max-w-md w-full text-center">
+          <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-primary-100 overflow-hidden flex items-center justify-center text-2xl font-semibold text-primary-700">
+            {user.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.avatar} alt="" className="h-full w-full object-cover" />
+            ) : (
+              user.fullName.slice(0, 1).toUpperCase()
+            )}
+          </div>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{user.fullName}</h1>
+          <p className="mt-2 text-muted-foreground">Người dùng này đã đặt hồ sơ ở chế độ riêng tư.</p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <ProfileHeader user={user} isOwnProfile={isOwnProfile} stats={stats} />
