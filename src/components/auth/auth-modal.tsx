@@ -233,7 +233,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                     {/* Logo */}
                     <div className={cn("text-center", isRegisterFlow ? "mb-4" : "mb-6")}>
                         <h1 className="text-3xl font-bold text-primary">ForteX</h1>
-                        <p className="text-xs tracking-[0.2em] text-muted-foreground mt-1 uppercase">
+                        <p className="text-xs tracking-[0.2em] text-slate-600 dark:text-slate-400 mt-1 uppercase">
                             Learn · Leap · Lead
                         </p>
                     </div>
@@ -390,7 +390,7 @@ function LoginView({
                     required
                 />
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
                         <Checkbox id="auth-modal-remember-me" checked={rememberMe} onCheckedChange={setRememberMe} />
                         <label htmlFor="auth-modal-remember-me" className="cursor-pointer">Nhớ mật khẩu</label>
                     </div>
@@ -409,7 +409,7 @@ function LoginView({
 
             <div className="my-6 flex items-center gap-3">
                 <div className="h-px flex-1 bg-border" />
-                <span className="text-xs text-muted-foreground">hoặc đăng nhập với</span>
+                <span className="text-sm text-slate-600 dark:text-slate-400">hoặc đăng nhập với</span>
                 <div className="h-px flex-1 bg-border" />
             </div>
 

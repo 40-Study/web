@@ -97,14 +97,14 @@ export function BottomNav({ role = "student", className }: BottomNavProps) {
               key={tab.href}
               href={tab.href}
               className={cn(
-                "flex flex-col items-center gap-1 px-3 py-2 min-w-[64px] rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                "flex flex-col items-center gap-1 px-2 py-2 min-w-[56px] rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                 isActive
                   ? "text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
               {tab.icon}
-              <span className="text-xs font-medium">{tab.label}</span>
+              <span className="whitespace-nowrap text-[11px] font-medium leading-none">{tab.label}</span>
             </Link>
           );
         })}

@@ -103,7 +103,7 @@ export default function LoginPage() {
         />
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
             <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={setRememberMe} />
             <label htmlFor="remember-me" className="cursor-pointer">Nhớ mật khẩu</label>
           </div>
@@ -127,11 +127,11 @@ export default function LoginPage() {
 
       <div className="my-6 flex items-center gap-3">
         <div className="h-px flex-1 bg-border" />
-        <span className="text-xs text-muted-foreground">hoặc đăng nhập với</span>
+        <span className="text-sm text-slate-600 dark:text-slate-400">hoặc đăng nhập với</span>
         <div className="h-px flex-1 bg-border" />
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <SocialLoginButton provider="google" onClick={() => startOAuthFlow("google")} />
         <SocialLoginButton provider="facebook" onClick={() => startOAuthFlow("facebook")} />
         <SocialLoginButton provider="apple" onClick={showComingSoon} />

@@ -76,7 +76,7 @@ export function Footer() {
 
         {/* Bottom */}
         <div className="mt-10 pt-6 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-          <p>© 2024 {siteConfig.name}. Đã đăng ký bản quyền.</p>
+          <p>© {new Date().getFullYear()} {siteConfig.name}. Đã đăng ký bản quyền.</p>
           <div className="flex gap-6">
             <Link href="/terms" className="hover:text-foreground transition-colors">Điều khoản dịch vụ</Link>
             <Link href="/privacy" className="hover:text-foreground transition-colors">Chính sách bảo mật</Link>

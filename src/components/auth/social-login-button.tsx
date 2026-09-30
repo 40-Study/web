@@ -23,7 +23,7 @@ const providerConfig: Record<SocialProvider, { label: string; icon: React.ReactN
   google: { label: "Google", icon: <GoogleIcon /> },
   facebook: { label: "Facebook", icon: <FacebookIcon /> },
   apple: { label: "Apple", icon: <AppleIcon /> },
-  github: { label: "Github", icon: <GithubIcon /> },
+  github: { label: "GitHub", icon: <GithubIcon /> },
   email: { label: "Email", icon: <MailIcon /> },
 };
 
