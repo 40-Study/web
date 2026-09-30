@@ -73,7 +73,6 @@ export default function CoursesPage() {
           <div>
             <h1 className="text-h1 text-slate-900 dark:text-slate-50">Khám phá khóa học</h1>
             <p className="text-body-sm mt-2 text-slate-600 dark:text-slate-400">
-              {!isLoading && allCourses.length > 0 && `${allCourses.length}+ khóa học · `}
               Cập nhật liên tục
             </p>
           </div>

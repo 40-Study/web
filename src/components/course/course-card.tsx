@@ -64,19 +64,19 @@ export function CourseCard({ course, className, priority = false }: CourseCardPr
     >
       <Card hoverable className={cn("flex h-full flex-col overflow-hidden", className)}>
         {/* Thumbnail */}
-        <div className="relative aspect-video bg-slate-100 dark:bg-slate-800">
+        <div className="relative aspect-video overflow-hidden bg-slate-100 dark:bg-slate-800">
           {!imgError && course.thumbnail ? (
             <img
               src={course.thumbnail}
               alt={course.title}
               width={640}
               height={360}
-              className="h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover"
               loading={priority ? "eager" : "lazy"}
               onError={() => setImgError(true)}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center">
               <BookOpen
                 className="h-10 w-10 text-slate-300 dark:text-slate-600"
                 aria-hidden="true"

@@ -141,7 +141,7 @@ export function CourseBannerCarousel() {
                 role="group"
                 aria-roledescription="slide"
                 aria-label={`${i + 1} / ${total}`}
-                className="flex h-40 w-full flex-shrink-0 items-center justify-between gap-6 px-4 md:h-[200px] md:px-14 lg:h-[220px]"
+                className="flex h-40 w-full flex-shrink-0 items-center justify-between gap-6 px-4 md:h-[200px] md:px-16 lg:h-[220px]"
               >
                 <div className="max-w-lg">
                   <h2 className="text-h3 text-slate-900 dark:text-slate-50">{banner.title}</h2>
@@ -156,7 +156,7 @@ export function CourseBannerCarousel() {
                     className={cn(
                       buttonVariants({ variant: "secondary", size: "sm" }),
                       // Panel đã là primary-50 nên nút secondary cần nền trắng để nhìn thấy được.
-                      "mt-3 border border-primary-100 bg-white shadow-xs hover:bg-primary-100 dark:border-slate-700 dark:bg-slate-800 dark:text-primary-300 dark:hover:bg-slate-700 md:mt-4"
+                      "mt-3 min-h-11 md:min-h-0 border border-primary-100 bg-white shadow-xs hover:bg-primary-100 dark:border-slate-700 dark:bg-slate-800 dark:text-primary-300 dark:hover:bg-slate-700 md:mt-4"
                     )}
                   >
                     {banner.cta}
@@ -200,7 +200,7 @@ export function CourseBannerCarousel() {
             aria-label={`Chuyển tới slide ${i + 1}`}
             aria-current={i === current}
             onClick={() => goTo(i)}
-            className="group flex h-11 w-6 items-center justify-center focus-visible:outline-none"
+            className="group grid size-6 place-items-center focus-visible:outline-none"
           >
             <span
               className={cn(

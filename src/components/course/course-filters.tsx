@@ -82,10 +82,11 @@ export function CourseFiltersComponent({
     <div className={cn("space-y-4", className)}>
       {/* Category chips: cuộn ngang ở 390 (fade mép), nút Bộ lọc cố định bên phải */}
       <div className="flex items-center gap-3">
+        <div className="relative min-w-0 flex-1">
         <div
           role="group"
           aria-label="Danh mục khóa học"
-          className="-mx-1 flex min-w-0 flex-1 gap-2 overflow-x-auto px-1 py-1 [mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-24px),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="-mx-1 flex gap-2 overflow-x-auto px-1 py-1 pr-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           <Button
             type="button"
@@ -110,6 +111,11 @@ export function CourseFiltersComponent({
               {cat.name}
             </Button>
           ))}
+        </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent"
+          />
         </div>
 
         <Button

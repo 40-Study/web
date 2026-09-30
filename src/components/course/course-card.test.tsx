@@ -93,6 +93,18 @@ describe("CourseCard", () => {
     expect(container.querySelector("svg.fill-amber-400")).toBeNull();
   });
 
+  it("thumbnail thật vẫn giữ aspect-video, ảnh định vị tuyệt đối (không kéo cao thẻ)", () => {
+    const { container } = render(
+      <CourseCard course={{ ...base, thumbnail: "https://example.com/logo.png" }} />
+    );
+    const img = container.querySelector("img") as HTMLImageElement;
+    expect(img.className).toContain("absolute");
+    expect(img.className).toContain("inset-0");
+    const wrapper = img.parentElement as HTMLElement;
+    expect(wrapper.className).toContain("aspect-video");
+    expect(wrapper.className).toContain("overflow-hidden");
+  });
+
   it("có rating thật thì hiện điểm, số đánh giá và học viên", () => {
     render(<CourseCard course={base} />);
     expect(screen.getByText("4.6")).toBeTruthy();
