@@ -6,10 +6,13 @@ import { CourseGrid } from "@/components/course/course-grid";
 import { CourseFiltersComponent } from "@/components/course/course-filters";
 import { CourseSearch } from "@/components/course/course-search";
 import { CourseBannerCarousel } from "@/components/course/course-banner-carousel";
-import { ScrollReveal } from "@/components/landing/scroll-reveal";
+import { Button } from "@/components/ui/button";
 import { useCourses, useCategories, useSearchSuggestions } from "@/hooks/use-courses";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { CourseFilters } from "@/types/course";
+
+/** Số card hiển thị mỗi lượt. Dữ liệu đã tải đủ một lần, "Tải thêm" chỉ mở rộng phần hiển thị. */
+const PAGE_SIZE = 12;
 
 export default function CoursesPage() {
   const searchParams = useSearchParams();
@@ -17,6 +20,7 @@ export default function CoursesPage() {
 
   const [filters, setFilters] = useState<CourseFilters>({});
   const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   // Debounce 300ms: `useSearchSuggestions` gọi API gợi ý theo từng ký tự.
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
@@ -34,107 +38,95 @@ export default function CoursesPage() {
       )
     : allCourses;
 
-  const freeCourses = filteredCourses.filter((course) => course.price === 0);
-  const paidCourses = filteredCourses.filter((course) => course.price > 0);
+  const visibleCourses = filteredCourses.slice(0, visibleCount);
+  const hasMore = filteredCourses.length > visibleCount;
+  const isLoading = coursesLoading || categoriesLoading;
+  const hasActiveFilters = Boolean(
+    searchQuery ||
+      filters.category ||
+      filters.levels?.length ||
+      filters.priceMin !== undefined ||
+      filters.priceMax !== undefined
+  );
 
   const handleFilterChange = (newFilters: CourseFilters) => {
     setFilters(newFilters);
+    setVisibleCount(PAGE_SIZE);
   };
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    setVisibleCount(PAGE_SIZE);
+  };
+
+  const clearAll = () => {
+    setFilters({ sortBy: filters.sortBy });
+    setSearchQuery("");
+    setVisibleCount(PAGE_SIZE);
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4 pt-6 pb-8">
-        {/* Compact Header: Title + Search */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <ScrollReveal direction="fade">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-light text-black">Khám phá khóa học</h1>
-              <p className="text-neutral-500 text-sm mt-2" style={{ letterSpacing: '0.16px' }}>
-                {allCourses.length}+ khóa học &middot; Cập nhật liên tục
-              </p>
-            </div>
-          </ScrollReveal>
-          <ScrollReveal direction="fade" delay={100} className="w-full md:w-[22rem] md:shrink-0">
-            <div className="w-full max-w-[360px] md:max-w-none">
-              <CourseSearch
-                onSearch={handleSearch}
-                suggestions={suggestions}
-                placeholder="Tìm kiếm khóa học..."
-              />
-            </div>
-          </ScrollReveal>
-        </div>
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-6xl space-y-8 px-4 py-6 md:space-y-10 md:px-6 lg:px-8 xl:space-y-12">
+        {/* Header: tiêu đề + tìm kiếm */}
+        <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="text-h1 text-slate-900 dark:text-slate-50">Khám phá khóa học</h1>
+            <p className="text-body-sm mt-2 text-slate-600 dark:text-slate-400">
+              Cập nhật liên tục
+            </p>
+          </div>
+          <div className="w-full md:w-[22rem] md:shrink-0">
+            <CourseSearch
+              onSearch={handleSearch}
+              suggestions={suggestions}
+              placeholder="Tìm trong danh sách…"
+            />
+          </div>
+        </header>
 
-        {/* Banner Carousel */}
-        <ScrollReveal direction="scale" className="mb-8">
-          <CourseBannerCarousel />
-        </ScrollReveal>
+        <CourseBannerCarousel />
 
-        {/* Filters */}
-        <ScrollReveal direction="fade">
+        <div className="space-y-4 md:space-y-5">
           <CourseFiltersComponent
             categories={categories}
             filters={filters}
             onFilterChange={handleFilterChange}
-            className="mb-8"
           />
-        </ScrollReveal>
 
-        {/* Results Count */}
-        {!coursesLoading && (
-          <p className="mb-4 text-sm text-neutral-500">
-            {filteredCourses.length} khóa học
-            {searchQuery && ` cho "${searchQuery}"`}
-          </p>
-        )}
+          {!isLoading && (
+            <p className="text-sm text-slate-600 dark:text-slate-400" aria-live="polite">
+              {filteredCourses.length} khóa học
+              {searchQuery && ` cho "${searchQuery}"`}
+            </p>
+          )}
 
-        {/* Free courses */}
-        {freeCourses.length > 0 && (
-          <section className="mb-14">
-            <ScrollReveal>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-1 h-6 rounded-full bg-green-500" />
-                <h2 className="text-xl font-light text-black">Khóa học miễn phí</h2>
-                <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-full">
-                  {freeCourses.length} khóa học
-                </span>
-              </div>
-            </ScrollReveal>
-            <CourseGrid
-              courses={freeCourses}
-              loading={coursesLoading || categoriesLoading}
-              staggered
-            />
-          </section>
-        )}
+          <CourseGrid
+            courses={visibleCourses}
+            loading={isLoading}
+            staggered
+            emptyAction={
+              hasActiveFilters ? (
+                <Button type="button" variant="outline" onClick={clearAll}>
+                  Xóa bộ lọc
+                </Button>
+              ) : undefined
+            }
+          />
 
-        {/* Paid courses */}
-        {paidCourses.length > 0 && (
-          <section className="mb-14">
-            <ScrollReveal>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-1 h-6 rounded-full bg-black" />
-                <h2 className="text-xl font-light text-black">Khóa học trả phí</h2>
-                <span className="text-xs font-medium text-black bg-neutral-100 px-2.5 py-1 rounded-full">
-                  {paidCourses.length} khóa học
-                </span>
-              </div>
-            </ScrollReveal>
-            <CourseGrid
-              courses={paidCourses}
-              loading={coursesLoading || categoriesLoading}
-              staggered
-            />
-          </section>
-        )}
-
-        {/* Đã gỡ nút "Xem thêm khóa học" (F4, QA vòng 2): useCourses tải TOÀN BỘ danh sách một lần và
-            lọc phía client, không có trang kế tiếp để tải — nút cũ chỉ bật toast "Đang tải thêm..."
-            rồi không làm gì. */}
+          {hasMore && !isLoading && (
+            <div className="flex justify-center pt-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className="dark:bg-slate-800 dark:text-primary-300 dark:hover:bg-slate-700"
+                onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+              >
+                Tải thêm khóa học
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
