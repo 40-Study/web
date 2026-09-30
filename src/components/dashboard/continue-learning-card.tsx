@@ -46,7 +46,7 @@ export function ContinueLearningCard({ course, className }: ContinueLearningCard
         className
       )}
     >
-      <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-slate-100 dark:bg-slate-800 md:w-72 md:self-stretch">
+      <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-gradient-to-br from-primary-500 to-primary-700 md:w-72 md:self-stretch">
         {course.thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -59,7 +59,7 @@ export function ContinueLearningCard({ course, className }: ContinueLearningCard
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <BookOpen
-              className="h-12 w-12 text-slate-300 dark:text-slate-600"
+              className="h-12 w-12 text-white/90"
               aria-hidden="true"
             />
           </div>

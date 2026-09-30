@@ -24,8 +24,8 @@ describe("ContinueLearningCard thumbnail", () => {
   it("renders the BookOpen fallback in the same box when there is no thumbnail", () => {
     const html = renderToStaticMarkup(<ContinueLearningCard course={baseCourse} />);
     expect(html).toContain("aspect-video");
-    expect(html).toContain("bg-slate-100");
-    expect(html).toContain("dark:bg-slate-800");
+    expect(html).toContain("from-primary-500");
+    expect(html).toContain("to-primary-700");
     expect(html).toContain("lucide-book-open");
     expect(html).not.toContain("<img");
   });

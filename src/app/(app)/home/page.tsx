@@ -107,6 +107,8 @@ function StudentHomeContent() {
         <p className="text-body-sm text-slate-600 dark:text-slate-400">{formatToday()}</p>
       </header>
 
+      {/* Daily-goal ring (DailyGoalWidget) is intentionally NOT rendered: there is no
+          daily-goal API yet, and showing a fake 0/N ring would mislead students. */}
       {/* Continue learning + gamification bento */}
       <section
         aria-label="Tiếp tục học và tiến độ"

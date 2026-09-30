@@ -64,9 +64,10 @@ export function StreakCard({
           return (
             <li
               key={label}
-              aria-label={`${WEEKDAY_LONG[i]}: ${done ? "đã học" : "chưa học"}${isToday ? " (hôm nay)" : ""}`}
+              aria-label={`${isToday ? "Hôm nay" : WEEKDAY_LONG[i]}: ${done ? "đã học" : "chưa học"}`}
+              title={isToday ? "Hôm nay" : undefined}
               className={cn(
-                "mx-auto flex h-7 w-7 items-center justify-center rounded-lg text-xs font-semibold",
+                "mx-auto flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold",
                 done
                   ? "bg-streak text-white dark:bg-orange-500 dark:text-slate-950"
                   : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",

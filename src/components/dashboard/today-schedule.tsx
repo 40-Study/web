@@ -81,7 +81,7 @@ export function TodaySchedule({ items, className }: TodayScheduleProps) {
   }
 
   return (
-    <ul className={cn("grid gap-3 md:grid-cols-2 md:gap-4", className)}>
+    <ul className={cn("flex flex-col gap-3", className)}>
       {items.map((item) => (
         <li key={item.id}>
           <Card
