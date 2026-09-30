@@ -12,42 +12,38 @@ interface StatsCardProps {
   className?: string;
 }
 
-export function StatsCard({
-  title,
-  value,
-  change,
-  icon,
-  className,
-}: StatsCardProps) {
-  const isPositive = change !== undefined && change >= 0;
+export function StatsCard({ title, value, change, icon, className }: StatsCardProps) {
   const hasChange = change !== undefined;
+  const isPositive = hasChange && change >= 0;
 
   return (
-    <Card className={cn("p-4", className)}>
+    <Card className={cn("p-4 md:p-5", className)}>
       <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">{title}</span>
-        <div className="p-2 bg-primary-50 dark:bg-primary-900/30 rounded-lg text-primary-600">
+        <span className="text-body-sm text-slate-600 dark:text-slate-400">{title}</span>
+        <div className="rounded-lg bg-primary-50 p-2 text-primary-600 dark:bg-primary-950 dark:text-primary-400">
           {icon}
         </div>
       </div>
 
-      <p className="text-2xl font-bold mt-2">{value}</p>
+      <p className="text-h2 mt-2 tabular-nums text-slate-900 dark:text-slate-50">{value}</p>
 
       {hasChange && (
         <div
           className={cn(
-            "flex items-center gap-1 text-xs mt-1",
-            isPositive ? "text-green-600" : "text-red-600"
+            "mt-1 flex items-center gap-1 text-xs font-medium",
+            isPositive
+              ? "text-green-700 dark:text-green-400"
+              : "text-red-700 dark:text-red-400"
           )}
         >
           {isPositive ? (
-            <TrendingUp className="w-3 h-3" />
+            <TrendingUp className="h-3 w-3" aria-hidden="true" />
           ) : (
-            <TrendingDown className="w-3 h-3" />
+            <TrendingDown className="h-3 w-3" aria-hidden="true" />
           )}
           <span>
             {isPositive ? "+" : ""}
-            {change}% from last month
+            {change}% so với tháng trước
           </span>
         </div>
       )}
