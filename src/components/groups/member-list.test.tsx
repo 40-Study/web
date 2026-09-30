@@ -9,7 +9,8 @@ import { renderWithQuery } from "@/test-utils/query-wrapper";
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
 
 import { groupService, type Group, type GroupMember } from "@/services/group.service";
-import { MemberList } from "./member-list";
+import { ApiError } from "@/lib/errors";
+import { MEMBERS_FORBIDDEN_MESSAGE, MemberList } from "./member-list";
 
 const group = (role: string): Group => ({
   id: "g1",
@@ -125,5 +126,18 @@ describe("MemberList — chế độ quản lý", () => {
     await screen.findByText("Thành Viên");
     const adminSelect = within(rowOf("Thành Viên")).getByLabelText(/Đổi vai trò của Thành Viên/) as HTMLSelectElement;
     expect(Array.from(adminSelect.options).map((o) => o.value)).toEqual(["", "MODERATOR"]);
+  });
+});
+
+describe("MemberList — người ngoài nhóm PRIVATE", () => {
+  it("403 ERR_FORBIDDEN: báo rõ chỉ thành viên mới xem được, không phải lỗi chung chung, không có nút Thử lại", async () => {
+    const spy = vi.spyOn(groupService, "listMembers").mockRejectedValue(new ApiError(403, "FORBIDDEN", "ERR_FORBIDDEN"));
+    renderWithQuery(<MemberList group={group("")} viewerId="u-out" />);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toBe(MEMBERS_FORBIDDEN_MESSAGE);
+    expect(screen.queryByRole("button", { name: /Thử lại/ })).toBeNull();
+    // 403 là dứt khoát: chỉ một lần gọi, không retry.
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 });

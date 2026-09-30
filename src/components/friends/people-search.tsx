@@ -57,6 +57,7 @@ export function PeopleSearch() {
                   <FriendActionButton
                     userId={user.user_id}
                     status={user.relationship}
+                    requestId={user.request_id}
                     name={friendDisplayName(user)}
                   />
                 }

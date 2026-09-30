@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/errors";
 import { getErrorMessage, HAS_VIETNAMESE_DIACRITICS } from "@/lib/error-messages";
 import {
   groupService,
@@ -62,6 +63,8 @@ export function useGroupMembers(id: string, params?: MembersParams, enabled = tr
     queryKey: groupKeys.members(id, params),
     queryFn: () => groupService.listMembers(id, params),
     enabled: !!id && enabled,
+    // 403 (PRIVATE, người ngoài) / 404 (SECRET) là câu trả lời dứt khoát: thử lại 3 lần chỉ làm chậm màn báo lỗi.
+    retry: (failureCount, error) => !(error instanceof ApiError && error.status >= 400 && error.status < 500) && failureCount < 3,
   });
 }
 

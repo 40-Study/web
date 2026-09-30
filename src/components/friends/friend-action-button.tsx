@@ -7,7 +7,6 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import {
   useAcceptFriendRequest,
   useCancelFriendRequest,
-  useRelationship,
   useSendFriendRequest,
   useUnblockUser,
   useUnfriend,
@@ -17,7 +16,7 @@ import type { RelationStatus } from "@/services/friend.service";
 interface FriendActionButtonProps {
   userId: string;
   status: RelationStatus;
-  /** Id lời mời khi `status` là PENDING_*. Thiếu thì tự tra qua `GET /friends/relationship/:userId`. */
+  /** Id lời mời khi `status` là PENDING_* (search và relationship đều trả `request_id`). Thiếu thì nút khoá. */
   requestId?: string;
   /** Tên người kia, dùng cho `aria-label` và câu xác nhận huỷ kết bạn. */
   name?: string;
@@ -28,8 +27,8 @@ interface FriendActionButtonProps {
  * Đúng MỘT nút theo `relationship`: NONE "Kết bạn" · PENDING_OUT "Huỷ lời mời" · PENDING_IN "Chấp nhận" ·
  * FRIENDS "Bạn bè" (bấm để huỷ kết bạn, có xác nhận) · BLOCKED_BY_ME "Bỏ chặn" · SELF không có nút.
  *
- * Kết quả tìm kiếm chỉ trả `relationship` mà KHÔNG có `request_id` (contract §1), trong khi huỷ/chấp
- * nhận cần id lời mời — nên với PENDING_* ta tự tra một lần và khoá nút tới khi có id.
+ * Huỷ/chấp nhận cần id lời mời: lấy từ `request_id` server trả kèm PENDING_* (kể cả trong kết quả
+ * tìm kiếm). Không có id thì khoá nút, không đoán.
  */
 export function FriendActionButton({ userId, status, requestId, name, className }: FriendActionButtonProps) {
   const send = useSendFriendRequest();
@@ -39,9 +38,7 @@ export function FriendActionButton({ userId, status, requestId, name, className 
   const unblock = useUnblockUser();
   const [confirmUnfriend, setConfirmUnfriend] = useState(false);
 
-  const isPending = status === "PENDING_OUT" || status === "PENDING_IN";
-  const lookup = useRelationship(userId, isPending && !requestId);
-  const resolvedRequestId = requestId ?? lookup.data?.request_id;
+  const resolvedRequestId = requestId;
 
   // Có tên thì nhãn đọc rõ đối tượng ("Kết bạn với Lan"); không có thì để chữ hiển thị tự làm tên,
   // không treo chữ "với" lơ lửng.

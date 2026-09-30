@@ -10,6 +10,7 @@ import { renderWithQuery } from "@/test-utils/query-wrapper";
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
 
 import { toast } from "sonner";
+import { RateLimitError } from "@/lib/errors";
 import { friendService } from "@/services/friend.service";
 import { FriendActionButton } from "./friend-action-button";
 
@@ -50,23 +51,17 @@ describe("FriendActionButton — một nút theo relationship", () => {
     await waitFor(() => expect(cancel).toHaveBeenCalledWith("r7"));
   });
 
-  it("PENDING_OUT thiếu requestId (kết quả tìm kiếm không có id): tự tra relationship, khoá nút tới khi có id", async () => {
-    let resolve!: (v: { status: "PENDING_OUT"; request_id: string }) => void;
-    const lookup = vi.spyOn(friendService, "relationship").mockReturnValue(new Promise((r) => (resolve = r)));
+  it("PENDING_OUT thiếu requestId: khoá nút và KHÔNG tự gọi relationship (search đã có request_id)", () => {
+    const lookup = vi.spyOn(friendService, "relationship");
     const cancel = vi.spyOn(friendService, "cancel").mockResolvedValue(null);
     renderWithQuery(<FriendActionButton userId="u1" status="PENDING_OUT" />);
 
     const button = screen.getByRole("button", { name: "Huỷ lời mời" }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
-    expect(lookup).toHaveBeenCalledWith("u1");
-
-    resolve({ status: "PENDING_OUT", request_id: "r-looked-up" });
-    await waitFor(() => expect(button.disabled).toBe(false));
     fireEvent.click(button);
-
-    await waitFor(() => expect(cancel).toHaveBeenCalledWith("r-looked-up"));
+    expect(lookup).not.toHaveBeenCalled();
+    expect(cancel).not.toHaveBeenCalled();
   });
-
   it("PENDING_IN: 'Chấp nhận' gọi accept", async () => {
     const accept = vi.spyOn(friendService, "accept").mockResolvedValue({ id: "r2", status: "ACCEPTED", user });
     renderWithQuery(<FriendActionButton userId="u1" status="PENDING_IN" requestId="r2" />);
@@ -126,4 +121,12 @@ describe("FriendActionButton — một nút theo relationship", () => {
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Lời mời này đã được xử lý, vui lòng tải lại trang"));
     await waitFor(() => expect(invalidate).toHaveBeenCalled());
   });
-});
+  it("hạn mức chung 10 POST/phút: accept bị 429 không code -> toast nói rõ phải chờ bao lâu, không 'Đã có lỗi' chung", async () => {
+    vi.spyOn(friendService, "accept").mockRejectedValue(new RateLimitError(60));
+    renderWithQuery(<FriendActionButton userId="u1" status="PENDING_IN" requestId="r2" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Chấp nhận" }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(toast.error).mock.calls[0][0]).toBe("Bạn thao tác quá nhiều lần, vui lòng thử lại sau 60 giây");
+  });});

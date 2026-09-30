@@ -39,6 +39,8 @@ export interface BlockItem {
 
 export interface SearchedUser extends FriendUser {
   relationship: RelationStatus;
+  /** Id lời mời đang chờ; server chỉ trả khi relationship là PENDING_IN hoặc PENDING_OUT. */
+  request_id?: string;
 }
 
 export interface FriendSummary {

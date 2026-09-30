@@ -15,12 +15,20 @@ import {
   useRemoveMember,
   useUpdateMemberRole,
 } from "@/hooks/queries/use-groups";
+import { ApiError } from "@/lib/errors";
 import type { Group, GroupMember } from "@/services/group.service";
 import { formatVnDate, roleLabel } from "./group-labels";
 import { assignableRoles, canManageMember } from "./group-permissions";
 import { PaginationControls } from "@/components/common/pagination-controls";
 
 export const MEMBERS_PAGE_SIZE = 20;
+
+/** Người ngoài xem thành viên nhóm PRIVATE nhận 403 ERR_FORBIDDEN (nhóm SECRET thì 404, xử lý ở trang). */
+export const MEMBERS_FORBIDDEN_MESSAGE = "Chỉ thành viên mới xem được danh sách thành viên của nhóm riêng tư này.";
+
+function isForbidden(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 403;
+}
 
 interface MemberListProps {
   group: Group;
@@ -43,7 +51,17 @@ export function MemberList({ group, viewerId, manage = false }: MemberListProps)
   const banMember = useBanMember();
 
   const members = data?.members ?? [];
+  const forbidden = isError && isForbidden(error);
   const closePending = () => setPending(null);
+
+  if (forbidden) {
+    // Thử lại vô ích (quyền không đổi sau một lần bấm), nên không hiện nút Thử lại.
+    return (
+      <Card className="p-6 text-center text-sm text-muted-foreground" role="alert">
+        {MEMBERS_FORBIDDEN_MESSAGE}
+      </Card>
+    );
+  }
 
   return (
     <div>

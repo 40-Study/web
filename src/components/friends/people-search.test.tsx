@@ -105,16 +105,15 @@ describe("PeopleSearch", () => {
     vi.spyOn(friendService, "search").mockResolvedValue({
       users: [
         { user_id: "a", user_name: "a", full_name: "An None", relationship: "NONE" },
-        { user_id: "b", user_name: "b", full_name: "Bình Out", relationship: "PENDING_OUT" },
-        { user_id: "c", user_name: "c", full_name: "Chi In", relationship: "PENDING_IN" },
+        { user_id: "b", user_name: "b", full_name: "Bình Out", relationship: "PENDING_OUT", request_id: "req-b" },
+        { user_id: "c", user_name: "c", full_name: "Chi In", relationship: "PENDING_IN", request_id: "req-c" },
         { user_id: "d", user_name: "d", full_name: "Dũng Friend", relationship: "FRIENDS" },
         { user_id: "e", user_name: "e_user", relationship: "SELF" },
       ],
     });
-    vi.spyOn(friendService, "relationship").mockImplementation(async (id) => ({
-      status: id === "b" ? "PENDING_OUT" : "PENDING_IN",
-      request_id: `req-${id}`,
-    }));
+    const lookup = vi.spyOn(friendService, "relationship");
+    const cancel = vi.spyOn(friendService, "cancel").mockResolvedValue(null);
+    const accept = vi.spyOn(friendService, "accept").mockResolvedValue({ id: "req-c", status: "ACCEPTED", user: { user_id: "c", user_name: "c" } });
     const { container } = renderWithQuery(<PeopleSearch />);
     type("abc");
     await settle();
@@ -128,6 +127,14 @@ describe("PeopleSearch", () => {
     expect(screen.getByText("e_user")).toBeTruthy();
     expect(screen.getAllByRole("button")).toHaveLength(4);
     expect(container.textContent).not.toMatch(/@|email|điện thoại/i);
+    // request_id lấy thẳng từ kết quả search: không gọi thêm relationship, và hành động dùng đúng id đó.
+    expect(lookup).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Huỷ lời mời kết bạn với Bình Out" }));
+    await settle();
+    expect(cancel).toHaveBeenCalledWith("req-b");
+    fireEvent.click(screen.getByRole("button", { name: "Chấp nhận lời mời của Chi In" }));
+    await settle();
+    expect(accept).toHaveBeenCalledWith("req-c");
   });
 
   it("không có kết quả: nói rõ, không phải khung trống", async () => {
