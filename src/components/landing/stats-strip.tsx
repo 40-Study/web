@@ -14,7 +14,7 @@ export function StatsStrip() {
       <ScrollReveal>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-10 border-y border-slate-200 py-10 dark:border-slate-800 lg:grid-cols-4">
           {STATS.map(({ value, label }) => (
-            <div key={label} className="flex flex-col-reverse text-center">
+            <div key={label} className="flex flex-col-reverse items-center text-center">
               <dt className="text-body-sm mt-2 text-slate-600 dark:text-slate-300">{label}</dt>
               <dd className="text-h1 tabular-nums text-slate-900 dark:text-slate-50">{value}</dd>
             </div>

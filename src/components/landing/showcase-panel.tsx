@@ -43,8 +43,10 @@ export function ShowcasePanel() {
           {/* Tiếp tục học */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card dark:border-slate-800 dark:bg-slate-950 md:col-span-2 md:p-6">
             <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Tiếp tục học</p>
-            <div className="mt-3 flex aspect-video items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-900">
-              <BookOpen className="h-10 w-10 text-slate-300 dark:text-slate-700" />
+            <div className="mt-3 flex aspect-video items-end rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 p-4 md:p-5">
+              <p className="font-heading text-xl font-semibold text-white md:text-2xl">
+                Web với React
+              </p>
             </div>
             <p className="mt-4 font-heading text-lg font-semibold text-slate-900 dark:text-slate-50 md:text-xl">
               Lập trình Web với React

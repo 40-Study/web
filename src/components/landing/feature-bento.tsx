@@ -46,7 +46,7 @@ export function FeatureBento() {
       className="mx-auto max-w-7xl scroll-mt-20 px-4 py-16 sm:px-6 md:py-20 lg:px-8 lg:py-24"
     >
       <ScrollReveal>
-        <div className="mx-auto mb-12 max-w-2xl text-center">
+        <div className="mb-12 max-w-2xl">
           <p className="mb-3 text-sm font-semibold text-primary-600 dark:text-primary-400">
             Tính năng
           </p>
@@ -62,8 +62,8 @@ export function FeatureBento() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-6 md:gap-5 lg:gap-6">
         {FEATURES.map(({ icon: Icon, title, description, span }, i) => (
           <ScrollReveal key={title} delay={i * 60} className={span}>
-            <Card className={cn("h-full rounded-3xl p-6 lg:p-8")}>
-              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-300">
+            <Card className={cn("h-full min-h-[180px] rounded-3xl p-6 lg:p-8")}>
+              <div className="mb-6 flex size-12 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400">
                 <Icon className="h-6 w-6" aria-hidden />
               </div>
               <h3 className="text-h3 text-slate-900 dark:text-slate-50">{title}</h3>

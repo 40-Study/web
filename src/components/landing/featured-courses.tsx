@@ -9,7 +9,7 @@ import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { useFeaturedCourses } from "@/hooks/use-courses";
 import { cn } from "@/lib/utils";
 
-const MAX_COURSES = 8;
+const MAX_COURSES = 4;
 
 /** Khóa học nổi bật. Không có dữ liệu (hoặc lỗi API) thì ẩn cả section, không hiện khung trống. */
 export function FeaturedCourses() {
