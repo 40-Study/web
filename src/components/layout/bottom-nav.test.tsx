@@ -12,6 +12,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { BottomNav } from "./bottom-nav";
+import { useAuthStore } from "@/stores/auth.store";
 import { isRouteAllowedForRole, type NavRole } from "@/lib/routes";
 
 // Badge lời mời đọc /friends/summary qua React Query; test này không dựng QueryClientProvider.
@@ -38,6 +39,7 @@ describe("BottomNav — bộ tab guest", () => {
   });
 
   it("student: Trang chủ trỏ /home (không phải /), có Bạn bè -> /friends kèm badge lời mời", () => {
+    useAuthStore.setState({ activeRole: "STUDENT" });
     render(<BottomNav role="student" />);
 
     const home = screen.getByRole("link", { name: /Trang chủ/i });
@@ -53,6 +55,14 @@ describe("BottomNav — bộ tab guest", () => {
       expect(screen.queryByText("Bạn bè")).toBeNull();
       unmount();
     }
+  });
+
+  it("tab student nhưng vai thật là TEACHER: ẩn Bạn bè (không phụ thuộc prop role)", () => {
+    useAuthStore.setState({ activeRole: "TEACHER" });
+    render(<BottomNav role="student" />);
+    expect(screen.queryByText("Bạn bè")).toBeNull();
+    expect(screen.getByText("Xếp hạng")).toBeTruthy();
+    useAuthStore.setState({ activeRole: null });
   });
 
   it("parent: nhãn Con của tôi trỏ /settings/family", () => {

@@ -2,12 +2,15 @@
 
 import { useFriendSummary } from "@/hooks/queries/use-friends";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth.store";
+import { canUseFriends } from "./friends-access";
 
 /** Chấm số lời mời kết bạn đang chờ, đặt góc trên phải icon "Bạn bè". Không có lời mời thì không hiện gì. */
 export function FriendsNavBadge({ className }: { className?: string }) {
-  // Chỉ được mount ở mục menu dành cho STUDENT (roles của /friends), nên không gọi API sai vai.
-  const { data } = useFriendSummary();
-  const count = data?.incoming_requests ?? 0;
+  // Vai khác STUDENT gọi /friends/summary sẽ nhận 403 mỗi 30 giây: tắt query theo vai thật.
+  const activeRole = useAuthStore((s) => s.activeRole);
+  const { data } = useFriendSummary(canUseFriends(activeRole));
+  const count = canUseFriends(activeRole) ? (data?.incoming_requests ?? 0) : 0;
   if (count <= 0) return null;
   return (
     <span

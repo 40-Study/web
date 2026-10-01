@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/errors";
 import { getErrorMessage, HAS_VIETNAMESE_DIACRITICS } from "@/lib/error-messages";
+import { conversationKeys } from "@/hooks/queries/use-conversations";
 import {
   groupService,
   type CreateGroupDTO,
@@ -187,6 +188,8 @@ export function useLeaveGroup() {
     mutationFn: (id: string) => groupService.leave(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: groupKeys.all });
+      // Rời nhóm là rời cả hội thoại của nhóm: làm mới danh sách tin nhắn.
+      qc.invalidateQueries({ queryKey: conversationKeys.list() });
       toast.success("Đã rời nhóm");
     },
     onError: (err) => toast.error(getErrorMessage(err, "Không thể rời nhóm")),

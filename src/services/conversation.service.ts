@@ -128,21 +128,17 @@ export const conversationService = {
     businessRequest<unknown>({ method: "DELETE", url: `/conversations/${convId}/messages/${messageId}` }),
 
   pinMessage: (convId: string, messageId: string) =>
-    api.post(`/conversations/${convId}/messages/${messageId}/pin`).then((r) => r.data),
+    businessRequest<unknown>({ method: "POST", url: `/conversations/${convId}/messages/${messageId}/pin` }),
 
   unpinMessage: (convId: string, messageId: string) =>
-    api.post(`/conversations/${convId}/messages/${messageId}/unpin`).then((r) => r.data),
+    businessRequest<unknown>({ method: "POST", url: `/conversations/${convId}/messages/${messageId}/unpin` }),
 
   // Reactions
   addReaction: (convId: string, messageId: string, emoji: string) =>
-    api
-      .post(`/conversations/${convId}/messages/${messageId}/reactions`, { emoji })
-      .then((r) => r.data),
+    businessRequest<unknown>({ method: "POST", url: `/conversations/${convId}/messages/${messageId}/reactions`, data: { emoji } }),
 
   removeReaction: (convId: string, messageId: string, emoji: string) =>
-    api
-      .delete(`/conversations/${convId}/messages/${messageId}/reactions/${emoji}`)
-      .then((r) => r.data),
+    businessRequest<unknown>({ method: "DELETE", url: `/conversations/${convId}/messages/${messageId}/reactions/${emoji}` }),
 
   // Search & unread
   searchMessages: (params: { q: string; conversation_id?: string; page?: number; limit?: number }) =>

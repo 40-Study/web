@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { FriendsNavBadge } from "@/components/friends/friends-nav-badge";
 import { useAuthStore } from "@/stores/auth.store";
+import { canUseFriends } from "@/components/friends/friends-access";
 import { useSidebarStore } from "@/stores/sidebar.store";
 import { getRoleHomeRoute, normalizeRole, resolveNavRole, ROLE_SCOPED_ROUTES, type NavRole } from "@/lib/routes";
 
@@ -94,7 +95,7 @@ export function Sidebar() {
   const currentRole: SidebarRole = resolveNavRole(isAuthenticated, normalizedRole);
   const familyLabel = isParent ? "Con của tôi" : "Gia đình";
   const navItems = buildSidebarItems(homeHref, familyLabel).filter((item) =>
-    item.roles.includes(currentRole)
+    item.roles.includes(currentRole) && (item.href !== "/friends" || canUseFriends(activeRole))
   );
 
   return (

@@ -16,9 +16,9 @@ import { Sidebar } from "./sidebar";
 import { useAuthStore } from "@/stores/auth.store";
 
 // Badge lời mời đọc /friends/summary qua React Query; sidebar test không dựng QueryClientProvider.
-const summary = vi.hoisted(() => ({ incoming: 0 }));
+const summary = vi.hoisted(() => ({ incoming: 0, enabledCalls: [] as unknown[] }));
 vi.mock("@/hooks/queries/use-friends", () => ({
-  useFriendSummary: () => ({ data: { friends_count: 0, incoming_requests: summary.incoming, outgoing_requests: 0 } }),
+  useFriendSummary: (enabled?: boolean) => (summary.enabledCalls.push(enabled), { data: { friends_count: 0, incoming_requests: summary.incoming, outgoing_requests: 0 } }),
 }));
 
 function setRole(role: string | null, isAuthenticated: boolean) {
@@ -28,6 +28,7 @@ function setRole(role: string | null, isAuthenticated: boolean) {
 describe("Sidebar — menu data-driven theo role", () => {
   beforeEach(() => {
     summary.incoming = 0;
+    summary.enabledCalls.length = 0;
   });
   afterEach(() => {
     useAuthStore.setState({ isAuthenticated: false, activeRole: null });
@@ -90,6 +91,35 @@ describe("Sidebar — menu data-driven theo role", () => {
       expect(screen.queryByText("Bạn bè")).toBeNull();
       unmount();
     }
+  });
+
+  it("TEACHER: ẩn Bạn bè và KHÔNG gọi /friends/summary (query bị tắt)", () => {
+    summary.incoming = 3;
+    setRole("TEACHER", true);
+    render(<Sidebar />);
+
+    expect(screen.queryByText("Bạn bè")).toBeNull();
+    expect(screen.queryByRole("status", { name: /lời mời kết bạn/ })).toBeNull();
+    expect(summary.enabledCalls.every((e) => e === false)).toBe(true);
+  });
+
+  it("STUDENT có vai phụ (PARENT/TEACHER_APPLICANT/ORG_OWNER): vẫn thấy Bạn bè, query bật", () => {
+    useAuthStore.setState({
+      isAuthenticated: true,
+      activeRole: "STUDENT",
+      roles: [{ role_name: "STUDENT" }, { role_name: "PARENT" }, { role_name: "TEACHER_APPLICANT" }, { role_name: "ORG_OWNER" }] as never,
+    });
+    render(<Sidebar />);
+
+    expect(screen.getByRole("link", { name: /Bạn bè/ }).getAttribute("href")).toBe("/friends");
+    expect(summary.enabledCalls).toContain(true);
+    useAuthStore.setState({ roles: [] });
+  });
+
+  it("SYSTEM_ADMIN: ẩn Bạn bè", () => {
+    setRole("SYSTEM_ADMIN", true);
+    render(<Sidebar />);
+    expect(screen.queryByText("Bạn bè")).toBeNull();
   });
 
   it("khách chưa đăng nhập: chỉ thấy mục public, không có Gia đình/Tin nhắn", () => {

@@ -95,3 +95,23 @@ describe("JoinRequestList", () => {
     expect(await screen.findByText("Không có yêu cầu nào đang chờ")).toBeTruthy();
   });
 });
+
+describe("JoinRequestList — tên hiển thị", () => {
+  it("full_name, rồi user_name, cuối cùng 'Học viên'", async () => {
+    const base = { group_id: "g1", status: "PENDING", created_at: "2026-09-02T00:00:00Z" };
+    vi.spyOn(groupService, "listJoinRequests").mockResolvedValue({
+      requests: [
+        { ...base, id: "a", user_id: "ua", user_name: "an", full_name: "Nguyễn An" },
+        { ...base, id: "b", user_id: "ub", user_name: "binh" },
+        { ...base, id: "c", user_id: "uc", user_name: "" },
+      ],
+      total_count: 3,
+    });
+    renderWithQuery(<JoinRequestList group={group} />);
+
+    expect(await screen.findByText("Nguyễn An")).toBeTruthy();
+    expect(screen.getByText("binh")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Chấp nhận yêu cầu của Học viên" })).toBeTruthy();
+    expect(screen.queryByText("an")).toBeNull();
+  });
+});

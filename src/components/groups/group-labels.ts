@@ -27,7 +27,7 @@ export const TYPE_LABELS: Record<string, string> = {
 };
 
 export function roleLabel(role?: string): string {
-  return (role && ROLE_LABELS[role]) || "Thành viên";
+  return (role && ROLE_LABELS[role]) || "Học viên";
 }
 
 export function formatVnDate(iso?: string | null): string {
@@ -38,5 +38,5 @@ export function formatVnDate(iso?: string | null): string {
 
 /** Tên hiển thị của thành viên nhóm: `full_name` rồi `user_name`, không bao giờ rỗng. */
 export function memberDisplayName(member: { full_name?: string; user_name?: string }): string {
-  return member.full_name?.trim() || member.user_name?.trim() || "Thành viên";
+  return member.full_name?.trim() || member.user_name?.trim() || "Học viên";
 }

@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
 import { FriendsNavBadge } from "@/components/friends/friends-nav-badge";
+import { canUseFriends } from "@/components/friends/friends-access";
 
 type UserRole = "student" | "teacher" | "parent" | "guest" | "admin";
 
@@ -76,11 +77,11 @@ interface BottomNavProps {
 
 export function BottomNav({ role = "student", className }: BottomNavProps) {
   const pathname = usePathname();
-  const { user } = useAuthStore();
+  const { user, activeRole } = useAuthStore();
   const profileHref = user?.id ? `/profile/${user.id}` : "/login";
-  const tabs = navConfigs[role].map((tab) =>
-    tab.href === "/profile" ? { ...tab, href: profileHref } : tab
-  );
+  const tabs = navConfigs[role]
+    .filter((tab) => tab.href !== "/friends" || canUseFriends(activeRole))
+    .map((tab) => (tab.href === "/profile" ? { ...tab, href: profileHref } : tab));
 
   return (
     <nav

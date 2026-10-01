@@ -41,6 +41,7 @@ export interface JoinRequest {
   group_id: string;
   user_id: string;
   user_name: string;
+  full_name?: string;
   avatar_url?: string;
   message?: string;
   status: string;

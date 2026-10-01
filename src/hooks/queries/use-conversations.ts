@@ -133,5 +133,7 @@ export function useAddReaction(convId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: conversationKeys.messages(convId) });
     },
+    // DM bị chặn: 403 ERR_CONVERSATION_BLOCKED -> câu cố định (contract §4).
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể thả cảm xúc")),
   });
 }

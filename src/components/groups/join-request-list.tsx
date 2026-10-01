@@ -21,7 +21,7 @@ import {
   useRejectJoinRequest,
 } from "@/hooks/queries/use-groups";
 import type { Group, JoinRequest } from "@/services/group.service";
-import { formatVnDate } from "./group-labels";
+import { formatVnDate, memberDisplayName } from "./group-labels";
 
 /** Lý do từ chối tuỳ chọn; giới hạn để không gửi đoạn văn dài vào thông báo. */
 const REJECT_REASON_MAX = 300;
@@ -55,9 +55,9 @@ export function JoinRequestList({ group }: { group: Group }) {
         <Card className="divide-y">
           {requests.map((req) => (
             <div key={req.id} className="flex flex-wrap items-start gap-3 p-3 sm:p-4">
-              <Avatar src={req.avatar_url} fallback={req.user_name || "?"} size="md" />
+              <Avatar src={req.avatar_url} fallback={memberDisplayName(req)} size="md" />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{req.user_name}</p>
+                <p className="truncate font-medium">{memberDisplayName(req)}</p>
                 <p className="text-xs text-muted-foreground">Gửi lúc {formatVnDate(req.created_at)}</p>
                 {req.message && <p className="mt-1 break-words text-sm text-muted-foreground">&ldquo;{req.message}&rdquo;</p>}
               </div>
@@ -66,7 +66,7 @@ export function JoinRequestList({ group }: { group: Group }) {
                   size="sm"
                   onClick={() => approve.mutate({ groupId: group.id, requestId: req.id })}
                   disabled={approve.isPending}
-                  aria-label={`Chấp nhận yêu cầu của ${req.user_name}`}
+                  aria-label={`Chấp nhận yêu cầu của ${memberDisplayName(req)}`}
                 >
                   <Check className="mr-1.5 h-4 w-4" aria-hidden="true" />
                   Chấp nhận
@@ -75,7 +75,7 @@ export function JoinRequestList({ group }: { group: Group }) {
                   variant="outline"
                   size="sm"
                   onClick={() => setRejecting(req)}
-                  aria-label={`Từ chối yêu cầu của ${req.user_name}`}
+                  aria-label={`Từ chối yêu cầu của ${memberDisplayName(req)}`}
                 >
                   <X className="mr-1.5 h-4 w-4" aria-hidden="true" />
                   Từ chối
@@ -89,7 +89,7 @@ export function JoinRequestList({ group }: { group: Group }) {
       <Dialog open={!!rejecting} onOpenChange={(open) => !open && closeReject()}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Từ chối yêu cầu của {rejecting?.user_name}</DialogTitle>
+            <DialogTitle>Từ chối yêu cầu của {rejecting ? memberDisplayName(rejecting) : ""}</DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
             <Label htmlFor="reject-reason">Lý do (không bắt buộc)</Label>
