@@ -263,7 +263,11 @@ export default function MessagesPage() {
                 </div>
               </div>
 
-              <ConversationChat conversationId={selectedConvId} currentUserId={currentUserId} />
+              <ConversationChat
+                conversationId={selectedConvId}
+                currentUserId={currentUserId}
+                isDirect={selectedConv?.type === "DIRECT"}
+              />
             </>
           )}
         </div>

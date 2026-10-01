@@ -14,6 +14,12 @@ export interface Conversation {
   unread_count: number;
   is_muted: boolean;
   is_pinned: boolean;
+  /**
+   * Chỉ có ở chi tiết hội thoại DM 1-1 (GET /conversations/:id, POST /conversations/direct): true khi giữa hai
+   * người có chặn ở bất kỳ chiều nào. Vắng mặt (danh sách, chat nhóm) = chưa biết, KHÔNG phải "không chặn".
+   * Chỉ là cờ: backend cố ý không nói ai chặn ai.
+   */
+  is_blocked?: boolean;
   participants: Participant[];
   created_at: string;
   updated_at: string;
@@ -34,6 +40,8 @@ export interface Message {
   conversation_id: string;
   sender_id?: string;
   sender_name: string;
+  /** Họ tên hiển thị; vắng mặt khi người gửi chưa có họ tên (khi đó dùng `sender_name`). */
+  sender_full_name?: string;
   sender_avatar?: string;
   type: string;
   content?: string;

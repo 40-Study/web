@@ -241,3 +241,96 @@ describe("ConversationChat — DM bị chặn (ERR_CONVERSATION_BLOCKED)", () =>
     expect((screen.getByLabelText("Nhập tin nhắn") as HTMLInputElement).disabled).toBe(false);
   });
 });
+
+// E2E 01/10 F2: ô nhập từng chỉ khoá SAU lần gửi đầu bị 403. Backend nay trả `is_blocked` trong chi tiết hội
+// thoại DM, nên khung chat khoá ngay khi mở (không cần gửi thử).
+describe("ConversationChat — DM bị chặn từ trước (cờ is_blocked của server)", () => {
+  const BLOCKED_MESSAGE = "Không thể gửi tin nhắn trong cuộc trò chuyện này";
+  const detail = (is_blocked?: boolean) =>
+    ({ id: "c1", type: "DIRECT", message_count: 1, unread_count: 0, is_muted: false, is_pinned: false, participants: [], created_at: "", updated_at: "", is_blocked }) as Awaited<
+      ReturnType<typeof conversationService.getById>
+    >;
+  const input = () => screen.getByLabelText("Nhập tin nhắn") as HTMLInputElement;
+  const sendButton = () => screen.getByRole("button", { name: "Gửi tin nhắn" }) as HTMLButtonElement;
+
+  beforeEach(() => {
+    socket.status = "open";
+    vi.spyOn(conversationService, "markAsRead").mockResolvedValue({});
+    vi.spyOn(conversationService, "getMessages").mockResolvedValue({
+      messages: [msg("m1", "lịch sử vẫn đọc được")],
+      total_count: 1,
+    });
+  });
+
+  it("is_blocked=true: khoá ô nhập + nút gửi ngay khi mở, hiện đúng câu, lịch sử vẫn đọc được, không cần gửi thử", async () => {
+    vi.spyOn(conversationService, "getById").mockResolvedValue(detail(true));
+    const send = vi.spyOn(conversationService, "sendMessage");
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" isDirect />);
+
+    await screen.findByText("lịch sử vẫn đọc được");
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain(BLOCKED_MESSAGE);
+    expect(input().disabled).toBe(true);
+    expect(sendButton().disabled).toBe(true);
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("is_blocked=false: ô nhập mở như thường, không có cảnh báo", async () => {
+    vi.spyOn(conversationService, "getById").mockResolvedValue(detail(false));
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" isDirect />);
+
+    await screen.findByText("lịch sử vẫn đọc được");
+    await waitFor(() => expect(conversationService.getById).toHaveBeenCalledWith("c1"));
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(input().disabled).toBe(false);
+  });
+
+  it("chat nhóm (không phải DM): không hỏi chi tiết hội thoại, ô nhập mở", async () => {
+    const getById = vi.spyOn(conversationService, "getById").mockResolvedValue(detail(true));
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
+
+    await screen.findByText("lịch sử vẫn đọc được");
+    expect(getById).not.toHaveBeenCalled();
+    expect(input().disabled).toBe(false);
+  });
+
+  it("'Thử lại' khi server vẫn báo chặn: tải lại cờ và GIỮ khoá (không mở khoá giả)", async () => {
+    const getById = vi.spyOn(conversationService, "getById").mockResolvedValue(detail(true));
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" isDirect />);
+    await screen.findByRole("alert");
+
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+
+    await waitFor(() => expect(getById.mock.calls.length).toBeGreaterThanOrEqual(2));
+    expect(screen.getByRole("alert").textContent).toContain(BLOCKED_MESSAGE);
+    expect(input().disabled).toBe(true);
+  });
+
+  it("khoá vì lần gửi bị 403 chỉ thuộc hội thoại đó: chuyển sang DM khác thì ô nhập mở lại", async () => {
+    vi.spyOn(conversationService, "getById").mockResolvedValue(detail(false));
+    vi.spyOn(conversationService, "sendMessage").mockRejectedValue(new BusinessApiError(403, "ERR_CONVERSATION_BLOCKED", BLOCKED_MESSAGE));
+    const { rerender } = renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" isDirect />);
+    await screen.findByText("lịch sử vẫn đọc được");
+    fireEvent.change(input(), { target: { value: "xin chào" } });
+    fireEvent.keyDown(input(), { key: "Enter" });
+    await screen.findByRole("alert");
+    expect(input().disabled).toBe(true);
+
+    // Trang Tin nhắn dùng lại cùng một <ConversationChat> khi chọn hội thoại khác (không có key).
+    rerender(<ConversationChat conversationId="c2" currentUserId="me" isDirect />);
+
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    expect(input().disabled).toBe(false);
+  });
+
+  it("bỏ chặn rồi bấm 'Thử lại': tải lại thấy is_blocked=false thì mở khoá", async () => {
+    vi.spyOn(conversationService, "getById").mockResolvedValueOnce(detail(true)).mockResolvedValue(detail(false));
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" isDirect />);
+    await screen.findByRole("alert");
+
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    expect(input().disabled).toBe(false);
+  });
+});
