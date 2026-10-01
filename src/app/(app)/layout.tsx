@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppShellLayout } from "@/components/layout/app-shell-layout";
 import { RoleGuard } from "@/components/guards/role-guard";
+import { canUseFriends } from "@/components/friends/friends-access";
 import { useAuthStore } from "@/stores/auth.store";
 import {
   normalizeRole,
@@ -66,11 +67,16 @@ export default function AppLayout({
   // dự án 28/09) phụ huynh XEM được "/contests" và trang chi tiết, nhưng bị
   // chặn ở làm bài/kết quả/chứng nhận (ROLE_SCOPED_PATTERNS, lib/routes.ts).
   const navRole = resolveNavRole(isAuthenticated, normalizedRole);
+  // Bạn bè (E2E 01/10 F1): bảng ROLE_SCOPED_ROUTES khoá theo NavRole, mà resolveNavRole quy TEACHER về
+  // STUDENT (để dựng menu) nên giáo viên gõ thẳng /friends lọt qua và thấy trang học viên kèm lỗi 403. Khoá
+  // thêm theo vai THẬT bằng canUseFriends, cùng hàm sidebar/bottom-nav dùng để ẩn mục menu (SSOT), để menu và
+  // route không lệch nhau. Đích chuyển hướng là trang chủ của vai (getRoleHomeRoute), không bao giờ là /friends.
+  const isFriendsRoute = pathname === "/friends" || pathname.startsWith("/friends/");
   const isRoleRestrictedRoute =
     isAuthenticated &&
     !isAdminRole &&
     !!normalizedRole &&
-    !isRouteAllowedForRole(pathname, navRole);
+    (!isRouteAllowedForRole(pathname, navRole) || (isFriendsRoute && !canUseFriends(activeRole)));
 
   // N-08 (QA admin 260928, P1): mất phiên (bị khoá giữa phiên, token hết hạn) → bootstrap đặt
   // `anonymous` nhưng layout chỉ `return null` và KHÔNG có nhánh điều hướng nào — RoleGuard (nơi

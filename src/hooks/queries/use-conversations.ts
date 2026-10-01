@@ -21,11 +21,16 @@ export function useConversations(params?: { page?: number; limit?: number }) {
   });
 }
 
-export function useConversation(id: string) {
+/**
+ * Chi tiết một hội thoại. `staleTime: 0` vì chi tiết DM mang cờ `is_blocked`: bỏ chặn rồi mở lại DM trong vòng
+ * 30 giây (staleTime mặc định) không được thấy cờ cũ mà khoá ô nhập oan.
+ */
+export function useConversation(id: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: conversationKeys.detail(id),
     queryFn: () => conversationService.getById(id),
-    enabled: !!id,
+    enabled: !!id && (options?.enabled ?? true),
+    staleTime: 0,
   });
 }
 

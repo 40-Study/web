@@ -11,6 +11,7 @@ import { AuthError } from "@/lib/errors";
 import { cn } from "@/lib/utils";
 import {
   conversationKeys,
+  useConversation,
   useMarkAsRead,
   useMessages,
   useSendMessage,
@@ -34,6 +35,11 @@ interface ConversationChatProps {
   conversationId: string;
   currentUserId: string;
   className?: string;
+  /**
+   * DM 1-1: hỏi chi tiết hội thoại để biết ngay khi mở có đang bị chặn không (`is_blocked`) và khoá ô nhập,
+   * thay vì chờ lần gửi đầu bị 403. Chat nhóm không truyền (chi tiết nhóm nặng và không có cờ này).
+   */
+  isDirect?: boolean;
 }
 
 /**
@@ -41,11 +47,18 @@ interface ConversationChatProps {
  * "Trò chuyện" của nhóm. Tin mới về qua WebSocket; rớt kết nối thì tự tải lại định kỳ và hiện
  * trạng thái "Đang kết nối lại".
  */
-export function ConversationChat({ conversationId, currentUserId, className }: ConversationChatProps) {
+export function ConversationChat({ conversationId, currentUserId, className, isDirect = false }: ConversationChatProps) {
   const qc = useQueryClient();
   const [messageInput, setMessageInput] = useState("");
-  // DM bị chặn (403 ERR_CONVERSATION_BLOCKED): khoá ô nhập. Lịch sử vẫn đọc được; bỏ chặn rồi bấm "Thử lại" để mở khoá.
-  const [blocked, setBlocked] = useState(false);
+  // DM bị chặn: khoá ô nhập. Lịch sử vẫn đọc được. Hai nguồn, khoá khi MỘT trong hai đúng:
+  //  - `sentBlockedId`: hội thoại có lần gửi vừa bị 403 ERR_CONVERSATION_BLOCKED (chặn xảy ra sau khi mở khung
+  //    chat). Lưu ID thay vì boolean vì trang Tin nhắn dùng lại cùng một component khi chọn DM khác: khoá của DM
+  //    này không được dính sang DM kia;
+  //  - `is_blocked` của server khi mở (chi tiết DM): khoá ngay từ đầu, không cần gửi thử.
+  // Bỏ chặn rồi bấm "Thử lại": xoá khoá cục bộ và tải lại cờ của server; server vẫn báo chặn thì GIỮ khoá.
+  const [sentBlockedId, setSentBlockedId] = useState<string | null>(null);
+  const { data: conversation, refetch: refetchConversation } = useConversation(conversationId, { enabled: isDirect });
+  const blocked = sentBlockedId === conversationId || conversation?.is_blocked === true;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { mutate: markAsRead } = useMarkAsRead();
   const sendMessage = useSendMessage(conversationId);
@@ -98,7 +111,7 @@ export function ConversationChat({ conversationId, currentUserId, className }: C
       { content },
       {
         onError: (error) => {
-          if (isConversationBlockedError(error)) setBlocked(true);
+          if (isConversationBlockedError(error)) setSentBlockedId(conversationId);
           // Trả lại bản nháp để người dùng không mất chữ vừa gõ.
           setMessageInput((current) => current || content);
         },
@@ -161,7 +174,14 @@ export function ConversationChat({ conversationId, currentUserId, className }: C
           className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/50 px-4 py-2 text-sm text-muted-foreground"
         >
           <span>{CONVERSATION_BLOCKED_MESSAGE}</span>
-          <Button size="sm" variant="outline" onClick={() => setBlocked(false)}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setSentBlockedId(null);
+              if (isDirect) void refetchConversation();
+            }}
+          >
             Thử lại
           </Button>
         </div>
