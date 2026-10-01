@@ -17,6 +17,7 @@ import {
   useSendMessage,
 } from "@/hooks/queries/use-conversations";
 import { useConversationSocket } from "@/hooks/use-conversation-socket";
+import type { Conversation } from "@/services/conversation.service";
 import { useMarkConversationRead } from "@/app/(app)/messages/use-mark-conversation-read";
 import { readDraft, writeDraft } from "@/lib/chat-draft";
 import { MessageBubble } from "./message-bubble";
@@ -90,6 +91,15 @@ function ConversationChatInner({ conversationId, currentUserId, className, isDir
     onEdited: (message) => qc.setQueryData<MessageListData>(messagesKey, (data) => replaceMessage(data, message)),
     onDeleted: ({ message_id }) =>
       qc.setQueryData<MessageListData>(messagesKey, (data) => removeMessage(data, message_id)),
+    // Chặn/bỏ chặn realtime: khoá hoặc mở ô nhập NGAY, không cần gửi thử. Sự kiện đi theo kênh người dùng nên có
+    // thể thuộc DM khác DM đang mở: bỏ qua. Payload không nói ai chặn ai nên UI cũng không suy ra.
+    onBlockedChanged: ({ conversation_id, is_blocked }) => {
+      if (conversation_id !== conversationId) return;
+      // Cờ của server đi vào cache (nguồn thứ hai của `blocked`) và khoá cục bộ theo đúng giá trị mới: bỏ chặn
+      // phải xoá cả khoá do lần gửi 403 trước đó, nếu không ô nhập vẫn khoá sau khi hết chặn.
+      qc.setQueryData<Conversation>(conversationKeys.detail(conversationId), (c) => (c ? { ...c, is_blocked } : c));
+      setSentBlockedId(is_blocked ? conversationId : null);
+    },
     // Nạp bù tin đã lỡ trong lúc mất kết nối.
     onReconnected: () => qc.invalidateQueries({ queryKey: conversationKeys.messages(conversationId) }),
   });

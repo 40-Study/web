@@ -500,3 +500,80 @@ describe("ConversationChat — nháp không lộ giữa các tài khoản", () =
     expect(() => useAuthStore.getState().logout()).not.toThrow();
   });
 });
+
+// L3: chặn/bỏ chặn realtime (event `conversation_blocked_changed` qua kênh người dùng). Khung chat khoá hoặc mở ô
+// nhập NGAY, không cần gửi thử và không cần tải lại.
+describe("ConversationChat — chặn/bỏ chặn realtime (conversation_blocked_changed)", () => {
+  const BLOCKED_MESSAGE = "Không thể gửi tin nhắn trong cuộc trò chuyện này";
+  const detail = (is_blocked?: boolean) =>
+    ({ id: "c1", type: "DIRECT", message_count: 1, unread_count: 0, is_muted: false, is_pinned: false, participants: [], created_at: "", updated_at: "", is_blocked }) as Awaited<
+      ReturnType<typeof conversationService.getById>
+    >;
+  const input = () => screen.getByLabelText("Nhập tin nhắn") as HTMLInputElement;
+  const sendButton = () => screen.getByRole("button", { name: "Gửi tin nhắn" }) as HTMLButtonElement;
+
+  beforeEach(() => {
+    socket.status = "open";
+    vi.spyOn(conversationService, "markAsRead").mockResolvedValue({});
+    vi.spyOn(conversationService, "getMessages").mockResolvedValue({
+      messages: [msg("m1", "lịch sử vẫn đọc được")],
+      total_count: 1,
+    });
+  });
+
+  it("is_blocked=true tới khi đang mở DM: khoá ô nhập ngay, không gọi API gửi, không tải lại chi tiết", async () => {
+    const getById = vi.spyOn(conversationService, "getById").mockResolvedValue(detail(false));
+    const send = vi.spyOn(conversationService, "sendMessage");
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" isDirect />);
+    await screen.findByText("lịch sử vẫn đọc được");
+    await waitFor(() => expect(getById).toHaveBeenCalledTimes(1));
+    expect(input().disabled).toBe(false);
+
+    act(() => socket.handlers.onBlockedChanged?.({ conversation_id: "c1", is_blocked: true }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain(BLOCKED_MESSAGE);
+    expect(input().disabled).toBe(true);
+    expect(sendButton().disabled).toBe(true);
+    expect(send).not.toHaveBeenCalled();
+    expect(getById).toHaveBeenCalledTimes(1);
+  });
+
+  it("is_blocked=false tới khi đang khoá (cờ server lúc mở): mở ô nhập ngay", async () => {
+    vi.spyOn(conversationService, "getById").mockResolvedValue(detail(true));
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" isDirect />);
+    await screen.findByRole("alert");
+    expect(input().disabled).toBe(true);
+
+    act(() => socket.handlers.onBlockedChanged?.({ conversation_id: "c1", is_blocked: false }));
+
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    expect(input().disabled).toBe(false);
+  });
+
+  it("is_blocked=false cũng gỡ khoá do lần gửi bị 403 trước đó (không kẹt khoá sau khi hết chặn)", async () => {
+    vi.spyOn(conversationService, "getById").mockResolvedValue(detail(false));
+    vi.spyOn(conversationService, "sendMessage").mockRejectedValue(new BusinessApiError(403, "ERR_CONVERSATION_BLOCKED", BLOCKED_MESSAGE));
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" isDirect />);
+    await screen.findByText("lịch sử vẫn đọc được");
+    fireEvent.change(input(), { target: { value: "xin chào" } });
+    fireEvent.keyDown(input(), { key: "Enter" });
+    await screen.findByRole("alert");
+
+    act(() => socket.handlers.onBlockedChanged?.({ conversation_id: "c1", is_blocked: false }));
+
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    expect(input().disabled).toBe(false);
+  });
+
+  it("sự kiện của DM khác (cùng kênh người dùng) bị bỏ qua", async () => {
+    vi.spyOn(conversationService, "getById").mockResolvedValue(detail(false));
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" isDirect />);
+    await screen.findByText("lịch sử vẫn đọc được");
+
+    act(() => socket.handlers.onBlockedChanged?.({ conversation_id: "c-khac", is_blocked: true }));
+
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(input().disabled).toBe(false);
+  });
+});

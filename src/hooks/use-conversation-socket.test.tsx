@@ -82,6 +82,16 @@ describe("useConversationSocket", () => {
     expect(onDeleted).toHaveBeenCalledWith({ message_id: "m1", conversation_id: "conv-1" });
   });
 
+  it("conversation_blocked_changed (kênh người dùng) tới onBlockedChanged với payload nguyên vẹn", () => {
+    const onBlockedChanged = vi.fn();
+    renderHook(() => useConversationSocket("conv-1", { onBlockedChanged }));
+    act(() => last().open());
+
+    act(() => last().emit(CONVERSATION_WS_EVENTS.blockedChanged, { conversation_id: "conv-1", is_blocked: true }));
+
+    expect(CONVERSATION_WS_EVENTS.blockedChanged).toBe("conversation_blocked_changed");
+    expect(onBlockedChanged).toHaveBeenCalledWith({ conversation_id: "conv-1", is_blocked: true });
+  });
   it("rớt kết nối: status 'reconnecting', nối lại sau backoff, và báo onReconnected để nạp bù tin lỡ", () => {
     const onReconnected = vi.fn();
     const { result } = renderHook(() => useConversationSocket("conv-1", { onReconnected }));

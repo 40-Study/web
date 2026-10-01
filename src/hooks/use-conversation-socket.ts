@@ -19,7 +19,18 @@ export const CONVERSATION_WS_EVENTS = {
   message: "conversation_message",
   edited: "message_edited",
   deleted: "message_deleted",
+  /**
+   * Chặn/bỏ chặn làm khoá của một DM đổi. Backend gửi tới kênh `user:<id>` (tự đăng ký khi nối), không phải kênh
+   * `conversation:<id>`, nên về cùng kết nối này và có thể thuộc DM khác DM đang mở: nơi gọi phải so `conversation_id`.
+   */
+  blockedChanged: "conversation_blocked_changed",
 } as const;
+
+/** Payload `conversation_blocked_changed`: giống hệt nhau ở hai phía, KHÔNG nói ai chặn ai. */
+export interface ConversationBlockedChangedPayload {
+  conversation_id: string;
+  is_blocked: boolean;
+}
 
 /**
  * - `connecting`: đang mở kết nối lần đầu.
@@ -33,6 +44,7 @@ export interface ConversationSocketHandlers {
   onMessage?: (message: Message) => void;
   onEdited?: (message: Message) => void;
   onDeleted?: (payload: { message_id: string; conversation_id: string }) => void;
+  onBlockedChanged?: (payload: ConversationBlockedChangedPayload) => void;
   /** Gọi mỗi lần nối lại thành công sau khi rớt — nơi gọi nạp bù tin đã lỡ. */
   onReconnected?: () => void;
 }
@@ -124,6 +136,9 @@ export function useConversationSocket(
             break;
           case CONVERSATION_WS_EVENTS.deleted:
             h.onDeleted?.(msg.payload as { message_id: string; conversation_id: string });
+            break;
+          case CONVERSATION_WS_EVENTS.blockedChanged:
+            h.onBlockedChanged?.(msg.payload as ConversationBlockedChangedPayload);
             break;
           case "error": {
             // Bị từ chối kênh (không còn là participant): thử lại vô ích, chỉ còn polling.
