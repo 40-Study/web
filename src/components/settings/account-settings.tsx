@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Mail, Lock, ShieldCheck, Trash2, Eye, EyeOff, Users, ChevronRight, Check, Plus, LogOut } from "lucide-react";
+import { Mail, Lock, ShieldCheck, Trash2, Users, ChevronRight, Check, Plus, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -76,8 +76,6 @@ export function AccountSettings({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [switchAccountOpen, setSwitchAccountOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showCurrentPw, setShowCurrentPw] = useState(false);
-  const [showNewPw, setShowNewPw] = useState(false);
 
   // Get roles from store
   const { roles, activeRole, activeUnifiedRole, activeOrg } = useAuthStore();
@@ -226,18 +224,8 @@ export function AccountSettings({
         <DialogContent className="rounded-2xl">
           <DialogHeader><DialogTitle>Đổi mật khẩu</DialogTitle></DialogHeader>
           <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
-            <div className="relative">
-              <Input label="Mật khẩu hiện tại" type={showCurrentPw ? "text" : "password"} {...passwordForm.register("currentPassword")} error={passwordForm.formState.errors.currentPassword?.message} />
-              <button type="button" className="absolute right-3 top-9 text-gray-400 hover:text-gray-600" onClick={() => setShowCurrentPw((v) => !v)}>
-                {showCurrentPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            <div className="relative">
-              <Input label="Mật khẩu mới" type={showNewPw ? "text" : "password"} {...passwordForm.register("newPassword")} error={passwordForm.formState.errors.newPassword?.message} />
-              <button type="button" className="absolute right-3 top-9 text-gray-400 hover:text-gray-600" onClick={() => setShowNewPw((v) => !v)}>
-                {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
+            <Input label="Mật khẩu hiện tại" type="password" {...passwordForm.register("currentPassword")} error={passwordForm.formState.errors.currentPassword?.message} />
+            <Input label="Mật khẩu mới" type="password" {...passwordForm.register("newPassword")} error={passwordForm.formState.errors.newPassword?.message} />
             <Input label="Xác nhận mật khẩu mới" type="password" {...passwordForm.register("confirmPassword")} error={passwordForm.formState.errors.confirmPassword?.message} />
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="outline" className="rounded-xl" onClick={() => setPasswordDialogOpen(false)}>Hủy</Button>

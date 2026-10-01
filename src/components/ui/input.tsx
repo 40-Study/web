@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface InputProps
@@ -14,6 +15,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         const inputId = id || generatedId;
         const errorId = `${inputId}-error`;
         const helperId = `${inputId}-helper`;
+        // Ô mật khẩu tự có nút hiện/ẩn để mọi form dùng chung một hành vi.
+        const isPassword = type === "password";
+        const [isPasswordVisible, setIsPasswordVisible] = React.useState(false);
 
         // Build aria-describedby from error, helper, and any passed value
         const describedByIds = [
@@ -32,20 +36,40 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                         {label}
                     </label>
                 )}
-                <input
-                    type={type}
-                    id={inputId}
-                    className={cn(
-                        "flex h-10 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground transition-colors duration-150 hover:border-slate-400 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-                        "dark:border-input dark:placeholder:text-slate-400 dark:hover:border-slate-500",
-                        error && "border-red-400 focus-visible:border-red-500 focus-visible:ring-red-500/40 dark:border-red-500/70",
-                        className
+                <div className="relative">
+                    <input
+                        type={isPassword && isPasswordVisible ? "text" : type}
+                        id={inputId}
+                        className={cn(
+                            "flex h-10 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground transition-colors duration-150 hover:border-slate-400 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                            "dark:border-input dark:placeholder:text-slate-400 dark:hover:border-slate-500",
+                            error && "border-red-400 focus-visible:border-red-500 focus-visible:ring-red-500/40 dark:border-red-500/70",
+                            isPassword && "pr-11",
+                            className
+                        )}
+                        ref={ref}
+                        aria-invalid={error ? "true" : undefined}
+                        aria-describedby={describedByIds}
+                        {...props}
+                    />
+                    {isPassword && (
+                        <button
+                            type="button"
+                            onClick={() => setIsPasswordVisible((visible) => !visible)}
+                            disabled={props.disabled}
+                            aria-label={isPasswordVisible ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                            aria-pressed={isPasswordVisible}
+                            aria-controls={inputId}
+                            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {isPasswordVisible ? (
+                                <EyeOff className="h-4 w-4" aria-hidden="true" />
+                            ) : (
+                                <Eye className="h-4 w-4" aria-hidden="true" />
+                            )}
+                        </button>
                     )}
-                    ref={ref}
-                    aria-invalid={error ? "true" : undefined}
-                    aria-describedby={describedByIds}
-                    {...props}
-                />
+                </div>
                 {error && (
                     <p
                         id={errorId}
