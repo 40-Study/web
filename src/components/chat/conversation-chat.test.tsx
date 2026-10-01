@@ -8,6 +8,7 @@ import { ApiError } from "@/lib/errors";
 import { BusinessApiError } from "@/services/business-request";
 import { toast } from "sonner";
 import { renderWithQuery } from "@/test-utils/query-wrapper";
+import { useAuthStore } from "@/stores/auth.store";
 import type { ConversationSocketHandlers, ConversationSocketStatus } from "@/hooks/use-conversation-socket";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
@@ -440,5 +441,62 @@ describe("ConversationChat — bản nháp theo hội thoại", () => {
     fireEvent.keyDown(input(), { key: "Enter" });
     await waitFor(() => expect(conversationService.sendMessage).toHaveBeenCalled());
     vi.restoreAllMocks();
+  });
+});
+
+// L5 review MAJOR: sessionStorage sống theo TAB nên nháp của A không được lộ cho B đăng nhập sau trên cùng tab.
+describe("ConversationChat — nháp không lộ giữa các tài khoản", () => {
+  const input = () => screen.getByLabelText("Nhập tin nhắn") as HTMLInputElement;
+
+  beforeEach(() => {
+    window.sessionStorage.clear();
+    socket.status = "open";
+    vi.spyOn(conversationService, "markAsRead").mockResolvedValue({});
+    vi.spyOn(conversationService, "getMessages").mockResolvedValue({ messages: [msg("m1", "tin đầu tiên")], total_count: 1 });
+  });
+
+  it("A gõ dở, đăng xuất, B mở cùng hội thoại: ô nhập của B rỗng", async () => {
+    const a = renderWithQuery(<ConversationChat conversationId="dm-AB" currentUserId="userA" />);
+    await screen.findByText("tin đầu tiên");
+    fireEvent.change(input(), { target: { value: "bí mật của A" } });
+    a.unmount();
+
+    useAuthStore.getState().logout();
+
+    renderWithQuery(<ConversationChat conversationId="dm-AB" currentUserId="userB" />);
+    await screen.findByText("tin đầu tiên");
+    expect(input().value).toBe("");
+    expect(JSON.stringify({ ...window.sessionStorage })).not.toContain("bí mật của A");
+  });
+
+  it("khoá nháp gắn userId: B không thấy nháp của A kể cả khi không có đăng xuất nào", async () => {
+    const a = renderWithQuery(<ConversationChat conversationId="dm-AB" currentUserId="userA" />);
+    await screen.findByText("tin đầu tiên");
+    fireEvent.change(input(), { target: { value: "bí mật của A" } });
+    a.unmount();
+
+    renderWithQuery(<ConversationChat conversationId="dm-AB" currentUserId="userB" />);
+    await screen.findByText("tin đầu tiên");
+    expect(input().value).toBe("");
+  });
+
+  it("mất phiên (clearServerSession) cũng xoá nháp", async () => {
+    const a = renderWithQuery(<ConversationChat conversationId="dm-AB" currentUserId="userA" />);
+    await screen.findByText("tin đầu tiên");
+    fireEvent.change(input(), { target: { value: "dở dang" } });
+    a.unmount();
+
+    useAuthStore.getState().clearServerSession();
+
+    renderWithQuery(<ConversationChat conversationId="dm-AB" currentUserId="userA" />);
+    await screen.findByText("tin đầu tiên");
+    expect(input().value).toBe("");
+  });
+
+  it("sessionStorage ném lỗi lúc đăng xuất: không crash", () => {
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    expect(() => useAuthStore.getState().logout()).not.toThrow();
   });
 });
