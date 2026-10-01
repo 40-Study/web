@@ -4,7 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { userPreferenceService } from "@/services/user-preference.service";
+import { userPreferenceService, type PrivacySettings } from "@/services/user-preference.service";
 
 const QUERY_KEY = ["privacy-settings"] as const;
 
@@ -19,7 +19,7 @@ export function usePrivacySettings() {
 export function useUpdatePrivacySettings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Record<string, string>) => userPreferenceService.updatePrivacySettings(data),
+    mutationFn: (data: Partial<PrivacySettings>) => userPreferenceService.updatePrivacySettings(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
     },
