@@ -1,18 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-
-interface Particle {
-  baseX: number;
-  baseY: number;
-  x: number;
-  y: number;
-  size: number;
-  phase: number;
-  amplitude: number;
-  speed: number;
-  alpha: number;
-}
+import {
+  createParticles,
+  readPrimary,
+  type Particle,
+} from "@/components/landing/particle-wave-model";
 
 interface ParticleWaveBackgroundProps {
   /** Tạm dừng do người dùng bấm nút dừng hiệu ứng (WCAG 2.2.2). */
@@ -23,32 +16,6 @@ interface ParticleWaveBackgroundProps {
 const MAX_DPR = 2;
 const LINK_DIST = 120;
 const MOUSE_RADIUS = 140;
-
-/** Đọc `--primary` ("221 83% 53%") để canvas đổi màu theo light/dark. */
-function readPrimary(): string {
-  const raw = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
-  const [h, s, l] = raw.split(/\s+/);
-  return h && s && l ? `${h}, ${s}, ${l}` : "221, 83%, 53%";
-}
-
-function createParticles(w: number, h: number): Particle[] {
-  const count = Math.max(24, Math.min(70, Math.round((w * h) / 20000)));
-  return Array.from({ length: count }, () => {
-    const x = Math.random() * w;
-    const y = Math.random() * h;
-    return {
-      baseX: x,
-      baseY: y,
-      x,
-      y,
-      size: Math.random() * 2.5 + 1,
-      phase: Math.random() * Math.PI * 2,
-      amplitude: Math.random() * 28 + 10,
-      speed: Math.random() * 0.5 + 0.3,
-      alpha: Math.random() * 0.4 + 0.25,
-    };
-  });
-}
 
 /**
  * Canvas particle wave cho hero: sóng + đẩy theo chuột + nối line gần nhau.
