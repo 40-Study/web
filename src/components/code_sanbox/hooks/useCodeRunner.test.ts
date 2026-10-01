@@ -49,6 +49,15 @@ describe("useCodeRunner", () => {
     expect(r.result?.stderr).toMatch(/[ạảãàáâăêôơưđ]/i); // thông báo tiếng Việt
   });
 
+  it("AbortError (trình duyệt huỷ fetch bằng timer fallback, không giữ lý do TimeoutError) vẫn là timeout", async () => {
+    mocked.mockImplementation(async () => {
+      throw new DOMException("The operation was aborted.", "AbortError");
+    });
+    const r = await runAndGet();
+    expect(r.result?.stderr).toMatch(/quá lâu/);
+    expect(r.result?.stderr).not.toMatch(/Không kết nối/);
+  });
+
   it("timeout có thông báo riêng, khác lỗi mạng", async () => {
     mocked.mockImplementation(async () => {
       throw Object.assign(new Error("t"), { name: "TimeoutError" });

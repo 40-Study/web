@@ -16,7 +16,10 @@ export function useCodeRunner() {
       // Judge0 lỗi (mạng, timeout, HTTP lỗi): báo lỗi THẬT. Trước đây trả kết quả giả "Accepted" + "Hello, World!"
       // nên người học tưởng code chạy đạt. id 13 (Internal Error) > 3 nên OutputPanel tô đỏ như mọi lỗi.
       // So theo `name` thay vì `instanceof Error`: DOMException (lý do huỷ của AbortSignal) không phải lúc nào cũng qua được instanceof.
-      const isTimeout = (err as { name?: string } | null)?.name === "TimeoutError";
+      // `AbortError` cũng là timeout: lời gọi này không có nút huỷ nào khác, và một số trình duyệt huỷ fetch bằng timer fallback
+      // mà không giữ lý do `TimeoutError` (reject bằng AbortError chung).
+      const name = (err as { name?: string } | null)?.name;
+      const isTimeout = name === "TimeoutError" || name === "AbortError";
       setResult({
         status: { id: 13, description: "Internal Error" },
         stderr: isTimeout
