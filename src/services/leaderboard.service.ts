@@ -6,7 +6,8 @@ import { api } from "@/lib/api-client";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type PeriodType = "daily" | "weekly" | "monthly" | "all_time";
+// Khớp enum kỳ của backend (model.IsValidLeaderboardPeriodType): backend không có kỳ theo ngày.
+export type PeriodType = "weekly" | "monthly" | "all_time";
 
 export interface LeaderboardEntryDTO {
   rank: number;

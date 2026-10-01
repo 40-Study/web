@@ -24,7 +24,6 @@ const PERIOD_OPTIONS: { label: string; value: PeriodType }[] = [
   { label: "Tuần", value: "weekly" },
   { label: "Tháng", value: "monthly" },
   { label: "Toàn thời gian", value: "all_time" },
-  { label: "Ngày", value: "daily" },
 ];
 
 /**

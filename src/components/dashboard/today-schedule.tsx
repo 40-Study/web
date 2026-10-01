@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { clockTimeToMinutes, formatClockTime } from "@/lib/schedule-time";
 import type { ClassSchedule } from "@/types/class-schedule";
 
 export type ScheduleStatus = "done" | "ongoing" | "upcoming";
@@ -29,12 +30,11 @@ const STATUS_DOT: Record<ScheduleStatus, string> = {
   upcoming: "bg-amber-500",
 };
 
-function toMinutes(time: string): number {
-  const [h, m] = time.split(":").map(Number);
-  return h * 60 + (m || 0);
-}
-
-/** Lọc lịch lặp hằng tuần rơi vào hôm nay, sắp theo giờ bắt đầu, gắn trạng thái so với `now`. */
+/**
+ * Lọc lịch lặp hằng tuần rơi vào hôm nay, sắp theo giờ bắt đầu, gắn trạng thái so với `now`.
+ * `start_time`/`end_time` từ /me/timetable là timestamp ISO — đọc qua `lib/schedule-time`,
+ * mục có giờ không đọc được thì bị bỏ.
+ */
 export function buildTodaySchedule(
   schedules: ClassSchedule[],
   now: Date = new Date()
@@ -44,21 +44,24 @@ export function buildTodaySchedule(
 
   return schedules
     .filter((s) => s.day_of_week === dow)
-    .map((s): TodayScheduleItem => {
-      const startMin = toMinutes(s.start_time);
-      const endMin = toMinutes(s.end_time);
+    .flatMap((s) => {
+      const startMin = clockTimeToMinutes(s.start_time);
+      const endMin = clockTimeToMinutes(s.end_time);
+      if (startMin === null || endMin === null) return [];
       const status: ScheduleStatus =
         nowMin >= endMin ? "done" : nowMin >= startMin ? "ongoing" : "upcoming";
-      return {
+      const item: TodayScheduleItem = {
         id: s.id,
-        start: s.start_time.slice(0, 5),
-        end: s.end_time.slice(0, 5),
+        start: formatClockTime(s.start_time),
+        end: formatClockTime(s.end_time),
         title: s.title || "Buổi học",
         room: s.room,
         status,
       };
+      return [{ item, startMin }];
     })
-    .sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+    .sort((a, b) => a.startMin - b.startMin)
+    .map(({ item }) => item);
 }
 
 interface TodayScheduleProps {
