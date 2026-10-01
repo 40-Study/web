@@ -18,6 +18,7 @@ import {
 } from "@/hooks/queries/use-conversations";
 import { useConversationSocket } from "@/hooks/use-conversation-socket";
 import { useMarkConversationRead } from "@/app/(app)/messages/use-mark-conversation-read";
+import { readDraft, writeDraft } from "@/lib/chat-draft";
 import { MessageBubble } from "./message-bubble";
 import {
   prependMessage,
@@ -47,9 +48,23 @@ interface ConversationChatProps {
  * "Trò chuyện" của nhóm. Tin mới về qua WebSocket; rớt kết nối thì tự tải lại định kỳ và hiện
  * trạng thái "Đang kết nối lại".
  */
-export function ConversationChat({ conversationId, currentUserId, className, isDirect = false }: ConversationChatProps) {
+export function ConversationChat(props: ConversationChatProps) {
+  // `key` theo (user, hội thoại): đổi hội thoại hoặc tài khoản thì khung chat được dựng lại với state sạch, nên
+  // nháp chỉ cần đọc từ storage MỘT LẦN lúc khởi tạo (không đọc storage / ghi ref trong lúc render).
+  return <ConversationChatInner key={`${props.currentUserId}:${props.conversationId}`} {...props} />;
+}
+
+function ConversationChatInner({ conversationId, currentUserId, className, isDirect = false }: ConversationChatProps) {
   const qc = useQueryClient();
-  const [messageInput, setMessageInput] = useState("");
+  // Bản nháp lưu theo (user, conversation_id) ở sessionStorage (lib/chat-draft.ts) để quay lại danh sách rồi mở lại
+  // không mất chữ. State là bản hiển thị; ref phản chiếu giá trị mới nhất cho callback onError (chỉ ghi trong handler).
+  const [messageInput, setMessageInputState] = useState(() => readDraft(currentUserId, conversationId));
+  const messageInputRef = useRef(messageInput);
+  const setMessageInput = (text: string) => {
+    messageInputRef.current = text;
+    setMessageInputState(text);
+    writeDraft(currentUserId, conversationId, text);
+  };
   // DM bị chặn: khoá ô nhập. Lịch sử vẫn đọc được. Hai nguồn, khoá khi MỘT trong hai đúng:
   //  - `sentBlockedId`: hội thoại có lần gửi vừa bị 403 ERR_CONVERSATION_BLOCKED (chặn xảy ra sau khi mở khung
   //    chat). Lưu ID thay vì boolean vì trang Tin nhắn dùng lại cùng một component khi chọn DM khác: khoá của DM
@@ -114,11 +129,14 @@ export function ConversationChat({ conversationId, currentUserId, className, isD
       {
         onError: (error) => {
           if (isConversationBlockedError(error)) setSentBlockedId(conversationId);
-          // Trả lại bản nháp để người dùng không mất chữ vừa gõ.
-          setMessageInput((current) => current || content);
+          // Trả lại bản nháp để người dùng không mất chữ vừa gõ — trừ khi họ đã gõ chữ mới trong lúc chờ.
+          // (Callback của mutate không chạy sau khi unmount nên không cần xử lý trường hợp đã đổi hội thoại.)
+          if (!messageInputRef.current) setMessageInput(content);
         },
       }
     );
+    // Xoá nháp ngay khi gửi (không chờ phản hồi): chờ thì nháp cũ còn trong storage nếu khung chat unmount giữa chừng
+    // và lần mở sau sẽ hiện lại tin đã gửi. Gửi lỗi thì onError ở trên trả lại. (Chuỗi rỗng = xoá khỏi storage.)
     setMessageInput("");
   };
 

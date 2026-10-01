@@ -126,6 +126,8 @@ export function useMarkAsRead() {
     mutationFn: (convId: string) => conversationService.markAsRead(convId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: conversationKeys.unread() });
+      // unread_count của từng hội thoại nằm trong danh sách: không làm mới thì quay lại danh sách vẫn thấy badge cũ.
+      qc.invalidateQueries({ queryKey: conversationKeys.list() });
     },
   });
 }

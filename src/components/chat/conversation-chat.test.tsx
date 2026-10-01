@@ -8,6 +8,7 @@ import { ApiError } from "@/lib/errors";
 import { BusinessApiError } from "@/services/business-request";
 import { toast } from "sonner";
 import { renderWithQuery } from "@/test-utils/query-wrapper";
+import { useAuthStore } from "@/stores/auth.store";
 import type { ConversationSocketHandlers, ConversationSocketStatus } from "@/hooks/use-conversation-socket";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
@@ -42,6 +43,7 @@ const msg = (id: string, content: string, sender = "u-other"): Message => ({
 
 describe("ConversationChat", () => {
   beforeEach(() => {
+    window.sessionStorage.clear();
     socket.status = "open";
     vi.spyOn(conversationService, "markAsRead").mockResolvedValue({});
     // API trả tin mới nhất trước.
@@ -168,6 +170,7 @@ describe("ConversationChat — DM bị chặn (ERR_CONVERSATION_BLOCKED)", () =>
   const blocked = () => new BusinessApiError(403, "ERR_CONVERSATION_BLOCKED", BLOCKED_MESSAGE);
 
   beforeEach(() => {
+    window.sessionStorage.clear();
     socket.status = "open";
     vi.spyOn(conversationService, "markAsRead").mockResolvedValue({});
     vi.spyOn(conversationService, "getMessages").mockResolvedValue({
@@ -254,6 +257,7 @@ describe("ConversationChat — DM bị chặn từ trước (cờ is_blocked c�
   const sendButton = () => screen.getByRole("button", { name: "Gửi tin nhắn" }) as HTMLButtonElement;
 
   beforeEach(() => {
+    window.sessionStorage.clear();
     socket.status = "open";
     vi.spyOn(conversationService, "markAsRead").mockResolvedValue({});
     vi.spyOn(conversationService, "getMessages").mockResolvedValue({
@@ -350,5 +354,149 @@ describe("ConversationChat — cuộn tới tin mới nhất", () => {
 
     expect(scrollIntoView).toHaveBeenCalled();
     for (const [opts] of scrollIntoView.mock.calls) expect(opts).toMatchObject({ block: "nearest" });
+  });
+});
+// L5-1: bản nháp theo conversation_id — quay lại danh sách (điện thoại) làm khung chat unmount, mở lại
+// hội thoại không được mất chữ đang gõ dở.
+describe("ConversationChat — bản nháp theo hội thoại", () => {
+  const input = () => screen.getByLabelText("Nhập tin nhắn") as HTMLInputElement;
+  const type = (text: string) => fireEvent.change(input(), { target: { value: text } });
+
+  beforeEach(() => {
+    window.sessionStorage.clear();
+    socket.status = "open";
+    vi.spyOn(conversationService, "markAsRead").mockResolvedValue({});
+    vi.spyOn(conversationService, "getMessages").mockResolvedValue({ messages: [msg("m1", "tin đầu tiên")], total_count: 1 });
+  });
+
+  it("unmount rồi mở lại cùng hội thoại: nháp còn nguyên", async () => {
+    const first = renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
+    await screen.findByText("tin đầu tiên");
+    type("đang gõ dở");
+    first.unmount();
+
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
+    await screen.findByText("tin đầu tiên");
+    expect(input().value).toBe("đang gõ dở");
+  });
+
+  it("nháp thuộc từng hội thoại: đổi sang hội thoại khác không mang chữ sang", async () => {
+    const view = renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
+    await screen.findByText("tin đầu tiên");
+    type("nháp của c1");
+
+    view.rerender(<ConversationChat conversationId="c2" currentUserId="me" />);
+    expect(input().value).toBe("");
+    type("nháp của c2");
+
+    view.rerender(<ConversationChat conversationId="c1" currentUserId="me" />);
+    expect(input().value).toBe("nháp của c1");
+  });
+
+  it("gửi thành công thì xoá nháp: mở lại ô nhập rỗng", async () => {
+    vi.spyOn(conversationService, "sendMessage").mockResolvedValue(msg("m9", "xin chào", "me"));
+    const first = renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
+    await screen.findByText("tin đầu tiên");
+    type("xin chào");
+    fireEvent.keyDown(input(), { key: "Enter" });
+    await waitFor(() => expect(conversationService.sendMessage).toHaveBeenCalled());
+    await waitFor(() => expect(input().value).toBe(""));
+    first.unmount();
+
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
+    await screen.findByText("tin đầu tiên");
+    expect(input().value).toBe("");
+  });
+
+  it("gửi lỗi thì trả lại nháp (không mất chữ) và vẫn giữ sau khi mở lại", async () => {
+    vi.spyOn(conversationService, "sendMessage").mockRejectedValue(new Error("mạng"));
+    const first = renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
+    await screen.findByText("tin đầu tiên");
+    type("gửi hỏng");
+    fireEvent.keyDown(input(), { key: "Enter" });
+    await waitFor(() => expect(input().value).toBe("gửi hỏng"));
+    first.unmount();
+
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
+    await screen.findByText("tin đầu tiên");
+    expect(input().value).toBe("gửi hỏng");
+  });
+
+  it("sessionStorage ném lỗi: khung chat vẫn gõ và gửi được, không crash", async () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    vi.spyOn(conversationService, "sendMessage").mockResolvedValue(msg("m9", "ok", "me"));
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
+    await screen.findByText("tin đầu tiên");
+
+    type("vẫn gõ được");
+    expect(input().value).toBe("vẫn gõ được");
+    fireEvent.keyDown(input(), { key: "Enter" });
+    await waitFor(() => expect(conversationService.sendMessage).toHaveBeenCalled());
+    vi.restoreAllMocks();
+  });
+});
+
+// L5 review MAJOR: sessionStorage sống theo TAB nên nháp của A không được lộ cho B đăng nhập sau trên cùng tab.
+describe("ConversationChat — nháp không lộ giữa các tài khoản", () => {
+  const input = () => screen.getByLabelText("Nhập tin nhắn") as HTMLInputElement;
+
+  beforeEach(() => {
+    window.sessionStorage.clear();
+    socket.status = "open";
+    vi.spyOn(conversationService, "markAsRead").mockResolvedValue({});
+    vi.spyOn(conversationService, "getMessages").mockResolvedValue({ messages: [msg("m1", "tin đầu tiên")], total_count: 1 });
+  });
+
+  it("A gõ dở, đăng xuất, B mở cùng hội thoại: ô nhập của B rỗng", async () => {
+    const a = renderWithQuery(<ConversationChat conversationId="dm-AB" currentUserId="userA" />);
+    await screen.findByText("tin đầu tiên");
+    fireEvent.change(input(), { target: { value: "bí mật của A" } });
+    a.unmount();
+
+    useAuthStore.getState().logout();
+
+    renderWithQuery(<ConversationChat conversationId="dm-AB" currentUserId="userB" />);
+    await screen.findByText("tin đầu tiên");
+    expect(input().value).toBe("");
+    expect(JSON.stringify({ ...window.sessionStorage })).not.toContain("bí mật của A");
+  });
+
+  it("khoá nháp gắn userId: B không thấy nháp của A kể cả khi không có đăng xuất nào", async () => {
+    const a = renderWithQuery(<ConversationChat conversationId="dm-AB" currentUserId="userA" />);
+    await screen.findByText("tin đầu tiên");
+    fireEvent.change(input(), { target: { value: "bí mật của A" } });
+    a.unmount();
+
+    renderWithQuery(<ConversationChat conversationId="dm-AB" currentUserId="userB" />);
+    await screen.findByText("tin đầu tiên");
+    expect(input().value).toBe("");
+  });
+
+  it("mất phiên (clearServerSession) cũng xoá nháp", async () => {
+    const a = renderWithQuery(<ConversationChat conversationId="dm-AB" currentUserId="userA" />);
+    await screen.findByText("tin đầu tiên");
+    fireEvent.change(input(), { target: { value: "dở dang" } });
+    a.unmount();
+
+    useAuthStore.getState().clearServerSession();
+
+    renderWithQuery(<ConversationChat conversationId="dm-AB" currentUserId="userA" />);
+    await screen.findByText("tin đầu tiên");
+    expect(input().value).toBe("");
+  });
+
+  it("sessionStorage ném lỗi lúc đăng xuất: không crash", () => {
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    expect(() => useAuthStore.getState().logout()).not.toThrow();
   });
 });

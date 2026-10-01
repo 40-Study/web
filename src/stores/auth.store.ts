@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { clearAllDrafts } from "@/lib/chat-draft";
 import type { Permission } from "@/lib/permissions";
 import type { UnifiedRole } from "@/services/auth.service";
 
@@ -189,6 +190,7 @@ export const useAuthStore = create<AuthState>()(
       },
       clearServerSession: () => {
         writeRoleSelectionToken(null);
+        clearAllDrafts(); // mất phiên (401 / refresh thất bại): không để nháp của người này cho người sau trên cùng tab
         set((state) => ({
           ...initialState,
           hasHydrated: state.hasHydrated,
@@ -218,6 +220,7 @@ export const useAuthStore = create<AuthState>()(
       // còn false" (sẽ bị hiểu là mất phiên và gắn ?redirect).
       logout: () => {
         writeRoleSelectionToken(null);
+        clearAllDrafts();
         set((state) => ({
           ...initialState,
           hasHydrated: state.hasHydrated,

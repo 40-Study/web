@@ -10,6 +10,7 @@
  */
 
 import { fireEvent, render, screen } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/stores/auth.store", () => ({
@@ -90,5 +91,39 @@ describe("Trang Tin nhắn — bố cục điện thoại", () => {
     expect(hiddenBelowMd(screen.getByTestId("conversation-chat-panel"))).toBe(true);
     expect(screen.queryByTestId("chat-body")).toBeNull();
     expect(window.location.search).toBe("");
+  });
+});
+
+// L5-3, L5-4
+describe("Trang Tin nhắn — deep-link và chiều cao", () => {
+  beforeEach(() => {
+    window.history.replaceState(null, "", "/messages");
+  });
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
+  });
+
+  it("deep-link ?conversation=<id>: LẦN RENDER ĐẦU đã là khung chat (không nháy danh sách)", () => {
+    window.history.replaceState(null, "", "/messages?conversation=c1");
+    // renderToString không chạy effect: chỉ thấy khung chat nếu trạng thái được quyết định ngay khi render.
+    const html = renderToString(<MessagesPage />);
+    expect(html).toContain('data-testid="chat-body"');
+    expect(html).toMatch(/data-testid="conversation-list-panel"[^>]*class="[^"]*\bhidden md:flex\b/);
+  });
+
+  it("không có ?conversation: render đầu hiện danh sách như cũ", () => {
+    const html = renderToString(<MessagesPage />);
+    expect(html).not.toContain('data-testid="chat-body"');
+  });
+
+  it("chiều cao khung: trừ chỗ thanh điều hướng dưới (lg:hidden) tới hết lg, chỉ trả lại từ lg trở lên", () => {
+    const { container } = render(<MessagesPage />);
+    const card = screen.getByTestId("conversation-list-panel").parentElement as HTMLElement;
+    const cls = card.className;
+    expect(container.contains(card)).toBe(true);
+    // Thanh dưới ẩn ở `lg`, nên bước nhảy chiều cao phải ở `lg`, không phải `md`.
+    expect(cls).toContain("h-[calc(100dvh-250px)]");
+    expect(cls).toContain("lg:h-[calc(100dvh-200px)]");
+    expect(cls).not.toMatch(/\bmd:h-/);
   });
 });
