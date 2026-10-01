@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import {
   LEVELS,
   initialCourseFormData as initialFormData,
+  validateDiscountPrice,
   type CourseFormData,
 } from "../_components/course-form-model";
 import { CourseBasicInfoStep, FORMATS } from "../_components/course-basic-info-step";
@@ -43,7 +44,18 @@ export default function CreateCoursePage() {
 
   const canGoNext = () => {
     if (currentStep === 1) return formData.title.trim().length > 0;
+    // Bước "Cài đặt giá": không cho đi tiếp với giá khuyến mãi sai (lý do hiện ngay dưới ô nhập).
+    if (currentStep === 3) return validateDiscountPrice(formData) === null;
     return true;
+  };
+
+  /** Lưu/tạo khoá chỉ khi giá khuyến mãi hợp lệ; sai thì quay lại bước giá và báo lý do. */
+  const discountPriceOk = () => {
+    const discountError = validateDiscountPrice(formData);
+    if (discountError === null) return true;
+    toast.error(discountError);
+    setCurrentStep(3);
+    return false;
   };
 
   const buildPayload = () => ({
@@ -70,6 +82,7 @@ export default function CreateCoursePage() {
       toast.error("Vui lòng nhập tên khóa học");
       return;
     }
+    if (!discountPriceOk()) return;
     try {
       const course = await createCourse.mutateAsync(buildPayload());
       toast.success("Đã lưu nháp thành công");
@@ -84,6 +97,7 @@ export default function CreateCoursePage() {
       toast.error("Vui lòng nhập tên khóa học");
       return;
     }
+    if (!discountPriceOk()) return;
     try {
       const course = await createCourse.mutateAsync(buildPayload());
       toast.success("Khóa học đã được tạo! Thêm bài học ngay.");

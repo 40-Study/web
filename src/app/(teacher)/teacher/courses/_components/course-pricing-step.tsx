@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import type { CourseFormData, UpdateCourseFormField } from "./course-form-model";
+import { validateDiscountPrice, type CourseFormData, type UpdateCourseFormField } from "./course-form-model";
 
 /** Bước "Cài đặt giá" — dùng chung trang tạo và trang sửa khoá. */
 export function CoursePricingStep({
@@ -24,6 +24,9 @@ export function CoursePricingStep({
   const discount = price > 0 && salePrice > 0 && salePrice < price
     ? Math.round(((price - salePrice) / price) * 100)
     : 0;
+  // Báo ngay khi gõ (không chờ bấm lưu): backend từ chối 400 DISCOUNT_PRICE_INVALID với giá khuyến mãi
+  // <= 0 hoặc >= giá bán, nên để người dùng thấy lý do tại đúng ô nhập.
+  const discountError = validateDiscountPrice(formData);
 
   return (
     <div className="space-y-6">
@@ -92,12 +95,20 @@ export function CoursePricingStep({
                   placeholder="890000"
                   value={formData.discount_price}
                   onChange={(e) => update("discount_price", e.target.value)}
-                  className="h-11"
+                  className={cn("h-11", discountError && "border-red-500 focus-visible:ring-red-500")}
+                  aria-invalid={discountError ? true : undefined}
+                  aria-describedby={discountError ? "discount-price-error" : undefined}
                 />
-                {discount > 0 && (
-                  <p className="text-xs text-green-600 font-medium">
-                    Giảm {discount}%
+                {discountError ? (
+                  <p id="discount-price-error" role="alert" className="text-xs text-red-600">
+                    {discountError} Muốn bỏ khuyến mãi, hãy để trống ô này.
                   </p>
+                ) : (
+                  discount > 0 && (
+                    <p className="text-xs text-green-600 font-medium">
+                      Giảm {discount}%
+                    </p>
+                  )
                 )}
               </div>
               <div className="space-y-2 col-span-2">

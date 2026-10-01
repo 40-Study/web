@@ -4,10 +4,17 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { voucherService, type Voucher, type UserSavedVoucher } from "@/services/voucher.service";
+import {
+  voucherService,
+  type CreateVoucherDTO,
+  type UpdateVoucherDTO,
+  type Voucher,
+  type UserSavedVoucher,
+} from "@/services/voucher.service";
 
 export const voucherKeys = {
   all: ["vouchers"] as const,
+  admin: () => [...voucherKeys.all, "admin"] as const,
   public: () => [...voucherKeys.all, "public"] as const,
   mine: () => [...voucherKeys.all, "my"] as const,
   byCode: (code: string) => [...voucherKeys.all, "code", code] as const,
@@ -74,6 +81,40 @@ export function useVoucherLookup() {
     onError: () => {
       toast.error("Mã voucher không hợp lệ");
     },
+  });
+}
+
+/** Admin: toàn bộ voucher (kể cả voucher dành riêng, đang tắt). */
+export function useAdminVouchers() {
+  return useQuery({
+    queryKey: voucherKeys.admin(),
+    queryFn: () => voucherService.getAllVouchers({ limit: 100, offset: 0 }).then((r) => r.vouchers),
+  });
+}
+
+/** Admin: tạo voucher. */
+export function useCreateVoucher() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dto: CreateVoucherDTO) => voucherService.createVoucher(dto),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: voucherKeys.all });
+      toast.success("Đã tạo voucher");
+    },
+    onError: () => toast.error("Không thể tạo voucher. Mã hoặc tên có thể đã tồn tại."),
+  });
+}
+
+/** Admin: sửa voucher. */
+export function useUpdateVoucher() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, dto }: { id: string; dto: UpdateVoucherDTO }) => voucherService.updateVoucher(id, dto),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: voucherKeys.all });
+      toast.success("Đã cập nhật voucher");
+    },
+    onError: () => toast.error("Không thể cập nhật voucher"),
   });
 }
 

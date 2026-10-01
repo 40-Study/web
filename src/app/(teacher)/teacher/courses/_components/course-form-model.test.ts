@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { ApiCourse } from "@/services/course.service";
-import { buildCourseUpdatePayload, courseToFormData } from "./course-form-model";
+import {
+  DISCOUNT_PRICE_ERROR,
+  buildCourseUpdatePayload,
+  courseToFormData,
+  validateDiscountPrice,
+} from "./course-form-model";
 
 const course = (over: Partial<ApiCourse> = {}): ApiCourse =>
   ({
@@ -57,5 +62,40 @@ describe("course-form-model (D1: trang /edit sửa được thông tin khoá)", 
     const original = course();
     expect(buildCourseUpdatePayload({ ...courseToFormData(original), discount_price: "1200000" }, original).error).toBeTruthy();
     expect(buildCourseUpdatePayload({ ...courseToFormData(original), price: "" }, original).error).toBeTruthy();
+  });
+});
+
+describe("validateDiscountPrice (L1: 0 < giá khuyến mãi < giá bán, khớp DISCOUNT_PRICE_INVALID của backend)", () => {
+  const form = (price: string, discount_price: string, is_free = false) => ({ is_free, price, discount_price });
+
+  it("để trống hoặc khoá miễn phí là hợp lệ (không có khuyến mãi)", () => {
+    expect(validateDiscountPrice(form("500000", ""))).toBeNull();
+    expect(validateDiscountPrice(form("500000", "   "))).toBeNull();
+    expect(validateDiscountPrice(form("", "100", true))).toBeNull();
+  });
+
+  it("giá khuyến mãi hợp lệ nằm trong (0, giá bán)", () => {
+    expect(validateDiscountPrice(form("500000", "499999"))).toBeNull();
+    expect(validateDiscountPrice(form("500000", "1"))).toBeNull();
+  });
+
+  it.each([
+    ["bằng giá bán", "500000"],
+    ["lớn hơn giá bán", "600000"],
+    ["bằng 0 (xoá thì để trống, không dùng 0)", "0"],
+    ["âm", "-5"],
+    ["không phải số", "abc"],
+  ])("từ chối khi %s", (_name, discount) => {
+    expect(validateDiscountPrice(form("500000", discount))).toBe(DISCOUNT_PRICE_ERROR);
+  });
+
+  it("từ chối khuyến mãi khi chưa nhập giá bán", () => {
+    expect(validateDiscountPrice(form("", "100"))).toBe(DISCOUNT_PRICE_ERROR);
+  });
+
+  it("buildCourseUpdatePayload dùng chung luật: khuyến mãi 0 bị từ chối, không biến thành null", () => {
+    const original = course();
+    const res = buildCourseUpdatePayload({ ...courseToFormData(original), discount_price: "0" }, original);
+    expect(res.error).toBe(DISCOUNT_PRICE_ERROR);
   });
 });
