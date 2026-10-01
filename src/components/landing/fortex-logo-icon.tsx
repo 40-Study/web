@@ -12,6 +12,7 @@ interface ForteXLogoIconProps {
 /**
  * ForteX "folded X" logo — hai dải chéo cắt đầu ngang kiểu chữ in (viewBox 100x100).
  * Phần giao nhau được tô đậm hơn (clip theo dải "\") để tạo cảm giác một dải giấy gấp chéo.
+ * Favicon tĩnh ở src/app/icon2.svg (+ icon1.png, apple-icon.png render từ nó) — đổi logo thì đổi cả ở đó.
  */
 const BAND_BACKSLASH = "M14 12H36L86 88H64Z";
 const BAND_SLASH = "M64 12H86L36 88H14Z";
