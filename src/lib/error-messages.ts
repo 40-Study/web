@@ -47,6 +47,30 @@ const CODE_MESSAGES: Record<string, string> = {
   APPLICATION_NOT_REJECTED: "Chỉ có thể nộp lại hồ sơ đang bị từ chối.",
   APPLICATION_UNDER_REVIEW: "Hồ sơ của bạn đang chờ duyệt.",
   RESUBMISSION_LIMIT_REACHED: "Bạn đã nộp lại quá số lần cho phép. Vui lòng liên hệ hỗ trợ.",
+  // ── Nhóm (plans/260930-groups-friends/contract-api.md §2) ──
+  GROUP_ALREADY_MEMBER: "Bạn đã là thành viên của nhóm này",
+  GROUP_BANNED: "Bạn đã bị cấm khỏi nhóm này",
+  GROUP_FULL: "Nhóm đã đủ thành viên",
+  GROUP_JOIN_REQUEST_EXISTS: "Bạn đã gửi yêu cầu tham gia nhóm này, đang chờ duyệt",
+  GROUP_MEMBER_BANNED: "Người này đang bị cấm khỏi nhóm",
+  GROUP_INVITE_NOT_ALLOWED: "Bạn chưa có quan hệ hợp lệ để mời người này vào nhóm",
+  // ── Bạn bè (contract §1) ──
+  // FRIEND_REQUEST_NOT_ALLOWED / FRIEND_REQUEST_COOLDOWN cố ý mơ hồ: không được lộ "bị chặn" hay "bị từ chối".
+  FRIEND_SELF_REQUEST: "Bạn không thể kết bạn với chính mình",
+  FRIEND_ROLE_NOT_ALLOWED: "Tính năng bạn bè chỉ dành cho học viên",
+  FRIEND_REQUEST_NOT_ALLOWED: "Không thể gửi lời mời cho người này.",
+  FRIEND_USER_NOT_FOUND: "Không tìm thấy người dùng này",
+  FRIEND_REQUEST_NOT_FOUND: "Lời mời không còn tồn tại",
+  FRIEND_NOT_FOUND: "Hai bạn chưa là bạn bè",
+  FRIEND_ALREADY_FRIENDS: "Hai bạn đã là bạn bè",
+  FRIEND_REQUEST_EXISTS: "Bạn đã gửi lời mời cho người này, đang chờ phản hồi",
+  FRIEND_REQUEST_NOT_PENDING: "Lời mời này đã được xử lý, vui lòng tải lại trang",
+  FRIEND_REQUEST_COOLDOWN: "Bạn chưa thể gửi lời mời cho người này lúc này.",
+  // DM bị chặn (contract §4): câu cố định, không suy ra ai chặn ai.
+  ERR_CONVERSATION_BLOCKED: "Không thể gửi tin nhắn trong cuộc trò chuyện này",
+  FRIEND_LIMIT_REACHED: "Một trong hai bạn đã đạt số lượng bạn bè tối đa",
+  FRIEND_DAILY_LIMIT_REACHED: "Hôm nay bạn đã gửi đủ lời mời, hãy thử lại vào ngày mai.",
+  FRIEND_PENDING_LIMIT_REACHED: "Bạn đang có quá nhiều lời mời chờ phản hồi. Hãy đợi hoặc huỷ bớt lời mời cũ.",
 };
 
 // Code chỉ nói LOẠI lỗi, message mới nói lý do (vd. ERR_NOT_FOUND + "Voucher not found",
@@ -91,6 +115,8 @@ const EXACT_MESSAGES: Record<string, string> = {
   "student is already enrolled in this class": "Học viên này đã có trong lớp",
   "already a member of this group": "Bạn đã là thành viên của nhóm này",
   "you are banned from this group": "Bạn đã bị chặn khỏi nhóm này",
+  // Backend chưa gắn `code` GROUP_JOIN_REQUEST_EXISTS (phase 02): tới lúc đó khớp theo câu.
+  "you already have a pending join request": "Bạn đã gửi yêu cầu tham gia nhóm này, đang chờ duyệt",
   "contest is full": "Cuộc thi đã đủ người tham gia",
   "contest is not accepting participants": "Cuộc thi hiện không nhận thêm người tham gia",
   "already joined this contest": "Bạn đã tham gia cuộc thi này",
@@ -224,6 +250,22 @@ export function translateApiErrorMessage(
 }
 
 /** Câu tiếng Việt để hiển thị cho MỌI loại lỗi (toast, dòng lỗi dưới form, trang lỗi). */
+/** Mã 403 khi gửi/sửa/xoá tin trong DM 1-1 mà một bên đã chặn bên kia. */
+export const CONVERSATION_BLOCKED_CODE = "ERR_CONVERSATION_BLOCKED";
+export const CONVERSATION_BLOCKED_MESSAGE = "Không thể gửi tin nhắn trong cuộc trò chuyện này";
+
+export function isConversationBlockedError(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 403 && error.code === CONVERSATION_BLOCKED_CODE;
+}
+
+/** 45 -> "45 giây", 300 -> "5 phút", 90 -> "2 phút" (làm tròn lên để không hẹn sớm hơn thực tế). */
+export function formatWaitDuration(seconds: number): string {
+  if (seconds < 60) return `${Math.ceil(seconds)} giây`;
+  if (seconds < 3600) return `${Math.ceil(seconds / 60)} phút`;
+  if (seconds < 86400) return `${Math.ceil(seconds / 3600)} giờ`;
+  return `${Math.ceil(seconds / 86400)} ngày`;
+}
+
 export function getErrorMessage(error: unknown, fallback?: string): string {
   if (error instanceof NetworkError) return NETWORK_ERROR_MESSAGE;
   // RateLimitError tự dựng câu tiếng Việt kèm số giây (lib/errors.ts).
@@ -231,6 +273,11 @@ export function getErrorMessage(error: unknown, fallback?: string): string {
   if (error instanceof ApiError) {
     // 5xx: api-client đã thay message bằng câu chung; không đọc thêm gì từ backend.
     if (error.status >= 500) return fallback ?? GENERIC_ERROR_MESSAGE;
+    // Cooldown lời mời: nếu backend cho biết phải chờ bao lâu thì nói luôn, vẫn không lộ lý do (từ chối hay huỷ).
+    const wait = (error as { retryAfter?: number }).retryAfter;
+    if (error.code === "FRIEND_REQUEST_COOLDOWN" && typeof wait === "number" && wait > 0) {
+      return `Bạn chưa thể gửi lời mời cho người này lúc này. Hãy thử lại sau ${formatWaitDuration(wait)}.`;
+    }
     return translateApiErrorMessage(error.status, error.code, error.message, fallback);
   }
   if (error instanceof Error && HAS_VIETNAMESE_DIACRITICS.test(error.message)) return error.message;

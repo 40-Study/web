@@ -1,4 +1,5 @@
 import { api } from "@/lib/api-client";
+import { businessRequest } from "./business-request";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -115,35 +116,29 @@ export const conversationService = {
       })
       .then((r) => r.data.data),
 
+  // Gửi / sửa / xoá đi qua businessRequest để giữ `code` của 403 ERR_CONVERSATION_BLOCKED (DM bị chặn):
+  // interceptor chung đổi mọi 403 thành ForbiddenError và làm rơi mất mã này.
   sendMessage: (convId: string, data: { content?: string; type?: string; reply_to_id?: string }) =>
-    api
-      .post<R<Message>>(`/conversations/${convId}/messages`, data)
-      .then((r) => r.data.data),
+    businessRequest<Message>({ method: "POST", url: `/conversations/${convId}/messages`, data }),
 
   editMessage: (convId: string, messageId: string, content: string) =>
-    api
-      .put<R<Message>>(`/conversations/${convId}/messages/${messageId}`, { content })
-      .then((r) => r.data.data),
+    businessRequest<Message>({ method: "PUT", url: `/conversations/${convId}/messages/${messageId}`, data: { content } }),
 
   deleteMessage: (convId: string, messageId: string) =>
-    api.delete(`/conversations/${convId}/messages/${messageId}`).then((r) => r.data),
+    businessRequest<unknown>({ method: "DELETE", url: `/conversations/${convId}/messages/${messageId}` }),
 
   pinMessage: (convId: string, messageId: string) =>
-    api.post(`/conversations/${convId}/messages/${messageId}/pin`).then((r) => r.data),
+    businessRequest<unknown>({ method: "POST", url: `/conversations/${convId}/messages/${messageId}/pin` }),
 
   unpinMessage: (convId: string, messageId: string) =>
-    api.post(`/conversations/${convId}/messages/${messageId}/unpin`).then((r) => r.data),
+    businessRequest<unknown>({ method: "POST", url: `/conversations/${convId}/messages/${messageId}/unpin` }),
 
   // Reactions
   addReaction: (convId: string, messageId: string, emoji: string) =>
-    api
-      .post(`/conversations/${convId}/messages/${messageId}/reactions`, { emoji })
-      .then((r) => r.data),
+    businessRequest<unknown>({ method: "POST", url: `/conversations/${convId}/messages/${messageId}/reactions`, data: { emoji } }),
 
   removeReaction: (convId: string, messageId: string, emoji: string) =>
-    api
-      .delete(`/conversations/${convId}/messages/${messageId}/reactions/${emoji}`)
-      .then((r) => r.data),
+    businessRequest<unknown>({ method: "DELETE", url: `/conversations/${convId}/messages/${messageId}/reactions/${emoji}` }),
 
   // Search & unread
   searchMessages: (params: { q: string; conversation_id?: string; page?: number; limit?: number }) =>

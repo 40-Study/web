@@ -1,37 +1,74 @@
 "use client";
 
-/**
- * Trang "Bạn bè" — QA 260927 S-P1-4: backend chưa có router nào cho
- * friends/friend-requests (grep `backend/internal/router/` = 0 kết quả).
- * Bản cũ vẫn dựng đủ tab/ô tìm kiếm nhưng luôn CỐ Ý trả rỗng — trông như tính
- * năng đang chạy mà chỉ chưa có dữ liệu, trong khi thực chất không có cách
- * nào để nó từng có dữ liệu. Thay bằng thông báo "Sắp có" trung thực thay vì
- * danh sách rỗng giả; mục menu tương ứng cũng đã bỏ khỏi sidebar
- * (`components/layout/sidebar.tsx`).
- */
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Users } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BlockedList } from "@/components/friends/blocked-list";
+import { FriendList } from "@/components/friends/friend-list";
+import { parseFriendsTab, type FriendsTab } from "@/components/friends/friends-tabs";
+import { PeopleSearch } from "@/components/friends/people-search";
+import { RequestList } from "@/components/friends/request-list";
+import { useFriendSummary } from "@/hooks/queries/use-friends";
 
-import Link from "next/link";
-import { Users, ArrowLeft } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+function FriendsTabs() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlTab = parseFriendsTab(searchParams.get("tab"));
+  const [tab, setTab] = useState<FriendsTab>(urlTab);
+  const { data: summary } = useFriendSummary();
+
+  // Bấm thông báo khi đang đứng ở /friends chỉ đổi query, không mount lại trang.
+  useEffect(() => setTab(urlTab), [urlTab]);
+
+  const incoming = summary?.incoming_requests ?? 0;
+
+  return (
+    <Tabs
+      value={tab}
+      onValueChange={(v) => {
+        setTab(v as FriendsTab);
+        router.replace(`/friends?tab=${v}`, { scroll: false });
+      }}
+    >
+      <TabsList className="h-auto max-w-full flex-wrap justify-start">
+        <TabsTrigger value="friends">Bạn bè{summary ? ` (${summary.friends_count})` : ""}</TabsTrigger>
+        <TabsTrigger value="requests">Lời mời{incoming > 0 ? ` (${incoming})` : ""}</TabsTrigger>
+        <TabsTrigger value="search">Tìm người</TabsTrigger>
+        <TabsTrigger value="blocked">Đã chặn</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="friends" className="mt-4">
+        <FriendList />
+      </TabsContent>
+      <TabsContent value="requests" className="mt-4">
+        <RequestList />
+      </TabsContent>
+      <TabsContent value="search" className="mt-4">
+        <PeopleSearch />
+      </TabsContent>
+      <TabsContent value="blocked" className="mt-4">
+        <BlockedList />
+      </TabsContent>
+    </Tabs>
+  );
+}
 
 export default function FriendsPage() {
   return (
-    <div className="container max-w-lg mx-auto py-16 px-4">
-      <Card className="p-10 text-center border-dashed">
-        <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-        <h1 className="text-xl font-bold text-gray-900 mb-2">Bạn bè — Sắp có</h1>
-        <p className="text-sm text-gray-500 mb-6">
-          Tính năng kết bạn với bạn học đang được xây dựng và chưa sẵn sàng sử dụng.
-          Chúng tôi sẽ thông báo khi tính năng này ra mắt.
-        </p>
-        <Link href="/home">
-          <Button variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-1.5" />
-            Quay lại trang chủ
-          </Button>
-        </Link>
-      </Card>
+    <div className="container mx-auto max-w-3xl space-y-6 px-4 py-6">
+      <div>
+        <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <Users className="h-7 w-7 text-primary" aria-hidden="true" />
+          Bạn bè
+        </h1>
+        <p className="mt-1 text-muted-foreground">Kết nối với các bạn học và nhắn tin cùng nhau</p>
+      </div>
+      {/* useSearchParams bắt buộc nằm trong Suspense để `next build` không báo thiếu boundary. */}
+      <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+        <FriendsTabs />
+      </Suspense>
     </div>
   );
 }

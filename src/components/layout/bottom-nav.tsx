@@ -12,9 +12,12 @@ import {
   Users,
   Wallet,
   ClipboardList,
+  UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
+import { FriendsNavBadge } from "@/components/friends/friends-nav-badge";
+import { canUseFriends } from "@/components/friends/friends-access";
 
 type UserRole = "student" | "teacher" | "parent" | "guest" | "admin";
 
@@ -22,6 +25,8 @@ interface NavItem {
   icon: React.ReactNode;
   label: string;
   href: string;
+  /** Chấm số đặt góc trên phải icon (vd. lời mời kết bạn chờ). */
+  badge?: React.ReactNode;
 }
 
 // Nhãn thống nhất tiếng Việt cho mọi vai trò (M-03); /children và /reports trỏ tới
@@ -32,6 +37,8 @@ const navConfigs: Record<UserRole, NavItem[]> = {
     { icon: <Calendar className="w-5 h-5" />, label: "Lịch học", href: "/schedule" },
     { icon: <BookOpen className="w-5 h-5" />, label: "Khóa học", href: "/courses" },
     { icon: <Trophy className="w-5 h-5" />, label: "Xếp hạng", href: "/leaderboard" },
+    // Bạn bè chỉ dành cho học viên (Q1): các vai khác không có mục này.
+    { icon: <UserCheck className="w-5 h-5" />, label: "Bạn bè", href: "/friends", badge: <FriendsNavBadge /> },
     { icon: <User className="w-5 h-5" />, label: "Cá nhân", href: "/profile" },
   ],
   teacher: [
@@ -70,11 +77,11 @@ interface BottomNavProps {
 
 export function BottomNav({ role = "student", className }: BottomNavProps) {
   const pathname = usePathname();
-  const { user } = useAuthStore();
+  const { user, activeRole } = useAuthStore();
   const profileHref = user?.id ? `/profile/${user.id}` : "/login";
-  const tabs = navConfigs[role].map((tab) =>
-    tab.href === "/profile" ? { ...tab, href: profileHref } : tab
-  );
+  const tabs = navConfigs[role]
+    .filter((tab) => tab.href !== "/friends" || canUseFriends(activeRole))
+    .map((tab) => (tab.href === "/profile" ? { ...tab, href: profileHref } : tab));
 
   return (
     <nav
@@ -103,7 +110,10 @@ export function BottomNav({ role = "student", className }: BottomNavProps) {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {tab.icon}
+              <span className="relative">
+                {tab.icon}
+                {tab.badge}
+              </span>
               <span className="whitespace-nowrap text-[11px] font-medium leading-none">{tab.label}</span>
             </Link>
           );

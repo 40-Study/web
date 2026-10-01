@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QueryState } from "@/components/common/query-state";
+import { getNotificationHref } from "@/lib/notification-route";
 import {
   useNotifications,
   useMarkNotificationRead,
@@ -24,6 +26,7 @@ function timeAgo(dateStr: string): string {
  * đã có sẵn ở header.tsx ("Xem tất cả thông báo") nhưng trước đó chưa có page.
  */
 export default function NotificationsPage() {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const { data, isLoading, isError, error, refetch } = useNotifications(page);
   const markReadMutation = useMarkNotificationRead();
@@ -77,6 +80,9 @@ export default function NotificationsPage() {
                 }`}
                 onClick={() => {
                   if (!item.is_read) markReadMutation.mutate(item.id);
+                  // Thông báo bạn bè/nhóm mở thẳng màn liên quan (lib/notification-route).
+                  const href = getNotificationHref(item);
+                  if (href) router.push(href);
                 }}
               >
                 <div className="flex items-start gap-3">

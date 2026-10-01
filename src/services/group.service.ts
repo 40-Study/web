@@ -1,4 +1,5 @@
 import { api } from "@/lib/api-client";
+import { ForbiddenError } from "@/lib/errors";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -16,6 +17,8 @@ export interface Group {
   created_by: string;
   my_role?: string;
   conversation?: { id: string };
+  /** Chỉ có khi người xem chưa là thành viên và đang có yêu cầu xin vào chờ duyệt (contract §2). */
+  my_join_request?: { id: string; status: "PENDING" };
   created_at: string;
   updated_at: string;
 }
@@ -24,6 +27,8 @@ export interface GroupMember {
   id: string;
   user_id: string;
   user_name: string;
+  /** Họ tên hiển thị (contract §2); thiếu thì rơi về `user_name`. */
+  full_name?: string;
   avatar_url?: string;
   role: string;
   status: string;
@@ -36,11 +41,14 @@ export interface JoinRequest {
   group_id: string;
   user_id: string;
   user_name: string;
+  full_name?: string;
   avatar_url?: string;
   message?: string;
   status: string;
   created_at: string;
 }
+
+export type GroupMemberStatus = "ACTIVE" | "BANNED";
 
 export interface CreateGroupDTO {
   name: string;
@@ -60,6 +68,17 @@ export const GROUP_INVITE_NOT_ALLOWED = "GROUP_INVITE_NOT_ALLOWED";
 export interface InviteMembersResult {
   invited: string[];
   rejected: { user_id: string; code: string }[];
+}
+
+/**
+ * Kết quả mời đã chuẩn hoá cho cả 200 lẫn 403-kèm-danh-sách. llRejected = true khi backend trả 403
+ * GROUP_INVITE_NOT_ALLOWED (không ai được mời và mọi lý do đều là NOT_ALLOWED): vẫn là kết quả có
+ * danh sách từ chối để hiển thị, không phải lỗi mất dữ liệu.
+ */
+export interface InviteMembersResponse {
+  message: string;
+  data: InviteMembersResult;
+  allRejected?: boolean;
 }
 
 export const groupService = {
@@ -85,21 +104,37 @@ export const groupService = {
     api.get<R<{ groups: Group[]; total_count: number }>>("/groups/me/owned", { params }).then((r) => r.data.data),
 
   // Membership
+  /** `status: "joined"` khi nhóm PUBLIC (vào luôn); nhóm PRIVATE chỉ tạo yêu cầu chờ duyệt. */
   join: (id: string, message?: string) =>
-    api.post<R<unknown>>(`/groups/${id}/join`, { message }).then((r) => r.data.data),
+    api.post<R<{ status?: string }>>(`/groups/${id}/join`, { message }).then((r) => r.data.data),
 
   leave: (id: string) =>
     api.post(`/groups/${id}/leave`).then((r) => r.data),
 
   // Members
-  listMembers: (id: string, params?: { page?: number; limit?: number }) =>
+  /** `status=BANNED` chỉ OWNER/ADMIN xem được (contract §2); mặc định ACTIVE. */
+  listMembers: (id: string, params?: { page?: number; limit?: number; status?: GroupMemberStatus }) =>
     api.get<R<{ members: GroupMember[]; total_count: number }>>(`/groups/${id}/members`, { params }).then((r) => r.data.data),
 
-  /** 200 kèm `rejected` khi mời được một phần; 403 GROUP_INVITE_NOT_ALLOWED khi không ai được mời. */
-  inviteMembers: (id: string, userIds: string[]) =>
-    api
-      .post<{ message: string; data: InviteMembersResult }>(`/groups/${id}/members/invite`, { user_ids: userIds })
-      .then((r) => r.data),
+  /**
+   * 200 kèm `rejected` khi mời được một phần; 403 GROUP_INVITE_NOT_ALLOWED khi không ai được mời.
+   * Interceptor chung đổi mọi 403 thành ForbiddenError và BỎ body, làm mất danh sách `rejected`, nên
+   * nhận riêng 403 ở đây (validateStatus) và chỉ ném lỗi khi body KHÔNG có danh sách (403 thường: không đủ quyền).
+   */
+  inviteMembers: async (id: string, userIds: string[]): Promise<InviteMembersResponse> => {
+    const res = await api.post<
+      | { message: string; data: InviteMembersResult }
+      | { message?: string; error?: string; data?: Partial<InviteMembersResult> }
+    >(`/groups/${id}/members/invite`, { user_ids: userIds }, { validateStatus: (s) => (s >= 200 && s < 300) || s === 403 });
+    if (res.status !== 403) return res.data as InviteMembersResponse;
+
+    const body = res.data as { message?: string; error?: string; data?: Partial<InviteMembersResult> };
+    const rejected = body?.data?.rejected;
+    if (Array.isArray(rejected)) {
+      return { message: body.message ?? "", data: { invited: body.data?.invited ?? [], rejected }, allRejected: true };
+    }
+    throw new ForbiddenError(body?.error || body?.message || "Insufficient permissions");
+  },
 
   updateMemberRole: (groupId: string, userId: string, role: string) =>
     api.put(`/groups/${groupId}/members/${userId}/role`, { role }).then((r) => r.data),

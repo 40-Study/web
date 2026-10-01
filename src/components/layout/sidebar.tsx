@@ -6,10 +6,12 @@ import type { LucideIcon } from "lucide-react";
 import {
   Home, BookOpen, MessageSquare, Calendar, Award, Users,
   Trophy, Coins, UsersRound, ChevronLeft, ChevronRight, GraduationCap,
-  CalendarCheck, ScrollText,
+  CalendarCheck, ScrollText, UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FriendsNavBadge } from "@/components/friends/friends-nav-badge";
 import { useAuthStore } from "@/stores/auth.store";
+import { canUseFriends } from "@/components/friends/friends-access";
 import { useSidebarStore } from "@/stores/sidebar.store";
 import { getRoleHomeRoute, normalizeRole, resolveNavRole, ROLE_SCOPED_ROUTES, type NavRole } from "@/lib/routes";
 
@@ -21,6 +23,8 @@ interface SidebarNavItem {
   icon: LucideIcon;
   /** Vai trò được thấy mục này — thiếu role hiện tại (kể cả GUEST) => ẩn. */
   roles: SidebarRole[];
+  /** Chấm số đặt góc trên phải icon (vd. lời mời kết bạn chờ). */
+  badge?: React.ReactNode;
 }
 
 /**
@@ -46,8 +50,8 @@ function rolesFromRouteTable(href: string): SidebarRole[] {
  * mảng duy nhất thay vì if/else rải rác. `roles` là danh sách vai trò được
  * thấy mục đó; không khai báo role hiện tại => tự ẩn, không cần nhánh riêng.
  *
- * - "Bạn bè": bỏ hẳn khỏi menu mọi vai trò — backend chưa có API bạn bè
- *   (S-P1-4), trang chỉ còn thông báo "Sắp có".
+ * - "Bạn bè": chỉ STUDENT (roles lấy từ ROLE_SCOPED_ROUTES) — phụ huynh/giáo viên
+ *   không có tính năng này (plans/260930-groups-friends Q1). Kèm badge số lời mời chờ.
  * - "AI Chat": bỏ hẳn khỏi menu mọi vai trò — sản phẩm không làm AI (H8).
  * - Phụ huynh không cần Nhóm/Xu (tính năng game-hoá của học sinh);
  *   "Gia đình" đổi nhãn "Con của tôi" khi xem bằng vai phụ huynh.
@@ -72,6 +76,7 @@ function buildSidebarItems(homeHref: string, familyLabel: string): SidebarNavIte
     { label: "Chứng chỉ", href: "/certificates", icon: ScrollText, roles: rolesFromRouteTable("/certificates") },
     { label: "Tin nhắn", href: "/messages", icon: MessageSquare, roles: rolesFromRouteTable("/messages") },
     { label: "Nhóm", href: "/groups", icon: UsersRound, roles: rolesFromRouteTable("/groups") },
+    { label: "Bạn bè", href: "/friends", icon: UserCheck, roles: rolesFromRouteTable("/friends"), badge: <FriendsNavBadge /> },
     { label: "Xu", href: "/coins", icon: Coins, roles: rolesFromRouteTable("/coins") },
     { label: familyLabel, href: "/settings/family", icon: Users, roles: rolesFromRouteTable("/settings/family") },
     { label: "Thành tích", href: "/achievements", icon: Award, roles: rolesFromRouteTable("/achievements") },
@@ -90,7 +95,7 @@ export function Sidebar() {
   const currentRole: SidebarRole = resolveNavRole(isAuthenticated, normalizedRole);
   const familyLabel = isParent ? "Con của tôi" : "Gia đình";
   const navItems = buildSidebarItems(homeHref, familyLabel).filter((item) =>
-    item.roles.includes(currentRole)
+    item.roles.includes(currentRole) && (item.href !== "/friends" || canUseFriends(activeRole))
   );
 
   return (
@@ -114,7 +119,10 @@ export function Sidebar() {
                 ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}>
-              <Icon className="w-5 h-5 shrink-0" aria-hidden="true" />
+              <span className="relative shrink-0">
+                <Icon className="w-5 h-5" aria-hidden="true" />
+                {item.badge}
+              </span>
               {isExpanded && (
                 <span className="text-sm font-medium truncate">
                   {item.label}

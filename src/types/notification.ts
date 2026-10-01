@@ -13,7 +13,11 @@ export type NotificationType =
   | "system"
   | "achievement"
   | "streak"
-  | "point_earned";
+  | "point_earned"
+  // Bạn bè và nhóm (plans/260930-groups-friends/contract-api.md §1)
+  | "friend_request"
+  | "friend_accepted"
+  | "group_added";
 
 export interface Notification {
   id: string;

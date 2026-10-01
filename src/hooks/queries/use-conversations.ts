@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error-messages";
 import { ForbiddenError } from "@/lib/errors";
 import { conversationService } from "@/services/conversation.service";
 
@@ -28,11 +29,20 @@ export function useConversation(id: string) {
   });
 }
 
-export function useMessages(convId: string, params?: { page?: number; limit?: number }) {
+/**
+ * `options.refetchInterval`: chat realtime tắt polling khi WebSocket đang mở và bật lại khi rớt
+ * (xem `components/chat/conversation-chat.tsx`). Không truyền = không polling như trước.
+ */
+export function useMessages(
+  convId: string,
+  params?: { page?: number; limit?: number },
+  options?: { refetchInterval?: number | false }
+) {
   return useQuery({
     queryKey: conversationKeys.messages(convId, params?.page),
     queryFn: () => conversationService.getMessages(convId, params),
     enabled: !!convId,
+    refetchInterval: options?.refetchInterval,
   });
 }
 
@@ -76,7 +86,8 @@ export function useSendMessage(convId: string) {
       qc.invalidateQueries({ queryKey: conversationKeys.messages(convId) });
       qc.invalidateQueries({ queryKey: conversationKeys.list() });
     },
-    onError: () => toast.error("Không thể gửi tin nhắn"),
+    // 403 ERR_CONVERSATION_BLOCKED (DM bị chặn) có câu riêng từ getErrorMessage; lỗi khác giữ câu chung.
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể gửi tin nhắn")),
   });
 }
 
@@ -88,6 +99,7 @@ export function useEditMessage(convId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: conversationKeys.messages(convId) });
     },
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể sửa tin nhắn")),
   });
 }
 
@@ -99,6 +111,7 @@ export function useDeleteMessage(convId: string) {
       qc.invalidateQueries({ queryKey: conversationKeys.messages(convId) });
       qc.invalidateQueries({ queryKey: conversationKeys.list() });
     },
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể xoá tin nhắn")),
   });
 }
 
@@ -120,5 +133,7 @@ export function useAddReaction(convId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: conversationKeys.messages(convId) });
     },
+    // DM bị chặn: 403 ERR_CONVERSATION_BLOCKED -> câu cố định (contract §4).
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể thả cảm xúc")),
   });
 }
