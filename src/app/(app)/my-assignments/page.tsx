@@ -19,14 +19,23 @@ import {
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { livestreamClassroomService, type Assignment } from "@/services/livestream-classroom.service";
+import { classifyAssignment, isPastDue, type AssignmentStatus } from "@/lib/assignment-status";
 
 // ---- Display helpers ----
 
-function isActive(item: Assignment): boolean {
-  return item.is_published;
+function formatDeadline(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
-type TabKey = "all" | "active" | "upcoming" | "ended";
+type TabKey = "all" | AssignmentStatus;
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "all", label: "Tất cả" },
@@ -37,12 +46,24 @@ const TABS: { key: TabKey; label: string }[] = [
 
 // ---- Assignment card ----
 
-function AssignmentCard({ item }: { item: Assignment }) {
-  const active = isActive(item);
+function AssignmentCard({
+  item,
+  status,
+  pastDue,
+}: {
+  item: Assignment;
+  status: AssignmentStatus;
+  pastDue: boolean;
+}) {
+  const active = status === "active";
 
-  const borderCls = active
-    ? "border-l-4 border-l-green-400"
-    : "border-l-4 border-l-orange-400";
+  const borderCls =
+    status === "ended"
+      ? "border-l-4 border-l-gray-300"
+      : active
+      ? "border-l-4 border-l-green-400"
+      : "border-l-4 border-l-orange-400";
+  const deadline = item.end_time ? formatDeadline(item.end_time) : "";
 
   return (
     <div className={cn("bg-white rounded-2xl border border-gray-100 p-5 flex flex-col gap-4 shadow-sm", borderCls)}>
@@ -76,6 +97,12 @@ function AssignmentCard({ item }: { item: Assignment }) {
           {!item.is_published && (
             <span className="text-gray-400">Chưa công bố</span>
           )}
+          {deadline && (
+            <span className={cn(pastDue ? "text-orange-600" : "text-gray-500")}>
+              {pastDue ? "Quá hạn, còn nộp muộn · " : "Hạn: "}
+              {deadline}
+            </span>
+          )}
         </div>
 
         {/* Time limit */}
@@ -96,7 +123,7 @@ function AssignmentCard({ item }: { item: Assignment }) {
             disabled
             className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-400 cursor-not-allowed"
           >
-            Chưa mở
+            {status === "ended" ? "Đã đóng" : "Chưa mở"}
           </button>
         )}
       </div>
@@ -151,16 +178,19 @@ export default function MyAssignmentsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const { data: assignments = [], isLoading } = useAllAssignments();
+  // Một mốc "bây giờ" cho cả lượt render để tab và thẻ không lệch nhau.
+  const now = new Date();
 
-  const filtered = assignments.filter((a) => {
-    if (activeTab === "all") return true;
-    if (activeTab === "active") return isActive(a);
-    if (activeTab === "upcoming") return !a.is_published;
-    if (activeTab === "ended") return false; // No end_time available on this type
-    return true;
-  });
+  const classified = assignments.map((item) => ({
+    item,
+    status: classifyAssignment(item, now),
+    pastDue: isPastDue(item, now),
+  }));
+  const filtered = classified.filter(
+    (c) => activeTab === "all" || c.status === activeTab
+  );
 
-  const activeCount = assignments.filter(isActive).length;
+  const activeCount = classified.filter((c) => c.status === "active").length;
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -230,7 +260,9 @@ export default function MyAssignmentsPage() {
           viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
         )}>
           {filtered.length > 0
-            ? filtered.map((item) => <AssignmentCard key={item.id} item={item} />)
+            ? filtered.map((c) => (
+                <AssignmentCard key={c.item.id} item={c.item} status={c.status} pastDue={c.pastDue} />
+              ))
             : <EmptyState />
           }
         </div>
