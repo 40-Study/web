@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Bot, Route, Smartphone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { HeroEffects } from "@/components/landing/hero-effects";
 import { cn } from "@/lib/utils";
 
 const HIGHLIGHTS = [
@@ -20,11 +21,12 @@ const AVATARS = [
 export function HeroSection() {
   return (
     <section className="relative overflow-hidden">
-      {/* Ánh sáng radial mờ duy nhất — không particle, không shape trôi. */}
+      {/* Ánh sáng radial mờ + hiệu ứng nền (particle wave, hình trôi) là progressive enhancement. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-[520px] bg-[radial-gradient(60%_70%_at_50%_0%,hsl(var(--primary)/0.08),transparent)]"
       />
+      <HeroEffects />
       <div className="relative mx-auto flex max-w-7xl flex-col items-center px-4 py-16 text-center sm:px-6 md:py-20 lg:px-8 lg:py-32">
         <Badge
           size="lg"
