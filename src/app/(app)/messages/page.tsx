@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import {
+  ArrowLeft,
   MessageSquare,
   Search,
   Loader2,
@@ -132,8 +133,19 @@ export default function MessagesPage() {
 
   const selectedConv = conversations.find((c) => c.id === selectedConvId);
 
+  // Quay lại danh sách (điện thoại). Bỏ luôn `?conversation=` khỏi URL: nếu để lại, tải lại trang hay
+  // đóng/mở tab sẽ đọc lại tham số ở effect trên và đẩy người dùng vào đúng khung chat vừa rời.
+  const handleBackToList = () => {
+    setSelectedConvId(null);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has(CONVERSATION_PARAM)) {
+      url.searchParams.delete(CONVERSATION_PARAM);
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+  };
+
   return (
-    <div className="container max-w-6xl mx-auto py-6">
+    <div className="container max-w-6xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <MessageSquare className="h-7 w-7 text-primary" />
@@ -157,9 +169,22 @@ export default function MessagesPage() {
         />
       )}
 
-      <Card className="flex h-[calc(100vh-200px)] overflow-hidden">
+      {/* Điện thoại trừ thêm chỗ cho thanh điều hướng dưới (fixed) để ô nhập tin không bị che. */}
+      <Card className="flex h-[calc(100dvh-250px)] md:h-[calc(100vh-200px)] overflow-hidden">
+        {/*
+          Bố cục theo màn hình: dưới md chỉ hiện MỘT trong hai khung (chưa chọn => danh sách, đã chọn
+          => khung chat) vì cạnh nhau ở 390px khung chat bị bóp còn ~70px. Từ md trở lên luôn hai cột.
+          Dùng `hidden` + `md:flex` thay vì render có điều kiện để ConversationChat không bị mount/unmount
+          khi đổi kích thước cửa sổ.
+        */}
         {/* Conversation list */}
-        <div className="w-80 border-r flex flex-col shrink-0">
+        <div
+          data-testid="conversation-list-panel"
+          className={cn(
+            "w-full md:w-80 border-r flex-col shrink-0",
+            selectedConvId ? "hidden md:flex" : "flex"
+          )}
+        >
           <div className="p-3 border-b">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -234,7 +259,10 @@ export default function MessagesPage() {
         </div>
 
         {/* Chat area */}
-        <div className="flex-1 flex flex-col">
+        <div
+          data-testid="conversation-chat-panel"
+          className={cn("flex-1 min-w-0 flex-col", selectedConvId ? "flex" : "hidden md:flex")}
+        >
           {!selectedConvId ? (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
               <div className="text-center">
@@ -246,6 +274,16 @@ export default function MessagesPage() {
             <>
               {/* Chat header */}
               <div className="h-14 border-b flex items-center px-4 gap-3">
+                {/* Chỉ có ở điện thoại: từ md danh sách luôn hiện bên trái nên không cần nút này. */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden -ml-2 shrink-0"
+                  aria-label="Quay lại danh sách hội thoại"
+                  onClick={handleBackToList}
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
                 <Avatar
                   fallback={(selectedConv?.name ?? "C")[0].toUpperCase()}
                   size="sm"

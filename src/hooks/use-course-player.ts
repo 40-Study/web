@@ -327,9 +327,9 @@ export function useSubmitExercise() {
     onSuccess: (result, { exerciseId }) => {
       qc.invalidateQueries({ queryKey: playerKeys.exercise(exerciseId) });
       if (result.status === "accepted") {
-        toast.success("Accepted! Bài làm của bạn đã đúng");
+        toast.success("Đã được chấp nhận! Bài làm của bạn đã đúng");
       } else {
-        toast.error("Sai kết quả. Hãy kiểm tra lại code!");
+        toast.error("Sai đáp án. Hãy kiểm tra lại code!");
       }
     },
     onError: () => {

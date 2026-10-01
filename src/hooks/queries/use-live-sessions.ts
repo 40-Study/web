@@ -53,10 +53,10 @@ export function useCreateLiveSession() {
     mutationFn: (dto: CreateLiveSessionDTO) => liveSessionService.create(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: liveSessionKeys.all });
-      toast.success("Đã tạo buổi live thành công");
+      toast.success("Đã tạo buổi học trực tiếp thành công");
     },
     onError: (error: Error) => {
-      toast.error("Không thể tạo buổi live", { description: error.message });
+      toast.error("Không thể tạo buổi học trực tiếp", { description: error.message });
     },
   });
 }
@@ -70,7 +70,7 @@ export function useUpdateLiveSession() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: liveSessionKeys.all });
       queryClient.setQueryData(liveSessionKeys.detail(data.id), data);
-      toast.success("Đã cập nhật buổi live");
+      toast.success("Đã cập nhật buổi học trực tiếp");
     },
     onError: (error: Error) => {
       toast.error("Không thể cập nhật", { description: error.message });
@@ -85,7 +85,7 @@ export function useDeleteLiveSession() {
     mutationFn: (id: string) => liveSessionService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: liveSessionKeys.all });
-      toast.success("Đã hủy buổi live");
+      toast.success("Đã hủy buổi học trực tiếp");
     },
     onError: (error: Error) => {
       toast.error("Không thể hủy", { description: error.message });
@@ -101,10 +101,10 @@ export function useStartLiveSession() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: liveSessionKeys.all });
       queryClient.setQueryData(liveSessionKeys.detail(data.id), data);
-      toast.success("Buổi live đã bắt đầu!");
+      toast.success("Buổi học trực tiếp đã bắt đầu!");
     },
     onError: (error: Error) => {
-      toast.error("Không thể bắt đầu buổi live", { description: error.message });
+      toast.error("Không thể bắt đầu buổi học trực tiếp", { description: error.message });
     },
   });
 }
@@ -117,7 +117,7 @@ export function useEndLiveSession() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: liveSessionKeys.all });
       queryClient.setQueryData(liveSessionKeys.detail(data.id), data);
-      toast.success("Buổi live đã kết thúc");
+      toast.success("Buổi học trực tiếp đã kết thúc");
     },
     onError: (error: Error) => {
       toast.error("Không thể kết thúc", { description: error.message });

@@ -190,7 +190,7 @@ export default function TeacherAssignmentsPage() {
       <div>
         <h1 className="text-2xl font-bold">Quản lí bài tập giáo viên</h1>
         <p className="text-sm text-muted-foreground">
-          Chọn khóa học → chọn buổi học (livestream) → giao bài tập lập trình trực tiếp, bài tập về nhà hoặc dự án.
+          Chọn khóa học → chọn buổi học trực tiếp → giao bài tập lập trình trực tiếp, bài tập về nhà hoặc dự án.
         </p>
       </div>
 
@@ -242,9 +242,9 @@ export default function TeacherAssignmentsPage() {
         {/* Column 2: Livestream session list for the course */}
         <Card className="h-[calc(100vh-15rem)] overflow-hidden">
           <CardHeader className="border-b pb-3">
-            <CardTitle className="text-base">2) Buổi học (livestream)</CardTitle>
+            <CardTitle className="text-base">2) Buổi học trực tiếp</CardTitle>
             <p className="text-xs text-muted-foreground">
-              Bài tập gắn theo buổi livestream cụ thể của khóa học này.
+              Bài tập gắn theo buổi học trực tiếp cụ thể của khóa học này.
             </p>
           </CardHeader>
           <CardContent className="space-y-2 overflow-auto p-3">
@@ -256,7 +256,7 @@ export default function TeacherAssignmentsPage() {
               </div>
             ) : sessions.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Khóa học này chưa có buổi livestream nào do bạn host.
+                Khóa học này chưa có buổi học trực tiếp nào do bạn host.
               </p>
             ) : (
               sessions.map((session) => (

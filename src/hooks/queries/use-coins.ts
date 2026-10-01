@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { coinService, type CoinPurchase } from "@/services/coin.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { ApiError } from "@/lib/errors";
+import { canUseCoinWallet } from "@/lib/routes";
 
 export const coinKeys = {
   all: ["coins"] as const,
@@ -16,10 +17,14 @@ export const coinKeys = {
 
 export function useCoinWallet() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const activeRole = useAuthStore((s) => s.activeRole);
   return useQuery({
     queryKey: coinKeys.wallet(),
     queryFn: () => coinService.getWallet(),
-    enabled: isAuthenticated,
+    // Chỉ vai đang dùng được vào /coins mới có ví: header mount cho MỌI vai nên không chặn ở đây thì
+    // phụ huynh/admin vẫn bắn request thừa dù số dư đã bị ẩn. Theo `activeRole` (không phải danh sách
+    // roles) để người nhiều vai đổi sang phụ huynh là ngừng gọi ngay.
+    enabled: isAuthenticated && canUseCoinWallet(activeRole),
   });
 }
 

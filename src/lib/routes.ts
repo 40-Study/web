@@ -161,6 +161,14 @@ export function isRouteAllowedForRole(pathname: string, role: NavRole): boolean 
   return entry.roles.includes(role);
 }
 
+/**
+ * Vai ĐANG DÙNG có được dùng ví xu không — đọc cùng entry "/coins" của bảng route nên menu, route guard,
+ * chip số dư ở header và `useCoinWallet` không thể lệch nhau (phụ huynh/admin không có ví).
+ */
+export function canUseCoinWallet(activeRole?: string | null): boolean {
+  return isRouteAllowedForRole("/coins", resolveNavRole(true, normalizeRole(activeRole)));
+}
+
 /** Đích chuyển hướng khi route bị chặn theo vai trò: pattern có đích riêng, còn lại về home. */
 export function getRoleRestrictedRedirect(pathname: string, role?: string | null): string {
   const scopedPattern = ROLE_SCOPED_PATTERNS.find((p) => p.pattern.test(pathname));

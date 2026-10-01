@@ -34,7 +34,7 @@ export default async function RoomPage({
         ? 'Bạn đã bị mời ra khỏi buổi học này.'
         : 'Không thể tham gia buổi học trực tiếp này.';
     const detail = isNotMember
-      ? 'Buổi live này chỉ dành cho học sinh của lớp được gán. Liên hệ giáo viên nếu bạn nghĩ đây là nhầm lẫn.'
+      ? 'Buổi học trực tiếp này chỉ dành cho học sinh của lớp được gán. Liên hệ giáo viên nếu bạn nghĩ đây là nhầm lẫn.'
       : isKicked
         ? 'Giáo viên đã yêu cầu bạn rời khỏi buổi học. Liên hệ giáo viên nếu bạn nghĩ đây là nhầm lẫn.'
         : 'Buổi học có thể chưa bắt đầu, đã kết thúc, hoặc bạn chưa đăng nhập.';

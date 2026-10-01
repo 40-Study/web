@@ -13,7 +13,7 @@ import { CartDropdown } from "@/components/layout/cart-dropdown";
 import { useLogout, useSwitchRole, useMyRoles } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCoinWallet } from "@/hooks/queries/use-coins";
-import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
+import { canUseCoinWallet, getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { useNotifications, useUnreadCount, useMarkNotificationRead, useMarkAllNotificationsRead } from "@/hooks/queries/use-notifications";
 import { useNotificationSocket } from "@/hooks/use-notification-socket";
 
@@ -159,7 +159,7 @@ export function Header() {
 
         <div className="flex items-center gap-3 lg:gap-4">
           {/* Coin balance */}
-          {isAuthenticated && !isParent && (
+          {isAuthenticated && canUseCoinWallet(activeRole) && (
             <Link href="/coins" className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/30 dark:hover:bg-amber-900/50 transition-colors">
               <Coins className="h-4 w-4 text-amber-500" />
               <span className="text-xs font-bold text-amber-700 dark:text-amber-300">{coinBalance.toLocaleString("vi-VN")}</span>

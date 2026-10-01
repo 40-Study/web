@@ -15,7 +15,7 @@ export function LiveClassCard({ liveClass }: LiveClassCardProps) {
       <div className="flex items-center justify-between mb-4">
         <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-100 text-orange-600 text-xs font-semibold rounded-full">
           <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
-          LIVE {liveClass.startTime}
+          TRỰC TIẾP {liveClass.startTime}
         </span>
         <Video className="w-5 h-5 text-gray-400" />
       </div>

@@ -69,7 +69,7 @@ export default function ChatTab({ sessionId, onClose, broadcast, onChatMessage }
         setLoadError(
           err.code === 'NOT_SESSION_MEMBER'
             ? 'Bạn không thuộc lớp này nên không xem được trò chuyện.'
-            : 'Bạn không có quyền xem trò chuyện trong buổi live này.'
+            : 'Bạn không có quyền xem trò chuyện trong buổi học trực tiếp này.'
         );
       }
     } finally {
@@ -150,7 +150,7 @@ export default function ChatTab({ sessionId, onClose, broadcast, onChatMessage }
         alert(
           err.code === 'NOT_SESSION_MEMBER'
             ? 'Bạn không thuộc lớp này nên không gửi được tin nhắn.'
-            : 'Bạn không có quyền gửi tin nhắn trong buổi live này.'
+            : 'Bạn không có quyền gửi tin nhắn trong buổi học trực tiếp này.'
         );
       } else {
         alert(err instanceof Error ? err.message : 'Không gửi được tin nhắn');

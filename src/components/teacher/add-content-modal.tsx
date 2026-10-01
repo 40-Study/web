@@ -269,13 +269,13 @@ export function AddContentModal({
    */
   const classBlockReason: string | null = hasCachedClasses
     ? hasMultipleClasses && !liveClassId
-      ? "Chọn lớp cho buổi live ở trên để tiếp tục."
+      ? "Chọn lớp cho buổi học trực tiếp ở trên để tiếp tục."
       : null
     : classesError
       ? "Không tải được danh sách lớp của khoá học."
       : classesLoading
         ? "Đang tải danh sách lớp…"
-        : "Khoá học chưa có lớp nào — tạo lớp trước khi lên lịch buổi live.";
+        : "Khoá học chưa có lớp nào — tạo lớp trước khi lên lịch buổi học trực tiếp.";
 
   // Exercise state
   const [exerciseType, setExerciseType] = useState<ExerciseType | null>(null);
@@ -660,14 +660,14 @@ export function AddContentModal({
 
               <TabsContent value="content" className="space-y-4 mt-4">
                 <Input
-                  label="Tiêu đề buổi live"
+                  label="Tiêu đề buổi học trực tiếp"
                   placeholder="VD: Q&A - Giải đáp thắc mắc"
                   value={liveTitle}
                   onChange={(e) => setLiveTitle(e.target.value)}
                 />
                 <Textarea
                   label="Mô tả & chuẩn bị"
-                  placeholder="Nội dung buổi live..."
+                  placeholder="Nội dung buổi học trực tiếp..."
                   value={liveDesc}
                   onChange={(e) => setLiveDesc(e.target.value)}
                   rows={4}
@@ -677,7 +677,7 @@ export function AddContentModal({
               <TabsContent value="schedule" className="space-y-4 mt-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Ngày phát sóng</label>
+                    <label className="text-sm font-medium mb-2 block">Ngày học trực tiếp</label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
@@ -704,9 +704,9 @@ export function AddContentModal({
 
                 {/*
                   Ô chọn lớp: bắt buộc khi khoá có từ 2 lớp trở lên.
-                  Backend gắn buổi live vào MỘT lớp (`CreateLivestreamDTO.ClassID`)
+                  Backend gắn buổi học trực tiếp vào MỘT lớp (`CreateLivestreamDTO.ClassID`)
                   — tự lấy lớp đầu tiên sẽ khiến học viên các lớp khác không bao
-                  giờ thấy buổi live, và lỗi này im lặng (finding #1).
+                  giờ thấy buổi học trực tiếp, và lỗi này im lặng (finding #1).
 
                   Ba trạng thái "chưa có lớp để chọn" được tách bạch (M-2): đang
                   tải → skeleton, tải lỗi → thông báo + thử lại, khoá chưa có lớp
@@ -739,7 +739,7 @@ export function AddContentModal({
                         <div>
                           <p className="text-sm font-medium">Không tải được danh sách lớp</p>
                           <p className="text-xs text-muted-foreground">
-                            Chưa xác định được lớp để gắn buổi live vào.
+                            Chưa xác định được lớp để gắn buổi học trực tiếp vào.
                           </p>
                         </div>
                       </div>
@@ -783,7 +783,7 @@ export function AddContentModal({
                       <div>
                         <p className="text-sm font-medium">Khoá học chưa có lớp nào</p>
                         <p className="text-xs">
-                          Tạo lớp cho khoá học trước khi lên lịch buổi live.
+                          Tạo lớp cho khoá học trước khi lên lịch buổi học trực tiếp.
                         </p>
                       </div>
                     </div>
@@ -796,7 +796,7 @@ export function AddContentModal({
                     </label>
                     <Select value={liveClassId} onValueChange={setLiveClassId}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Chọn lớp cho buổi live" />
+                        <SelectValue placeholder="Chọn lớp cho buổi học trực tiếp" />
                       </SelectTrigger>
                       <SelectContent>
                         {courseClasses.map((c) => (
@@ -807,7 +807,7 @@ export function AddContentModal({
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground mt-2">
-                      Buổi live chỉ hiển thị cho học viên thuộc lớp được chọn.
+                      Buổi học trực tiếp chỉ hiển thị cho học viên thuộc lớp được chọn.
                     </p>
                   </div>
                 )}
@@ -1006,7 +1006,7 @@ export function AddContentModal({
         {(contentType === "video" || contentType === "livestream" || (contentType === "exercise" && exerciseType)) && (
           <DialogFooter className="border-t pt-4 mt-4 sm:items-center sm:justify-between">
             {/*
-              M-2: nút "Tạo buổi live" từng bị vô hiệu hoá không một lời giải thích
+              M-2: nút "Tạo buổi học trực tiếp" từng bị vô hiệu hoá không một lời giải thích
               (đang tải / tải lỗi / khoá chưa có lớp đều ra `[]`). Lý do giờ nằm
               ngay cạnh nút, để trạng thái xám luôn đọc được.
             */}
@@ -1027,7 +1027,7 @@ export function AddContentModal({
                 isLoading={isLoading}
                 disabled={(contentType === "livestream" && !effectiveClassId) || durationInvalid}
               >
-                {contentType === "video" ? "Thêm video" : contentType === "livestream" ? "Tạo buổi live" : "Lưu bài tập"}
+                {contentType === "video" ? "Thêm video" : contentType === "livestream" ? "Tạo buổi học trực tiếp" : "Lưu bài tập"}
               </Button>
             </div>
           </DialogFooter>

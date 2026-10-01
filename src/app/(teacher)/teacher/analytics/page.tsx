@@ -74,7 +74,7 @@ export default function TeacherAnalyticsPage() {
         <div>
           <h1 className="text-2xl font-bold">Thống kê phiên học</h1>
           <p className="text-sm text-muted-foreground">
-            Nhập Session ID để xem phân tích chi tiết cho một buổi livestream.
+            Nhập Session ID để xem phân tích chi tiết cho một buổi học trực tiếp.
           </p>
         </div>
         <Button variant="outline">

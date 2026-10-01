@@ -63,7 +63,7 @@ function getTypeLabel(type: ContentItemType) {
     case "video":
       return "Video";
     case "live":
-      return "Buoi Live";
+      return "Buổi học trực tiếp";
     case "document":
       return "Tai lieu";
     case "exercise":
@@ -193,7 +193,7 @@ export function LessonContentEditor({
               className="gap-2"
             >
               <Calendar className="h-4 w-4" />
-              Lên lịch học trực tuyến
+              Lên lịch học trực tiếp
             </Button>
             <Button
               variant="outline"

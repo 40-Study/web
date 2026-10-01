@@ -334,3 +334,21 @@ describe("ConversationChat — DM bị chặn từ trước (cờ is_blocked c�
     expect(input().disabled).toBe(false);
   });
 });
+
+// L4: trên điện thoại khung chat chiếm cả màn hình; scrollIntoView mặc định (block "start") kéo CẢ TRANG
+// xuống nên tiêu đề hội thoại + nút quay lại trôi dưới header cố định. "nearest" chỉ cuộn khung tin nhắn.
+describe("ConversationChat — cuộn tới tin mới nhất", () => {
+  it("chỉ cuộn khung tin nhắn, không kéo cả trang (block: nearest)", async () => {
+    socket.status = "open";
+    vi.spyOn(conversationService, "markAsRead").mockResolvedValue({});
+    vi.spyOn(conversationService, "getMessages").mockResolvedValue({ messages: [msg("m1", "tin đầu tiên")], total_count: 1 });
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
+    await screen.findByText("tin đầu tiên");
+
+    expect(scrollIntoView).toHaveBeenCalled();
+    for (const [opts] of scrollIntoView.mock.calls) expect(opts).toMatchObject({ block: "nearest" });
+  });
+});
