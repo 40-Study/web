@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   ArrowLeft,
   MessageSquare,
@@ -98,13 +98,13 @@ export default function MessagesPage() {
   const role = normalizeRole(activeRole);
   // E2: phụ huynh cũng có nút "Tin nhắn mới" (giáo viên các khoá của con).
   const newConvAudience = role === "STUDENT" ? "student" : role === "PARENT" ? "parent" : null;
-  const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
-
-  // Đọc query một lần sau mount (không dùng useSearchParams để trang không phải bọc Suspense).
-  useEffect(() => {
-    const fromUrl = new URLSearchParams(window.location.search).get(CONVERSATION_PARAM);
-    if (fromUrl) setSelectedConvId(fromUrl);
-  }, []);
+  // Quyết định màn hiển thị từ `?conversation=` ngay lần render đầu: đọc trong effect thì lần vẽ đầu còn là danh sách
+  // rồi mới nhảy sang khung chat (nháy trên điện thoại). Không dùng useSearchParams để trang không phải bọc Suspense.
+  // An toàn với SSR/hydration: layout (app) trả null tới khi store hydrate xong nên trang không bao giờ render ở server;
+  // `typeof window` chỉ là chốt phòng khi có ai đó render server-side sau này.
+  const [selectedConvId, setSelectedConvId] = useState<string | null>(() =>
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get(CONVERSATION_PARAM)
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [isNewConvOpen, setIsNewConvOpen] = useState(false);
 
@@ -169,8 +169,12 @@ export default function MessagesPage() {
         />
       )}
 
-      {/* Điện thoại trừ thêm chỗ cho thanh điều hướng dưới (fixed) để ô nhập tin không bị che. */}
-      <Card className="flex h-[calc(100dvh-250px)] md:h-[calc(100vh-200px)] overflow-hidden">
+      {/*
+        Thanh điều hướng dưới (bottom-nav) hiện tới hết breakpoint `lg` (`lg:hidden`, fixed), nên chỗ trừ cho nó phải
+        kéo dài tới `lg`, không phải `md`: ở 768-1023px mà dùng 100vh-200px thì ô nhập bị thanh này che.
+        `dvh` để thanh địa chỉ của trình duyệt di động không làm khung cao quá màn hình.
+      */}
+      <Card className="flex h-[calc(100dvh-250px)] lg:h-[calc(100dvh-200px)] overflow-hidden">
         {/*
           Bố cục theo màn hình: dưới md chỉ hiện MỘT trong hai khung (chưa chọn => danh sách, đã chọn
           => khung chat) vì cạnh nhau ở 390px khung chat bị bóp còn ~70px. Từ md trở lên luôn hai cột.

@@ -1,6 +1,7 @@
 "use client";
 import { memo, useState, useCallback } from "react";
 import type { Theme, JudgeResult } from "./types";
+import { translateJudgeStatus } from "./judge-status";
 
 interface Props {
   T: Theme;
@@ -56,7 +57,7 @@ const OutputPanel = memo(({
             <div style={{ flex: 1 }} />
             {result && (
               <span style={{ fontSize: 11, fontWeight: 600, color: isErr ? T.error : T.success, fontFamily: "var(--font-mono)" }}>
-                {result.status?.description}
+                {translateJudgeStatus(result.status)}
                 {result.time && <span style={{ color: T.textMuted, fontWeight: 400 }}>{" "}· {(parseFloat(result.time) * 1000).toFixed(0)}ms</span>}
                 {result.memory && <span style={{ color: T.textMuted, fontWeight: 400 }}>{" "}· {(result.memory / 1024).toFixed(1)}MB</span>}
               </span>
