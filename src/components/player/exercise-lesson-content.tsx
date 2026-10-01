@@ -112,9 +112,9 @@ function getDifficultyConfig(difficulty: ExerciseData["difficulty"]) {
 function getStatusConfig(status: SubmitResult["status"]) {
   switch (status) {
     case "accepted":
-      return { label: "Chính xác", color: "text-green-600", icon: CheckCircle };
+      return { label: "Được chấp nhận", color: "text-green-600", icon: CheckCircle };
     case "wrong_answer":
-      return { label: "Sai kết quả", color: "text-red-600", icon: XCircle };
+      return { label: "Sai đáp án", color: "text-red-600", icon: XCircle };
     case "time_limit":
       return { label: "Quá thời gian", color: "text-orange-600", icon: Clock };
     case "runtime_error":

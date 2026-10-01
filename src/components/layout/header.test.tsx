@@ -105,6 +105,13 @@ describe("Header — vai phụ huynh", () => {
     expect(screen.queryByText("Khóa học của tôi")).toBeNull();
   });
 
+  // L4: chip xu dùng cùng điều kiện với useCoinWallet — vai không có ví thì không hiện "0" giả.
+  it("quản trị viên cũng không hiện số dư xu (không có ví, /coins sẽ bị chuyển hướng)", () => {
+    authState.activeRole = "SYSTEM_ADMIN";
+    render(<Header />);
+    expect(document.querySelector('a[href="/coins"]')).toBeNull();
+  });
+
   it("học viên vẫn thấy xu và 'Khóa học của tôi'", () => {
     authState.activeRole = "STUDENT";
     render(<Header />);

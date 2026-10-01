@@ -1511,7 +1511,7 @@ function EditContentModal({
         <DialogHeader>
           <DialogTitle>Chỉnh sửa nội dung</DialogTitle>
           <DialogDescription>
-            Cập nhật thông tin {content.type === "video" ? "video" : content.type === "livestream" ? "buổi live" : "bài tập"}
+            Cập nhật thông tin {content.type === "video" ? "video" : content.type === "livestream" ? "buổi học trực tiếp" : "bài tập"}
           </DialogDescription>
         </DialogHeader>
 

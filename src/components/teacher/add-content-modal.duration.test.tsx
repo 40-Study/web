@@ -171,7 +171,7 @@ describe("AddContentModal — thời lượng video (C-6)", () => {
     expect(screen.getByText(/hệ thống tự đọc được thời lượng/)).toBeTruthy();
   });
 
-  it("buổi live không có ô thời lượng và không gửi trường `duration`", async () => {
+  it("buổi học trực tiếp không có ô thời lượng và không gửi trường `duration`", async () => {
     const onSubmit = vi.fn();
     renderModal({
       onSubmit,
@@ -190,7 +190,7 @@ describe("AddContentModal — thời lượng video (C-6)", () => {
     expect(screen.queryByPlaceholderText("VD: 12:30")).toBeNull();
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /tạo buổi live/i }));
+      fireEvent.click(screen.getByRole("button", { name: /tạo buổi học trực tiếp/i }));
     });
 
     expect(onSubmit).toHaveBeenCalledTimes(1);

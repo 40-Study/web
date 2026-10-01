@@ -41,7 +41,7 @@ async function openLivestreamForm() {
 }
 
 function getSubmitButton() {
-  return screen.getByRole("button", { name: /tạo buổi live/i });
+  return screen.getByRole("button", { name: /tạo buổi học trực tiếp/i });
 }
 
 /** Nút gửi có bị chặn bởi thuộc tính `disabled` không (Base UI có thể chỉ set aria). */
@@ -53,7 +53,7 @@ function isSubmitDisabled(btn: HTMLElement) {
   );
 }
 
-describe("AddContentModal — chọn lớp cho buổi live (finding #1)", () => {
+describe("AddContentModal — chọn lớp cho buổi học trực tiếp (finding #1)", () => {
   it("khoá 1 lớp: không hiện ô chọn lớp, nút gửi vẫn bật", async () => {
     renderModal({ courseClasses: ONE_CLASS });
     await openLivestreamForm();
@@ -69,7 +69,7 @@ describe("AddContentModal — chọn lớp cho buổi live (finding #1)", () => 
 
     // Ô chọn lớp có mặt, đánh dấu bắt buộc.
     expect(screen.getByText(/Lớp học/)).toBeTruthy();
-    expect(screen.getByText("Chọn lớp cho buổi live")).toBeTruthy();
+    expect(screen.getByText("Chọn lớp cho buổi học trực tiếp")).toBeTruthy();
 
     const submit = getSubmitButton();
     expect(isSubmitDisabled(submit)).toBe(true);
@@ -88,7 +88,7 @@ describe("AddContentModal — chọn lớp cho buổi live (finding #1)", () => 
 
     // Mở select và chọn "Lớp B".
     await act(async () => {
-      fireEvent.click(screen.getByText("Chọn lớp cho buổi live"));
+      fireEvent.click(screen.getByText("Chọn lớp cho buổi học trực tiếp"));
     });
     await act(async () => {
       fireEvent.click(screen.getByText("Lớp B"));
@@ -113,7 +113,7 @@ describe("AddContentModal — chọn lớp cho buổi live (finding #1)", () => 
     expect(isSubmitDisabled(getSubmitButton())).toBe(true);
     // M-2: trạng thái xám phải đọc được — không còn im lặng.
     expect(screen.getByText("Khoá học chưa có lớp nào")).toBeTruthy();
-    expect(screen.getByText(/tạo lớp trước khi lên lịch buổi live/i)).toBeTruthy();
+    expect(screen.getByText(/tạo lớp trước khi lên lịch buổi học trực tiếp/i)).toBeTruthy();
   });
 
   it("đang tải danh sách lớp: nút chặn kèm lý do, KHÔNG hiện câu 'chưa có lớp'", async () => {
@@ -149,7 +149,7 @@ describe("AddContentModal — chọn lớp cho buổi live (finding #1)", () => 
     await openLivestreamForm();
 
     expect(isSubmitDisabled(getSubmitButton())).toBe(true);
-    expect(screen.getByText(/chọn lớp cho buổi live ở trên/i)).toBeTruthy();
+    expect(screen.getByText(/chọn lớp cho buổi học trực tiếp ở trên/i)).toBeTruthy();
     expect(screen.queryByText("Khoá học chưa có lớp nào")).toBeNull();
   });
 
@@ -180,7 +180,7 @@ describe("AddContentModal — refetch lớp hỏng nhưng cache còn lớp (M-7)
     await openLivestreamForm();
 
     // Ô chọn lớp không bị lỗi refetch xoá mất.
-    expect(screen.getByText("Chọn lớp cho buổi live")).toBeTruthy();
+    expect(screen.getByText("Chọn lớp cho buổi học trực tiếp")).toBeTruthy();
     // Banner chặn + câu nói sai sự thật đều không được xuất hiện.
     expect(screen.queryByText("Không tải được danh sách lớp")).toBeNull();
     expect(screen.queryByText(/chưa xác định được lớp/i)).toBeNull();
@@ -194,7 +194,7 @@ describe("AddContentModal — refetch lớp hỏng nhưng cache còn lớp (M-7)
     await openLivestreamForm();
 
     await act(async () => {
-      fireEvent.click(screen.getByText("Chọn lớp cho buổi live"));
+      fireEvent.click(screen.getByText("Chọn lớp cho buổi học trực tiếp"));
     });
     await act(async () => {
       fireEvent.click(screen.getByText("Lớp B"));
@@ -216,7 +216,7 @@ describe("AddContentModal — refetch lớp hỏng nhưng cache còn lớp (M-7)
     expect(isSubmitDisabled(getSubmitButton())).toBe(false);
     // Banner cũ nói sai: lớp nằm sẵn trong cache và đã được tự chọn.
     expect(screen.queryByText(/chưa xác định được lớp/i)).toBeNull();
-    expect(screen.queryByText(/chọn lớp cho buổi live ở trên/i)).toBeNull();
+    expect(screen.queryByText(/chọn lớp cho buổi học trực tiếp ở trên/i)).toBeNull();
   });
 
   it("banner hạ cấp vẫn có nút thử lại gọi onRetryClasses", async () => {

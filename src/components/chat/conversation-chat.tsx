@@ -99,7 +99,9 @@ export function ConversationChat({ conversationId, currentUserId, className, isD
   const awaitingAuth = isError && messages.length === 0 && isAuth;
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView?.({ behavior: "smooth" });
+    // `block: "nearest"`: mặc định ("start") còn kéo cả trang xuống khi khung chat chiếm gần hết màn
+    // hình điện thoại, làm tiêu đề hội thoại và nút quay lại trôi dưới header cố định.
+    messagesEndRef.current?.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
   }, [messages]);
 
   useMarkConversationRead(conversationId, markAsRead);

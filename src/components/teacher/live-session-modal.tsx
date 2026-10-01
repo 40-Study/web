@@ -152,8 +152,8 @@ export function LiveSessionModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Cài đặt phòng học trực tuyến</DialogTitle>
-          <DialogDescription>Len lich buoi Live Session cho khoa hoc cua ban</DialogDescription>
+          <DialogTitle>Cài đặt phòng học trực tiếp</DialogTitle>
+          <DialogDescription>Lên lịch buổi học trực tiếp cho khóa học của bạn</DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -238,7 +238,7 @@ export function LiveSessionModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                  Ngày phát sóng
+                  Ngày học trực tiếp
                 </label>
                 <div className="relative mt-2">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -292,7 +292,7 @@ export function LiveSessionModal({
               <div className="flex items-center gap-2 p-3 bg-primary-50 rounded-xl text-sm">
                 <Clock className="h-4 w-4 text-primary-600" />
                 <span>
-                  Buoi live se dien ra vao{" "}
+                  Buổi học trực tiếp sẽ diễn ra vào{" "}
                   <strong>
                     {form.startTime} - {endTime}
                   </strong>{" "}
@@ -307,7 +307,7 @@ export function LiveSessionModal({
             {/* Platform selection */}
             <div>
               <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Nền tảng phát sóng
+                Nền tảng học trực tiếp
               </label>
               <div className="grid grid-cols-3 gap-3 mt-3">
                 <PlatformCard
@@ -389,7 +389,7 @@ export function LiveSessionModal({
               <Button onClick={handleNext}>Tiếp theo</Button>
             ) : (
               <Button onClick={handleSubmit} isLoading={isLoading}>
-                Tạo buổi live
+                Tạo buổi học trực tiếp
               </Button>
             )}
           </div>
