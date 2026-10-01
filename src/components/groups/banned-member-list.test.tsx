@@ -70,3 +70,15 @@ describe("BannedMemberList", () => {
     expect(screen.queryByText("Chủ Nhóm")).toBeNull();
   });
 });
+
+describe("BannedMemberList — tên hiển thị", () => {
+  it("dùng full_name cho dòng và nhãn Bỏ cấm", async () => {
+    vi.spyOn(groupService, "listMembers").mockResolvedValue({
+      members: [{ ...member("u-bad", "student2", "BANNED"), full_name: "Phạm Thị D" }],
+      total_count: 1,
+    });
+    renderWithQuery(<BannedMemberList group={group} />);
+
+    expect(await screen.findByRole("button", { name: "Bỏ cấm Phạm Thị D" })).toBeTruthy();
+  });
+});

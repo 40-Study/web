@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error-messages";
 import { ForbiddenError } from "@/lib/errors";
 import { conversationService } from "@/services/conversation.service";
 
@@ -85,7 +86,8 @@ export function useSendMessage(convId: string) {
       qc.invalidateQueries({ queryKey: conversationKeys.messages(convId) });
       qc.invalidateQueries({ queryKey: conversationKeys.list() });
     },
-    onError: () => toast.error("Không thể gửi tin nhắn"),
+    // 403 ERR_CONVERSATION_BLOCKED (DM bị chặn) có câu riêng từ getErrorMessage; lỗi khác giữ câu chung.
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể gửi tin nhắn")),
   });
 }
 
@@ -97,6 +99,7 @@ export function useEditMessage(convId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: conversationKeys.messages(convId) });
     },
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể sửa tin nhắn")),
   });
 }
 
@@ -108,6 +111,7 @@ export function useDeleteMessage(convId: string) {
       qc.invalidateQueries({ queryKey: conversationKeys.messages(convId) });
       qc.invalidateQueries({ queryKey: conversationKeys.list() });
     },
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể xoá tin nhắn")),
   });
 }
 

@@ -17,7 +17,7 @@ import {
 } from "@/hooks/queries/use-groups";
 import { ApiError } from "@/lib/errors";
 import type { Group, GroupMember } from "@/services/group.service";
-import { formatVnDate, roleLabel } from "./group-labels";
+import { formatVnDate, memberDisplayName, roleLabel } from "./group-labels";
 import { assignableRoles, canManageMember } from "./group-permissions";
 import { PaginationControls } from "@/components/common/pagination-controls";
 
@@ -79,10 +79,10 @@ export function MemberList({ group, viewerId, manage = false }: MemberListProps)
             const canAct = manage && canManageMember(group.my_role, member, viewerId);
             return (
               <div key={member.id} className="flex flex-wrap items-center gap-3 p-3 sm:p-4">
-                <Avatar src={member.avatar_url} fallback={member.user_name || "?"} size="md" />
+                <Avatar src={member.avatar_url} fallback={memberDisplayName(member)} size="md" />
                 <div className="min-w-0 flex-1">
                   <Link href={`/profile/${member.user_id}`} className="block truncate font-medium hover:text-primary">
-                    {member.user_name}
+                    {memberDisplayName(member)}
                     {member.user_id === viewerId && <span className="text-muted-foreground"> (Bạn)</span>}
                   </Link>
                   <p className="text-xs text-muted-foreground">
@@ -95,7 +95,7 @@ export function MemberList({ group, viewerId, manage = false }: MemberListProps)
                   <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
                     {roles.length > 0 && (
                       <select
-                        aria-label={`Đổi vai trò của ${member.user_name}`}
+                        aria-label={`Đổi vai trò của ${memberDisplayName(member)}`}
                         className="h-9 rounded-lg border border-slate-200 bg-background px-2 text-sm dark:border-slate-700"
                         value=""
                         disabled={updateRole.isPending}
@@ -141,8 +141,8 @@ export function MemberList({ group, viewerId, manage = false }: MemberListProps)
           title={pending.kind === "remove" ? "Gỡ thành viên khỏi nhóm?" : "Cấm thành viên?"}
           description={
             pending.kind === "remove"
-              ? `${pending.member.user_name} sẽ rời khỏi nhóm nhưng vẫn có thể xin vào lại.`
-              : `${pending.member.user_name} sẽ bị đưa khỏi nhóm và không thể tham gia lại cho tới khi được bỏ cấm.`
+              ? `${memberDisplayName(pending.member)} sẽ rời khỏi nhóm nhưng vẫn có thể xin vào lại.`
+              : `${memberDisplayName(pending.member)} sẽ bị đưa khỏi nhóm và không thể tham gia lại cho tới khi được bỏ cấm.`
           }
           confirmLabel={pending.kind === "remove" ? "Gỡ khỏi nhóm" : "Cấm"}
           destructive

@@ -93,3 +93,22 @@ describe("businessRequest", () => {
     expect(err.payload).toEqual({ rejected: [{ user_id: "u1" }] });
   });
 });
+
+describe("businessRequest: retry_after của lỗi nghiệp vụ", () => {
+  beforeEach(() => vi.mocked(api.request).mockReset());
+
+  it("409 có retry_after trong body -> BusinessApiError.retryAfter (làm tròn lên)", async () => {
+    respond(409, { code: "FRIEND_REQUEST_COOLDOWN", message: "x", retry_after: 299.2 });
+    const err = await caught(businessRequest({ method: "POST", url: "/friends/requests" }));
+    expect(err).toBeInstanceOf(BusinessApiError);
+    expect(err.code).toBe("FRIEND_REQUEST_COOLDOWN");
+    expect(err.retryAfter).toBe(300);
+  });
+
+  it("409 chỉ có header Retry-After vẫn đọc được; không có gì thì undefined", async () => {
+    respond(409, { code: "FRIEND_REQUEST_COOLDOWN", message: "x" }, { "retry-after": "60" });
+    expect((await caught(businessRequest({ method: "POST", url: "/friends/requests" }))).retryAfter).toBe(60);
+    respond(409, { code: "FRIEND_REQUEST_COOLDOWN", message: "x" });
+    expect((await caught(businessRequest({ method: "POST", url: "/friends/requests" }))).retryAfter).toBeUndefined();
+  });
+});

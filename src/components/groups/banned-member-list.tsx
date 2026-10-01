@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { QueryState } from "@/components/common/query-state";
 import { useBannedMembers, useUnbanMember } from "@/hooks/queries/use-groups";
 import type { Group } from "@/services/group.service";
+import { memberDisplayName } from "./group-labels";
 import { MEMBERS_PAGE_SIZE } from "./member-list";
 import { PaginationControls } from "@/components/common/pagination-controls";
 
@@ -38,14 +39,14 @@ export function BannedMemberList({ group }: { group: Group }) {
       <Card className="divide-y">
         {banned.map((member) => (
           <div key={member.id} className="flex items-center gap-3 p-3 sm:p-4">
-            <Avatar src={member.avatar_url} fallback={member.user_name || "?"} size="md" />
-            <p className="min-w-0 flex-1 truncate font-medium">{member.user_name}</p>
+            <Avatar src={member.avatar_url} fallback={memberDisplayName(member)} size="md" />
+            <p className="min-w-0 flex-1 truncate font-medium">{memberDisplayName(member)}</p>
             <Button
               variant="outline"
               size="sm"
               disabled={unban.isPending}
               onClick={() => unban.mutate({ groupId: group.id, userId: member.user_id })}
-              aria-label={`Bỏ cấm ${member.user_name}`}
+              aria-label={`Bỏ cấm ${memberDisplayName(member)}`}
             >
               <ShieldCheck className="mr-1.5 h-4 w-4" aria-hidden="true" />
               Bỏ cấm

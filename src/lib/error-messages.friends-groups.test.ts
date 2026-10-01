@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { ApiError } from "./errors";
-import { HAS_VIETNAMESE_DIACRITICS, getErrorMessage } from "./error-messages";
+import { HAS_VIETNAMESE_DIACRITICS, formatWaitDuration, getErrorMessage, isConversationBlockedError } from "./error-messages";
 
 const FRIEND_CODES: Array<[number, string]> = [
   [400, "FRIEND_SELF_REQUEST"],
@@ -73,5 +73,52 @@ describe("mã lỗi bạn bè + nhóm -> tiếng Việt cụ thể", () => {
     expect(getErrorMessage(new ApiError(400, "UNKNOWN", "you already have a pending join request"))).toBe(
       "Bạn đã gửi yêu cầu tham gia nhóm này, đang chờ duyệt"
     );
+  });
+});
+
+describe("ERR_CONVERSATION_BLOCKED (DM bị chặn)", () => {
+  it("ra đúng câu của contract, cho cả ApiError 403 lẫn kiểm tra bằng isConversationBlockedError", () => {
+    const err = new ApiError(403, "ERR_CONVERSATION_BLOCKED", "Không thể gửi tin nhắn trong cuộc trò chuyện này");
+    expect(getErrorMessage(err)).toBe("Không thể gửi tin nhắn trong cuộc trò chuyện này");
+    expect(isConversationBlockedError(err)).toBe(true);
+  });
+
+  it("không nhầm với 403 khác hay cùng mã ở status khác", () => {
+    expect(isConversationBlockedError(new ApiError(403, "ERR_FORBIDDEN", "x"))).toBe(false);
+    expect(isConversationBlockedError(new ApiError(404, "ERR_CONVERSATION_BLOCKED", "x"))).toBe(false);
+    expect(isConversationBlockedError(new Error("x"))).toBe(false);
+  });
+});
+
+describe("FRIEND_USER_NOT_FOUND: không lộ việc bị chặn", () => {
+  it("câu chung 'không tìm thấy', không nhắc chặn / từ chối", () => {
+    const msg = getErrorMessage(new ApiError(404, "FRIEND_USER_NOT_FOUND", "bất kỳ"));
+    expect(msg).toBe("Không tìm thấy người dùng này");
+    expect(msg).not.toMatch(/chặn|từ chối|block/i);
+  });
+});
+
+describe("FRIEND_REQUEST_COOLDOWN dùng retry_after khi có", () => {
+  const withWait = (retryAfter?: number) => Object.assign(new ApiError(409, "FRIEND_REQUEST_COOLDOWN", "x"), { retryAfter });
+
+  it.each([
+    [300, "5 phút"],
+    [45, "45 giây"],
+    [90, "2 phút"],
+    [7200, "2 giờ"],
+    [604800, "7 ngày"],
+  ])("retry_after %i giây -> %s", (seconds, text) => {
+    expect(getErrorMessage(withWait(seconds))).toBe(`Bạn chưa thể gửi lời mời cho người này lúc này. Hãy thử lại sau ${text}.`);
+  });
+
+  it("không có retry_after: câu mơ hồ như cũ, không lộ lý do", () => {
+    const msg = getErrorMessage(withWait(undefined));
+    expect(msg).toBe("Bạn chưa thể gửi lời mời cho người này lúc này.");
+    expect(msg).not.toMatch(/huỷ|từ chối/i);
+  });
+
+  it("formatWaitDuration làm tròn lên", () => {
+    expect(formatWaitDuration(61)).toBe("2 phút");
+    expect(formatWaitDuration(0.2)).toBe("1 giây");
   });
 });

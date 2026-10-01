@@ -63,7 +63,8 @@ export interface PageParams {
 
 /** Tên hiển thị: ưu tiên họ tên đầy đủ, rơi về tên đăng nhập. KHÔNG bao giờ dùng email/điện thoại. */
 export function friendDisplayName(user: Pick<FriendUser, "user_name" | "full_name">): string {
-  return user.full_name?.trim() || user.user_name;
+  // `user_name` có thể là chuỗi rỗng (tài khoản Google, contract §1): không bao giờ trả chuỗi rỗng / "@" trống.
+  return user.full_name?.trim() || user.user_name?.trim() || "Học viên";
 }
 
 export const friendService = {

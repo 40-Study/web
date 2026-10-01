@@ -129,4 +129,31 @@ describe("FriendActionButton — một nút theo relationship", () => {
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
     expect(vi.mocked(toast.error).mock.calls[0][0]).toBe("Bạn thao tác quá nhiều lần, vui lòng thử lại sau 60 giây");
-  });});
+  });
+
+  it("gửi cho người đã chặn mình: BE trả 404 FRIEND_USER_NOT_FOUND -> toast chung, không lộ việc bị chặn", async () => {
+    vi.spyOn(friendService, "sendRequest").mockRejectedValue(new BusinessApiError(404, "FRIEND_USER_NOT_FOUND", "x"));
+    renderWithQuery(<FriendActionButton userId="u1" status="NONE" name="Lan" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Kết bạn với Lan" }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
+    const shown = String(vi.mocked(toast.error).mock.calls[0][0]);
+    expect(shown).toBe("Không tìm thấy người dùng này");
+    expect(shown).not.toMatch(/chặn|block/i);
+  });
+
+  it("cooldown 409 có retry_after: toast nói phải chờ bao lâu, vẫn không nói 'huỷ' hay 'từ chối'", async () => {
+    vi.spyOn(friendService, "sendRequest").mockRejectedValue(
+      new BusinessApiError(409, "FRIEND_REQUEST_COOLDOWN", "x", undefined, 300)
+    );
+    renderWithQuery(<FriendActionButton userId="u1" status="NONE" name="Lan" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Kết bạn với Lan" }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
+    const shown = String(vi.mocked(toast.error).mock.calls[0][0]);
+    expect(shown).toContain("thử lại sau 5 phút");
+    expect(shown).not.toMatch(/huỷ|từ chối/i);
+  });
+});

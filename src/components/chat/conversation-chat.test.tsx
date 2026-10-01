@@ -5,6 +5,8 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/errors";
+import { BusinessApiError } from "@/services/business-request";
+import { toast } from "sonner";
 import { renderWithQuery } from "@/test-utils/query-wrapper";
 import type { ConversationSocketHandlers, ConversationSocketStatus } from "@/hooks/use-conversation-socket";
 
@@ -158,5 +160,84 @@ describe("ConversationChat", () => {
     renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
 
     expect(await screen.findByText(/Chưa có tin nhắn nào/)).toBeTruthy();
+  });
+});
+
+describe("ConversationChat — DM bị chặn (ERR_CONVERSATION_BLOCKED)", () => {
+  const BLOCKED_MESSAGE = "Không thể gửi tin nhắn trong cuộc trò chuyện này";
+  const blocked = () => new BusinessApiError(403, "ERR_CONVERSATION_BLOCKED", BLOCKED_MESSAGE);
+
+  beforeEach(() => {
+    socket.status = "open";
+    vi.spyOn(conversationService, "markAsRead").mockResolvedValue({});
+    vi.spyOn(conversationService, "getMessages").mockResolvedValue({
+      messages: [msg("m1", "lịch sử vẫn đọc được")],
+      total_count: 1,
+    });
+  });
+
+  const send = (text: string) => {
+    const input = screen.getByLabelText("Nhập tin nhắn") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: text } });
+    fireEvent.keyDown(input, { key: "Enter" });
+  };
+
+  it("403 khi gửi: báo đúng câu, khoá ô nhập + nút gửi, lịch sử vẫn hiện, chỉ gọi API một lần (không retry)", async () => {
+    const spy = vi.spyOn(conversationService, "sendMessage").mockRejectedValue(blocked());
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
+    await screen.findByText("lịch sử vẫn đọc được");
+
+    send("xin chào");
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain(BLOCKED_MESSAGE);
+    expect((screen.getByLabelText("Nhập tin nhắn") as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Gửi tin nhắn" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText("lịch sử vẫn đọc được")).toBeTruthy();
+    expect(spy).toHaveBeenCalledTimes(1);
+    // Toast cũng dùng câu cố định, không phải "Không thể gửi tin nhắn" chung.
+    expect(vi.mocked(toast.error)).toHaveBeenCalledWith(BLOCKED_MESSAGE);
+  });
+
+  it("chữ vừa gõ không bị mất khi bị chặn (trả lại bản nháp)", async () => {
+    vi.spyOn(conversationService, "sendMessage").mockRejectedValue(blocked());
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
+    await screen.findByText("lịch sử vẫn đọc được");
+
+    send("bản nháp quan trọng");
+
+    await screen.findByRole("alert");
+    expect((screen.getByLabelText("Nhập tin nhắn") as HTMLInputElement).value).toBe("bản nháp quan trọng");
+  });
+
+  it("bấm 'Thử lại' (sau khi bỏ chặn) mở khoá và gửi được", async () => {
+    const spy = vi
+      .spyOn(conversationService, "sendMessage")
+      .mockRejectedValueOnce(blocked())
+      .mockResolvedValueOnce(msg("m9", "đã gửi", "me"));
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
+    await screen.findByText("lịch sử vẫn đọc được");
+    send("lần một");
+    await screen.findByRole("alert");
+
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+
+    expect(screen.queryByRole("alert")).toBeNull();
+    const input = screen.getByLabelText("Nhập tin nhắn") as HTMLInputElement;
+    expect(input.disabled).toBe(false);
+    send("lần hai");
+    await waitFor(() => expect(spy).toHaveBeenCalledTimes(2));
+  });
+
+  it("lỗi khác (không phải bị chặn) KHÔNG khoá ô nhập: chat nhóm không bị ảnh hưởng", async () => {
+    vi.spyOn(conversationService, "sendMessage").mockRejectedValue(new BusinessApiError(403, "ERR_FORBIDDEN", "x"));
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
+    await screen.findByText("lịch sử vẫn đọc được");
+
+    send("tin nhóm");
+
+    await waitFor(() => expect(vi.mocked(toast.error)).toHaveBeenCalled());
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect((screen.getByLabelText("Nhập tin nhắn") as HTMLInputElement).disabled).toBe(false);
   });
 });

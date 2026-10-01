@@ -140,4 +140,28 @@ describe("MemberList — người ngoài nhóm PRIVATE", () => {
     // 403 là dứt khoát: chỉ một lần gọi, không retry.
     expect(spy).toHaveBeenCalledTimes(1);
   });
+
+
+});
+
+describe("MemberList — tên hiển thị", () => {
+  it("dùng full_name khi có, rơi về user_name khi thiếu hoặc rỗng, ở cả danh sách lẫn nhãn Đổi vai trò", async () => {
+    vi.spyOn(groupService, "listMembers").mockResolvedValue({
+      members: [
+        { ...member("u1", "student1", "OWNER"), full_name: "Lê Văn C" },
+        { ...member("u2", "student2", "MEMBER"), full_name: "Phạm Thị D" },
+        { ...member("u3", "student3", "MEMBER") },
+        { ...member("u4", "student4", "MEMBER"), full_name: "   " },
+      ],
+      total_count: 4,
+    });
+    renderWithQuery(<MemberList group={group("OWNER")} viewerId="u1" manage />);
+
+    expect(await screen.findByText("Phạm Thị D")).toBeTruthy();
+    expect(screen.getByText(/Lê Văn C/)).toBeTruthy();
+    expect(screen.getByText("student3")).toBeTruthy();
+    expect(screen.getByText("student4")).toBeTruthy();
+    expect(screen.queryByText("student2")).toBeNull();
+    expect(screen.getByLabelText("Đổi vai trò của Phạm Thị D")).toBeTruthy();
+  });
 });

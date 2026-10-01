@@ -27,6 +27,8 @@ export interface GroupMember {
   id: string;
   user_id: string;
   user_name: string;
+  /** Họ tên hiển thị (contract §2); thiếu thì rơi về `user_name`. */
+  full_name?: string;
   avatar_url?: string;
   role: string;
   status: string;

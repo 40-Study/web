@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { QueryState } from "@/components/common/query-state";
+import { CONVERSATION_BLOCKED_MESSAGE, isConversationBlockedError } from "@/lib/error-messages";
 import { AuthError } from "@/lib/errors";
 import { cn } from "@/lib/utils";
 import {
@@ -43,6 +44,8 @@ interface ConversationChatProps {
 export function ConversationChat({ conversationId, currentUserId, className }: ConversationChatProps) {
   const qc = useQueryClient();
   const [messageInput, setMessageInput] = useState("");
+  // DM bị chặn (403 ERR_CONVERSATION_BLOCKED): khoá ô nhập. Lịch sử vẫn đọc được; bỏ chặn rồi bấm "Thử lại" để mở khoá.
+  const [blocked, setBlocked] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { mutate: markAsRead } = useMarkAsRead();
   const sendMessage = useSendMessage(conversationId);
@@ -89,8 +92,18 @@ export function ConversationChat({ conversationId, currentUserId, className }: C
   useMarkConversationRead(conversationId, markAsRead);
 
   const handleSend = () => {
-    if (!messageInput.trim()) return;
-    sendMessage.mutate({ content: messageInput.trim() });
+    if (blocked || !messageInput.trim()) return;
+    const content = messageInput.trim();
+    sendMessage.mutate(
+      { content },
+      {
+        onError: (error) => {
+          if (isConversationBlockedError(error)) setBlocked(true);
+          // Trả lại bản nháp để người dùng không mất chữ vừa gõ.
+          setMessageInput((current) => current || content);
+        },
+      }
+    );
     setMessageInput("");
   };
 
@@ -142,9 +155,21 @@ export function ConversationChat({ conversationId, currentUserId, className }: C
         <div ref={messagesEndRef} />
       </div>
 
+      {blocked && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/50 px-4 py-2 text-sm text-muted-foreground"
+        >
+          <span>{CONVERSATION_BLOCKED_MESSAGE}</span>
+          <Button size="sm" variant="outline" onClick={() => setBlocked(false)}>
+            Thử lại
+          </Button>
+        </div>
+      )}
       <div className="flex gap-2 border-t p-3">
         <Input
-          placeholder="Nhập tin nhắn..."
+          placeholder={blocked ? "Không thể gửi tin nhắn" : "Nhập tin nhắn..."}
+          disabled={blocked}
           value={messageInput}
           onChange={(e) => setMessageInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
@@ -154,7 +179,7 @@ export function ConversationChat({ conversationId, currentUserId, className }: C
         <Button
           size="icon"
           onClick={handleSend}
-          disabled={!messageInput.trim() || sendMessage.isPending}
+          disabled={blocked || !messageInput.trim() || sendMessage.isPending}
           aria-label="Gửi tin nhắn"
         >
           <Send className="h-4 w-4" />

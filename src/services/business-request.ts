@@ -29,11 +29,14 @@ type Envelope<T> = { message: string; data: T };
 export class BusinessApiError extends ApiError {
   /** `data` thô của body lỗi; nơi dùng tự kiểm shape trước khi đọc. */
   public readonly payload?: unknown;
+  /** Số giây phải chờ nếu backend trả `retry_after` (body hoặc header `Retry-After`). */
+  public readonly retryAfter?: number;
 
-  constructor(status: number, code: string, message: string, payload?: unknown) {
+  constructor(status: number, code: string, message: string, payload?: unknown, retryAfter?: number) {
     super(status, code, message);
     this.name = "BusinessApiError";
     this.payload = payload;
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -56,7 +59,8 @@ export async function businessRequest<T>(config: AxiosRequestConfig): Promise<T>
     if (res.status === 429 && !body?.code) {
       throw new RateLimitError(retryAfterSeconds(body, res.headers as Record<string, unknown> | undefined));
     }
-    throw new BusinessApiError(res.status, body?.code ?? "UNKNOWN", body?.message ?? "", body?.data);
+    const retryAfter = retryAfterSeconds(body, res.headers as Record<string, unknown> | undefined);
+    throw new BusinessApiError(res.status, body?.code ?? "UNKNOWN", body?.message ?? "", body?.data, retryAfter);
   }
   return (res.data as Envelope<T>).data;
 }

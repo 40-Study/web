@@ -35,3 +35,8 @@ export function formatVnDate(iso?: string | null): string {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("vi-VN");
 }
+
+/** Tên hiển thị của thành viên nhóm: `full_name` rồi `user_name`, không bao giờ rỗng. */
+export function memberDisplayName(member: { full_name?: string; user_name?: string }): string {
+  return member.full_name?.trim() || member.user_name?.trim() || "Thành viên";
+}

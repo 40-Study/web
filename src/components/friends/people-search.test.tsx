@@ -144,4 +144,21 @@ describe("PeopleSearch", () => {
 
     expect(await screen.findByText("Không tìm thấy học viên phù hợp")).toBeTruthy();
   });
+
+  it("user_name rỗng (tài khoản Google): hiện full_name; thiếu cả hai thì 'Học viên'; không bao giờ '@' hay dòng trống", async () => {
+    vi.spyOn(friendService, "search").mockResolvedValue({
+      users: [
+        { user_id: "a", user_name: "", full_name: "Trần Google", relationship: "NONE" },
+        { user_id: "b", user_name: "", relationship: "NONE" },
+      ],
+    });
+    const { container } = renderWithQuery(<PeopleSearch />);
+    type("abc");
+    await settle();
+
+    expect(await screen.findByText("Trần Google")).toBeTruthy();
+    expect(screen.getByText("Học viên")).toBeTruthy();
+    expect(container.textContent).not.toContain("@");
+    expect(screen.getByRole("button", { name: "Kết bạn với Trần Google" })).toBeTruthy();
+  });
 });
