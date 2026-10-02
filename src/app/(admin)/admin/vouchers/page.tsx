@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAdminVouchers, useCreateVoucher, useUpdateVoucher } from "@/hooks/queries/use-voucher";
 import { formatVoucherDiscountLabel, type Voucher } from "@/services/voucher.service";
 import {
+  HOLDERS_ONLY_ENABLE_NOTE,
   HOLDERS_ONLY_HINT,
   HOLDERS_ONLY_LABEL,
   buildCreateVoucherPayload,
@@ -33,7 +34,11 @@ function Field({ label, children, hint }: { label: string; children: React.React
 }
 
 export default function AdminVouchersPage() {
-  const { data = [], isLoading, isError, refetch } = useAdminVouchers();
+  // L6 mục 8: phân trang thật (trước đây chỉ tải 100 voucher đầu).
+  const [page, setPage] = useState(1);
+  const { data: pageData, isLoading, isError, refetch } = useAdminVouchers(page);
+  const data = pageData?.vouchers ?? [];
+  const totalPages = pageData?.totalPages ?? 1;
   const createVoucher = useCreateVoucher();
   const updateVoucher = useUpdateVoucher();
 
@@ -129,6 +134,32 @@ export default function AdminVouchersPage() {
               </div>
             ))}
           </QueryState>
+
+          {pageData && totalPages > 1 && (
+            <nav className="flex items-center justify-between px-1 text-sm text-gray-500" aria-label="Phân trang voucher" data-testid="voucher-pagination">
+              <span>
+                Trang {page}/{totalPages} — {pageData.total} voucher
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="rounded border px-3 py-1 disabled:opacity-40"
+                >
+                  Trước
+                </button>
+                <button
+                  type="button"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                  className="rounded border px-3 py-1 disabled:opacity-40"
+                >
+                  Sau
+                </button>
+              </div>
+            </nav>
+          )}
         </div>
 
         <form onSubmit={onSubmit} className="h-fit space-y-3 rounded-xl bg-white p-4 shadow-sm" data-testid="voucher-form">
@@ -180,7 +211,7 @@ export default function AdminVouchersPage() {
               <Field label="Giảm (%)">
                 <input className={inputClass} type="number" min={0} max={100} value={form.discount_percent} onChange={(e) => set("discount_percent", e.target.value)} />
               </Field>
-              <Field label={isMoney ? "Giảm tối đa (VNĐ)" : "Giảm tối đa (điểm)"} hint="Để trống = không giới hạn">
+              <Field label={isMoney ? "Giảm tối đa (VNĐ)" : "Giảm tối đa (điểm)"} hint={editingId ? "Để trống rồi lưu = bỏ trần giảm" : "Để trống = không giới hạn"}>
                 <input className={inputClass} type="number" min={0} value={form.max_discount} onChange={(e) => set("max_discount", e.target.value)} />
               </Field>
             </div>
@@ -204,10 +235,10 @@ export default function AdminVouchersPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Bắt đầu">
+            <Field label="Bắt đầu" hint={editingId ? "Xoá ô này rồi lưu để bỏ ngày bắt đầu" : undefined}>
               <input className={inputClass} type="datetime-local" value={form.start_date} onChange={(e) => set("start_date", e.target.value)} />
             </Field>
-            <Field label="Kết thúc">
+            <Field label="Kết thúc" hint={editingId ? "Xoá ô này rồi lưu để bỏ ngày kết thúc" : undefined}>
               <input className={inputClass} type="datetime-local" value={form.end_date} onChange={(e) => set("end_date", e.target.value)} />
             </Field>
           </div>
@@ -230,6 +261,10 @@ export default function AdminVouchersPage() {
             </label>
             <p id="holders-only-hint" className="mt-1 pl-6 text-xs text-gray-600">
               {HOLDERS_ONLY_HINT}
+            </p>
+            {/* L6 mục 7: bật cho voucher đã công khai không thu hồi quyền người đã lưu. */}
+            <p className="mt-1 pl-6 text-xs text-amber-800" data-testid="holders-only-enable-note">
+              {HOLDERS_ONLY_ENABLE_NOTE}
             </p>
           </div>
 

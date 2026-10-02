@@ -30,7 +30,19 @@ function item(overrides: Partial<AdminOrderListItem>): AdminOrderListItem {
 }
 
 const mockItems: AdminOrderListItem[] = [
-  item({ id: "flagged", order_number: "ORD-FLAGGED", refund_needed: true }),
+  item({
+    id: "flagged",
+    order_number: "ORD-FLAGGED",
+    refund_needed: true,
+    late_refunds: {
+      pending_count: 2,
+      pending_amount: "749000",
+      items: [
+        { ref: "TX1", transaction_id: "TX1", amount: "499000", flagged_at: "2026-09-28T01:00:00Z", refunded: false },
+        { ref: "TX2", transaction_id: "TX2", amount: "250000", flagged_at: "2026-09-28T02:00:00Z", refunded: false },
+      ],
+    },
+  }),
   item({ id: "plain", order_number: "ORD-PLAIN", status: "expired" }),
   // Admin đã ghi nhận chuyển khoản hoàn: cờ tắt, có mốc late_refunded_at.
   item({ id: "done", order_number: "ORD-DONE", refund_needed: false, late_refunded_at: "2026-09-30T08:00:00Z" }),
@@ -63,5 +75,16 @@ describe("AdminOrdersPage — badge Cần hoàn tiền", () => {
     // Đơn có cờ hoặc chưa từng có tiền về không mang nhãn "Đã hoàn tiền".
     expect(within(screen.getByText("ORD-FLAGGED").closest("tr")!).queryByText("Đã hoàn tiền")).toBeNull();
     expect(within(screen.getByText("ORD-PLAIN").closest("tr")!).queryByText("Đã hoàn tiền")).toBeNull();
+  });
+
+  // L6 mục 3: admin thấy bao nhiêu khoản và tổng tiền cần hoàn ngay ở danh sách.
+  it("đơn có cờ hiện số khoản chờ hoàn và tổng tiền; đơn khác không có dòng này", () => {
+    render(<AdminOrdersPage />);
+    const flaggedRow = screen.getByText("ORD-FLAGGED").closest("tr")!;
+    const summary = within(flaggedRow).getByTestId("late-refund-summary");
+    expect(summary.textContent).toContain("2 khoản chờ hoàn");
+    expect((summary.textContent ?? "").replace(/\s/g, " ")).toMatch(/749\.000/);
+    expect(within(screen.getByText("ORD-PLAIN").closest("tr")!).queryByTestId("late-refund-summary")).toBeNull();
+    expect(within(screen.getByText("ORD-DONE").closest("tr")!).queryByTestId("late-refund-summary")).toBeNull();
   });
 });

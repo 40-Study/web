@@ -80,21 +80,25 @@ export interface CreateVoucherDTO {
   holders_only?: boolean;
 }
 
+/**
+ * Body PUT /vouchers/:id. Với start_date, end_date, max_discount_money, max_discount_points: bỏ trống =
+ * giữ nguyên, `null` = XOÁ (backend đọc null như UpdateCourseDTO.discount_price), có giá trị = đặt mới.
+ */
 export interface UpdateVoucherDTO {
   name?: string;
   description?: string;
   discount_amount_money?: number;
   discount_amount_points?: number;
   discount_percent?: number;
-  max_discount_money?: number;
-  max_discount_points?: number;
+  max_discount_money?: number | null;
+  max_discount_points?: number | null;
   min_purchase_money?: number;
   min_purchase_points?: number;
   usage_limit?: number;
   usage_per_user?: number;
   can_stack?: boolean;
-  start_date?: string;
-  end_date?: string;
+  start_date?: string | null;
+  end_date?: string | null;
   is_active?: boolean;
   /** Bỏ trống = giữ nguyên; true/false = đổi. */
   holders_only?: boolean;
@@ -114,7 +118,7 @@ export interface UserSavedVoucher {
   voucher?: Voucher | null;
 }
 
-interface VoucherListResponse {
+export interface VoucherListResponse {
   vouchers: Voucher[];
   total_count: number;
   limit: number;

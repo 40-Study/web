@@ -20,7 +20,9 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import type { RefundMethod } from "@/services/admin-order.service";
 import { ORDER_STATUS_LABEL, formatOrderDateTime } from "@/services/order.service";
+import { pendingLateRefunds } from "@/lib/late-refund";
 import { LateRefundDialog } from "./_components/late-refund-dialog";
+import { LateRefundList } from "./_components/late-refund-list";
 
 const REASON_MAX_LEN = 500;
 const TRANSACTION_REF_MAX_LEN = 100;
@@ -138,13 +140,18 @@ export default function AdminOrderDetailPage() {
                 </Can>
               )}
 
-              {/* Đơn đã huỷ/hết hạn nhận tiền về muộn: sau khi admin chuyển khoản hoàn, ghi nhận ở đây. */}
+              {/* L6: từng khoản tiền về muộn (mã giao dịch, số tiền, khoản nào đã hoàn). */}
+              {order.late_refunds && order.late_refunds.items.length > 0 && <LateRefundList summary={order.late_refunds} />}
+
+              {/* Đơn có tiền về muộn (đã huỷ/hết hạn, hoặc hoàn tất nhưng khách chuyển dư): sau khi admin
+                  chuyển khoản hoàn, ghi nhận ở đây — chọn đúng khoản đã hoàn. */}
               {order.refund_needed && (
                 <Can permission={PERMISSIONS.MANAGE_PAYMENTS}>
                   <LateRefundDialog
                     orderId={order.id}
                     orderNumber={order.order_number}
                     totalAmount={Number(order.total_amount)}
+                    pendingItems={pendingLateRefunds(order.late_refunds)}
                   />
                 </Can>
               )}

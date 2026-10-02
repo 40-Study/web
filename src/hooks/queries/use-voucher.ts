@@ -2,8 +2,9 @@
  * React Query hooks for voucher operations
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/errors";
 import {
   voucherService,
   type CreateVoucherDTO,
@@ -12,9 +13,12 @@ import {
   type UserSavedVoucher,
 } from "@/services/voucher.service";
 
+/** Số voucher mỗi trang ở trang admin (backend giới hạn tối đa 100/lần). */
+export const ADMIN_VOUCHER_PAGE_SIZE = 20;
+
 export const voucherKeys = {
   all: ["vouchers"] as const,
-  admin: () => [...voucherKeys.all, "admin"] as const,
+  admin: (page = 1, pageSize = ADMIN_VOUCHER_PAGE_SIZE) => [...voucherKeys.all, "admin", page, pageSize] as const,
   public: () => [...voucherKeys.all, "public"] as const,
   mine: () => [...voucherKeys.all, "my"] as const,
   byCode: (code: string) => [...voucherKeys.all, "code", code] as const,
@@ -84,11 +88,23 @@ export function useVoucherLookup() {
   });
 }
 
-/** Admin: toàn bộ voucher (kể cả voucher dành riêng, đang tắt). */
-export function useAdminVouchers() {
+/**
+ * Admin: voucher (kể cả voucher dành riêng, đang tắt) theo TRANG (L6 mục 8). Trước đây chỉ tải 100 voucher
+ * đầu nên voucher thứ 101 trở đi không bao giờ hiện để sửa. page bắt đầu từ 1.
+ */
+export function useAdminVouchers(page = 1, pageSize = ADMIN_VOUCHER_PAGE_SIZE) {
   return useQuery({
-    queryKey: voucherKeys.admin(),
-    queryFn: () => voucherService.getAllVouchers({ limit: 100, offset: 0 }).then((r) => r.vouchers),
+    queryKey: voucherKeys.admin(page, pageSize),
+    queryFn: () =>
+      voucherService.getAllVouchers({ limit: pageSize, offset: (page - 1) * pageSize }).then((r) => ({
+        vouchers: r.vouchers ?? [],
+        total: r.total_count,
+        page,
+        pageSize,
+        totalPages: Math.max(1, Math.ceil(r.total_count / pageSize)),
+      })),
+    // Giữ trang cũ trên màn hình khi chuyển trang để danh sách không nhấp nháy về trống.
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -130,6 +146,17 @@ export function useSaveVoucher() {
   });
 }
 
+/** Mã lỗi 403 của backend khi bỏ lưu voucher dành riêng (L6 mục 6). */
+export const VOUCHER_HOLDERS_ONLY_NOT_REMOVABLE = "VOUCHER_HOLDERS_ONLY_NOT_REMOVABLE";
+
+/** Câu báo lỗi bỏ lưu voucher: voucher dành riêng được cấp cho bạn nên không bỏ lưu được. */
+export function unsaveVoucherErrorMessage(error: unknown): string {
+  if (error instanceof ApiError && error.code === VOUCHER_HOLDERS_ONLY_NOT_REMOVABLE) {
+    return "Voucher này được cấp riêng cho bạn nên không thể bỏ lưu.";
+  }
+  return "Không thể bỏ lưu voucher, thử lại sau.";
+}
+
 /** Remove a voucher from user's collection */
 export function useUnsaveVoucher() {
   const qc = useQueryClient();
@@ -139,5 +166,6 @@ export function useUnsaveVoucher() {
       qc.invalidateQueries({ queryKey: voucherKeys.mine() });
       toast.success("Đã bỏ lưu voucher");
     },
+    onError: (error) => toast.error(unsaveVoucherErrorMessage(error)),
   });
 }
