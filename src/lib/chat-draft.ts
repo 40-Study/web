@@ -16,6 +16,7 @@ export const CHAT_DRAFT_PREFIX = "chat-draft:";
 const draftKey = (userId: string, conversationId: string) => `${CHAT_DRAFT_PREFIX}${userId}:${conversationId}`;
 
 export function readDraft(userId: string, conversationId: string): string {
+  if (!userId) return ""; // chưa biết user: khoá sẽ là `chat-draft::<conv>` dùng chung cho mọi người
   try {
     return window.sessionStorage.getItem(draftKey(userId, conversationId)) ?? "";
   } catch {
@@ -25,6 +26,7 @@ export function readDraft(userId: string, conversationId: string): string {
 
 /** Ghi nháp; chuỗi rỗng (hoặc chỉ khoảng trắng) tương đương xoá để không để rác trong storage. */
 export function writeDraft(userId: string, conversationId: string, text: string): void {
+  if (!userId) return;
   try {
     const key = draftKey(userId, conversationId);
     if (text.trim()) window.sessionStorage.setItem(key, text);

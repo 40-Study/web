@@ -8,8 +8,12 @@ describe("translateJudgeStatus", () => {
     [4, "Wrong Answer", "Sai đáp án"],
     [5, "Time Limit Exceeded", "Vượt quá thời gian"],
     [6, "Compilation Error", "Lỗi biên dịch"],
-    [7, "Runtime Error (SIGSEGV)", "Lỗi khi chạy"],
-    [11, "Runtime Error (NZEC)", "Lỗi khi chạy"],
+    [7, "Runtime Error (SIGSEGV)", "Lỗi khi chạy (tràn bộ nhớ đoạn)"],
+    [8, "Runtime Error (SIGXFSZ)", "Lỗi khi chạy (vượt quá kích thước tệp)"],
+    [9, "Runtime Error (SIGFPE)", "Lỗi khi chạy (lỗi phép tính số học)"],
+    [10, "Runtime Error (SIGABRT)", "Lỗi khi chạy (chương trình tự huỷ)"],
+    [11, "Runtime Error (NZEC)", "Lỗi khi chạy (mã thoát khác 0)"],
+    [12, "Runtime Error (Other)", "Lỗi khi chạy (lỗi khác)"],
     [13, "Internal Error", "Lỗi hệ thống"],
   ])("id %i (%s) -> %s", (id, description, vi) => {
     expect(translateJudgeStatus({ id, description })).toBe(vi);
