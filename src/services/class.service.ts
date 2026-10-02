@@ -10,6 +10,8 @@ import { api } from "@/lib/api-client";
 export interface Class {
   id: string;
   course_id: string;
+  /** Tổ chức mà lớp thuộc về; vắng = lớp cá nhân của giảng viên. */
+  organization_id?: string;
   name: string;
   description?: string;
   max_students?: number;
@@ -24,6 +26,8 @@ export interface Class {
 export interface CreateClassDTO {
   name: string;
   description?: string;
+  /** Tạo lớp trong tổ chức (người tạo phải là thành viên active). Bỏ trống = lớp cá nhân. */
+  organization_id?: string;
   max_students?: number;
   start_date?: string;
   end_date?: string;
