@@ -566,6 +566,29 @@ describe("ConversationChat — chặn/bỏ chặn realtime (conversation_blocked
     expect(input().disabled).toBe(false);
   });
 
+  it("nối lại WebSocket: nạp lại cờ is_blocked (event chặn đã lỡ lúc rớt), khoá ô nhập nếu server báo chặn", async () => {
+    const getById = vi.spyOn(conversationService, "getById").mockResolvedValueOnce(detail(false)).mockResolvedValue(detail(true));
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" isDirect />);
+    await screen.findByText("lịch sử vẫn đọc được");
+    await waitFor(() => expect(getById).toHaveBeenCalledTimes(1));
+    expect(input().disabled).toBe(false);
+
+    act(() => socket.handlers.onReconnected?.());
+
+    await waitFor(() => expect(getById).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(input().disabled).toBe(true));
+  });
+
+  it("nối lại WebSocket sau khi bỏ chặn lúc rớt: nạp lại cờ và mở ô nhập", async () => {
+    vi.spyOn(conversationService, "getById").mockResolvedValueOnce(detail(true)).mockResolvedValue(detail(false));
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" isDirect />);
+    await screen.findByRole("alert");
+
+    act(() => socket.handlers.onReconnected?.());
+
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    expect(input().disabled).toBe(false);
+  });
   it("sự kiện của DM khác (cùng kênh người dùng) bị bỏ qua", async () => {
     vi.spyOn(conversationService, "getById").mockResolvedValue(detail(false));
     renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" isDirect />);

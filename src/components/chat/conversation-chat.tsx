@@ -101,7 +101,11 @@ function ConversationChatInner({ conversationId, currentUserId, className, isDir
       setSentBlockedId(is_blocked ? conversationId : null);
     },
     // Nạp bù tin đã lỡ trong lúc mất kết nối.
-    onReconnected: () => qc.invalidateQueries({ queryKey: conversationKeys.messages(conversationId) }),
+    onReconnected: () => {
+      qc.invalidateQueries({ queryKey: conversationKeys.messages(conversationId) });
+      // Event chặn/bỏ chặn xảy ra lúc rớt kết nối đã mất (server không phát lại): nạp lại cờ is_blocked (contract).
+      qc.invalidateQueries({ queryKey: conversationKeys.detail(conversationId) });
+    },
   });
 
   const isLive = status === "open";
