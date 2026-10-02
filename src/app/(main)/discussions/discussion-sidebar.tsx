@@ -7,6 +7,7 @@
 import { TrendingUp, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLeaderboard } from "@/hooks/queries/use-leaderboard";
+import { leaderboardEntryKey, leaderboardEntryName } from "@/lib/leaderboard-display";
 import type { ForumPost } from "@/types/discussion";
 
 const CATEGORIES = [
@@ -81,12 +82,13 @@ export function DiscussionSidebar({ posts, activeCategory, onCategoryChange }: D
             <h3 className="text-sm font-semibold text-slate-800">Thành viên tích cực</h3>
           </div>
           <div className="space-y-3">
-            {members.map((m) => {
-              const initials = (m.full_name || m.user_name).slice(0, 2).toUpperCase();
+            {members.map((m, index) => {
+              const name = leaderboardEntryName(m);
+              const initials = name.slice(0, 2).toUpperCase();
               return (
-                <div key={m.user_id} className="flex items-center gap-3">
+                <div key={leaderboardEntryKey(m, index)} className="flex items-center gap-3">
                   {m.avatar_url ? (
-                    <img src={m.avatar_url} alt={m.user_name} className="w-8 h-8 rounded-full object-cover" />
+                    <img src={m.avatar_url} alt={name} className="w-8 h-8 rounded-full object-cover" />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-xs">
                       {initials}
@@ -94,7 +96,7 @@ export function DiscussionSidebar({ posts, activeCategory, onCategoryChange }: D
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-800 truncate">
-                      {m.full_name || m.user_name}
+                      {name}
                     </p>
                     <p className="text-xs text-slate-400">{m.points} điểm</p>
                   </div>

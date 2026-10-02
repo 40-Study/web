@@ -15,7 +15,8 @@ import {
 import type { LeaderboardEntry, LeagueType } from "@/components/gamification";
 import { cn } from "@/lib/utils";
 import { useLeaderboard, useMyRank } from "@/hooks/queries/use-leaderboard";
-import type { PeriodType } from "@/services/leaderboard.service";
+import type { LeaderboardEntryDTO, PeriodType } from "@/services/leaderboard.service";
+import { leaderboardEntryKey, leaderboardEntryName } from "@/lib/leaderboard-display";
 
 /**
  * Map period của backend sang lựa chọn hiển thị trên UI
@@ -28,20 +29,14 @@ const PERIOD_OPTIONS: { label: string; value: PeriodType }[] = [
 
 /**
  * Map backend LeaderboardEntryDTO to UI LeaderboardEntry
- * Backend has rank, user_id, user_name, full_name, avatar_url, points
+ * Backend has rank, display_name, points (+ user_id, user_name, full_name, avatar_url trừ người ẩn danh)
  * UI expects userId, name, avatar, level, weeklyXP, trend
+ * `index`: người ẩn danh không có user_id nên khoá dòng dựa vào vị trí.
  */
-function mapToUiEntry(dto: {
-  rank: number;
-  user_id: string;
-  user_name: string;
-  full_name?: string;
-  avatar_url?: string;
-  points: number;
-}): LeaderboardEntry & { rank: number } {
+function mapToUiEntry(dto: LeaderboardEntryDTO, index: number): LeaderboardEntry & { rank: number } {
   return {
-    userId: dto.user_id,
-    name: dto.full_name || dto.user_name,
+    userId: leaderboardEntryKey(dto, index),
+    name: leaderboardEntryName(dto),
     avatar: dto.avatar_url,
     level: 0, // backend doesn't expose level separately
     weeklyXP: dto.points,
@@ -105,7 +100,8 @@ export default function LeaderboardPage() {
   const entries: (LeaderboardEntry & { rank: number })[] =
     leaderboardData?.entries.map(mapToUiEntry) ?? [];
 
-  const myEntry = myRankData?.entry ? mapToUiEntry(myRankData.entry) : null;
+  // Chính mình luôn có user_id thật (backend không ẩn danh với chính chủ), nên so được với dòng trong danh sách.
+  const myEntry = myRankData?.entry ? mapToUiEntry(myRankData.entry, 0) : null;
   const myUserId = myEntry?.userId ?? "";
 
   const isLoading = isLeaderboardLoading || isMyRankLoading;
