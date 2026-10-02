@@ -74,6 +74,25 @@ export type UpdateCourseFormField = <K extends keyof CourseFormData>(
 // form dùng "all" cho nhãn "Tất cả trình độ".
 const API_ALL_LEVELS = "all_levels";
 
+/** Câu báo lỗi giá khuyến mãi — khớp quy tắc backend: 0 < discount_price < price (DISCOUNT_PRICE_INVALID). */
+export const DISCOUNT_PRICE_ERROR = "Giá khuyến mãi phải lớn hơn 0 và thấp hơn giá bán.";
+
+/**
+ * Kiểm giá khuyến mãi của form theo đúng quy tắc backend (0 < giá khuyến mãi < giá bán).
+ * Trả câu lỗi, hoặc null khi hợp lệ. Ô khuyến mãi để trống (hoặc khoá miễn phí) là hợp lệ: không có
+ * khuyến mãi. Số 0 KHÔNG phải cách xoá khuyến mãi — để trống ô. Dùng chung trang tạo, trang sửa và
+ * ô nhập ở bước "Cài đặt giá" để cả ba cùng một luật.
+ */
+export function validateDiscountPrice(form: Pick<CourseFormData, "is_free" | "price" | "discount_price">): string | null {
+  const text = form.discount_price.trim();
+  if (form.is_free || text === "") return null;
+  const discount = Number(text);
+  const price = Number(form.price);
+  if (!Number.isFinite(discount) || discount <= 0) return DISCOUNT_PRICE_ERROR;
+  if (!Number.isFinite(price) || discount >= price) return DISCOUNT_PRICE_ERROR;
+  return null;
+}
+
 /** Giá trị số từ API có thể là chuỗi decimal ("1200000.00") — "" khi không có/không hợp lệ. */
 function numberText(value: number | string | undefined | null): string {
   if (value === undefined || value === null || value === "") return "";
@@ -143,13 +162,9 @@ export function buildCourseUpdatePayload(form: CourseFormData, original: ApiCour
   const hadDiscount = numberText(original.discount_price) !== "";
   const discountText = form.is_free ? "" : form.discount_price.trim();
   const clearDiscount = hadDiscount && discountText === "";
-  let discountPrice: number | undefined;
-  if (discountText !== "") {
-    discountPrice = Number(discountText);
-    if (!Number.isFinite(discountPrice) || discountPrice <= 0 || discountPrice >= price) {
-      return { error: "Giá khuyến mãi phải lớn hơn 0 và thấp hơn giá bán." };
-    }
-  }
+  const discountError = validateDiscountPrice(form);
+  if (discountError) return { error: discountError };
+  const discountPrice = discountText !== "" ? Number(discountText) : undefined;
 
   const payload: UpdateCourseDTO = {
     title,

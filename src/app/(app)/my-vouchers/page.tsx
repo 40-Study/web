@@ -100,7 +100,18 @@ function VoucherCard({ entry }: { entry: MyVoucherWithDetails }) {
       </div>
 
       {/* Discount value */}
-      <p className="text-sm font-semibold text-primary-600 mb-1">{discountLabel}</p>
+      <p className="text-sm font-semibold text-primary-600 mb-1">
+        {discountLabel}
+        {voucher.holders_only && (
+          <span
+            data-testid="holders-only-badge"
+            title="Voucher dành riêng cho bạn: người khác không dùng được"
+            className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 align-middle text-xs font-medium text-amber-700 ring-1 ring-amber-200"
+          >
+            Dành riêng cho bạn
+          </span>
+        )}
+      </p>
 
       {/* Description */}
       {voucher.description && (

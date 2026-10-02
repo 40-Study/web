@@ -17,6 +17,9 @@ const CODE_MESSAGES: Record<string, string> = {
   COURSE_EMPTY: "Khoá học cần có ít nhất 1 bài học trước khi gửi duyệt.",
   COURSE_PENDING_REVIEW:
     "Khoá học đang chờ duyệt nên không thể chỉnh sửa hay xoá. Hãy rút yêu cầu duyệt trước.",
+  // L1: backend từ chối giá khuyến mãi <= 0 hoặc >= giá bán (tạo và sửa khoá).
+  DISCOUNT_PRICE_INVALID:
+    "Giá khuyến mãi phải lớn hơn 0 và thấp hơn giá bán. Muốn bỏ khuyến mãi, hãy để trống ô giá khuyến mãi.",
   APPLICATION_NOT_PENDING: "Hồ sơ không còn ở trạng thái chờ duyệt. Vui lòng tải lại trang.",
   APPLICATION_NOT_REJECTED: "Chỉ có thể nộp lại hồ sơ đang bị từ chối.",
   RESUBMISSION_LIMIT_REACHED:

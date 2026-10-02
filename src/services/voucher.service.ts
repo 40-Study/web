@@ -48,6 +48,11 @@ export interface Voucher {
   start_date?: string | null;
   end_date?: string | null;
   is_active: boolean;
+  /**
+   * Voucher "dành riêng": chỉ người đã được cấp (vd thưởng cuộc thi) hoặc đã lưu mới dùng được. Backend
+   * luôn trả field này; thiếu (dữ liệu cũ/mock) coi như công khai.
+   */
+  holders_only?: boolean;
 }
 
 export interface CreateVoucherDTO {
@@ -71,6 +76,8 @@ export interface CreateVoucherDTO {
   start_date?: string;
   end_date?: string;
   is_active?: boolean;
+  /** Bỏ trống = công khai (mặc định). */
+  holders_only?: boolean;
 }
 
 export interface UpdateVoucherDTO {
@@ -89,6 +96,8 @@ export interface UpdateVoucherDTO {
   start_date?: string;
   end_date?: string;
   is_active?: boolean;
+  /** Bỏ trống = giữ nguyên; true/false = đổi. */
+  holders_only?: boolean;
 }
 
 export interface UserSavedVoucher {

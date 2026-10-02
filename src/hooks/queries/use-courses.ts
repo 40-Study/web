@@ -83,7 +83,8 @@ export function useCreateCourse() {
       qc.invalidateQueries({ queryKey: courseKeys.all });
       toast.success("Tạo khóa học thành công");
     },
-    onError: () => toast.error("Không thể tạo khóa học"),
+    // 400 DISCOUNT_PRICE_INVALID -> lý do tiếng Việt cụ thể thay vì lỗi chung.
+    onError: (error) => toast.error(approvalErrorMessage(error, "Không thể tạo khóa học")),
   });
 }
 
@@ -98,7 +99,7 @@ export function useUpdateCourse() {
       qc.invalidateQueries({ queryKey: courseKeys.detail(id) });
       toast.success("Cập nhật khóa học thành công");
     },
-    onError: () => toast.error("Không thể cập nhật khóa học"),
+    onError: (error) => toast.error(approvalErrorMessage(error, "Không thể cập nhật khóa học")),
   });
 }
 
