@@ -39,27 +39,57 @@ export function LateRefundDialog({ orderId, orderNumber, totalAmount, pendingIte
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const [transactionRef, setTransactionRef] = useState("");
-  // Mặc định chọn TẤT CẢ khoản đang chờ; lưu phần bỏ chọn để danh sách đổi sau khi refetch vẫn đúng.
-  const [unchecked, setUnchecked] = useState<Set<string>>(new Set());
+  // Khoản admin ĐÃ THẤY lúc mở hộp thoại, và tập đang chọn. Chốt lúc mở (không suy từ danh sách hiện tại): job
+  // nền làm khoản mới xuất hiện khi refetch, và khoản đó admin chưa cân nhắc nên không được tự chọn. Mặc định
+  // chọn TẤT CẢ khoản đã thấy lúc mở; khoản mới về sau hiện ở nhóm riêng và phải tự tick.
+  const [seenRefs, setSeenRefs] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const hasItems = pendingItems.length > 0;
-  const selectedRefs = pendingItems.filter((i) => !unchecked.has(i.ref)).map((i) => i.ref);
+  const seenItems = pendingItems.filter((i) => seenRefs.has(i.ref));
+  const newItems = pendingItems.filter((i) => !seenRefs.has(i.ref));
+  // Chỉ gửi khoản đang còn chờ VÀ được chọn (khoản đã hoàn ở nơi khác sau refetch tự rơi khỏi danh sách).
+  const selectedRefs = pendingItems.filter((i) => selected.has(i.ref)).map((i) => i.ref);
   const canConfirm = !hasItems || selectedRefs.length > 0;
+
+  const openDialog = () => {
+    const refs = new Set(pendingItems.map((i) => i.ref));
+    setSeenRefs(refs);
+    setSelected(new Set(refs));
+    setOpen(true);
+  };
 
   const close = () => {
     setOpen(false);
     setNote("");
     setTransactionRef("");
-    setUnchecked(new Set());
+    setSeenRefs(new Set());
+    setSelected(new Set());
   };
 
   const toggle = (ref: string) =>
-    setUnchecked((prev) => {
+    setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(ref)) next.delete(ref);
       else next.add(ref);
       return next;
     });
+
+  const renderItem = (item: LateRefundItem) => (
+    <label
+      key={item.ref}
+      className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-700"
+    >
+      <input
+        type="checkbox"
+        checked={selected.has(item.ref)}
+        onChange={() => toggle(item.ref)}
+        aria-label={`Khoản ${item.transaction_id || item.ref}`}
+      />
+      <span className="font-mono text-xs">{item.transaction_id || "(không có mã giao dịch)"}</span>
+      <span className="ml-auto font-medium">{formatLateRefundAmount(item.amount)}</span>
+    </label>
+  );
 
   const confirm = () => {
     if (!canConfirm) return;
@@ -79,7 +109,7 @@ export function LateRefundDialog({ orderId, orderNumber, totalAmount, pendingIte
 
   return (
     <>
-      <Button className="w-full" onClick={() => setOpen(true)}>
+      <Button className="w-full" onClick={openDialog}>
         Đánh dấu đã hoàn tiền
       </Button>
 
@@ -102,24 +132,23 @@ export function LateRefundDialog({ orderId, orderNumber, totalAmount, pendingIte
             vẫn giữ nguyên trạng thái, hệ thống chỉ ghi nhận đã hoàn.
           </DialogDescription>
 
-          {hasItems && (
+          {seenItems.length > 0 && (
             <fieldset className="mt-4 space-y-2 text-sm">
               <legend className="mb-1 font-medium text-gray-700 dark:text-gray-300">Khoản đã hoàn</legend>
-              {pendingItems.map((item) => (
-                <label
-                  key={item.ref}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-700"
-                >
-                  <input
-                    type="checkbox"
-                    checked={!unchecked.has(item.ref)}
-                    onChange={() => toggle(item.ref)}
-                    aria-label={`Khoản ${item.transaction_id || item.ref}`}
-                  />
-                  <span className="font-mono text-xs">{item.transaction_id || "(không có mã giao dịch)"}</span>
-                  <span className="ml-auto font-medium">{formatLateRefundAmount(item.amount)}</span>
-                </label>
-              ))}
+              {seenItems.map(renderItem)}
+            </fieldset>
+          )}
+
+          {newItems.length > 0 && (
+            <fieldset
+              className="mt-4 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/30"
+              data-testid="late-refund-new-items"
+            >
+              <legend className="px-1 font-medium text-amber-800 dark:text-amber-300">Mới về sau khi bạn mở hộp thoại</legend>
+              <p className="text-xs text-amber-800 dark:text-amber-300">
+                Chưa được chọn. Chỉ tick khoản bạn đã chuyển khoản hoàn lại.
+              </p>
+              {newItems.map(renderItem)}
             </fieldset>
           )}
 

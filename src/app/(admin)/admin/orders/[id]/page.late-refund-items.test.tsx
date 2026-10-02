@@ -76,6 +76,49 @@ describe("AdminOrderDetailPage — từng khoản tiền về muộn", () => {
     });
   });
 
+  // Review L6 MINOR: job nền làm khoản mới xuất hiện giữa lúc admin đang mở hộp thoại. Khoản đó admin chưa
+  // thấy lúc quyết định, nên KHÔNG được tự chọn (nếu không "đã hoàn" bị ghi cho khoản chưa chuyển khoản hoàn).
+  const withNewItem = {
+    ...BASE,
+    late_refunds: {
+      ...BASE.late_refunds,
+      pending_count: 3,
+      pending_amount: "1000000",
+      items: [
+        ...BASE.late_refunds.items,
+        { ref: "L6-C", transaction_id: "L6-C", amount: "251000", flagged_at: "2026-09-28T03:00:00Z", refunded: false },
+      ],
+    },
+  };
+
+  it("khoản mới về sau khi mở hộp thoại hiện riêng, mặc định KHÔNG chọn, không bị gửi đi", () => {
+    const { rerender } = render(<AdminOrderDetailPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Đánh dấu đã hoàn tiền" }));
+    expect(screen.queryByTestId("late-refund-new-items")).toBeNull();
+
+    mockOrder = withNewItem; // refetch: một khoản mới về
+    rerender(<AdminOrderDetailPage />);
+    const fresh = screen.getByTestId("late-refund-new-items");
+    const c = within(fresh).getByLabelText("Khoản L6-C") as HTMLInputElement;
+    expect(c.checked).toBe(false);
+    // Hai khoản admin đã thấy lúc mở vẫn được chọn sẵn và nằm ngoài nhóm "mới".
+    expect((screen.getByLabelText("Khoản L6-A") as HTMLInputElement).checked).toBe(true);
+    expect(within(fresh).queryByLabelText("Khoản L6-A")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận đã hoàn tiền" }));
+    expect(mockLateRefundMutate.mock.calls[0][0].dto.refs).toEqual(["L6-A", "L6-B"]);
+  });
+
+  it("khoản mới chỉ được gửi khi admin chủ động chọn", () => {
+    const { rerender } = render(<AdminOrderDetailPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Đánh dấu đã hoàn tiền" }));
+    mockOrder = withNewItem;
+    rerender(<AdminOrderDetailPage />);
+    fireEvent.click(screen.getByLabelText("Khoản L6-C"));
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận đã hoàn tiền" }));
+    expect(mockLateRefundMutate.mock.calls[0][0].dto.refs).toEqual(["L6-A", "L6-B", "L6-C"]);
+  });
+
   it("bỏ chọn hết thì không xác nhận được", () => {
     render(<AdminOrderDetailPage />);
     fireEvent.click(screen.getByRole("button", { name: "Đánh dấu đã hoàn tiền" }));
