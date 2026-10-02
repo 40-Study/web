@@ -300,6 +300,7 @@ export default function ChildDetailPage() {
                         <th className="px-4 py-2 text-left font-medium text-gray-600">Tiêu đề</th>
                         <th className="px-4 py-2 text-right font-medium text-gray-600">Điểm</th>
                         <th className="px-4 py-2 text-right font-medium text-gray-600">%</th>
+                        <th className="px-4 py-2 text-left font-medium text-gray-600">Chấm bởi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -324,6 +325,7 @@ export default function ChildDetailPage() {
                               {grade.percentage.toFixed(1)}%
                             </span>
                           </td>
+                          <td className="px-4 py-2 text-gray-600">{grade.graded_by_name || "—"}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -48,6 +48,9 @@ export interface ChildGrade {
   max_score: number;
   percentage: number;
   weight: number;
+  /** Người chấm (giảng viên hoặc chủ/quản trị tổ chức). Rỗng khi backend không nạp được tên. */
+  graded_by?: string;
+  graded_by_name?: string;
   graded_at: string;
 }
 

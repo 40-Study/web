@@ -9,11 +9,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePrivacySettings, useUpdatePrivacySettings } from "@/hooks/queries/use-user-preferences";
+import type { PrivacySettingKey } from "@/services/user-preference.service";
 
 // ─── Static config ───────────────────────────────────────────────────────────
 
 interface PrivacyOption {
-  id: string;
+  // Khoá của backend (PrivacySettingKey): gõ sai tên là lỗi biên dịch thay vì lựa chọn không được lưu.
+  id: PrivacySettingKey;
   label: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -53,7 +55,7 @@ const privacyOptions: PrivacyOption[] = [
     defaultValue: "everyone",
   },
   {
-    id: "leaderboard_visibility",
+    id: "leaderboard_display",
     label: "Bảng xếp hạng",
     description: "Hiển thị tên bạn trên bảng xếp hạng công khai",
     icon: Trophy,
@@ -74,12 +76,12 @@ export function PrivacySettings() {
   const { data: settings, isLoading } = usePrivacySettings();
   const { mutate: updateSetting } = useUpdatePrivacySettings();
 
-  const getValue = (id: string): string => {
+  const getValue = (id: PrivacySettingKey): string => {
     if (!settings) return privacyOptions.find((o) => o.id === id)?.defaultValue ?? "";
     return settings[id] ?? privacyOptions.find((o) => o.id === id)?.defaultValue ?? "";
   };
 
-  const handleChange = (id: string, value: string) => {
+  const handleChange = (id: PrivacySettingKey, value: string) => {
     updateSetting({ [id]: value });
   };
 

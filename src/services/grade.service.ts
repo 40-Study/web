@@ -48,6 +48,9 @@ export interface Grade {
   weight?: number;
   feedback?: string;
   is_final?: boolean;
+  /** Người chấm: id và tên hiển thị ("Chấm bởi …"). Giảng viên lớp hoặc chủ/quản trị tổ chức của lớp. */
+  graded_by?: string;
+  graded_by_name?: string;
   graded_at?: string;
   student?: {
     id: string;

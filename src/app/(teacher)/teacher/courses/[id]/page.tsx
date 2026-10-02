@@ -80,6 +80,7 @@ import { submitLivestreamContent } from "@/lib/livestream";
 import { LIVESTREAM_NOT_READY_HINT, resolveLivestreamRoomHref } from "@/lib/lesson-content-link";
 import { formatLessonDuration, parseLessonDuration } from "@/lib/lesson-duration";
 import { VideoDurationField } from "@/components/teacher/video-duration-field";
+import { ClassCreateForm } from "@/components/teacher/class-create-form";
 
 // ─── Content type config ────────────────────────────────────────────────────
 
@@ -1161,10 +1162,6 @@ function ClassManagementDialog({
   }>>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [name, setName] = useState("");
-  const [desc, setDesc] = useState("");
-  const [maxStudents, setMaxStudents] = useState("");
-  const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   // Fetch classes when dialog opens
@@ -1183,29 +1180,6 @@ function ClassManagementDialog({
     }
   }, [open, courseId]);
 
-  const handleCreate = async () => {
-    if (!name.trim()) return;
-    setCreating(true);
-    try {
-      const { classService } = await import("@/services/class.service");
-      const newClass = await classService.create(courseId, {
-        name: name.trim(),
-        description: desc.trim() || undefined,
-        max_students: maxStudents ? parseInt(maxStudents) : undefined,
-      });
-      toast.success("Đã tạo lớp học");
-      setClasses((prev) => [...prev, newClass]);
-      setName("");
-      setDesc("");
-      setMaxStudents("");
-      setShowCreateForm(false);
-    } catch {
-      toast.error("Không thể tạo lớp học");
-    } finally {
-      setCreating(false);
-    }
-  };
-
   const handleDelete = async (classId: string) => {
     if (!confirm("Bạn có chắc muốn xóa lớp này?")) return;
     setDeleting(classId);
@@ -1219,13 +1193,6 @@ function ClassManagementDialog({
     } finally {
       setDeleting(null);
     }
-  };
-
-  const resetForm = () => {
-    setName("");
-    setDesc("");
-    setMaxStudents("");
-    setShowCreateForm(false);
   };
 
   return (
@@ -1246,29 +1213,14 @@ function ClassManagementDialog({
           </div>
         ) : showCreateForm ? (
           /* ── Create Form ── */
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label>Tên lớp *</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="VD: Lớp A - K67" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Mô tả</Label>
-              <Textarea rows={2} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Mô tả về lớp học..." />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Số học viên tối đa</Label>
-              <Input type="number" value={maxStudents} onChange={(e) => setMaxStudents(e.target.value)} placeholder="30" className="w-32" />
-            </div>
-            <div className="flex gap-2 pt-2">
-              {classes.length > 0 && (
-                <Button variant="outline" onClick={resetForm}>Hủy</Button>
-              )}
-              <Button onClick={handleCreate} disabled={!name.trim() || creating} className="flex-1">
-                {creating && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
-                Tạo lớp
-              </Button>
-            </div>
-          </div>
+          <ClassCreateForm
+            courseId={courseId}
+            onCreated={(created) => {
+              setClasses((prev) => [...prev, created]);
+              setShowCreateForm(false);
+            }}
+            onCancel={classes.length > 0 ? () => setShowCreateForm(false) : undefined}
+          />
         ) : (
           /* ── Class List ── */
           <div className="space-y-3">
