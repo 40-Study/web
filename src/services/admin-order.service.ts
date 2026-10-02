@@ -9,7 +9,7 @@
  */
 
 import { api } from "@/lib/api-client";
-import type { Order, OrderStatus } from "@/services/order.service";
+import type { LateRefundSummary, Order, OrderStatus } from "@/services/order.service";
 
 // ─── Types (khớp internal/dto/orderDTO.go AdminOrder*/RefundOrder*) ────────
 
@@ -35,6 +35,8 @@ export interface AdminOrderListItem {
   refund_needed?: boolean;
   /** Admin đã ghi nhận hoàn xong khoản tiền về muộn: badge "Cần hoàn tiền" đổi thành "Đã hoàn tiền". */
   late_refunded_at?: string | null;
+  /** Từng khoản tiền về muộn: số khoản chờ, tổng tiền, mã giao dịch (L6). nil khi đơn chưa có khoản nào. */
+  late_refunds?: LateRefundSummary | null;
 }
 
 export interface AdminOrderListResponse {
@@ -73,10 +75,15 @@ export interface RefundOrderResult {
   refunded_at: string;
 }
 
-/** POST /orders/admin/:id/late-refund — cả hai trường đều tuỳ chọn (ghi chú, mã giao dịch chuyển khoản hoàn). */
+/**
+ * POST /orders/admin/:id/late-refund — mọi trường đều tuỳ chọn (ghi chú, mã giao dịch chuyển khoản hoàn).
+ * `refs`: các khoản (LateRefundItem.ref) vừa hoàn; bỏ trống = hoàn mọi khoản đang chờ. Chỉ khoản được nêu
+ * bị tắt cờ, khoản còn lại vẫn cần hoàn.
+ */
 export interface LateRefundDTO {
   note?: string;
   transaction_ref?: string;
+  refs?: string[];
 }
 
 export interface LateRefundResult {
@@ -85,6 +92,10 @@ export interface LateRefundResult {
   late_refunded_at: string;
   /** true khi đơn đã được ghi nhận hoàn từ trước (gọi lại không tạo thêm bản ghi). */
   already_recorded: boolean;
+  /** Các khoản vừa được ghi hoàn trong lần gọi này. */
+  refunded_refs?: string[];
+  /** Số khoản còn chờ hoàn sau lần gọi (refund_needed = pending_count > 0). */
+  pending_count?: number;
 }
 
 type Envelope<T> = { message: string; data: T };

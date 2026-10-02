@@ -59,6 +59,29 @@ export interface OrderItem {
   final_price: number;
 }
 
+/**
+ * Một khoản tiền về muộn của đơn (một giao dịch ngân hàng nhận cho mã của đơn đã đóng, hoặc chuyển dư
+ * vào đơn đã hoàn tất). Khớp internal/dto/orderDTO.go LateRefundItem.
+ */
+export interface LateRefundItem {
+  /** Khoá gửi lại ở POST /orders/admin/:id/late-refund (`refs`): mã giao dịch, hoặc "history:<id>" khi dòng cũ không có mã. */
+  ref: string;
+  transaction_id: string;
+  /** Số tiền ngân hàng ghi nhận, dạng chuỗi số ("499000"). */
+  amount: string;
+  flagged_at: string;
+  refunded: boolean;
+  refunded_at?: string | null;
+}
+
+/** Các khoản tiền về muộn của đơn: backend chỉ trả cho admin, nil khi đơn chưa từng nhận tiền về muộn. */
+export interface LateRefundSummary {
+  pending_count: number;
+  /** Tổng tiền các khoản còn chờ hoàn (decimal của backend, dạng chuỗi). */
+  pending_amount: string | number;
+  items: LateRefundItem[];
+}
+
 export interface Order {
   id: string;
   order_number: string;
@@ -93,6 +116,8 @@ export interface Order {
    * Khác `refunded_at`: đơn không đổi sang trạng thái "refunded", chỉ ghi nhận đã hoàn tiền.
    */
   late_refunded_at?: string | null;
+  /** Từng khoản tiền về muộn (chỉ admin nhận được). refund_needed / late_refunded_at giữ nguyên nghĩa. */
+  late_refunds?: LateRefundSummary | null;
   /** Chỉ có khi đơn đã hoàn tiền (quyết định #1: ghi lý do + mã giao dịch chuyển khoản). */
   refund_reason?: string | null;
   refund_transaction_ref?: string | null;

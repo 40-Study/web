@@ -70,4 +70,34 @@ describe("voucher-form-model (L1: holders_only)", () => {
   ])("từ chối khi %s", (_name, over) => {
     expect(buildCreateVoucherPayload(base(over)).error).toBeTruthy();
   });
+
+  // L6 mục 8: sửa voucher, ô ngày và trần giảm để trống nghĩa là XOÁ => gửi null; tạo mới thì bỏ trống = không gửi.
+  it("sửa: ô ngày bắt đầu/kết thúc trống gửi null; có giá trị thì gửi ISO", () => {
+    const cleared = buildUpdateVoucherPayload(base({ start_date: "", end_date: "" }));
+    expect(cleared.payload).toHaveProperty("start_date", null);
+    expect(cleared.payload).toHaveProperty("end_date", null);
+    const kept = buildUpdateVoucherPayload(base({ start_date: "2026-10-01T10:00", end_date: "2026-12-31T10:00" }));
+    expect(typeof kept.payload?.start_date).toBe("string");
+    expect(typeof kept.payload?.end_date).toBe("string");
+  });
+
+  it("sửa PERCENT: trần giảm trống gửi null theo đơn vị; có giá trị thì gửi số; FIXED không gửi trần", () => {
+    const money = buildUpdateVoucherPayload(base({ discount_method: "PERCENT", discount_percent: "10", max_discount: "" }));
+    expect(money.payload).toHaveProperty("max_discount_money", null);
+    expect(money.payload).not.toHaveProperty("max_discount_points");
+    const point = buildUpdateVoucherPayload(base({ discount_unit: "POINT", discount_method: "PERCENT", discount_percent: "10", max_discount: "" }));
+    expect(point.payload).toHaveProperty("max_discount_points", null);
+    const kept = buildUpdateVoucherPayload(base({ discount_method: "PERCENT", discount_percent: "10", max_discount: "30000" }));
+    expect(kept.payload).toHaveProperty("max_discount_money", 30000);
+    const fixed = buildUpdateVoucherPayload(base());
+    expect(fixed.payload).not.toHaveProperty("max_discount_money");
+    expect(fixed.payload).not.toHaveProperty("max_discount_points");
+  });
+
+  it("tạo mới: ô ngày và trần để trống thì KHÔNG gửi (không phải null)", () => {
+    const res = buildCreateVoucherPayload(base({ discount_method: "PERCENT", discount_percent: "10", max_discount: "" }));
+    expect(res.payload).not.toHaveProperty("start_date");
+    expect(res.payload).not.toHaveProperty("end_date");
+    expect(res.payload).not.toHaveProperty("max_discount_money");
+  });
 });

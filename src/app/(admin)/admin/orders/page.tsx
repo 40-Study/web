@@ -9,6 +9,7 @@ import { QueryState } from "@/components/common/query-state";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { lateRefundSummaryText } from "@/lib/late-refund";
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
@@ -188,6 +189,12 @@ function AdminOrdersContent() {
                         {/* Admin đã ghi nhận chuyển khoản hoàn ở trang chi tiết: cờ tắt, badge đổi tên. */}
                         {!order.refund_needed && order.late_refunded_at && <Badge variant="success">{REFUNDED_LATE_BADGE}</Badge>}
                       </div>
+                      {/* L6: bao nhiêu khoản, tổng tiền cần hoàn (chi tiết mã giao dịch ở trang đơn). */}
+                      {order.refund_needed && lateRefundSummaryText(order.late_refunds) && (
+                        <p className="mt-1 text-xs text-red-600 dark:text-red-400" data-testid="late-refund-summary">
+                          {lateRefundSummaryText(order.late_refunds)}
+                        </p>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-gray-500">{formatDate(order.created_at)}</td>
                     <td className="px-4 py-3">

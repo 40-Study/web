@@ -60,6 +60,13 @@ export const HOLDERS_ONLY_LABEL = "Dành riêng";
 export const HOLDERS_ONLY_HINT =
   "Chỉ người được cấp (vd thưởng cuộc thi) hoặc đã lưu voucher mới dùng được. Người khác nhập mã sẽ thấy báo mã không hợp lệ.";
 
+/**
+ * Ghi chú dưới công tắc "Dành riêng" (L6 mục 7): bật cho voucher ĐANG công khai không thu hồi quyền của
+ * những người đã lưu nó từ trước — họ vẫn là người giữ và dùng được. Chỉ chặn người chưa lưu từ giờ.
+ */
+export const HOLDERS_ONLY_ENABLE_NOTE =
+  "Lưu ý: bật cho voucher đang công khai KHÔNG thu hồi quyền của những người đã lưu voucher trước đó, họ vẫn dùng được. Chỉ người chưa lưu mới bị chặn.";
+
 function numText(v: number | string | null | undefined): string {
   if (v === undefined || v === null || v === "") return "";
   const n = Number(v);
@@ -183,7 +190,12 @@ export function buildCreateVoucherPayload(f: VoucherFormState): VoucherBuildResu
   return { payload };
 }
 
-/** Body PUT /vouchers/:id — backend không cho đổi mã, loại giảm hay cách giảm nên không gửi các trường đó. */
+/**
+ * Body PUT /vouchers/:id — backend không cho đổi mã, loại giảm hay cách giảm nên không gửi các trường đó.
+ *
+ * Khác lúc tạo: ô NGÀY BẮT ĐẦU, NGÀY KẾT THÚC và TRẦN GIẢM để trống nghĩa là XOÁ, nên gửi `null` (backend
+ * đọc null như UpdateCourseDTO.discount_price). Trước đây ô trống không gửi gì nên không xoá được.
+ */
 export function buildUpdateVoucherPayload(f: VoucherFormState): VoucherBuildResult<UpdateVoucherDTO> {
   const error = validateShared(f, false);
   if (error) return { error };
@@ -200,7 +212,11 @@ export function buildUpdateVoucherPayload(f: VoucherFormState): VoucherBuildResu
     is_active: f.is_active,
     holders_only: f.holders_only,
   };
-  if (f.start_date) payload.start_date = new Date(f.start_date).toISOString();
-  if (f.end_date) payload.end_date = new Date(f.end_date).toISOString();
+  payload.start_date = f.start_date ? new Date(f.start_date).toISOString() : null;
+  payload.end_date = f.end_date ? new Date(f.end_date).toISOString() : null;
+  // Trần giảm chỉ có ý nghĩa với PERCENT; ô trống = bỏ trần (null). FIXED không có trần nên không gửi.
+  if (f.discount_method === "PERCENT" && nonNegative(f.max_discount) === null) {
+    payload[f.discount_unit === "MONEY" ? "max_discount_money" : "max_discount_points"] = null;
+  }
   return { payload };
 }
