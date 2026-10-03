@@ -75,6 +75,8 @@ function buildSidebarItems(homeHref: string, familyLabel: string): SidebarNavIte
     // A-08: đường vào danh sách buổi livestream. Route chưa có trong ROLE_SCOPED_ROUTES (routes.ts thuộc
     // lane khác) nên roles khai báo tại chỗ; dữ liệu do backend lọc theo người gọi nên route không lộ gì.
     { label: "Livestream", href: "/livestream", icon: Radio, roles: ["STUDENT"] },
+    // Trang /my-grades do lane khác làm (chưa có trong ROLE_SCOPED_ROUTES), roles khai báo tại chỗ như Livestream.
+    { label: "Điểm của tôi", href: "/my-grades", icon: Award, roles: ["STUDENT"] },
     { label: "Chuyên cần", href: "/my-attendance", icon: CalendarCheck, roles: rolesFromRouteTable("/my-attendance") },
     { label: "Chứng chỉ", href: "/certificates", icon: ScrollText, roles: rolesFromRouteTable("/certificates") },
     { label: "Tin nhắn", href: "/messages", icon: MessageSquare, roles: rolesFromRouteTable("/messages") },
@@ -101,7 +103,7 @@ export function Sidebar() {
     item.roles.includes(currentRole) &&
     (item.href !== "/friends" || canUseFriends(activeRole)) &&
     // resolveNavRole quy TEACHER về STUDENT để dựng khung; Livestream của học viên khoá theo vai THẬT.
-    (item.href !== "/livestream" || normalizedRole === "STUDENT")
+    ((item.href !== "/livestream" && item.href !== "/my-grades") || normalizedRole === "STUDENT")
   );
 
   return (
