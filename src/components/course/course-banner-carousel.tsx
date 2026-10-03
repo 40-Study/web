@@ -51,7 +51,7 @@ export const BANNERS: BannerSlide[] = [
 const AUTO_PLAY_MS = 6000;
 
 /**
- * Banner carousel dạng panel nhẹ: nền primary-50, chữ slate-900, một nút secondary.
+ * Banner carousel kiểu F8: nền gradient xanh thương hiệu, chữ trắng, nút pill viền trắng.
  * Hỗ trợ vuốt/kéo trên mobile, mũi tên từ md trở lên, dot 6px.
  */
 export function CourseBannerCarousel() {
@@ -107,20 +107,20 @@ export function CourseBannerCarousel() {
   };
 
   const arrowClass =
-    "absolute top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-700 shadow-xs transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:flex dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-200 dark:hover:bg-slate-900";
+    "absolute top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-white/90 text-slate-700 shadow-xs transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:flex dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-200 dark:hover:bg-slate-900";
 
   return (
     <section
       aria-roledescription="carousel"
       aria-label="Thông báo nổi bật"
-      className="relative select-none rounded-3xl bg-primary-50 ring-1 ring-inset ring-primary-100 dark:bg-slate-900 dark:ring-slate-800"
+      className="relative select-none rounded-[20px] bg-gradient-to-r from-primary-800 via-primary-700 to-primary-500 shadow-card dark:from-primary-950 dark:via-primary-900 dark:to-primary-700"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocus={() => setIsPaused(true)}
       onBlur={() => setIsPaused(false)}
     >
       <div
-        className="overflow-hidden rounded-3xl"
+        className="overflow-hidden rounded-[20px]"
         onMouseDown={(e) => handleDragStart(e.clientX)}
         onMouseMove={(e) => handleDragMove(e.clientX)}
         onMouseUp={handleDragEnd}
@@ -141,11 +141,13 @@ export function CourseBannerCarousel() {
                 role="group"
                 aria-roledescription="slide"
                 aria-label={`${i + 1} / ${total}`}
-                className="flex h-40 w-full flex-shrink-0 items-center justify-between gap-6 px-4 md:h-[200px] md:px-16 lg:h-[220px]"
+                className="flex h-[240px] w-full flex-shrink-0 items-center justify-between gap-6 px-6 md:h-[280px] md:px-16 lg:h-[320px] lg:px-20"
               >
-                <div className="max-w-lg">
-                  <h2 className="text-h3 text-slate-900 dark:text-slate-50">{banner.title}</h2>
-                  <p className="text-body-sm mt-1 line-clamp-2 text-slate-600 dark:text-slate-300 md:text-base">
+                <div className="max-w-2xl">
+                  <h2 className="font-heading text-3xl font-extrabold leading-tight text-white md:text-4xl lg:text-[2.75rem]">
+                    {banner.title}
+                  </h2>
+                  <p className="mt-3 line-clamp-3 text-base leading-relaxed text-white/90 lg:text-lg">
                     {banner.subtitle}
                   </p>
                   <Link
@@ -154,9 +156,9 @@ export function CourseBannerCarousel() {
                     draggable={false}
                     tabIndex={i === current ? 0 : -1}
                     className={cn(
-                      buttonVariants({ variant: "secondary", size: "sm" }),
-                      // Panel đã là primary-50 nên nút secondary cần nền trắng để nhìn thấy được.
-                      "mt-3 min-h-11 md:min-h-0 border border-primary-100 bg-white shadow-xs hover:bg-primary-100 dark:border-slate-700 dark:bg-slate-800 dark:text-primary-300 dark:hover:bg-slate-700 md:mt-4"
+                      buttonVariants({ variant: "ghost", size: "lg" }),
+                      // Nút pill viền trắng trên nền gradient; hover đảo thành nền trắng.
+                      "mt-5 min-h-11 rounded-full border-2 border-white bg-transparent px-7 font-semibold text-white shadow-none hover:bg-white hover:text-primary-700 focus-visible:ring-white md:mt-6"
                     )}
                   >
                     {banner.cta}
@@ -164,9 +166,9 @@ export function CourseBannerCarousel() {
                 </div>
                 <div
                   aria-hidden="true"
-                  className="hidden h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-white text-primary-600 shadow-card md:flex dark:bg-slate-800 dark:text-primary-400"
+                  className="hidden h-40 w-40 shrink-0 items-center justify-center rounded-[2rem] bg-white/15 text-white ring-1 ring-inset ring-white/30 backdrop-blur-sm md:flex lg:h-52 lg:w-52"
                 >
-                  <Icon className="h-10 w-10" strokeWidth={1.75} />
+                  <Icon className="h-20 w-20 lg:h-28 lg:w-28" strokeWidth={1.5} />
                 </div>
               </div>
             );
@@ -204,10 +206,10 @@ export function CourseBannerCarousel() {
           >
             <span
               className={cn(
-                "h-1.5 rounded-full transition-colors group-focus-visible:ring-2 group-focus-visible:ring-primary group-focus-visible:ring-offset-2",
+                "h-1.5 rounded-full transition-colors group-focus-visible:ring-2 group-focus-visible:ring-white group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-primary-700",
                 i === current
-                  ? "w-1.5 bg-primary-600 dark:bg-primary-400"
-                  : "w-1.5 bg-slate-300 group-hover:bg-slate-400 dark:bg-slate-600"
+                  ? "w-1.5 bg-white"
+                  : "w-1.5 bg-white/40 group-hover:bg-white/70"
               )}
             />
           </button>

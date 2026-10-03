@@ -20,10 +20,10 @@ interface CourseGridProps {
 }
 
 const GRID_CLASS =
-  "grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-3 xl:grid-cols-4 xl:gap-6";
+  "grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-3 xl:grid-cols-4 xl:gap-6 2xl:grid-cols-5";
 
-/** Số card trên viewport đầu tiên (xl = 4 cột): ảnh tải ngay. */
-const PRIORITY_COUNT = 4;
+/** Số card trên viewport đầu tiên (xl = 4 cột, 2xl = 5 cột): ảnh tải ngay. */
+const PRIORITY_COUNT = 5;
 
 function CourseCardSkeleton() {
   return (
