@@ -72,11 +72,10 @@ function buildSidebarItems(homeHref: string, familyLabel: string): SidebarNavIte
     { label: "Cuộc thi", href: "/contests", icon: Trophy, roles: rolesFromRouteTable("/contests") },
     { label: "Khóa học của tôi", href: "/my-courses", icon: GraduationCap, roles: rolesFromRouteTable("/my-courses") },
     { label: "Lịch học", href: "/schedule", icon: Calendar, roles: rolesFromRouteTable("/schedule") },
-    // A-08: đường vào danh sách buổi livestream. Route chưa có trong ROLE_SCOPED_ROUTES (routes.ts thuộc
-    // lane khác) nên roles khai báo tại chỗ; dữ liệu do backend lọc theo người gọi nên route không lộ gì.
-    { label: "Livestream", href: "/livestream", icon: Radio, roles: ["STUDENT"] },
-    // Trang /my-grades do lane khác làm (chưa có trong ROLE_SCOPED_ROUTES), roles khai báo tại chỗ như Livestream.
-    { label: "Điểm của tôi", href: "/my-grades", icon: Award, roles: ["STUDENT"] },
+    // A-08: đường vào danh sách buổi livestream; A-07: sổ điểm của học viên. Roles lấy từ ROLE_SCOPED_ROUTES như
+    // mọi mục khác nên menu và route guard không lệch nhau.
+    { label: "Livestream", href: "/livestream", icon: Radio, roles: rolesFromRouteTable("/livestream") },
+    { label: "Điểm của tôi", href: "/my-grades", icon: Award, roles: rolesFromRouteTable("/my-grades") },
     { label: "Chuyên cần", href: "/my-attendance", icon: CalendarCheck, roles: rolesFromRouteTable("/my-attendance") },
     { label: "Chứng chỉ", href: "/certificates", icon: ScrollText, roles: rolesFromRouteTable("/certificates") },
     { label: "Tin nhắn", href: "/messages", icon: MessageSquare, roles: rolesFromRouteTable("/messages") },
