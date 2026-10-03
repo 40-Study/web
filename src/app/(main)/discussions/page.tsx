@@ -30,7 +30,7 @@ export default function DiscussionsPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="page-container py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900">Diễn đàn thảo luận</h1>
         <p className="text-slate-500 mt-1">Trao đổi, chia sẻ và học hỏi cùng cộng đồng</p>

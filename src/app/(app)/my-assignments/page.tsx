@@ -193,7 +193,7 @@ export default function MyAssignmentsPage() {
   const activeCount = classified.filter((c) => c.status === "active").length;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="page-container py-8">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Bài tập của tôi</h1>
