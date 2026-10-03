@@ -26,8 +26,8 @@ import { cn } from "@/lib/utils";
 import { normalizeRole } from "@/lib/routes";
 import { ParentHomeOverview } from "@/components/parent";
 
-const MAX_ENROLLED_SHOWN = 6;
-const MAX_RECOMMENDED = 6;
+const MAX_ENROLLED_SHOWN = 8;
+const MAX_RECOMMENDED = 8;
 
 function SectionHeader({ title, href, linkLabel }: { title: string; href?: string; linkLabel?: string }) {
   return (
@@ -44,7 +44,7 @@ function SectionHeader({ title, href, linkLabel }: { title: string; href?: strin
 }
 
 function CourseGrid({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-6">{children}</div>;
+  return <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4 2xl:grid-cols-5">{children}</div>;
 }
 
 function ContinueSkeleton() {
@@ -99,7 +99,7 @@ function StudentHomeContent() {
   ) ?? false;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-4 py-6 md:space-y-10 md:px-6 lg:space-y-12 lg:px-8 lg:py-8">
+    <div className="page-container space-y-8 py-6 md:space-y-10 lg:space-y-12 lg:py-8">
       {/* Greeting */}
       <header className="space-y-1">
         <h1 className="text-h1 text-slate-900 dark:text-slate-50">

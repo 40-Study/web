@@ -132,6 +132,13 @@ body {
   }
 }
 
+/* Khung nội dung dùng chung cho trang người học: gần hết cột bên phải sidebar (kiểu F8), không bó 1100px. */
+@layer components {
+  .page-container {
+    @apply mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-10;
+  }
+}
+
 /* Typography utilities — semibold/bold nhất quán (bỏ font-light kiểu ElevenLabs) */
 @layer components {
   .text-display {

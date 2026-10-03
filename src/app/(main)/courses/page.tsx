@@ -67,12 +67,12 @@ export default function CoursesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-6xl space-y-8 px-4 py-6 md:space-y-10 md:px-6 lg:px-8 xl:space-y-12">
+      <div className="page-container space-y-8 py-6 md:space-y-10 lg:py-8 xl:space-y-12">
         {/* Header: tiêu đề + tìm kiếm */}
         <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="text-h1 text-slate-900 dark:text-slate-50">Khám phá khóa học</h1>
-            <p className="text-body-sm mt-2 text-slate-600 dark:text-slate-400">
+            <p className="text-body mt-2 text-slate-600 dark:text-slate-400">
               Cập nhật liên tục
             </p>
           </div>

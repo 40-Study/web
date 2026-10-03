@@ -23,7 +23,7 @@ import { SupportCard } from "@/components/student/support-card";
 function LoadingSkeleton() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="page-container !px-0">
         <div className="animate-pulse space-y-6">
           <div className="h-8 w-48 bg-gray-200 rounded" />
           <div className="h-4 w-64 bg-gray-200 rounded" />
@@ -143,7 +143,7 @@ export default function MyCoursesPage() {
   if (coursesError) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="page-container !px-0">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Khóa học của tôi</h1>
           <QueryState
             isError
@@ -163,7 +163,7 @@ export default function MyCoursesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      <div className="page-container py-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
           <div>

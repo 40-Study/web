@@ -55,7 +55,7 @@ export default function ContestsPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-5 px-4 py-6 sm:px-6">
+    <div className="page-container space-y-5 py-6">
       <header className="space-y-1">
         <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
           <Trophy className="h-6 w-6 text-amber-500" aria-hidden="true" />
