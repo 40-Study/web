@@ -42,6 +42,18 @@ export function useMySchedules() {
   });
 }
 
+/**
+ * Lịch lớp của giảng viên/học viên kèm buổi học cụ thể trong `range` (B-08). `range` undefined = chưa biết
+ * khoảng đang xem nên chưa gọi API (tránh một request thừa trước khi lịch báo khoảng ngày).
+ */
+export function useMyTimetableEntries(range?: { from: string; to: string }) {
+  return useQuery({
+    queryKey: [...classScheduleKeys.all, "timetable", range] as const,
+    queryFn: () => classScheduleService.getMyTimetableEntries(range),
+    enabled: !!range,
+  });
+}
+
 export function useTeacherSchedules() {
   return useQuery({
     queryKey: classScheduleKeys.teacher(),

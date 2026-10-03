@@ -49,6 +49,21 @@ describe("BottomNav — bộ tab guest", () => {
     expect(screen.getByRole("status", { name: "2 lời mời kết bạn mới" })).toBeTruthy();
   });
 
+  // A-08: tab Live dẫn tới danh sách buổi livestream; chỉ có ở bộ tab học viên.
+  it("student: có tab Live -> /livestream; các vai khác không có", () => {
+    useAuthStore.setState({ activeRole: "STUDENT" });
+    const { unmount } = render(<BottomNav role="student" />);
+    expect(screen.getByRole("link", { name: /Live/ }).getAttribute("href")).toBe("/livestream");
+    unmount();
+
+    for (const role of ["parent", "teacher", "guest", "admin"] as const) {
+      const r = render(<BottomNav role={role} />);
+      expect(screen.queryByText("Live")).toBeNull();
+      r.unmount();
+    }
+    useAuthStore.setState({ activeRole: null });
+  });
+
   it("chỉ student có Bạn bè: parent, teacher, guest, admin không có", () => {
     for (const role of ["parent", "teacher", "guest", "admin"] as const) {
       const { unmount } = render(<BottomNav role={role} />);

@@ -81,6 +81,18 @@ export const classScheduleService = {
       .get<ApiResponse<TimetableResponse>>("/me/timetable")
       .then((r) => r.data.data.entries.map(timetableEntryToClassSchedule)),
 
+  /**
+   * GET /me/timetable — mục thô của lịch cá nhân. Truyền `range` (YYYY-MM-DD, gồm cả hai đầu, tối đa 120
+   * ngày) thì backend kèm thêm các buổi học cụ thể chưa huỷ của lớp trong khoảng đó (mục có `session_id`
+   * + `date`); không truyền thì chỉ có lịch lặp tuần như `getMySchedules` (B-08).
+   */
+  getMyTimetableEntries: (range?: { from: string; to: string }) =>
+    api
+      .get<ApiResponse<TimetableResponse>>("/me/timetable", {
+        params: range ? { sessions_from: range.from, sessions_to: range.to } : undefined,
+      })
+      .then((r) => r.data.data.entries),
+
   /** @deprecated /class-schedules/teacher không tồn tại ở backend — chưa có nơi gọi (dead code) */
   getTeacherSchedules: () =>
     api

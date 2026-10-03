@@ -58,4 +58,7 @@ export interface TimetableEntry {
   room?: string;
   topic?: string;
   status: string;
+  /** Khoảng ngày hiệu lực của lịch lặp tuần (YYYY-MM-DD); chỉ có ở mục lịch lặp (schedule_id). */
+  effective_from?: string;
+  effective_until?: string;
 }

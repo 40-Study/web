@@ -73,6 +73,21 @@ describe("Sidebar — menu data-driven theo role", () => {
     expect(screen.queryByText("AI Chat")).toBeNull();
   });
 
+  // A-08: học viên trước đây không có đường nào vào danh sách buổi livestream.
+  it("học sinh: có mục Livestream -> /livestream; phụ huynh, giảng viên, khách, admin không có", () => {
+    setRole("STUDENT", true);
+    const { unmount } = render(<Sidebar />);
+    expect(screen.getByRole("link", { name: /Livestream/ }).getAttribute("href")).toBe("/livestream");
+    unmount();
+
+    for (const [role, authed] of [["PARENT", true], ["TEACHER", true], [null, false], ["ADMIN", true]] as const) {
+      setRole(role, authed);
+      const r = render(<Sidebar />);
+      expect(screen.queryByText("Livestream")).toBeNull();
+      r.unmount();
+    }
+  });
+
   it("học sinh: badge hiện số lời mời kết bạn đang chờ, ẩn khi không có", () => {
     setRole("STUDENT", true);
     const { unmount } = render(<Sidebar />);

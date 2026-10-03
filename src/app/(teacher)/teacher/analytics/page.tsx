@@ -14,18 +14,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ProgressBar } from "@/components/ui/progress-bar";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-import { cn } from "@/lib/utils";
 import {
   useLivestreamAnalytics,
   useParticipantAnalytics,
@@ -39,29 +27,37 @@ function formatSeconds(seconds: number): string {
   return `${m}m ${s}s`;
 }
 
+// Nhãn vai trò theo `model.ParticipantRole` ở backend; vai lạ hiện nguyên giá trị thay vì mất dòng.
+const ROLE_LABELS: Record<string, string> = {
+  teacher: "Giảng viên",
+  assistant: "Trợ giảng",
+  student: "Học viên",
+  viewer: "Người xem",
+};
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TeacherAnalyticsPage() {
   const [sessionId, setSessionId] = useState("");
   const [inputValue, setInputValue] = useState("");
 
-  const { data: sessionAnalytics, isLoading: isSessionLoading } =
-    useLivestreamAnalytics(sessionId);
+  const {
+    data: sessionAnalytics,
+    isLoading: isSessionLoading,
+    isError: isSessionError,
+  } = useLivestreamAnalytics(sessionId);
 
   const { data: participantData, isLoading: isParticipantsLoading } =
     useParticipantAnalytics(sessionId);
 
   const isLoading = isSessionLoading || isParticipantsLoading;
 
-  // Build join-timeline chart data from API response
-  const timelineData =
-    sessionAnalytics?.join_timeline.map((point) => ({
-      time: new Date(point.timestamp).toLocaleTimeString("vi-VN", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      participants: point.count,
-    })) ?? [];
+  // QA hồi quy B-01: trước đây trang đọc join_timeline / participants[] mà backend không trả nên
+  // crash với Session ID hợp lệ. Số liệu dưới đây khớp đúng dto.AnalyticsResponseDTO và
+  // dto.ParticipantAnalyticsDTO; biểu đồ theo thời gian và bảng từng người đã bỏ vì không có nguồn dữ liệu.
+  const roleRows = Object.entries(participantData?.by_role ?? {}).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
 
   const handleSearch = () => {
     setSessionId(inputValue.trim());
@@ -116,169 +112,102 @@ export default function TeacherAnalyticsPage() {
 
       {/* Session KPI cards */}
       {sessionId && !isLoading && sessionAnalytics && (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Tổng người tham gia</span>
-                  <Users className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <span className="text-2xl font-bold">
-                  {sessionAnalytics.total_participants}
-                </span>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Đỉnh người tham gia</span>
-                  <TrendingUp className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <span className="text-2xl font-bold">
-                  {sessionAnalytics.peak_participants}
-                </span>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">TG xem TB</span>
-                  <Zap className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <span className="text-2xl font-bold">
-                  {formatSeconds(sessionAnalytics.avg_watch_duration)}
-                </span>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Tin nhắn</span>
-                  <MessageSquare className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <span className="text-2xl font-bold">
-                  {sessionAnalytics.total_messages}
-                </span>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Engagement rate */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardContent className="p-4">
-              <p className="text-sm font-medium mb-2">
-                Tỷ lệ tương tác:{" "}
-                <span className="font-bold">
-                  {(sessionAnalytics.engagement_rate * 100).toFixed(1)}%
-                </span>
-              </p>
-              <ProgressBar
-                value={sessionAnalytics.engagement_rate * 100}
-                size="sm"
-              />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">Tổng lượt xem</span>
+                <Users className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <span className="text-2xl font-bold">{sessionAnalytics.total_viewers ?? 0}</span>
             </CardContent>
           </Card>
 
-          {/* Join timeline chart */}
-          {timelineData.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Biểu đồ người tham gia theo thời gian</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[280px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={timelineData}
-                      margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="time" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="participants"
-                        name="Người tham gia"
-                        stroke="#3B82F6"
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">Đỉnh người xem</span>
+                <TrendingUp className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <span className="text-2xl font-bold">{sessionAnalytics.peak_viewers ?? 0}</span>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">TG xem TB</span>
+                <Zap className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <span className="text-2xl font-bold">
+                {formatSeconds(sessionAnalytics.avg_watch_time_secs ?? 0)}
+              </span>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">Tin nhắn</span>
+                <MessageSquare className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <span className="text-2xl font-bold">{sessionAnalytics.total_messages ?? 0}</span>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
-      {/* Participant table */}
-      {sessionId && !isLoading && participantData && participantData.participants.length > 0 && (
+      {/* Participant summary by role */}
+      {sessionId && !isLoading && participantData && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">
-              Chi tiết người tham gia ({participantData.total})
-            </CardTitle>
+            <CardTitle className="text-base">Người tham gia</CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-900">
-                <tr className="border-b text-left">
-                  <th className="p-4 text-xs font-medium text-muted-foreground">HỌC SINH</th>
-                  <th className="p-4 text-xs font-medium text-muted-foreground">GIỜ VÀO</th>
-                  <th className="p-4 text-xs font-medium text-muted-foreground">THỜI GIAN XEM</th>
-                  <th className="p-4 text-xs font-medium text-muted-foreground">TIN NHẮN</th>
-                  <th className="p-4 text-xs font-medium text-muted-foreground">BÀI NỘP</th>
-                </tr>
-              </thead>
-              <tbody>
-                {participantData.participants.map((p) => (
-                  <tr
-                    key={p.user_id}
-                    className="border-b last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800"
-                  >
-                    <td className="p-4">
-                      <div>
-                        <p className={cn("font-medium", !p.full_name && "text-muted-foreground")}>
-                          {p.full_name || p.user_name}
-                        </p>
-                        {p.full_name && (
-                          <p className="text-xs text-muted-foreground">@{p.user_name}</p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4 text-muted-foreground">
-                      {new Date(p.join_time).toLocaleTimeString("vi-VN", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                    <td className="p-4">{formatSeconds(p.duration_seconds)}</td>
-                    <td className="p-4">{p.messages_sent}</td>
-                    <td className="p-4">{p.submissions_count}</td>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-6 text-sm">
+              <p>
+                Đang trong phòng:{" "}
+                <span className="font-bold">{participantData.active_count ?? 0}</span>
+              </p>
+              <p>
+                Tổng lượt vào phòng:{" "}
+                <span className="font-bold">{participantData.total_joined ?? 0}</span>
+              </p>
+            </div>
+            {roleRows.length > 0 ? (
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-900">
+                  <tr className="border-b text-left">
+                    <th className="p-3 text-xs font-medium text-muted-foreground">VAI TRÒ</th>
+                    <th className="p-3 text-xs font-medium text-muted-foreground">SỐ NGƯỜI</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {roleRows.map(([role, count]) => (
+                    <tr key={role} className="border-b last:border-0">
+                      <td className="p-3">{ROLE_LABELS[role] ?? role}</td>
+                      <td className="p-3">{count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="text-sm text-muted-foreground">Chưa có ai tham gia buổi học này.</p>
+            )}
           </CardContent>
         </Card>
       )}
 
-      {/* No data for given session */}
+      {/* No data for given session (không tồn tại, không có quyền, hoặc lỗi tải) */}
       {sessionId && !isLoading && !sessionAnalytics && (
         <Card>
           <EmptyState
             icon={BarChart3}
-            title="Không tìm thấy dữ liệu"
+            title={isSessionError ? "Không thể tải thống kê" : "Không tìm thấy dữ liệu"}
             description={
               <>
-                Không có dữ liệu cho session <strong>{sessionId}</strong>.
+                Không có dữ liệu cho session <strong>{sessionId}</strong>. Kiểm tra lại Session ID và
+                chắc chắn đây là buổi học của bạn.
               </>
             }
           />

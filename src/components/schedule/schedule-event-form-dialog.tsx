@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { format, setHours, setMinutes } from "date-fns";
-import { vi } from "date-fns/locale";
-import { Clock, MapPin, Video, Radio, Trash2, RepeatIcon } from "lucide-react";
+import { MapPin, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,13 +21,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import type { ScheduleEvent } from "./week-calendar-grid";
-import RecurrenceSelector, {
-  type RecurrenceConfig,
-  DEFAULT_RECURRENCE,
-  buildRRule,
-} from "./recurrence-selector";
 import { useMyCourses } from "@/hooks/queries/use-courses";
 import { useClasses } from "@/hooks/queries/use-classes";
 
@@ -67,11 +60,18 @@ interface ScheduleEventFormDialogProps {
   onDelete?: (eventId: string) => void;
 }
 
-const EVENT_TYPES = [
-  { value: "video", label: "Video bài giảng", icon: Video, color: "text-blue-500" },
-  { value: "livestream", label: "Livestream", icon: Radio, color: "text-red-500" },
-  { value: "hybrid", label: "Kết hợp", icon: Video, color: "text-purple-500" },
-] as const;
+/**
+ * Kiểm cặp giờ của form. Trả thông báo lỗi tiếng Việt, hoặc null khi hợp lệ.
+ * `checkPast` bật khi tạo mới hoặc khi giờ bắt đầu bị đổi (sửa tiêu đề của buổi đã quá giờ không bị chặn).
+ * Backend kiểm lại cùng luật (400) nên đây chỉ là phản hồi sớm, không phải rào duy nhất.
+ */
+export function validateEventTimes(start: Date, end: Date, checkPast: boolean, now = new Date()): string | null {
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "Ngày hoặc giờ không hợp lệ.";
+  if (end <= start) return "Giờ kết thúc phải sau giờ bắt đầu.";
+  // Dung sai 1 phút khớp backend (livestreamClockSkew): ô giờ chọn theo phút.
+  if (checkPast && start.getTime() < now.getTime() - 60_000) return "Giờ bắt đầu không được nằm trong quá khứ.";
+  return null;
+}
 
 export default function ScheduleEventFormDialog({
   open,
@@ -84,19 +84,18 @@ export default function ScheduleEventFormDialog({
   onDelete,
 }: ScheduleEventFormDialogProps) {
   const isEditing = !!event;
+  // Chỉ buổi chưa bắt đầu mới đổi lịch được (backend trả 409 với buổi đang live/đã kết thúc).
+  const canEditTime = !isEditing || event?.status === "upcoming";
 
   const [title, setTitle] = useState("");
-  const [type, setType] = useState<EventFormData["type"]>("video");
   const [startTime, setStartTime] = useState("08:00");
   const [endTime, setEndTime] = useState("09:30");
   const [location, setLocation] = useState("");
-  const [meetingUrl, setMeetingUrl] = useState("");
   const [description, setDescription] = useState("");
   const [dateStr, setDateStr] = useState("");
-  const [recurrence, setRecurrence] = useState<RecurrenceConfig>(DEFAULT_RECURRENCE);
-  const [showRecurrence, setShowRecurrence] = useState(false);
   const [courseId, setCourseId] = useState("");
   const [classId, setClassId] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   // P1 QA 260927 teacher: khóa/lớp thật của giáo viên — bắt buộc khi tạo mới.
   const { data: apiCourses = [], isLoading: coursesLoading } = useMyCourses();
@@ -106,26 +105,21 @@ export default function ScheduleEventFormDialog({
 
   // Populate form when event or defaults change
   useEffect(() => {
+    setError(null);
     if (event) {
       setTitle(event.title);
-      setType(event.type);
       const startDate = new Date(event.startTime);
       const endDate = new Date(event.endTime);
       setStartTime(format(startDate, "HH:mm"));
       setEndTime(format(endDate, "HH:mm"));
       setDateStr(format(startDate, "yyyy-MM-dd"));
       setLocation(event.location || "");
-      setMeetingUrl(event.meetingUrl || "");
       setDescription(event.description || "");
       setCourseId(event.courseId || "");
     } else {
       setTitle("");
-      setType("video");
       setLocation("");
-      setMeetingUrl("");
       setDescription("");
-      setRecurrence(DEFAULT_RECURRENCE);
-      setShowRecurrence(false);
       setCourseId("");
       setClassId("");
       if (defaultDate) {
@@ -149,20 +143,31 @@ export default function ScheduleEventFormDialog({
     if (!isEditing && !classId) return;
     const [startH, startM] = startTime.split(":").map(Number);
     const [endH, endM] = endTime.split(":").map(Number);
-    const base = new Date(dateStr);
+    const base = new Date(`${dateStr}T00:00:00`);
     const start = setMinutes(setHours(base, startH), startM);
     const end = setMinutes(setHours(base, endH), endM);
+
+    if (canEditTime) {
+      // Sửa buổi: chỉ kiểm "quá khứ" khi người dùng thực sự dời giờ bắt đầu.
+      const startChanged = !event || start.getTime() !== new Date(event.startTime).getTime();
+      const problem = validateEventTimes(start, end, !isEditing || startChanged);
+      if (problem) {
+        setError(problem);
+        return;
+      }
+    }
 
     onSave(
       {
         title,
-        type,
+        // Mọi buổi ở trang này là livestream thật (POST /livestream); các lựa chọn loại buổi, liên kết
+        // họp và lặp lịch trước đây không có trường nào ở backend nên đã bị bỏ khỏi form thay vì gửi rồi mất.
+        type: "livestream",
         startTime: start.toISOString(),
         endTime: end.toISOString(),
         location,
-        meetingUrl,
+        meetingUrl: "",
         description,
-        recurrenceRule: buildRRule(recurrence),
         courseId,
         classId,
       },
@@ -246,36 +251,8 @@ export default function ScheduleEventFormDialog({
             </div>
           )}
 
-          {/* Event Type */}
-          <div className="space-y-2">
-            <Label>Loại buổi học</Label>
-            <div className="grid grid-cols-3 gap-2">
-              {EVENT_TYPES.map((t) => {
-                const Icon = t.icon;
-                return (
-                  <button
-                    key={t.value}
-                    type="button"
-                    className={cn(
-                      "flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all text-xs",
-                      type === t.value
-                        ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
-                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
-                    )}
-                    onClick={() => setType(t.value)}
-                  >
-                    <Icon className={cn("w-4 h-4", t.color)} />
-                    <span className="font-medium">{t.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Date + Time — chỉ đổi được lúc TẠO MỚI: PUT /livestream/:id
-              (dto.UpdateLivestreamDTO) chỉ nhận title/description/max_viewers,
-              không có lịch/giờ, nên sửa ở đây sau khi đã tạo sẽ chỉ đổi state
-              cục bộ rồi mất ngay khi trang tải lại — im lặng "thành công giả". */}
+          {/* Date + Time — B-09: gửi đủ giờ bắt đầu/kết thúc và đổi được sau khi tạo (PUT /livestream/:id
+              nay nhận scheduled_at/scheduled_end_at); chỉ khoá khi buổi đã bắt đầu hoặc kết thúc. */}
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label htmlFor="event-date">Ngày *</Label>
@@ -284,7 +261,7 @@ export default function ScheduleEventFormDialog({
                 type="date"
                 value={dateStr}
                 onChange={(e) => setDateStr(e.target.value)}
-                disabled={isEditing}
+                disabled={!canEditTime}
                 required
               />
             </div>
@@ -295,7 +272,7 @@ export default function ScheduleEventFormDialog({
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                disabled={isEditing}
+                disabled={!canEditTime}
                 required
               />
             </div>
@@ -306,14 +283,19 @@ export default function ScheduleEventFormDialog({
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                disabled={isEditing}
+                disabled={!canEditTime}
                 required
               />
             </div>
           </div>
-          {isEditing && (
+          {!canEditTime && (
             <p className="-mt-2 text-xs text-muted-foreground">
-              Chưa hỗ trợ đổi lịch sau khi tạo — chỉ có thể sửa tiêu đề/mô tả.
+              Buổi học đã bắt đầu hoặc đã kết thúc nên không đổi được lịch.
+            </p>
+          )}
+          {error && (
+            <p role="alert" className="-mt-2 text-sm text-red-600">
+              {error}
             </p>
           )}
 
@@ -327,51 +309,10 @@ export default function ScheduleEventFormDialog({
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="VD: Phòng A101"
+                maxLength={255}
                 className="pl-9"
               />
             </div>
-          </div>
-
-          {/* Meeting URL (for livestream/hybrid) */}
-          {(type === "livestream" || type === "hybrid") && (
-            <div className="space-y-2">
-              <Label htmlFor="event-url">Liên kết buổi họp</Label>
-              <Input
-                id="event-url"
-                type="url"
-                value={meetingUrl}
-                onChange={(e) => setMeetingUrl(e.target.value)}
-                placeholder="https://meet.google.com/..."
-              />
-            </div>
-          )}
-
-          {/* Recurrence toggle */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setShowRecurrence((v) => !v)}
-              className={cn(
-                "flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg w-full transition-colors",
-                showRecurrence
-                  ? "bg-primary-50 text-primary-700"
-                  : "text-gray-600 hover:bg-gray-50"
-              )}
-            >
-              <RepeatIcon className="w-4 h-4" />
-              {showRecurrence ? "Ẩn lặp lịch" : "Thêm lặp lịch"}
-              {recurrence.frequency !== "none" && !showRecurrence && (
-                <span className="ml-auto text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">
-                  Đang bật
-                </span>
-              )}
-            </button>
-
-            {showRecurrence && (
-              <div className="mt-3 pl-2 border-l-2 border-primary-200">
-                <RecurrenceSelector value={recurrence} onChange={setRecurrence} />
-              </div>
-            )}
           </div>
 
           {/* Footer Actions */}

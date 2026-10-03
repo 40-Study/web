@@ -90,11 +90,13 @@ function fmtDate(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 
+// Giờ 24h kiểu Việt Nam ("07:00"); trước đây AM/PM ("7 AM") lạc quẻ với phần còn lại của lịch (A-21).
 function fmtHour(h: number) {
-  if (h === 0) return "12 AM";
-  if (h < 12) return `${h} AM`;
-  if (h === 12) return "12 PM";
-  return `${h - 12} PM`;
+  return `${String(h).padStart(2, "0")}:00`;
+}
+
+function fmtHM(h: number, m: number) {
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
 function toEvents(schedules: ClassSchedule[]): CalEvent[] {
@@ -655,6 +657,10 @@ export default function SchedulePage() {
           <h2 className="text-sm font-medium text-gray-700 ml-2 flex-1">{weekLabel}</h2>
         </div>
 
+        {/* Mobile: 7 cột tuần cần ≥ 640px để tên lớp/giờ đọc được — cuộn ngang thay vì ép cột (A-21).
+            Một vùng cuộn chung cho hàng thứ-ngày và lưới giờ để hai phần luôn thẳng cột. */}
+        <div className="flex-1 min-h-0 overflow-x-auto">
+        <div className="flex h-full min-w-[640px] flex-col">
         {/* Day headers */}
         <div className="grid grid-cols-[48px_repeat(7,1fr)] border-b border-gray-100 shrink-0">
           <div />
@@ -700,7 +706,7 @@ export default function SchedulePage() {
                           <div key={ev.id} className={cn("absolute left-0.5 right-0.5 rounded-md border px-1.5 py-0.5 text-[11px] overflow-hidden z-10", c.bg, c.border, c.text)}
                             style={{ top: `${ev.startM}px`, height: `${Math.max(dur, 22)}px` }} onClick={e => e.stopPropagation()}>
                             <p className="font-semibold truncate">{ev.title}</p>
-                            {dur >= 35 && <p className="truncate opacity-70">{ev.startH}:{String(ev.startM).padStart(2,"0")} – {ev.endH}:{String(ev.endM).padStart(2,"0")}</p>}
+                            {dur >= 35 && <p className="truncate opacity-70">{fmtHM(ev.startH, ev.startM)} – {fmtHM(ev.endH, ev.endM)}</p>}
                           </div>
                         );
                       })}
@@ -738,6 +744,8 @@ export default function SchedulePage() {
               <div className="flex-1 h-[2px] bg-red-500" />
             </div>
           )}
+        </div>
+        </div>
         </div>
       </div>
 

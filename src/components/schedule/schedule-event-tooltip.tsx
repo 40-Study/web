@@ -10,6 +10,8 @@ interface ScheduleEventTooltipProps {
   editable?: boolean;
   onEdit?: (event: ScheduleEvent) => void;
   onViewDetail?: (event: ScheduleEvent) => void;
+  /** Mục chỉ để xem (lịch lớp, B-08): không hiện nút nào để tránh nút chết. */
+  readOnly?: boolean;
 }
 
 export default function ScheduleEventTooltip({
@@ -17,6 +19,7 @@ export default function ScheduleEventTooltip({
   editable = false,
   onEdit,
   onViewDetail,
+  readOnly = false,
 }: ScheduleEventTooltipProps) {
   return (
     <div
@@ -75,7 +78,7 @@ export default function ScheduleEventTooltip({
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2">
+      {!readOnly && <div className="flex gap-2">
         {event.status === "ongoing" && event.meetingUrl && (
           <Button
             size="sm"
@@ -118,7 +121,7 @@ export default function ScheduleEventTooltip({
             Chỉnh sửa
           </Button>
         )}
-      </div>
+      </div>}
     </div>
   );
 }
