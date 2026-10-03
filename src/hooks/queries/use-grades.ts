@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error-messages";
 import {
   gradeService,
   CreateGradeColumnDTO,
@@ -96,7 +97,8 @@ export function useCreateGrade(classId: string) {
       queryClient.invalidateQueries({ queryKey: gradeKeys.book(classId) });
       toast.success("Đã nhập điểm");
     },
-    onError: () => toast.error("Không thể nhập điểm"),
+    // Lỗi quyền (403) hay lớp không xem được (404) phải nói rõ, không gộp chung "Không thể nhập điểm".
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể nhập điểm")),
   });
 }
 
@@ -121,7 +123,7 @@ export function useUpdateGrade(classId: string) {
       queryClient.invalidateQueries({ queryKey: gradeKeys.book(classId) });
       toast.success("Đã cập nhật điểm");
     },
-    onError: () => toast.error("Không thể cập nhật điểm"),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể cập nhật điểm")),
   });
 }
 

@@ -345,6 +345,9 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
       inset: 0,
       zIndex: 100,
       background: 'rgba(0,0,0,0.7)',
+      // Màn này vốn chạy trong phòng live (chữ mặc định sáng); mở từ trang nền sáng thì tiêu đề/đề bài
+      // thừa kế màu chữ tối và chìm vào nền #121212. Đặt màu chữ tường minh để không phụ thuộc nơi mở.
+      color: '#fff',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
