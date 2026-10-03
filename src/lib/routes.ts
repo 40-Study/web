@@ -104,6 +104,9 @@ export const ROLE_SCOPED_ROUTES: RoleScopedRoute[] = [
   { href: "/contests", roles: ["GUEST", "STUDENT", "PARENT"] },
   { href: "/my-courses", roles: ["STUDENT"] },
   { href: "/schedule", roles: ["STUDENT"] },
+  // Buổi livestream và sổ điểm là của học viên (A-08, A-07); sidebar/bottom-nav đọc roles từ đây.
+  { href: "/livestream", roles: ["STUDENT"] },
+  { href: "/my-grades", roles: ["STUDENT"] },
   { href: "/my-attendance", roles: ["STUDENT"] },
   { href: "/certificates", roles: ["STUDENT"] },
   { href: "/groups", roles: ["STUDENT"] },

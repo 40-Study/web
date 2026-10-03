@@ -75,6 +75,17 @@ describe("isRouteAllowedForRole — ma trận role x route (ROLE_SCOPED_ROUTES)"
     expect(getRoleRestrictedRedirect("/friends", "PARENT")).toBe("/home");
   });
 
+  // Bỏ hai entry khỏi ROLE_SCOPED_ROUTES làm test này ĐỎ: menu của học viên mất mục và phụ huynh gõ URL vẫn vào được.
+  it("/livestream và /my-grades: chỉ học viên, phụ huynh bị đưa về /home", () => {
+    for (const href of ["/livestream", "/my-grades"]) {
+      expect(isRouteAllowedForRole(href, "STUDENT")).toBe(true);
+      expect(isRouteAllowedForRole(href, "PARENT")).toBe(false);
+      expect(isRouteAllowedForRole(href, "GUEST")).toBe(false);
+      expect(isRouteAllowedForRole(href, "ADMIN")).toBe(false);
+      expect(getRoleRestrictedRedirect(href, "PARENT")).toBe("/home");
+    }
+  });
+
   it("/settings/family và /messages cho cả STUDENT lẫn PARENT (không phải route học sinh-only)", () => {
     expect(isRouteAllowedForRole("/settings/family", "STUDENT")).toBe(true);
     expect(isRouteAllowedForRole("/settings/family", "PARENT")).toBe(true);
