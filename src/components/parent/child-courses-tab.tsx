@@ -10,11 +10,18 @@ import type { ChildCourse } from "@/services/parent-dashboard.service";
 /**
  * Tab "Khóa học" của trang chi tiết con. E2 (QA vòng 2): mỗi khoá có nút "Nhắn giảng viên" —
  * tạo/mở hội thoại trực tiếp (`POST /conversations/direct`) rồi chuyển sang /messages với hội
- * thoại đó được chọn sẵn. Khoá chưa gắn giảng viên (không có instructor_id) thì không hiện nút.
+ * thoại đó được chọn sẵn. Khoá chưa gắn giảng viên (không có instructor_id) thì không hiện nút. Từ QA hồi quy
+ * 03/10 backend cho phép nhắn giảng viên đang dạy con (conversation_service.go, nhánh phụ huynh -> giảng viên).
  */
 export function ChildCoursesTab({ courses, isLoading }: { courses?: ChildCourse[]; isLoading: boolean }) {
   const router = useRouter();
-  const createConv = useCreateDirectConversation();
+  // Backend cho phụ huynh nhắn giảng viên đang dạy lớp/khoá mà con (liên kết đã xác nhận) ghi danh. Khi vẫn bị
+  // từ chối (vd. giảng viên đã thôi dạy con, hoặc quyền liên hệ giảng viên của liên kết bị tắt) nói đúng điều
+  // kiện đó thay vì danh sách quan hệ chung của backend (QA hồi quy A-06).
+  const createConv = useCreateDirectConversation({
+    forbiddenMessage:
+      "Chưa nhắn được giảng viên này. Bạn chỉ nhắn được giảng viên đang dạy lớp hoặc khoá mà con bạn đang học, khi liên kết với con đã được xác nhận và còn quyền liên hệ giảng viên.",
+  });
 
   if (isLoading) {
     return (

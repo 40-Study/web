@@ -8,6 +8,12 @@ describe("createDirectErrorMessage", () => {
     expect(createDirectErrorMessage(new ForbiddenError(msg))).toBe(msg);
   });
 
+  it("nơi gọi cho câu riêng (phụ huynh nhắn giảng viên) thì 403 hiện câu đó, lỗi khác không bị đè", () => {
+    const custom = "Giảng viên này chưa dạy lớp hoặc khoá mà con bạn đang học";
+    expect(createDirectErrorMessage(new ForbiddenError("Bạn chỉ có thể nhắn tin với ..."), custom)).toBe(custom);
+    expect(createDirectErrorMessage(new ApiError(500, "UNKNOWN", "boom"), custom)).toBe("Không thể tạo cuộc trò chuyện");
+  });
+
   it("lỗi khác (500, mạng) giữ câu chung, không lộ message thô", () => {
     expect(createDirectErrorMessage(new ApiError(500, "UNKNOWN", "internal boom"))).toBe(
       "Không thể tạo cuộc trò chuyện"

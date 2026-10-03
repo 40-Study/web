@@ -59,14 +59,18 @@ export function useUnreadCount() {
   });
 }
 
-export function useCreateDirectConversation() {
+/**
+ * `forbiddenMessage`: câu hiện khi backend từ chối 403 (chưa đủ quan hệ). Nơi gọi biết ngữ cảnh (vd. phụ huynh
+ * nhắn giảng viên của con) nên nói đúng điều kiện thay vì danh sách quan hệ chung của backend.
+ */
+export function useCreateDirectConversation(options?: { forbiddenMessage?: string }) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (userId: string) => conversationService.createDirect(userId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: conversationKeys.all });
     },
-    onError: (error) => toast.error(createDirectErrorMessage(error)),
+    onError: (error) => toast.error(createDirectErrorMessage(error, options?.forbiddenMessage)),
   });
 }
 
@@ -77,8 +81,11 @@ export function useCreateDirectConversation() {
  * nhận diện theo lớp lỗi. Chỉ dùng message backend cho 403; lỗi khác giữ câu chung để không lộ
  * message tiếng Anh của tầng khác.
  */
-export function createDirectErrorMessage(error: unknown): string {
-  if (error instanceof ForbiddenError && error.message.trim()) return error.message;
+export function createDirectErrorMessage(error: unknown, forbiddenMessage?: string): string {
+  if (error instanceof ForbiddenError) {
+    if (forbiddenMessage) return forbiddenMessage;
+    if (error.message.trim()) return error.message;
+  }
   return "Không thể tạo cuộc trò chuyện";
 }
 

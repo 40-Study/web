@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { AUTH_ROUTES } from "@/lib/routes";
 import { AUTH_CONFIG, STORAGE_KEYS } from "@/lib/constants";
 import { useRegisterRequest } from "@/hooks/queries/use-auth";
+import { validateUserName } from "@/lib/user-name";
 
 interface FormData {
   username: string;
@@ -49,7 +50,9 @@ export default function RegisterFormPage() {
 
   const validate = (): FieldErrors => {
     const errors: FieldErrors = {};
+    // Cùng luật với backend và trang sửa hồ sơ (lib/user-name.ts): cho '_', không cho '@'/email/dấu cách.
     if (!formData.username.trim()) errors.username = "Vui lòng nhập tên đăng nhập";
+    else errors.username = validateUserName(formData.username) ?? undefined;
     if (!formData.lastName.trim()) errors.lastName = "Vui lòng nhập họ";
     if (!formData.firstName.trim()) errors.firstName = "Vui lòng nhập tên";
     if (!formData.email.trim()) {
