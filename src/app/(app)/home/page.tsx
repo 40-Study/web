@@ -81,8 +81,9 @@ function StudentHomeContent() {
       }),
     [enrolledCourses]
   );
-  const featured = sorted[0];
-  const otherEnrolled = sorted.slice(1, 1 + MAX_ENROLLED_SHOWN);
+  // A-11: "Đang học gần đây" phải là khoá CÒN dang dở; khoá đã 100% chỉ được chọn khi không còn khoá nào khác.
+  const featured = sorted.find((c) => c.progress < 100) ?? sorted[0];
+  const otherEnrolled = sorted.filter((c) => c !== featured).slice(0, MAX_ENROLLED_SHOWN);
 
   const recommended = useMemo(() => {
     const enrolledIds = new Set(enrolledCourses.map((c) => String(c.id)));

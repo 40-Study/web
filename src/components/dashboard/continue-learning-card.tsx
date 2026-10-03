@@ -36,7 +36,8 @@ export function getCurrentLessonNumber(completed: number, total: number): number
 export function ContinueLearningCard({ course, className }: ContinueLearningCardProps) {
   const progress = Math.round(course.progress);
   const current = getCurrentLessonNumber(course.completedLessons, course.totalLessons);
-  const href = `/courses/${course.slug}`;
+  // Tới route resume: nó chọn bài chưa học đầu tiên (A-11) thay vì dừng ở trang giới thiệu khoá.
+  const href = `/courses/${course.slug}/learn`;
 
   return (
     <Card

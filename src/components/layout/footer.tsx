@@ -33,7 +33,7 @@ export function Footer() {
               <span className="font-heading text-xl font-bold text-foreground">{siteConfig.name}</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Nền tảng đào tạo STEAM & AI thế hệ mới, cam kết mang lại kiến thức thực tế và chuẩn quốc tế cho học viên Việt Nam.
+              Trường học trực tuyến về lập trình và thiết kế, cam kết mang lại kiến thức thực tế cho học viên Việt Nam.
             </p>
             <div className="flex gap-3">
               {/* Số điện thoại đã gỡ vì số cũ là số giả. Chỉ thêm lại khi có số thật. */}

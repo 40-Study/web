@@ -222,7 +222,9 @@ export function useCategories() {
       return raw.map((c): Category => ({
         id: c.id,
         name: c.name,
-        slug: c.name.toLowerCase().replace(/\s+/g, "-"),
+        // Phải dùng slug của backend: khoá học mang category.slug dạng không dấu
+        // ("lap-trinh-web"); tự sinh từ tên cho ra "lập-trình-web" nên chip lọc không khớp khoá nào.
+        slug: c.slug ?? c.name.toLowerCase().replace(/\s+/g, "-"),
         icon: c.icon_url ?? undefined,
       }));
     },

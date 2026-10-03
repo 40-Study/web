@@ -5,7 +5,7 @@ import { ScrollReveal } from "@/components/landing/scroll-reveal";
 // `target` là số đếm tới; "24/7" không phải số lượng nên giữ nguyên chữ.
 const STATS: { label: string; target?: number; suffix?: string; text?: string }[] = [
   { target: 10000, suffix: "+", label: "Học viên đang học" },
-  { text: "24/7", label: "Trợ giảng AI luôn sẵn sàng" },
+  { text: "24/7", label: "Học bất cứ lúc nào, trên mọi thiết bị" },
   { target: 98, suffix: "%", label: "Đánh giá 5 sao" },
   { target: 2, label: "Nền tảng: web và di động" },
 ];

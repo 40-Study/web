@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  Download,
   Users,
   TrendingUp,
   MessageSquare,
@@ -77,10 +76,8 @@ export default function TeacherAnalyticsPage() {
             Nhập Session ID để xem phân tích chi tiết cho một buổi học trực tiếp.
           </p>
         </div>
-        <Button variant="outline">
-          <Download className="w-4 h-4 mr-2" />
-          Tải báo cáo PDF
-        </Button>
+        {/* B-07: đã gỡ nút "Tải báo cáo PDF" — backend không có API/thư viện sinh PDF (xem certificate.service.ts),
+            nút không làm gì là nút chết. Thêm lại khi có báo cáo thật. */}
       </div>
 
       {/* Session ID input */}

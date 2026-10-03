@@ -23,9 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
+import { buildCsv, downloadCsv, type CsvCell } from "@/lib/csv-export";
 import { useTeacherWallet, useTeacherTransactions } from "@/hooks/queries/use-wallet";
-import type { TeacherTransaction } from "@/services/wallet.service";
+import { walletService, type TeacherTransaction } from "@/services/wallet.service";
 import { BankInfoDialog } from "./bank-info-dialog";
 import { WithdrawalSection } from "./withdrawal-section";
 
@@ -45,6 +47,9 @@ function getStatusConfig(status: string): { label: string; variant: BadgeVariant
   return STATUS_CONFIG[status] ?? { label: status, variant: "secondary" as BadgeVariant };
 }
 
+/** Backend chấp nhận limit 1..100; ngoài khoảng đó nó âm thầm đổi về 20. */
+const EXPORT_PAGE_SIZE = 100;
+
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("vi-VN");
 }
@@ -54,6 +59,7 @@ export default function TeacherWalletPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [showBankDialog, setShowBankDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const limit = 20;
 
   // Map tab to API type param
@@ -84,6 +90,47 @@ export default function TeacherWalletPage() {
   // Bank info display
   const hasBankInfo = wallet?.bank_name && wallet?.bank_account_number;
 
+  // B-07: nút xuất trước đây không làm gì. Xuất TOÀN BỘ giao dịch của tab đang chọn (không chỉ
+  // trang đang xem) bằng cách đi hết các trang; backend giới hạn limit tối đa 100/trang.
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const all: TeacherTransaction[] = [];
+      let nextPage = 1;
+      let pages = 1;
+      do {
+        const res = await walletService.getTeacherTransactions({
+          type: txTypeParam || undefined,
+          page: nextPage,
+          limit: EXPORT_PAGE_SIZE,
+        });
+        all.push(...res.transactions);
+        pages = res.total_pages;
+        nextPage += 1;
+      } while (nextPage <= pages);
+
+      const rows: CsvCell[][] = [
+        ["Mã GD", "Ngày", "Khóa học", "Người mua", "Loại", "Số tiền", "Trạng thái"],
+        ...all.map((tx) => [
+          tx.order_number,
+          formatDate(tx.created_at),
+          tx.course_name,
+          tx.buyer_name,
+          tx.type === "expense" ? "Hoàn tiền" : "Thu nhập",
+          // Hoàn tiền ghi số âm để cộng cột ra đúng số thực nhận.
+          tx.type === "expense" ? -Number(tx.amount) : Number(tx.amount),
+          getStatusConfig(tx.status).label,
+        ]),
+      ];
+      downloadCsv("giao-dich-giang-vien.csv", buildCsv(rows));
+      toast.success(`Đã xuất ${all.length} giao dịch`);
+    } catch {
+      toast.error("Không xuất được danh sách giao dịch. Vui lòng thử lại.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -94,9 +141,13 @@ export default function TeacherWalletPage() {
             Quản lý thu nhập và các giao dịch thanh toán của bạn.
           </p>
         </div>
-        <Button variant="outline">
-          <Download className="w-4 h-4 mr-2" />
-          Xuất biên lai Excel
+        <Button variant="outline" onClick={handleExport} disabled={isExporting}>
+          {isExporting ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4 mr-2" />
+          )}
+          Xuất CSV
         </Button>
       </div>
 

@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { fetchCurriculum } from "@/lib/server-fetchers/curriculum";
+import { pickResumeLessonId } from "@/lib/resume-lesson";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -29,8 +30,9 @@ export default async function CourseLearnRedirectPage({ params, searchParams }: 
   const curriculum = await fetchCurriculum(slug);
   if (!curriculum) notFound();
 
-  const firstLessonId = curriculum.sections[0]?.lessons[0]?.id;
-  if (!firstLessonId) notFound();
+  // Mở bài chưa học đầu tiên (A-11), không phải luôn là bài 1 — nút "Tiếp tục học" dựa vào đây.
+  const resumeLessonId = pickResumeLessonId(curriculum.sections);
+  if (!resumeLessonId) notFound();
 
-  redirect(`/learn/${slug}/${firstLessonId}`);
+  redirect(`/learn/${slug}/${resumeLessonId}`);
 }

@@ -190,11 +190,8 @@ export default function MyCoursesPage() {
                       Đang học gần đây
                     </h2>
                   </div>
-                  <CurrentCourseHero
-                    course={currentCourse}
-                    currentChapter="Đang học"
-                    nextLessonTitle="Tiếp tục bài học"
-                  />
+                  {/* Không truyền nextLessonTitle: trước đây là nhãn giả "Tiếp tục bài học" đóng vai tên bài. */}
+                  <CurrentCourseHero course={currentCourse} currentChapter="Đang học" />
                 </section>
               )}
 
