@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, Bot, Route, Smartphone } from "lucide-react";
+import { BarChart3, Route, Smartphone, Video } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { cn } from "@/lib/utils";
@@ -14,21 +14,21 @@ interface Feature {
 
 const FEATURES: Feature[] = [
   {
-    icon: Bot,
-    title: "Trợ giảng ảo AI 24/7",
-    description: "Giải đáp thắc mắc, sửa lỗi code và gợi ý hướng đi ngay khi bạn cần.",
+    icon: Video,
+    title: "Bài giảng video và buổi học trực tiếp",
+    description: "Học theo nhịp riêng với video bài giảng, hoặc vào buổi live để hỏi đáp cùng giảng viên.",
     span: "md:col-span-4",
   },
   {
     icon: Route,
-    title: "Lộ trình thích ứng",
-    description: "Nội dung tự điều chỉnh theo kết quả của từng bài kiểm tra.",
+    title: "Lộ trình khóa học rõ ràng",
+    description: "Mỗi khóa chia thành chương, bài học và bài tập theo thứ tự để bạn biết mình đang ở đâu.",
     span: "md:col-span-2",
   },
   {
     icon: BarChart3,
-    title: "Tối ưu nhịp độ học",
-    description: "Phân tích dữ liệu học tập để gợi ý phù hợp với khả năng của bạn.",
+    title: "Theo dõi tiến độ",
+    description: "Xem phần trăm hoàn thành, điểm số và thành tích của từng khóa học.",
     span: "md:col-span-3",
   },
   {

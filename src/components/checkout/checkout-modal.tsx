@@ -6,27 +6,15 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { CreditCard, Loader2, Wallet, ShoppingCart } from "lucide-react";
+import { Building2, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { cn, formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { VoucherInput } from "./voucher-input";
 import type { CourseDetail } from "@/types/course";
 import type { VoucherValidateResponse } from "@/types/voucher";
 
-type PaymentMethod = "card" | "momo" | "banking";
-
-interface PaymentOption {
-  id: PaymentMethod;
-  label: string;
-  icon: React.ReactNode;
-}
-
-const PAYMENT_OPTIONS: PaymentOption[] = [
-  { id: "card", label: "Thẻ tín dụng / Ghi nợ", icon: <CreditCard className="h-4 w-4" /> },
-  { id: "momo", label: "Ví MoMo", icon: <Wallet className="h-4 w-4" /> },
-  { id: "banking", label: "Chuyển khoản ngân hàng", icon: <ShoppingCart className="h-4 w-4" /> },
-];
+type PaymentMethod = "banking";
 
 interface CheckoutModalProps {
   open: boolean;
@@ -45,7 +33,7 @@ export function CheckoutModal({
   onConfirm,
   isConfirming = false,
 }: CheckoutModalProps) {
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+  const paymentMethod: PaymentMethod = "banking";
   const [voucherResult, setVoucherResult] = useState<VoucherValidateResponse | null>(null);
 
   const originalPrice = course.originalPrice ?? course.price;
@@ -119,34 +107,24 @@ export function CheckoutModal({
           <p className="text-sm font-medium text-gray-700 mb-2">Mã giảm giá</p>
           <VoucherInput
             courseIds={[String(course.id)]}
+            // A-05: thiếu subtotal thì mặc định 0 -> voucher có đơn tối thiểu luôn bị từ chối, % tính 0đ.
+            subtotal={course.price}
             onApplied={setVoucherResult}
           />
         </div>
 
-        {/* Payment method */}
+        {/* Payment method — backend chỉ có chuyển khoản (A-18: trước đây hiện cả Thẻ/MoMo nhưng
+            mọi đơn đều tạo bank_transfer). Khớp với trang /checkout. */}
         <div>
           <p className="text-sm font-medium text-gray-700 mb-2">Phương thức thanh toán</p>
-          <div className="space-y-2">
-            {PAYMENT_OPTIONS.map((option) => (
-              <button
-                key={option.id}
-                onClick={() => setPaymentMethod(option.id)}
-                className={cn(
-                  "w-full flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors",
-                  paymentMethod === option.id
-                    ? "border-primary-500 bg-primary-50 text-primary-700"
-                    : "border-gray-200 hover:border-gray-300 text-gray-700"
-                )}
-              >
-                <span className={cn(paymentMethod === option.id ? "text-primary-600" : "text-gray-400")}>
-                  {option.icon}
-                </span>
-                {option.label}
-                {paymentMethod === option.id && (
-                  <span className="ml-auto h-2 w-2 rounded-full bg-primary-500" />
-                )}
-              </button>
-            ))}
+          <div className="w-full flex items-center gap-3 rounded-lg border border-primary-500 bg-primary-50 px-3 py-2.5 text-sm text-primary-700">
+            <Building2 className="h-4 w-4 text-primary-600" />
+            <div className="min-w-0">
+              <p className="font-medium">Chuyển khoản ngân hàng</p>
+              <p className="text-xs text-primary-700/80">
+                Sau khi đặt hàng, bạn nhận thông tin chuyển khoản và mã đơn hàng.
+              </p>
+            </div>
           </div>
         </div>
 

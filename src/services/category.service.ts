@@ -10,6 +10,8 @@ import { api } from "@/lib/api-client";
 export interface Category {
   id: string;
   name: string;
+  /** Slug không dấu do backend sinh; khớp với `category.slug` trong dữ liệu khoá học. */
+  slug?: string;
   parent_id?: string | null;
   description?: string;
   icon_url?: string | null;

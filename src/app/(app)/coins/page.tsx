@@ -24,7 +24,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useFriends } from "@/hooks/queries/use-friends";
+import { friendDisplayName } from "@/services/friend.service";
 import {
   useCoinWallet,
   useCoinTransactions,
@@ -147,6 +156,9 @@ function SendGiftDialog() {
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
   const sendGift = useSendCoinGift();
+  // Chỉ tải bạn bè khi mở hộp thoại; backend giới hạn limit 100 nên đủ cho danh sách chọn.
+  const { data: friendsData, isLoading: friendsLoading } = useFriends({ limit: 100 }, open);
+  const friends = friendsData?.friends ?? [];
 
   const handleSend = () => {
     if (!receiverId || !amount) return;
@@ -168,9 +180,29 @@ function SendGiftDialog() {
           <DialogTitle>Tặng xu cho bạn bè</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          {/* A-19: trước đây bắt nhập UUID thô, sai thì chỉ báo "Không thể tặng xu". Chọn từ danh sách bạn bè. */}
           <div className="space-y-2">
-            <Label>ID người nhận</Label>
-            <Input value={receiverId} onChange={(e) => setReceiverId(e.target.value)} placeholder="Nhập ID người nhận" />
+            <Label>Người nhận</Label>
+            {friendsLoading ? (
+              <p className="text-sm text-muted-foreground">Đang tải danh sách bạn bè...</p>
+            ) : friends.length === 0 ? (
+              <p className="text-sm text-muted-foreground" data-testid="gift-no-friends">
+                Bạn chưa có bạn bè nào để tặng xu. Hãy kết bạn trước.
+              </p>
+            ) : (
+              <Select value={receiverId} onValueChange={setReceiverId}>
+                <SelectTrigger aria-label="Người nhận">
+                  <SelectValue placeholder="Chọn một người bạn" />
+                </SelectTrigger>
+                <SelectContent>
+                  {friends.map((f) => (
+                    <SelectItem key={f.user.user_id} value={f.user.user_id}>
+                      {friendDisplayName(f.user)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div className="space-y-2">
             <Label>Số xu</Label>

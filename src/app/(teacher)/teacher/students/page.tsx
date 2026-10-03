@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/table";
 import TeacherNotificationDialog from "@/components/teacher/teacher-notification-dialog";
 import { useMyStudents } from "@/hooks/queries/use-classes";
+import { buildCsv, downloadCsv } from "@/lib/csv-export";
 import { courseFilterOptions, groupStudents, type GroupedStudent } from "./group-students";
 
 const STATUS_LABEL: Record<GroupedStudent["status"], string> = {
@@ -90,18 +91,7 @@ export default function TeacherStudentsPage() {
         STATUS_LABEL[s.status],
       ]),
     ];
-
-    // Nháy kép trong dữ liệu phải nhân đôi, nếu không 1 tên có dấu " làm lệch cả dòng CSV.
-    const csv = rowsCsv
-      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "teacher-students.csv";
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadCsv("teacher-students.csv", buildCsv(rowsCsv));
   };
 
   const handleNotifySelected = () => {
@@ -117,7 +107,7 @@ export default function TeacherStudentsPage() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={handleExportStudents} disabled={isLoading}>
             <Download className="mr-2 h-4 w-4" />
-            Xuất Excel
+            Xuất CSV
           </Button>
           <Button disabled={selectedIds.length === 0} onClick={handleNotifySelected}>
             <Bell className="mr-2 h-4 w-4" />

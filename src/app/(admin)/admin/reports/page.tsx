@@ -12,6 +12,7 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
+import { successRateHint } from "@/lib/revenue-report";
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
@@ -111,7 +112,7 @@ export default function AdminReportsPage() {
               <MetricCard
                 label="Tỷ lệ thành công"
                 value={`${report.success_rate.toFixed(1)}%`}
-                hint={`${report.completed_count} hoàn tất / ${report.transaction_count} đơn trong kỳ`}
+                hint={successRateHint(report)}
               />
             </section>
 

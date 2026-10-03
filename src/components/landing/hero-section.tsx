@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { ArrowRight, Bot, Route, Smartphone } from "lucide-react";
+import { ArrowRight, Route, Smartphone, Video } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { HeroEffects } from "@/components/landing/hero-effects";
 import { cn } from "@/lib/utils";
 
 const HIGHLIGHTS = [
-  { icon: Bot, label: "Trợ giảng AI 24/7" },
-  { icon: Route, label: "Lộ trình cá nhân hóa" },
+  { icon: Video, label: "Video bài giảng và buổi học trực tiếp" },
+  { icon: Route, label: "Lộ trình khóa học rõ ràng" },
   { icon: Smartphone, label: "Học trên web và di động" },
 ];
 
@@ -33,7 +33,7 @@ export function HeroSection() {
           variant="default"
           className="mb-6 border border-primary-100 text-sm dark:border-primary-900"
         >
-          Nền tảng học tập thích ứng
+          Trường học trực tuyến
         </Badge>
 
         <h1 className="text-display max-w-4xl text-balance text-slate-900 dark:text-slate-50">
@@ -44,8 +44,8 @@ export function HeroSection() {
         </h1>
 
         <p className="text-body-lg mt-6 max-w-2xl text-slate-600 dark:text-slate-300">
-          Hệ thống giáo dục cá nhân hóa với trợ lý ảo AI, giúp bạn làm chủ lập trình và thiết
-          kế thông qua các dự án thực tế.
+          Học lập trình và thiết kế qua bài giảng video, bài tập và buổi học trực tiếp cùng
+          giảng viên, bám sát các dự án thực tế.
         </p>
 
         {/* CTA hero là pill (quyết định của người dùng); các nút khác giữ 10px. */}

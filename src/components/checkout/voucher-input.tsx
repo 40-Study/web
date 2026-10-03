@@ -7,7 +7,7 @@
  * rồi báo kết quả cho parent qua onApplied callback.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Tag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,9 @@ interface VoucherInputProps {
   /**
    * Tổng tiền trước giảm giá (VND) — bắt buộc để tính đúng voucher PERCENT
    * và kiểm tra min_purchase_money. Nếu không truyền, mặc định 0 (voucher
-   * PERCENT/có mức tối thiểu sẽ báo không áp dụng được).
+   * PERCENT/có mức tối thiểu sẽ báo không áp dụng được). Khi giá trị này đổi
+   * lúc voucher đang áp (vd tick/bỏ tick khoá trong giỏ), mức giảm được tính
+   * lại; nếu đơn không còn đủ điều kiện thì voucher bị gỡ kèm lý do.
    */
   subtotal?: number;
   /**
@@ -45,8 +47,17 @@ export function VoucherInput({
   const [code, setCode] = useState(initialCode ? initialCode.toUpperCase() : "");
   const [applied, setApplied] = useState<VoucherValidateResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Giữ voucher gốc để tính lại mức giảm khi `subtotal` đổi mà không phải gọi API lần nữa.
+  const appliedVoucherRef = useRef<ServiceVoucher | null>(null);
 
   const lookupMutation = useVoucherLookup();
+
+  function clearApplied(message: string | null) {
+    appliedVoucherRef.current = null;
+    setApplied(null);
+    setErrorMessage(message);
+    onApplied(null);
+  }
 
   function handleApply() {
     const trimmed = code.trim();
@@ -57,9 +68,7 @@ export function VoucherInput({
       onSuccess(voucher: ServiceVoucher) {
         const calc = calculateVoucherDiscount(voucher, subtotal);
         if (!calc.ok) {
-          setErrorMessage(calc.errorMessage ?? "Mã voucher không hợp lệ");
-          setApplied(null);
-          onApplied(null);
+          clearApplied(calc.errorMessage ?? "Mã voucher không hợp lệ");
           return;
         }
         const result: VoucherValidateResponse = {
@@ -67,22 +76,19 @@ export function VoucherInput({
           voucher: { id: voucher.id, code: voucher.code },
           discount_amount: calc.discountAmount,
         };
+        appliedVoucherRef.current = voucher;
         setApplied(result);
         onApplied(result);
       },
       onError() {
-        setErrorMessage("Không tìm thấy voucher hoặc mã không hợp lệ");
-        setApplied(null);
-        onApplied(null);
+        clearApplied("Không tìm thấy voucher hoặc mã không hợp lệ");
       },
     });
   }
 
   function handleRemove() {
     setCode("");
-    setApplied(null);
-    setErrorMessage(null);
-    onApplied(null);
+    clearApplied(null);
   }
 
   // M-01: chỉ tự áp dụng 1 lần lúc mount (không phụ thuộc `subtotal` đổi theo
@@ -91,6 +97,25 @@ export function VoucherInput({
     if (initialCode) handleApply();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // A-04 (QA hồi quy 03/10): trước đây giỏ hàng xoá kết quả voucher của parent mỗi lần tick khoá
+  // nhưng chip ở đây vẫn hiện "đang áp dụng" -> người dùng tưởng được giảm trong khi tổng không giảm.
+  // Giờ chính component này tính lại theo `subtotal` mới, nên chip và tổng tiền luôn khớp nhau.
+  useEffect(() => {
+    const voucher = appliedVoucherRef.current;
+    if (!voucher) return;
+    const calc = calculateVoucherDiscount(voucher, subtotal);
+    if (!calc.ok) {
+      clearApplied(calc.errorMessage ?? "Mã voucher không còn áp dụng được cho đơn này");
+      return;
+    }
+    if (applied && applied.discount_amount !== calc.discountAmount) {
+      const next = { ...applied, discount_amount: calc.discountAmount };
+      setApplied(next);
+      onApplied(next);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtotal]);
 
   if (applied?.valid) {
     return (

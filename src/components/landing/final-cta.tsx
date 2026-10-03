@@ -12,7 +12,7 @@ export function FinalCta() {
         <div className="rounded-3xl bg-gradient-to-br from-primary-600 to-primary-700 px-6 py-12 text-center text-white md:px-12 md:py-16">
           <h2 className="text-h1 mx-auto max-w-2xl">Sẵn sàng bắt đầu hành trình học tập?</h2>
           <p className="text-body-lg mx-auto mt-4 max-w-xl text-primary-50">
-            Chọn khóa học phù hợp và để lộ trình cá nhân hóa dẫn đường cho bạn.
+            Chọn khóa học phù hợp với mục tiêu của bạn và học cùng giảng viên ngay hôm nay.
           </p>
           <div className="mt-8 flex justify-center">
             <Link

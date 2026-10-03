@@ -36,6 +36,10 @@ export interface LessonWithContent {
   quiz_id?: string;
   exercise_id?: string;
   video_url?: string;
+  /** Server quyết định (contract §2); có mặt khi đã đăng nhập và ghi danh. */
+  locked?: boolean;
+  /** Tóm tắt tiến độ học của người đang xem (contract §1). */
+  progress?: { status?: string } | null;
 }
 
 export interface SectionWithLessons {

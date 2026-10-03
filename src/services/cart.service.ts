@@ -37,21 +37,21 @@ type R<T> = { message: string; data: T };
 // ─── Service ────────────────────────────────────────────────────────────────
 
 export const cartService = {
-  /** GET /cart/ */
+  /** GET /cart */
   getCart: () =>
-    api.get<R<Cart>>("/cart/").then((r) => r.data.data),
+    api.get<R<Cart>>("/cart").then((r) => r.data.data),
 
-  /** POST /cart/ { course_id } */
+  /** POST /cart { course_id } */
   addToCart: (courseId: string) =>
-    api.post<R<CartItem>>("/cart/", { course_id: courseId }).then((r) => r.data.data),
+    api.post<R<CartItem>>("/cart", { course_id: courseId }).then((r) => r.data.data),
 
   /** GET /cart/check/:courseId */
   isInCart: (courseId: string) =>
     api.get<R<{ in_cart: boolean }>>(`/cart/check/${courseId}`).then((r) => r.data.data.in_cart),
 
-  /** DELETE /cart/ { course_ids } — remove specific courses */
+  /** DELETE /cart { course_ids } — remove specific courses */
   removeFromCart: (courseIds: string[]) =>
-    api.delete<R<null>>("/cart/", { data: { course_ids: courseIds } }).then((r) => r.data),
+    api.delete<R<null>>("/cart", { data: { course_ids: courseIds } }).then((r) => r.data),
 
   /** DELETE /cart/clear — remove all items */
   clearCart: () =>

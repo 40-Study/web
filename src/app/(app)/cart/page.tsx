@@ -49,8 +49,9 @@ export default function CartPage() {
 
   const allSelected = items.length > 0 && selectedIds.length === items.length;
 
+  // Đổi lựa chọn KHÔNG xoá voucher ở đây: VoucherInput tự tính lại mức giảm theo `subtotal` mới
+  // (hoặc gỡ voucher kèm lý do), nên chip voucher và dòng "Giảm giá" luôn khớp nhau (A-04).
   const toggleSelectAll = () => {
-    setVoucherResult(null);
     if (allSelected) {
       setSelectedIds([]);
     } else {
@@ -59,7 +60,6 @@ export default function CartPage() {
   };
 
   const toggleSelect = (courseId: string) => {
-    setVoucherResult(null);
     setSelectedIds((prev) =>
       prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]
     );
@@ -255,10 +255,12 @@ export default function CartPage() {
                     <span className="text-neutral-600">Tạm tính</span>
                     <span className="font-medium">{formatPrice(effectiveSubtotal)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-neutral-600">Giảm giá</span>
-                    <span className="font-medium text-green-600">-{formatPrice(discount)}</span>
-                  </div>
+                  {discount > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-neutral-600">Giảm giá</span>
+                      <span className="font-medium text-green-600">-{formatPrice(discount)}</span>
+                    </div>
+                  )}
                   <div className="pt-3 flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
                     <span className="font-medium text-black">Tổng cộng</span>
                     <span className="text-xl font-medium text-black">{formatPrice(finalTotal)}</span>
@@ -279,6 +281,12 @@ export default function CartPage() {
                     Thanh toán {selectedIds.length > 0 && `(${selectedIds.length})`}
                   </Button>
                 </Link>
+
+                {selectedIds.length === 0 && items.length > 0 && (
+                  <p className="text-xs text-center text-amber-600 mt-2" data-testid="cart-select-hint">
+                    Chọn ít nhất một khóa học để thanh toán.
+                  </p>
+                )}
 
                 <p className="text-xs text-center text-neutral-500 mt-3">
                   Bằng việc thanh toán, bạn đồng ý với{" "}
