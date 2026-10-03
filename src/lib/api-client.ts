@@ -136,6 +136,8 @@ type ErrorResponseBody = {
    * trong `message`, không có field này). */
   error?: string;
   details?: Record<string, string[]>;
+  /** Lỗi validate từng field của backend (utils.ValidateStruct): 400 `{message:"Validation failed", errors:[{field,tag,message}]}`. */
+  errors?: unknown;
 };
 
 /**
@@ -146,7 +148,21 @@ type ErrorResponseBody = {
  * OTP, 4 attempts remaining") — phát hiện khi kiểm chứng lỗi OTP sai (260927).
  */
 function extractErrorMessage(data: ErrorResponseBody | undefined, fallback: string): string {
-  return data?.error || data?.message || fallback;
+  return data?.error || firstFieldErrorMessage(data) || data?.message || fallback;
+}
+
+/**
+ * Câu lỗi của field đầu tiên trong `errors[]` (400 validate). `message` của body chỉ là nhãn chung
+ * "Validation failed" nên người dùng không biết sai chỗ nào (QA hồi quy A-09: sửa hồ sơ chỉ báo "Cập nhật thất
+ * bại"). Tầng hiển thị (getErrorMessage) vẫn dịch/chặn câu tiếng Anh lạ về câu chung theo status.
+ */
+function firstFieldErrorMessage(data: ErrorResponseBody | undefined): string | undefined {
+  if (!Array.isArray(data?.errors)) return undefined;
+  for (const item of data.errors) {
+    const msg = (item as { message?: unknown } | null)?.message;
+    if (typeof msg === "string" && msg.trim()) return msg;
+  }
+  return undefined;
 }
 
 // Review PR #25 (item 3 — MAJOR): `error`/`message` từ backend CHỈ an toàn

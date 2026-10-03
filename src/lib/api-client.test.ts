@@ -202,6 +202,34 @@ describe("extractErrorMessage — chỉ lộ chi tiết backend khi 4xx", () => 
     ).rejects.toMatchObject({ message: "coupon_code đã hết hạn" });
   });
 
+  it("400 validate từng field: hiện câu lỗi của field đầu tiên thay vì nhãn chung 'Validation failed' (QA hồi quy A-09)", async () => {
+    await expect(
+      api.put("/auth/me", { username: "a@b" }, {
+        adapter: async (config) =>
+          Promise.reject(
+            errorResponse(config, 400, {
+              message: "Validation failed",
+              errors: [
+                { field: "username", tag: "user_name", message: "Tên đăng nhập chỉ gồm chữ, số và dấu gạch dưới (_)" },
+                { field: "full_name", tag: "min", message: "full_name must be at least 2 characters" },
+              ],
+            })
+          ),
+      })
+    ).rejects.toMatchObject({ message: "Tên đăng nhập chỉ gồm chữ, số và dấu gạch dưới (_)" });
+  });
+
+  it("400 có errors[] rỗng/không đúng dạng -> rơi về message như cũ", async () => {
+    for (const errors of [[], {}, "x", [null, { message: 5 }]]) {
+      await expect(
+        api.put("/auth/me", {}, {
+          adapter: async (config) =>
+            Promise.reject(errorResponse(config, 400, { message: "Validation failed", errors })),
+        })
+      ).rejects.toMatchObject({ message: "Validation failed" });
+    }
+  });
+
   it("404 (đã case riêng, vẫn 4xx) -> hiện đúng chi tiết backend trả về", async () => {
     await expect(
       api.get("/orders/does-not-exist", {

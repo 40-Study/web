@@ -28,6 +28,8 @@ export interface Conversation {
 export interface Participant {
   user_id: string;
   user_name: string;
+  /** Họ tên hiển thị; vắng mặt khi chưa có (khi đó dùng `user_name`). */
+  full_name?: string;
   email: string;
   avatar_url?: string;
   is_online: boolean;

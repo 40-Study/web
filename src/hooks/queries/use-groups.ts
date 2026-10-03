@@ -112,6 +112,9 @@ export function useDeleteGroup() {
     mutationFn: (id: string) => groupService.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: groupKeys.all });
+      // Backend đóng hội thoại của nhóm khi xoá nhóm (QA hồi quy A-03): làm mới danh sách tin nhắn để hội thoại
+      // đó không còn hiện trong /messages.
+      qc.invalidateQueries({ queryKey: conversationKeys.all });
       toast.success("Đã xoá nhóm");
     },
     onError: (err) => toast.error(getErrorMessage(err, "Không thể xoá nhóm")),

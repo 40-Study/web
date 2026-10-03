@@ -85,7 +85,14 @@ function GroupCard({ group, showJoin = false }: { group: Group; showJoin?: boole
           <p className="text-sm text-muted-foreground line-clamp-2">{group.description}</p>
         )}
 
-        {showJoin && !group.my_role && (
+        {/* Đã có yêu cầu chờ duyệt (backend kèm my_join_request cho người đã đăng nhập, QA hồi quy A-24): hiện
+            trạng thái thay vì nút "Xin tham gia" để không gửi trùng (backend trả 400 GROUP_JOIN_REQUEST_EXISTS). */}
+        {showJoin && !group.my_role && group.my_join_request && (
+          <Button size="sm" variant="outline" className="w-full" disabled>
+            Đã gửi yêu cầu
+          </Button>
+        )}
+        {showJoin && !group.my_role && !group.my_join_request && (
           <Button
             size="sm"
             variant="outline"

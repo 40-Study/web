@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/stores/auth.store";
 import { useMe, useUpdateProfile } from "@/hooks/queries/use-auth";
+import { USER_NAME_RULE_MESSAGE, validateUserName } from "@/lib/user-name";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -21,11 +22,8 @@ const profileSchema = z.object({
     .string()
     .min(2, "Tên tối thiểu 2 ký tự")
     .max(100, "Tên tối đa 100 ký tự"),
-  username: z
-    .string()
-    .min(3, "Username tối thiểu 3 ký tự")
-    .max(30, "Username tối đa 30 ký tự")
-    .regex(/^[a-zA-Z0-9_]+$/, "Username chỉ chứa chữ, số và dấu gạch dưới"),
+  // Cùng luật với backend và với trang đăng ký (lib/user-name.ts): cho '_', không cho '@'/email.
+  username: z.string().refine((v) => validateUserName(v) === null, USER_NAME_RULE_MESSAGE),
   bio: z.string().max(160, "Tiểu sử tối đa 160 ký tự").optional(),
   phone: z.string().optional(),
 });

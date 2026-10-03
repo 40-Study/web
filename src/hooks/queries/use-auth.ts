@@ -123,8 +123,10 @@ export function useUpdateProfile() {
       qc.invalidateQueries({ queryKey: authKeys.profile() });
       toast.success("Cập nhật thành công");
     },
-    onError: () => {
-      toast.error("Cập nhật thất bại");
+    // Hiện lý do thật của backend (vd. user_name sai định dạng) thay vì câu chung "Cập nhật thất bại"
+    // (QA hồi quy A-09); lỗi không có lý do dùng được vẫn rơi về câu chung.
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Cập nhật thất bại"));
     },
   });
 }

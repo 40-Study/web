@@ -26,6 +26,11 @@ import { QueryState } from "@/components/common/query-state";
 import { AuthError } from "@/lib/errors";
 import type { Conversation } from "@/services/conversation.service";
 import { ConversationChat } from "@/components/chat/conversation-chat";
+import {
+  conversationDisplayName,
+  conversationMatchesQuery,
+  conversationSubtitle,
+} from "@/lib/conversation-display";
 import { NewConversationDialog } from "./new-conversation-dialog";
 
 /** Query `?conversation=<id>` — nút "Nhắn giảng viên" ở trang chi tiết con mở thẳng hội thoại vừa tạo. */
@@ -45,8 +50,7 @@ function ConversationItem({
   const otherParticipant = conversation.participants?.find(
     (p) => p.user_id !== currentUserId
   );
-  const displayName =
-    conversation.name ?? otherParticipant?.user_name ?? "Cuộc trò chuyện";
+  const displayName = conversationDisplayName(conversation, currentUserId);
   const isOnline = otherParticipant?.is_online ?? false;
 
   return (
@@ -132,6 +136,8 @@ export default function MessagesPage() {
   const awaitingConvAuth = convError && conversations.length === 0 && convErr instanceof AuthError;
 
   const selectedConv = conversations.find((c) => c.id === selectedConvId);
+  const headerName = conversationDisplayName(selectedConv, currentUserId);
+  const headerSubtitle = conversationSubtitle(selectedConv);
 
   // Quay lại danh sách (điện thoại). Bỏ luôn `?conversation=` khỏi URL: nếu để lại, tải lại trang hay
   // đóng/mở tab sẽ đọc lại tham số ở effect trên và đẩy người dùng vào đúng khung chat vừa rời.
@@ -240,14 +246,7 @@ export default function MessagesPage() {
                   </div>
                 )}
                 {conversations
-                  .filter(
-                    (c) =>
-                      !searchQuery ||
-                      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      c.participants?.some((p) =>
-                        p.user_name.toLowerCase().includes(searchQuery.toLowerCase())
-                      )
-                  )
+                  .filter((c) => conversationMatchesQuery(c, searchQuery))
                   .map((conv) => (
                     <ConversationItem
                       key={conv.id}
@@ -289,19 +288,14 @@ export default function MessagesPage() {
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <Avatar
-                  fallback={(selectedConv?.name ?? "C")[0].toUpperCase()}
+                  fallback={headerName[0]?.toUpperCase() ?? "C"}
                   size="sm"
                 />
                 <div>
-                  <p className="font-medium text-sm">
-                    {selectedConv?.name ??
-                      selectedConv?.participants?.find((p) => p.user_id !== currentUserId)
-                        ?.user_name ??
-                      "Cuộc trò chuyện"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedConv?.participants?.length ?? 0} thành viên
-                  </p>
+                  <p className="font-medium text-sm">{headerName}</p>
+                  {headerSubtitle && (
+                    <p className="text-xs text-muted-foreground">{headerSubtitle}</p>
+                  )}
                 </div>
               </div>
 
