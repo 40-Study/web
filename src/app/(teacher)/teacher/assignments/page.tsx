@@ -1,6 +1,7 @@
 "use client";
 
 import { sanitizeHtml } from "@/lib/sanitize-html";
+import { sessionStatusLabel } from "@/lib/session-status";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -188,7 +189,7 @@ export default function TeacherAssignmentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Quản lí bài tập giáo viên</h1>
+        <h1 className="text-2xl font-bold">Quản lý bài tập</h1>
         <p className="text-sm text-muted-foreground">
           Chọn khóa học → chọn buổi học trực tiếp → giao bài tập lập trình trực tiếp, bài tập về nhà hoặc dự án.
         </p>
@@ -276,7 +277,7 @@ export default function TeacherAssignmentsPage() {
                     {session.title}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {session.status ?? "scheduled"}
+                    {sessionStatusLabel(session.status)}
                     {session.scheduled_at ? ` · ${new Date(session.scheduled_at).toLocaleString("vi-VN")}` : ""}
                   </p>
                 </button>

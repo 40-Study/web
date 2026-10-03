@@ -7,7 +7,15 @@ import { api } from "@/lib/api-client";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-export type GradeType = "assignment" | "quiz" | "midterm" | "final" | "attendance" | "participation" | "other";
+export type GradeType =
+  | "assignment"
+  | "quiz"
+  | "midterm"
+  | "final"
+  | "attendance"
+  | "participation"
+  | "project"
+  | "other";
 
 export interface GradeColumn {
   id: string;
@@ -37,12 +45,19 @@ export interface UpdateGradeColumnDTO {
   is_required?: boolean;
 }
 
+/** Đúng shape `GradeResponseDTO` của backend (điểm là số, không phải chuỗi). */
 export interface Grade {
   id: string;
   class_id: string;
   student_id: string;
+  /** Họ tên học viên; rỗng ở `/me/grades` (người xem chính là học viên). */
+  student_name?: string;
+  /** Tên lớp; chỉ có ở điểm của chính học viên (`/me/grades`), để nhóm theo lớp không phải gọi thêm. */
+  class_name?: string;
+  /** Có khi điểm được chấm cho một bài tập cụ thể. */
+  assignment_id?: string;
   grade_type: GradeType;
-  title?: string;
+  title: string;
   score: number;
   max_score: number;
   weight?: number;
@@ -52,22 +67,17 @@ export interface Grade {
   graded_by?: string;
   graded_by_name?: string;
   graded_at?: string;
-  student?: {
-    id: string;
-    name: string;
-    email?: string;
-  };
-  created_at?: string;
-  updated_at?: string;
 }
 
 export interface CreateGradeDTO {
   student_id: string;
   grade_type: GradeType;
-  title?: string;
+  title: string;
   score: number;
   max_score: number;
   weight?: number;
+  /** Gắn điểm vào bài tập để biết bài nào đã chấm. */
+  assignment_id?: string;
   feedback?: string;
 }
 
@@ -106,27 +116,22 @@ export interface UpdateFinalGradeDTO {
   notes?: string;
 }
 
+/**
+ * GET /classes/:id/grades. `students` chỉ liệt kê học viên ĐÃ có ít nhất một điểm (có thể là null khi
+ * lớp chưa có điểm nào), nên không dùng nó làm danh sách học viên của lớp.
+ */
 export interface GradeBookResponse {
-  columns: GradeColumn[];
-  grades: Grade[];
+  class_id: string;
+  columns: GradeColumn[] | null;
   students: Array<{
-    id: string;
-    name: string;
-    email?: string;
-    grades: Record<string, number>;
-    weighted_total?: number;
-  }>;
+    student_id: string;
+    student_name: string;
+    grades: Grade[];
+  }> | null;
 }
 
-export interface MyGradesResponse {
-  classes: Array<{
-    class_id: string;
-    class_name: string;
-    course_name?: string;
-    grades: Grade[];
-    final_grade?: FinalGrade;
-  }>;
-}
+/** GET /me/grades trả danh sách phẳng; muốn nhóm theo lớp thì nhóm theo `class_id`. */
+export type MyGradesResponse = Grade[];
 
 type R<T> = { message: string; data: T };
 

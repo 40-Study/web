@@ -14,6 +14,7 @@ import {
 export const assignmentKeys = {
   all: ["assignments"] as const,
   bySession: (sessionId: string) => [...assignmentKeys.all, "session", sessionId] as const,
+  byClass: (classId: string) => [...assignmentKeys.all, "class", classId] as const,
   detail: (id: string) => [...assignmentKeys.all, "detail", id] as const,
   sandbox: (id: string) => [...assignmentKeys.all, "sandbox", id] as const,
   testCases: (id: string) => [...assignmentKeys.all, "testcases", id] as const,
@@ -25,6 +26,15 @@ export function useAssignmentsBySession(sessionId: string) {
     queryKey: assignmentKeys.bySession(sessionId),
     queryFn: () => assignmentService.getBySession(sessionId),
     enabled: !!sessionId,
+  });
+}
+
+/** Danh sách bài tập của một lớp (quyền xem do backend quyết định: 404 khi không xem được lớp) */
+export function useAssignmentsByClass(classId: string) {
+  return useQuery({
+    queryKey: assignmentKeys.byClass(classId),
+    queryFn: () => assignmentService.getByClass(classId),
+    enabled: !!classId,
   });
 }
 

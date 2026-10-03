@@ -114,6 +114,16 @@ export const assignmentService = {
       .get<AssignmentListDTO>("/assignments", { params: { session_id: sessionId, page, page_size: pageSize } })
       .then((r) => r.data),
 
+  /**
+   * GET /classes/:classId/assignments — bài tập của một lớp, trả raw {data,total,page,page_size} như getBySession.
+   * Quản lý lớp (giảng viên, chủ khoá, admin, chủ/quản trị tổ chức của lớp) thấy cả bản nháp; học viên đang học
+   * chỉ thấy bản đã công bố; lớp không xem được là 404.
+   */
+  getByClass: (classId: string, page = 1, pageSize = 50) =>
+    api
+      .get<AssignmentListDTO>(`/classes/${classId}/assignments`, { params: { page, page_size: pageSize } })
+      .then((r) => r.data),
+
   /** POST /assignments — create */
   create: (dto: CreateAssignmentDTO) =>
     api.post<R<AssignmentResponseDTO>>("/assignments", dto).then((r) => r.data.data),

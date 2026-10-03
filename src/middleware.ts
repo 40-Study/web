@@ -76,6 +76,7 @@ const PROTECTED_ROUTE_PREFIXES = [
   "/my-assignments",
   "/my-attendance",
   "/my-courses",
+  "/my-grades",
   "/my-vouchers",
   "/notifications",
   // "Đơn hàng của tôi" (lane B vòng 2, B3).

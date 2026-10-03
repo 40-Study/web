@@ -38,6 +38,7 @@ export const DISALLOWED_PATH_PREFIXES = [
   "/my-courses",
   "/my-assignments",
   "/my-attendance",
+  "/my-grades",
   "/my-vouchers",
   "/certificates/verify/", // trang kết quả theo mã — dữ liệu cá nhân
   "/login",

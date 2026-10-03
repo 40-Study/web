@@ -866,6 +866,13 @@ export default function CourseDetailPage() {
         }
       }
 
+      // B-04: video/bài tập/trắc nghiệm đều gọi service trực tiếp (không qua hook có invalidate),
+      // nên danh sách nội dung của bài vẫn giữ cache cũ "Chưa có nội dung" tới khi tải lại trang.
+      // Làm mới ở một chỗ chung cho mọi nhánh thay vì rải invalidate vào từng nhánh.
+      if (currentLessonId) {
+        await queryClient.invalidateQueries({ queryKey: lessonContentKeys.contents(currentLessonId) });
+      }
+
       setAddContentModal(false);
       setCurrentLessonId(null);
     } catch (err) {
@@ -1445,7 +1452,8 @@ function EditContentModal({
           : {}),
       });
       // Invalidate lesson contents query
-      queryClient.invalidateQueries({ queryKey: ["lesson-contents", lessonId] });
+      // B-04: key cũ ["lesson-contents", id] không khớp lessonContentKeys ("lesson-content") nên sửa xong danh sách không đổi.
+      queryClient.invalidateQueries({ queryKey: lessonContentKeys.contents(lessonId) });
       toast.success("Đã cập nhật nội dung");
       onSuccess();
     } catch {

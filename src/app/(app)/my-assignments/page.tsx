@@ -6,6 +6,8 @@
  */
 
 import { useState } from "react";
+import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   Code,
   Clock,
@@ -15,11 +17,20 @@ import {
   ChevronRight,
   Loader2,
   BookOpen,
+  GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { livestreamClassroomService, type Assignment } from "@/services/livestream-classroom.service";
 import { classifyAssignment, isPastDue, type AssignmentStatus } from "@/lib/assignment-status";
+import { useAuthStore } from "@/stores/auth.store";
+
+// A-02: nơi làm bài (code / tự luận / trắc nghiệm, chạy thử, nộp) đã có sẵn ở phòng livestream. Dùng lại đúng
+// màn đó thay vì viết bản thứ hai; tải động vì kéo theo trình soạn thảo nặng mà phần lớn lượt vào trang không dùng.
+const AssignmentWorkOverlay = dynamic(
+  () => import("@/app/(live)/rooms/[roomName]/tabs/AssignmentWorkOverlay"),
+  { ssr: false },
+);
 
 // ---- Display helpers ----
 
@@ -50,10 +61,12 @@ function AssignmentCard({
   item,
   status,
   pastDue,
+  onStart,
 }: {
   item: Assignment;
   status: AssignmentStatus;
   pastDue: boolean;
+  onStart: (item: Assignment) => void;
 }) {
   const active = status === "active";
 
@@ -115,7 +128,11 @@ function AssignmentCard({
 
         {/* Action button */}
         {active ? (
-          <button className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+          <button
+            type="button"
+            onClick={() => onStart(item)}
+            className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+          >
             Làm bài ngay
           </button>
         ) : (
@@ -176,6 +193,8 @@ function useAllAssignments() {
 export default function MyAssignmentsPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [working, setWorking] = useState<Assignment | null>(null);
+  const userId = useAuthStore((s) => s.user?.id);
 
   const { data: assignments = [], isLoading } = useAllAssignments();
   // Một mốc "bây giờ" cho cả lượt render để tab và thẻ không lệch nhau.
@@ -193,27 +212,38 @@ export default function MyAssignmentsPage() {
   const activeCount = classified.filter((c) => c.status === "active").length;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Bài tập của tôi</h1>
-        <p className="text-gray-500 mt-1">
-          {isLoading
-            ? "Đang tải..."
-            : `Bạn có ${activeCount} bài tập đang mở.`}
-        </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Bài tập của tôi</h1>
+          <p className="text-gray-500 mt-1">
+            {isLoading
+              ? "Đang tải..."
+              : `Bạn có ${activeCount} bài tập đang mở.`}
+          </p>
+        </div>
+        {/* A-07: đường vào điểm số, người chấm và nhận xét của chính học viên */}
+        <Link
+          href="/my-grades"
+          className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+        >
+          <GraduationCap className="w-4 h-4" />
+          Điểm của tôi
+        </Link>
       </div>
 
       {/* Filter bar */}
       <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-6 flex items-center gap-3 flex-wrap shadow-sm">
         {/* Tabs */}
-        <div className="flex gap-1 flex-1">
+        {/* A-21: whitespace-nowrap + cuộn ngang để nhãn ("Tất cả") không bị bẻ dòng ở 390px */}
+        <div className="flex gap-1 flex-1 overflow-x-auto">
           {TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5",
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0",
                 activeTab === tab.key
                   ? "bg-blue-600 text-white"
                   : "text-gray-600 hover:bg-gray-100"
@@ -233,7 +263,8 @@ export default function MyAssignmentsPage() {
         </div>
 
         {/* View mode toggle */}
-        <div className="flex border border-gray-100 rounded-xl overflow-hidden">
+        {/* Ở 390px chế độ lưới/danh sách đều là một cột nên ẩn đi để đủ chỗ cho 4 tab */}
+        <div className="hidden sm:flex border border-gray-100 rounded-xl overflow-hidden">
           <button
             onClick={() => setViewMode("grid")}
             className={cn("p-1.5 transition-colors", viewMode === "grid" ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100")}
@@ -261,11 +292,26 @@ export default function MyAssignmentsPage() {
         )}>
           {filtered.length > 0
             ? filtered.map((c) => (
-                <AssignmentCard key={c.item.id} item={c.item} status={c.status} pastDue={c.pastDue} />
+                <AssignmentCard
+                  key={c.item.id}
+                  item={c.item}
+                  status={c.status}
+                  pastDue={c.pastDue}
+                  onStart={setWorking}
+                />
               ))
             : <EmptyState />
           }
         </div>
+      )}
+
+      {working && userId && (
+        <AssignmentWorkOverlay
+          assignmentId={working.id}
+          title={working.title}
+          userId={userId}
+          onClose={() => setWorking(null)}
+        />
       )}
 
       {/* Pagination summary */}
