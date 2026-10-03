@@ -38,7 +38,7 @@ function mapToUiEntry(dto: LeaderboardEntryDTO, index: number): LeaderboardEntry
     userId: leaderboardEntryKey(dto, index),
     name: leaderboardEntryName(dto),
     avatar: dto.avatar_url,
-    level: 0, // backend doesn't expose level separately
+    level: undefined, // backend không trả cấp độ trong bảng xếp hạng: ẩn thay vì hiện "Cấp 0" (A-16)
     weeklyXP: dto.points,
     trend: 0, // backend doesn't expose trend
     rank: dto.rank,

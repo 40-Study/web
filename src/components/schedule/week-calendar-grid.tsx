@@ -44,6 +44,23 @@ export interface ScheduleEvent {
   participants?: number;
   avatarUrl?: string;
   recurrenceRule?: string;
+  /**
+   * Nguồn của mục (B-08). Mặc định (vắng) là buổi livestream sửa được; "class-schedule" (lịch lặp tuần
+   * của lớp) và "class-session" (buổi học cụ thể của lớp) chỉ để xem — chỉnh ở trang Quản lý lớp.
+   */
+  kind?: "livestream" | "class-schedule" | "class-session";
+  /**
+   * Lịch lặp tuần (B-08) dùng recurring event có sẵn của FullCalendar (daysOfWeek/startTime/endTime), không
+   * cần plugin rrule: `daysOfWeek` 0 = Chủ nhật; `startTime`/`endTime` dạng "HH:mm"; `startRecur`/
+   * `endRecur` là ngày YYYY-MM-DD (endRecur loại trừ, nên truyền ngày sau ngày hết hạn).
+   */
+  weekly?: {
+    daysOfWeek: number[];
+    startTime: string;
+    endTime: string;
+    startRecur?: string;
+    endRecur?: string;
+  };
 }
 
 export interface SelectionInfo {
@@ -66,6 +83,8 @@ interface WeekCalendarGridProps {
   /** Called when user clicks "More options" in the drag popover */
   onSelectMore?: (start: Date, end: Date) => void;
   renderEventTooltip?: (event: ScheduleEvent) => React.ReactNode;
+  /** Gọi mỗi khi khoảng ngày đang xem đổi (chuyển tuần/tháng/ngày); `end` loại trừ. */
+  onRangeChange?: (start: Date, end: Date) => void;
   headerActions?: React.ReactNode;
   /**
    * Thẻ thống kê dưới lịch. Trang gọi tự đặt nhãn theo vai trò (QA vòng 2, D8): trước đây lưới
@@ -98,18 +117,33 @@ export function getEventPosition(
   };
 }
 
-function toFcEvents(events: ScheduleEvent[]) {
+export function toFcEvents(events: ScheduleEvent[]) {
   return events.map((ev) => {
     const colors = getEventColor(ev);
-    return {
+    const common = {
       id: ev.id,
       title: ev.title,
-      start: ev.startTime,
-      end: ev.endTime,
-      rrule: ev.recurrenceRule || undefined,
       backgroundColor: "transparent",
       borderColor: "transparent",
       extendedProps: { scheduleEvent: ev, fcColor: colors.fc },
+    };
+    // Lịch lặp tuần: FullCalendar tự lặp theo thứ trong tuần cho mọi tuần đang xem. Không truyền start/end
+    // cùng lúc với daysOfWeek (sẽ thành sự kiện một lần).
+    if (ev.weekly) {
+      return {
+        ...common,
+        daysOfWeek: ev.weekly.daysOfWeek,
+        startTime: ev.weekly.startTime,
+        endTime: ev.weekly.endTime,
+        startRecur: ev.weekly.startRecur,
+        endRecur: ev.weekly.endRecur,
+      };
+    }
+    return {
+      ...common,
+      start: ev.startTime,
+      end: ev.endTime,
+      rrule: ev.recurrenceRule || undefined,
     };
   });
 }
@@ -126,6 +160,7 @@ export default function WeekCalendarGrid({
   onQuickCreate,
   onSelectMore,
   renderEventTooltip,
+  onRangeChange,
   headerActions,
   stats,
 }: WeekCalendarGridProps) {
@@ -267,6 +302,7 @@ export default function WeekCalendarGrid({
           snapDuration={snapDuration}
           height="auto"
           events={fcEvents}
+          datesSet={(arg) => onRangeChange?.(arg.start, arg.end)}
           editable={editable}
           droppable={editable}
           selectable={editable}

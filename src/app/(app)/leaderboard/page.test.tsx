@@ -63,4 +63,12 @@ describe("LeaderboardPage — người ẩn danh", () => {
     const duplicateKey = errors.mock.calls.some((c) => String(c[0]).includes("same key"));
     expect(duplicateKey).toBe(false);
   });
+
+  // A-16: backend không trả cấp độ trong bảng xếp hạng; trước đây mọi dòng đều hiện "Cấp 0".
+  it("không hiện 'Cấp 0' cho mọi dòng khi backend không có cấp độ", async () => {
+    mockLeaderboard();
+    renderWithProviders(<LeaderboardPage />);
+    expect(await screen.findByText("Bình Công Khai")).toBeTruthy();
+    expect(screen.queryByText(/Cấp\s*0/)).toBeNull();
+  });
 });

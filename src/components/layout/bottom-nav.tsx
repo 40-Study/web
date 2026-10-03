@@ -13,11 +13,13 @@ import {
   Wallet,
   ClipboardList,
   UserCheck,
+  Radio,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
 import { FriendsNavBadge } from "@/components/friends/friends-nav-badge";
 import { canUseFriends } from "@/components/friends/friends-access";
+import { normalizeRole } from "@/lib/routes";
 
 type UserRole = "student" | "teacher" | "parent" | "guest" | "admin";
 
@@ -35,6 +37,8 @@ const navConfigs: Record<UserRole, NavItem[]> = {
   student: [
     { icon: <Home className="w-5 h-5" />, label: "Trang chủ", href: "/home" },
     { icon: <Calendar className="w-5 h-5" />, label: "Lịch học", href: "/schedule" },
+    // Nhãn ngắn "Live": bottom-nav học viên có 7 tab, "Livestream" không vừa 390px.
+    { icon: <Radio className="w-5 h-5" />, label: "Live", href: "/livestream" },
     { icon: <BookOpen className="w-5 h-5" />, label: "Khóa học", href: "/courses" },
     { icon: <Trophy className="w-5 h-5" />, label: "Xếp hạng", href: "/leaderboard" },
     // Bạn bè chỉ dành cho học viên (Q1): các vai khác không có mục này.
@@ -81,6 +85,8 @@ export function BottomNav({ role = "student", className }: BottomNavProps) {
   const profileHref = user?.id ? `/profile/${user.id}` : "/login";
   const tabs = navConfigs[role]
     .filter((tab) => tab.href !== "/friends" || canUseFriends(activeRole))
+    // Cùng nguyên tắc với Bạn bè: tab Live chỉ cho vai học viên THẬT (teacher rơi vào bộ tab student ở B-11).
+    .filter((tab) => tab.href !== "/livestream" || normalizeRole(activeRole) === "STUDENT")
     .map((tab) => (tab.href === "/profile" ? { ...tab, href: profileHref } : tab));
 
   return (
@@ -104,7 +110,8 @@ export function BottomNav({ role = "student", className }: BottomNavProps) {
               key={tab.href}
               href={tab.href}
               className={cn(
-                "flex flex-col items-center gap-1 px-2 py-2 min-w-[56px] rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                // flex-1 + min-w-0 (không còn min-w-[56px]): 7 tab × 56px = 392px tràn khung 390px.
+                "flex flex-1 min-w-0 flex-col items-center gap-1 px-1 py-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                 isActive
                   ? "text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30"
                   : "text-muted-foreground hover:text-foreground"

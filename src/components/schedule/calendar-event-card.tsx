@@ -8,6 +8,16 @@ import type { ScheduleEvent } from "./week-calendar-grid";
 
 /** Color palette per event type/status */
 export function getEventColor(event: ScheduleEvent) {
+  // Lịch lớp (lặp tuần / buổi cụ thể) một màu riêng để phân biệt với livestream.
+  if (event.kind === "class-schedule" || event.kind === "class-session") {
+    return {
+      border: "border-l-teal-500",
+      bg: "bg-teal-50",
+      text: "text-teal-700",
+      tagBg: "bg-teal-100 text-teal-700",
+      fc: "#14b8a6",
+    };
+  }
   if (event.tag === "GIAO VIỆC" || event.type === "hybrid") {
     return {
       border: "border-l-purple-500",

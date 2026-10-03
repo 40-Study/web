@@ -34,6 +34,7 @@ export const DISALLOWED_PATH_PREFIXES = [
   "/parent",
   "/settings",
   "/messages",
+  "/livestream",
   "/cart",
   "/checkout",
   "/my-courses",

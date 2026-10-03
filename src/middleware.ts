@@ -72,6 +72,8 @@ const PROTECTED_ROUTE_PREFIXES = [
   "/home",
   "/leaderboard",
   "/learn",
+  // Danh sách buổi livestream của học viên (A-08).
+  "/livestream",
   "/messages",
   "/my-assignments",
   "/my-attendance",

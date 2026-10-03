@@ -9,7 +9,8 @@ export interface LeaderboardEntry {
   userId: string;
   name: string;
   avatar?: string;
-  level: number;
+  /** Vắng/0 = backend không trả cấp độ trong bảng xếp hạng: ẩn dòng "Cấp" thay vì hiện "Cấp 0" cho mọi người. */
+  level?: number;
   weeklyXP: number;
   trend: number; // positive = moved up, negative = moved down
 }
@@ -99,7 +100,7 @@ export function LeaderboardCard({
         >
           {entry.name} {isCurrentUser && "(Bạn)"}
         </p>
-        <p className="text-xs text-slate-600 dark:text-slate-400">Cấp {entry.level}</p>
+        {entry.level ? <p className="text-xs text-slate-600 dark:text-slate-400">Cấp {entry.level}</p> : null}
       </div>
 
       {/* XP this week */}

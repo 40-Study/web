@@ -14,7 +14,7 @@ import { api } from "@/lib/api-client";
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 /** Trạng thái phiên live theo model backend. */
-export type LiveSessionStatus = "scheduled" | "live" | "ended";
+export type LiveSessionStatus = "scheduled" | "live" | "ended" | "cancelled";
 
 /** Vai trò người tham gia — khớp `JoinLivestreamDTO.role` (oneof) ở backend. */
 export type LiveParticipantRole = "teacher" | "assistant" | "student" | "viewer";
@@ -46,6 +46,10 @@ export interface LiveSession {
   started_at?: string;
   ended_at?: string;
   scheduled_at?: string;
+  /** Giờ kết thúc dự kiến (B-09); buổi cũ không có thì trang lịch tự vẽ 1 giờ. */
+  scheduled_end_at?: string;
+  /** Phòng học GV nhập ở form tạo buổi (B-09). */
+  location?: string;
   max_viewers: number;
   is_recorded: boolean;
   settings: string;
@@ -91,15 +95,27 @@ export interface CreateLiveSessionDTO {
   lesson_content_id?: string;
   max_viewers?: number;
   is_recorded?: boolean;
-  /** Chuỗi thời gian ISO; backend nhận dạng chuỗi và tự parse. */
+  /**
+   * RFC3339. Backend trả 400 khi sai định dạng hoặc nằm trong quá khứ (B-21), không còn bỏ qua im lặng.
+   */
   scheduled_at?: string;
+  /** RFC3339, phải sau `scheduled_at` (B-09/B-10). */
+  scheduled_end_at?: string;
+  /** Phòng học, tối đa 255 ký tự (B-09). */
+  location?: string;
 }
 
-/** Body của `PUT /livestream/:id` — `dto.UpdateLivestreamDTO` (chỉ 3 field). */
+/**
+ * Body của `PUT /livestream/:id` — `dto.UpdateLivestreamDTO`. Các trường lịch chỉ đổi được khi buổi chưa
+ * bắt đầu (backend trả 409 nếu không). `scheduled_end_at`/`location` là chuỗi rỗng = xoá giá trị đã lưu.
+ */
 export interface UpdateLiveSessionDTO {
   title?: string;
   description?: string;
   max_viewers?: number;
+  scheduled_at?: string;
+  scheduled_end_at?: string;
+  location?: string;
 }
 
 /**
