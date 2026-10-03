@@ -6,6 +6,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error-messages";
 import { roleService } from "@/services/role.service";
 import type { CreateRoleData, UpdateRoleData } from "@/types/role";
 
@@ -74,7 +75,7 @@ export function useDeleteRole(organizationId?: string) {
       toast.success("Xóa vai trò thành công");
     },
     onError: (err: Error) => {
-      toast.error("Xóa vai trò thất bại", { description: err.message });
+      toast.error("Xóa vai trò thất bại", { description: getErrorMessage(err) });
     },
   });
 }

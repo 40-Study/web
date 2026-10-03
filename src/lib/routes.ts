@@ -21,7 +21,9 @@ export const ROLE_HOME_ROUTES: Record<string, string> = {
   TEACHER: "/teacher/schedule",
   PARENT: "/home",
   SYSTEM_ADMIN: "/admin",
-  ORG_OWNER: "/admin",
+  // Chủ tổ chức có khu riêng /org (thành viên, lớp của tổ chức). /admin chỉ dành cho SYSTEM_ADMIN: ORG_OWNER chỉ có
+  // quyền phạm vi tổ chức nên bị (admin)/layout.tsx đá về /403 (đưa về /admin từng khiến vòng lặp "Về trang chủ").
+  ORG_OWNER: "/org",
   // Phase 3: ứng viên chưa có quyền giảng dạy — trang duy nhất có ý nghĩa là hồ sơ ứng tuyển.
   TEACHER_APPLICANT: "/teacher-application",
 } as const;

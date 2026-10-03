@@ -78,6 +78,8 @@ const PROTECTED_ROUTE_PREFIXES = [
   "/my-courses",
   "/my-vouchers",
   "/notifications",
+  // Khu quản lý tổ chức của chủ tổ chức (ORG_OWNER); vai trò cụ thể do RoleGuard ở (org)/layout kiểm.
+  "/org",
   // "Đơn hàng của tôi" (lane B vòng 2, B3).
   "/orders",
   "/parent",

@@ -29,6 +29,7 @@ export const PUBLIC_INDEXABLE_PATHS = [
 export const DISALLOWED_PATH_PREFIXES = [
   "/api/",
   "/admin",
+  "/org",
   "/teacher",
   "/parent",
   "/settings",

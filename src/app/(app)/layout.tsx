@@ -12,6 +12,7 @@ import {
   resolveNavRole,
   isRouteAllowedForRole,
   getRoleRestrictedRedirect,
+  getRoleHomeRoute,
   CONTEST_PARTICIPANT_ROUTE_PATTERN,
 } from "@/lib/routes";
 
@@ -103,7 +104,8 @@ export default function AppLayout({
 
     // Admin roles should go to admin dashboard — trừ các trang tài khoản cá nhân được phép ở trên.
     if (isAuthenticated && isAdminRole && !isAdminAllowedRoute) {
-      router.replace("/admin");
+      // Đích theo vai (SYSTEM_ADMIN -> /admin, ORG_OWNER -> /org): ép ORG_OWNER về /admin rơi vào /403.
+      router.replace(getRoleHomeRoute(normalizedRole));
       return;
     }
 
