@@ -33,6 +33,7 @@ export const HAS_VIETNAMESE_DIACRITICS = /[à-ỹÀ-Ỹ]/;
 
 const CODE_MESSAGES: Record<string, string> = {
   ACCOUNT_LOCKED: "Tài khoản đã bị khoá. Vui lòng liên hệ quản trị viên.",
+  ROLE_IN_USE: "Vai trò này vẫn đang được gán cho thành viên. Hãy gỡ vai trò khỏi các thành viên trước khi xoá.",
   ERR_UNAUTHORIZED: SESSION_EXPIRED_MESSAGE,
   ERR_FORBIDDEN: FORBIDDEN_MESSAGE,
   ERR_NOT_FOUND: NOT_FOUND_MESSAGE,
@@ -87,6 +88,12 @@ const GENERIC_CODES = new Set([
 
 // Khoá là message backend viết thường (so khớp không phân biệt hoa thường).
 const EXACT_MESSAGES: Record<string, string> = {
+  // Quản lý lớp (class_service.go, class_repository.go).
+  "student is not enrolled in this class": "Học viên này không còn trong lớp",
+  "teacher is already assigned to this class": "Giảng viên này đã được gán vào lớp",
+  "teacher is not assigned to this class": "Giảng viên này không còn trong lớp",
+  "student not found": "Không tìm thấy học viên",
+  "teacher not found": "Không tìm thấy giảng viên",
   "incorrect current password": "Mật khẩu hiện tại không đúng",
   "invalid email or password": "Email hoặc mật khẩu không đúng",
   "invalid password": "Mật khẩu không đúng",

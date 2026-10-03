@@ -81,6 +81,7 @@ import { LIVESTREAM_NOT_READY_HINT, resolveLivestreamRoomHref } from "@/lib/less
 import { formatLessonDuration, parseLessonDuration } from "@/lib/lesson-duration";
 import { VideoDurationField } from "@/components/teacher/video-duration-field";
 import { ClassCreateForm } from "@/components/teacher/class-create-form";
+import { getClassStatusLabel } from "@/lib/class-status";
 
 // ─── Content type config ────────────────────────────────────────────────────
 
@@ -1241,9 +1242,15 @@ function ClassManagementDialog({
                   <p className="text-xs text-muted-foreground">
                     {cls.student_count ?? 0} học viên
                     {cls.max_students && ` / ${cls.max_students}`}
-                    {cls.status && ` · ${cls.status}`}
+                    {` · ${getClassStatusLabel(cls.status)}`}
                   </p>
                 </div>
+                <Link
+                  href={`/teacher/classes/${cls.id}`}
+                  className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-primary-600 hover:border-primary-300 transition-colors"
+                >
+                  Quản lý
+                </Link>
                 <Link
                   href={`/teacher/classes/${cls.id}/attendance`}
                   className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-primary-600 hover:border-primary-300 transition-colors"

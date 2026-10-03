@@ -19,8 +19,41 @@ export interface Class {
   end_date?: string;
   status?: string;
   student_count?: number;
+  teacher_count?: number;
+  /**
+   * Chỉ có ở chi tiết lớp (GET /classes/:id), do backend tính bằng đúng hàm kiểm của thao tác ghi.
+   * Vắng = không có quyền; UI không được tự suy ra quyền từ vai trò.
+   */
+  can_manage?: boolean;
+  can_assign_teachers?: boolean;
   created_at?: string;
   updated_at?: string;
+}
+
+/** Một dòng giảng viên của lớp (GET /classes/:id/teachers). */
+export interface ClassTeacherRow {
+  teacher_id: string;
+  role: string;
+  name: string;
+}
+
+/** Một dòng học viên của lớp, kèm trạng thái ghi danh. */
+export interface ClassStudentRow {
+  student_id: string;
+  name: string;
+  status?: string;
+  enrolled_at?: string;
+}
+
+/** Ứng viên ghi danh (GET /classes/:id/enrollable-students): không có email. */
+export interface EnrollableStudent {
+  id: string;
+  name: string;
+}
+
+export interface ClassPage<T> {
+  items: T[];
+  total: number;
 }
 
 export interface CreateClassDTO {
@@ -57,6 +90,14 @@ interface ClassStudentApiResponse {
   student_id: string;
   user_name: string;
   full_name?: string;
+  status?: string;
+  enrolled_at?: string;
+}
+
+interface ClassTeacherApi {
+  teacher_id: string;
+  role: string;
+  teacher?: { user_name: string; full_name?: string };
 }
 
 interface ClassStudentListApiResponse {
@@ -183,6 +224,86 @@ export const classService = {
         params: { page: 1, page_size: 100 },
       })
       .then((r) => mapClassStudents(r.data.data)),
+
+  // ── Quản lý lớp chỉ cần classId (khu tổ chức, lớp không gắn khoá) ───────────
+  // Backend đăng ký cả /classes/:id/* lẫn /courses/:courseId/classes/:id/*, cùng một handler.
+
+  /** GET /classes/:classId — kèm can_manage / can_assign_teachers. */
+  getByClassId: (classId: string) =>
+    api.get<R<Class>>(`/classes/${classId}`).then((r) => r.data.data),
+
+  /** PUT /classes/:classId — kích hoạt lớp (draft → active), lưu trữ, đổi tên. */
+  updateByClassId: (classId: string, data: UpdateClassDTO) =>
+    api.put<R<Class>>(`/classes/${classId}`, data).then((r) => r.data.data),
+
+  /** GET /classes/:classId/teachers */
+  listTeachersByClassId: (classId: string) =>
+    api
+      .get<R<{ teachers: ClassTeacherApi[]; total: number }>>(`/classes/${classId}/teachers`, {
+        params: { page: 1, page_size: 100 },
+      })
+      .then((r) =>
+        r.data.data.teachers.map((t) => ({
+          teacher_id: t.teacher_id,
+          role: t.role,
+          name: t.teacher?.full_name?.trim() || t.teacher?.user_name || "Giảng viên",
+        }))
+      ),
+
+  /** POST /classes/:classId/teachers — chỉ chủ lớp / admin / chủ tổ chức (can_assign_teachers). */
+  assignTeacherByClassId: (classId: string, teacherId: string, role = "primary") =>
+    api.post<R<unknown>>(`/classes/${classId}/teachers`, { teacher_id: teacherId, role }).then((r) => r.data),
+
+  /** GET /teachers?keyword= — ô chọn giảng viên để gán vào lớp (tìm theo tên, backend không trả email). */
+  searchTeachers: (keyword: string) =>
+    api
+      .get<R<{ teachers: Array<{ id: string; user_name: string; full_name?: string }> }>>("/teachers", {
+        params: { keyword, page: 1, page_size: 20 },
+      })
+      .then((r): EnrollableStudent[] =>
+        r.data.data.teachers.map((t) => ({ id: t.id, name: t.full_name?.trim() || t.user_name }))
+      ),
+
+  /** DELETE /classes/:classId/teachers/:teacherId */
+  removeTeacherByClassId: (classId: string, teacherId: string) =>
+    api.delete<R<null>>(`/classes/${classId}/teachers/${teacherId}`).then((r) => r.data),
+
+  /** GET /classes/:classId/students — kèm trạng thái ghi danh và tổng số. */
+  listStudentsByClassId: (classId: string) =>
+    api
+      .get<R<ClassStudentListApiResponse>>(`/classes/${classId}/students`, {
+        params: { page: 1, page_size: 100 },
+      })
+      .then(
+        (r): ClassPage<ClassStudentRow> => ({
+          total: r.data.data.total,
+          items: r.data.data.students.map((s) => ({
+            student_id: s.student_id,
+            name: s.full_name?.trim() || s.user_name,
+            status: s.status,
+            enrolled_at: s.enrolled_at,
+          })),
+        })
+      ),
+
+  /** POST /classes/:classId/students */
+  enrollStudentByClassId: (classId: string, studentId: string) =>
+    api.post<R<unknown>>(`/classes/${classId}/students`, { student_id: studentId }).then((r) => r.data),
+
+  /** DELETE /classes/:classId/students/:studentId */
+  removeStudentByClassId: (classId: string, studentId: string) =>
+    api.delete<R<null>>(`/classes/${classId}/students/${studentId}`).then((r) => r.data),
+
+  /** GET /classes/:classId/enrollable-students?keyword= — học viên chưa học lớp này, tìm theo tên. */
+  searchEnrollableStudents: (classId: string, keyword: string) =>
+    api
+      .get<R<{ students: Array<{ id: string; user_name: string; full_name?: string }> }>>(
+        `/classes/${classId}/enrollable-students`,
+        { params: { keyword } }
+      )
+      .then((r): EnrollableStudent[] =>
+        r.data.data.students.map((s) => ({ id: s.id, name: s.full_name?.trim() || s.user_name }))
+      ),
 
   // ── Content Schedule ──────────────────────────────────────────────────────
 
