@@ -14,6 +14,7 @@ import {
   getRoleRestrictedRedirect,
   getRoleHomeRoute,
   CONTEST_PARTICIPANT_ROUTE_PATTERN,
+  canAccessStudentOnlyRoute,
 } from "@/lib/routes";
 
 export default function AppLayout({
@@ -77,7 +78,10 @@ export default function AppLayout({
     isAuthenticated &&
     !isAdminRole &&
     !!normalizedRole &&
-    (!isRouteAllowedForRole(pathname, navRole) || (isFriendsRoute && !canUseFriends(activeRole)));
+    (!isRouteAllowedForRole(pathname, navRole) ||
+      (isFriendsRoute && !canUseFriends(activeRole)) ||
+      // /livestream, /my-grades: cùng lý do với Bạn bè, khoá theo vai THẬT (giáo viên không lọt qua NavRole STUDENT).
+      !canAccessStudentOnlyRoute(pathname, activeRole));
 
   // N-08 (QA admin 260928, P1): mất phiên (bị khoá giữa phiên, token hết hạn) → bootstrap đặt
   // `anonymous` nhưng layout chỉ `return null` và KHÔNG có nhánh điều hướng nào — RoleGuard (nơi

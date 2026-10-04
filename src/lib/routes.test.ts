@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import {
   ROLE_SCOPED_PATTERNS,
   ROLE_SCOPED_ROUTES,
+  canAccessStudentOnlyRoute,
   getRoleRestrictedRedirect,
   isRouteAllowedForRole,
   type NavRole,
@@ -84,6 +85,18 @@ describe("isRouteAllowedForRole — ma trận role x route (ROLE_SCOPED_ROUTES)"
       expect(isRouteAllowedForRole(href, "ADMIN")).toBe(false);
       expect(getRoleRestrictedRedirect(href, "PARENT")).toBe("/home");
     }
+  });
+
+  // resolveNavRole quy TEACHER về STUDENT nên bảng NavRole không chặn được giáo viên; hàm theo vai THẬT chặn.
+  it("canAccessStudentOnlyRoute: /livestream, /my-grades chỉ vai STUDENT thật; route khác không bị ảnh hưởng", () => {
+    for (const href of ["/livestream", "/livestream/x", "/my-grades"]) {
+      expect(canAccessStudentOnlyRoute(href, "STUDENT")).toBe(true);
+      expect(canAccessStudentOnlyRoute(href, "TEACHER")).toBe(false);
+      expect(canAccessStudentOnlyRoute(href, "PARENT")).toBe(false);
+    }
+    expect(canAccessStudentOnlyRoute("/my-grades-old", "TEACHER")).toBe(true);
+    expect(canAccessStudentOnlyRoute("/messages", "TEACHER")).toBe(true);
+    expect(canAccessStudentOnlyRoute("/schedule", "TEACHER")).toBe(true);
   });
 
   it("/settings/family và /messages cho cả STUDENT lẫn PARENT (không phải route học sinh-only)", () => {

@@ -13,7 +13,7 @@ import { FriendsNavBadge } from "@/components/friends/friends-nav-badge";
 import { useAuthStore } from "@/stores/auth.store";
 import { canUseFriends } from "@/components/friends/friends-access";
 import { useSidebarStore } from "@/stores/sidebar.store";
-import { getRoleHomeRoute, normalizeRole, resolveNavRole, ROLE_SCOPED_ROUTES, type NavRole } from "@/lib/routes";
+import { canAccessStudentOnlyRoute, getRoleHomeRoute, normalizeRole, resolveNavRole, ROLE_SCOPED_ROUTES, type NavRole } from "@/lib/routes";
 
 type SidebarRole = NavRole;
 
@@ -101,8 +101,8 @@ export function Sidebar() {
   const navItems = buildSidebarItems(homeHref, familyLabel).filter((item) =>
     item.roles.includes(currentRole) &&
     (item.href !== "/friends" || canUseFriends(activeRole)) &&
-    // resolveNavRole quy TEACHER về STUDENT để dựng khung; Livestream của học viên khoá theo vai THẬT.
-    ((item.href !== "/livestream" && item.href !== "/my-grades") || normalizedRole === "STUDENT")
+    // resolveNavRole quy TEACHER về STUDENT để dựng khung; mục học viên-only khoá theo vai THẬT (cùng hàm với route guard).
+    canAccessStudentOnlyRoute(item.href, activeRole)
   );
 
   return (

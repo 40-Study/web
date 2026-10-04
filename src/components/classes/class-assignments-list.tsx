@@ -7,6 +7,7 @@ import { formatDateTime } from "@/components/grading/submission-grade-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAssignmentsByClass } from "@/hooks/queries/use-assignments";
+import { useClassById } from "@/hooks/queries/use-class-manage";
 import { NotFoundError } from "@/lib/errors";
 import type { AssignmentType } from "@/services/assignment.service";
 
@@ -24,13 +25,14 @@ interface ClassAssignmentsListProps {
 
 /**
  * Danh sách bài tập của một lớp, mỗi dòng dẫn tới trang chấm bài.
- * Quyền xem do backend quyết (GET /classes/:id/assignments): lớp không xem được trả 404. Khi đó
- * ClassManagePanel cạnh bên đã hiện "Không tìm thấy lớp", nên ở đây không vẽ thêm lỗi thứ hai.
+ * Chỉ ẩn khi chính LỚP là 404 (ClassManagePanel cạnh bên đã hiện "Không tìm thấy lớp", dùng chung query chi tiết
+ * lớp). Lớp xem được mà riêng endpoint bài tập lỗi (kể cả 404) thì vẫn hiện lỗi, không để mục biến mất im lặng.
  */
 export function ClassAssignmentsList({ classId, hrefFor }: ClassAssignmentsListProps) {
+  const classQuery = useClassById(classId);
   const query = useAssignmentsByClass(classId);
 
-  if (query.error instanceof NotFoundError) return null;
+  if (classQuery.error instanceof NotFoundError) return null;
 
   const items = query.data?.data ?? [];
 

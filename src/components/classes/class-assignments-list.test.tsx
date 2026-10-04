@@ -13,7 +13,7 @@ vi.mock("@/lib/api-client", async () => {
 
 import { ClassAssignmentsList } from "./class-assignments-list";
 import { NotFoundError } from "@/lib/errors";
-import { mockApi, resetMockApi } from "@/test/mock-api";
+import { envelope, mockApi, resetMockApi } from "@/test/mock-api";
 import { renderWithProviders } from "@/test/utils";
 
 const hrefFor = (id: string) => `/org/classes/c1/assignments/${id}`;
@@ -34,16 +34,23 @@ beforeEach(() => {
   resetMockApi();
 });
 
+type Reply = () => Promise<unknown>;
+
+/** Chi tiết lớp và danh sách bài tập là hai endpoint riêng: mỗi test chọn kết quả cho từng cái. */
+function serve(list: Reply, cls: Reply = () => Promise.resolve(envelope({ id: "c1", name: "Lớp A" }))) {
+  mockApi.get.mockImplementation((url: string) => {
+    if (url === "/classes/c1") return cls();
+    if (url === "/classes/c1/assignments") return list();
+    return Promise.reject(new Error(`unexpected GET ${url}`));
+  });
+}
+
+const page = (items: unknown[]) => () =>
+  Promise.resolve({ data: { data: items, total: items.length, page: 1, page_size: 50 } });
+
 describe("ClassAssignmentsList", () => {
   it("có dữ liệu: mỗi bài là link tới trang chấm, hiện trạng thái công bố và loại bài", async () => {
-    mockApi.get.mockResolvedValue({
-      data: {
-        data: [assignment(), assignment({ id: "a2", title: "Dự án cuối khoá", type: "project", is_published: false })],
-        total: 2,
-        page: 1,
-        page_size: 50,
-      },
-    });
+    serve(page([assignment(), assignment({ id: "a2", title: "Dự án cuối khoá", type: "project", is_published: false })]));
     renderWithProviders(<ClassAssignmentsList classId="c1" hrefFor={hrefFor} />);
 
     const link = await screen.findByRole("link", { name: /Bài tập giỏ hàng/ });
@@ -56,7 +63,7 @@ describe("ClassAssignmentsList", () => {
   });
 
   it("rỗng: hiện thông báo lớp chưa có bài tập, không có link", async () => {
-    mockApi.get.mockResolvedValue({ data: { data: [], total: 0, page: 1, page_size: 50 } });
+    serve(page([]));
     renderWithProviders(<ClassAssignmentsList classId="c1" hrefFor={hrefFor} />);
 
     expect(await screen.findByText("Lớp chưa có bài tập")).toBeTruthy();
@@ -64,23 +71,31 @@ describe("ClassAssignmentsList", () => {
   });
 
   it("lỗi tải: hiện lỗi kèm nút Thử lại", async () => {
-    mockApi.get.mockRejectedValue(new Error("boom"));
+    serve(() => Promise.reject(new Error("boom")));
     renderWithProviders(<ClassAssignmentsList classId="c1" hrefFor={hrefFor} />);
 
     expect(await screen.findByText("Không thể tải dữ liệu")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Thử lại" })).toBeTruthy();
   });
 
-  it("lớp không xem được (404): không vẽ gì, tránh hai lỗi cạnh nhau", async () => {
-    mockApi.get.mockRejectedValue(new NotFoundError("Không tìm thấy lớp"));
+  it("lớp xem được nhưng riêng endpoint bài tập trả 404: vẫn hiện lỗi, mục không biến mất im lặng", async () => {
+    serve(() => Promise.reject(new NotFoundError("Không tìm thấy")));
+    renderWithProviders(<ClassAssignmentsList classId="c1" hrefFor={hrefFor} />);
+
+    expect(await screen.findByText("Không thể tải dữ liệu")).toBeTruthy();
+    expect(screen.getByText(/^Bài tập/)).toBeTruthy();
+  });
+
+  it("chính lớp là 404: không vẽ gì, tránh hai lỗi cạnh nhau (panel quản lý lớp đã báo)", async () => {
+    serve(() => Promise.reject(new NotFoundError("Không tìm thấy lớp")), () => Promise.reject(new NotFoundError("Không tìm thấy lớp")));
     const { container } = renderWithProviders(<ClassAssignmentsList classId="c1" hrefFor={hrefFor} />);
 
-    await vi.waitFor(() => expect(mockApi.get).toHaveBeenCalled());
+    await vi.waitFor(() => expect(mockApi.get).toHaveBeenCalledWith("/classes/c1"));
     await vi.waitFor(() => expect(container.textContent).toBe(""));
   });
 
   it("đang tải: hiện skeleton trạng thái status", () => {
-    mockApi.get.mockReturnValue(new Promise(() => {}));
+    serve(() => new Promise(() => {}));
     renderWithProviders(<ClassAssignmentsList classId="c1" hrefFor={hrefFor} />);
 
     expect(screen.getByRole("status")).toBeTruthy();
