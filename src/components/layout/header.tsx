@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { AuthModal } from "@/components/auth/auth-modal";
 import { GlobalSearch } from "@/components/layout/global-search";
+import { CategoryMenu } from "@/components/layout/category-menu";
 import { CartDropdown } from "@/components/layout/cart-dropdown";
 import { useLogout, useSwitchRole, useMyRoles } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth.store";
@@ -150,17 +151,24 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 h-16 bg-background/90 border-b border-border backdrop-blur-md z-50 flex items-center justify-between px-4 lg:px-8">
-        <div className="flex items-center gap-6 lg:gap-12">
-          <Link href={homeHref} className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-            <ForteXLogoIcon size={32} className="text-foreground" />
-            <span className="font-heading text-xl font-bold text-foreground tracking-tight">{siteConfig.name}</span>
-          </Link>
+      <header className="fixed top-0 left-0 right-0 h-16 bg-background/90 border-b border-border backdrop-blur-md z-50 px-4 lg:px-8">
+        {/* 3 cột: logo trái — pill search căn giữa — hành động phải; hàng thẳng, cao đều (h-16). */}
+        <div className="h-full grid grid-cols-[1fr_minmax(0,600px)_1fr] items-center gap-4">
+          <div className="flex items-center min-w-0">
+            <Link href={homeHref} className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+              <ForteXLogoIcon size={32} className="text-foreground" />
+              <span className="font-heading text-xl font-bold text-foreground tracking-tight">{siteConfig.name}</span>
+            </Link>
+          </div>
 
-          <GlobalSearch />
-        </div>
+          <div className="flex justify-center w-full min-w-0">
+            <GlobalSearch
+              className="w-full"
+              leadingSlot={<CategoryMenu />}
+            />
+          </div>
 
-        <div className="flex items-center gap-3 lg:gap-4">
+          <div className="flex items-center justify-end gap-3 lg:gap-4">
           {/* Coin balance */}
           {isAuthenticated && canUseCoinWallet(activeRole) && (
             <Link href="/coins" className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/30 dark:hover:bg-amber-900/50 transition-colors">
@@ -483,9 +491,9 @@ export function Header() {
               </div>
             )}
           </div>
+          </div>
         </div>
       </header>
-
       <AuthModal isOpen={authModal.isOpen} onClose={closeAuthModal} initialMode={authModal.mode} />
     </>
   );
