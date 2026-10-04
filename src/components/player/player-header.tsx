@@ -50,7 +50,7 @@ export function PlayerHeader({ courseTitle, courseSlug, exerciseCount = 0 }: Pla
         </Link>
 
         <Link
-          href="/profile"
+          href={user?.id ? `/profile/${user.id}` : "/login"}
           aria-label="Trang cá nhân"
           className="p-0.5 rounded-full hover:ring-2 hover:ring-gray-200 transition-all"
         >
