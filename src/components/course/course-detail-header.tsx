@@ -35,7 +35,7 @@ export function CourseDetailHeader({ course, reviewsSummary }: CourseDetailHeade
 
   return (
     <div className="bg-neutral-50" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-      <div className="container mx-auto px-4 py-10">
+      <div className="page-container py-10">
         {/* Breadcrumb */}
         <nav className="mb-5 flex items-center gap-1.5 text-sm text-neutral-500">
           <Link href="/" className="hover:text-black transition-colors">

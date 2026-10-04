@@ -212,7 +212,7 @@ export default function MyAssignmentsPage() {
   const activeCount = classified.filter((c) => c.status === "active").length;
 
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto">
+    <div className="page-container py-4 sm:py-8">
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>

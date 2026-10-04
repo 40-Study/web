@@ -161,7 +161,7 @@ export function ParentHomeOverview() {
 
   return (
     <div className="min-h-screen bg-[#f8f9fb]">
-      <div className="max-w-5xl mx-auto px-4 lg:px-6 py-5 space-y-5">
+      <div className="page-container py-5 space-y-5">
         <div>
           <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Con của tôi</h1>
           <p className="text-sm text-gray-500 mt-1">Tổng quan tiến độ học tập, bài tập và điểm danh của con.</p>
