@@ -34,6 +34,7 @@ export const HAS_VIETNAMESE_DIACRITICS = /[à-ỹÀ-Ỹ]/;
 const CODE_MESSAGES: Record<string, string> = {
   ACCOUNT_LOCKED: "Tài khoản đã bị khoá. Vui lòng liên hệ quản trị viên.",
   ROLE_IN_USE: "Vai trò này vẫn đang được gán cho thành viên. Hãy gỡ vai trò khỏi các thành viên trước khi xoá.",
+  TEACHER_NOT_ORG_MEMBER: "Giảng viên này chưa là thành viên của tổ chức. Hãy thêm họ vào tổ chức trước khi gán vào lớp.",
   ERR_UNAUTHORIZED: SESSION_EXPIRED_MESSAGE,
   ERR_FORBIDDEN: FORBIDDEN_MESSAGE,
   ERR_NOT_FOUND: NOT_FOUND_MESSAGE,

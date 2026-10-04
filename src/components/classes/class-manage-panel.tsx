@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, PlayCircle, UserMinus } from "lucide-react";
+import { Archive, Loader2, PlayCircle, UserMinus } from "lucide-react";
 import { QueryState } from "@/components/common/query-state";
 import { NotFoundError } from "@/lib/errors";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,7 @@ export function ClassManagePanel({ classId }: { classId: string }) {
   const studentsQuery = useClassStudentsById(classId);
   const actions = useClassManageActions(classId);
   const [pending, setPending] = useState<PendingRemoval | null>(null);
+  const [confirmingArchive, setConfirmingArchive] = useState(false);
 
   const cls = classQuery.data;
   const canManage = cls?.can_manage === true;
@@ -86,6 +87,13 @@ export function ClassManagePanel({ classId }: { classId: string }) {
                       <PlayCircle className="mr-1 h-4 w-4" aria-hidden="true" />
                     )}
                     Kích hoạt lớp
+                  </Button>
+                )}
+                {/* Chủ/quản trị tổ chức chỉ được lưu trữ lớp, không xoá (xoá vĩnh viễn là việc của quản trị viên hệ thống). */}
+                {canManage && cls.status !== "archived" && (
+                  <Button variant="outline" onClick={() => setConfirmingArchive(true)} disabled={actions.update.isPending}>
+                    <Archive className="mr-1 h-4 w-4" aria-hidden="true" />
+                    Lưu trữ lớp
                   </Button>
                 )}
               </div>
@@ -136,7 +144,7 @@ export function ClassManagePanel({ classId }: { classId: string }) {
                 {canAssignTeachers && (
                   <PersonPicker
                     queryKey={["class-manage", "teacher-candidates", classId]}
-                    search={(keyword) => classService.searchTeachers(keyword)}
+                    search={(keyword) => classService.searchAssignableTeachers(classId, keyword)}
                     onPick={(id) => actions.assignTeacher.mutate(id)}
                     isPicking={actions.assignTeacher.isPending}
                     placeholder="Tìm giảng viên theo tên"
@@ -200,6 +208,28 @@ export function ClassManagePanel({ classId }: { classId: string }) {
           )}
         </div>
       )}
+
+      <Dialog open={confirmingArchive} onOpenChange={setConfirmingArchive}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Lưu trữ lớp này?</DialogTitle>
+            <DialogDescription>
+              Lớp sẽ chuyển sang trạng thái đã lưu trữ và không còn hoạt động. Dữ liệu điểm số, điểm danh và học viên vẫn được giữ lại.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmingArchive(false)}>
+              Hủy
+            </Button>
+            <Button
+              disabled={actions.update.isPending}
+              onClick={() => actions.update.mutate({ status: "archived" }, { onSettled: () => setConfirmingArchive(false) })}
+            >
+              Lưu trữ lớp
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={pending !== null} onOpenChange={(open) => !open && setPending(null)}>
         <DialogContent>

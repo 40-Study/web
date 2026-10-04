@@ -49,7 +49,9 @@ export function useClassManageActions(classId: string) {
     mutationFn: (data: UpdateClassDTO) => classService.updateByClassId(classId, data),
     onSuccess: (_, data) => {
       refreshAll();
-      toast.success(data.status === "active" ? "Đã kích hoạt lớp" : "Đã cập nhật lớp");
+      toast.success(
+        data.status === "active" ? "Đã kích hoạt lớp" : data.status === "archived" ? "Đã lưu trữ lớp" : "Đã cập nhật lớp"
+      );
     },
     onError: fail("Không thể cập nhật lớp"),
   });

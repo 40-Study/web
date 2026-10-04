@@ -164,3 +164,13 @@ describe("getErrorMessage — ánh xạ lỗi backend sang tiếng Việt", () =
     expect(getErrorMessage("boom")).toBe(GENERIC_ERROR_MESSAGE);
   });
 });
+
+// W2-A: gán giảng viên ngoài tổ chức vào lớp của tổ chức trả 400 kèm code ổn định; web dịch theo code, không theo câu tiếng Anh.
+describe("getErrorMessage - TEACHER_NOT_ORG_MEMBER", () => {
+  it("dịch theo code sang câu tiếng Việt chỉ rõ cách xử lý", () => {
+    const error = new ApiError(400, "TEACHER_NOT_ORG_MEMBER", "teacher is not an active member of this class's organization");
+    const message = getErrorMessage(error);
+    expect(message).toMatch(/thành viên của tổ chức/);
+    expect(message).not.toMatch(/teacher/i);
+  });
+});
