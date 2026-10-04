@@ -20,6 +20,14 @@ export function useLeaderboard(params?: LeaderboardParams) {
   });
 }
 
+/** Các lớp của người dùng có bảng xếp hạng riêng (ô chọn lớp ở trang xếp hạng) */
+export function useMyClassBoards() {
+  return useQuery({
+    queryKey: [...leaderboardKeys.all, "classes"] as const,
+    queryFn: () => leaderboardService.getMyClassBoards(),
+  });
+}
+
 /** Current user's rank on the leaderboard */
 export function useMyRank(params?: { period_type?: PeriodType } | PeriodType) {
   const periodType = typeof params === "string" ? params : params?.period_type;

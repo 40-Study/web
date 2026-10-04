@@ -164,6 +164,22 @@ describe("SubmissionGradingPanel", () => {
     expect(createGrade).not.toHaveBeenCalled();
   });
 
+  it("sửa bản ghi điểm thang 100: nhập 85 được và chặn theo max_score của bản ghi (review R4 MINOR 5)", async () => {
+    mockGrades = [grade({ score: 70, max_score: 100 })];
+    render(<SubmissionGradingPanel assignmentId="a1" />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Xem bài/ }));
+    fireEvent.change(screen.getByLabelText(/Điểm \(thang 100\)/), { target: { value: "101" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu điểm" }));
+    expect(await screen.findByText("Điểm phải từ 0 đến 100")).toBeTruthy();
+    expect(updateGrade).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText(/Điểm \(thang 100\)/), { target: { value: "85" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu điểm" }));
+    await waitFor(() => expect(updateGrade).toHaveBeenCalledTimes(1));
+    expect(updateGrade).toHaveBeenCalledWith({ gradeId: "g1", data: { score: 85, feedback: "Tốt" } });
+  });
+
   it("điểm ngoài thang hoặc để trống: báo lỗi tại ô, không gọi API", async () => {
     render(<SubmissionGradingPanel assignmentId="a1" />);
 

@@ -62,3 +62,13 @@ export interface TimetableEntry {
   effective_from?: string;
   effective_until?: string;
 }
+
+/**
+ * Buổi sinh từ lịch lặp tuần đã bị huỷ (khớp dto.TimetableOccurrenceDTO). Backend không trả buổi huỷ ở `entries`,
+ * nên đây là cách duy nhất để web biết ngày nào của lịch lặp không còn buổi học.
+ */
+export interface TimetableOccurrence {
+  schedule_id: string;
+  /** YYYY-MM-DD */
+  date: string;
+}

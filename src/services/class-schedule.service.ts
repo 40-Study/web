@@ -19,6 +19,7 @@ import type {
   UpdateClassScheduleDTO,
   ClassScheduleFilters,
   TimetableEntry,
+  TimetableOccurrence,
 } from "@/types/class-schedule";
 
 type ApiResponse<T> = { message: string; data: T };
@@ -26,6 +27,8 @@ type ApiResponse<T> = { message: string; data: T };
 interface TimetableResponse {
   entries: TimetableEntry[];
   week?: string;
+  /** Chỉ có khi gọi kèm khoảng ngày: buổi sinh từ lịch lặp đã huỷ trong khoảng đó. */
+  cancelled_occurrences?: TimetableOccurrence[];
 }
 
 function timetableEntryToClassSchedule(entry: TimetableEntry): ClassSchedule {
@@ -84,14 +87,18 @@ export const classScheduleService = {
   /**
    * GET /me/timetable — mục thô của lịch cá nhân. Truyền `range` (YYYY-MM-DD, gồm cả hai đầu, tối đa 120
    * ngày) thì backend kèm thêm các buổi học cụ thể chưa huỷ của lớp trong khoảng đó (mục có `session_id`
-   * + `date`); không truyền thì chỉ có lịch lặp tuần như `getMySchedules` (B-08).
+   * + `date`); không truyền thì chỉ có lịch lặp tuần như `getMySchedules` (B-08). `cancelled` là các buổi sinh từ
+   * lịch lặp đã huỷ trong khoảng (để không vẽ lại chúng theo giờ lặp gốc).
    */
   getMyTimetableEntries: (range?: { from: string; to: string }) =>
     api
       .get<ApiResponse<TimetableResponse>>("/me/timetable", {
         params: range ? { sessions_from: range.from, sessions_to: range.to } : undefined,
       })
-      .then((r) => r.data.data.entries),
+      .then((r) => ({
+        entries: r.data.data.entries ?? [],
+        cancelled: r.data.data.cancelled_occurrences ?? [],
+      })),
 
   /** @deprecated /class-schedules/teacher không tồn tại ở backend — chưa có nơi gọi (dead code) */
   getTeacherSchedules: () =>

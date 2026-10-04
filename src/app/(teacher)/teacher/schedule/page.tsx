@@ -21,6 +21,7 @@ import {
   liveSessionToEvent,
   timetableEntriesToEvents,
   visibleDateRange,
+  vnWallClockToIso,
 } from "@/lib/teacher-schedule-events";
 import type { UpdateLiveSessionDTO } from "@/services/live-session.service";
 
@@ -65,8 +66,12 @@ export default function TeacherSchedulePage() {
     [sessionsData]
   );
   const classEvents: ScheduleEvent[] = useMemo(
-    () => timetableEntriesToEvents(timetableEntries ?? []),
-    [timetableEntries]
+    () =>
+      timetableEntriesToEvents(timetableEntries?.entries ?? [], {
+        range,
+        cancelled: timetableEntries?.cancelled,
+      }),
+    [timetableEntries, range]
   );
   const events = useMemo(() => [...liveEvents, ...classEvents], [liveEvents, classEvents]);
 
@@ -137,8 +142,10 @@ export default function TeacherSchedulePage() {
         const original = events.find((e) => e.id === eventId);
         const startChanged = !original || new Date(data.startTime).getTime() !== new Date(original.startTime).getTime();
         const endChanged = !original || new Date(data.endTime).getTime() !== new Date(original.endTime).getTime();
-        if (startChanged) dto.scheduled_at = data.startTime;
-        if (startChanged || endChanged) dto.scheduled_end_at = data.endTime;
+        // Form trả giờ theo trường LOCAL (= giờ VN đang hiển thị): đổi sang RFC3339 +07:00 để máy ngoài múi giờ VN
+        // không gửi sai khoảnh khắc.
+        if (startChanged) dto.scheduled_at = vnWallClockToIso(new Date(data.startTime));
+        if (startChanged || endChanged) dto.scheduled_end_at = vnWallClockToIso(new Date(data.endTime));
         updateLiveSession.mutate({ id: eventId, dto });
         return;
       }
@@ -148,8 +155,8 @@ export default function TeacherSchedulePage() {
         description: data.description || undefined,
         class_id: data.classId,
         course_id: data.courseId || undefined,
-        scheduled_at: data.startTime,
-        scheduled_end_at: data.endTime,
+        scheduled_at: vnWallClockToIso(new Date(data.startTime)),
+        scheduled_end_at: vnWallClockToIso(new Date(data.endTime)),
         location: location || undefined,
       });
     },

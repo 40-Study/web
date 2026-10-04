@@ -63,9 +63,12 @@ export function SubmissionGradeDialog({ row, canGrade, isSaving, onClose, onSave
   const [scoreText, setScoreText] = useState(grade ? String(grade.score) : "");
   const [feedback, setFeedback] = useState(grade?.feedback ?? "");
   const [scoreError, setScoreError] = useState<string | undefined>();
+  // Điểm đã chấm giữ thang của chính nó (vd 85/100): chặn theo max_score của bản ghi, không ép thang 10, nếu không
+  // sẽ không nhập được điểm trên 10 cho bản ghi như vậy. Chấm mới dùng thang mặc định của sổ điểm lớp.
+  const maxScore = grade?.max_score && grade.max_score > 0 ? grade.max_score : GRADE_MAX_SCORE;
 
   const handleSave = async () => {
-    const parsed = parseScoreInput(scoreText);
+    const parsed = parseScoreInput(scoreText, maxScore);
     if (!parsed.ok) {
       setScoreError(parsed.message);
       return;
@@ -115,7 +118,7 @@ export function SubmissionGradeDialog({ row, canGrade, isSaving, onClose, onSave
           {canGrade ? (
             <div className="space-y-3 rounded-lg border p-3">
               <Input
-                label={`Điểm (thang ${GRADE_MAX_SCORE})`}
+                label={`Điểm (thang ${maxScore})`}
                 inputMode="decimal"
                 value={scoreText}
                 onChange={(e) => setScoreText(e.target.value)}

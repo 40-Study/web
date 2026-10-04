@@ -4,7 +4,7 @@
  * khoá React giữa nhiều người ẩn danh, và vẫn tô sáng dòng của chính mình.
  */
 
-import { screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/api-client", async () => {
@@ -18,8 +18,9 @@ import { renderWithProviders } from "@/test/utils";
 
 const ME = "11111111-1111-4111-8111-111111111111";
 
-function mockLeaderboard() {
+function mockLeaderboard(classes: { id: string; name: string }[] = []) {
   mockApi.get.mockImplementation((url: string) => {
+    if (url === "/leaderboard/classes") return Promise.resolve(envelope(classes));
     if (url === "/leaderboard/me") {
       return Promise.resolve(
         envelope({
@@ -70,5 +71,48 @@ describe("LeaderboardPage — người ẩn danh", () => {
     renderWithProviders(<LeaderboardPage />);
     expect(await screen.findByText("Bình Công Khai")).toBeTruthy();
     expect(screen.queryByText(/Cấp\s*0/)).toBeNull();
+  });
+});
+// W2-B: bảng xếp hạng theo lớp (?class_id=) cho học viên/giảng viên của lớp đó.
+describe("LeaderboardPage — chọn lớp", () => {
+  const CLASS_A = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", name: "ReactJS K12" };
+
+  const leaderboardCalls = () =>
+    mockApi.get.mock.calls.filter((c: unknown[]) => c[0] === "/leaderboard").map((c: unknown[]) => (c[1] as { params?: Record<string, unknown> })?.params);
+
+  it("không có lớp nào thì không hiện ô chọn phạm vi", async () => {
+    mockLeaderboard([]);
+    renderWithProviders(<LeaderboardPage />);
+
+    expect(await screen.findByText("Bình Công Khai")).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "Phạm vi bảng xếp hạng" })).toBeNull();
+  });
+
+  it("chọn lớp thì gọi /leaderboard kèm class_id, dùng dòng is_me của bảng lớp làm vị trí của mình", async () => {
+    mockLeaderboard([CLASS_A]);
+    renderWithProviders(<LeaderboardPage />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "ReactJS K12" }));
+
+    await waitFor(() => expect(leaderboardCalls().some((p) => p?.class_id === CLASS_A.id)).toBe(true));
+    const classCall = leaderboardCalls().find((p) => p?.class_id === CLASS_A.id);
+    expect(classCall).toMatchObject({ period_type: "weekly", limit: 100, class_id: CLASS_A.id });
+    expect(screen.getByRole("button", { name: "ReactJS K12" }).getAttribute("aria-pressed")).toBe("true");
+    // Hạng #3 là dòng is_me trong bảng lớp (mock dùng chung dữ liệu), hiển thị ở khối "Vị trí của bạn".
+    expect(await screen.findByText("#3")).toBeTruthy();
+  });
+
+  it("quay lại Toàn hệ thống thì bỏ class_id", async () => {
+    mockLeaderboard([CLASS_A]);
+    renderWithProviders(<LeaderboardPage />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "ReactJS K12" }));
+    await waitFor(() => expect(leaderboardCalls().some((p) => p?.class_id === CLASS_A.id)).toBe(true));
+    mockApi.get.mockClear();
+    mockLeaderboard([CLASS_A]);
+    fireEvent.click(screen.getByRole("button", { name: "Toàn hệ thống" }));
+
+    await waitFor(() => expect(leaderboardCalls().length).toBeGreaterThan(0));
+    expect(leaderboardCalls().every((p) => p?.class_id === undefined)).toBe(true);
   });
 });
