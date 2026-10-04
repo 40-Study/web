@@ -13,11 +13,15 @@ let mockAssignmentError: unknown = null;
 let mockSubmissions: SubmissionResponseDTO[] = [];
 let mockSubmissionsError: unknown = null;
 let mockGrades: Grade[] = [];
+let mockClassStatus: string | undefined;
 const createGrade = vi.fn();
 const updateGrade = vi.fn();
 
 vi.mock("@/hooks/queries/use-assignments", () => ({
   useAssignment: () => ({ data: mockAssignment, isLoading: false, error: mockAssignmentError }),
+}));
+vi.mock("@/hooks/queries/use-class-manage", () => ({
+  useClassById: () => ({ data: mockClassStatus ? { id: "class-1", status: mockClassStatus } : undefined }),
 }));
 vi.mock("@/hooks/queries/use-submissions", () => ({
   useSubmissionsByAssignment: () => ({
@@ -89,6 +93,7 @@ beforeEach(() => {
   mockAssignmentError = null;
   mockSubmissionsError = null;
   mockGrades = [];
+  mockClassStatus = "active";
   mockSubmissions = [sub()];
   mockAssignment = {
     id: "a1",
@@ -240,5 +245,23 @@ describe("SubmissionGradingPanel", () => {
     render(<SubmissionGradingPanel assignmentId="a1" />);
 
     expect(screen.getByText("Chưa có học viên nào nộp bài")).toBeTruthy();
+  });
+
+  it("lớp đã lưu trữ: vẫn xem được bài nộp, nhưng không có 'Chấm điểm' và có thông báo chỉ đọc", () => {
+    mockClassStatus = "archived";
+    render(<SubmissionGradingPanel assignmentId="a1" />);
+
+    const row = screen.getByText("student1").closest("tr")!;
+    expect(within(row).getByRole("button", { name: /Xem bài/ })).toBeTruthy();
+    expect(within(row).queryByRole("button", { name: /Chấm điểm/ })).toBeNull();
+    expect(screen.getByText(/Lớp đã lưu trữ: chỉ xem bài nộp/)).toBeTruthy();
+  });
+
+  it("lớp đang hoạt động: vẫn có 'Chấm điểm' và không có thông báo lưu trữ", () => {
+    render(<SubmissionGradingPanel assignmentId="a1" />);
+
+    const row = screen.getByText("student1").closest("tr")!;
+    expect(within(row).getByRole("button", { name: /Chấm điểm/ })).toBeTruthy();
+    expect(screen.queryByText(/Lớp đã lưu trữ/)).toBeNull();
   });
 });

@@ -57,6 +57,24 @@ export function ResourceLoadError({ resourceLabel, onRetry }: { resourceLabel: s
   );
 }
 
+/**
+ * Refetch lỗi khi đã có dữ liệu: giữ nguyên trang, chỉ báo nhỏ rằng dữ liệu đang hiện có thể đã cũ
+ * (thay cả trang bằng ResourceLoadError làm mất danh sách người dùng đang xem).
+ */
+export function StaleDataNotice({ resourceLabel, onRetry }: { resourceLabel: string; onRetry: () => void }) {
+  return (
+    <div
+      role="status"
+      className="flex flex-wrap items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+    >
+      <span>{`Không làm mới được ${resourceLabel}, đang hiện dữ liệu đã tải trước đó.`}</span>
+      <Button variant="outline" size="sm" onClick={onRetry}>
+        Thử lại
+      </Button>
+    </div>
+  );
+}
+
 /** 403 giữ 403, mọi lỗi "không xem được" khác coi là 404. */
 export function unavailableStatus(error: unknown): 403 | 404 {
   return error instanceof ApiError && error.status === 403 ? 403 : 404;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Archive, Loader2, PlayCircle, UserMinus } from "lucide-react";
+import { Archive, ArchiveRestore, Loader2, PlayCircle, UserMinus } from "lucide-react";
 import { QueryState } from "@/components/common/query-state";
 import { NotFoundError } from "@/lib/errors";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,7 @@ import {
   useClassStudentsById,
   useClassTeachersById,
 } from "@/hooks/queries/use-class-manage";
-import { getClassStatusLabel, getClassStatusVariant } from "@/lib/class-status";
+import { getClassStatusLabel, getClassStatusVariant, isClassArchived } from "@/lib/class-status";
 import { classService } from "@/services/class.service";
 
 type PendingRemoval = { kind: "teacher" | "student"; id: string; name: string };
@@ -43,8 +43,11 @@ export function ClassManagePanel({ classId }: { classId: string }) {
   const [confirmingArchive, setConfirmingArchive] = useState(false);
 
   const cls = classQuery.data;
+  const archived = isClassArchived(cls?.status);
+  // Lớp lưu trữ chỉ đọc: backend từ chối mọi thao tác ghi (409 CLASS_ARCHIVED), nên các nút ghi ẩn hẳn.
   const canManage = cls?.can_manage === true;
-  const canAssignTeachers = cls?.can_assign_teachers === true;
+  const canWrite = canManage && !archived;
+  const canAssignTeachers = cls?.can_assign_teachers === true && !archived;
   const teachers = teachersQuery.data ?? [];
   const students = studentsQuery.data?.items ?? [];
 
@@ -89,8 +92,18 @@ export function ClassManagePanel({ classId }: { classId: string }) {
                     Kích hoạt lớp
                   </Button>
                 )}
+                {canManage && archived && (
+                  <Button onClick={() => actions.update.mutate({ status: "active" })} disabled={actions.update.isPending}>
+                    {actions.update.isPending ? (
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <ArchiveRestore className="mr-1 h-4 w-4" aria-hidden="true" />
+                    )}
+                    Mở lại lớp
+                  </Button>
+                )}
                 {/* Chủ/quản trị tổ chức chỉ được lưu trữ lớp, không xoá (xoá vĩnh viễn là việc của quản trị viên hệ thống). */}
-                {canManage && cls.status !== "archived" && (
+                {canWrite && (
                   <Button variant="outline" onClick={() => setConfirmingArchive(true)} disabled={actions.update.isPending}>
                     <Archive className="mr-1 h-4 w-4" aria-hidden="true" />
                     Lưu trữ lớp
@@ -101,6 +114,12 @@ export function ClassManagePanel({ classId }: { classId: string }) {
             {cls.status === "draft" && (
               <CardContent className="pt-0 text-sm text-muted-foreground">
                 Lớp đang ở trạng thái nháp: chưa hoạt động cho tới khi được kích hoạt.
+              </CardContent>
+            )}
+            {archived && (
+              <CardContent className="pt-0 text-sm text-muted-foreground">
+                Lớp đã lưu trữ: chỉ xem. Điểm số, điểm danh và danh sách vẫn được giữ lại; không thể ghi danh, gán giảng viên
+                hay chỉnh sửa cho tới khi mở lại lớp.
               </CardContent>
             )}
           </Card>
@@ -174,7 +193,7 @@ export function ClassManagePanel({ classId }: { classId: string }) {
                     {students.map((s) => (
                       <li key={s.student_id} className="flex items-center justify-between gap-2 py-2">
                         <span className="truncate text-sm font-medium">{s.name}</span>
-                        {canManage && (
+                        {canWrite && (
                           <Button
                             variant="destructiveGhost"
                             size="sm"
@@ -188,7 +207,7 @@ export function ClassManagePanel({ classId }: { classId: string }) {
                     ))}
                   </ul>
                 </QueryState>
-                {canManage && (
+                {canWrite && (
                   <PersonPicker
                     queryKey={["class-manage", "student-candidates", classId]}
                     search={(keyword) => classService.searchEnrollableStudents(classId, keyword)}
@@ -203,7 +222,7 @@ export function ClassManagePanel({ classId }: { classId: string }) {
             </Card>
           </div>
 
-          {!canManage && (
+          {!canManage && !archived && (
             <p className="text-sm text-muted-foreground">Bạn chỉ có quyền xem lớp này.</p>
           )}
         </div>

@@ -116,7 +116,17 @@ export function timetableEntriesToEvents(entries: TimetableEntry[], options: Tim
     skipDates.set(scheduleId, set);
   };
   for (const c of cancelled) markSkipped(c.schedule_id, c.date);
-  for (const e of entries) if (e.session_id) markSkipped(e.schedule_id, e.date);
+  const weeklyDow = new Map<string, number>();
+  for (const e of entries) if (e.schedule_id && !e.session_id) weeklyDow.set(e.schedule_id, e.day_of_week);
+  for (const e of entries) {
+    if (!e.session_id) continue;
+    markSkipped(e.schedule_id, e.date);
+    // Buổi dời sang THỨ khác: backend không báo ngày gốc (không có cancelled_occurrences, chỉ trả ngày mới), nên ngày
+    // gốc được suy ra là ngày của lịch lặp trong cùng tuần (thứ Hai đầu tuần). Dời sang cùng thứ của tuần khác thì
+    // không suy ra được: cần backend trả ngày gốc.
+    const dow = e.schedule_id ? weeklyDow.get(e.schedule_id) : undefined;
+    if (dow !== undefined && e.date) markSkipped(e.schedule_id, sameWeekOccurrence(e.date, dow));
+  }
 
   const events: ScheduleEvent[] = [];
   for (const e of entries) {
@@ -170,6 +180,13 @@ export function timetableEntriesToEvents(entries: TimetableEntry[], options: Tim
     }
   }
   return events;
+}
+
+/** Ngày của thứ `dow` (0 = Chủ nhật) trong cùng tuần (thứ Hai đầu tuần) với `date`; trả lại chính `date` nếu đã đúng thứ. */
+function sameWeekOccurrence(date: string, dow: number): string {
+  const d = new Date(`${date.slice(0, 10)}T00:00:00`);
+  if (d.getDay() === dow) return dayKey(d);
+  return dayKey(addDays(d, ((dow + 6) % 7) - ((d.getDay() + 6) % 7)));
 }
 
 /** Trải một lịch lặp tuần thành sự kiện một lần cho từng ngày trong `range`, bỏ các ngày trong `skip`. */

@@ -20,7 +20,7 @@ import TeacherNotificationDialog from "@/components/teacher/teacher-notification
 import { useMyStudents } from "@/hooks/queries/use-classes";
 import { useCourse } from "@/hooks/queries/use-courses";
 import { useAuthStore } from "@/stores/auth.store";
-import { ResourceLoadError, ResourceUnavailable, isResourceUnavailableError, unavailableStatus } from "@/components/common/resource-unavailable";
+import { ResourceLoadError, ResourceUnavailable, StaleDataNotice, isResourceUnavailableError, unavailableStatus } from "@/components/common/resource-unavailable";
 
 export default function TeacherCourseMembersPage() {
   const params = useParams<{ id: string }>();
@@ -62,7 +62,7 @@ export default function TeacherCourseMembersPage() {
     );
   }
   // Lỗi 5xx/mạng khác "không tìm thấy": hiện lỗi + Thử lại, không báo khoá không tồn tại.
-  if (courseError && !isResourceUnavailableError(courseErrorValue)) {
+  if (courseError && !course && !isResourceUnavailableError(courseErrorValue)) {
     return <ResourceLoadError resourceLabel="khoá học" onRetry={() => void refetchCourse()} />;
   }
   if (!course) {
@@ -82,6 +82,7 @@ export default function TeacherCourseMembersPage() {
 
   return (
     <div className="space-y-6">
+      {courseError && <StaleDataNotice resourceLabel="khoá học" onRetry={() => void refetchCourse()} />}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href="/teacher/courses">

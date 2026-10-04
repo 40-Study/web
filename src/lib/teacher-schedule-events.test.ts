@@ -124,6 +124,23 @@ describe("timetableEntriesToEvents: có khoảng ngày (buổi đã sửa giờ 
     expect(days(events)).toEqual(["2026-10-05 19:00", "2026-10-19 19:00"]);
   });
 
+  it("buổi DỜI sang ngày khác trong tuần: hiện ở ngày mới, ngày gốc (cùng tuần) không còn bóng giờ lặp", () => {
+    // thứ Hai 12/10 dời sang thứ Tư 14/10: backend chỉ trả buổi ở ngày mới, không báo ngày gốc.
+    const events = timetableEntriesToEvents(
+      [weekly, entry({ session_id: "s2", schedule_id: "sch1", date: "2026-10-14", day_of_week: 3, start_time: "19:00", end_time: "21:00" })],
+      { range },
+    );
+    expect(days(events).sort()).toEqual(["2026-10-05 19:00", "2026-10-14 19:00", "2026-10-19 19:00"]);
+  });
+
+  it("buổi sinh từ lịch lặp ở đúng thứ của lịch (chỉ đổi giờ) không làm mất buổi của tuần khác", () => {
+    const events = timetableEntriesToEvents(
+      [weekly, entry({ session_id: "s2", schedule_id: "sch1", date: "2026-10-12", day_of_week: 1, start_time: "14:00", end_time: "15:30" })],
+      { range },
+    );
+    expect(days(events).sort()).toEqual(["2026-10-05 19:00", "2026-10-12 14:00", "2026-10-19 19:00"]);
+  });
+
   it("lịch lặp ngoài hiệu lực hoặc khác thứ không vẽ", () => {
     expect(timetableEntriesToEvents([{ ...weekly, effective_until: "2026-10-10" }], { range })).toHaveLength(1);
     expect(timetableEntriesToEvents([{ ...weekly, effective_from: "2026-10-20" }], { range })).toHaveLength(0);

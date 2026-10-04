@@ -24,6 +24,7 @@ import {
 import type { ScheduleEvent } from "./week-calendar-grid";
 import { useMyCourses } from "@/hooks/queries/use-courses";
 import { useClasses } from "@/hooks/queries/use-classes";
+import { selectableClasses } from "@/lib/class-status";
 
 export interface EventFormData {
   title: string;
@@ -237,7 +238,7 @@ export default function ScheduleEventFormDialog({
                     />
                   </SelectTrigger>
                   <SelectContent>
-                    {classes.map((cls) => (
+                    {selectableClasses(classes).map((cls) => (
                       <SelectItem key={cls.id} value={cls.id}>
                         {cls.name}
                       </SelectItem>

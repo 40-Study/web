@@ -6,10 +6,13 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/errors";
 
-const state = vi.hoisted(() => ({ sessions: {} as Record<string, unknown> }));
+const state = vi.hoisted(() => ({ sessions: {} as Record<string, unknown>, classStatus: undefined as string | undefined }));
 
 vi.mock("next/navigation", () => ({ useParams: () => ({ classId: "class-1" }) }));
 vi.mock("@/hooks/queries/use-classes", () => ({ useClassStudentsByClassId: () => ({ data: [], isLoading: false }) }));
+vi.mock("@/hooks/queries/use-class-manage", () => ({
+  useClassById: () => ({ data: state.classStatus ? { id: "class-1", status: state.classStatus } : undefined }),
+}));
 vi.mock("@/hooks/queries/use-sessions", () => ({
   useClassSessions: () => state.sessions,
   useSessionAttendances: () => ({ data: [], isLoading: false }),
@@ -27,12 +30,13 @@ vi.mock("@/components/attendance/use-attendance-draft", () => ({
     hasChanges: false,
   }),
 }));
-vi.mock("@/components/attendance/attendance-table", () => ({ AttendanceTable: () => <div>BANG DIEM DANH</div> }));
+vi.mock("@/components/attendance/attendance-table", () => ({ AttendanceTable: ({ disabled }: { disabled?: boolean }) => <div data-testid="table" data-disabled={String(!!disabled)}>BANG DIEM DANH</div> }));
 
 import ClassAttendancePage from "./page";
 
 beforeEach(() => {
   state.sessions = {};
+  state.classStatus = "active";
 });
 
 describe("ClassAttendancePage — lớp không xem được", () => {
@@ -56,5 +60,32 @@ describe("ClassAttendancePage — lớp không xem được", () => {
     render(<ClassAttendancePage />);
 
     expect(screen.queryByRole("heading", { name: "Không tìm thấy lớp học" })).toBeNull();
+  });
+});
+describe("ClassAttendancePage — lớp đã lưu trữ (chỉ đọc)", () => {
+  const withSession = () => {
+    state.sessions = {
+      data: { sessions: [{ id: "s1", date: "2026-10-01", start_time: "19:00", end_time: "20:30", status: "completed" }] },
+      isLoading: false,
+    };
+  };
+
+  it("lớp lưu trữ: thông báo chỉ đọc, khoá 'Đánh dấu tất cả có mặt' và 'Lưu điểm danh', bảng ở chế độ khoá", () => {
+    state.classStatus = "archived";
+    withSession();
+    render(<ClassAttendancePage />);
+
+    expect(screen.getByText(/Lớp đã lưu trữ: chỉ xem điểm danh/)).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Đánh dấu tất cả có mặt" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Lưu điểm danh" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByTestId("table").getAttribute("data-disabled")).toBe("true");
+  });
+
+  it("lớp đang hoạt động: không có thông báo lưu trữ, bảng không bị khoá", () => {
+    withSession();
+    render(<ClassAttendancePage />);
+
+    expect(screen.queryByText(/Lớp đã lưu trữ/)).toBeNull();
+    expect(screen.getByTestId("table").getAttribute("data-disabled")).toBe("false");
   });
 });

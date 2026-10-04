@@ -100,6 +100,37 @@ describe("ClassManagePanel", () => {
     expect(screen.queryByRole("button", { name: "Lưu trữ lớp" })).toBeNull();
   });
 
+  it("lớp đã lưu trữ: nhãn + thông báo chỉ đọc, ẩn mọi nút ghi (ghi danh, gán, gỡ), vẫn xem được danh sách", async () => {
+    serve({ status: "archived", can_manage: true, can_assign_teachers: true });
+    renderWithProviders(<ClassManagePanel classId={CLASS_ID} />);
+
+    expect(await screen.findByText("Bé Minh")).toBeTruthy();
+    expect(screen.getByText("Cô Lan")).toBeTruthy();
+    expect(screen.getByText("Đã lưu trữ")).toBeTruthy();
+    expect(screen.getByText(/Lớp đã lưu trữ: chỉ xem/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Gỡ học viên/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Gỡ giảng viên/ })).toBeNull();
+    expect(screen.queryByPlaceholderText("Tìm học viên để ghi danh")).toBeNull();
+    expect(screen.queryByPlaceholderText("Tìm giảng viên theo tên")).toBeNull();
+    expect(screen.queryByText("Bạn chỉ có quyền xem lớp này.")).toBeNull();
+  });
+
+  it("lớp đã lưu trữ + có quyền quản lý: 'Mở lại lớp' gọi PUT status=active", async () => {
+    serve({ status: "archived", can_manage: true, can_assign_teachers: true });
+    renderWithProviders(<ClassManagePanel classId={CLASS_ID} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Mở lại lớp" }));
+    await waitFor(() => expect(mockApi.put).toHaveBeenCalledWith(`/classes/${CLASS_ID}`, { status: "active" }));
+  });
+
+  it("lớp đã lưu trữ + chỉ xem (không can_manage): không có 'Mở lại lớp'", async () => {
+    serve({ status: "archived" });
+    renderWithProviders(<ClassManagePanel classId={CLASS_ID} />);
+
+    await screen.findByText("Bé Minh");
+    expect(screen.queryByRole("button", { name: "Mở lại lớp" })).toBeNull();
+  });
+
   it("chỉ có quyền xem (không có cờ nào): không có nút kích hoạt, ghi danh, gỡ", async () => {
     serve({ status: "draft" });
     renderWithProviders(<ClassManagePanel classId={CLASS_ID} />);

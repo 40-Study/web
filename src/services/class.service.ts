@@ -254,16 +254,6 @@ export const classService = {
   assignTeacherByClassId: (classId: string, teacherId: string, role = "primary") =>
     api.post<R<unknown>>(`/classes/${classId}/teachers`, { teacher_id: teacherId, role }).then((r) => r.data),
 
-  /** GET /teachers?keyword= — ô chọn giảng viên để gán vào lớp (tìm theo tên, backend không trả email). */
-  searchTeachers: (keyword: string) =>
-    api
-      .get<R<{ teachers: Array<{ id: string; user_name: string; full_name?: string }> }>>("/teachers", {
-        params: { keyword, page: 1, page_size: 20 },
-      })
-      .then((r): EnrollableStudent[] =>
-        r.data.data.teachers.map((t) => ({ id: t.id, name: t.full_name?.trim() || t.user_name }))
-      ),
-
   /**
    * GET /classes/:classId/assignable-teachers?keyword= — giảng viên có thể gán vào lớp. Backend quyết danh sách: lớp của
    * tổ chức chỉ có giảng viên là thành viên tổ chức (admin hệ thống thấy tất cả), nên ô chọn không hiện người mà

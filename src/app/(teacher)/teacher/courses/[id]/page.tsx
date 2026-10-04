@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ResourceLoadError, ResourceUnavailable, isResourceUnavailableError, unavailableStatus } from "@/components/common/resource-unavailable";
+import { ResourceLoadError, ResourceUnavailable, StaleDataNotice, isResourceUnavailableError, unavailableStatus } from "@/components/common/resource-unavailable";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -76,6 +76,7 @@ import { AddContentModal, type ContentData } from "@/components/teacher/add-cont
 import { useCreateLiveSession } from "@/hooks/queries/use-live-sessions";
 import { useAuthStore } from "@/stores/auth.store";
 import { useClasses } from "@/hooks/queries/use-classes";
+import { selectableClasses } from "@/lib/class-status";
 import { lessonContentKeys } from "@/hooks/queries/use-lesson-content";
 import { submitLivestreamContent } from "@/lib/livestream";
 import { LIVESTREAM_NOT_READY_HINT, resolveLivestreamRoomHref } from "@/lib/lesson-content-link";
@@ -543,11 +544,13 @@ export default function CourseDetailPage() {
   // `data`, nên 3 trạng thái khác hẳn nhau (đang tải / lỗi / khoá chưa có lớp)
   // đều ra `[]` → nút gửi xám im lặng, không một chữ giải thích.
   const {
-    data: courseClasses = [],
+    data: allCourseClasses = [],
     isLoading: classesLoading,
     isError: classesError,
     refetch: refetchClasses,
   } = useClasses(courseId, { enabled: addContentModal });
+  // Lớp lưu trữ chỉ đọc: không cho chọn làm lớp của buổi live mới.
+  const courseClasses = useMemo(() => selectableClasses(allCourseClasses), [allCourseClasses]);
 
   // Section form
   const [sectionTitle, setSectionTitle] = useState("");
@@ -891,7 +894,7 @@ export default function CourseDetailPage() {
   }
 
   // B-18: khoá không tồn tại (404) trước đây render trang trắng.
-  if (courseError && !isResourceUnavailableError(courseErrorValue)) {
+  if (courseError && !course && !isResourceUnavailableError(courseErrorValue)) {
     return <ResourceLoadError resourceLabel="khoá học" onRetry={() => void refetchCourse()} />;
   }
   if (!course) {
@@ -933,6 +936,7 @@ export default function CourseDetailPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {courseError && <StaleDataNotice resourceLabel="khoá học" onRetry={() => void refetchCourse()} />}
       {/* Header */}
       <div className="flex items-start gap-4">
         <Link href="/teacher/courses">
