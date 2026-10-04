@@ -28,7 +28,9 @@ function serve(cls: Record<string, unknown>) {
     if (url.endsWith("/students"))
       return Promise.resolve(envelope({ students: [{ id: "sc1", student_id: "s1", user_name: "hs1", full_name: "Bé Minh", status: "active" }], total: 1, page: 1, page_size: 100 }));
     if (url.endsWith("/enrollable-students")) return Promise.resolve(envelope({ students: [{ id: "s2", user_name: "hs2", full_name: "Bé Hoa" }] }));
-    if (url === "/teachers") return Promise.resolve(envelope({ teachers: [{ id: "t2", user_name: "gv2", full_name: "Thầy Nam" }] }));
+    // Ô chọn giảng viên đọc /classes/:id/assignable-teachers (backend lọc theo thành viên tổ chức), không phải /teachers công khai.
+    if (url === `/classes/${CLASS_ID}/assignable-teachers`)
+      return Promise.resolve(envelope({ teachers: [{ id: "t2", user_name: "gv2", full_name: "Thầy Nam" }] }));
     return Promise.reject(new Error(`unexpected GET ${url}`));
   });
   mockApi.put.mockResolvedValue(envelope({}));
@@ -77,12 +79,34 @@ describe("ClassManagePanel", () => {
     expect(await screen.findByPlaceholderText("Tìm học viên để ghi danh")).toBeTruthy();
   });
 
+  it("người quản lý chỉ được lưu trữ lớp: có 'Lưu trữ lớp' (hộp xác nhận, PUT status=archived), không có nút xoá", async () => {
+    serve({ status: "active", can_manage: true, can_assign_teachers: true });
+    renderWithProviders(<ClassManagePanel classId={CLASS_ID} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Lưu trữ lớp" }));
+    expect(mockApi.put).not.toHaveBeenCalled();
+    const buttons = await screen.findAllByRole("button", { name: "Lưu trữ lớp" });
+    await userEvent.click(buttons[buttons.length - 1]);
+    await waitFor(() => expect(mockApi.put).toHaveBeenCalledWith(`/classes/${CLASS_ID}`, { status: "archived" }));
+    expect(mockApi.delete).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: /Xoá lớp|Xóa lớp|Xoá vĩnh viễn/ })).toBeNull();
+  });
+
+  it("lớp đã lưu trữ: không còn nút 'Lưu trữ lớp'", async () => {
+    serve({ status: "archived", can_manage: true, can_assign_teachers: true });
+    renderWithProviders(<ClassManagePanel classId={CLASS_ID} />);
+
+    expect(await screen.findByText("Đã lưu trữ")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Lưu trữ lớp" })).toBeNull();
+  });
+
   it("chỉ có quyền xem (không có cờ nào): không có nút kích hoạt, ghi danh, gỡ", async () => {
     serve({ status: "draft" });
     renderWithProviders(<ClassManagePanel classId={CLASS_ID} />);
 
     await screen.findByText("Bé Minh");
     expect(screen.queryByRole("button", { name: /Kích hoạt lớp/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Lưu trữ lớp" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Gỡ học viên/ })).toBeNull();
     expect(screen.queryByPlaceholderText("Tìm học viên để ghi danh")).toBeNull();
     expect(screen.getByText("Bạn chỉ có quyền xem lớp này.")).toBeTruthy();

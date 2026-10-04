@@ -264,6 +264,21 @@ export const classService = {
         r.data.data.teachers.map((t) => ({ id: t.id, name: t.full_name?.trim() || t.user_name }))
       ),
 
+  /**
+   * GET /classes/:classId/assignable-teachers?keyword= — giảng viên có thể gán vào lớp. Backend quyết danh sách: lớp của
+   * tổ chức chỉ có giảng viên là thành viên tổ chức (admin hệ thống thấy tất cả), nên ô chọn không hiện người mà
+   * việc gán sẽ bị từ chối.
+   */
+  searchAssignableTeachers: (classId: string, keyword: string) =>
+    api
+      .get<R<{ teachers: Array<{ id: string; user_name: string; full_name?: string }> }>>(
+        `/classes/${classId}/assignable-teachers`,
+        { params: { keyword } }
+      )
+      .then((r): EnrollableStudent[] =>
+        r.data.data.teachers.map((t) => ({ id: t.id, name: t.full_name?.trim() || t.user_name }))
+      ),
+
   /** DELETE /classes/:classId/teachers/:teacherId */
   removeTeacherByClassId: (classId: string, teacherId: string) =>
     api.delete<R<null>>(`/classes/${classId}/teachers/${teacherId}`).then((r) => r.data),
