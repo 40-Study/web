@@ -18,7 +18,9 @@ export class MeetApiError extends Error {
   constructor(
     public status: number,
     message: string,
-    public code?: string
+    public code?: string,
+    /** Trường `code` của body (vd. CLASS_ARCHIVED); khác `.code` ở trên vốn là `message` của envelope 403. */
+    public bodyCode?: string
   ) {
     super(message);
     this.name = 'MeetApiError';
@@ -40,7 +42,7 @@ async function request<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: 'Unknown error' }));
-    throw new MeetApiError(res.status, body.error ?? `HTTP ${res.status}`, body.message);
+    throw new MeetApiError(res.status, body.error ?? `HTTP ${res.status}`, body.message, body.code);
   }
 
   return res.json();
@@ -62,7 +64,7 @@ export const api = {
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({ error: 'Unknown error' }));
-      throw new MeetApiError(res.status, body.error ?? `HTTP ${res.status}`, body.message);
+      throw new MeetApiError(res.status, body.error ?? `HTTP ${res.status}`, body.message, body.code);
     }
     return res.json();
   },
