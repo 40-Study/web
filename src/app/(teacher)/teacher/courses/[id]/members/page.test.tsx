@@ -2,15 +2,27 @@
  * QA B-18: khoá không tồn tại / của giảng viên khác trước đây hiện bảng "Không có thành viên phù hợp" như thể khoá
  * chưa có ai. Phải từ chối rõ ràng, và tiêu đề không còn "Khóa học #<uuid>".
  */
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/stores/auth.store";
+import { ApiError } from "@/lib/errors";
 
-const state = vi.hoisted(() => ({ course: undefined as unknown, loading: false }));
+const state = vi.hoisted(() => ({
+  course: undefined as unknown,
+  loading: false,
+  error: undefined as unknown,
+  refetch: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({ useParams: () => ({ id: "course-1" }) }));
 vi.mock("@/hooks/queries/use-courses", () => ({
-  useCourse: () => ({ data: state.course, isLoading: state.loading }),
+  useCourse: () => ({
+    data: state.course,
+    isLoading: state.loading,
+    isError: state.error !== undefined,
+    error: state.error,
+    refetch: state.refetch,
+  }),
 }));
 vi.mock("@/hooks/queries/use-classes", () => ({
   useMyStudents: () => ({
@@ -25,6 +37,8 @@ import TeacherCourseMembersPage from "./page";
 beforeEach(() => {
   state.course = undefined;
   state.loading = false;
+  state.error = undefined;
+  state.refetch.mockReset();
   useAuthStore.setState({ user: { id: "t1", name: "GV" } as never, activeRole: "TEACHER" });
 });
 
@@ -52,5 +66,57 @@ describe("TeacherCourseMembersPage — quyền và tồn tại của khoá", () 
     expect(screen.getByText("Lê Văn C")).toBeTruthy();
     expect(screen.getByText("React + Next.js")).toBeTruthy();
     expect(screen.queryByText(/Khóa học #/)).toBeNull();
+  });
+
+  it("lỗi 5xx khi tải khoá: hiện lỗi + Thử lại (gọi refetch), không báo 'Không tìm thấy'", () => {
+    state.error = new ApiError(500, "INTERNAL", "boom");
+    render(<TeacherCourseMembersPage />);
+
+    expect(screen.getByRole("heading", { name: "Không tải được khoá học" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Không tìm thấy khoá học" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    expect(state.refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("API 403 khi tải khoá: hiện 'Không có quyền truy cập'", () => {
+    state.error = new ApiError(403, "FORBIDDEN", "no");
+    render(<TeacherCourseMembersPage />);
+
+    expect(screen.getByRole("heading", { name: "Không có quyền truy cập" })).toBeTruthy();
+  });
+
+  it("store chưa có user: không nháy 'Không có quyền truy cập' (chờ)", () => {
+    state.course = { id: "course-1", title: "React + Next.js", instructor_id: "t1" };
+    useAuthStore.setState({ user: null as never, activeRole: "TEACHER" });
+    render(<TeacherCourseMembersPage />);
+
+    expect(screen.queryByRole("heading", { name: "Không có quyền truy cập" })).toBeNull();
+    expect(screen.queryByText("Lê Văn C")).toBeNull();
+  });
+
+  it("lỗi 5xx khi tải khoá: hiện lỗi + Thử lại (gọi refetch), không báo 'Không tìm thấy'", () => {
+    state.error = new ApiError(500, "INTERNAL", "boom");
+    render(<TeacherCourseMembersPage />);
+
+    expect(screen.getByRole("heading", { name: "Không tải được khoá học" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Không tìm thấy khoá học" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    expect(state.refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("API 403 khi tải khoá: hiện 'Không có quyền truy cập'", () => {
+    state.error = new ApiError(403, "FORBIDDEN", "no");
+    render(<TeacherCourseMembersPage />);
+
+    expect(screen.getByRole("heading", { name: "Không có quyền truy cập" })).toBeTruthy();
+  });
+
+  it("store chưa có user: không nháy 'Không có quyền truy cập' (chờ)", () => {
+    state.course = { id: "course-1", title: "React + Next.js", instructor_id: "t1" };
+    useAuthStore.setState({ user: null as never, activeRole: "TEACHER" });
+    render(<TeacherCourseMembersPage />);
+
+    expect(screen.queryByRole("heading", { name: "Không có quyền truy cập" })).toBeNull();
+    expect(screen.queryByText("Lê Văn C")).toBeNull();
   });
 });

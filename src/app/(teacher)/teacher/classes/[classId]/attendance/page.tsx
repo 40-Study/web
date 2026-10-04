@@ -6,9 +6,8 @@ import { toast } from "sonner";
 import { AttendanceTable } from "@/components/attendance/attendance-table";
 import { useAttendanceDraft } from "@/components/attendance/use-attendance-draft";
 import { useClassStudentsByClassId } from "@/hooks/queries/use-classes";
-import { ResourceUnavailable, isResourceUnavailableError } from "@/components/common/resource-unavailable";
+import { ResourceUnavailable, isResourceUnavailableError, unavailableStatus } from "@/components/common/resource-unavailable";
 import { formatVnDateOnly } from "@/lib/vn-datetime";
-import { ApiError } from "@/lib/errors";
 import {
   useBulkMarkAttendance,
   useClassSessions,
@@ -80,8 +79,7 @@ export default function ClassAttendancePage() {
   const selectedSession = sessions.find((s) => s.id === sessionId);
   // B-18: lớp không tồn tại hoặc của giảng viên khác (API 404/403) trước đây hiện trang điểm danh rỗng như lớp chưa có buổi.
   if (sessionsError && isResourceUnavailableError(sessionsErrorValue)) {
-    const status = sessionsErrorValue instanceof ApiError && sessionsErrorValue.status === 403 ? 403 : 404;
-    return (<ResourceUnavailable status={status} resourceLabel="lớp học" backHref="/teacher/courses" backLabel="Về Khóa học của tôi" />);
+    return (<ResourceUnavailable status={unavailableStatus(sessionsErrorValue)} resourceLabel="lớp học" backHref="/teacher/courses" backLabel="Về Khóa học của tôi" />);
   }
   const loading = sessionsLoading || studentsLoading || attendancesLoading;
 
