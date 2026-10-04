@@ -98,7 +98,7 @@ export default function CartPage() {
         isError
         error={error}
         onRetry={() => refetch()}
-        className="container max-w-5xl mx-auto px-4 py-16"
+        className="page-container py-16"
       >
         {null}
       </QueryState>
@@ -106,7 +106,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="container max-w-5xl mx-auto px-4 py-8">
+    <div className="page-container py-8">
       {showRefetchBanner && (
         <div
           role="alert"

@@ -22,7 +22,7 @@ function LoadingSkeleton() {
   return (
     <div className="animate-pulse">
       <div className="h-48 bg-primary-900/80" />
-      <div className="container mx-auto grid gap-8 px-4 py-8 lg:grid-cols-3">
+      <div className="page-container grid gap-8 py-8 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <div className="h-6 w-1/3 rounded bg-muted" />
           <div className="h-32 rounded bg-muted" />
@@ -80,7 +80,7 @@ export default function CourseDetailPage() {
     // N13: không in thẳng error.message (lộ "invalid UUID length: 14"); slug không tồn tại đã được
     // hook trả null → nhánh notFound() bên dưới. Còn lại là lỗi mạng/server thật.
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
+      <div className="page-container py-16 text-center">
         <h2 className="text-2xl font-bold text-destructive mb-2">Lỗi tải khóa học</h2>
         <p className="text-muted-foreground mb-4">
           {getErrorMessage(error, "Không thể tải thông tin khóa học, vui lòng thử lại")}
@@ -132,7 +132,7 @@ export default function CourseDetailPage() {
         }
       />
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="page-container py-8">
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <CourseDetailContent
