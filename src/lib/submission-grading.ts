@@ -73,7 +73,8 @@ export function buildGradingRows({
     const grade = gradeByStudent.get(studentId);
     rows.push({
       studentId,
-      studentName: grade?.student_name || latest.user?.username || studentId,
+      // Họ tên trước, tên đăng nhập chỉ là phương án cuối: panel từng hiện username ("student1") tới khi chấm xong.
+      studentName: grade?.student_name || latest.user?.full_name || latest.user?.username || studentId,
       submission: latest,
       attempts: list.length,
       late: isLateSubmission(latest.created_at, endTime, graceMinutes),

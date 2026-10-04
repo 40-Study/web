@@ -30,8 +30,8 @@ export default function AdminAuditLogsPage() {
       <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
         <Info className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
         <p>
-          Backend <strong>chưa có API nhật ký hoạt động</strong>, nên bảng dưới đây đang trống.
-          Bảng sẽ tự động dùng dữ liệu thật khi endpoint tương ứng sẵn sàng.
+          Hệ thống <strong>chưa ghi nhận nhật ký hoạt động</strong>, nên bảng dưới đây đang trống.
+          Dữ liệu sẽ xuất hiện tại đây khi tính năng được bật.
         </p>
       </div>
 
@@ -52,7 +52,7 @@ export default function AdminAuditLogsPage() {
             {auditLogs.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
-                  Chưa có dữ liệu nhật ký — tính năng đang được phát triển
+                  Chưa có nhật ký hoạt động nào
                 </td>
               </tr>
             )}

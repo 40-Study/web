@@ -106,9 +106,12 @@ export function Header() {
   // Phụ huynh không học: /coins và /my-courses chỉ dành cho học viên (ROLE_SCOPED_ROUTES) nên link
   // tới đó sẽ bị chuyển hướng. Nút chính của phụ huynh trỏ về /home — nơi đang hiển thị tổng quan
   // các con (ParentHomeOverview); chưa có route danh sách con riêng nên không bịa thêm.
+  // Giảng viên cũng không học: "Khóa học của tôi" kiểu học viên vô nghĩa, dẫn về khu giảng dạy (B-11).
   const primaryNav = isParent
     ? { label: "Con của tôi", href: "/home" }
-    : { label: "Khóa học của tôi", href: "/my-courses" };
+    : normalizedRole === "TEACHER"
+      ? { label: "Khóa học giảng dạy", href: "/teacher/courses" }
+      : { label: "Khóa học của tôi", href: "/my-courses" };
 
   // Students: Bài tập + Đơn hàng + Cài đặt; Parents: Đơn hàng + Cài đặt; Teachers/Admins: only Cài đặt
   const userMenuItems = [

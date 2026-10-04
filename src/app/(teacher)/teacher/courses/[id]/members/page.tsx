@@ -18,6 +18,9 @@ import {
 } from "@/components/ui/table";
 import TeacherNotificationDialog from "@/components/teacher/teacher-notification-dialog";
 import { useMyStudents } from "@/hooks/queries/use-classes";
+import { useCourse } from "@/hooks/queries/use-courses";
+import { useAuthStore } from "@/stores/auth.store";
+import { ResourceUnavailable } from "@/components/common/resource-unavailable";
 
 export default function TeacherCourseMembersPage() {
   const params = useParams<{ id: string }>();
@@ -26,6 +29,11 @@ export default function TeacherCourseMembersPage() {
   const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false);
 
   const { data: allStudents = [], isLoading } = useMyStudents();
+  // B-18: danh sách thành viên lọc từ "học viên của tôi" nên khoá không tồn tại hay của giảng viên khác
+  // trước đây chỉ ra bảng rỗng như khoá chưa có ai. Kiểm khoá và chủ khoá như trang sửa khoá.
+  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const teacherId = useAuthStore((s) => s.user?.id);
+  const isAdmin = useAuthStore((s) => s.activeRole) === "SYSTEM_ADMIN";
 
   // Filter by course_id; if the course has an associated class, filter by class_id too
   const members = useMemo(
@@ -34,7 +42,7 @@ export default function TeacherCourseMembersPage() {
   );
 
   // Use class_name or course_name for the title
-  const courseTitle = members[0]?.course_name ?? members[0]?.class_name ?? `Khóa học #${courseId}`;
+  const courseTitle = course?.title ?? members[0]?.course_name ?? members[0]?.class_name ?? "Khóa học";
 
   const filteredMembers = useMemo(() => {
     return members.filter((member) => {
@@ -45,6 +53,20 @@ export default function TeacherCourseMembersPage() {
       );
     });
   }, [members, searchQuery]);
+
+  if (courseLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  if (!course) {
+    return <ResourceUnavailable resourceLabel="khoá học" backHref="/teacher/courses" backLabel="Về Khóa học của tôi" />;
+  }
+  if (!isAdmin && course.instructor_id !== teacherId) {
+    return <ResourceUnavailable status={403} resourceLabel="khoá học" backHref="/teacher/courses" backLabel="Về Khóa học của tôi" />;
+  }
 
   return (
     <div className="space-y-6">

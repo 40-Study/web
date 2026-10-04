@@ -30,6 +30,7 @@ import {
 import type { TimetableEntry } from "@/services/parent-dashboard.service";
 import { ChildCoursesTab } from "@/components/parent/child-courses-tab";
 import { ChildOverviewTab } from "@/components/parent/child-overview-tab";
+import { assignmentTypeLabel, difficultyLabel, gradeTypeLabel, roomLabel } from "@/lib/display-labels";
 
 type TabType = "overview" | "courses" | "grades" | "schedule" | "attendance" | "assignments";
 
@@ -121,7 +122,7 @@ function ScheduleGrid({ entries }: { entries: TimetableEntry[] }) {
                   <div className="truncate">
                     {formatClockTime(entry.start_time)} - {formatClockTime(entry.end_time)}
                   </div>
-                  {entry.room && <div className="truncate text-[10px]">P.{entry.room}</div>}
+                  {entry.room && <div className="truncate text-[10px]">{roomLabel(entry.room)}</div>}
                 </div>
               );
             })
@@ -307,7 +308,7 @@ export default function ChildDetailPage() {
                       {gradesData?.grades.map((grade) => (
                         <tr key={grade.id} className="hover:bg-gray-50">
                           <td className="px-4 py-2">{grade.class_name}</td>
-                          <td className="px-4 py-2 capitalize">{grade.grade_type}</td>
+                          <td className="px-4 py-2">{gradeTypeLabel(grade.grade_type)}</td>
                           <td className="px-4 py-2">{grade.title}</td>
                           <td className="px-4 py-2 text-right">
                             {grade.score}/{grade.max_score}
@@ -491,8 +492,9 @@ export default function ChildDetailPage() {
                               <p className="text-sm text-gray-500">
                                 {/* /parent/children/:id/assignments không trả class_name — chỉ hiện khi có */}
                                 {assignment.class_name && <>{assignment.class_name} | </>}
-                                {assignment.type} |{" "}
-                                <span className="capitalize">{assignment.difficulty}</span>
+                                {[assignmentTypeLabel(assignment.type), difficultyLabel(assignment.difficulty)]
+                                  .filter(Boolean)
+                                  .join(" | ")}
                               </p>
                             </div>
                             <div className="text-right">

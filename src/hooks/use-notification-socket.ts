@@ -107,6 +107,10 @@ export function useNotificationSocket() {
             case "pong":
               // Heartbeat response
               break;
+            case "conversation_blocked_changed":
+              // Backend gửi sự kiện theo NGƯỜI DÙNG tới mọi kết nối của họ, nên socket thông báo này cũng nhận
+              // bản sao; khung chat (use-conversation-socket) mới là nơi xử lý. Bỏ qua, không ghi log "unknown".
+              break;
             default:
               console.log("[WS] Unknown event:", message.event);
           }
@@ -119,8 +123,11 @@ export function useNotificationSocket() {
         console.log("[WS] Connection closed:", event.code, event.reason);
         wsRef.current = null;
 
-        // Attempt to reconnect with exponential backoff
-        if (isAuthenticated && reconnectAttemptsRef.current < maxReconnectAttempts) {
+        // Attempt to reconnect with exponential backoff.
+        // Đọc phiên từ store tại thời điểm đóng, KHÔNG dùng `isAuthenticated` của closure: closure này
+        // sinh ra lúc còn đăng nhập nên luôn thấy true, và socket vừa bị đóng do đăng xuất sẽ tự nối lại
+        // không có phiên rồi nhận lỗi "Authentication failed" (QA A-15).
+        if (useAuthStore.getState().isAuthenticated && reconnectAttemptsRef.current < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
           reconnectAttemptsRef.current += 1;
 
@@ -149,6 +156,10 @@ export function useNotificationSocket() {
     }
 
     if (wsRef.current) {
+      // Gỡ handler trước khi đóng: `close()` kích hoạt `onclose` bất đồng bộ, và handler đó lên lịch nối lại.
+      wsRef.current.onclose = null;
+      wsRef.current.onerror = null;
+      wsRef.current.onmessage = null;
       wsRef.current.close(1000, "User disconnected");
       wsRef.current = null;
     }

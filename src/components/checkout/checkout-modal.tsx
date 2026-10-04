@@ -20,6 +20,8 @@ interface CheckoutModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   course: CourseDetail;
+  /** Mã voucher đã áp ở ngoài modal (ô "Mã giảm giá" của trang khoá học): tự áp lại khi modal mở. */
+  initialVoucherCode?: string;
   /** Called when user confirms purchase */
   onConfirm?: (paymentMethod: PaymentMethod, voucherCode?: string) => void;
   /** true trong lúc đơn đang được tạo — khoá nút "Thanh toán", hiện spinner. */
@@ -30,6 +32,7 @@ export function CheckoutModal({
   open,
   onOpenChange,
   course,
+  initialVoucherCode,
   onConfirm,
   isConfirming = false,
 }: CheckoutModalProps) {
@@ -64,7 +67,12 @@ export function CheckoutModal({
   useEffect(() => {
     // Modal đóng (huỷ, hoặc cha tự đóng sau khi biết kết quả) -> mở lại lần
     // sau phải bấm được, không bị kẹt ở trạng thái khoá.
-    if (!open) submittingRef.current = false;
+    if (!open) {
+      submittingRef.current = false;
+      // VoucherInput bị huỷ khi dialog đóng (mất mã đã áp) nên kết quả voucher cũ cũng phải bỏ, nếu không lần mở
+      // sau bảng giá vẫn trừ tiền của một voucher mà ô nhập đã trống.
+      setVoucherResult(null);
+    }
   }, [open]);
 
   function handleConfirm() {
@@ -109,6 +117,7 @@ export function CheckoutModal({
             courseIds={[String(course.id)]}
             // A-05: thiếu subtotal thì mặc định 0 -> voucher có đơn tối thiểu luôn bị từ chối, % tính 0đ.
             subtotal={course.price}
+            initialCode={initialVoucherCode}
             onApplied={setVoucherResult}
           />
         </div>

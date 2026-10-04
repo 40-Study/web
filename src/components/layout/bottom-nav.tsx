@@ -14,6 +14,7 @@ import {
   ClipboardList,
   UserCheck,
   Radio,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
@@ -49,6 +50,8 @@ const navConfigs: Record<UserRole, NavItem[]> = {
     { icon: <Calendar className="w-5 h-5" />, label: "Lịch", href: "/teacher/schedule" },
     { icon: <BookOpen className="w-5 h-5" />, label: "Khóa học", href: "/teacher/courses" },
     { icon: <Users className="w-5 h-5" />, label: "Học sinh", href: "/teacher/students" },
+    // B-11: Tin nhắn là route dùng chung nhưng giảng viên cần vào được từ menu (trước chỉ gõ URL).
+    { icon: <MessageSquare className="w-5 h-5" />, label: "Tin nhắn", href: "/messages" },
     { icon: <BarChart3 className="w-5 h-5" />, label: "Thống kê", href: "/teacher/analytics" },
     { icon: <Wallet className="w-5 h-5" />, label: "Ví", href: "/teacher/wallet" },
   ],

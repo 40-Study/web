@@ -20,6 +20,8 @@ export type SubmissionVerdict =
 export interface SubmissionUserDTO {
   id: string;
   username: string;
+  /** Họ tên (backend bỏ trống khi người dùng chưa nhập). */
+  full_name?: string;
 }
 
 export interface SubmissionResponseDTO {

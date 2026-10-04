@@ -110,6 +110,19 @@ describe("buildGradingRows", () => {
     });
     expect(rows[0].studentName).toBe("Lê Văn C");
   });
+
+  // Bài chưa chấm chưa có bản ghi điểm nên tên chỉ có thể đến từ bài nộp: trước đây hiện username ("student1").
+  it("bài chưa chấm: hiện họ tên của bài nộp, chỉ rơi về username khi chưa có họ tên", () => {
+    const named = buildGradingRows({
+      submissions: [sub({ user: { id: "u1", username: "student1", full_name: "Lê Văn C" } })],
+      grades: [],
+      assignmentId: "a1",
+    });
+    expect(named[0].studentName).toBe("Lê Văn C");
+
+    const unnamed = buildGradingRows({ submissions: [sub({})], grades: [], assignmentId: "a1" });
+    expect(unnamed[0].studentName).toBe("student1");
+  });
 });
 
 describe("isLateSubmission", () => {

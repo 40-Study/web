@@ -29,7 +29,9 @@ export function AppShellLayout({ children }: AppShellLayoutProps) {
       ? "admin"
       : normalizedRole === "PARENT"
         ? "parent"
-        : "student";
+        : normalizedRole === "TEACHER"
+          ? "teacher" // B-11: giảng viên ghé trang dùng chung vẫn thấy tab giảng viên
+          : "student";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
