@@ -27,6 +27,7 @@ import {
 import TeacherNotificationDialog from "@/components/teacher/teacher-notification-dialog";
 import { useMyStudents } from "@/hooks/queries/use-classes";
 import { buildCsv, downloadCsv } from "@/lib/csv-export";
+import { withClassPrefix } from "@/lib/class-label";
 import { courseFilterOptions, groupStudents, type GroupedStudent } from "./group-students";
 
 const STATUS_LABEL: Record<GroupedStudent["status"], string> = {
@@ -241,7 +242,7 @@ export default function TeacherStudentsPage() {
                             <li key={`${c.courseId ?? c.courseName}-${c.className ?? ""}`}>
                               {c.courseName}
                               {c.className && c.className !== c.courseName && (
-                                <span className="text-xs text-muted-foreground"> · Lớp {c.className}</span>
+                                <span className="text-xs text-muted-foreground"> · {withClassPrefix(c.className)}</span>
                               )}
                             </li>
                           ))}

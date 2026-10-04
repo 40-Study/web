@@ -7,6 +7,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { categoryService } from "@/services/category.service";
+import { getErrorMessage } from "@/lib/error-messages";
 import type { CreateCategoryDTO, UpdateCategoryDTO } from "@/services/category.service";
 
 export const categoryKeys = {
@@ -42,7 +43,8 @@ export function useCreateCategory() {
       qc.invalidateQueries({ queryKey: categoryKeys.all });
       toast.success("Đã tạo danh mục");
     },
-    onError: () => toast.error("Không thể tạo danh mục"),
+    // Lý do cụ thể (vd. trùng tên) lấy từ backend qua bảng dịch lỗi, không còn một câu chung (B-15).
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể tạo danh mục")),
   });
 }
 
@@ -57,7 +59,7 @@ export function useUpdateCategory() {
       qc.invalidateQueries({ queryKey: categoryKeys.detail(id) });
       toast.success("Đã cập nhật danh mục");
     },
-    onError: () => toast.error("Không thể cập nhật danh mục"),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể cập nhật danh mục")),
   });
 }
 
@@ -70,7 +72,7 @@ export function useDeleteCategory() {
       qc.invalidateQueries({ queryKey: categoryKeys.all });
       toast.success("Đã xóa danh mục");
     },
-    onError: () => toast.error("Không thể xóa danh mục"),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể xóa danh mục")),
   });
 }
 

@@ -6,32 +6,13 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useSidebarStore, useAuthStore } from "@/stores";
 import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import {
-    Calendar,
-    BookOpen,
-    Users,
-    ClipboardList,
-    BarChart3,
-    Wallet,
-    ChevronRight,
-    ChevronLeft,
-    Trophy,
-} from "lucide-react";
+import { TEACHER_MENU_ITEMS } from "./teacher-menu";
 
 interface TeacherSidebarProps {
     className?: string;
 }
 
-const menuItems = [
-    { label: "Lịch giảng dạy", href: "/teacher/schedule", icon: Calendar },
-    { label: "Quản lý khóa học", href: "/teacher/courses", icon: BookOpen },
-    { label: "Quản lý học sinh", href: "/teacher/students", icon: Users },
-    { label: "Quản lý bài tập", href: "/teacher/assignments", icon: ClipboardList },
-    { label: "Cuộc thi", href: "/teacher/contests", icon: Trophy },
-    { label: "Thống kê", href: "/teacher/analytics", icon: BarChart3 },
-    { label: "Ví", href: "/teacher/wallet", icon: Wallet },
-];
+const menuItems = TEACHER_MENU_ITEMS;
 
 export function TeacherSidebar({ className }: TeacherSidebarProps) {
     const { isCollapsed, toggle } = useSidebarStore();

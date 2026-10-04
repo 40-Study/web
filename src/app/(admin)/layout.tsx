@@ -10,6 +10,7 @@ import { RoleGuard } from "@/components/guards";
 import { Avatar } from "@/components/ui/avatar";
 import { useLogout } from "@/hooks/queries/use-auth";
 import { cn } from "@/lib/utils";
+import { isAdminNavActive } from "@/lib/admin-nav";
 import { useAuthStore } from "@/stores/auth.store";
 
 const adminMenu = [
@@ -82,7 +83,7 @@ export default function AdminLayout({
           </div>
           <nav className="space-y-2 p-3" aria-label="Menu quản trị">
             {adminMenu.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const isActive = isAdminNavActive(pathname, item.href);
 
               return (
                 <Link
@@ -151,7 +152,7 @@ export default function AdminLayout({
             </div>
             <nav className="flex gap-2 overflow-x-auto border-t border-border px-4 py-2 md:hidden">
               {adminMenu.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const isActive = isAdminNavActive(pathname, item.href);
 
                 return (
                   <Link

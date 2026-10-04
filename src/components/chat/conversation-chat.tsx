@@ -71,7 +71,8 @@ function ConversationChatInner({ conversationId, currentUserId, className, isDir
   //    chat). Lưu ID thay vì boolean vì trang Tin nhắn dùng lại cùng một component khi chọn DM khác: khoá của DM
   //    này không được dính sang DM kia;
   //  - `is_blocked` của server khi mở (chi tiết DM): khoá ngay từ đầu, không cần gửi thử.
-  // Bỏ chặn rồi bấm "Thử lại": xoá khoá cục bộ và tải lại cờ của server; server vẫn báo chặn thì GIỮ khoá.
+  // Không có nút "Thử lại" (A-13): bấm không làm hết chặn nên chỉ gây hiểu nhầm. Khoá tự mở khi hết chặn, qua hai đường:
+  // sự kiện `conversation_blocked_changed` của WebSocket, hoặc (WebSocket rớt) tải lại cờ `is_blocked` định kỳ bên dưới.
   const [sentBlockedId, setSentBlockedId] = useState<string | null>(null);
   const { data: conversation, refetch: refetchConversation } = useConversation(conversationId, { enabled: isDirect });
   const blocked = sentBlockedId === conversationId || conversation?.is_blocked === true;
@@ -109,6 +110,17 @@ function ConversationChatInner({ conversationId, currentUserId, className, isDir
   });
 
   const isLive = status === "open";
+
+  // WebSocket không mở thì sự kiện bỏ chặn không tới được: tự hỏi lại server định kỳ để ô nhập không kẹt khoá.
+  useEffect(() => {
+    if (!blocked || !isDirect || isLive) return;
+    const timer = setInterval(() => {
+      void refetchConversation().then((result) => {
+        if (result.data && result.data.is_blocked !== true) setSentBlockedId(null);
+      });
+    }, CHAT_FALLBACK_POLL_MS);
+    return () => clearInterval(timer);
+  }, [blocked, isDirect, isLive, refetchConversation]);
   const {
     data: msgData,
     isLoading,
@@ -141,6 +153,13 @@ function ConversationChatInner({ conversationId, currentUserId, className, isDir
     sendMessage.mutate(
       { content },
       {
+        // Chèn ngay tin vừa gửi (server trả về nguyên tin) vào cache thay vì chờ lượt tải lại: hội thoại MỚI chưa có
+        // tin nào, trong lúc chờ khung chat nháy "Chưa có tin nhắn nào" ~2 giây dù tin đã gửi xong. Tin về lại qua
+        // WebSocket hay lượt tải lại sau đó được `prependMessage` khử trùng theo id.
+        onSuccess: (sent) => {
+          if (!sent?.id) return;
+          qc.setQueryData<MessageListData>(messagesKey, (data) => prependMessage(data, sent));
+        },
         onError: (error) => {
           if (isConversationBlockedError(error)) setSentBlockedId(conversationId);
           // Trả lại bản nháp để người dùng không mất chữ vừa gõ — trừ khi họ đã gõ chữ mới trong lúc chờ.
@@ -205,19 +224,11 @@ function ConversationChatInner({ conversationId, currentUserId, className, isDir
       {blocked && (
         <div
           role="alert"
-          className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/50 px-4 py-2 text-sm text-muted-foreground"
+          className="space-y-0.5 border-t bg-muted/50 px-4 py-2 text-sm text-muted-foreground"
         >
-          <span>{CONVERSATION_BLOCKED_MESSAGE}</span>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setSentBlockedId(null);
-              if (isDirect) void refetchConversation();
-            }}
-          >
-            Thử lại
-          </Button>
+          {/* Câu cố định (không suy ra ai chặn ai) + giải thích rõ lý do và khi nào gửi lại được. */}
+          <p className="font-medium text-foreground">{CONVERSATION_BLOCKED_MESSAGE}</p>
+          <p className="text-xs">Cuộc trò chuyện này đang bị chặn. Ô nhập sẽ tự mở lại khi không còn bị chặn.</p>
         </div>
       )}
       <div className="flex gap-2 border-t p-3">

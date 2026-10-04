@@ -84,8 +84,8 @@ export default function AdminIndexPage() {
             </p>
             <p className="mt-1 text-[11px] text-gray-400">
               {totalAssignedUsersError
-                ? "Không tải được — thiếu quyền hoặc lỗi API khi đếm user theo vai trò."
-                : "Tổng số LƯỢT gán vai trò (1 user giữ 2 vai trò sẽ tính 2 lần) — API chưa có endpoint đếm user duy nhất."}
+                ? "Không tải được số người dùng theo vai trò — có thể thiếu quyền hoặc hệ thống đang lỗi."
+                : "Tổng số lượt gán vai trò: một người giữ 2 vai trò sẽ được tính 2 lần."}
             </p>
           </div>
         </section>
@@ -109,7 +109,7 @@ export default function AdminIndexPage() {
                           ? "bg-amber-100 text-amber-700"
                           : "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
                       }`}
-                      title={role.userCountError ? "Không tải được số user (thiếu quyền hoặc lỗi API)" : undefined}
+                      title={role.userCountError ? "Không tải được số người dùng (có thể thiếu quyền hoặc hệ thống đang lỗi)" : undefined}
                     >
                       {role.userCountError ? "lỗi" : role.userCount === null ? "…" : `${role.userCount} user`}
                     </span>
@@ -127,8 +127,8 @@ export default function AdminIndexPage() {
             <div className="mt-4 rounded-lg border border-dashed border-gray-200 dark:border-gray-800">
               <EmptyState
                 icon={Activity}
-                title="Chưa có dữ liệu nhật ký hoạt động"
-                description="Tính năng đang được phát triển"
+                title="Chưa có nhật ký hoạt động"
+                description="Nhật ký thao tác quản trị sẽ hiển thị tại đây khi hệ thống bắt đầu ghi nhận."
               />
             </div>
           </div>

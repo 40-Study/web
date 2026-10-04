@@ -29,6 +29,11 @@ type CategoryFormState = {
 
 const emptyForm: CategoryFormState = { name: "", description: "" };
 
+/** Khớp ràng buộc backend (tên bắt buộc); trả thông báo cụ thể thay vì để bấm mà không có phản hồi. */
+function validateCategoryName(name: string): string | null {
+  return name.trim() ? null : "Vui lòng nhập tên danh mục";
+}
+
 export default function AdminCategoriesPage() {
   const { data = [], isLoading, isError, refetch } = useCategoryList();
   const createCategory = useCreateCategory();
@@ -38,6 +43,7 @@ export default function AdminCategoriesPage() {
   const [form, setForm] = useState<CategoryFormState>(emptyForm);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const selected = useMemo(() => data.find((c) => c.id === selectedId) || null, [data, selectedId]);
   const confirmDeleteCategory = useMemo(
@@ -47,16 +53,20 @@ export default function AdminCategoriesPage() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
+    // B-15: tên rỗng trước đây bị bỏ qua im lặng (bấm "Tạo" không có phản hồi nào).
+    const nameError = validateCategoryName(form.name);
+    setNameError(nameError);
+    if (nameError) return;
+    const name = form.name.trim();
 
     if (form.id) {
       updateCategory.mutate(
-        { id: form.id, data: { name: form.name, description: form.description || undefined } },
+        { id: form.id, data: { name, description: form.description || undefined } },
         { onSuccess: () => setForm(emptyForm) }
       );
     } else {
       createCategory.mutate(
-        { name: form.name, description: form.description || undefined },
+        { name, description: form.description || undefined },
         { onSuccess: () => setForm(emptyForm) }
       );
     }
@@ -71,8 +81,7 @@ export default function AdminCategoriesPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Danh mục khoá học</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Tạo, sửa, xoá danh mục dùng để phân loại khoá học. Thao tác gọi thẳng API thật
-          (POST/PUT/DELETE /api/categories).
+          Tạo, sửa, xoá danh mục dùng để phân loại khoá học.
         </p>
       </div>
 
@@ -126,10 +135,21 @@ export default function AdminCategoriesPage() {
             <div className="mt-3 space-y-2">
               <input
                 placeholder="Tên danh mục"
+                aria-label="Tên danh mục"
+                aria-invalid={nameError ? true : undefined}
+                aria-describedby={nameError ? "category-name-error" : undefined}
                 value={form.name}
-                onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => {
+                  setForm((prev) => ({ ...prev, name: e.target.value }));
+                  if (nameError) setNameError(null);
+                }}
                 className="h-10 w-full rounded border border-gray-200 px-3 text-sm"
               />
+              {nameError && (
+                <p id="category-name-error" role="alert" className="text-xs text-red-600">
+                  {nameError}
+                </p>
+              )}
               <input
                 placeholder="Mô tả (tuỳ chọn)"
                 value={form.description}
@@ -146,7 +166,10 @@ export default function AdminCategoriesPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setForm(emptyForm)}
+                  onClick={() => {
+                    setForm(emptyForm);
+                    setNameError(null);
+                  }}
                   className="rounded bg-gray-100 px-3 py-2 text-sm font-medium"
                 >
                   Reset

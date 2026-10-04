@@ -74,7 +74,7 @@ export default function OrganizationsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Quản lý tổ chức</h1>
-        <p className="mt-1 text-sm text-gray-500">CRUD đầy đủ cho tổ chức và khu chi tiết riêng.</p>
+        <p className="mt-1 text-sm text-gray-500">Tạo, sửa, xoá tổ chức và xem thông tin chi tiết từng tổ chức.</p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
@@ -93,7 +93,7 @@ export default function OrganizationsPage() {
               >
                 <button className="w-full text-left" onClick={() => setSelectedId(org.id)}>
                   <h3 className="font-semibold text-gray-900">{org.name}</h3>
-                  <p className="text-sm text-gray-500">{org.code}</p>
+                  {org.code && <p className="text-sm text-gray-500">{org.code}</p>}
                 </button>
                 <Can permission={PERMISSIONS.MANAGE_ORGANIZATIONS}>
                   <div className="mt-3 flex gap-2">
@@ -161,7 +161,7 @@ export default function OrganizationsPage() {
               <div className="mt-3 space-y-2 text-sm">
                 <p><span className="text-gray-500">ID:</span> {selected.id}</p>
                 <p><span className="text-gray-500">Tên:</span> {selected.name}</p>
-                <p><span className="text-gray-500">Mã:</span> {selected.code}</p>
+                {selected.code && <p><span className="text-gray-500">Mã:</span> {selected.code}</p>}
                 {selected.created_at && <p><span className="text-gray-500">Tạo lúc:</span> {formatVnDateTime(selected.created_at)}</p>}
               </div>
             ) : (

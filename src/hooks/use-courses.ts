@@ -11,6 +11,7 @@ import { categoryService } from "@/services/category.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { NotFoundError } from "@/lib/errors";
 import { resolveEffectivePrice } from "@/lib/course-pricing";
+import { slugifyName } from "@/lib/slug";
 import {
   Course,
   CourseDetail,
@@ -27,7 +28,7 @@ function mapApiCategory(c: ApiCategory): Category {
   return {
     id: c.id,
     name: c.name,
-    slug: c.slug ?? c.name.toLowerCase().replace(/\s+/g, "-"),
+    slug: c.slug ?? slugifyName(c.name),
     icon: c.icon,
   };
 }
@@ -223,8 +224,9 @@ export function useCategories() {
         id: c.id,
         name: c.name,
         // Phải dùng slug của backend: khoá học mang category.slug dạng không dấu
-        // ("lap-trinh-web"); tự sinh từ tên cho ra "lập-trình-web" nên chip lọc không khớp khoá nào.
-        slug: c.slug ?? c.name.toLowerCase().replace(/\s+/g, "-"),
+        // ("lap-trinh-web"). Chỉ khi API thiếu slug mới sinh từ tên, và sinh KHÔNG DẤU như backend
+        // (slugifyName) — slug có dấu làm chip lọc không khớp khoá nào, ra 0 kết quả âm thầm.
+        slug: c.slug ?? slugifyName(c.name),
         icon: c.icon_url ?? undefined,
       }));
     },

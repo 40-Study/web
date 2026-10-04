@@ -44,17 +44,6 @@ function getRarityConfig(rarity: AchievementRarity) {
   return configs[rarity];
 }
 
-function calculateLevel(xp: number): number {
-  return Math.floor(xp / 300) + 1;
-}
-
-function getXpForNextLevel(currentXp: number): { current: number; needed: number } {
-  const level = calculateLevel(currentXp);
-  const xpForCurrentLevel = (level - 1) * 300;
-  const xpForNextLevel = level * 300;
-  return { current: currentXp - xpForCurrentLevel, needed: 300 };
-}
-
 // ─── Derive skill data from achievement categories ─────────────────────────
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -123,12 +112,11 @@ function ProfileBanner({
   level?: number;
   levelProgress?: number;
 }) {
-  // Use API level/progress if available, otherwise calculate
-  const displayLevel = level || calculateLevel(totalXp);
-  const { current, needed } = level > 0
-    ? { current: levelProgress, needed: 100 } // API returns progress as percentage
-    : getXpForNextLevel(totalXp);
-  const nextLevelXp = displayLevel * 300;
+  // Cấp và % tiến độ do backend trả (user_points.level / level_progress) — nguồn DUY NHẤT, cùng nguồn với
+  // Trang chủ và hồ sơ. Trước đây trang này tự suy mốc "XP cấp kế" = cấp x 300 (backend dùng ngưỡng khác) nên hiện
+  // "1.850 / 1.200 XP" (vượt mốc) và cấp lệch giữa các trang (A-16). Không hiện mẫu số XP tự bịa.
+  const displayLevel = level;
+  const progressPercent = Math.min(100, Math.max(0, levelProgress));
 
   return (
     <div className="relative bg-gradient-to-r from-slate-800 via-slate-900 to-indigo-900 rounded-3xl p-8 overflow-hidden">
@@ -158,7 +146,7 @@ function ProfileBanner({
         {/* User Info */}
         <div className="flex-1">
           <h1 className="text-3xl font-bold text-white mb-1">
-            {user.name || "Learner"}
+            {user.name || "Học viên"}
           </h1>
           <div className="flex items-center gap-2 mb-4">
             <span className="text-cyan-400">—</span>
@@ -171,12 +159,12 @@ function ProfileBanner({
             <div className="flex items-center gap-2">
               <Flame className="w-5 h-5 text-orange-400" />
               <span className="text-white font-semibold">{streakDays}</span>
-              <span className="text-gray-400 text-sm">DAYS</span>
+              <span className="text-gray-400 text-sm">NGÀY LIÊN TIẾP</span>
             </div>
             <div className="flex items-center gap-2">
               <Trophy className="w-5 h-5 text-yellow-400" />
               <span className="text-white font-semibold">{badgeCount}</span>
-              <span className="text-gray-400 text-sm">BADGES</span>
+              <span className="text-gray-400 text-sm">HUY HIỆU</span>
             </div>
           </div>
         </div>
@@ -184,7 +172,7 @@ function ProfileBanner({
         {/* Level & XP */}
         <div className="text-right">
           <div className="mb-2">
-            <span className="text-cyan-400 text-sm font-medium tracking-wider">LEVEL</span>
+            <span className="text-cyan-400 text-sm font-medium tracking-wider">CẤP</span>
           </div>
           <div className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 leading-none mb-4">
             {displayLevel}
@@ -192,16 +180,22 @@ function ProfileBanner({
 
           <div className="text-right mb-2">
             <span className="text-gray-400 text-xs">ĐIỂM KINH NGHIỆM</span>
-            <span className="text-white ml-2 font-semibold">
-              {totalXp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP
-            </span>
+            <span className="text-white ml-2 font-semibold">{totalXp.toLocaleString("vi-VN")} XP</span>
           </div>
-          <div className="w-64 h-2 bg-slate-700 rounded-full overflow-hidden">
+          <div
+            className="w-64 h-2 bg-slate-700 rounded-full overflow-hidden"
+            role="progressbar"
+            aria-label={`Tiến độ cấp ${displayLevel}`}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progressPercent}
+          >
             <div
               className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all"
-              style={{ width: `${(current / needed) * 100}%` }}
+              style={{ width: `${progressPercent}%` }}
             />
           </div>
+          <p className="mt-1 text-right text-xs text-gray-400">Đã đạt {progressPercent}% để lên cấp {displayLevel + 1}</p>
         </div>
       </div>
     </div>
@@ -330,7 +324,7 @@ function RadarChart({ skills }: { skills: SkillData[] }) {
 }
 
 function HeatmapCalendar({ data }: { data: number[] }) {
-  const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+  const months = ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"];
   const weeksPerMonth = 4;
   const daysPerWeek = 7;
 
@@ -529,7 +523,7 @@ export default function AchievementsPage() {
                 <h2 className="text-xl font-bold text-gray-900">Tần suất học tập</h2>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-500">
-                <span>LESS</span>
+                <span>ÍT</span>
                 <div className="flex gap-1">
                   <div className="w-3 h-3 bg-blue-100 rounded-sm" />
                   <div className="w-3 h-3 bg-blue-200 rounded-sm" />
@@ -537,7 +531,7 @@ export default function AchievementsPage() {
                   <div className="w-3 h-3 bg-blue-400 rounded-sm" />
                   <div className="w-3 h-3 bg-blue-500 rounded-sm" />
                 </div>
-                <span>MORE</span>
+                <span>NHIỀU</span>
               </div>
             </div>
 
@@ -560,7 +554,7 @@ export default function AchievementsPage() {
 
             {topSkill && (
               <div className="text-center mt-4">
-                <span className="text-sm text-gray-500">TOP STAT: </span>
+                <span className="text-sm text-gray-500">NĂNG LỰC NỔI BẬT: </span>
                 <span className="text-sm font-bold text-indigo-600">
                   {topSkill.name} ({topSkill.value}%)
                 </span>
@@ -573,21 +567,21 @@ export default function AchievementsPage() {
             icon={<Zap className="w-6 h-6 text-blue-500" />}
             iconBg="bg-blue-100"
             label="TỔNG XP"
-            value={totalXp.toLocaleString()}
+            value={totalXp.toLocaleString("vi-VN")}
           />
 
           <StatCard
             icon={<Flame className="w-6 h-6 text-orange-500" />}
             iconBg="bg-orange-100"
             label="CHUỖI DÀI NHẤT"
-            value={`${longestStreak} Days`}
+            value={`${longestStreak} ngày`}
           />
 
           <StatCard
             icon={<CheckCircle className="w-6 h-6 text-green-500" />}
             iconBg="bg-green-100"
             label="CHỨNG CHỈ"
-            value={certificateCount > 0 ? `${certificateCount} Active` : "0"}
+            value={String(certificateCount)}
           />
         </div>
       </div>

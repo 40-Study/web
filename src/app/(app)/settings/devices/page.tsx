@@ -2,6 +2,7 @@
 
 import { useDevices, useLogoutAll } from "@/hooks/queries/use-auth";
 import { Button } from "@/components/ui/button";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 export default function DevicesPage() {
   const { data, isLoading } = useDevices();
@@ -53,7 +54,7 @@ export default function DevicesPage() {
                 )}
               </div>
               <p className="mt-1 text-sm text-gray-500">
-                {device.ip_address || "Không rõ"} • Hoạt động {device.logged_in_at}
+                {device.ip_address || "Không rõ"} • Hoạt động {formatVnDateTime(device.logged_in_at)}
               </p>
             </div>
           </div>

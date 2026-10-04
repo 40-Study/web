@@ -6,6 +6,9 @@ import { toast } from "sonner";
 import { AttendanceTable } from "@/components/attendance/attendance-table";
 import { useAttendanceDraft } from "@/components/attendance/use-attendance-draft";
 import { useClassStudentsByClassId } from "@/hooks/queries/use-classes";
+import { ResourceUnavailable, isResourceUnavailableError } from "@/components/common/resource-unavailable";
+import { formatVnDateOnly } from "@/lib/vn-datetime";
+import { ApiError } from "@/lib/errors";
 import {
   useBulkMarkAttendance,
   useClassSessions,
@@ -19,7 +22,7 @@ export default function ClassAttendancePage() {
 
   const [sessionId, setSessionId] = useState("");
 
-  const { data: sessionsData, isLoading: sessionsLoading } = useClassSessions(
+  const { data: sessionsData, isLoading: sessionsLoading, isError: sessionsError, error: sessionsErrorValue } = useClassSessions(
     classId,
     // Backend giới hạn page_size tối đa 50; giá trị lớn hơn bị reset về 20.
     { page: 1, page_size: 50 }
@@ -75,6 +78,11 @@ export default function ClassAttendancePage() {
   }
 
   const selectedSession = sessions.find((s) => s.id === sessionId);
+  // B-18: lớp không tồn tại hoặc của giảng viên khác (API 404/403) trước đây hiện trang điểm danh rỗng như lớp chưa có buổi.
+  if (sessionsError && isResourceUnavailableError(sessionsErrorValue)) {
+    const status = sessionsErrorValue instanceof ApiError && sessionsErrorValue.status === 403 ? 403 : 404;
+    return (<ResourceUnavailable status={status} resourceLabel="lớp học" backHref="/teacher/courses" backLabel="Về Khóa học của tôi" />);
+  }
   const loading = sessionsLoading || studentsLoading || attendancesLoading;
 
   return (
@@ -107,7 +115,7 @@ export default function ClassAttendancePage() {
               >
                 {sessions.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.date} · {s.start_time}–{s.end_time}
+                    {formatVnDateOnly(s.date)} · {s.start_time}–{s.end_time}
                     {s.topic ? ` · ${s.topic}` : ""}
                   </option>
                 ))}

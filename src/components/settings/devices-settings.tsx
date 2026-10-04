@@ -3,6 +3,7 @@
 import { Monitor, Smartphone, Tablet, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDevices, useLogoutAll } from "@/hooks/queries/use-auth";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 /** Pick device icon based on device_name heuristics */
 function DeviceIcon({ name, className }: { name: string; className?: string }) {
@@ -81,7 +82,7 @@ export function DevicesSettings() {
                 )}
               </div>
               <p className="text-sm text-gray-500 mt-0.5">
-                {device.ip_address || "IP không rõ"} &middot; Hoạt động {device.logged_in_at}
+                {device.ip_address || "IP không rõ"} &middot; Hoạt động {formatVnDateTime(device.logged_in_at)}
               </p>
             </div>
           </div>

@@ -132,6 +132,19 @@ describe("Sidebar — menu data-driven theo role", () => {
     expect(summary.enabledCalls.every((e) => e === false)).toBe(true);
   });
 
+  // B-11: giảng viên ghé /messages, /notifications, /settings trước đây thấy menu học viên, không có đường về /teacher.
+  it("TEACHER ở khung dùng chung: thấy menu giảng viên (có Tin nhắn), không có menu học viên", () => {
+    setRole("TEACHER", true);
+    render(<Sidebar />);
+
+    expect(screen.getByRole("link", { name: /Lịch giảng dạy/ }).getAttribute("href")).toBe("/teacher/schedule");
+    expect(screen.getByRole("link", { name: /Quản lý khóa học/ }).getAttribute("href")).toBe("/teacher/courses");
+    expect(screen.getByRole("link", { name: /Tin nhắn/ }).getAttribute("href")).toBe("/messages");
+    for (const studentOnly of ["Khám phá", "Khóa học của tôi", "Nhóm", "Xu", "Gia đình", "Thành tích", "Chứng chỉ"]) {
+      expect(screen.queryByText(studentOnly)).toBeNull();
+    }
+  });
+
   it("STUDENT có vai phụ (PARENT/TEACHER_APPLICANT/ORG_OWNER): vẫn thấy Bạn bè, query bật", () => {
     useAuthStore.setState({
       isAuthenticated: true,

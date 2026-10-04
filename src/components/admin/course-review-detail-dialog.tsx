@@ -12,6 +12,7 @@ import { useLessons } from "@/hooks/queries/use-lessons";
 import { QueryState } from "@/components/common/query-state";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/utils";
+import { courseLevelLabel } from "@/lib/course-level";
 import type { ApiCourse } from "@/services/course.service";
 
 interface CourseReviewDetailDialogProps {
@@ -57,7 +58,7 @@ function CourseDetailBody({ courseId }: { courseId: string }) {
           <div className="mt-4 space-y-4 text-sm">
             <div className="grid gap-2 sm:grid-cols-2">
               <Info label="Giá" value={priceLabel(course.data)} />
-              <Info label="Trình độ" value={course.data.level || "—"} />
+              <Info label="Trình độ" value={courseLevelLabel(course.data.level)} />
             </div>
             {course.data.short_description && (
               <p className="font-medium text-gray-700 dark:text-gray-300">

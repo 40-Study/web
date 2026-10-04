@@ -13,6 +13,7 @@ import { FriendsNavBadge } from "@/components/friends/friends-nav-badge";
 import { useAuthStore } from "@/stores/auth.store";
 import { canUseFriends } from "@/components/friends/friends-access";
 import { useSidebarStore } from "@/stores/sidebar.store";
+import { TEACHER_MENU_ITEMS } from "./teacher-menu";
 import { canAccessStudentOnlyRoute, getRoleHomeRoute, normalizeRole, resolveNavRole, ROLE_SCOPED_ROUTES, type NavRole } from "@/lib/routes";
 
 type SidebarRole = NavRole;
@@ -98,12 +99,18 @@ export function Sidebar() {
 
   const currentRole: SidebarRole = resolveNavRole(isAuthenticated, normalizedRole);
   const familyLabel = isParent ? "Con của tôi" : "Gia đình";
-  const navItems = buildSidebarItems(homeHref, familyLabel).filter((item) =>
-    item.roles.includes(currentRole) &&
-    (item.href !== "/friends" || canUseFriends(activeRole)) &&
-    // resolveNavRole quy TEACHER về STUDENT để dựng khung; mục học viên-only khoá theo vai THẬT (cùng hàm với route guard).
-    canAccessStudentOnlyRoute(item.href, activeRole)
-  );
+  // B-11: giảng viên ghé trang dùng chung (/messages, /notifications, /settings...) phải thấy menu GIẢNG VIÊN,
+  // không phải menu học viên — nếu không họ mất đường quay về khu /teacher. resolveNavRole quy TEACHER về STUDENT
+  // chỉ để dựng khung; menu chọn theo vai THẬT.
+  const navItems: SidebarNavItem[] =
+    normalizedRole === "TEACHER"
+      ? TEACHER_MENU_ITEMS.map((item) => ({ ...item, roles: [currentRole] }))
+      : buildSidebarItems(homeHref, familyLabel).filter((item) =>
+          item.roles.includes(currentRole) &&
+          (item.href !== "/friends" || canUseFriends(activeRole)) &&
+          // Mục học viên-only khoá theo vai THẬT (cùng hàm với route guard).
+          canAccessStudentOnlyRoute(item.href, activeRole)
+        );
 
   return (
     <aside className={cn(

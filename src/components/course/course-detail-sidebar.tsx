@@ -21,6 +21,7 @@ import { useAddToCart, useRemoveFromCart, useIsInCart } from "@/hooks/queries/us
 import { useCreateOrder } from "@/hooks/queries/use-orders";
 import { CourseDetail } from "@/types/course";
 import type { Order } from "@/services/order.service";
+import type { VoucherValidateResponse } from "@/types/voucher";
 
 interface CourseDetailSidebarProps {
   course: CourseDetail;
@@ -58,6 +59,7 @@ export function CourseDetailSidebar({
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [voucherResult, setVoucherResult] = useState<VoucherValidateResponse | null>(null);
 
   // Review PR #25 (BLOCKER #1): idempotency_key phải CỐ ĐỊNH theo 1 phiên
   // checkout, không sinh mới mỗi lần handleCheckoutConfirm chạy — trước đây
@@ -208,6 +210,7 @@ export function CourseDetailSidebar({
         open={checkoutOpen}
         onOpenChange={handleCheckoutOpenChange}
         course={course}
+        initialVoucherCode={voucherResult?.voucher?.code}
         onConfirm={handleCheckoutConfirm}
         isConfirming={createOrderMutation.isPending}
       />
@@ -382,7 +385,9 @@ export function CourseDetailSidebar({
         {!isEnrolled && !isFree && (
           <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
             <h3 className="mb-3 font-semibold text-gray-900">Mã giảm giá</h3>
-            <VoucherInput courseIds={[String(course.id)]} onApplied={() => {}} />
+            {/* subtotal = giá khoá: thiếu thì mặc định 0 và voucher có đơn tối thiểu luôn bị từ chối (cùng lỗi A-05 ở
+                dialog Mua ngay). Kết quả được giữ lại để "Mua ngay" mở dialog với voucher đã áp, không bắt nhập lại. */}
+            <VoucherInput courseIds={[String(course.id)]} subtotal={course.price} onApplied={setVoucherResult} />
           </div>
         )}
       </div>

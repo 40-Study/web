@@ -360,6 +360,17 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
           from { opacity: 0; }
           to { opacity: 1; }
         }
+        /* Điện thoại (<= 767px): khung 90vw x 80vh với 2-3 cột cố định (đề 45% + trả lời, hoặc editor + cột đề 320px)
+           làm vùng viết chỉ còn vài chục px ở 390px. Chiếm toàn màn hình, xếp các khu theo CHIỀU DỌC, cho cuộn,
+           để vùng soạn bài rộng đủ dùng. Dùng !important vì kiểu cột đặt inline. */
+        @media (max-width: 767px) {
+          .awo-modal { width: 100vw !important; max-width: none !important; height: 100dvh !important; border-radius: 0 !important; }
+          .awo-header { height: auto !important; min-height: 48px; flex-wrap: wrap; padding-top: 0.4rem !important; padding-bottom: 0.4rem !important; row-gap: 0.4rem; }
+          .awo-body { flex-direction: column !important; overflow-y: auto !important; }
+          .awo-body > * { flex-shrink: 0 !important; min-height: 280px; }
+          .awo-pane-side { width: 100% !important; max-height: 38vh; border-right: none !important; border-left: none !important; border-bottom: 1px solid rgba(255,255,255,0.06); }
+          .awo-toolbar { flex-wrap: wrap; padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+        }
       `}</style>
 
       {/* Waiting overlay - before start_time */}
@@ -409,6 +420,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
       {/* Modal container - only show when active */}
       {timeStatus === 'active' && (
       <div
+        className="awo-modal"
         onClick={(e) => e.stopPropagation()}
         style={{
         background: '#121212',
@@ -422,7 +434,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
         boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
       }}>
       {/* Header */}
-      <header style={{
+      <header className="awo-header" style={{
         background: 'rgba(20,20,20,0.95)',
         borderBottom: '1px solid rgba(255,255,255,0.07)',
         padding: '0 1rem',
@@ -550,12 +562,12 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
       </header>
 
       {/* Body */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <div className="awo-body" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         {assignmentType === 'essay' ? (
           /* Essay Layout: Question left, Answer right */
           <>
             {/* Left: Question */}
-            <div style={{
+            <div className="awo-pane-side" style={{
               width: '45%',
               display: 'flex',
               flexDirection: 'column',
@@ -837,7 +849,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
         {/* Left: Editor */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {/* Toolbar */}
-          <div style={{
+          <div className="awo-toolbar" style={{
             background: 'rgba(20,20,20,0.9)',
             borderBottom: '1px solid rgba(255,255,255,0.06)',
             padding: '0.6rem 1.25rem',
@@ -1029,7 +1041,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
         </div>
 
         {/* Right sidebar: Description + Tests stacked */}
-        <div style={{
+        <div className="awo-pane-side" style={{
           width: '320px',
           flexShrink: 0,
           borderLeft: '1px solid rgba(255,255,255,0.06)',
@@ -1162,6 +1174,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
               borderRadius: '20px',
               padding: '28px',
               width: '360px',
+              maxWidth: '90vw',
               boxShadow: '0 25px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)',
               animation: 'slideUp 0.2s ease',
             }}
@@ -1282,6 +1295,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
               borderRadius: '20px',
               padding: '28px',
               width: '340px',
+              maxWidth: '90vw',
               boxShadow: '0 25px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)',
               animation: 'slideUp 0.2s ease',
             }}

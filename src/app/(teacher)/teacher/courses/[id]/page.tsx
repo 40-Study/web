@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ResourceUnavailable } from "@/components/common/resource-unavailable";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -889,7 +890,10 @@ export default function CourseDetailPage() {
     );
   }
 
-  if (!course) return null;
+  // B-18: khoá không tồn tại (404) trước đây render trang trắng.
+  if (!course) {
+    return <ResourceUnavailable resourceLabel="khoá học" backHref="/teacher/courses" backLabel="Về Khóa học của tôi" />;
+  }
 
   // P1 QA 260927 teacher: GET /courses/:id (dùng bởi useCourse) là endpoint xem-trước dùng
   // chung cho mọi người dùng đã đăng nhập (kể cả preview bài học đang khoá trước khi mua) —
