@@ -93,8 +93,8 @@ export function ClassManagePanel({ classId }: { classId: string }) {
                   </Button>
                 )}
                 {canManage && archived && (
-                  <Button onClick={() => actions.update.mutate({ status: "active" })} disabled={actions.update.isPending}>
-                    {actions.update.isPending ? (
+                  <Button onClick={() => actions.reopen.mutate()} disabled={actions.reopen.isPending}>
+                    {actions.reopen.isPending ? (
                       <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden="true" />
                     ) : (
                       <ArchiveRestore className="mr-1 h-4 w-4" aria-hidden="true" />

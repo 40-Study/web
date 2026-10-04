@@ -11,7 +11,8 @@ vi.mock("@/lib/api-client", async () => {
   const { mockApi } = await import("@/test/mock-api");
   return { api: mockApi };
 });
-vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+const { toastSuccess } = vi.hoisted(() => ({ toastSuccess: vi.fn() }));
+vi.mock("sonner", () => ({ toast: { success: toastSuccess, error: vi.fn() } }));
 
 import { ClassManagePanel } from "./class-manage-panel";
 import { NotFoundError } from "@/lib/errors";
@@ -40,6 +41,7 @@ function serve(cls: Record<string, unknown>) {
 
 beforeEach(() => {
   resetMockApi();
+  toastSuccess.mockClear();
 });
 
 describe("ClassManagePanel", () => {
@@ -121,6 +123,8 @@ describe("ClassManagePanel", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: "Mở lại lớp" }));
     await waitFor(() => expect(mockApi.put).toHaveBeenCalledWith(`/classes/${CLASS_ID}`, { status: "active" }));
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Đã mở lại lớp"));
+    expect(toastSuccess).not.toHaveBeenCalledWith("Đã kích hoạt lớp");
   });
 
   it("lớp đã lưu trữ + chỉ xem (không can_manage): không có 'Mở lại lớp'", async () => {
