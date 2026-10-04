@@ -47,6 +47,14 @@ vi.mock("@/components/chat/conversation-chat", () => ({
 }));
 vi.mock("./new-conversation-dialog", () => ({ NewConversationDialog: () => null }));
 
+// Mô phỏng router của Next: `routerQuery` là query mà router báo (khi điều hướng phía client nó đổi TRƯỚC khi
+// `window.location` đổi). null = chưa có router điều hướng, đọc từ URL trình duyệt như lúc tải thẳng trang.
+const routerState = vi.hoisted(() => ({ query: null as string | null }));
+vi.mock("next/navigation", () => ({
+  useSearchParams: () =>
+    new URLSearchParams(routerState.query ?? (typeof window === "undefined" ? "" : window.location.search)),
+}));
+
 // eslint-disable-next-line import/first
 import MessagesPage from "./page";
 
@@ -101,6 +109,25 @@ describe("Trang Tin nhắn — deep-link và chiều cao", () => {
   });
   afterEach(() => {
     window.history.replaceState(null, "", "/");
+    routerState.query = null;
+  });
+
+  it("điều hướng phía client (router.push): query của router mở khung chat dù window.location còn là URL cũ", () => {
+    // Đúng tình huống bấm "Nhắn giảng viên": trang mount khi window.location chưa có ?conversation=.
+    routerState.query = "conversation=c1";
+    render(<MessagesPage />);
+    expect(window.location.search).toBe("");
+    expect(screen.getByTestId("chat-body").textContent).toBe("chat c1");
+    expect(hiddenBelowMd(screen.getByTestId("conversation-list-panel"))).toBe(true);
+  });
+
+  it("đang ở /messages rồi query đổi sang ?conversation=<id> thì mở hội thoại đó", () => {
+    routerState.query = "";
+    const { rerender } = render(<MessagesPage />);
+    expect(screen.queryByTestId("chat-body")).toBeNull();
+    routerState.query = "conversation=c1";
+    rerender(<MessagesPage />);
+    expect(screen.getByTestId("chat-body").textContent).toBe("chat c1");
   });
 
   it("deep-link ?conversation=<id>: LẦN RENDER ĐẦU đã là khung chat (không nháy danh sách)", () => {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   MessageSquare,
@@ -97,18 +98,23 @@ function ConversationItem({
   );
 }
 
-export default function MessagesPage() {
+function MessagesContent() {
   const { user, activeRole } = useAuthStore();
   const role = normalizeRole(activeRole);
   // E2: phụ huynh cũng có nút "Tin nhắn mới" (giáo viên các khoá của con).
   const newConvAudience = role === "STUDENT" ? "student" : role === "PARENT" ? "parent" : null;
-  // Quyết định màn hiển thị từ `?conversation=` ngay lần render đầu: đọc trong effect thì lần vẽ đầu còn là danh sách
-  // rồi mới nhảy sang khung chat (nháy trên điện thoại). Không dùng useSearchParams để trang không phải bọc Suspense.
-  // An toàn với SSR/hydration: layout (app) trả null tới khi store hydrate xong nên trang không bao giờ render ở server;
-  // `typeof window` chỉ là chốt phòng khi có ai đó render server-side sau này.
-  const [selectedConvId, setSelectedConvId] = useState<string | null>(() =>
-    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get(CONVERSATION_PARAM)
-  );
+  // Màn hiển thị theo `?conversation=`: lần render đầu lấy luôn từ query (đọc trong effect thì lần vẽ đầu còn là danh
+  // sách rồi mới nhảy sang khung chat, nháy trên điện thoại). Phải đọc qua useSearchParams chứ không phải
+  // `window.location`: khi điều hướng phía client (router.push từ nút "Nhắn giảng viên"/"Nhắn tin") trang được render
+  // TRƯỚC khi URL của trình duyệt đổi, nên `window.location.search` lúc đó còn là URL cũ và khung chat không mở.
+  const searchParams = useSearchParams();
+  const conversationParam = searchParams.get(CONVERSATION_PARAM);
+  const [selectedConvId, setSelectedConvId] = useState<string | null>(conversationParam);
+  // Query đổi sau khi trang đã mount (vd đang ở /messages rồi bấm nhắn một người khác) thì mở hội thoại mới.
+  // Chỉ phản ứng khi query CÓ giá trị: bỏ param ở handleBackToList không được kéo người dùng về lại khung chat.
+  useEffect(() => {
+    if (conversationParam) setSelectedConvId(conversationParam);
+  }, [conversationParam]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isNewConvOpen, setIsNewConvOpen] = useState(false);
 
@@ -309,5 +315,14 @@ export default function MessagesPage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+/** useSearchParams cần Suspense để build tĩnh không báo lỗi; layout (app) đã chặn render tới khi store hydrate nên fallback không hiện. */
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={null}>
+      <MessagesContent />
+    </Suspense>
   );
 }
