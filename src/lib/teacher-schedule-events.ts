@@ -122,10 +122,12 @@ export function timetableEntriesToEvents(entries: TimetableEntry[], options: Tim
     if (!e.session_id) continue;
     markSkipped(e.schedule_id, e.date);
     // Buổi dời sang THỨ khác: backend không báo ngày gốc (không có cancelled_occurrences, chỉ trả ngày mới), nên ngày
-    // gốc được suy ra là ngày của lịch lặp gần nhất (lệch ≤ 3 ngày). Dời sang cùng thứ của tuần khác thì
-    // không suy ra được: cần backend trả ngày gốc.
+    // gốc chỉ được suy ra khi CHẮC: ngày lịch lặp lệch ≤ 2 ngày (ngày lặp kia cách ≥ 5 ngày). Lệch 3 ngày (hai ngày lặp
+    // cách 3 và 4) hay dời sang cùng thứ của tuần khác thì không chắc: hiện cả bóng lẫn buổi thật, không ẩn nhầm.
+    // Cần backend trả ngày gốc để hết mơ hồ.
     const dow = e.schedule_id ? weeklyDow.get(e.schedule_id) : undefined;
-    if (dow !== undefined && e.date) markSkipped(e.schedule_id, sameWeekOccurrence(e.date, dow));
+    const origin = dow !== undefined && e.date ? nearbyOccurrence(e.date, dow) : undefined;
+    if (origin) markSkipped(e.schedule_id, origin);
   }
 
   const events: ScheduleEvent[] = [];
@@ -182,14 +184,12 @@ export function timetableEntriesToEvents(entries: TimetableEntry[], options: Tim
   return events;
 }
 
-/** Ngày của thứ `dow` (0 = Chủ nhật) gần `date` nhất (lệch ≤ 3 ngày); trả lại chính `date` nếu đã đúng thứ. */
-function sameWeekOccurrence(date: string, dow: number): string {
+/** Ngày của thứ `dow` (0 = Chủ nhật) cách `date` tối đa 2 ngày (kể cả chính `date`); không có thì undefined. */
+function nearbyOccurrence(date: string, dow: number): string | undefined {
   const d = new Date(`${date.slice(0, 10)}T00:00:00`);
-  if (d.getDay() === dow) return dayKey(d);
-  // Ngày của lịch lặp GẦN NHẤT (lệch tối đa 3 ngày): Chủ nhật 11/10 dời sang thứ Hai 12/10 thì ngày gốc là 11/10, không phải 18/10.
   let offset = (dow - d.getDay() + 7) % 7;
   if (offset > 3) offset -= 7;
-  return dayKey(addDays(d, offset));
+  return Math.abs(offset) <= 2 ? dayKey(addDays(d, offset)) : undefined;
 }
 
 /** Trải một lịch lặp tuần thành sự kiện một lần cho từng ngày trong `range`, bỏ các ngày trong `skip`. */

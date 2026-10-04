@@ -142,6 +142,24 @@ describe("timetableEntriesToEvents: có khoảng ngày (buổi đã sửa giờ 
     expect(days(events).sort()).toEqual(["2026-10-12 19:00", "2026-10-18 19:00", "2026-10-25 19:00"]);
   });
 
+  it("dời qua ranh giới tuần, chiều ngược: lịch thứ Hai, buổi 12/10 dời sang Chủ nhật 11/10 → bỏ bóng 12/10, giữ 05/10 và 19/10", () => {
+    const events = timetableEntriesToEvents(
+      [weekly, entry({ session_id: "s4", schedule_id: "sch1", date: "2026-10-11", day_of_week: 0, start_time: "19:00", end_time: "21:00" })],
+      { range },
+    );
+    expect(days(events).sort()).toEqual(["2026-10-05 19:00", "2026-10-11 19:00", "2026-10-19 19:00"]);
+  });
+
+  it("không chắc ngày gốc (lệch 3 ngày, hai ngày lặp cách 3 và 4): hiện cả bóng lẫn buổi thật thay vì ẩn nhầm", () => {
+    const sunday = entry({ schedule_id: "sch2", day_of_week: 0, effective_from: "2026-09-01", effective_until: "2026-12-31" });
+    // Thứ Năm 15/10: cách CN 11/10 là 4 ngày, cách CN 18/10 là 3 ngày. Có thể dời từ ngày nào cũng được.
+    const events = timetableEntriesToEvents(
+      [sunday, entry({ session_id: "s5", schedule_id: "sch2", date: "2026-10-15", day_of_week: 4, start_time: "19:00", end_time: "21:00" })],
+      { range },
+    );
+    expect(days(events).sort()).toEqual(["2026-10-11 19:00", "2026-10-15 19:00", "2026-10-18 19:00", "2026-10-25 19:00"]);
+  });
+
   it("buổi sinh từ lịch lặp ở đúng thứ của lịch (chỉ đổi giờ) không làm mất buổi của tuần khác", () => {
     const events = timetableEntriesToEvents(
       [weekly, entry({ session_id: "s2", schedule_id: "sch1", date: "2026-10-12", day_of_week: 1, start_time: "14:00", end_time: "15:30" })],
