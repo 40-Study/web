@@ -104,6 +104,9 @@ export const ROLE_SCOPED_ROUTES: RoleScopedRoute[] = [
   { href: "/contests", roles: ["GUEST", "STUDENT", "PARENT"] },
   { href: "/my-courses", roles: ["STUDENT"] },
   { href: "/schedule", roles: ["STUDENT"] },
+  // Buổi livestream và sổ điểm là của học viên (A-08, A-07); sidebar/bottom-nav đọc roles từ đây.
+  { href: "/livestream", roles: ["STUDENT"] },
+  { href: "/my-grades", roles: ["STUDENT"] },
   { href: "/my-attendance", roles: ["STUDENT"] },
   { href: "/certificates", roles: ["STUDENT"] },
   { href: "/groups", roles: ["STUDENT"] },
@@ -161,6 +164,21 @@ export function isRouteAllowedForRole(pathname: string, role: NavRole): boolean 
   );
   if (!entry) return true;
   return entry.roles.includes(role);
+}
+
+/**
+ * Route chỉ dành cho vai THẬT là STUDENT. Bảng ROLE_SCOPED_ROUTES khoá theo NavRole mà resolveNavRole quy TEACHER
+ * về STUDENT (để dựng khung), nên giáo viên gõ thẳng URL vẫn lọt; menu và guard cùng đọc hàm này để không lệch.
+ */
+const STUDENT_REAL_ROLE_ROUTES = ["/livestream", "/my-grades"];
+
+export function requiresRealStudentRole(pathname: string): boolean {
+  return STUDENT_REAL_ROLE_ROUTES.some((href) => pathname === href || pathname.startsWith(`${href}/`));
+}
+
+/** Route học viên-only có mở được với vai ĐANG DÙNG không (route không thuộc nhóm này luôn true). */
+export function canAccessStudentOnlyRoute(pathname: string, activeRole?: string | null): boolean {
+  return !requiresRealStudentRole(pathname) || normalizeRole(activeRole) === "STUDENT";
 }
 
 /**
