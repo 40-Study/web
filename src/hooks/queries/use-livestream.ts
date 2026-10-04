@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error-messages";
 import { livestreamClassroomService as livestreamService } from "@/services/livestream-classroom.service";
 
 export const livestreamKeys = {
@@ -40,6 +41,7 @@ export function useCreateSession() {
       qc.invalidateQueries({ queryKey: livestreamKeys.sessions() });
       toast.success("Tạo phiên học thành công");
     },
+    onError: (err) => toast.error("Không thể tạo phiên học", { description: getErrorMessage(err) }),
   });
 }
 
@@ -109,6 +111,7 @@ export function useCreateAssignment() {
       qc.invalidateQueries({ queryKey: livestreamKeys.assignments(sessionId) });
       toast.success("Tạo bài tập thành công");
     },
+    onError: (err) => toast.error("Không thể tạo bài tập", { description: getErrorMessage(err) }),
   });
 }
 
@@ -119,6 +122,7 @@ export function useSubmitCode() {
     onSuccess: () => {
       toast.success("Nộp bài thành công");
     },
+    onError: (err) => toast.error("Không thể nộp bài", { description: getErrorMessage(err) }),
   });
 }
 

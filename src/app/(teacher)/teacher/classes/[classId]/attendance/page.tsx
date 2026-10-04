@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { AttendanceTable } from "@/components/attendance/attendance-table";
 import { useAttendanceDraft } from "@/components/attendance/use-attendance-draft";
 import { useClassStudentsByClassId } from "@/hooks/queries/use-classes";
+import { useClassById } from "@/hooks/queries/use-class-manage";
+import { isClassArchived } from "@/lib/class-status";
 import { ResourceUnavailable, isResourceUnavailableError, unavailableStatus } from "@/components/common/resource-unavailable";
 import { formatVnDateOnly } from "@/lib/vn-datetime";
 import {
@@ -50,8 +52,12 @@ export default function ClassAttendancePage() {
   const bulkMark = useBulkMarkAttendance(sessionId);
   const updateOne = useUpdateAttendance(sessionId);
   const saving = bulkMark.isPending || updateOne.isPending;
+  // Lớp lưu trữ chỉ đọc: backend từ chối ghi điểm danh (409 CLASS_ARCHIVED).
+  const { data: classInfo } = useClassById(classId);
+  const archived = isClassArchived(classInfo?.status);
 
   async function handleSave() {
+    if (archived) return;
     const { toCreate, toUpdate } = changes;
 
     try {
@@ -123,7 +129,7 @@ export default function ClassAttendancePage() {
             <button
               type="button"
               onClick={markAllPresent}
-              disabled={saving || rows.length === 0}
+              disabled={archived || saving || rows.length === 0}
               className="rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               Đánh dấu tất cả có mặt
@@ -132,12 +138,18 @@ export default function ClassAttendancePage() {
             <button
               type="button"
               onClick={handleSave}
-              disabled={!hasChanges || saving}
+              disabled={archived || !hasChanges || saving}
               className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
             >
               {saving ? "Đang lưu…" : "Lưu điểm danh"}
             </button>
           </div>
+
+          {archived && (
+            <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              Lớp đã lưu trữ: chỉ xem điểm danh. Hãy mở lại lớp ở trang quản lý lớp để điểm danh tiếp.
+            </p>
+          )}
 
           {selectedSession?.status === "cancelled" && (
             <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -157,7 +169,7 @@ export default function ClassAttendancePage() {
               rows={rows}
               onStatusChange={setStatus}
               onNoteChange={setNote}
-              disabled={saving}
+              disabled={archived || saving}
             />
           )}
         </>

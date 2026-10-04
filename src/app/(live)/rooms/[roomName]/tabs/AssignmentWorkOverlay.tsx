@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { api } from '@/lib/meet/api';
+import { meetErrorMessage } from '@/lib/meet/error-message';
 import type { Assignment, TestCase, SandboxResponse, SubmissionResult } from '@/lib/meet/types-assignment';
 import RichTextEditor, { RichTextViewer } from '@/components/meet/RichTextEditor';
 
@@ -244,7 +245,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
       setMySubmission(res);
       setActiveResultTab('tests');
     } catch (err: any) {
-      setResults({ error: err.message ?? 'Lỗi khi nộp bài' } as any);
+      setResults({ error: meetErrorMessage(err, 'Lỗi khi nộp bài') } as any);
     } finally {
       setSubmitting(false);
     }
@@ -281,7 +282,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
       });
       setMySubmission(res);
     } catch (err: any) {
-      setAlertModal({ title: 'Lỗi', message: err.message ?? 'Lỗi khi nộp bài' });
+      setAlertModal({ title: 'Lỗi', message: meetErrorMessage(err, 'Lỗi khi nộp bài') });
     } finally {
       setSubmitting(false);
     }
@@ -326,7 +327,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
         }
       }
     } catch (err: any) {
-      setAlertModal({ title: 'Lỗi', message: err.message ?? 'Lỗi khi nộp bài' });
+      setAlertModal({ title: 'Lỗi', message: meetErrorMessage(err, 'Lỗi khi nộp bài') });
     } finally {
       setSubmitting(false);
     }

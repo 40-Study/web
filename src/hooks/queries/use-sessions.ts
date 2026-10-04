@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error-messages";
 import {
   sessionService,
   CreateClassScheduleDTO,
@@ -46,7 +47,7 @@ export function useCreateSchedule(classId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.schedules(classId) });
       toast.success("Đã tạo lịch học");
     },
-    onError: () => toast.error("Không thể tạo lịch học"),
+    onError: (err) => toast.error("Không thể tạo lịch học", { description: getErrorMessage(err) }),
   });
 }
 
@@ -59,7 +60,7 @@ export function useUpdateSchedule(classId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.schedules(classId) });
       toast.success("Đã cập nhật lịch học");
     },
-    onError: () => toast.error("Không thể cập nhật lịch học"),
+    onError: (err) => toast.error("Không thể cập nhật lịch học", { description: getErrorMessage(err) }),
   });
 }
 
@@ -71,7 +72,7 @@ export function useDeleteSchedule(classId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.schedules(classId) });
       toast.success("Đã xóa lịch học");
     },
-    onError: () => toast.error("Không thể xóa lịch học"),
+    onError: (err) => toast.error("Không thể xóa lịch học", { description: getErrorMessage(err) }),
   });
 }
 
@@ -109,7 +110,7 @@ export function useCreateSession(classId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.sessions(classId) });
       toast.success("Đã tạo buổi học");
     },
-    onError: () => toast.error("Không thể tạo buổi học"),
+    onError: (err) => toast.error("Không thể tạo buổi học", { description: getErrorMessage(err) }),
   });
 }
 
@@ -121,7 +122,7 @@ export function useGenerateSessions(classId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.sessions(classId) });
       toast.success(`Đã tạo ${sessions.length} buổi học`);
     },
-    onError: () => toast.error("Không thể tạo buổi học"),
+    onError: (err) => toast.error("Không thể tạo buổi học", { description: getErrorMessage(err) }),
   });
 }
 
@@ -134,7 +135,7 @@ export function useUpdateSession(classId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.sessions(classId) });
       toast.success("Đã cập nhật buổi học");
     },
-    onError: () => toast.error("Không thể cập nhật buổi học"),
+    onError: (err) => toast.error("Không thể cập nhật buổi học", { description: getErrorMessage(err) }),
   });
 }
 
@@ -147,7 +148,7 @@ export function useCancelSession(classId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.sessions(classId) });
       toast.success("Đã hủy buổi học");
     },
-    onError: () => toast.error("Không thể hủy buổi học"),
+    onError: (err) => toast.error("Không thể hủy buổi học", { description: getErrorMessage(err) }),
   });
 }
 
@@ -169,7 +170,7 @@ export function useMarkAttendance(sessionId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.attendances(sessionId) });
       toast.success("Đã điểm danh");
     },
-    onError: () => toast.error("Không thể điểm danh"),
+    onError: (err) => toast.error("Không thể điểm danh", { description: getErrorMessage(err) }),
   });
 }
 
@@ -181,7 +182,7 @@ export function useBulkMarkAttendance(sessionId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.attendances(sessionId) });
       toast.success("Đã điểm danh hàng loạt");
     },
-    onError: () => toast.error("Không thể điểm danh"),
+    onError: (err) => toast.error("Không thể điểm danh", { description: getErrorMessage(err) }),
   });
 }
 
@@ -194,7 +195,7 @@ export function useUpdateAttendance(sessionId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.attendances(sessionId) });
       toast.success("Đã cập nhật điểm danh");
     },
-    onError: () => toast.error("Không thể cập nhật điểm danh"),
+    onError: (err) => toast.error("Không thể cập nhật điểm danh", { description: getErrorMessage(err) }),
   });
 }
 
@@ -207,7 +208,7 @@ export function useCheckIn(sessionId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.myAttendances() });
       toast.success("Đã check-in thành công");
     },
-    onError: () => toast.error("Không thể check-in"),
+    onError: (err) => toast.error("Không thể check-in", { description: getErrorMessage(err) }),
   });
 }
 
@@ -220,7 +221,7 @@ export function useCheckOut(sessionId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.myAttendances() });
       toast.success("Đã check-out thành công");
     },
-    onError: () => toast.error("Không thể check-out"),
+    onError: (err) => toast.error("Không thể check-out", { description: getErrorMessage(err) }),
   });
 }
 
@@ -257,6 +258,6 @@ export function useUpdateReminderSettings() {
       queryClient.invalidateQueries({ queryKey: sessionKeys.reminders() });
       toast.success("Đã cập nhật cài đặt nhắc nhở");
     },
-    onError: () => toast.error("Không thể cập nhật cài đặt"),
+    onError: (err) => toast.error("Không thể cập nhật cài đặt", { description: getErrorMessage(err) }),
   });
 }

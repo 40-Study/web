@@ -15,6 +15,7 @@ vi.mock("@/lib/api-client", async () => {
 import LeaderboardPage from "./page";
 import { envelope, mockApi, resetMockApi } from "@/test/mock-api";
 import { renderWithProviders } from "@/test/utils";
+import { useAuthStore } from "@/stores/auth.store";
 
 const ME = "11111111-1111-4111-8111-111111111111";
 
@@ -47,8 +48,27 @@ function mockLeaderboard(classes: { id: string; name: string }[] = []) {
   });
 }
 
-beforeEach(() => resetMockApi());
-afterEach(() => vi.restoreAllMocks());
+beforeEach(() => {
+  resetMockApi();
+  useAuthStore.setState({ isAuthenticated: true, sessionStatus: "authenticated" });
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+  useAuthStore.getState().clearServerSession();
+});
+
+describe("LeaderboardPage — khách", () => {
+  it("không gọi /leaderboard/classes và /leaderboard/me (không 401 thừa), vẫn tải bảng công khai", async () => {
+    useAuthStore.setState({ isAuthenticated: false, sessionStatus: "anonymous" });
+    mockLeaderboard();
+    renderWithProviders(<LeaderboardPage />);
+
+    expect(await screen.findByText("Bình Công Khai")).toBeTruthy();
+    const urls = mockApi.get.mock.calls.map((c) => c[0]);
+    expect(urls).not.toContain("/leaderboard/classes");
+    expect(urls).not.toContain("/leaderboard/me");
+  });
+});
 
 describe("LeaderboardPage — người ẩn danh", () => {
   it("hiện nhãn ẩn danh cho dòng không có danh tính, không lộ gì khác, không lỗi khoá trùng", async () => {

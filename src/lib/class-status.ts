@@ -21,3 +21,14 @@ export function getClassStatusVariant(status?: string | null): ClassStatusBadgeV
   if (status === "archived") return "secondary";
   return "warning";
 }
+
+/**
+ * Lớp lưu trữ là CHỈ ĐỌC: backend trả 409 CLASS_ARCHIVED cho mọi thao tác ghi, nên UI ẩn/khoá nút ghi theo `status`
+ * mà backend đã trả thay vì để người dùng bấm rồi nhận lỗi.
+ */
+export const isClassArchived = (status?: string | null): boolean => status === "archived";
+
+/** Lớp có thể chọn khi TẠO buổi/bài mới: bỏ lớp lưu trữ. */
+export function selectableClasses<T extends { status?: string | null }>(classes: readonly T[]): T[] {
+  return classes.filter((c) => !isClassArchived(c.status));
+}

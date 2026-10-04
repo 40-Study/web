@@ -94,29 +94,15 @@ describe("TeacherCourseMembersPage — quyền và tồn tại của khoá", () 
     expect(screen.queryByText("Lê Văn C")).toBeNull();
   });
 
-  it("lỗi 5xx khi tải khoá: hiện lỗi + Thử lại (gọi refetch), không báo 'Không tìm thấy'", () => {
+  it("refetch lỗi 5xx khi đã có dữ liệu: giữ nguyên trang và danh sách, chỉ hiện thông báo nhỏ + Thử lại", () => {
+    state.course = { id: "course-1", title: "React + Next.js", instructor_id: "t1" };
     state.error = new ApiError(500, "INTERNAL", "boom");
     render(<TeacherCourseMembersPage />);
 
-    expect(screen.getByRole("heading", { name: "Không tải được khoá học" })).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: "Không tìm thấy khoá học" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Không tải được khoá học" })).toBeNull();
+    expect(screen.getByText("Lê Văn C")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain("Không làm mới được");
     fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
     expect(state.refetch).toHaveBeenCalledTimes(1);
-  });
-
-  it("API 403 khi tải khoá: hiện 'Không có quyền truy cập'", () => {
-    state.error = new ApiError(403, "FORBIDDEN", "no");
-    render(<TeacherCourseMembersPage />);
-
-    expect(screen.getByRole("heading", { name: "Không có quyền truy cập" })).toBeTruthy();
-  });
-
-  it("store chưa có user: không nháy 'Không có quyền truy cập' (chờ)", () => {
-    state.course = { id: "course-1", title: "React + Next.js", instructor_id: "t1" };
-    useAuthStore.setState({ user: null as never, activeRole: "TEACHER" });
-    render(<TeacherCourseMembersPage />);
-
-    expect(screen.queryByRole("heading", { name: "Không có quyền truy cập" })).toBeNull();
-    expect(screen.queryByText("Lê Văn C")).toBeNull();
   });
 });

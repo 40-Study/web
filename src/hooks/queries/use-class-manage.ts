@@ -56,6 +56,16 @@ export function useClassManageActions(classId: string) {
     onError: fail("Không thể cập nhật lớp"),
   });
 
+  // Mở lại lớp đã lưu trữ: cùng PUT status=active nhưng toast riêng để không báo "Đã kích hoạt lớp".
+  const reopen = useMutation({
+    mutationFn: () => classService.updateByClassId(classId, { status: "active" }),
+    onSuccess: () => {
+      refreshAll();
+      toast.success("Đã mở lại lớp");
+    },
+    onError: fail("Không thể mở lại lớp"),
+  });
+
   const assignTeacher = useMutation({
     mutationFn: (teacherId: string) => classService.assignTeacherByClassId(classId, teacherId),
     onSuccess: () => {
@@ -92,5 +102,5 @@ export function useClassManageActions(classId: string) {
     onError: fail("Không thể gỡ học viên"),
   });
 
-  return { update, assignTeacher, removeTeacher, enrollStudent, removeStudent };
+  return { update, reopen, assignTeacher, removeTeacher, enrollStudent, removeStudent };
 }

@@ -80,4 +80,21 @@ describe("MeetApiError (I4)", () => {
       code: "NOT_SESSION_MEMBER",
     });
   });
+
+  it("giữ body.code (vd. CLASS_ARCHIVED) ở bodyCode, tách khỏi .code vốn là message của envelope", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: async () => ({ code: "CLASS_ARCHIVED", message: "Lớp đã lưu trữ" }),
+      })
+    );
+
+    await expect(api.post("/submissions", {})).rejects.toMatchObject({
+      status: 409,
+      bodyCode: "CLASS_ARCHIVED",
+      code: "Lớp đã lưu trữ",
+    });
+  });
 });

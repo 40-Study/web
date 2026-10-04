@@ -174,3 +174,15 @@ describe("getErrorMessage - TEACHER_NOT_ORG_MEMBER", () => {
     expect(message).not.toMatch(/teacher/i);
   });
 });
+describe("getErrorMessage — ghi vào lớp đã lưu trữ (409 CLASS_ARCHIVED)", () => {
+  it("backend đã trả message tiếng Việt: hiện đúng message của backend", () => {
+    const error = new ApiError(409, "CLASS_ARCHIVED", "Lớp đã lưu trữ, hãy mở lại lớp trước khi chỉnh sửa");
+    expect(getErrorMessage(error)).toBe("Lớp đã lưu trữ, hãy mở lại lớp trước khi chỉnh sửa");
+  });
+
+  it("message không có tiếng Việt: dùng câu dự phòng theo code, không in tiếng Anh, không là câu xung đột chung", () => {
+    const message = getErrorMessage(new ApiError(409, "CLASS_ARCHIVED", "class is archived"));
+    expect(message).toMatch(/Lớp đã lưu trữ/);
+    expect(message).not.toMatch(/archived/i);
+  });
+});

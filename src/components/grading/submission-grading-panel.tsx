@@ -25,6 +25,8 @@ import {
 import { cn } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/error-messages";
 import { useAssignment } from "@/hooks/queries/use-assignments";
+import { useClassById } from "@/hooks/queries/use-class-manage";
+import { isClassArchived } from "@/lib/class-status";
 import { useSubmissionsByAssignment } from "@/hooks/queries/use-submissions";
 import { useCreateGrade, useGradeBook, useUpdateGrade } from "@/hooks/queries/use-grades";
 import {
@@ -45,6 +47,9 @@ export interface SubmissionGradingPanelProps {
 export function SubmissionGradingPanel({ assignmentId }: SubmissionGradingPanelProps) {
   const { data: assignment, isLoading: assignmentLoading, error: assignmentError } = useAssignment(assignmentId);
   const classId = assignment?.class_id ?? "";
+  const { data: classInfo } = useClassById(classId);
+  // Lớp lưu trữ chỉ đọc (backend 409 CLASS_ARCHIVED): xem bài nộp được, không chấm mới/sửa điểm.
+  const archived = isClassArchived(classInfo?.status);
   const {
     data: submissionData,
     isLoading: submissionsLoading,
@@ -98,7 +103,7 @@ export function SubmissionGradingPanel({ assignmentId }: SubmissionGradingPanelP
   );
 
   const openRow = rows.find((r) => r.studentId === openStudentId) ?? null;
-  const canGrade = !!classId;
+  const canGrade = !!classId && !archived;
 
   const saveGrade = async (row: GradingRow, input: { score: number; feedback: string }) => {
     if (row.grade) {
@@ -189,7 +194,13 @@ export function SubmissionGradingPanel({ assignmentId }: SubmissionGradingPanelP
         </Select>
       </div>
 
-      {!canGrade && (
+      {archived && (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          Lớp đã lưu trữ: chỉ xem bài nộp và điểm đã chấm, không chấm thêm cho tới khi mở lại lớp.
+        </p>
+      )}
+
+      {!classId && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
           Bài tập này chưa gắn với lớp nào nên chỉ xem được bài nộp, chưa chấm điểm được.
         </p>

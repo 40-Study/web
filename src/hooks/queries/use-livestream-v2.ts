@@ -5,6 +5,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error-messages";
 import {
   livestreamService,
   type CreateLivestreamDTO,
@@ -53,7 +54,7 @@ export function useCreateLivestream() {
       qc.invalidateQueries({ queryKey: livestreamV2Keys.all });
       toast.success("Tạo livestream thành công");
     },
-    onError: () => toast.error("Không thể tạo livestream"),
+    onError: (err) => toast.error("Không thể tạo livestream", { description: getErrorMessage(err) }),
   });
 }
 

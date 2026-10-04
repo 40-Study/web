@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error-messages";
 import {
   submissionService,
   type SubmitCodeDTO,
@@ -58,7 +59,7 @@ export function useSubmitCode() {
       qc.invalidateQueries({ queryKey: submissionKeys.byAssignment(dto.assignment_id) });
       toast.success("Đã nộp bài");
     },
-    onError: () => toast.error("Không thể nộp bài"),
+    onError: (err) => toast.error("Không thể nộp bài", { description: getErrorMessage(err) }),
   });
 }
 

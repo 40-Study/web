@@ -10,7 +10,7 @@
  * mọi endpoint quản lý khóa phía backend, xem `course_handler.go` isAdminActor).
  */
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 // ─── next/navigation — override mock global (vitest.setup.ts) để có :id thật ─────────────────
@@ -37,9 +37,17 @@ vi.mock("@/stores/auth.store", () => ({
 // ─── course/section/lesson query hooks — course controllable, phần còn lại stub rỗng ─────────
 const COURSE_OWNER_ID = "teacher-owner-uuid";
 let mockCourse: Record<string, unknown> | undefined;
+let mockCourseError: unknown;
+const mockRefetchCourse = vi.fn();
 
 vi.mock("@/hooks/queries/use-courses", () => ({
-  useCourse: () => ({ data: mockCourse, isLoading: false }),
+  useCourse: () => ({
+    data: mockCourse,
+    isLoading: false,
+    isError: mockCourseError !== undefined,
+    error: mockCourseError,
+    refetch: mockRefetchCourse,
+  }),
   useUpdateCourse: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
@@ -89,9 +97,12 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 // vi.mock() lên đầu file nên thứ tự import bên dưới vẫn đúng thời điểm.
 // eslint-disable-next-line import/first
 import TeacherCourseDetailPage from "./page";
+import { ApiError } from "@/lib/errors";
 
 function setScenario(opts: { userId?: string; activeRole?: string; instructorId: string }) {
   mockAuthState = { userId: opts.userId, activeRole: opts.activeRole };
+  mockCourseError = undefined;
+  mockRefetchCourse.mockReset();
   mockCourse = {
     id: "course-1",
     title: "Khóa test",
@@ -119,5 +130,17 @@ describe("/teacher/courses/[id] — kiểm quyền chủ khóa (review đối kh
     setScenario({ userId: "some-admin-uuid", activeRole: "SYSTEM_ADMIN", instructorId: COURSE_OWNER_ID });
     render(<TeacherCourseDetailPage />);
     expect(screen.queryByText("Không có quyền truy cập")).toBeNull();
+  });
+
+  it("refetch lỗi 5xx khi đã có khoá: giữ trang quản lý, chỉ hiện thông báo nhỏ + Thử lại", () => {
+    setScenario({ userId: COURSE_OWNER_ID, instructorId: COURSE_OWNER_ID });
+    mockCourseError = new ApiError(500, "INTERNAL", "boom");
+    render(<TeacherCourseDetailPage />);
+
+    expect(screen.queryByRole("heading", { name: "Không tải được khoá học" })).toBeNull();
+    expect(screen.getByText("Khóa test")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain("Không làm mới được");
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    expect(mockRefetchCourse).toHaveBeenCalledTimes(1);
   });
 });
