@@ -14,7 +14,7 @@ import {
 } from "@/components/gamification";
 import type { LeaderboardEntry, LeagueType } from "@/components/gamification";
 import { cn } from "@/lib/utils";
-import { useLeaderboard, useMyRank } from "@/hooks/queries/use-leaderboard";
+import { useLeaderboard, useMyClassBoards, useMyRank } from "@/hooks/queries/use-leaderboard";
 import type { LeaderboardEntryDTO, PeriodType } from "@/services/leaderboard.service";
 import { leaderboardEntryKey, leaderboardEntryName } from "@/lib/leaderboard-display";
 
@@ -72,6 +72,12 @@ export default function LeaderboardPage() {
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>("gold");
   const [isLeagueDropdownOpen, setIsLeagueDropdownOpen] = useState(false);
   const [periodType, setPeriodType] = useState<PeriodType>("weekly");
+  // "" = bảng toàn hệ thống; có giá trị = bảng riêng của lớp đó (?class_id=).
+  const [classId, setClassId] = useState("");
+
+  const { data: classBoards } = useMyClassBoards();
+  // Lớp đã chọn mà không còn trong danh sách (vừa rời lớp...) thì quay về bảng toàn hệ thống, tránh gọi class_id sẽ 404.
+  const activeClassId = classBoards?.some((c) => c.id === classId) ? classId : "";
 
   const {
     data: leaderboardData,
@@ -79,7 +85,12 @@ export default function LeaderboardPage() {
     isError: isLeaderboardError,
     error: leaderboardError,
     refetch: refetchLeaderboard,
-  } = useLeaderboard({ period_type: periodType, limit: 10 });
+  } = useLeaderboard(
+    activeClassId
+      // Lớp nhỏ nên lấy tới 100 dòng: vị trí của mình trong lớp suy ra từ dòng is_me, mà /leaderboard/me chỉ có bảng toàn hệ thống.
+      ? { period_type: periodType, limit: 100, class_id: activeClassId }
+      : { period_type: periodType, limit: 10 },
+  );
 
   const {
     data: myRankData,
@@ -101,11 +112,20 @@ export default function LeaderboardPage() {
     leaderboardData?.entries.map(mapToUiEntry) ?? [];
 
   // Chính mình luôn có user_id thật (backend không ẩn danh với chính chủ), nên so được với dòng trong danh sách.
-  const myEntry = myRankData?.entry ? mapToUiEntry(myRankData.entry, 0) : null;
+  // Bảng lớp: /leaderboard/me không có class_id nên lấy dòng is_me trong chính bảng đó, không dùng hạng toàn hệ thống.
+  const myClassIndex = activeClassId ? (leaderboardData?.entries.findIndex((e) => e.is_me) ?? -1) : -1;
+  const myEntry = activeClassId
+    ? myClassIndex >= 0 && leaderboardData
+      ? mapToUiEntry(leaderboardData.entries[myClassIndex], myClassIndex)
+      : null
+    : myRankData?.entry
+      ? mapToUiEntry(myRankData.entry, 0)
+      : null;
   const myUserId = myEntry?.userId ?? "";
 
-  const isLoading = isLeaderboardLoading || isMyRankLoading;
-  const isError = isLeaderboardError || isMyRankError;
+  // Bảng lớp không cần hạng toàn hệ thống nên không chờ/không lỗi theo /leaderboard/me.
+  const isLoading = isLeaderboardLoading || (!activeClassId && isMyRankLoading);
+  const isError = isLeaderboardError || (!activeClassId && isMyRankError);
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8">
@@ -119,6 +139,32 @@ export default function LeaderboardPage() {
           <p className="text-muted-foreground">Thi đua cùng bạn bè và leo hạng mỗi ngày</p>
         </div>
       </div>
+
+      {/* Phạm vi: toàn hệ thống hoặc một lớp của mình (học viên/giảng viên của lớp đó) */}
+      {classBoards && classBoards.length > 0 && (
+        <div className="flex gap-2 mb-3 flex-wrap items-center" role="group" aria-label="Phạm vi bảng xếp hạng">
+          <span className="text-sm text-muted-foreground mr-1">Phạm vi:</span>
+          <Button
+            variant={activeClassId === "" ? "default" : "outline"}
+            size="sm"
+            aria-pressed={activeClassId === ""}
+            onClick={() => setClassId("")}
+          >
+            Toàn hệ thống
+          </Button>
+          {classBoards.map((c) => (
+            <Button
+              key={c.id}
+              variant={activeClassId === c.id ? "default" : "outline"}
+              size="sm"
+              aria-pressed={activeClassId === c.id}
+              onClick={() => setClassId(c.id)}
+            >
+              {c.name}
+            </Button>
+          ))}
+        </div>
+      )}
 
       {/* Period selector */}
       <div className="flex gap-2 mb-6 flex-wrap">

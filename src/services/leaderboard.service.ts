@@ -42,6 +42,14 @@ export interface LeaderboardParams {
   period_type?: PeriodType;
   limit?: number;
   page?: number;
+  /** Bảng riêng của một lớp: chỉ thành viên lớp (học viên đang ghi danh, giảng viên) hoặc admin mở được, còn lại 404. */
+  class_id?: string;
+}
+
+/** Lớp mà người dùng mở được bảng xếp hạng riêng (khớp dto.LeaderboardClassDTO). */
+export interface LeaderboardClass {
+  id: string;
+  name: string;
 }
 
 type ApiResponse<T> = { message: string; data: T };
@@ -54,6 +62,12 @@ export const leaderboardService = {
     api
       .get<ApiResponse<LeaderboardResponse>>("/leaderboard", { params })
       .then((r) => r.data.data),
+
+  /** GET /leaderboard/classes — các lớp người dùng được xem bảng xếp hạng riêng (nguồn của ô chọn lớp) */
+  getMyClassBoards: () =>
+    api
+      .get<ApiResponse<LeaderboardClass[]>>("/leaderboard/classes")
+      .then((r) => r.data.data ?? []),
 
   /** GET /leaderboard/me — current user's rank */
   getMyRank: (params?: Pick<LeaderboardParams, "period_type">) =>
