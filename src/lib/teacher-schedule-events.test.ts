@@ -133,6 +133,15 @@ describe("timetableEntriesToEvents: có khoảng ngày (buổi đã sửa giờ 
     expect(days(events).sort()).toEqual(["2026-10-05 19:00", "2026-10-14 19:00", "2026-10-19 19:00"]);
   });
 
+  it("lịch lặp Chủ nhật, buổi 11/10 dời sang thứ Hai 12/10: bỏ bóng 11/10, KHÔNG làm mất buổi lặp 18/10", () => {
+    const sunday = entry({ schedule_id: "sch2", day_of_week: 0, effective_from: "2026-09-01", effective_until: "2026-12-31" });
+    const events = timetableEntriesToEvents(
+      [sunday, entry({ session_id: "s3", schedule_id: "sch2", date: "2026-10-12", day_of_week: 1, start_time: "19:00", end_time: "21:00" })],
+      { range },
+    );
+    expect(days(events).sort()).toEqual(["2026-10-12 19:00", "2026-10-18 19:00", "2026-10-25 19:00"]);
+  });
+
   it("buổi sinh từ lịch lặp ở đúng thứ của lịch (chỉ đổi giờ) không làm mất buổi của tuần khác", () => {
     const events = timetableEntriesToEvents(
       [weekly, entry({ session_id: "s2", schedule_id: "sch1", date: "2026-10-12", day_of_week: 1, start_time: "14:00", end_time: "15:30" })],

@@ -122,7 +122,7 @@ export function timetableEntriesToEvents(entries: TimetableEntry[], options: Tim
     if (!e.session_id) continue;
     markSkipped(e.schedule_id, e.date);
     // Buổi dời sang THỨ khác: backend không báo ngày gốc (không có cancelled_occurrences, chỉ trả ngày mới), nên ngày
-    // gốc được suy ra là ngày của lịch lặp trong cùng tuần (thứ Hai đầu tuần). Dời sang cùng thứ của tuần khác thì
+    // gốc được suy ra là ngày của lịch lặp gần nhất (lệch ≤ 3 ngày). Dời sang cùng thứ của tuần khác thì
     // không suy ra được: cần backend trả ngày gốc.
     const dow = e.schedule_id ? weeklyDow.get(e.schedule_id) : undefined;
     if (dow !== undefined && e.date) markSkipped(e.schedule_id, sameWeekOccurrence(e.date, dow));
@@ -182,11 +182,14 @@ export function timetableEntriesToEvents(entries: TimetableEntry[], options: Tim
   return events;
 }
 
-/** Ngày của thứ `dow` (0 = Chủ nhật) trong cùng tuần (thứ Hai đầu tuần) với `date`; trả lại chính `date` nếu đã đúng thứ. */
+/** Ngày của thứ `dow` (0 = Chủ nhật) gần `date` nhất (lệch ≤ 3 ngày); trả lại chính `date` nếu đã đúng thứ. */
 function sameWeekOccurrence(date: string, dow: number): string {
   const d = new Date(`${date.slice(0, 10)}T00:00:00`);
   if (d.getDay() === dow) return dayKey(d);
-  return dayKey(addDays(d, ((dow + 6) % 7) - ((d.getDay() + 6) % 7)));
+  // Ngày của lịch lặp GẦN NHẤT (lệch tối đa 3 ngày): Chủ nhật 11/10 dời sang thứ Hai 12/10 thì ngày gốc là 11/10, không phải 18/10.
+  let offset = (dow - d.getDay() + 7) % 7;
+  if (offset > 3) offset -= 7;
+  return dayKey(addDays(d, offset));
 }
 
 /** Trải một lịch lặp tuần thành sự kiện một lần cho từng ngày trong `range`, bỏ các ngày trong `skip`. */

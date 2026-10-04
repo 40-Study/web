@@ -6,7 +6,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/errors";
 
-const state = vi.hoisted(() => ({ sessions: {} as Record<string, unknown>, classStatus: undefined as string | undefined }));
+const state = vi.hoisted(() => ({ sessions: {} as Record<string, unknown>, classStatus: undefined as string | undefined, hasChanges: false, rows: [] as unknown[] }));
 
 vi.mock("next/navigation", () => ({ useParams: () => ({ classId: "class-1" }) }));
 vi.mock("@/hooks/queries/use-classes", () => ({ useClassStudentsByClassId: () => ({ data: [], isLoading: false }) }));
@@ -21,13 +21,13 @@ vi.mock("@/hooks/queries/use-sessions", () => ({
 }));
 vi.mock("@/components/attendance/use-attendance-draft", () => ({
   useAttendanceDraft: () => ({
-    rows: [],
+    rows: state.rows,
     setStatus: vi.fn(),
     setNote: vi.fn(),
     markAllPresent: vi.fn(),
     reset: vi.fn(),
     changes: { toCreate: [], toUpdate: [] },
-    hasChanges: false,
+    hasChanges: state.hasChanges,
   }),
 }));
 vi.mock("@/components/attendance/attendance-table", () => ({ AttendanceTable: ({ disabled }: { disabled?: boolean }) => <div data-testid="table" data-disabled={String(!!disabled)}>BANG DIEM DANH</div> }));
@@ -37,6 +37,8 @@ import ClassAttendancePage from "./page";
 beforeEach(() => {
   state.sessions = {};
   state.classStatus = "active";
+  state.hasChanges = false;
+  state.rows = [];
 });
 
 describe("ClassAttendancePage — lớp không xem được", () => {
@@ -79,6 +81,27 @@ describe("ClassAttendancePage — lớp đã lưu trữ (chỉ đọc)", () => {
     expect((screen.getByRole("button", { name: "Đánh dấu tất cả có mặt" }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole("button", { name: "Lưu điểm danh" }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByTestId("table").getAttribute("data-disabled")).toBe("true");
+  });
+
+  it("lớp lưu trữ: nút Lưu vẫn khoá dù có thay đổi và không rảnh tay, nút 'Đánh dấu tất cả' khoá dù có học viên", () => {
+    state.classStatus = "archived";
+    state.hasChanges = true;
+    state.rows = [{ studentId: "u1" }];
+    withSession();
+    render(<ClassAttendancePage />);
+
+    expect((screen.getByRole("button", { name: "Lưu điểm danh" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Đánh dấu tất cả có mặt" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("lớp đang hoạt động có thay đổi và có học viên: hai nút đó bật", () => {
+    state.hasChanges = true;
+    state.rows = [{ studentId: "u1" }];
+    withSession();
+    render(<ClassAttendancePage />);
+
+    expect((screen.getByRole("button", { name: "Lưu điểm danh" }) as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByRole("button", { name: "Đánh dấu tất cả có mặt" }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it("lớp đang hoạt động: không có thông báo lưu trữ, bảng không bị khoá", () => {
