@@ -20,7 +20,7 @@ import TeacherNotificationDialog from "@/components/teacher/teacher-notification
 import { useMyStudents } from "@/hooks/queries/use-classes";
 import { useCourse } from "@/hooks/queries/use-courses";
 import { useAuthStore } from "@/stores/auth.store";
-import { ResourceUnavailable } from "@/components/common/resource-unavailable";
+import { ResourceLoadError, ResourceUnavailable, isResourceUnavailableError, unavailableStatus } from "@/components/common/resource-unavailable";
 
 export default function TeacherCourseMembersPage() {
   const params = useParams<{ id: string }>();
@@ -31,7 +31,7 @@ export default function TeacherCourseMembersPage() {
   const { data: allStudents = [], isLoading } = useMyStudents();
   // B-18: danh sách thành viên lọc từ "học viên của tôi" nên khoá không tồn tại hay của giảng viên khác
   // trước đây chỉ ra bảng rỗng như khoá chưa có ai. Kiểm khoá và chủ khoá như trang sửa khoá.
-  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const { data: course, isLoading: courseLoading, isError: courseError, error: courseErrorValue, refetch: refetchCourse } = useCourse(courseId);
   const teacherId = useAuthStore((s) => s.user?.id);
   const isAdmin = useAuthStore((s) => s.activeRole) === "SYSTEM_ADMIN";
 
@@ -61,8 +61,20 @@ export default function TeacherCourseMembersPage() {
       </div>
     );
   }
+  // Lỗi 5xx/mạng khác "không tìm thấy": hiện lỗi + Thử lại, không báo khoá không tồn tại.
+  if (courseError && !isResourceUnavailableError(courseErrorValue)) {
+    return <ResourceLoadError resourceLabel="khoá học" onRetry={() => void refetchCourse()} />;
+  }
   if (!course) {
-    return <ResourceUnavailable resourceLabel="khoá học" backHref="/teacher/courses" backLabel="Về Khóa học của tôi" />;
+    return <ResourceUnavailable status={unavailableStatus(courseErrorValue)} resourceLabel="khoá học" backHref="/teacher/courses" backLabel="Về Khóa học của tôi" />;
+  }
+  // Store chưa có user thì chưa so được chủ khoá: chờ, không nháy "Không có quyền".
+  if (!isAdmin && !teacherId) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
   if (!isAdmin && course.instructor_id !== teacherId) {
     return <ResourceUnavailable status={403} resourceLabel="khoá học" backHref="/teacher/courses" backLabel="Về Khóa học của tôi" />;

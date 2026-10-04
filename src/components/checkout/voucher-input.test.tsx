@@ -57,6 +57,28 @@ describe("VoucherInput — chip voucher luôn khớp với mức giảm thật (
     expect(screen.getByText(/tối thiểu 300\.000đ/)).toBeTruthy();
   });
 
+  it("voucher theo phần trăm: subtotal đổi mà vẫn đủ điều kiện thì mức giảm được tính lại và báo parent", async () => {
+    vi.spyOn(voucherService, "getVoucherByCode").mockResolvedValue({
+      ...summer50k,
+      discount_method: "PERCENT",
+      discount_percent: 10,
+      discount_amount_money: undefined,
+      min_purchase_money: 0,
+    });
+    const onApplied = vi.fn<(r: VoucherValidateResponse | null) => void>();
+    const { rerender } = wrap(<VoucherInput courseIds={["a"]} subtotal={1000000} onApplied={onApplied} />);
+    await applyCode();
+    expect(onApplied).toHaveBeenLastCalledWith(expect.objectContaining({ discount_amount: 100000 }));
+
+    await act(async () => {
+      rerender(<VoucherInput courseIds={["a"]} subtotal={500000} onApplied={onApplied} />);
+    });
+
+    // Chip và parent phải cùng thấy mức giảm mới, nếu không tổng tiền lệch chip.
+    expect(onApplied).toHaveBeenLastCalledWith(expect.objectContaining({ discount_amount: 50000 }));
+    expect(screen.getByText(/Giảm 50\.000/)).toBeTruthy();
+  });
+
   it("subtotal đổi nhưng vẫn đủ điều kiện: giữ voucher, không gọi parent thừa", async () => {
     const onApplied = vi.fn();
     const { rerender } = wrap(<VoucherInput courseIds={["a"]} subtotal={799000} onApplied={onApplied} />);

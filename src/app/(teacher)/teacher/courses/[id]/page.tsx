@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ResourceUnavailable } from "@/components/common/resource-unavailable";
+import { ResourceLoadError, ResourceUnavailable, isResourceUnavailableError, unavailableStatus } from "@/components/common/resource-unavailable";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -493,7 +493,7 @@ export default function CourseDetailPage() {
   const courseId = params.id;
   const queryClient = useQueryClient();
 
-  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const { data: course, isLoading: courseLoading, isError: courseError, error: courseErrorValue, refetch: refetchCourse } = useCourse(courseId);
   const { data: sectionsRaw = [], isLoading: sectionsLoading } = useSections(courseId);
   const sections = Array.isArray(sectionsRaw) ? sectionsRaw : [];
   const createSection = useCreateSection(courseId);
@@ -891,8 +891,11 @@ export default function CourseDetailPage() {
   }
 
   // B-18: khoá không tồn tại (404) trước đây render trang trắng.
+  if (courseError && !isResourceUnavailableError(courseErrorValue)) {
+    return <ResourceLoadError resourceLabel="khoá học" onRetry={() => void refetchCourse()} />;
+  }
   if (!course) {
-    return <ResourceUnavailable resourceLabel="khoá học" backHref="/teacher/courses" backLabel="Về Khóa học của tôi" />;
+    return <ResourceUnavailable status={unavailableStatus(courseErrorValue)} resourceLabel="khoá học" backHref="/teacher/courses" backLabel="Về Khóa học của tôi" />;
   }
 
   // P1 QA 260927 teacher: GET /courses/:id (dùng bởi useCourse) là endpoint xem-trước dùng

@@ -123,3 +123,21 @@ describe("BottomNav x isRouteAllowedForRole — menu hiển thị route nào th�
     });
   }
 });
+
+// B-11: giảng viên thêm tab Tin nhắn. 390px chia đều cho N tab: quá 6 tab thì nhãn 11px của tab sát nhau bị cắt/chồng,
+// và min-w-[56px] x 7 = 392px tràn khung. Ảnh teacher-messages-390 (plans/reports/fix-w2c-261004) cho thấy 6 tab vừa.
+describe("BottomNav — bộ tab teacher ở khung hẹp", () => {
+  it("teacher: đủ 6 tab gồm Tin nhắn, mỗi tab co giãn đều (flex-1 min-w-0) thay vì bề rộng cố định", () => {
+    useAuthStore.setState({ activeRole: "TEACHER" });
+    render(<BottomNav role="teacher" />);
+
+    const links = screen.getAllByRole("link");
+    expect(links).toHaveLength(6);
+    expect(screen.getByRole("link", { name: /Tin nhắn/ }).getAttribute("href")).toBe("/messages");
+    for (const link of links) {
+      expect(link.className).toContain("flex-1");
+      expect(link.className).toContain("min-w-0");
+      expect(link.className).not.toMatch(/min-w-\[\d+px\]/);
+    }
+  });
+});
