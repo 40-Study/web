@@ -6,7 +6,7 @@
  * Shows grouped results with keyboard navigation (arrows + enter)
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Search, BookOpen, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -36,7 +36,14 @@ function courseToResult(course: ApiCourse): SearchResult {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function GlobalSearch() {
+export function GlobalSearch({
+  leadingSlot,
+  className,
+}: {
+  /** Nội dung hiển thị bên trái trong pill (vd. nút Danh mục) — có sẵn ngăn cách với ô input. */
+  leadingSlot?: ReactNode;
+  className?: string;
+} = {}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -157,14 +164,18 @@ export function GlobalSearch() {
   }, [open, closeModal]);
 
   return (
-    <div ref={containerRef} className="relative hidden md:block">
-      {/* Search input - always visible */}
+    <div ref={containerRef} className={cn("relative hidden md:block", className)}>
+      {/* Search input - always visible, dạng pill bo tròn hoàn toàn kiểu F8 */}
       <div
         className={cn(
-          "flex items-center gap-2 bg-card border border-input rounded-lg px-3 h-10 w-64 lg:w-96 transition-colors",
-          open ? "ring-2 ring-primary border-transparent" : "hover:border-slate-300 dark:hover:border-slate-600"
+          "flex items-center gap-2 bg-muted/60 dark:bg-slate-800/70 border border-border rounded-full pl-2 pr-3 h-11 w-full transition-colors",
+          open ? "ring-2 ring-primary border-transparent bg-background" : "hover:bg-muted dark:hover:bg-slate-800"
         )}
       >
+        {leadingSlot}
+
+        {leadingSlot && <span aria-hidden="true" className="w-px h-5 bg-border flex-shrink-0" />}
+
         {loading ? (
           <Loader2 className="w-4 h-4 text-muted-foreground animate-spin flex-shrink-0" />
         ) : (
@@ -181,7 +192,8 @@ export function GlobalSearch() {
             setActiveIndex(-1);
           }}
           onKeyDown={handleInputKeyDown}
-          placeholder="Tìm kiếm khóa học..."
+          placeholder="Tìm khóa học, bài tập, hỏi đáp..."
+          aria-label="Tìm khóa học, bài tập, hỏi đáp"
           // Khung ngoài đã có vòng focus; tắt box-shadow focus-visible toàn cục của input để không hiện vòng thứ hai khi click.
           className="flex-1 min-w-0 p-0 bg-transparent border-none outline-none shadow-none focus:ring-0 focus-visible:shadow-none text-sm text-foreground placeholder:text-muted-foreground"
         />

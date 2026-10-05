@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CourseGrid } from "@/components/course/course-grid";
 import { CourseFiltersComponent } from "@/components/course/course-filters";
@@ -17,8 +17,11 @@ const PAGE_SIZE = 12;
 export default function CoursesPage() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
+  // Pill Danh mục trên header điều hướng tới /courses?category=<slug> — đọc sẵn để pill tương ứng
+  // được chọn từ đầu. Chỉ nhận slug có thật trong danh mục; slug lạ bỏ qua im lặng (không kẹt filter).
+  const initialCategory = searchParams.get("category") || undefined;
 
-  const [filters, setFilters] = useState<CourseFilters>({});
+  const [filters, setFilters] = useState<CourseFilters>({ category: initialCategory });
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   // Debounce 300ms: `useSearchSuggestions` gọi API gợi ý theo từng ký tự.
@@ -27,6 +30,26 @@ export default function CoursesPage() {
   const { data: allCourses = [], isLoading: coursesLoading } = useCourses(filters);
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: suggestions = [] } = useSearchSuggestions(debouncedSearchQuery);
+
+  // Đã ở /courses mà bấm Danh mục khác (cùng component, không remount) → đồng bộ lại filter theo URL.
+  const categoryParam = searchParams.get("category") || undefined;
+  useEffect(() => {
+    setFilters((f) => (f.category === categoryParam ? f : { ...f, category: categoryParam }));
+    setVisibleCount(PAGE_SIZE);
+  }, [categoryParam]);
+
+  // Slug lạ từ URL (vd. dữ liệu test rác) bị bỏ qua để không kẹt filter 0 kết quả âm thầm —
+  // chỉ clear MỘT LẦN khi danh mục đã tải xong và slug vẫn không khớp.
+  useEffect(() => {
+    if (
+      filters.category &&
+      categories.length > 0 &&
+      !categories.some((c) => c.slug === filters.category)
+    ) {
+      setFilters((f) => ({ ...f, category: undefined }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy khi danh sách danh mục hoặc slug trên URL đổi
+  }, [categories, filters.category]);
 
   // Filter courses by search query (API filters handled by useCourses)
   const filteredCourses = searchQuery
