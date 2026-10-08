@@ -48,6 +48,8 @@ import {
 import { cn } from "@/lib/utils";
 import { requiresClassSelection } from "@/lib/livestream";
 import { parseLessonDuration } from "@/lib/lesson-duration";
+import { getErrorMessage } from "@/lib/error-messages";
+import { hasContentFormErrors, validateContentForm } from "@/lib/add-content-validation";
 import { VideoDurationField } from "@/components/teacher/video-duration-field";
 import type { Class } from "@/services/class.service";
 
@@ -136,10 +138,16 @@ export interface ExerciseContentData {
 
 export type ContentData = VideoContentData | LivestreamContentData | ExerciseContentData;
 
+/**
+ * Kết quả `onSubmit`. `void`/`true` = xong, modal đóng. `false` hoặc `{ error }` = thất bại: modal
+ * GIỮ NGUYÊN dữ liệu giáo viên vừa nhập (T4); `error` được hiện ngay trong modal.
+ */
+export type ContentSubmitResult = void | boolean | { error: string };
+
 interface AddContentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: ContentData) => void;
+  onSubmit: (data: ContentData) => ContentSubmitResult | Promise<ContentSubmitResult>;
   isLoading?: boolean;
   lessonId: string;
   /** Danh sách lớp của khoá — nguồn cho ô chọn lớp của buổi live. */
@@ -289,6 +297,11 @@ export function AddContentModal({
   const [exMinWords, setExMinWords] = useState(50);
   const [exMaxWords, setExMaxWords] = useState(500);
 
+  // Kiểm tra form (T3/T4): chỉ hiện lỗi sau lần bấm gửi đầu tiên, rồi cập nhật theo từng ký tự gõ.
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const videoInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
 
@@ -296,6 +309,7 @@ export function AddContentModal({
   const resetAll = useCallback(() => {
     setContentType(null);
     setActiveTab("content");
+    setSubmitAttempted(false); setSubmitting(false); setSubmitError(null);
     setVideoTitle(""); setVideoDesc(""); setVideoFile(null); setVideoUrl("");
     setVideoDuration("");
     setVideoDocs([]); setVideoQuiz([]);
@@ -313,6 +327,8 @@ export function AddContentModal({
   }, [resetAll, onOpenChange]);
 
   const handleBack = useCallback(() => {
+    setSubmitAttempted(false);
+    setSubmitError(null);
     if (contentType === "exercise" && exerciseType) {
       setExerciseType(null);
     } else {
@@ -325,8 +341,34 @@ export function AddContentModal({
   // Bản trước đây chờ setTimeout 2 giây rồi chèn 2 câu hỏi cứng và tự chọn đáp án đúng là
   // phương án A — giáo viên tưởng đang dùng AI thật và có thể lưu quiz rác vào khóa học.
   // Đã bỏ hẳn; nút được vô hiệu hóa cho tới khi có API thật.
+  // Tiêu đề + câu trắc nghiệm của form đang mở — nguồn cho việc kiểm tra và hiện lỗi (T3/T4).
+  const formTitle =
+    contentType === "video" ? videoTitle : contentType === "livestream" ? liveTitle : exTitle;
+  const formQuestions: QuizQuestion[] =
+    contentType === "video"
+      ? videoQuiz
+      : contentType === "livestream"
+        ? liveQuiz
+        : contentType === "exercise" && exerciseType === "quiz"
+          ? exQuiz
+          : [];
+  const formErrors = validateContentForm(formTitle, formQuestions);
+  const visibleErrors = submitAttempted ? formErrors : { questions: {} };
+
   // Submit
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
+    if (submitting) return;
+    setSubmitAttempted(true);
+    setSubmitError(null);
+    if (hasContentFormErrors(formErrors)) {
+      // Tiêu đề nằm ở tab "content", quiz ở tab "quiz" — nhảy tới tab có lỗi đầu tiên.
+      if (contentType === "video" || contentType === "livestream") {
+        setActiveTab(formErrors.title ? "content" : "quiz");
+      }
+      return;
+    }
+
+    let data: ContentData;
     if (contentType === "video") {
       // Use uploadedVideoUrl if file was uploaded, otherwise use manual videoUrl
       const finalVideoUrl = uploadedVideoUrl || videoUrl || undefined;
@@ -339,7 +381,7 @@ export function AddContentModal({
       */
       const parsedDuration = parseLessonDuration(videoDuration);
 
-      onSubmit({
+      data = {
         type: "video",
         title: videoTitle,
         description: videoDesc,
@@ -348,10 +390,10 @@ export function AddContentModal({
         ...(parsedDuration.kind === "valid" ? { duration: parsedDuration.seconds } : {}),
         documents: videoDocs,
         quizQuestions: videoQuiz,
-      });
+      };
     } else if (contentType === "livestream") {
       if (!effectiveClassId) return; // chưa xác định được lớp — nút gửi đã bị vô hiệu hoá kèm lý do
-      onSubmit({
+      data = {
         type: "livestream",
         title: liveTitle,
         description: liveDesc,
@@ -361,9 +403,9 @@ export function AddContentModal({
         enableRecording: liveRecording,
         documents: liveDocs,
         quizQuestions: liveQuiz,
-      });
+      };
     } else if (contentType === "exercise" && exerciseType) {
-      onSubmit({
+      data = {
         type: "exercise",
         exerciseType,
         title: exTitle,
@@ -375,10 +417,28 @@ export function AddContentModal({
         solutionCode: exerciseType === "code" ? exSolution : undefined,
         minWords: exerciseType === "essay" ? exMinWords : undefined,
         maxWords: exerciseType === "essay" ? exMaxWords : undefined,
-      });
+      };
+    } else {
+      return;
     }
-    handleClose();
-  }, [contentType, exerciseType, videoTitle, videoDesc, videoUrl, videoDuration, uploadedVideoUrl, videoDocs, videoQuiz, liveTitle, liveDesc, liveDate, liveTime, effectiveClassId, liveRecording, liveDocs, liveQuiz, exTitle, exDesc, exQuiz, exTimeLimit, exLanguage, exTestCases, exSolution, exMinWords, exMaxWords, onSubmit, handleClose]);
+
+    // T4: chỉ đóng + xoá form khi gửi THÀNH CÔNG. Lỗi (parent trả `false`/`{error}` hoặc ném) thì
+    // giữ nguyên mọi thứ giáo viên đã nhập để họ sửa rồi gửi lại.
+    setSubmitting(true);
+    try {
+      const result = await onSubmit(data);
+      if (result === false) return;
+      if (typeof result === "object" && result !== null) {
+        setSubmitError(result.error);
+        return;
+      }
+      handleClose();
+    } catch (err) {
+      setSubmitError(getErrorMessage(err, "Không thể thêm nội dung"));
+    } finally {
+      setSubmitting(false);
+    }
+  }, [submitting, formErrors, contentType, exerciseType, videoTitle, videoDesc, videoUrl, videoDuration, uploadedVideoUrl, videoDocs, videoQuiz, liveTitle, liveDesc, liveDate, liveTime, effectiveClassId, liveRecording, liveDocs, liveQuiz, exTitle, exDesc, exQuiz, exTimeLimit, exLanguage, exTestCases, exSolution, exMinWords, exMaxWords, onSubmit, handleClose]);
 
   // Document handlers
   const addDocs = useCallback((files: FileList, target: "video" | "live") => {
@@ -522,6 +582,7 @@ export function AddContentModal({
                   placeholder="VD: Bài 1 - Giới thiệu Go"
                   value={videoTitle}
                   onChange={(e) => setVideoTitle(e.target.value)}
+                  error={visibleErrors.title}
                 />
                 <Textarea
                   label="Mô tả"
@@ -638,6 +699,7 @@ export function AddContentModal({
 
               <TabsContent value="quiz" className="space-y-4 mt-4">
                 <QuizPanel
+                  errors={visibleErrors.questions}
                   questions={videoQuiz}
                   onUpdateQuestion={(qId, field, val) => updateQuestion(qId, field, val, "video")}
                   onUpdateOption={(qId, optId, text) => updateOption(qId, optId, text, "video")}
@@ -664,6 +726,7 @@ export function AddContentModal({
                   placeholder="VD: Q&A - Giải đáp thắc mắc"
                   value={liveTitle}
                   onChange={(e) => setLiveTitle(e.target.value)}
+                  error={visibleErrors.title}
                 />
                 <Textarea
                   label="Mô tả & chuẩn bị"
@@ -831,6 +894,7 @@ export function AddContentModal({
 
               <TabsContent value="quiz" className="space-y-4 mt-4">
                 <QuizPanel
+                  errors={visibleErrors.questions}
                   questions={liveQuiz}
                   onUpdateQuestion={(qId, field, val) => updateQuestion(qId, field, val, "live")}
                   onUpdateOption={(qId, optId, text) => updateOption(qId, optId, text, "live")}
@@ -870,6 +934,7 @@ export function AddContentModal({
                 placeholder="VD: Kiểm tra kiến thức Go"
                 value={exTitle}
                 onChange={(e) => setExTitle(e.target.value)}
+                error={visibleErrors.title}
               />
               <div>
                 <label className="text-sm font-medium mb-2 block">Thời gian làm bài (phút)</label>
@@ -881,6 +946,7 @@ export function AddContentModal({
                 />
               </div>
               <QuizQuestionsEditor
+                errors={visibleErrors.questions}
                 questions={exQuiz}
                 onUpdate={(qId, field, val) => updateQuestion(qId, field, val, "exercise")}
                 onUpdateOption={(qId, optId, text) => updateOption(qId, optId, text, "exercise")}
@@ -900,6 +966,7 @@ export function AddContentModal({
                     placeholder="VD: Tính tổng số chẵn"
                     value={exTitle}
                     onChange={(e) => setExTitle(e.target.value)}
+                    error={visibleErrors.title}
                   />
                 </div>
                 <div>
@@ -976,6 +1043,7 @@ export function AddContentModal({
                 placeholder="VD: Phân tích ưu điểm của Go"
                 value={exTitle}
                 onChange={(e) => setExTitle(e.target.value)}
+                error={visibleErrors.title}
               />
               <Textarea
                 label="Đề bài"
@@ -1020,11 +1088,24 @@ export function AddContentModal({
                 Sửa lại thời lượng video hoặc xoá trắng ô đó để tiếp tục.
               </p>
             )}
+            {/* T3/T4: lý do không lưu được nằm ngay cạnh nút, kể cả khi lỗi ở tab đang ẩn. */}
+            {submitAttempted && hasContentFormErrors(formErrors) && (
+              <p role="alert" data-testid="add-content-validation-error" className="text-xs text-destructive sm:mr-auto sm:text-left">
+                {[formErrors.title, Object.keys(formErrors.questions).length > 0 && "Có câu trắc nghiệm chưa chọn đáp án đúng."]
+                  .filter(Boolean)
+                  .join(" ")}
+              </p>
+            )}
+            {submitError && (
+              <p role="alert" data-testid="add-content-submit-error" className="text-xs text-destructive sm:mr-auto sm:text-left">
+                {submitError}
+              </p>
+            )}
             <div className="flex flex-col-reverse gap-2 sm:ml-auto sm:flex-row">
               <Button variant="outline" onClick={handleClose}>Hủy</Button>
               <Button
                 onClick={handleSubmit}
-                isLoading={isLoading}
+                isLoading={isLoading || submitting}
                 disabled={(contentType === "livestream" && !effectiveClassId) || durationInvalid}
               >
                 {contentType === "video" ? "Thêm video" : contentType === "livestream" ? "Tạo buổi học trực tiếp" : "Lưu bài tập"}
@@ -1091,12 +1172,15 @@ function DocumentsPanel({
 // ─── Quiz Panel (with AI generation) ───────────────────────────────────────
 
 function QuizPanel({
+  errors,
   questions,
   onUpdateQuestion,
   onUpdateOption,
   onAddQuestion,
   onRemoveQuestion,
 }: {
+  /** `questionId` -> lỗi kiểm tra (T3); rỗng khi chưa bấm gửi hoặc không có lỗi. */
+  errors: Record<string, string>;
   questions: QuizQuestion[];
   onUpdateQuestion: (qId: string, field: "question" | "correctId", value: string) => void;
   onUpdateOption: (qId: string, optId: string, text: string) => void;
@@ -1128,6 +1212,7 @@ function QuizPanel({
       </div>
 
       <QuizQuestionsEditor
+        errors={errors}
         questions={questions}
         onUpdate={onUpdateQuestion}
         onUpdateOption={onUpdateOption}
@@ -1141,12 +1226,14 @@ function QuizPanel({
 // ─── Quiz Questions Editor ─────────────────────────────────────────────────
 
 function QuizQuestionsEditor({
+  errors,
   questions,
   onUpdate,
   onUpdateOption,
   onAdd,
   onRemove,
 }: {
+  errors: Record<string, string>;
   questions: QuizQuestion[];
   onUpdate: (qId: string, field: "question" | "correctId", value: string) => void;
   onUpdateOption: (qId: string, optId: string, text: string) => void;
@@ -1156,7 +1243,11 @@ function QuizQuestionsEditor({
   return (
     <div className="space-y-4">
       {questions.map((q, idx) => (
-        <div key={q.id} className="border rounded-xl p-4 space-y-3">
+        <div
+          key={q.id}
+          className={cn("border rounded-xl p-4 space-y-3", errors[q.id] && "border-destructive")}
+          data-testid={`quiz-question-${idx}`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-muted-foreground">Câu hỏi {idx + 1}</span>
             {questions.length > 1 && (
@@ -1175,6 +1266,8 @@ function QuizQuestionsEditor({
               <div key={opt.id} className="flex items-center gap-2">
                 <button
                   type="button"
+                  aria-label={`Chọn phương án làm đáp án đúng của câu ${idx + 1}`}
+                  aria-pressed={q.correctId === opt.id}
                   onClick={() => onUpdate(q.id, "correctId", opt.id)}
                   className={cn(
                     "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0",
@@ -1194,6 +1287,11 @@ function QuizQuestionsEditor({
               </div>
             ))}
           </div>
+          {errors[q.id] && (
+            <p role="alert" className="text-xs text-destructive">
+              {errors[q.id]}
+            </p>
+          )}
         </div>
       ))}
       <Button variant="outline" onClick={onAdd} className="w-full">

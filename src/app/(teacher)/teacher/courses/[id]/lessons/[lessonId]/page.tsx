@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SubtitleUploadField } from "@/components/teacher/subtitle-upload-field";
 import { useSections } from "@/hooks/queries/use-sections";
 import { useLessons, useUpdateLesson } from "@/hooks/queries/use-lessons";
+import { useLessonContents } from "@/hooks/queries/use-lesson-content";
 import type { Section } from "@/types/section";
 import type { Lesson } from "@/types/lesson";
 
@@ -29,13 +30,19 @@ function findLessonInSections(
   return null;
 }
 
-const LESSON_TYPE_LABEL: Record<string, string> = {
+// Loại nội dung nằm trên LessonContent (Lesson.type đã bỏ) — QA 261008 T9.
+const CONTENT_TYPE_LABEL: Record<string, string> = {
   video: "VIDEO",
-  quiz: "QUIZ",
-  article: "ARTICLE",
-  sandbox: "SANDBOX",
-  document: "DOCUMENT",
+  livestream: "LIVESTREAM",
+  exercise: "BÀI TẬP",
 };
+
+/** Nhãn loại theo nội dung thật của bài, không trùng lặp, giữ thứ tự xuất hiện. */
+function contentTypeLabels(contents: { type: string }[]): string[] {
+  return Array.from(new Set(contents.map((c) => c.type))).map(
+    (type) => CONTENT_TYPE_LABEL[type] ?? type.toUpperCase()
+  );
+}
 
 // ─── Inner component — rendered after sections load ───────────────────────────
 
@@ -79,6 +86,7 @@ function LessonDetailContent({
   // (`lessonKeys.bySection`), danh sách bài của chương thật không refresh.
   const found = isLoading ? null : findLessonInSections(sections, lessonsMap, lessonId);
   const updateLesson = useUpdateLesson(courseId, found?.section.id ?? sections[0]?.id ?? "");
+  const { data: contents = [] } = useLessonContents(lessonId);
 
   if (isLoading) {
     return (
@@ -120,7 +128,9 @@ function LessonDetailContent({
       <Card>
         <CardContent className="space-y-3 p-6">
           <div className="flex items-center gap-2">
-            <Badge>{LESSON_TYPE_LABEL[lesson.type ?? "article"] ?? (lesson.type ?? "article").toUpperCase()}</Badge>
+            {contentTypeLabels(contents).map((label) => (
+              <Badge key={label}>{label}</Badge>
+            ))}
             <Badge variant={lesson.is_preview ? "success" : "secondary"}>
               {lesson.is_preview ? "Preview" : "Draft"}
             </Badge>
@@ -135,7 +145,7 @@ function LessonDetailContent({
             </div>
           )}
           <div className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Vị trí:</span> {lesson.position}
+            <span className="font-medium text-foreground">Vị trí:</span> {lesson.display_order}
           </div>
         </CardContent>
       </Card>

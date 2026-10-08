@@ -2,7 +2,7 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/stores/auth.store";
 import { api } from "./api-client";
-import { ApiError, NetworkError, RateLimitError } from "./errors";
+import { ApiError, NetworkError, RateLimitError, ValidationError } from "./errors";
 
 function unauthorized(config: InternalAxiosRequestConfig) {
   return new AxiosError("unauthorized", "ERR_BAD_REQUEST", config, undefined, {
@@ -379,6 +379,40 @@ describe("API 429 — đọc retry_after (C5)", () => {
     await expect(rejection).rejects.toMatchObject({
       retryAfter: 37,
       message: "Bạn thao tác quá nhiều lần, vui lòng thử lại sau 37 giây",
+    });
+  });
+});
+
+// QA 261008 T6: 422 gửi-duyệt mang code nghiệp vụ + danh sách bài. Interceptor từng bỏ hết (chỉ giữ
+// `details`), nên code/message/lessons không bao giờ tới UI.
+describe("API 422 — giữ code/message/payload nghiệp vụ (T6)", () => {
+  it("422 có code COURSE_LESSON_NO_CONTENT -> ValidationError mang đúng code, message và payload.lessons", async () => {
+    const body = {
+      code: "COURSE_LESSON_NO_CONTENT",
+      message: "Every lesson must have content before submitting for review. Lessons without content: Bài 1",
+      lessons: [{ id: "l1", title: "Bài 1" }],
+    };
+    const rejection = api.post("/courses/c1/submit-review", undefined, {
+      adapter: async (config) => Promise.reject(errorResponse(config, 422, body)),
+    });
+
+    await expect(rejection).rejects.toBeInstanceOf(ValidationError);
+    await expect(rejection).rejects.toMatchObject({
+      status: 422,
+      code: "COURSE_LESSON_NO_CONTENT",
+      message: body.message,
+      payload: { lessons: [{ id: "l1", title: "Bài 1" }] },
+    });
+  });
+
+  it("422 validate field không code -> vẫn là ValidationError 'VALIDATION_ERROR' như cũ", async () => {
+    const rejection = api.post("/x", {}, {
+      adapter: async (config) => Promise.reject(errorResponse(config, 422, { details: { email: ["bad"] } })),
+    });
+    await expect(rejection).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+      message: "Validation failed",
+      details: { email: ["bad"] },
     });
   });
 });

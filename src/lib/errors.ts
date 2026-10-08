@@ -47,9 +47,25 @@ export class ForbiddenError extends ApiError {
 }
 
 export class ValidationError extends ApiError {
-  constructor(details: Record<string, string[]>) {
-    super(422, "VALIDATION_ERROR", "Validation failed", details);
+  /**
+   * Nguyên body 422 của backend khi nó mang `code` nghiệp vụ (vd. COURSE_LESSON_NO_CONTENT kèm
+   * `lessons: [{id,title}]`). Trước đây interceptor bỏ hết, chỉ giữ `details` — nên code/message/danh
+   * sách bài của 422 gửi-duyệt không bao giờ tới được UI (QA 261008 T6).
+   */
+  public payload?: Record<string, unknown>;
+
+  constructor(
+    details: Record<string, string[]>,
+    business?: { code: string; message: string; payload: Record<string, unknown> }
+  ) {
+    super(
+      422,
+      business?.code ?? "VALIDATION_ERROR",
+      business?.message ?? "Validation failed",
+      details
+    );
     this.name = "ValidationError";
+    this.payload = business?.payload;
   }
 }
 

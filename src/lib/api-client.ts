@@ -223,7 +223,18 @@ api.interceptors.response.use(
       case 404:
         throw new NotFoundError(extractErrorMessage(data, "Resource not found"));
       case 422:
-        throw new ValidationError(data?.details ?? {});
+        // 422 nghiệp vụ của backend luôn có `code` (COURSE_EMPTY, COURSE_LESSON_NO_CONTENT...):
+        // giữ code/message/payload để nơi gọi dịch được. 422 không code = lỗi validate field như cũ.
+        throw new ValidationError(
+          data?.details ?? {},
+          data?.code
+            ? {
+                code: data.code,
+                message: extractErrorMessage(data, "Validation failed"),
+                payload: data as Record<string, unknown>,
+              }
+            : undefined
+        );
       case 429:
         throw new RateLimitError(
           readRetryAfterSeconds(data, headers as Record<string, unknown> | undefined)

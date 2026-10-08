@@ -72,13 +72,18 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Section } from "@/types/section";
 import type { Lesson } from "@/types/lesson";
-import { AddContentModal, type ContentData } from "@/components/teacher/add-content-modal";
+import {
+  AddContentModal,
+  type ContentData,
+  type ContentSubmitResult,
+} from "@/components/teacher/add-content-modal";
 import { useCreateLiveSession } from "@/hooks/queries/use-live-sessions";
 import { useAuthStore } from "@/stores/auth.store";
 import { useClasses } from "@/hooks/queries/use-classes";
 import { selectableClasses } from "@/lib/class-status";
 import { lessonContentKeys } from "@/hooks/queries/use-lesson-content";
 import { submitLivestreamContent } from "@/lib/livestream";
+import { getErrorMessage } from "@/lib/error-messages";
 import { LIVESTREAM_NOT_READY_HINT, resolveLivestreamRoomHref } from "@/lib/lesson-content-link";
 import { formatLessonDuration, parseLessonDuration } from "@/lib/lesson-duration";
 import { VideoDurationField } from "@/components/teacher/video-duration-field";
@@ -720,7 +725,12 @@ export default function CourseDetailPage() {
   };
 
   // Handle content creation from modal
-  const handleAddContent = async (data: ContentData) => {
+  // Trả `true` khi đã lưu xong (modal đóng); `false`/`{ error }` khi thất bại — modal GIỮ NGUYÊN dữ
+  // liệu giáo viên đã nhập để sửa rồi gửi lại (QA 261008 T4). Không ném: mọi lỗi đã được báo bằng
+  // toast (+ dòng lỗi trong modal khi trả `{ error }`).
+  const handleAddContent = async (data: ContentData): Promise<ContentSubmitResult> => {
+    // Việc đã tạo xong trước khi một bước sau lỗi — gỡ lại để bấm "lưu" lần nữa không nhân đôi nội dung.
+    const undoStack: Array<() => Promise<unknown>> = [];
     try {
       const { lessonContentService } = await import("@/services/lesson-content.service");
 
@@ -730,10 +740,10 @@ export default function CourseDetailPage() {
 
         if (!videoUrl) {
           toast.error("Vui lòng upload video hoặc nhập URL");
-          return;
+          return false;
         }
 
-        await lessonContentService.createContent(currentLessonId || "", {
+        const createdVideo = await lessonContentService.createContent(currentLessonId || "", {
           type: "video",
           title: data.title,
           video_url: videoUrl,
@@ -745,6 +755,9 @@ export default function CourseDetailPage() {
           */
           ...(data.duration !== undefined ? { duration: data.duration } : {}),
         });
+        if (createdVideo?.id) {
+          undoStack.push(() => lessonContentService.deleteContent(currentLessonId || "", createdVideo.id));
+        }
         // Handle quiz questions if any
         if (data.quizQuestions.length > 0) {
           const { quizService } = await import("@/services/quiz.service");
@@ -756,6 +769,7 @@ export default function CourseDetailPage() {
             trigger_type: "scheduled",
             max_attempts: 3,
           });
+          undoStack.push(() => quizService.delete(quiz.id));
           for (let i = 0; i < data.quizQuestions.length; i++) {
             const q = data.quizQuestions[i];
             await quizService.createQuestion(quiz.id, {
@@ -782,9 +796,9 @@ export default function CourseDetailPage() {
         // lớp (`data.classId === null`) và nói rõ lý do, nên ở đây chỉ cần thoát.
         if (!teacherId) {
           toast.error("Không xác định được giáo viên đang đăng nhập");
-          return;
+          return false;
         }
-        if (!data.classId) return;
+        if (!data.classId) return false;
 
         const result = await submitLivestreamContent(
           data,
@@ -806,7 +820,7 @@ export default function CourseDetailPage() {
 
         // M-4: lỗi API thật đã được `useCreateLiveSession.onError` toast kèm
         // message; ở đây không báo thêm toast chung chung nữa.
-        if (!result.created) return;
+        if (!result.created) return false;
 
         // Buổi live nằm trong bài học thì danh sách nội dung phải thấy nó ngay.
         if (result.lessonContentId && currentLessonId) {
@@ -823,6 +837,7 @@ export default function CourseDetailPage() {
             trigger_type: "scheduled",
             max_attempts: 3,
           });
+          undoStack.push(() => quizService.delete(quiz.id));
           for (let i = 0; i < data.quizQuestions.length; i++) {
             const q = data.quizQuestions[i];
             await quizService.createQuestion(quiz.id, {
@@ -880,8 +895,15 @@ export default function CourseDetailPage() {
 
       setAddContentModal(false);
       setCurrentLessonId(null);
+      return true;
     } catch (err) {
-      toast.error("Không thể thêm nội dung");
+      // Gỡ phần đã tạo dở (best-effort, thứ tự ngược) rồi báo đúng lý do của backend thay vì câu chung.
+      for (const undo of undoStack.reverse()) {
+        await Promise.resolve().then(undo).catch(() => undefined);
+      }
+      const message = getErrorMessage(err, "Không thể thêm nội dung");
+      toast.error(message);
+      return { error: message };
     }
   };
 
