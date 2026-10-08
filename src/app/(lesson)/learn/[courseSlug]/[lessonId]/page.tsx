@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, notFound, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Loader2, Star } from "lucide-react";
 import Link from "next/link";
@@ -46,6 +46,7 @@ import {
   useQuizAttemptDetail,
 } from "@/hooks/queries/use-quiz";
 import { resolveResumeSeconds, findPreviousLesson } from "@/lib/lesson-lock";
+import { NotFoundError } from "@/lib/errors";
 import { detectPlatform } from "@/lib/keyboard-shortcut-label";
 import type { VideoPlayerHandle } from "@/components/lesson/video-player";
 import type { StartQuizResponse } from "@/services/quiz.service";
@@ -138,6 +139,18 @@ function mapApiCourseToPlayerCourse(course: ApiCourse, sections: Section[]): Pla
 /** Bài này có bị khoá trong curriculum THÔ không (trước khi map sang PlayerLesson). */
 function isLessonLockedInSections(sections: Section[], lessonId: string): boolean {
   return sections.some((s) => s.lessons?.some((l) => l.id === lessonId && l.locked === true));
+}
+
+/**
+ * Nguồn XÁC THỰC cho "bài học có tồn tại trong khoá không": dựa vào curriculum THÔ (`sections`)
+ * chứ KHÔNG phải PlayerCourse đã map — bản map chỉ giữ các bài đã mở (`locked === false`), nên
+ * một bài CÓ THẬT nhưng đang khoá sẽ vắng mặt ở đó (xem mapSectionsToChapters).
+ *
+ * QA S8: URL bài học sai (course/lesson id không tồn tại) trước đây render HTTP 200 kèm thông báo
+ * lỗi inline. Giờ trả 404 thật qua `notFound()`.
+ */
+function lessonExistsInSections(sections: Section[], lessonId: string): boolean {
+  return sections.some((s) => s.lessons?.some((l) => l.id === lessonId));
 }
 
 function getLessonById(course: PlayerCourse, lessonId: string): PlayerLesson | undefined {
@@ -368,7 +381,9 @@ export default function CourseLessonPage() {
   const {
     data: apiCourse,
     isLoading: courseLoading,
-    isError: courseError,
+    // S8: cần ĐỐI TƯỢNG lỗi (không phải cờ `isError`) để phân biệt 404
+    // (`NotFoundError` do api-client map từ HTTP 404) với lỗi tạm thời.
+    error: courseError,
     refetch: refetchCourse,
   } = useCourseBySlug(courseSlug);
   const { data: sections = [], isLoading: sectionsLoading } = useSections(apiCourse?.id ?? "");
@@ -460,7 +475,10 @@ export default function CourseLessonPage() {
     );
   }
 
+  // S8: khoá không tồn tại (slug sai) -> 404 thật, không render 200 với thông báo lỗi inline.
+  // Lỗi KHÁC (mạng/5xx) vẫn là lỗi tạm thời -> băng "thử lại".
   if (courseError) {
+    if (courseError instanceof NotFoundError) notFound();
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <LessonLoadError onRetry={() => refetchCourse()} />
@@ -468,16 +486,16 @@ export default function CourseLessonPage() {
     );
   }
 
-  if (!apiCourse) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Không tìm thấy khóa học.</p>
-      </div>
-    );
-  }
+  if (!apiCourse) notFound();
 
   const course = mapApiCourseToPlayerCourse(apiCourse, sections);
   const currentLesson = getLessonById(course, lessonId);
+
+  // S8: URL bài học trỏ tới bài KHÔNG có trong curriculum -> 404 thật. Dùng curriculum THÔ
+  // (`sections`) vì PlayerCourse đã map chỉ giữ bài đã mở; bài tồn tại nhưng đang khoá vẫn
+  // `lessonExistsInSections === true` nên KHÔNG bị 404 (đi vào nhánh LessonLockedNotice).
+  if (!currentLesson && !lessonExistsInSections(sections, lessonId)) notFound();
+
   const next = getNextLesson(course, lessonId);
   const previous = findPreviousLesson(course, lessonId);
 

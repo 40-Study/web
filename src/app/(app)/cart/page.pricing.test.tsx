@@ -11,7 +11,7 @@ const cart: Cart = {
     { id: "ci-2", course_id: "c2", course: { id: "c2", title: "Khoá giá thường", price: 300000 } },
   ],
   total: 799000,
-  item_count: 2,
+  total_item: 2,
 };
 
 vi.mock("@/hooks/queries/use-cart", () => ({
@@ -46,23 +46,25 @@ describe("CartPage — giá dòng và tạm tính theo giá bán", () => {
     expect(screen.getByText(fmt(300000)).tagName).not.toBe("DEL");
   });
 
-  it("chưa chọn dòng nào -> tạm tính = total của server", () => {
+  it("mặc định chọn sẵn tất cả -> tạm tính = tổng giá bán", () => {
     render(<CartPage />);
     expect(screen.getByTestId("voucher-subtotal").textContent).toBe("799000");
   });
 
-  it("chọn khoá giảm giá -> tạm tính = giá bán (không phải giá niêm yết)", () => {
+  it("bỏ chọn khoá thường -> tạm tính chỉ còn giá bán khoá giảm giá", () => {
     render(<CartPage />);
-    // checkbox[0] là "Chọn tất cả"; [1] là dòng đầu (khoá giảm giá)
-    fireEvent.click(screen.getAllByRole("checkbox")[1]);
+    // Mặc định chọn hết. checkbox[0] là "Chọn tất cả"; [2] là dòng thứ hai (khoá giá thường)
+    // -> bỏ tick nó đi, chỉ còn khoá giảm giá.
+    fireEvent.click(screen.getAllByRole("checkbox")[2]);
     expect(screen.getByTestId("voucher-subtotal").textContent).toBe("499000");
     // Tạm tính và Tổng cộng cùng hiện 499.000 ₫
     expect(screen.getAllByText(fmt(499000)).length).toBeGreaterThanOrEqual(3);
   });
 
-  it("chọn tất cả -> tạm tính = tổng giá bán", () => {
+  it("bỏ chọn hết -> tạm tính = total của server, nút thanh toán tắt", () => {
     render(<CartPage />);
-    fireEvent.click(screen.getAllByRole("checkbox")[0]);
+    fireEvent.click(screen.getAllByRole("checkbox")[0]); // đang chọn hết -> bỏ chọn hết
     expect(screen.getByTestId("voucher-subtotal").textContent).toBe("799000");
+    expect(screen.getByTestId("cart-select-hint")).toBeTruthy();
   });
 });

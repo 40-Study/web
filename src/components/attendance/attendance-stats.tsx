@@ -63,7 +63,9 @@ export function AttendanceStats({ summary }: { summary: AttendanceSummary }) {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      {/* 6 thẻ: Tỉ lệ, Tổng, Có mặt, Trễ, Vắng, CÓ PHÉP. Thiếu thẻ "Có phép" thì
+          present+late+absent không bằng Tổng (buổi nghỉ có phép bị ẩn) — QA P6. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Tỉ lệ tham dự" value={pct(summary.presentRate)} />
         <StatCard label="Tổng buổi" value={String(summary.total)} />
         <StatCard
@@ -77,6 +79,10 @@ export function AttendanceStats({ summary }: { summary: AttendanceSummary }) {
         <StatCard
           label={ATTENDANCE_STATUS_META.absent.label}
           value={String(summary.counts.absent)}
+        />
+        <StatCard
+          label={ATTENDANCE_STATUS_META.excused.label}
+          value={String(summary.counts.excused)}
         />
       </div>
 

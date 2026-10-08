@@ -241,6 +241,40 @@ export function useMyAttendances(params?: { page?: number; page_size?: number })
   });
 }
 
+/** Backend ép page_size tối đa 50 — xin lớn hơn cũng chỉ nhận 50. */
+const MY_ATTENDANCE_MAX_PAGE_SIZE = 50;
+/** Chặn trần số trang để một `total` hỏng không tạo vòng lặp vô hạn (50 × 100 = 5000 bản ghi). */
+const MY_ATTENDANCE_MAX_PAGES = 100;
+
+/**
+ * TOÀN BỘ lịch sử điểm danh của học viên (mọi trang), để phần thống kê chuyên cần không
+ * chỉ tính trên trang 1 (QA S3). Trang danh sách vẫn phân trang riêng qua `useMyAttendances`.
+ */
+export function useAllMyAttendances() {
+  return useQuery({
+    queryKey: [...sessionKeys.myAttendances(), "all"],
+    queryFn: async () => {
+      const first = await sessionService.getMyAttendancesPage(1, MY_ATTENDANCE_MAX_PAGE_SIZE);
+      const total = first.total ?? first.attendances.length;
+      const pageCount = Math.min(
+        Math.ceil(total / MY_ATTENDANCE_MAX_PAGE_SIZE),
+        MY_ATTENDANCE_MAX_PAGES
+      );
+      if (pageCount <= 1) return first.attendances;
+
+      const rest = await Promise.all(
+        Array.from({ length: pageCount - 1 }, (_, i) =>
+          sessionService.getMyAttendancesPage(i + 2, MY_ATTENDANCE_MAX_PAGE_SIZE)
+        )
+      );
+      return rest.reduce(
+        (acc, page) => acc.concat(page.attendances),
+        first.attendances.slice()
+      );
+    },
+  });
+}
+
 // ─── Reminder Settings ─────────────────────────────────────────────────────
 
 export function useReminderSettings() {

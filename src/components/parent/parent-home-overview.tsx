@@ -24,15 +24,7 @@ import {
 } from "@/hooks/queries/use-parent-dashboard";
 import type { Child } from "@/services/auth.service";
 import { inProgressCourseCount } from "./child-stats";
-
-function formatMinutes(totalMinutes: number): string {
-  if (totalMinutes <= 0) return "0 phút";
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  if (h === 0) return `${m} phút`;
-  if (m === 0) return `${h} giờ`;
-  return `${h} giờ ${m} phút`;
-}
+import { formatStudyMinutes } from "@/lib/format-study-time";
 
 function StatPill({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | number }) {
   return (
@@ -90,7 +82,7 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
           <StatPill icon={BookOpen} label="Đang học" value={inProgressCourseCount(overview)} />
           <StatPill icon={GraduationCap} label="Hoàn thành" value={overview.completed_courses} />
-          <StatPill icon={Clock} label="Thời gian học" value={formatMinutes(overview.total_study_minutes)} />
+          <StatPill icon={Clock} label="Thời gian học" value={formatStudyMinutes(overview.total_study_minutes)} />
           <StatPill icon={Flame} label="Chuỗi ngày học" value={overview.current_streak} />
         </div>
       ) : (

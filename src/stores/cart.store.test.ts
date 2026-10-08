@@ -20,7 +20,7 @@ describe("cart store — tổng lạc quan theo giá phải trả", () => {
   it("optimisticAdd khoá giảm giá cộng GIÁ BÁN", () => {
     useCartStore.getState().optimisticAdd(item("a", 999000, 499000));
     expect(useCartStore.getState().total).toBe(499000);
-    expect(useCartStore.getState().item_count).toBe(1);
+    expect(useCartStore.getState().total_item).toBe(1);
   });
 
   it("optimisticAdd khoá không giảm giá cộng giá niêm yết", () => {
@@ -41,7 +41,7 @@ describe("cart store — tổng lạc quan theo giá phải trả", () => {
 
     useCartStore.getState().optimisticRemove("a");
     expect(useCartStore.getState().total).toBe(300000);
-    expect(useCartStore.getState().item_count).toBe(1);
+    expect(useCartStore.getState().total_item).toBe(1);
   });
 
   it("add rồi remove cùng một khoá -> về 0", () => {

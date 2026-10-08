@@ -186,3 +186,19 @@ describe("getErrorMessage — ghi vào lớp đã lưu trữ (409 CLASS_ARCHIVED
     expect(message).not.toMatch(/archived/i);
   });
 });
+
+// QA 261008 T3/T4: quiz_handler/quiz_question_validation trả 400 tiếng Anh; modal "Thêm nội dung" hiện
+// thẳng câu này, nên phải ra tiếng Việt đúng lý do thay vì câu chung "Dữ liệu gửi lên không hợp lệ".
+describe("getErrorMessage — thêm nội dung bài học (T3/T4)", () => {
+  it("400 'title is required' -> nhắc nhập tiêu đề", () => {
+    expect(getErrorMessage(new ApiError(400, "UNKNOWN", "title is required"))).toBe("Vui lòng nhập tiêu đề");
+  });
+
+  it.each([
+    "invalid question answers: multiple_choice question must have at least 1 correct answer (got 0)",
+    "invalid question answers: single_choice question must have exactly 1 correct answer (got 0)",
+  ])("400 thiếu đáp án đúng (%s) -> nói đúng lý do, không phải câu chung", (raw) => {
+    const message = getErrorMessage(new ApiError(400, "UNKNOWN", raw));
+    expect(message).toBe("Mỗi câu hỏi trắc nghiệm cần có đáp án đúng trước khi lưu");
+  });
+});

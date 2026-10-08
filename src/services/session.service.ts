@@ -278,6 +278,19 @@ export const sessionService = {
       .get<R<{ attendances: SessionAttendance[]; total: number }>>("/me/attendances", { params })
       .then((r) => r.data.data),
 
+  /**
+   * GET /me/attendances (một trang). Backend ép `page_size` tối đa 50 (schedule_service.go
+   * GetMyAttendances) — xin lớn hơn cũng chỉ nhận 50.
+   *
+   * Dùng cho phần thống kê chuyên cần PHẢI phủ TOÀN BỘ lịch sử, không chỉ trang 1 (QA S3).
+   */
+  getMyAttendancesPage: (page: number, pageSize: number) =>
+    api
+      .get<R<{ attendances: SessionAttendance[]; total: number }>>("/me/attendances", {
+        params: { page, page_size: pageSize },
+      })
+      .then((r) => r.data.data),
+
   // ── Reminder Settings ─────────────────────────────────────────────────────
 
   /** GET /reminders/settings */

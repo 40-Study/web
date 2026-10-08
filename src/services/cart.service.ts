@@ -29,7 +29,12 @@ export interface CartItem {
 export interface Cart {
   items: CartItem[];
   total: number;
-  item_count: number;
+  /**
+   * Số lượng item trong giỏ. Trường backend (`CartListResponseDTO.TotalItem`) serialize
+   * ra JSON là `total_item` — KHÔNG phải `item_count`. Đọc sai tên khiến badge header và
+   * "Giỏ hàng (0)" luôn bằng 0 dù giỏ có hàng (QA S1).
+   */
+  total_item: number;
 }
 
 type R<T> = { message: string; data: T };

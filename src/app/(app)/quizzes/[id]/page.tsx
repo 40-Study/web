@@ -122,7 +122,7 @@ export default function StandaloneQuizPage() {
     <div className="mx-auto max-w-xl px-4 py-10">
       <QuizModePicker
         title={quiz.title}
-        attemptCount={attempts?.length}
+        attemptCount={attempts?.filter((a) => a.mode !== "practice").length}
         maxAttempts={quiz.max_attempts}
         onSelect={handleSelectMode}
         isStarting={startQuizMutation.isPending}

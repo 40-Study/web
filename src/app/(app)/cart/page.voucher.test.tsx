@@ -18,7 +18,7 @@ const cart: Cart = {
     { id: "ci-2", course_id: "c2", course: { id: "c2", title: "Khoá giá thường", price: 300000 } },
   ],
   total: 799000,
-  item_count: 2,
+  total_item: 2,
 };
 
 vi.mock("@/hooks/queries/use-cart", () => ({
@@ -70,8 +70,9 @@ describe("CartPage — voucher sống sót khi chọn khoá (A-04)", () => {
     await applyCode("SUMMER50K");
     expect(screen.getByText("-" + fmt(50000))).toBeTruthy();
 
-    // checkbox[0] là "Chọn tất cả"; [2] là dòng thứ hai (300.000đ, đúng bằng mức tối thiểu)
-    fireEvent.click(screen.getAllByRole("checkbox")[2]);
+    // Mặc định chọn hết; checkbox[0] là "Chọn tất cả", [1] là dòng đầu (khoá giảm giá).
+    // Bỏ chọn khoá giảm giá -> chỉ còn khoá 300.000đ (đúng bằng mức tối thiểu).
+    fireEvent.click(screen.getAllByRole("checkbox")[1]);
 
     // Chip còn thì tổng PHẢI còn giảm: lỗi cũ là chip "SUMMER50K — Giảm 50.000" nhưng "Giảm giá -0 ₫".
     expect(screen.getByLabelText("Xóa voucher")).toBeTruthy();
@@ -86,7 +87,8 @@ describe("CartPage — voucher sống sót khi chọn khoá (A-04)", () => {
     renderCart();
     await applyCode("BIG500");
 
-    fireEvent.click(screen.getAllByRole("checkbox")[2]); // chỉ còn 300.000đ < 500.000đ
+    // Mặc định chọn hết; bỏ chọn khoá giảm giá -> chỉ còn 300.000đ < 500.000đ.
+    fireEvent.click(screen.getAllByRole("checkbox")[1]);
 
     await waitFor(() => expect(screen.queryByLabelText("Xóa voucher")).toBeNull());
     expect(screen.getByText(/tối thiểu 500\.000đ/)).toBeTruthy();
