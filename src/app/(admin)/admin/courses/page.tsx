@@ -141,7 +141,12 @@ export default function AdminCoursesPage() {
                       <p className="text-xs text-gray-500">{course.instructor_email}</p>
                     </td>
                     <td className="px-4 py-3 text-gray-500">
-                      {course.submitted_at ? formatDate(course.submitted_at) : "—"}
+                      {/* A9: `submitted_at` chỉ được ghi khi khoá gửi duyệt, có khoá (seed/cũ) mang
+                          giá trị null nên trước đây hiện "—". Rơi về `created_at` để hàng đợi luôn
+                          có mốc thời gian để admin ưu tiên. */}
+                      {course.submitted_at || course.created_at
+                        ? formatDate(course.submitted_at || course.created_at!)
+                        : "—"}
                     </td>
                     <td className="px-4 py-3">
                       {isCourseStatus(course.status) ? (

@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useAllReports, useUpdateReportStatus } from "@/hooks/queries/use-reports";
 import type { Report, ReportStatus } from "@/services/report.service";
 import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import { reportTargetKey, useReportTargetMeta } from "./_lib/report-target";
 
 // A-P2-5: trước đây có API nghiệp vụ report (POST/GET/PUT/DELETE /api/reports) nhưng KHÔNG có
 // trang admin nào để xử lý — chủ trường không có cách nào nhìn thấy report của học viên. Trang
@@ -54,12 +56,16 @@ export default function AdminModerationPage() {
   const updateStatus = useUpdateReportStatus();
 
   const reports = useMemo(() => data?.data ?? [], [data]);
+  const targetMeta = useReportTargetMeta(reports);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [confirmAction, setConfirmAction] = useState<{ report: Report; status: ReportStatus } | null>(null);
 
   const selected = useMemo(() => reports.find((r) => r.id === selectedId) || null, [reports, selectedId]);
+  const selectedTarget = selected
+    ? targetMeta.get(reportTargetKey(selected.reported_type, selected.reported_id))
+    : undefined;
 
   const openReport = (r: Report) => {
     setSelectedId(r.id);
@@ -76,8 +82,8 @@ export default function AdminModerationPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Báo cáo vi phạm</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Kiểm duyệt báo cáo do người dùng gửi (khoá học, đánh giá, thảo luận, người dùng). Đổi
-          trạng thái gọi thẳng API thật <code>PUT /api/reports/:id/status</code>.
+          Kiểm duyệt báo cáo vi phạm do người dùng gửi (khoá học, đánh giá, thảo luận, người dùng).
+          Mở một báo cáo để xem chi tiết và cập nhật trạng thái xử lý.
         </p>
       </div>
 
@@ -126,7 +132,21 @@ export default function AdminModerationPage() {
                     <tr key={r.id} className={selected?.id === r.id ? "bg-primary-50/60 dark:bg-primary-900/20" : ""}>
                       <td className="px-4 py-3">
                         <p className="font-medium">{REPORTED_TYPE_LABEL[r.reported_type] ?? r.reported_type}</p>
-                        <p className="break-all font-mono text-[11px] text-gray-400">{r.reported_id}</p>
+                        {(() => {
+                          const meta = targetMeta.get(reportTargetKey(r.reported_type, r.reported_id));
+                          if (meta?.name) {
+                            return meta.href ? (
+                              <Link href={meta.href} className="text-primary-700 hover:underline dark:text-primary-400">
+                                {meta.name}
+                              </Link>
+                            ) : (
+                              <p className="text-xs text-gray-600 dark:text-gray-300">{meta.name}</p>
+                            );
+                          }
+                          return (
+                            <p className="break-all font-mono text-[11px] text-gray-400">{r.reported_id}</p>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3">{REASON_LABEL[r.reason] ?? r.reason}</td>
                       <td className="px-4 py-3">{STATUS_LABEL[r.status] ?? r.status}</td>
@@ -151,7 +171,21 @@ export default function AdminModerationPage() {
           <h2 className="mb-3 text-base font-semibold">Chi tiết báo cáo</h2>
           {selected ? (
             <div className="space-y-3 text-sm">
-              <p><span className="text-gray-500">Đối tượng:</span> {REPORTED_TYPE_LABEL[selected.reported_type] ?? selected.reported_type}</p>
+              <p>
+                <span className="text-gray-500">Đối tượng:</span>{" "}
+                {selectedTarget?.name ? (
+                  selectedTarget.href ? (
+                    <Link href={selectedTarget.href} className="text-primary-700 hover:underline dark:text-primary-400">
+                      {selectedTarget.name}
+                    </Link>
+                  ) : (
+                    selectedTarget.name
+                  )
+                ) : (
+                  REPORTED_TYPE_LABEL[selected.reported_type] ?? selected.reported_type
+                )}
+              </p>
+              <p><span className="text-gray-500">Loại:</span> {REPORTED_TYPE_LABEL[selected.reported_type] ?? selected.reported_type}</p>
               <p className="break-all"><span className="text-gray-500">ID đối tượng:</span> {selected.reported_id}</p>
               <p><span className="text-gray-500">Lý do:</span> {REASON_LABEL[selected.reason] ?? selected.reason}</p>
               <p><span className="text-gray-500">Mô tả:</span> {selected.description || "-"}</p>

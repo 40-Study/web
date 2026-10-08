@@ -66,8 +66,7 @@ export default function AdminPermissionsPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Phân quyền hệ thống</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Danh sách quyền theo module — chỉ xem và sửa mô tả. Backend hiện chưa có API tạo/xoá
-          quyền (chỉ GET và PUT /permissions/:id), nên trang này không hiển thị nút Tạo/Xoá.
+          Danh sách quyền theo nhóm chức năng. Bạn có thể xem và chỉnh sửa mô tả của từng quyền.
         </p>
       </div>
 
