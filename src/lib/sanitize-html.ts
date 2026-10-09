@@ -101,8 +101,8 @@ const ARTICLE_ALLOWED_TAGS = ALLOWED_TAGS.filter((tag) => tag !== "input" && tag
  */
 const ARTICLE_ALLOWED_ATTR = ["class", "href", "target", "src", "alt", "title", "colspan", "rowspan"];
 
-/** Token class của highlight.js/lowlight (`hljs`, `hljs-keyword`, `language-ts`) — mọi token phải khớp mới giữ class. */
-const ARTICLE_CLASS_TOKEN = /^(hljs(-[\w-]+)?|language-[\w-]+)$/;
+/** Token class của highlight.js/lowlight (`hljs`, `hljs-keyword`, `language-ts`, sub-scope `class_`/`function_`) — mọi token phải khớp mới giữ class. */
+const ARTICLE_CLASS_TOKEN = /^(hljs(-[\w-]+)?|language-[\w-]+|[a-z]+_+)$/;
 
 const ARTICLE_LINK_REL = "noopener noreferrer nofollow";
 const HTTP_URL = /^https?:\/\//i;

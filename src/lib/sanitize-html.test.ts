@@ -164,7 +164,7 @@ describe("sanitizeArticleHtml (M1)", () => {
         );
         const doc = new DOMParser().parseFromString(clean, "text/html");
         const classes = Array.from(doc.querySelectorAll("pre > code, span")).map((n) => n.getAttribute("class"));
-        expect(classes).toEqual(["language-ts hljs", "hljs-keyword", null, null, null, null, null, null]);
+        expect(classes).toEqual(["language-ts hljs", "hljs-keyword", "hljs-title class_", null, null, null, null, null]);
     });
 
     it("mọi liên kết có rel='noopener noreferrer nofollow', kể cả khi người nhập đặt rel khác hay không đặt", () => {
