@@ -49,6 +49,25 @@ describe("(admin)/layout — RoleGuard", () => {
     expect(link.getAttribute("href")).toBe("/admin/contests");
   });
 
+  it.each([
+    ["Nhật ký hoạt động", "/admin/audit-logs"],
+    ["Thông báo hệ thống", "/admin/notifications"],
+    ["Cấu hình hệ thống", "/admin/settings"],
+  ])("menu quản trị có mục %s trỏ tới %s (plan 261008 phase 8)", async (label, href) => {
+    useAuthStore.getState().setSessionStatus("authenticated");
+    useAuthStore.getState().setActiveRole("SYSTEM_ADMIN");
+
+    renderWithProviders(
+      <AdminLayout>
+        <div>NOI DUNG ADMIN</div>
+      </AdminLayout>
+    );
+
+    await screen.findByText("NOI DUNG ADMIN");
+    const nav = screen.getByRole("navigation", { name: "Menu quản trị" });
+    expect(within(nav).getByRole("link", { name: label }).getAttribute("href")).toBe(href);
+  });
+
   it("ORG_OWNER KHÔNG vào được — không thấy nội dung con (bị RoleGuard chặn, redirect /403)", async () => {
     useAuthStore.getState().setSessionStatus("authenticated");
     useAuthStore.getState().setActiveRole("ORG_OWNER");

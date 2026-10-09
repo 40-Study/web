@@ -17,6 +17,7 @@ vi.mock("@/lib/api-client", async () => {
 });
 
 import AdminIndexPage from "./page";
+import { ApiError } from "@/lib/errors";
 import { envelope, mockApi, resetMockApi } from "@/test/mock-api";
 import { renderWithProviders } from "@/test/utils";
 
@@ -31,7 +32,10 @@ const USER_COUNT_BY_ROLE: Record<string, number> = {
   "role-teacher": 7,
 };
 
+let AUDIT_PAGE: unknown;
+
 beforeEach(() => {
+  AUDIT_PAGE = { items: [], total: 0, page: 1, page_size: 5 };
   resetMockApi();
   mockApi.get.mockImplementation(async (url: string) => {
     if (url === "/organizations") return envelope({ organizations: [{ id: "org-1", name: "ForteX", code: "FX" }] });
@@ -42,6 +46,7 @@ beforeEach(() => {
       const total = USER_COUNT_BY_ROLE[usersMatch[1]] ?? 0;
       return envelope({ user_system_roles: [], total, page: 1, page_size: 1 });
     }
+    if (url === "/admin/audit-logs") return envelope(AUDIT_PAGE);
     throw new Error(`GET không mong đợi trong test: ${url}`);
   });
 });
@@ -67,5 +72,36 @@ describe("/admin dashboard — A-P2-2", () => {
       .map((el) => el.textContent);
 
     expect(rowTexts.indexOf("TEACHER")).toBeLessThan(rowTexts.indexOf("STUDENT"));
+  });
+
+  it("Hoạt động gần đây hiện nhật ký thật (hành động, người thao tác, giờ VN) kèm link Xem tất cả", async () => {
+    AUDIT_PAGE = {
+      items: [
+        { id: "a1", created_at: "2026-10-09T03:15:00Z", actor: { id: "u1", name: "Quản trị A", email: "a@x.vn" }, action: "user.lock", target_type: "user", target_id: "u9", status_code: 200, ip: null, metadata: null },
+        { id: "a2", created_at: "2026-10-09T02:00:00Z", actor: null, action: "notification.broadcast", target_type: "", target_id: null, status_code: 201, ip: null, metadata: null },
+      ],
+      total: 2, page: 1, page_size: 5,
+    };
+    renderWithProviders(<AdminIndexPage />);
+
+    await screen.findByText(/Quản trị A · /);
+    expect(screen.getByText(/^— · /)).toBeTruthy();
+    expect(screen.queryByText("Chưa có nhật ký hoạt động")).toBeNull();
+    expect(screen.getByRole("link", { name: "Xem tất cả" }).getAttribute("href")).toBe("/admin/audit-logs");
+    const call = mockApi.get.mock.calls.find((c) => c[0] === "/admin/audit-logs");
+    expect(call?.[1]).toEqual({ params: { page_size: 5 } });
+  });
+
+  it("admin thiếu quyền nhật ký (403): chỉ khối Hoạt động gần đây báo lỗi, các số liệu khác vẫn hiện", async () => {
+    const base = mockApi.get.getMockImplementation();
+    mockApi.get.mockImplementation(async (url: string, ...rest: unknown[]) => {
+      if (url === "/admin/audit-logs") throw new ApiError(403, "FORBIDDEN", "Bạn không có quyền xem nhật ký hoạt động.");
+      return base!(url, ...rest);
+    });
+    renderWithProviders(<AdminIndexPage />);
+
+    await screen.findByText("9");
+    expect(await screen.findByText(/Bạn không có quyền xem nhật ký hoạt động\./)).toBeTruthy();
+    expect(screen.getByText("Tổng lượt gán role")).toBeTruthy();
   });
 });

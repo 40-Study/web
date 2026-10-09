@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, Banknote, Building2, Flag, FolderTree, LayoutDashboard, LogOut, Receipt, Settings, ShieldCheck, Users } from "lucide-react";
+import { BarChart3, Banknote, Bell, Building2, Flag, FolderTree, LayoutDashboard, LogOut, Receipt, ScrollText, Settings, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
 import { BookCheck, Ticket, Trophy, UserCheck } from "lucide-react";
 
 import { RoleGuard } from "@/components/guards";
@@ -26,12 +26,10 @@ const adminMenu = [
   // "Ví của tôi" (PR #24) đã được thay bằng báo cáo doanh thu nền tảng THẬT (PR #29) —
   // xem admin/reports/page.tsx. Đổi lại tên mục nav cho khớp nội dung trang thật.
   { label: "Báo cáo hệ thống", href: "/admin/reports", icon: BarChart3 },
-  // TODO (Phase 3): "Nhật ký hoạt động" (/admin/audit-logs) tạm ẩn khỏi nav.
-  // Trang KHÔNG trắng — nó đã có banner amber nói rõ backend chưa có endpoint
-  // audit-log và hiển thị mảng rỗng có chủ đích. Lý do ẩn là mặt mục này chưa
-  // có dữ liệu thật để điều hướng tới. Route + page vẫn giữ nguyên (vào được
-  // bằng URL trực tiếp, vẫn qua RoleGuard của layout); bật lại mục nav khi
-  // backend có API nhật ký hoạt động.
+  { label: "Nhật ký hoạt động", href: "/admin/audit-logs", icon: ScrollText },
+  // Thông báo hệ thống + cấu hình hệ thống (plan 261008): API tự kiểm SYSTEM_SETTINGS_MANAGE, menu chưa lọc theo quyền từng mục.
+  { label: "Thông báo hệ thống", href: "/admin/notifications", icon: Bell },
+  { label: "Cấu hình hệ thống", href: "/admin/settings", icon: SlidersHorizontal },
   { label: "Duyệt khoá học", href: "/admin/courses", icon: BookCheck },
   { label: "Duyệt giáo viên", href: "/admin/teacher-applications", icon: UserCheck },
   // Cuộc thi (contract contest-feature §7): duyệt, gắn voucher, huỷ và CHỐT kết quả — chỉ admin chốt.

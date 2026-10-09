@@ -1,11 +1,57 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { Activity } from "lucide-react";
 import { useOrganizations, usePermissions, useSystemRolesWithUserCounts } from "@/hooks/queries/use-admin";
+import { useAuditLogs } from "@/hooks/queries/use-audit-logs";
 import { QueryState } from "@/components/common/query-state";
 import { EmptyState } from "@/components/ui/empty-state";
+import { formatVnDateTime } from "@/lib/vn-datetime";
+import { auditActionLabel } from "@/services/audit-log.service";
 
+const RECENT_ACTIVITY_SIZE = 5;
+
+/**
+ * "Hoạt động gần đây": 5 dòng nhật ký mới nhất. Có QueryState riêng (không dùng chung với các số liệu
+ * phía trên): API cần SYSTEM_SETTINGS_MANAGE, nên 403 với admin kém quyền chỉ làm khối này báo lỗi,
+ * không kéo cả dashboard theo.
+ */
+function RecentActivity() {
+  const { data, isLoading, isError, error, refetch } = useAuditLogs({ page_size: RECENT_ACTIVITY_SIZE });
+  const items = data?.items ?? [];
+  return (
+    <>
+      <div className="mt-4">
+        <QueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
+          {items.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-800">
+              <EmptyState
+                icon={Activity}
+                title="Chưa có nhật ký hoạt động"
+                description="Nhật ký thao tác quản trị sẽ hiển thị tại đây khi hệ thống bắt đầu ghi nhận."
+              />
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {items.map((item) => (
+                <li key={item.id} className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{auditActionLabel(item.action)}</p>
+                  <p className="text-xs text-gray-500">
+                    {item.actor?.name ?? "—"} · {formatVnDateTime(item.created_at)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </QueryState>
+      </div>
+      <Link href="/admin/audit-logs" className="mt-3 inline-block text-sm font-medium text-primary-600 hover:underline">
+        Xem tất cả
+      </Link>
+    </>
+  );
+}
 
 export default function AdminIndexPage() {
   const {
@@ -121,16 +167,7 @@ export default function AdminIndexPage() {
 
           <div className="rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Hoạt động gần đây</h3>
-            {/* Backend chưa có API nhật ký hoạt động (xem admin/audit-logs). Trước đây khối này
-                render một mảng tĩnh 4 dòng trông như dữ liệu thật — đã bỏ hẳn. Khi có endpoint,
-                thay khối rỗng bên dưới bằng useQuery + <QueryState> như các trang admin khác. */}
-            <div className="mt-4 rounded-lg border border-dashed border-gray-200 dark:border-gray-800">
-              <EmptyState
-                icon={Activity}
-                title="Chưa có nhật ký hoạt động"
-                description="Nhật ký thao tác quản trị sẽ hiển thị tại đây khi hệ thống bắt đầu ghi nhận."
-              />
-            </div>
+            <RecentActivity />
           </div>
         </section>
       </QueryState>
