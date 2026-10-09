@@ -19,6 +19,9 @@ import { formatWaitDuration, getErrorMessage } from "@/lib/error-messages";
 /** Hạn mức gửi của backend (router/admin_broadcast_router.go): 5 lần mỗi giờ mỗi quản trị viên. */
 export const BROADCAST_MAX_PER_HOUR = 5;
 
+const IN_PROGRESS_CODE = "IDEMPOTENCY_IN_PROGRESS";
+const IN_PROGRESS_MESSAGE = "Thông báo đang được gửi, vui lòng đợi";
+
 export const adminBroadcastKeys = {
   preview: (audience: BroadcastAudience, roles: string[], type: BroadcastNotificationType) =>
     ["admin-broadcast", "preview", audience, [...roles].sort(), type] as const,
@@ -51,6 +54,7 @@ export function broadcastErrorMessage(error: unknown): string {
   if (error instanceof BroadcastPartialError) {
     return `Gửi bị gián đoạn: ${error.delivered} người đã nhận thông báo. Không gửi lại toàn bộ để tránh trùng thông báo.`;
   }
+  if (isInProgress(error)) return IN_PROGRESS_MESSAGE;
   if (error instanceof RateLimitError) {
     const wait = error.retryAfter ? ` Vui lòng thử lại sau ${formatWaitDuration(error.retryAfter)}.` : "";
     return `Bạn đã gửi tối đa ${BROADCAST_MAX_PER_HOUR} thông báo hệ thống trong 1 giờ.${wait}`;
@@ -58,9 +62,17 @@ export function broadcastErrorMessage(error: unknown): string {
   return getErrorMessage(error, "Không thể gửi thông báo");
 }
 
-/** Lỗi 4xx = server từ chối TRƯỚC khi gửi (kể cả 429): chắc chắn chưa có ai nhận, lần sau là một lần gửi mới. */
+/** 409 IDEMPOTENCY_IN_PROGRESS: lần gửi trước CÙNG key vẫn đang chạy — chưa phải bị từ chối, có thể đang gửi dở. */
+function isInProgress(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 409 && error.code === IN_PROGRESS_CODE;
+}
+
+/**
+ * Lỗi 4xx = server từ chối TRƯỚC khi gửi (kể cả 429): chắc chắn chưa có ai nhận, lần sau là một lần gửi mới.
+ * Ngoại lệ: 409 IDEMPOTENCY_IN_PROGRESS — key phải được dùng lại, nếu không lần thử lại tạo thông báo trùng.
+ */
 function isDefinitiveRejection(error: unknown): boolean {
-  return error instanceof ApiError && error.status >= 400 && error.status < 500;
+  return error instanceof ApiError && error.status >= 400 && error.status < 500 && !isInProgress(error);
 }
 
 /**
@@ -68,7 +80,7 @@ function isDefinitiveRejection(error: unknown): boolean {
  *
  * Idempotency-Key (QA 261009 M2): MỘT UUID cho mỗi lần xác nhận, dùng lại khi gửi lại CÙNG nội dung sau một kết
  * quả không rõ ràng (timeout/mạng/5xx — server có thể đã gửi hoặc đang gửi tiếp). Key mới khi: gửi thành công,
- * server từ chối 4xx (chưa gửi gì), hoặc nội dung/đối tượng/loại đổi — một key không được gắn với hai nội dung.
+ * server từ chối 4xx trừ 409 IDEMPOTENCY_IN_PROGRESS (chưa gửi gì), hoặc nội dung/đối tượng/loại đổi — một key không được gắn với hai nội dung.
  */
 export function useSendBroadcast() {
   const pending = useRef<{ fingerprint: string; key: string } | null>(null);
@@ -86,6 +98,10 @@ export function useSendBroadcast() {
     },
     onError: (err: unknown) => {
       if (isDefinitiveRejection(err)) pending.current = null;
+      if (isInProgress(err)) {
+        toast.error(IN_PROGRESS_MESSAGE);
+        return;
+      }
       toast.error("Gửi thông báo thất bại", { description: broadcastErrorMessage(err) });
     },
   });

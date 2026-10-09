@@ -94,14 +94,20 @@ export function sanitizeHtml(dirty: string | null | undefined): string {
 const ARTICLE_ALLOWED_TAGS = ALLOWED_TAGS.filter((tag) => tag !== "input" && tag !== "label");
 
 /**
- * Không có class, style, id, data-* hay aria-*: Tailwind của app nằm sẵn trong CSS bundle, nên một `class`
- * do giáo viên nhập (`fixed inset-0 z-50 bg-white`) dựng được overlay phủ cả trình phát. `rel` cũng
- * không nằm đây: hook bên dưới tự đặt, không tin giá trị người nhập.
+ * Không có style, id, data-* hay aria-*. `class` được DOMPurify cho qua rồi hook bên dưới chỉ giữ lại token tô
+ * màu code (`ARTICLE_CLASS_TOKEN`): Tailwind của app nằm sẵn trong CSS bundle, nên một `class` tuỳ ý do giáo viên
+ * nhập (`fixed inset-0 z-50 bg-white`) dựng được overlay phủ cả trình phát. `rel` không nằm đây: hook tự đặt,
+ * không tin giá trị người nhập.
  */
-const ARTICLE_ALLOWED_ATTR = ["href", "target", "src", "alt", "title", "colspan", "rowspan"];
+const ARTICLE_ALLOWED_ATTR = ["class", "href", "target", "src", "alt", "title", "colspan", "rowspan"];
+
+/** Token class của highlight.js/lowlight (`hljs`, `hljs-keyword`, `language-ts`) — mọi token phải khớp mới giữ class. */
+const ARTICLE_CLASS_TOKEN = /^(hljs(-[\w-]+)?|language-[\w-]+)$/;
 
 const ARTICLE_LINK_REL = "noopener noreferrer nofollow";
 const HTTP_URL = /^https?:\/\//i;
+/** Ảnh raster nhúng base64 (editor chèn ảnh dán/tải lên). Không svg+xml, không kiểu data: nào khác. */
+const RASTER_DATA_URI = /^data:image\/(png|jpeg|jpg|gif|webp);base64,[A-Za-z0-9+/]+={0,2}$/i;
 
 type ArticleNode = { nodeName: string; getAttribute(n: string): string | null; setAttribute(n: string, v: string): void; removeAttribute(n: string): void; remove(): void };
 
@@ -109,10 +115,17 @@ type ArticleNode = { nodeName: string; getAttribute(n: string): string | null; s
 function enforceArticleNodeRules(node: Element) {
     const el = node as unknown as ArticleNode;
     const tag = el.nodeName.toLowerCase();
+    const classAttr = el.getAttribute("class");
+    if (classAttr !== null) {
+        const tokens = classAttr.split(/\s+/).filter(Boolean);
+        if (tokens.length === 0 || !tokens.every((t) => ARTICLE_CLASS_TOKEN.test(t))) el.removeAttribute("class");
+    }
     if (tag === "img") {
-        // Chỉ http(s) tuyệt đối: chặn data:, ftp:, //host và đường dẫn tương đối (không có ảnh nội bộ nào
-        // trong bài viết). Ảnh từ xa vẫn lộ IP/giờ đọc cho host đó — đó là giới hạn của việc cho phép ảnh ngoài.
-        if (!HTTP_URL.test((el.getAttribute("src") ?? "").trim())) el.remove();
+        // http(s) tuyệt đối hoặc ảnh raster base64: chặn svg/data: khác, ftp:, //host và đường dẫn tương đối
+        // (không có ảnh nội bộ nào trong bài viết). Ảnh từ xa vẫn lộ IP/giờ đọc cho host đó — đó là giới hạn của
+        // việc cho phép ảnh ngoài.
+        const src = (el.getAttribute("src") ?? "").trim();
+        if (!HTTP_URL.test(src) && !RASTER_DATA_URI.test(src)) el.remove();
         return;
     }
     if (tag === "a") {
@@ -135,7 +148,7 @@ export function sanitizeArticleHtml(dirty: string | null | undefined): string {
         return DOMPurify.sanitize(dirty, {
             ALLOWED_TAGS: ARTICLE_ALLOWED_TAGS,
             ALLOWED_ATTR: ARTICLE_ALLOWED_ATTR,
-            FORBID_ATTR: ["class", "style", "id"],
+            FORBID_ATTR: ["style", "id"],
             ALLOW_DATA_ATTR: false,
             ALLOW_ARIA_ATTR: false,
         });

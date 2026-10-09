@@ -102,12 +102,12 @@ describe("sanitizeArticleHtml (M1)", () => {
         expect(clean).toContain("Mật khẩu");
     });
 
-    it("ảnh: chỉ http(s) — data:, ftp:, //host, javascript: bị loại; https và http còn", () => {
+    it("ảnh: ngoài raster base64 chỉ http(s) — data: khác, ftp:, //host, tương đối bị loại; https và http còn", () => {
         const clean = sanitizeArticleHtml(
             [
                 `<img src="https://cdn.example/a.png" alt="ok1">`,
                 `<img src="http://cdn.example/b.png" alt="ok2">`,
-                `<img src="data:image/png;base64,AAAA" alt="bad-data">`,
+                `<img src="data:image/svg+xml;base64,AAAA" alt="bad-data">`,
                 `<img src="ftp://cdn.example/c.png" alt="bad-ftp">`,
                 `<img src="//cdn.example/d.png" alt="bad-proto-relative">`,
                 `<img src="/relative/e.png" alt="bad-relative">`,
@@ -121,7 +121,50 @@ describe("sanitizeArticleHtml (M1)", () => {
         expect(clean).not.toContain("bad-proto-relative");
         expect(clean).not.toContain("bad-relative");
         expect(clean).not.toContain("bad-nosrc");
-        expect(clean).not.toContain("data:image");
+        expect(clean).not.toContain("data:");
+    });
+
+    it("ảnh data: chỉ raster base64 (png/jpeg/jpg/gif/webp) — svg+xml và kiểu data: khác bị loại", () => {
+        const clean = sanitizeArticleHtml(
+            [
+                `<img src="data:image/png;base64,iVBORw0KGgo=" alt="ok-png">`,
+                `<img src="data:image/jpeg;base64,/9j/4AAQ" alt="ok-jpeg">`,
+                `<img src="data:image/jpg;base64,/9j/4AAQ" alt="ok-jpg">`,
+                `<img src="data:image/gif;base64,R0lGODlh" alt="ok-gif">`,
+                `<img src="data:image/webp;base64,UklGRg==" alt="ok-webp">`,
+                `<img src="data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=" alt="bad-svg">`,
+                `<img src="data:image/svg+xml,%3Csvg%3E%3C/svg%3E" alt="bad-svg-plain">`,
+                `<img src="data:text/html;base64,PHNjcmlwdD4=" alt="bad-html">`,
+                `<img src="data:image/png,notbase64" alt="bad-nonbase64">`,
+                `<img src="data:image/pngx;base64,AAAA" alt="bad-prefix">`,
+                `<img src="data:image/png;base64,AAAA&quot;onerror=1" alt="bad-chars">`,
+            ].join("")
+        );
+        for (const ok of ["ok-png", "ok-jpeg", "ok-jpg", "ok-gif", "ok-webp"]) {
+            expect(clean).toContain(`alt="${ok}"`);
+        }
+        for (const bad of ["bad-svg", "bad-svg-plain", "bad-html", "bad-nonbase64", "bad-prefix", "bad-chars"]) {
+            expect(clean).not.toContain(bad);
+        }
+        expect(clean).not.toContain("svg");
+    });
+
+    it("class: giữ khi MỌI token là hljs*/language-* (tô màu code), bỏ cả thuộc tính nếu có token lạ", () => {
+        const clean = sanitizeArticleHtml(
+            [
+                `<pre><code class="language-ts hljs">a</code></pre>`,
+                `<span class="hljs-keyword">b</span>`,
+                `<span class="hljs-title class_">c</span>`,
+                `<span class="hljs fixed inset-0">d</span>`,
+                `<span class="hljs-x_y bg-white">e</span>`,
+                `<span class="language-">f</span>`,
+                `<span class="hljsx">g</span>`,
+                `<span class="">h</span>`,
+            ].join("")
+        );
+        const doc = new DOMParser().parseFromString(clean, "text/html");
+        const classes = Array.from(doc.querySelectorAll("pre > code, span")).map((n) => n.getAttribute("class"));
+        expect(classes).toEqual(["language-ts hljs", "hljs-keyword", null, null, null, null, null, null]);
     });
 
     it("mọi liên kết có rel='noopener noreferrer nofollow', kể cả khi người nhập đặt rel khác hay không đặt", () => {

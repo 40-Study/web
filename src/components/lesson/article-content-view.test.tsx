@@ -63,7 +63,7 @@ describe("ArticleContentView", () => {
     const { container } = renderView({
       body:
         '<a href="https://evil.example" class="fixed inset-0 z-50 bg-white" style="position:fixed" data-x="1">Đăng nhập lại</a>' +
-        '<form><input type="password"></form><img src="data:image/png;base64,AAAA" alt="track">',
+        '<form><input type="password"></form><img src="data:image/svg+xml;base64,AAAA" alt="track">',
     });
     const body = screen.getByTestId("article-body");
     expect(body.querySelector("[class]")).toBeNull();
