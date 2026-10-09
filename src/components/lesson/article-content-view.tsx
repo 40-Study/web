@@ -2,14 +2,14 @@
 
 import { BookOpen, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import type { LessonProgressResponse } from "@/services/enrollment.service";
-import { sanitizeHtml } from "@/lib/sanitize-html";
+import { sanitizeArticleHtml } from "@/lib/sanitize-html";
 import { useMarkLessonCompleted } from "@/components/player/non-video-lesson-content";
 
 interface ArticleContentViewProps {
   lessonId: string;
   courseId: string;
   title: string;
-  /** HTML Tiptap do giáo viên nhập — đầu vào KHÔNG tin cậy, chỉ render qua `sanitizeHtml`. */
+  /** HTML Tiptap do giáo viên nhập — đầu vào KHÔNG tin cậy, chỉ render qua `sanitizeArticleHtml`. */
   body?: string | null;
   /** Do server tính từ `article_body` (không lưu); vắng mặt thì không hiện dòng thời gian đọc. */
   readingTimeMinutes?: number;
@@ -38,7 +38,7 @@ export function ArticleContentView({
 }: ArticleContentViewProps) {
   const markRead = useMarkLessonCompleted({ lessonId, courseId, onProgress });
   const isDone = completed || markRead.data?.status === "completed";
-  const safeHtml = sanitizeHtml(body);
+  const safeHtml = sanitizeArticleHtml(body);
   const hasBody = body != null && body.trim() !== "" && safeHtml.trim() !== "";
 
   return (
@@ -60,7 +60,9 @@ export function ArticleContentView({
       {hasBody ? (
         <div
           data-testid="article-body"
-          className="prose prose-sm sm:prose-base max-w-none break-words text-gray-800"
+          // relative + isolate + overflow-hidden + contain:paint kẹp mọi phần tử định vị (kể cả `fixed`) lọt qua
+          // sanitizer vào trong vùng đọc — contain:paint làm vùng này thành containing block của `fixed`.
+          className="relative isolate overflow-hidden [contain:paint] prose prose-sm sm:prose-base max-w-none break-words text-gray-800"
           dangerouslySetInnerHTML={{ __html: safeHtml }}
         />
       ) : (

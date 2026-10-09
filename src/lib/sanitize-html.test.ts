@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeHtml } from "./sanitize-html";
+import { sanitizeArticleHtml, sanitizeHtml } from "./sanitize-html";
 
 describe("sanitizeHtml", () => {
     it("loại bỏ thuộc tính onerror trong thẻ img", () => {
@@ -70,5 +70,104 @@ describe("sanitizeHtml", () => {
         const clean = sanitizeHtml(dirty);
         expect(clean).not.toContain("onclick");
         expect(clean).not.toContain("onload");
+    });
+});
+
+/**
+ * QA 261009 M1 — `article_body` do giáo viên nhập hiện cho MỌI học viên của khoá; allowlist chung
+ * (class, data-*, input, img từ xa) đủ để dựng overlay lừa đăng nhập hoặc theo dõi IP. Profile bài viết
+ * chặt hơn, và KHÔNG đổi hành vi của `sanitizeHtml` cho các nơi khác (thảo luận, ghi chú).
+ */
+describe("sanitizeArticleHtml (M1)", () => {
+    const overlay = `<a href="https://evil.example" class="fixed inset-0 z-50 bg-white">Phiên đăng nhập hết hạn</a>`;
+
+    it("bỏ class, style, id, data-* — overlay Tailwind không còn ăn được", () => {
+        const clean = sanitizeArticleHtml(
+            `${overlay}<p class="x" style="position:fixed" id="a" data-type="mention" data-id="1">chữ</p>`
+        );
+        expect(clean).not.toMatch(/\sclass=/i);
+        expect(clean).not.toMatch(/\sstyle=/i);
+        expect(clean).not.toMatch(/\sid=/i);
+        expect(clean).not.toMatch(/data-/i);
+        expect(clean).toContain("Phiên đăng nhập hết hạn");
+        expect(clean).toContain("chữ");
+    });
+
+    it("bỏ input/label/form/button, giữ chữ bên trong", () => {
+        const clean = sanitizeArticleHtml(
+            `<form action="https://evil.example"><label>Mật khẩu <input type="password" name="p"></label><button>Gửi</button></form>`
+        );
+        expect(clean).not.toMatch(/<(form|input|label|button)/i);
+        expect(clean).not.toMatch(/\stype=/i);
+        expect(clean).toContain("Mật khẩu");
+    });
+
+    it("ảnh: chỉ http(s) — data:, ftp:, //host, javascript: bị loại; https và http còn", () => {
+        const clean = sanitizeArticleHtml(
+            [
+                `<img src="https://cdn.example/a.png" alt="ok1">`,
+                `<img src="http://cdn.example/b.png" alt="ok2">`,
+                `<img src="data:image/png;base64,AAAA" alt="bad-data">`,
+                `<img src="ftp://cdn.example/c.png" alt="bad-ftp">`,
+                `<img src="//cdn.example/d.png" alt="bad-proto-relative">`,
+                `<img src="/relative/e.png" alt="bad-relative">`,
+                `<img alt="bad-nosrc">`,
+            ].join("")
+        );
+        expect(clean).toContain('alt="ok1"');
+        expect(clean).toContain('alt="ok2"');
+        expect(clean).not.toContain("bad-data");
+        expect(clean).not.toContain("bad-ftp");
+        expect(clean).not.toContain("bad-proto-relative");
+        expect(clean).not.toContain("bad-relative");
+        expect(clean).not.toContain("bad-nosrc");
+        expect(clean).not.toContain("data:image");
+    });
+
+    it("mọi liên kết có rel='noopener noreferrer nofollow', kể cả khi người nhập đặt rel khác hay không đặt", () => {
+        const clean = sanitizeArticleHtml(
+            `<a href="https://a.example" target="_blank" rel="opener">a</a><a href="https://b.example">b</a>`
+        );
+        const doc = new DOMParser().parseFromString(clean, "text/html");
+        const anchors = Array.from(doc.querySelectorAll("a"));
+        expect(anchors).toHaveLength(2);
+        for (const a of anchors) {
+            expect(a.getAttribute("rel")?.split(/\s+/).sort()).toEqual(["nofollow", "noopener", "noreferrer"]);
+        }
+        expect(anchors[0].getAttribute("target")).toBe("_blank");
+        expect(anchors[1].hasAttribute("target")).toBe(false);
+    });
+
+    it("target khác _blank bị bỏ (không đổi được top-level browsing context)", () => {
+        const clean = sanitizeArticleHtml(`<a href="https://a.example" target="_top">a</a>`);
+        expect(clean).not.toContain("target=");
+    });
+
+    it("vẫn giữ định dạng Tiptap: tiêu đề, danh sách, bảng, code, link https", () => {
+        const clean = sanitizeArticleHtml(
+            `<h2>Mục</h2><ul><li>a</li></ul><table><tbody><tr><td colspan="2">x</td></tr></tbody></table><pre><code>1</code></pre><a href="https://ok.example">l</a>`
+        );
+        for (const frag of ["<h2>Mục</h2>", "<li>a</li>", "<table>", 'colspan="2"', "<pre><code>1</code></pre>", 'href="https://ok.example"']) {
+            expect(clean).toContain(frag);
+        }
+    });
+
+    it("vẫn loại script/onerror/javascript:", () => {
+        const clean = sanitizeArticleHtml(`<p>a</p><script>1</script><img src="https://x.example/a.png" onerror="1"><a href="javascript:1">j</a>`);
+        expect(clean).not.toMatch(/<script|onerror|javascript:/i);
+    });
+
+    it("hook ảnh/liên kết KHÔNG rò sang sanitizeHtml chung (nơi khác giữ nguyên hành vi)", () => {
+        sanitizeArticleHtml(`<img src="https://x.example/a.png"><a href="https://a.example">a</a>`);
+        const general = sanitizeHtml(`<img src="data:image/png;base64,AAAA" alt="keep"><a href="https://a.example" class="k">a</a>`);
+        expect(general).toContain("data:image/png");
+        expect(general).toContain('class="k"');
+        expect(general).not.toContain("nofollow");
+    });
+
+    it("null/undefined/rỗng -> chuỗi rỗng", () => {
+        expect(sanitizeArticleHtml(null)).toBe("");
+        expect(sanitizeArticleHtml(undefined)).toBe("");
+        expect(sanitizeArticleHtml("")).toBe("");
     });
 });

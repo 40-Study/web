@@ -59,6 +59,24 @@ describe("ArticleContentView", () => {
     expect(screen.getByText("An toàn")).toBeTruthy();
   });
 
+  it("M1: overlay class/style/data-*/form/ảnh từ xa không tới được DOM; vùng đọc có lớp chứa nội dung định vị", () => {
+    const { container } = renderView({
+      body:
+        '<a href="https://evil.example" class="fixed inset-0 z-50 bg-white" style="position:fixed" data-x="1">Đăng nhập lại</a>' +
+        '<form><input type="password"></form><img src="data:image/png;base64,AAAA" alt="track">',
+    });
+    const body = screen.getByTestId("article-body");
+    expect(body.querySelector("[class]")).toBeNull();
+    expect(body.querySelector("[style]")).toBeNull();
+    expect(body.querySelector("input, form, img")).toBeNull();
+    const link = body.querySelector("a")!;
+    expect(link.getAttribute("rel")).toBe("noopener noreferrer nofollow");
+    // Lớp chứa: kẹp mọi nội dung `fixed/absolute` lọt qua (contain:paint làm nó thành containing block cho fixed).
+    const cls = body.className.split(/\s+/);
+    expect(cls).toEqual(expect.arrayContaining(["relative", "isolate", "overflow-hidden", "[contain:paint]"]));
+    expect(container.innerHTML).not.toMatch(/data:image/);
+  });
+
   it("body rỗng -> thông báo tiếng Việt, không để trang trắng", () => {
     renderView({ body: "   " });
     expect(screen.getByText("Bài viết chưa có nội dung.")).toBeTruthy();
