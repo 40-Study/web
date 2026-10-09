@@ -3,8 +3,8 @@
  * loading/lỗi/rỗng, và KHÔNG còn banner "chưa ghi nhận" của bản stub.
  */
 
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuditLogItem } from "@/services/audit-log.service";
 import AdminAuditLogsPage from "./page";
 
@@ -15,6 +15,8 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/admin/audit-logs",
   useSearchParams: () => new URLSearchParams(search),
 }));
+
+const ACTOR = "3f2a9c1e-7b4d-4e0a-9d51-0c8f6a2b1e34";
 
 function log(overrides: Partial<AuditLogItem>): AuditLogItem {
   return {
@@ -115,11 +117,11 @@ describe("AdminAuditLogsPage", () => {
   });
 
   it("bộ lọc đọc từ URL và truyền xuống query", () => {
-    search = "action=course.approve&actor_id=a1&from=2026-10-01&to=2026-10-05&page=3";
+    search = `action=course.approve&actor_id=${ACTOR}&from=2026-10-01&to=2026-10-05&page=3`;
     ok([log({})], 100);
     render(<AdminAuditLogsPage />);
     expect(useAuditLogs).toHaveBeenLastCalledWith({
-      page: 3, page_size: 20, action: "course.approve", actor_id: "a1", from: "2026-10-01", to: "2026-10-05",
+      page: 3, page_size: 20, action: "course.approve", actor_id: ACTOR, from: "2026-10-01", to: "2026-10-05",
     });
     expect((screen.getByLabelText("Lọc theo hành động") as HTMLSelectElement).value).toBe("course.approve");
     expect((screen.getByLabelText("Từ ngày") as HTMLInputElement).value).toBe("2026-10-01");
@@ -154,5 +156,56 @@ describe("AdminAuditLogsPage", () => {
     expect(replace).toHaveBeenLastCalledWith("/admin/audit-logs?page=3", { scroll: false });
     fireEvent.click(screen.getByRole("button", { name: "Trước" }));
     expect(replace).toHaveBeenLastCalledWith("/admin/audit-logs", { scroll: false });
+  });
+  // L7 (QA 261009): backend trả 400 INVALID_FILTER cho actor_id không phải UUID; gõ dở dang không được bắn request.
+  describe("L7 — ô lọc theo ID người thao tác", () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    const typeActor = (value: string) => {
+      fireEvent.change(screen.getByLabelText("Lọc theo ID người thao tác"), { target: { value } });
+      act(() => {
+        vi.advanceTimersByTime(600); // qua mốc debounce
+      });
+    };
+    const actorIdsQueried = () => useAuditLogs.mock.calls.map((c) => (c[0] as { actor_id: string }).actor_id);
+
+    it("gõ dở UUID: không ghi lên URL, không truyền xuống query, có gợi ý định dạng", () => {
+      render(<AdminAuditLogsPage />);
+      typeActor("3f2a9c1e-7b4d");
+      expect(replace).not.toHaveBeenCalled();
+      expect(actorIdsQueried().every((id) => id === "")).toBe(true);
+      expect(screen.getByText(/UUID đầy đủ/)).toBeTruthy();
+    });
+
+    it("đủ UUID: ghi ?actor_id= và hết gợi ý; chữ hoa vẫn hợp lệ", () => {
+      render(<AdminAuditLogsPage />);
+      typeActor(`  ${ACTOR.toUpperCase()}  `);
+      expect(replace).toHaveBeenLastCalledWith(`/admin/audit-logs?actor_id=${encodeURIComponent(ACTOR.toUpperCase())}`, { scroll: false });
+      expect(screen.queryByText(/UUID đầy đủ/)).toBeNull();
+    });
+
+    it("xoá ô: bỏ ?actor_id= khỏi URL", () => {
+      search = `actor_id=${ACTOR}`;
+      render(<AdminAuditLogsPage />);
+      typeActor("");
+      expect(replace).toHaveBeenLastCalledWith("/admin/audit-logs", { scroll: false });
+    });
+
+    it("sửa dở một UUID đang lọc: URL/query giữ nguyên giá trị hợp lệ cũ, không gửi giá trị dở", () => {
+      search = `actor_id=${ACTOR}`;
+      render(<AdminAuditLogsPage />);
+      typeActor(ACTOR.slice(0, -3));
+      expect(replace).not.toHaveBeenCalled();
+      expect(actorIdsQueried().every((id) => id === ACTOR)).toBe(true);
+    });
+
+    it("link chia sẻ có actor_id sai dạng: không gửi lên API (tránh 400), ô nhập hiện giá trị kèm gợi ý", () => {
+      search = "actor_id=a1";
+      render(<AdminAuditLogsPage />);
+      expect(actorIdsQueried().every((id) => id === "")).toBe(true);
+      expect((screen.getByLabelText("Lọc theo ID người thao tác") as HTMLInputElement).value).toBe("a1");
+      expect(screen.getByText(/UUID đầy đủ/)).toBeTruthy();
+    });
   });
 });

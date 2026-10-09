@@ -6,6 +6,7 @@ import { useAuditLogActions, useAuditLogs } from "@/hooks/queries/use-audit-logs
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { auditActionLabel, type AuditLogItem } from "@/services/audit-log.service";
 import { QueryState } from "@/components/common/query-state";
+import { isUuid } from "@/lib/uuid";
 import { Badge } from "@/components/ui/badge";
 import { formatVnDateTime } from "../_lib/format-vn-datetime";
 
@@ -63,8 +64,11 @@ function AuditLogsContent() {
     if (urlActor !== debouncedActor) setActorDraft(urlActor);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlActor]);
+  // Backend trả 400 INVALID_FILTER cho actor_id không phải UUID (L7): chỉ ghi lên URL khi ô trống (bỏ lọc) hoặc
+  // đã là UUID đầy đủ — giá trị gõ dở không được tới URL/API. URL vẫn giữ giá trị hợp lệ gần nhất.
+  const actorFilterShouldSync = debouncedActor === "" || isUuid(debouncedActor);
   useEffect(() => {
-    if (urlActor !== debouncedActor) updateQuery({ actor_id: debouncedActor, page: null });
+    if (urlActor !== debouncedActor && actorFilterShouldSync) updateQuery({ actor_id: debouncedActor, page: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedActor]);
 
@@ -72,7 +76,8 @@ function AuditLogsContent() {
     page,
     page_size: PAGE_SIZE,
     action,
-    actor_id: urlActor,
+    // Link chia sẻ có actor_id sai dạng cũng không được gửi đi (sẽ 400).
+    actor_id: isUuid(urlActor) ? urlActor : "",
     from,
     to,
   });
@@ -108,7 +113,9 @@ function AuditLogsContent() {
             aria-label="Lọc theo ID người thao tác"
             value={actorDraft}
             onChange={(e) => setActorDraft(e.target.value)}
-            placeholder="ID người thao tác..."
+            placeholder="ID người thao tác (UUID)..."
+            aria-invalid={!actorFilterShouldSync}
+            aria-describedby={actorFilterShouldSync ? undefined : "actor-id-hint"}
             className={INPUT_CLASS}
           />
           <input
@@ -128,6 +135,11 @@ function AuditLogsContent() {
             className={INPUT_CLASS}
           />
         </div>
+        {!actorFilterShouldSync && (
+          <p id="actor-id-hint" className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+            ID người thao tác phải là UUID đầy đủ (36 ký tự, dạng 3f2a9c1e-7b4d-4e0a-9d51-0c8f6a2b1e34) mới lọc được.
+          </p>
+        )}
       </section>
 
       <QueryState
