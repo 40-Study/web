@@ -5,17 +5,19 @@ import Link from "next/link";
 import { Activity } from "lucide-react";
 import { useOrganizations, usePermissions, useSystemRolesWithUserCounts } from "@/hooks/queries/use-admin";
 import { useAuditLogs } from "@/hooks/queries/use-audit-logs";
+import { Can } from "@/components/guards";
 import { QueryState } from "@/components/common/query-state";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatVnDateTime } from "@/lib/vn-datetime";
+import { PERMISSIONS } from "@/lib/permissions";
 import { auditActionLabel } from "@/services/audit-log.service";
 
 const RECENT_ACTIVITY_SIZE = 5;
 
 /**
  * "Hoạt động gần đây": 5 dòng nhật ký mới nhất. Có QueryState riêng (không dùng chung với các số liệu
- * phía trên): API cần SYSTEM_SETTINGS_MANAGE, nên 403 với admin kém quyền chỉ làm khối này báo lỗi,
- * không kéo cả dashboard theo.
+ * phía trên) để lỗi tạm thời chỉ làm khối này báo lỗi. API cần SYSTEM_SETTINGS_MANAGE nên cả khối được
+ * ẩn với admin thiếu quyền (QA 261009 L6) — component này chỉ mount, và chỉ gọi API, khi đã có quyền.
  */
 function RecentActivity() {
   const { data, isLoading, isError, error, refetch } = useAuditLogs({ page_size: RECENT_ACTIVITY_SIZE });
@@ -165,10 +167,12 @@ export default function AdminIndexPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Hoạt động gần đây</h3>
-            <RecentActivity />
-          </div>
+          <Can permission={PERMISSIONS.SYSTEM_SETTINGS_MANAGE}>
+            <div className="rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Hoạt động gần đây</h3>
+              <RecentActivity />
+            </div>
+          </Can>
         </section>
       </QueryState>
     </div>

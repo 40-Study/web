@@ -11,9 +11,18 @@ import { Avatar } from "@/components/ui/avatar";
 import { useLogout } from "@/hooks/queries/use-auth";
 import { cn } from "@/lib/utils";
 import { isAdminNavActive } from "@/lib/admin-nav";
+import { PERMISSIONS, type Permission } from "@/lib/permissions";
 import { useAuthStore } from "@/stores/auth.store";
 
-const adminMenu = [
+interface AdminMenuItem {
+  label: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  /** Mục chỉ hiện khi admin có quyền này — API phía sau trả 403 với admin kém quyền (QA 261009 L6). */
+  permission?: Permission;
+}
+
+const adminMenu: AdminMenuItem[] = [
   { label: "Tổng quan", href: "/admin", icon: LayoutDashboard },
   { label: "Người dùng", href: "/admin/users", icon: Users },
   { label: "Quản lý vai trò", href: "/admin/roles", icon: ShieldCheck },
@@ -26,10 +35,10 @@ const adminMenu = [
   // "Ví của tôi" (PR #24) đã được thay bằng báo cáo doanh thu nền tảng THẬT (PR #29) —
   // xem admin/reports/page.tsx. Đổi lại tên mục nav cho khớp nội dung trang thật.
   { label: "Báo cáo hệ thống", href: "/admin/reports", icon: BarChart3 },
-  { label: "Nhật ký hoạt động", href: "/admin/audit-logs", icon: ScrollText },
-  // Thông báo hệ thống + cấu hình hệ thống (plan 261008): API tự kiểm SYSTEM_SETTINGS_MANAGE, menu chưa lọc theo quyền từng mục.
-  { label: "Thông báo hệ thống", href: "/admin/notifications", icon: Bell },
-  { label: "Cấu hình hệ thống", href: "/admin/settings", icon: SlidersHorizontal },
+  // Nhật ký, thông báo hệ thống, cấu hình hệ thống: API đều cần SYSTEM_SETTINGS_MANAGE nên ẩn mục với admin thiếu quyền.
+  { label: "Nhật ký hoạt động", href: "/admin/audit-logs", icon: ScrollText, permission: PERMISSIONS.SYSTEM_SETTINGS_MANAGE },
+  { label: "Thông báo hệ thống", href: "/admin/notifications", icon: Bell, permission: PERMISSIONS.SYSTEM_SETTINGS_MANAGE },
+  { label: "Cấu hình hệ thống", href: "/admin/settings", icon: SlidersHorizontal, permission: PERMISSIONS.SYSTEM_SETTINGS_MANAGE },
   { label: "Duyệt khoá học", href: "/admin/courses", icon: BookCheck },
   { label: "Duyệt giáo viên", href: "/admin/teacher-applications", icon: UserCheck },
   // Cuộc thi (contract contest-feature §7): duyệt, gắn voucher, huỷ và CHỐT kết quả — chỉ admin chốt.
@@ -45,6 +54,8 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const { user } = useAuthStore();
+  const permissions = useAuthStore((s) => s.permissions);
+  const visibleMenu = adminMenu.filter((item) => !item.permission || permissions.includes(item.permission));
   const logoutMutation = useLogout();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -80,7 +91,7 @@ export default function AdminLayout({
             <h2 className="mt-1 font-heading text-lg font-semibold text-foreground">ForteX Admin</h2>
           </div>
           <nav className="space-y-2 p-3" aria-label="Menu quản trị">
-            {adminMenu.map((item) => {
+            {visibleMenu.map((item) => {
               const isActive = isAdminNavActive(pathname, item.href);
 
               return (
@@ -149,7 +160,7 @@ export default function AdminLayout({
               </div>
             </div>
             <nav className="flex gap-2 overflow-x-auto border-t border-border px-4 py-2 md:hidden">
-              {adminMenu.map((item) => {
+              {visibleMenu.map((item) => {
                 const isActive = isAdminNavActive(pathname, item.href);
 
                 return (

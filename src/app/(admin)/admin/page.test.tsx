@@ -20,6 +20,7 @@ import AdminIndexPage from "./page";
 import { ApiError } from "@/lib/errors";
 import { envelope, mockApi, resetMockApi } from "@/test/mock-api";
 import { renderWithProviders } from "@/test/utils";
+import { useAuthStore } from "@/stores/auth.store";
 
 // STUDENT có ít user hơn TEACHER — nếu sort đúng, TEACHER phải đứng TRƯỚC STUDENT trong "Top".
 const ROLES = [
@@ -35,6 +36,9 @@ const USER_COUNT_BY_ROLE: Record<string, number> = {
 let AUDIT_PAGE: unknown;
 
 beforeEach(() => {
+  useAuthStore.getState().reset();
+  useAuthStore.getState().setSessionStatus("authenticated");
+  useAuthStore.getState().setPermissions(["SYSTEM_SETTINGS_MANAGE"]);
   AUDIT_PAGE = { items: [], total: 0, page: 1, page_size: 5 };
   resetMockApi();
   mockApi.get.mockImplementation(async (url: string) => {
@@ -103,5 +107,17 @@ describe("/admin dashboard — A-P2-2", () => {
     await screen.findByText("9");
     expect(await screen.findByText(/Bạn không có quyền xem nhật ký hoạt động\./)).toBeTruthy();
     expect(screen.getByText("Tổng lượt gán role")).toBeTruthy();
+  });
+  // L6 (QA 261009): API nhật ký cần SYSTEM_SETTINGS_MANAGE — admin kém quyền không được thấy thẻ báo lỗi, và không bắn request 403.
+  it("L6: admin KHÔNG có SYSTEM_SETTINGS_MANAGE -> ẩn cả khối Hoạt động gần đây và không gọi /admin/audit-logs", async () => {
+    useAuthStore.getState().setPermissions(["USERS_VIEW_ALL"]);
+    renderWithProviders(<AdminIndexPage />);
+
+    await screen.findByText("9");
+    expect(screen.queryByText("Hoạt động gần đây")).toBeNull();
+    expect(screen.queryByRole("link", { name: "Xem tất cả" })).toBeNull();
+    expect(mockApi.get.mock.calls.some((c) => c[0] === "/admin/audit-logs")).toBe(false);
+    // Các số liệu khác của dashboard vẫn hiện.
+    expect(screen.getByText("Top vai trò theo số lượng user")).toBeTruthy();
   });
 });

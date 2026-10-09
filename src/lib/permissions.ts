@@ -28,6 +28,9 @@ export const PERMISSIONS = {
   // % phí ở /admin/reports.
   MANAGE_PAYMENTS: "PAYMENTS_MANAGE",
   MANAGE_PLATFORM_FEE: "SYSTEM_SETTINGS_MANAGE",
+  // Cùng tên permission backend với MANAGE_PLATFORM_FEE, nhưng gate cả nhóm route /admin/audit-logs,
+  // /admin/notifications/broadcast và /admin/settings — dùng tên này cho mục không liên quan tới phí nền tảng.
+  SYSTEM_SETTINGS_MANAGE: "SYSTEM_SETTINGS_MANAGE",
   // Phase 3 duyệt khoá học (28/09/2026) — tên permission thật đã seed ở backend. BẮT BUỘC có
   // trong bảng này: auth-session.ts lọc bỏ mọi permission server trả về mà không nằm ở đây,
   // thiếu thì <Can> không bao giờ hiện nút Duyệt/Từ chối.

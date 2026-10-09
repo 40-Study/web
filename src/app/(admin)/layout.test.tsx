@@ -56,6 +56,7 @@ describe("(admin)/layout — RoleGuard", () => {
   ])("menu quản trị có mục %s trỏ tới %s (plan 261008 phase 8)", async (label, href) => {
     useAuthStore.getState().setSessionStatus("authenticated");
     useAuthStore.getState().setActiveRole("SYSTEM_ADMIN");
+    useAuthStore.getState().setPermissions(["SYSTEM_SETTINGS_MANAGE"]);
 
     renderWithProviders(
       <AdminLayout>
@@ -66,6 +67,44 @@ describe("(admin)/layout — RoleGuard", () => {
     await screen.findByText("NOI DUNG ADMIN");
     const nav = screen.getByRole("navigation", { name: "Menu quản trị" });
     expect(within(nav).getByRole("link", { name: label }).getAttribute("href")).toBe(href);
+  });
+
+  // L6 (QA 261009): 3 mục này gọi API cần SYSTEM_SETTINGS_MANAGE; admin kém quyền bấm vào chỉ thấy 403.
+  it.each([
+    ["Nhật ký hoạt động"],
+    ["Thông báo hệ thống"],
+    ["Cấu hình hệ thống"],
+  ])("L6: admin KHÔNG có SYSTEM_SETTINGS_MANAGE -> mục %s bị ẩn ở cả menu desktop và mobile, các mục khác vẫn còn", async (label) => {
+    useAuthStore.getState().setSessionStatus("authenticated");
+    useAuthStore.getState().setActiveRole("SYSTEM_ADMIN");
+    useAuthStore.getState().setPermissions(["USERS_VIEW_ALL"]);
+
+    renderWithProviders(
+      <AdminLayout>
+        <div>NOI DUNG ADMIN</div>
+      </AdminLayout>
+    );
+
+    await screen.findByText("NOI DUNG ADMIN");
+    expect(screen.queryAllByRole("link", { name: label })).toHaveLength(0);
+    const nav = screen.getByRole("navigation", { name: "Menu quản trị" });
+    expect(within(nav).getByRole("link", { name: /Cuộc thi/ })).toBeTruthy();
+    expect(within(nav).getByRole("link", { name: "Người dùng" })).toBeTruthy();
+  });
+
+  it("L6: có SYSTEM_SETTINGS_MANAGE -> mục hiện ở cả menu desktop lẫn mobile", async () => {
+    useAuthStore.getState().setSessionStatus("authenticated");
+    useAuthStore.getState().setActiveRole("SYSTEM_ADMIN");
+    useAuthStore.getState().setPermissions(["SYSTEM_SETTINGS_MANAGE"]);
+
+    renderWithProviders(
+      <AdminLayout>
+        <div>NOI DUNG ADMIN</div>
+      </AdminLayout>
+    );
+
+    await screen.findByText("NOI DUNG ADMIN");
+    expect(screen.getAllByRole("link", { name: "Nhật ký hoạt động" })).toHaveLength(2);
   });
 
   it("ORG_OWNER KHÔNG vào được — không thấy nội dung con (bị RoleGuard chặn, redirect /403)", async () => {
