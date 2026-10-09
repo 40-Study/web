@@ -20,7 +20,11 @@ import {
 } from "@/components/player";
 import type { StudyToolKey } from "@/components/player";
 import { NonVideoLessonContent } from "@/components/player/non-video-lesson-content";
-import { announceCourseCompleted, isCourseCompleted } from "@/components/player/lesson-progress-sync";
+import {
+  announceCourseCompleted,
+  invalidateAfterLessonProgress,
+  isCourseCompleted,
+} from "@/components/player/lesson-progress-sync";
 import { pickPrimaryContent, quizzesForTab, resolveLessonKind, toPlayerLessonType } from "@/components/player/lesson-kind";
 import { ArticleContentView } from "@/components/lesson/article-content-view";
 import { resolveLivestreamRoomHref } from "@/lib/lesson-content-link";
@@ -597,6 +601,9 @@ export default function CourseLessonPage() {
         data: { answers },
       });
       setSubmittedAttemptId(result.id || activeQuiz.attempt_id);
+      // H1 (QA 261009): backend hoàn thành bài khi lượt official đạt. Tải lại curriculum + tiến độ ngay (cùng
+      // đường với bài video/bài viết) để sidebar hiện bài xong và bài kế tiếp mở khoá, không đợi F5.
+      invalidateAfterLessonProgress(queryClient, apiCourse?.id);
     } catch (err: unknown) {
       setQuizError(err instanceof Error ? err.message : "Không nộp được bài. Câu trả lời vẫn được lưu tạm, hãy thử nộp lại.");
     }

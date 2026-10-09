@@ -7,7 +7,7 @@
  * liệt kê lại quiz đã hiện làm nội dung (plan D2).
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
@@ -19,6 +19,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/hooks/queries/use-courses", () => ({
+  courseKeys: { enrolled: () => ["courses", "enrolled"] },
   useCourseBySlug: () => ({
     data: { id: "course-1", title: "Git cơ bản", slug: "git-co-ban", total_students: 3 },
     isLoading: false,
@@ -31,6 +32,7 @@ vi.mock("@/hooks/queries/use-enrollments", () => ({
   enrollmentKeys: { all: ["enrollments"] },
 }));
 vi.mock("@/hooks/queries/use-sections", () => ({
+  sectionKeys: { byCourse: (id: string) => ["sections", "course", id] },
   useSections: () => ({
     data: [
       {
@@ -64,12 +66,14 @@ vi.mock("@/hooks/queries/use-lesson-content", () => ({
 vi.mock("@/hooks/use-hls", () => ({ useHlsInfo: () => ({ data: undefined, isLoading: false, error: null }) }));
 
 const mockUseQuiz = vi.fn();
+const mockStartQuiz = vi.fn();
+const mockSubmitQuiz = vi.fn();
 let mockLessonQuizzes: { id: string; title: string }[] = [];
 vi.mock("@/hooks/queries/use-quiz", () => ({
   useQuiz: (id?: string) => mockUseQuiz(id),
   useQuizzesByLesson: () => ({ data: mockLessonQuizzes }),
-  useStartQuiz: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useSubmitQuiz: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useStartQuiz: () => ({ mutateAsync: mockStartQuiz, isPending: false }),
+  useSubmitQuiz: () => ({ mutateAsync: mockSubmitQuiz, isPending: false }),
   useSaveQuizAnswer: () => ({ mutate: vi.fn() }),
   useQuizAttemptDetail: () => ({ data: undefined, isLoading: false, isError: false }),
 }));
@@ -96,7 +100,9 @@ vi.mock("@/components/player", () => ({
   ),
   FloatingButtons: () => null,
   CodeEditorModal: () => null,
-  QuizLessonContent: () => null,
+  QuizLessonContent: ({ onSubmit }: { onSubmit: (answers: unknown[]) => void }) => (
+    <button onClick={() => onSubmit([{ question_id: "qq", selected_answer_ids: ["aa"] }])}>nộp-quiz</button>
+  ),
   HeartbeatVideo: () => null,
   LessonLockedNotice: () => null,
   LessonStudyTools: () => null,
@@ -107,9 +113,9 @@ vi.mock("@/components/player", () => ({
 // eslint-disable-next-line import/first
 import CourseLessonPage from "./page";
 
-function renderPage() {
+function renderPage(client = new QueryClient()) {
   return render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider client={client}>
       <CourseLessonPage />
     </QueryClientProvider>
   );
@@ -120,6 +126,8 @@ describe("/learn/[courseSlug]/[lessonId] — bài viết và trắc nghiệm", (
     mockContents = [];
     mockLessonQuizzes = [];
     mockUseQuiz.mockReset().mockReturnValue({ data: undefined, isError: false });
+    mockStartQuiz.mockReset();
+    mockSubmitQuiz.mockReset();
   });
 
   it("bài viết: hiện nội dung đã sanitize (không script/onerror) và thời gian đọc, không phải 'Video không khả dụng'", () => {
@@ -180,5 +188,41 @@ describe("/learn/[courseSlug]/[lessonId] — bài viết và trắc nghiệm", (
     renderPage();
     expect(screen.getByText(/Không tải được bài kiểm tra này/)).toBeTruthy();
     expect((screen.getByRole("button", { name: "Bắt đầu làm bài" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+  // H1 (QA 261009): backend hoàn thành bài khi nộp lượt official đạt; nếu web không tải lại curriculum thì
+  // sidebar vẫn "chưa xong" và bài kế tiếp vẫn khoá cho tới khi F5.
+  it("H1: nộp quiz xong -> tải lại curriculum + tiến độ để bài hiện hoàn thành và bài kế mở khoá", async () => {
+    mockContents = [{ id: "c2", type: "quiz", title: "Kiểm tra", display_order: 0, quiz_id: "q-b" }];
+    mockUseQuiz.mockReturnValue({ data: { id: "q-b", title: "Kiểm tra", max_attempts: 3 }, isError: false });
+    mockStartQuiz.mockResolvedValue({ attempt_id: "att-1", quiz_id: "q-b", title: "Kiểm tra", questions: [] });
+    mockSubmitQuiz.mockResolvedValue({ id: "att-1", quiz_id: "q-b", is_passed: true });
+    const client = new QueryClient();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    renderPage(client);
+
+    fireEvent.click(screen.getByRole("button", { name: "Bắt đầu làm bài" }));
+    fireEvent.click(await screen.findByRole("button", { name: "nộp-quiz" }));
+
+    await waitFor(() => expect(mockSubmitQuiz).toHaveBeenCalledTimes(1));
+    const keys = invalidate.mock.calls.map((c) => (c[0] as { queryKey: unknown }).queryKey);
+    expect(keys).toContainEqual(["sections", "course", "course-1"]); // sidebar + khoá bài kế đọc từ đây
+    expect(keys).toContainEqual(["courses", "enrolled"]);
+    expect(keys).toContainEqual(["enrollments"]); // % tiến độ khoá
+  });
+
+  it("H1: nộp quiz LỖI -> không tải lại curriculum (không có gì đổi)", async () => {
+    mockContents = [{ id: "c2", type: "quiz", title: "Kiểm tra", display_order: 0, quiz_id: "q-b" }];
+    mockUseQuiz.mockReturnValue({ data: { id: "q-b", title: "Kiểm tra" }, isError: false });
+    mockStartQuiz.mockResolvedValue({ attempt_id: "att-1", quiz_id: "q-b", title: "Kiểm tra", questions: [] });
+    mockSubmitQuiz.mockRejectedValue(new Error("boom"));
+    const client = new QueryClient();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    renderPage(client);
+
+    fireEvent.click(screen.getByRole("button", { name: "Bắt đầu làm bài" }));
+    fireEvent.click(await screen.findByRole("button", { name: "nộp-quiz" }));
+
+    await waitFor(() => expect(mockSubmitQuiz).toHaveBeenCalledTimes(1));
+    expect(invalidate).not.toHaveBeenCalled();
   });
 });
