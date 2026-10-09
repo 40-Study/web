@@ -38,7 +38,6 @@ vi.mock("@/hooks/queries/use-admin-reports", () => ({
     refetch: vi.fn(),
   }),
   usePlatformFeeSetting: () => ({ data: { platform_fee_percent: 5 }, isLoading: false }),
-  useUpdatePlatformFeeSetting: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 describe("AdminReportsPage — real platform revenue report", () => {
@@ -63,8 +62,23 @@ describe("AdminReportsPage — real platform revenue report", () => {
     expect(screen.getByText("80.0%")).toBeTruthy();
   });
 
-  it("shows the configured platform fee percentage", () => {
+  it("shows the configured platform fee percentage read-only, with a link to /admin/settings", () => {
     render(<AdminReportsPage />);
     expect(screen.getByText("5%")).toBeTruthy();
+
+    // Phase 5: nơi sửa duy nhất là /admin/settings — trang báo cáo không còn nút Sửa/ô nhập.
+    const link = screen.getByRole("link", { name: /Cấu hình hệ thống/ });
+    expect(link.getAttribute("href")).toBe("/admin/settings");
+    expect(screen.queryByRole("button", { name: "Sửa" })).toBeNull();
+    expect(screen.queryByRole("spinbutton")).toBeNull();
+  });
+
+  it("hides the fee card without SYSTEM_SETTINGS_MANAGE (the fee endpoint would 403)", () => {
+    useAuthStore.setState({ permissions: [] } as Partial<
+      ReturnType<typeof useAuthStore.getState>
+    >);
+    render(<AdminReportsPage />);
+    expect(screen.queryByText("5%")).toBeNull();
+    expect(screen.queryByRole("link", { name: /Cấu hình hệ thống/ })).toBeNull();
   });
 });
