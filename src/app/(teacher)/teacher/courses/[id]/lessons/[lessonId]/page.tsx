@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { notFound, useParams } from "next/navigation";
 import { ArrowLeft, Loader2, MessageSquare } from "lucide-react";
@@ -8,9 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SubtitleUploadField } from "@/components/teacher/subtitle-upload-field";
+import { ArticleContentForm, type ArticleFormValue } from "@/components/teacher/article-content-form";
 import { useSections } from "@/hooks/queries/use-sections";
 import { useLessons, useUpdateLesson } from "@/hooks/queries/use-lessons";
-import { useLessonContents } from "@/hooks/queries/use-lesson-content";
+import {
+  useCreateLessonContent,
+  useLessonContents,
+  useUpdateLessonContent,
+} from "@/hooks/queries/use-lesson-content";
 import type { Section } from "@/types/section";
 import type { Lesson } from "@/types/lesson";
 
@@ -35,6 +40,8 @@ const CONTENT_TYPE_LABEL: Record<string, string> = {
   video: "VIDEO",
   livestream: "LIVESTREAM",
   exercise: "BÀI TẬP",
+  article: "BÀI VIẾT",
+  quiz: "TRẮC NGHIỆM",
 };
 
 /** Nhãn loại theo nội dung thật của bài, không trùng lặp, giữ thứ tự xuất hiện. */
@@ -86,7 +93,30 @@ function LessonDetailContent({
   // (`lessonKeys.bySection`), danh sách bài của chương thật không refresh.
   const found = isLoading ? null : findLessonInSections(sections, lessonsMap, lessonId);
   const updateLesson = useUpdateLesson(courseId, found?.section.id ?? sections[0]?.id ?? "");
-  const { data: contents = [] } = useLessonContents(lessonId);
+  const { data: contents = [], isLoading: contentsLoading } = useLessonContents(lessonId);
+  const createContent = useCreateLessonContent(lessonId);
+  const updateContent = useUpdateLessonContent(lessonId);
+  const [addingArticle, setAddingArticle] = useState(false);
+  const article = contents.find((c) => c.type === "article");
+
+  // Lỗi đã được hook toast chung; ném lại để `ArticleContentForm` hiện lý do cụ thể ngay dưới form
+  // và GIỮ nguyên nội dung giáo viên đã viết.
+  const saveArticle = async (value: ArticleFormValue) => {
+    if (article) {
+      await updateContent.mutateAsync({
+        contentId: article.id,
+        data: { title: value.title, article_body: value.articleBody },
+      });
+      return;
+    }
+    await createContent.mutateAsync({
+      type: "article",
+      title: value.title,
+      article_body: value.articleBody,
+      is_mandatory: true,
+    });
+    setAddingArticle(false);
+  };
 
   if (isLoading) {
     return (
@@ -147,6 +177,41 @@ function LessonDetailContent({
           <div className="text-sm text-muted-foreground">
             <span className="font-medium text-foreground">Vị trí:</span> {lesson.display_order}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Nội dung bài viết (QA 261008 T1): soạn/sửa article của bài ngay tại đây */}
+      <Card>
+        <CardContent className="space-y-4 p-6">
+          <h2 className="text-lg font-semibold">Nội dung bài viết</h2>
+          {contentsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Đang tải nội dung...
+            </div>
+          ) : article ? (
+            <ArticleContentForm
+              // Nạp lại form khi bản lưu đổi (vd sau khi lưu, hoặc nội dung đổi từ nơi khác).
+              key={`${article.id}:${article.updated_at ?? ""}`}
+              initialTitle={article.title}
+              initialBody={article.article_body ?? ""}
+              submitLabel="Lưu thay đổi"
+              onSubmit={saveArticle}
+            />
+          ) : contents.length === 0 || addingArticle ? (
+            <ArticleContentForm
+              initialTitle={lesson.title}
+              submitLabel="Tạo bài viết"
+              onSubmit={saveArticle}
+              onCancel={contents.length > 0 ? () => setAddingArticle(false) : undefined}
+            />
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Bài học này chưa có bài viết.</p>
+              <Button variant="outline" onClick={() => setAddingArticle(true)}>
+                Thêm bài viết
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

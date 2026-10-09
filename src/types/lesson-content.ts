@@ -1,8 +1,8 @@
 /**
- * TypeScript types for lesson content (video, livestream, exercise)
+ * TypeScript types for lesson content (video, livestream, exercise, article, quiz)
  */
 
-export type ContentType = "video" | "livestream" | "exercise";
+export type ContentType = "video" | "livestream" | "exercise" | "article" | "quiz";
 
 export interface LessonContent {
   id: string;
@@ -14,6 +14,12 @@ export interface LessonContent {
   thumbnail_url?: string;
   duration?: number;
   exercise_id?: string;
+  /** Nội dung bài viết (HTML Tiptap) — chỉ có ở content `article`. Render qua `sanitizeHtml`. */
+  article_body?: string;
+  /** Thời gian đọc ước tính (phút) — server TÍNH khi trả response, không lưu. Chỉ `article`. */
+  reading_time_minutes?: number;
+  /** Quiz mà content `quiz` trỏ tới — chỉ có ở content `quiz`. */
+  quiz_id?: string;
   /**
    * id PHIÊN livestream (M-6) — KHÁC `id` của lesson_content. Optional vì
    * response cũ chưa có trường; `null` = phiên chưa sẵn sàng.
@@ -51,15 +57,27 @@ export interface UpdateLessonVideoDTO {
   is_mandatory?: boolean;
 }
 
-export interface CreateLessonArticleDTO {
-  type: "exercise";
+/** Contract C1: POST /lessons/:id/contents với type "article". */
+export interface CreateArticleContentDTO {
+  type: "article";
   title: string;
-  exercise_id: string;
+  article_body: string;
   is_mandatory?: boolean;
+  display_order?: number;
+}
+
+/** Contract C1: POST /lessons/:id/contents với type "quiz". */
+export interface CreateQuizContentDTO {
+  type: "quiz";
+  title: string;
+  quiz_id: string;
+  is_mandatory?: boolean;
+  display_order?: number;
 }
 
 export interface UpdateLessonArticleDTO {
   title?: string;
+  article_body?: string;
   is_mandatory?: boolean;
 }
 
