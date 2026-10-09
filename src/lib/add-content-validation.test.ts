@@ -48,6 +48,15 @@ describe("isArticleBodyBlank (T1) — Tiptap trống phát ra <p></p>, không ph
     "<p> </p>",
     "<p>&nbsp;</p><p><br></p>",
     "<p><strong></strong></p>",
+    // L1 (QA 261009): backend (`validateArticleBody`) chỉ coi chữ nhìn thấy hoặc <img> là nội dung.
+    // Các thẻ này từng bị web coi là "có nội dung" rồi bị backend trả 400 ARTICLE_BODY_REQUIRED.
+    "<hr>",
+    "<table><tbody><tr><td></td></tr></tbody></table>",
+    '<iframe src="https://x.example"></iframe>',
+    "<video></video><audio></audio>",
+    "<script>alert(1)</script>",
+    "<style>p{color:red}</style><p></p>",
+    "<p>&#32;&#x20;&ensp;&emsp;&thinsp;</p>",
   ])("%j -> trống", (html) => {
     expect(isArticleBodyBlank(html)).toBe(true);
   });
@@ -55,8 +64,11 @@ describe("isArticleBodyBlank (T1) — Tiptap trống phát ra <p></p>, không ph
   it.each([
     "<p>Xin chào</p>",
     '<p><img src="https://cdn.example.com/a.png"></p>',
-    "<hr>",
+    "<IMG SRC=x>",
+    "<hr><p>chữ</p>",
+    "<table><tbody><tr><td>ô</td></tr></tbody></table>",
     "<ul><li>Một</li></ul>",
+    "<p>&amp;</p>",
   ])("%j -> có nội dung", (html) => {
     expect(isArticleBodyBlank(html)).toBe(false);
   });

@@ -48,20 +48,33 @@ export const ARTICLE_BODY_REQUIRED_MESSAGE = "Vui lòng nhập nội dung bài v
 export const MAX_ARTICLE_BODY_CHARS = 200000;
 export const ARTICLE_BODY_TOO_LONG_MESSAGE = `Nội dung bài viết quá dài (tối đa ${MAX_ARTICLE_BODY_CHARS.toLocaleString("vi-VN")} ký tự).`;
 
-// Thẻ tự nó là nội dung dù không có chữ — bỏ chúng đi sẽ coi bài chỉ có ảnh là "trống".
-const CONTENT_BEARING_TAG = /<(img|hr|iframe|video|audio|table)\b/i;
+// Phản chiếu `validateArticleBody` của backend (service/lesson_content_article_quiz.go) — backend là SSOT:
+// bỏ khối <script>/<style>, bỏ thẻ, giải mã thực thể rồi cắt khoảng trắng; <img> là thẻ DUY NHẤT tự mang nội dung.
+// (<hr>, bảng rỗng, iframe, video, audio KHÔNG tính: backend trả 400 ARTICLE_BODY_REQUIRED cho chúng.)
+const SCRIPT_STYLE_BLOCK = /<(script|style)\b[\s\S]*?<\/(script|style)\s*>/gi;
+const ANY_TAG = /<[^>]*>/g;
+const IMAGE_TAG = /<img\b/i;
+const WHITESPACE_ENTITIES = /&(?:nbsp|ensp|emsp|thinsp);/gi;
+const NUMERIC_ENTITY = /&#(?:x([0-9a-f]+)|(\d+));/gi;
+
+function decodeNumericEntities(text: string): string {
+  return text.replace(NUMERIC_ENTITY, (match, hex?: string, dec?: string) => {
+    const code = hex !== undefined ? parseInt(hex, 16) : parseInt(dec ?? "", 10);
+    // Ngoài dải Unicode hợp lệ thì để nguyên (Go giữ nguyên thực thể không giải mã được).
+    return Number.isInteger(code) && code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : match;
+  });
+}
 
 /**
- * Tiptap phát ra `<p></p>` cho editor trống nên `body.trim() === ""` không đủ. Trống = không còn chữ
- * sau khi bỏ thẻ/`&nbsp;`, và không có thẻ nào tự mang nội dung (ảnh, đường kẻ, bảng).
+ * Tiptap phát ra `<p></p>` cho editor trống nên `body.trim() === ""` không đủ. Trống = không còn chữ nhìn thấy
+ * (sau khi bỏ script/style, thẻ, giải mã thực thể) và không có <img> — cùng quy tắc với backend.
  */
 export function isArticleBodyBlank(html: string | null | undefined): boolean {
   if (!html) return true;
-  if (CONTENT_BEARING_TAG.test(html)) return false;
-  const text = html
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;|&#160;/gi, " ")
-    .trim();
+  if (IMAGE_TAG.test(html)) return false;
+  const text = decodeNumericEntities(
+    html.replace(SCRIPT_STYLE_BLOCK, " ").replace(ANY_TAG, " ").replace(WHITESPACE_ENTITIES, " ")
+  ).trim();
   return text === "";
 }
 
