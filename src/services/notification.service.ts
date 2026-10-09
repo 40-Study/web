@@ -14,21 +14,24 @@ type ApiResponse<T> = { message: string; data: T };
 export type BroadcastAudience = "all" | "roles";
 export type BroadcastNotificationType = "system" | "promotion";
 
-/** POST /admin/notifications/broadcast/preview */
+/**
+ * POST /admin/notifications/broadcast/preview. `notification_type` (bỏ trống = "system") PHẢI trùng loại sẽ gửi:
+ * loại "promotion" chỉ tới người đã bật nhận khuyến mãi nên số người xem trước phụ thuộc loại (QA 261009 M3).
+ */
 export interface BroadcastPreviewRequest {
   audience: BroadcastAudience;
   roles?: string[];
+  notification_type?: BroadcastNotificationType;
 }
 
 export interface BroadcastPreview {
   recipient_count: number;
 }
 
-/** POST /admin/notifications/broadcast — notification_type bỏ trống = "system" (title <=255, content <=2000). */
+/** POST /admin/notifications/broadcast (title <=255, content <=2000). */
 export interface BroadcastRequest extends BroadcastPreviewRequest {
   title: string;
   content: string;
-  notification_type?: BroadcastNotificationType;
 }
 
 export interface BroadcastResult {
@@ -39,6 +42,11 @@ export interface BroadcastResult {
 }
 
 export const BROADCAST_PARTIAL_CODE = "BROADCAST_PARTIAL";
+
+/** Tên header backend đọc ở route gửi broadcast (đúng chữ hoa/thường như hợp đồng). */
+export const IDEMPOTENCY_KEY_HEADER = "Idempotency-Key";
+/** Dài hơn nhiều so với 15s mặc định của api-client: gửi ~50k người là hàng trăm đợt chèn + đẩy WS. */
+export const BROADCAST_SEND_TIMEOUT_MS = 120_000;
 
 /**
  * Đợt gửi lỗi giữa chừng: `delivered` người ĐÃ nhận (thông báo không thu hồi được nên admin không được gửi
@@ -110,12 +118,21 @@ export const notificationService = {
   /**
    * POST /admin/notifications/broadcast — gửi thật (201). 500 được cho qua validateStatus để đọc số người đã
    * nhận khi lỗi giữa chừng; mọi 4xx vẫn đi qua interceptor của api-client như thường.
+   *
+   * Backend gửi ĐỒNG BỘ trong request (từng đợt 500 người), có thể lâu hơn nhiều so với timeout mặc định 15s của
+   * api-client; hết timeout mà server vẫn gửi tiếp rồi admin bấm lại thì cả tệp nhận hai lần (QA 261009 M2).
+   * Nên: timeout riêng dài (`BROADCAST_SEND_TIMEOUT_MS`) và header `Idempotency-Key` để server nhận ra lần gửi
+   * lại của CÙNG một lần xác nhận.
    */
-  sendBroadcast: async (body: BroadcastRequest): Promise<BroadcastResult> => {
+  sendBroadcast: async (body: BroadcastRequest, idempotencyKey: string): Promise<BroadcastResult> => {
     const res = await api.post<ApiResponse<BroadcastResult> | BroadcastFailureBody>(
       "/admin/notifications/broadcast",
       body,
-      { validateStatus: (status) => (status >= 200 && status < 300) || status === 500 }
+      {
+        timeout: BROADCAST_SEND_TIMEOUT_MS,
+        headers: { [IDEMPOTENCY_KEY_HEADER]: idempotencyKey },
+        validateStatus: (status) => (status >= 200 && status < 300) || status === 500,
+      }
     );
     if (res.status === 500) {
       const failure = res.data as BroadcastFailureBody;

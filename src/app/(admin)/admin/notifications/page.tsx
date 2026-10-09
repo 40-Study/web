@@ -31,7 +31,7 @@ export default function AdminBroadcastNotificationsPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const rolesQuery = useSystemRoles();
-  const preview = useBroadcastPreview(audience, roles);
+  const preview = useBroadcastPreview(audience, roles, type);
   const send = useSendBroadcast();
 
   const count = preview.data?.recipient_count;
@@ -142,6 +142,11 @@ export default function AdminBroadcastNotificationsPage() {
             <option value="system">Hệ thống</option>
             <option value="promotion">Khuyến mãi</option>
           </select>
+          {type === "promotion" && (
+            <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+              Người dùng đã tắt nhận thông báo khuyến mãi sẽ không nằm trong số người nhận.
+            </p>
+          )}
         </div>
 
         <p className="text-sm text-gray-600 dark:text-gray-300" role="status" aria-live="polite">

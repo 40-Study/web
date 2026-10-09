@@ -72,7 +72,7 @@ describe("AdminBroadcastNotificationsPage", () => {
     renderWithProviders(<AdminBroadcastNotificationsPage />);
 
     expect(await screen.findByText("Sẽ gửi tới 123 người.")).toBeTruthy();
-    expect(mockApi.post).toHaveBeenCalledWith(PREVIEW_URL, { audience: "all", roles: undefined });
+    expect(mockApi.post).toHaveBeenCalledWith(PREVIEW_URL, { audience: "all", roles: undefined, notification_type: "system" });
     expect((submitButton() as HTMLButtonElement).disabled).toBe(true); // chưa nhập gì
 
     await fillForm(user);
@@ -93,7 +93,7 @@ describe("AdminBroadcastNotificationsPage", () => {
 
     await user.click(await screen.findByLabelText("STUDENT"));
     expect(await screen.findByText("Sẽ gửi tới 40 người.")).toBeTruthy();
-    expect(mockApi.post).toHaveBeenCalledWith(PREVIEW_URL, { audience: "roles", roles: ["STUDENT"] });
+    expect(mockApi.post).toHaveBeenCalledWith(PREVIEW_URL, { audience: "roles", roles: ["STUDENT"], notification_type: "system" });
     expect((submitButton() as HTMLButtonElement).disabled).toBe(false);
 
     await user.click(screen.getByLabelText("STUDENT")); // bỏ chọn -> lại không gửi được
@@ -230,5 +230,140 @@ describe("AdminBroadcastNotificationsPage", () => {
     await waitFor(() => expect(toast.error).toHaveBeenCalled());
     const opts = vi.mocked(toast.error).mock.calls[0][1] as { description: string };
     expect(opts.description).toBe("Bạn đã gửi tối đa 5 thông báo hệ thống trong 1 giờ. Vui lòng thử lại sau 59 phút.");
+  });
+  // ─── M2 (QA 261009): gửi đồng bộ trong request; web hết 15s -> admin gửi lại -> trùng thông báo ────────
+
+  const sendConfig = (i: number) =>
+    sendCalls()[i][2] as { headers?: Record<string, string>; timeout?: number } | undefined;
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  async function confirmSend(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(submitButton());
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Gửi thông báo" }));
+  }
+
+  it("M2: request gửi mang header Idempotency-Key (UUID) và timeout dài hơn mặc định 15s của api-client", async () => {
+    setupApi();
+    const user = userEvent.setup();
+    renderWithProviders(<AdminBroadcastNotificationsPage />);
+    await screen.findByText("Sẽ gửi tới 123 người.");
+    await fillForm(user);
+    await confirmSend(user);
+
+    await waitFor(() => expect(sendCalls()).toHaveLength(1));
+    expect(sendConfig(0)?.headers?.["Idempotency-Key"]).toMatch(UUID);
+    expect(sendConfig(0)?.timeout).toBeGreaterThanOrEqual(120_000);
+  });
+
+  it("M2: gửi lại CÙNG nội dung sau khi lỗi (timeout/5xx) dùng lại key cũ; gửi đợt mới sau khi thành công dùng key mới", async () => {
+    setupApi();
+    const base = mockApi.post.getMockImplementation()!;
+    let failNext = true;
+    mockApi.post.mockImplementation(async (url: string, body: unknown, config?: unknown) => {
+      if (url === SEND_URL && failNext) {
+        failNext = false;
+        throw new Error("timeout of 120000ms exceeded");
+      }
+      return base(url, body, config);
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<AdminBroadcastNotificationsPage />);
+    await screen.findByText("Sẽ gửi tới 123 người.");
+    await fillForm(user);
+
+    await confirmSend(user);
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+    await confirmSend(user); // cùng nội dung, bấm gửi lại
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+    expect(sendCalls()).toHaveLength(2);
+    expect(sendConfig(1)?.headers?.["Idempotency-Key"]).toBe(sendConfig(0)?.headers?.["Idempotency-Key"]);
+
+    // Thành công rồi: đợt mới (form đã xoá, nhập nội dung mới) là một lần gửi khác -> key khác.
+    await fillForm(user);
+    await confirmSend(user);
+    await waitFor(() => expect(sendCalls()).toHaveLength(3));
+    const k = [0, 1, 2].map((i) => sendConfig(i)?.headers?.["Idempotency-Key"]);
+    expect(k[2]).toMatch(UUID);
+    expect(k[2]).not.toBe(k[0]);
+  });
+
+  it("M2: sửa nội dung giữa hai lần gửi là một lần gửi khác -> key mới (key cũ không được dùng cho nội dung khác)", async () => {
+    setupApi();
+    const base = mockApi.post.getMockImplementation()!;
+    let failNext = true;
+    mockApi.post.mockImplementation(async (url: string, body: unknown, config?: unknown) => {
+      if (url === SEND_URL && failNext) {
+        failNext = false;
+        throw new Error("timeout of 120000ms exceeded");
+      }
+      return base(url, body, config);
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<AdminBroadcastNotificationsPage />);
+    await screen.findByText("Sẽ gửi tới 123 người.");
+    await fillForm(user);
+    await confirmSend(user);
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+    await user.type(screen.getByLabelText("Tiêu đề"), " (đã sửa)");
+    await confirmSend(user);
+    await waitFor(() => expect(sendCalls()).toHaveLength(2));
+    expect(sendConfig(1)?.headers?.["Idempotency-Key"]).not.toBe(sendConfig(0)?.headers?.["Idempotency-Key"]);
+  });
+
+  // ─── M3 (QA 261009): backend loại người đã tắt khuyến mãi khỏi số người nhận ───────────────────────
+
+  it("M3: chọn loại 'Khuyến mãi' hiện gợi ý người tắt khuyến mãi bị loại khỏi số người nhận; 'Hệ thống' thì không", async () => {
+    setupApi();
+    const user = userEvent.setup();
+    renderWithProviders(<AdminBroadcastNotificationsPage />);
+    await screen.findByText("Sẽ gửi tới 123 người.");
+
+    const hint = /đã tắt nhận thông báo khuyến mãi/i;
+    expect(screen.queryByText(hint)).toBeNull();
+
+    await user.selectOptions(screen.getByLabelText("Loại thông báo"), "promotion");
+    expect(screen.getByText(hint)).toBeTruthy();
+
+    await user.selectOptions(screen.getByLabelText("Loại thông báo"), "system");
+    expect(screen.queryByText(hint)).toBeNull();
+  });
+
+  it("M3: số người nhận được đếm lại theo loại — preview gửi notification_type để số khớp loại sẽ gửi", async () => {
+    setupApi({ previewCount: (b) => ((b as { notification_type?: string }).notification_type === "promotion" ? 80 : 123) });
+    const user = userEvent.setup();
+    renderWithProviders(<AdminBroadcastNotificationsPage />);
+    expect(await screen.findByText("Sẽ gửi tới 123 người.")).toBeTruthy();
+
+    await user.selectOptions(screen.getByLabelText("Loại thông báo"), "promotion");
+    expect(await screen.findByText("Sẽ gửi tới 80 người.")).toBeTruthy();
+    expect(mockApi.post).toHaveBeenCalledWith(PREVIEW_URL, { audience: "all", roles: undefined, notification_type: "promotion" });
+  });
+
+  it("M2: server từ chối bằng 4xx (429) -> chưa gửi gì, lần gửi lại là lần gửi mới với key mới", async () => {
+    setupApi();
+    const base = mockApi.post.getMockImplementation()!;
+    let rejectNext = true;
+    mockApi.post.mockImplementation(async (url: string, body: unknown, config?: unknown) => {
+      if (url === SEND_URL && rejectNext) {
+        rejectNext = false;
+        throw new RateLimitError(3500);
+      }
+      return base(url, body, config);
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<AdminBroadcastNotificationsPage />);
+    await screen.findByText("Sẽ gửi tới 123 người.");
+    await fillForm(user);
+    await confirmSend(user);
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+    await confirmSend(user);
+    await waitFor(() => expect(sendCalls()).toHaveLength(2));
+    expect(sendConfig(1)?.headers?.["Idempotency-Key"]).not.toBe(sendConfig(0)?.headers?.["Idempotency-Key"]);
   });
 });
