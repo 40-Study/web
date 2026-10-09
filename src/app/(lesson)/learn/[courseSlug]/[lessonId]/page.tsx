@@ -21,7 +21,8 @@ import {
 import type { StudyToolKey } from "@/components/player";
 import { NonVideoLessonContent } from "@/components/player/non-video-lesson-content";
 import { announceCourseCompleted, isCourseCompleted } from "@/components/player/lesson-progress-sync";
-import { resolveLessonKind } from "@/components/player/lesson-kind";
+import { pickPrimaryContent, quizzesForTab, resolveLessonKind, toPlayerLessonType } from "@/components/player/lesson-kind";
+import { ArticleContentView } from "@/components/lesson/article-content-view";
 import { resolveLivestreamRoomHref } from "@/lib/lesson-content-link";
 import type { LessonProgressResponse } from "@/services/enrollment.service";
 import type { Quiz } from "@/services/quiz.service";
@@ -39,6 +40,7 @@ import {
   VIDEO_PROCESSING_MESSAGE,
 } from "@/lib/hls-playback";
 import {
+  useQuiz,
   useStartQuiz,
   useSubmitQuiz,
   useQuizzesByLesson,
@@ -63,8 +65,14 @@ import type { ApiCourse } from "@/services/course.service";
  * `locked` / `lock_reason` / `progress` đến TỪ SERVER (contract §2) — KHÔNG suy ra
  * ở client. Trước đây chỗ này gán `locked: !lesson.is_preview`, tức mọi bài không
  * phải preview đều bị khoá, kể cả bài đã học xong. Server là nguồn duy nhất.
+ *
+ * `currentLessonType`: curriculum KHÔNG trả loại bài học (`lesson.type` deprecated, luôn rỗng) nên
+ * loại chỉ biết được cho bài ĐANG XEM, từ lesson content (`resolveLessonKind`). Bài khác mặc định "video".
  */
-function mapSectionsToChapters(sections: Section[]): PlayerChapter[] {
+function mapSectionsToChapters(
+  sections: Section[],
+  currentLessonType?: { lessonId: string; type: PlayerLesson["type"] }
+): PlayerChapter[] {
   return sections.map((section) => ({
     id: section.id,
     title: section.title,
@@ -79,7 +87,7 @@ function mapSectionsToChapters(sections: Section[]): PlayerChapter[] {
       duration: lesson.duration_minutes
         ? `${lesson.duration_minutes}:00`
         : "00:00",
-      type: lesson.type === "article" ? "reading" : (lesson.type as PlayerLesson["type"]),
+      type: currentLessonType?.lessonId === lesson.id ? currentLessonType.type : "video",
       completed: lesson.progress?.status === "completed",
       locked: lesson.locked ?? false,
       lockReason: lesson.lock_reason ?? null,
@@ -110,7 +118,11 @@ const LANGUAGE_LABELS_VI: Record<string, string> = {
   en: "Tiếng Anh",
 };
 
-function mapApiCourseToPlayerCourse(course: ApiCourse, sections: Section[]): PlayerCourse {
+function mapApiCourseToPlayerCourse(
+  course: ApiCourse,
+  sections: Section[],
+  currentLessonType?: { lessonId: string; type: PlayerLesson["type"] }
+): PlayerCourse {
   return {
     id: course.id,
     title: course.title,
@@ -130,7 +142,7 @@ function mapApiCourseToPlayerCourse(course: ApiCourse, sections: Section[]): Pla
     language: course.language
       ? (LANGUAGE_LABELS_VI[course.language] ?? course.language)
       : "Tiếng Việt",
-    chapters: mapSectionsToChapters(sections),
+    chapters: mapSectionsToChapters(sections, currentLessonType),
     resources: [],
     reviews: [],
   };
@@ -407,6 +419,7 @@ export default function CourseLessonPage() {
   );
   const lessonVideo = lessonContents?.find((c) => c.type === "video");
   const lessonKind = resolveLessonKind(lessonContents);
+  const primaryContent = pickPrimaryContent(lessonContents);
 
   /**
    * A4: báo hoàn thành khoá đúng MỘT lần — chỉ khi khoá CHƯA hoàn thành lúc mở
@@ -426,7 +439,10 @@ export default function CourseLessonPage() {
 
   // Quiz hooks
   const { data: quizzes } = useQuizzesByLesson(isLessonLocked ? "" : lessonId);
-  const lessonQuiz = quizzes?.[0]; // Assume one quiz per lesson
+  // Quiz của bài lấy THEO `quiz_id` của content `quiz` đứng đầu (không phải `quizzes[0]` — một bài có
+  // thể có nhiều quiz). Tab Quiz của player bỏ quiz này để nó không hiện hai lần (plan D2).
+  const { data: lessonQuiz, isError: lessonQuizError } = useQuiz(lessonKind === "quiz" ? primaryContent?.quiz_id : undefined);
+  const tabQuizzes = quizzesForTab(quizzes, lessonContents);
   const startQuizMutation = useStartQuiz();
   const submitQuizMutation = useSubmitQuiz();
   const saveAnswerMutation = useSaveQuizAnswer();
@@ -488,7 +504,10 @@ export default function CourseLessonPage() {
 
   if (!apiCourse) notFound();
 
-  const course = mapApiCourseToPlayerCourse(apiCourse, sections);
+  const course = mapApiCourseToPlayerCourse(apiCourse, sections, {
+    lessonId,
+    type: toPlayerLessonType(lessonKind),
+  });
   const currentLesson = getLessonById(course, lessonId);
 
   // S8: URL bài học trỏ tới bài KHÔNG có trong curriculum -> 404 thật. Dùng curriculum THÔ
@@ -608,8 +627,8 @@ export default function CourseLessonPage() {
   const renderContent = () => {
     if (lockNotice) return lockNotice;
 
-    // Quiz lesson
-    if (currentLesson?.type === "quiz") {
+    // Quiz lesson — loại bài lấy từ lesson content, không phải `lesson.type` (curriculum không trả).
+    if (lessonKind === "quiz") {
       // Đã nộp — đọc kết quả THẬT từ server, không dựng lại ở client (§6).
       if (submittedAttemptId) {
         if (isLoadingAttemptDetail) {
@@ -670,7 +689,7 @@ export default function CourseLessonPage() {
               </svg>
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">
-              {lessonQuiz?.title || "Bài kiểm tra"}
+              {lessonQuiz?.title || primaryContent?.title || "Bài kiểm tra"}
             </h2>
             {lessonQuiz?.description && (
               <p className="text-gray-500 mb-4">{lessonQuiz.description}</p>
@@ -683,8 +702,10 @@ export default function CourseLessonPage() {
                 <span>Số lần làm tối đa: {lessonQuiz.max_attempts}</span>
               ) : null}
             </div>
-            {quizError && (
-              <p className="text-red-500 text-sm mb-4">{quizError}</p>
+            {(quizError || lessonQuizError) && (
+              <p className="text-red-500 text-sm mb-4">
+                {quizError ?? "Không tải được bài kiểm tra này. Vui lòng tải lại trang."}
+              </p>
             )}
             <button
               onClick={handleStartQuiz}
@@ -709,8 +730,37 @@ export default function CourseLessonPage() {
       );
     }
 
+    // Bài viết (content `article`): hiển thị nội dung đã sanitize + "Đánh dấu đã đọc".
+    if (lessonKind === "article" && currentLesson) {
+      return (
+        <div className="flex-1 min-w-0 overflow-y-auto p-3 sm:p-5 pb-40 lg:pb-5 space-y-4">
+          <ArticleContentView
+            lessonId={lessonId}
+            courseId={course.id}
+            title={currentLesson.title}
+            body={primaryContent?.article_body}
+            readingTimeMinutes={primaryContent?.reading_time_minutes}
+            completed={currentLesson.completed}
+            onProgress={handleLessonProgress}
+          />
+          {next && (
+            <Link
+              href={`/learn/${courseSlug}/${next.id}`}
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary-600 text-white font-medium text-sm hover:bg-primary-700 transition-colors shadow-sm whitespace-nowrap"
+            >
+              Bài tiếp theo
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          )}
+          <div className="bg-white rounded-2xl shadow-sm px-4 sm:px-6 pb-4">
+            <PlayerTabs course={course} lessonQuizzes={tabQuizzes} />
+          </div>
+        </div>
+      );
+    }
+
     // Bài không có video: bài tập / buổi live (A2) — xem resolveLessonKind.
-    if (lessonKind !== "video" && currentLesson) {
+    if ((lessonKind === "exercise" || lessonKind === "livestream") && currentLesson) {
       const rawLesson = findRawLesson(sections, lessonId);
       const livestreamContent = lessonContents?.find((c) => c.type === "livestream");
       return (
@@ -753,7 +803,7 @@ export default function CourseLessonPage() {
         subtitleUrl={lessonVideo?.subtitle_url}
         durationSeconds={lessonVideo?.duration}
         studentCount={apiCourse.total_students ?? 0}
-        lessonQuizzes={quizzes}
+        lessonQuizzes={tabQuizzes}
         onProgress={handleLessonProgress}
       />
     );

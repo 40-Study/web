@@ -24,6 +24,7 @@ import {
   Paperclip,
   AlertCircle,
   RefreshCw,
+  BookOpen,
 } from "lucide-react";
 import {
   Dialog,
@@ -51,11 +52,12 @@ import { parseLessonDuration } from "@/lib/lesson-duration";
 import { getErrorMessage } from "@/lib/error-messages";
 import { hasContentFormErrors, validateContentForm } from "@/lib/add-content-validation";
 import { VideoDurationField } from "@/components/teacher/video-duration-field";
+import { ArticleContentForm, type ArticleFormValue, type ArticleSubmitResult } from "@/components/teacher/article-content-form";
 import type { Class } from "@/services/class.service";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
-export type ContentType = "video" | "livestream" | "exercise";
+export type ContentType = "video" | "livestream" | "exercise" | "article";
 export type ExerciseType = "quiz" | "code" | "essay";
 
 interface UploadedFile {
@@ -136,7 +138,18 @@ export interface ExerciseContentData {
   maxWords?: number;
 }
 
-export type ContentData = VideoContentData | LivestreamContentData | ExerciseContentData;
+/** Bài viết (content `article`, contract C1): tiêu đề + HTML Tiptap. */
+export interface ArticleContentData {
+  type: "article";
+  title: string;
+  articleBody: string;
+}
+
+export type ContentData =
+  | VideoContentData
+  | LivestreamContentData
+  | ExerciseContentData
+  | ArticleContentData;
 
 /**
  * Kết quả `onSubmit`. `void`/`true` = xong, modal đóng. `false` hoặc `{ error }` = thất bại: modal
@@ -170,6 +183,7 @@ const CONTENT_TYPES = [
   { type: "video" as const, label: "Video bài giảng", icon: Play, color: "text-blue-600", bg: "bg-blue-50" },
   { type: "livestream" as const, label: "Buổi học trực tiếp", icon: Radio, color: "text-rose-600", bg: "bg-rose-50" },
   { type: "exercise" as const, label: "Bài tập", icon: FileText, color: "text-amber-600", bg: "bg-amber-50" },
+  { type: "article" as const, label: "Bài viết", icon: BookOpen, color: "text-emerald-600", bg: "bg-emerald-50" },
 ];
 
 const EXERCISE_TYPES = [
@@ -440,6 +454,18 @@ export function AddContentModal({
     }
   }, [submitting, formErrors, contentType, exerciseType, videoTitle, videoDesc, videoUrl, videoDuration, uploadedVideoUrl, videoDocs, videoQuiz, liveTitle, liveDesc, liveDate, liveTime, effectiveClassId, liveRecording, liveDocs, liveQuiz, exTitle, exDesc, exQuiz, exTimeLimit, exLanguage, exTestCases, exSolution, exMinWords, exMaxWords, onSubmit, handleClose]);
 
+  // Bài viết: form tự giữ tiêu đề/nội dung; ở đây chỉ chuyển kết quả của cha về cho form (lỗi -> form
+  // hiện và giữ nguyên nội dung, thành công -> đóng modal).
+  const handleArticleSubmit = useCallback(
+    async (value: ArticleFormValue): Promise<ArticleSubmitResult> => {
+      const result = await onSubmit({ type: "article", title: value.title, articleBody: value.articleBody });
+      if (result === false) return false;
+      if (typeof result === "object" && result !== null) return result;
+      handleClose();
+    },
+    [onSubmit, handleClose]
+  );
+
   // Document handlers
   const addDocs = useCallback((files: FileList, target: "video" | "live") => {
     const arr = Array.from(files);
@@ -535,6 +561,8 @@ export function AddContentModal({
               ? "Thêm Video bài giảng"
               : contentType === "livestream"
               ? "Lên lịch buổi học trực tiếp"
+              : contentType === "article"
+              ? "Thêm bài viết"
               : !exerciseType
               ? "Chọn loại bài tập"
               : exerciseType === "quiz"
@@ -548,7 +576,7 @@ export function AddContentModal({
         <div className="flex-1 min-h-0 overflow-y-auto px-1">
           {/* ════ Step 1: Choose content type ════ */}
           {!contentType && (
-            <div className="grid grid-cols-3 gap-4 py-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-6">
               {CONTENT_TYPES.map((ct) => {
                 const Icon = ct.icon;
                 return (
@@ -564,6 +592,13 @@ export function AddContentModal({
                   </button>
                 );
               })}
+            </div>
+          )}
+
+          {/* ════ Article Form ════ */}
+          {contentType === "article" && (
+            <div className="py-2">
+              <ArticleContentForm submitLabel="Lưu bài viết" onSubmit={handleArticleSubmit} onCancel={handleClose} />
             </div>
           )}
 

@@ -23,6 +23,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   Bell,
+  BookOpen,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -119,6 +120,24 @@ const CONTENT_TYPES = [
     color: "text-amber-600",
     bg: "bg-amber-50",
     border: "border-amber-200",
+  },
+  {
+    type: "article",
+    label: "Bài viết",
+    desc: "Bài đọc có định dạng",
+    icon: BookOpen,
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+  },
+  {
+    type: "quiz",
+    label: "Trắc nghiệm",
+    desc: "Bài kiểm tra trắc nghiệm",
+    icon: FileQuestion,
+    color: "text-violet-600",
+    bg: "bg-violet-50",
+    border: "border-violet-200",
   },
 ];
 
@@ -731,6 +750,9 @@ export default function CourseDetailPage() {
   const handleAddContent = async (data: ContentData): Promise<ContentSubmitResult> => {
     // Việc đã tạo xong trước khi một bước sau lỗi — gỡ lại để bấm "lưu" lần nữa không nhân đôi nội dung.
     const undoStack: Array<() => Promise<unknown>> = [];
+    // T5: toast thành công CHỈ bật một lần, sau khi mọi bước (kể cả làm mới danh sách) đã xong; lỗi chỉ
+    // bật ở `catch`. Bật ngay trong từng nhánh khiến một lỗi ở bước sau cho ra hai toast mâu thuẫn.
+    let successMessage: string | null = null;
     try {
       const { lessonContentService } = await import("@/services/lesson-content.service");
 
@@ -785,7 +807,7 @@ export default function CourseDetailPage() {
             });
           }
         }
-        toast.success("Đã thêm video");
+        successMessage = "Đã thêm video";
       } else if (data.type === "livestream") {
         // Phase 0 vòng 3 (M-1): buổi live tạo từ TRONG một bài học phải xuất hiện
         // trong danh sách nội dung của bài học đó — đi đúng đường nhánh video
@@ -826,6 +848,15 @@ export default function CourseDetailPage() {
         if (result.lessonContentId && currentLessonId) {
           queryClient.invalidateQueries({ queryKey: lessonContentKeys.contents(currentLessonId) });
         }
+      } else if (data.type === "article") {
+        // Contract C1: nội dung là HTML Tiptap; backend từ chối rỗng/quá 200000 ký tự (form đã chặn trước).
+        await lessonContentService.createContent(currentLessonId || "", {
+          type: "article",
+          title: data.title,
+          article_body: data.articleBody,
+          is_mandatory: true,
+        });
+        successMessage = "Đã thêm bài viết";
       } else if (data.type === "exercise") {
         if (data.exerciseType === "quiz" && data.quizQuestions) {
           const { quizService } = await import("@/services/quiz.service");
@@ -852,7 +883,19 @@ export default function CourseDetailPage() {
               })),
             });
           }
-          toast.success("Đã tạo bài trắc nghiệm");
+          // T2: quiz + câu hỏi đã lưu thì phải có hàng lesson_content trỏ tới nó, nếu không bài vẫn
+          // "Chưa có nội dung". Lỗi ở đây ném ra `catch` -> undoStack xoá quiz vừa tạo (bấm lưu lại không
+          // nhân đôi quiz mồ côi).
+          const quizContent = await lessonContentService.createContent(currentLessonId || "", {
+            type: "quiz",
+            title: data.title,
+            quiz_id: quiz.id,
+            is_mandatory: true,
+          });
+          if (quizContent?.id) {
+            undoStack.push(() => lessonContentService.deleteContent(currentLessonId || "", quizContent.id));
+          }
+          successMessage = "Đã tạo bài trắc nghiệm";
         } else if (data.exerciseType === "code") {
           // Create exercise first, then link to lesson content
           const { exerciseService } = await import("@/services/exercise.service");
@@ -868,7 +911,7 @@ export default function CourseDetailPage() {
             exercise_id: exercise.id,
             is_mandatory: true,
           });
-          toast.success("Đã tạo bài tập code");
+          successMessage = "Đã tạo bài tập code";
         } else {
           // Essay exercise - create exercise first
           const { exerciseService } = await import("@/services/exercise.service");
@@ -882,7 +925,7 @@ export default function CourseDetailPage() {
             exercise_id: exercise.id,
             is_mandatory: true,
           });
-          toast.success("Đã tạo bài tự luận");
+          successMessage = "Đã tạo bài tự luận";
         }
       }
 
@@ -893,6 +936,7 @@ export default function CourseDetailPage() {
         await queryClient.invalidateQueries({ queryKey: lessonContentKeys.contents(currentLessonId) });
       }
 
+      if (successMessage) toast.success(successMessage);
       setAddContentModal(false);
       setCurrentLessonId(null);
       return true;
@@ -1041,6 +1085,11 @@ export default function CourseDetailPage() {
                   onDeleteSection={handleDeleteSection}
                   onOpenAddModal={openAddContentModal}
                   onEditContent={(content) => {
+                    // Nội dung bài viết sửa trên trang bài học (có trình soạn thảo); modal chỉ đổi tiêu đề.
+                    if (content.type === "article") {
+                      router.push(`/teacher/courses/${courseId}/lessons/${content.lesson_id}`);
+                      return;
+                    }
                     setEditingContent(content);
                     setCurrentLessonId(content.lesson_id);
                     setEditContentModal(true);

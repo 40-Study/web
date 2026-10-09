@@ -10,6 +10,7 @@
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ApiError } from "@/lib/errors";
+import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
@@ -86,7 +87,12 @@ vi.mock("@/services/lesson-content.service", () => ({
 }));
 
 // Kết quả handleAddContent trả cho modal (T4): true = đóng, false/{error} = giữ modal mở.
-const submitState = vi.hoisted(() => ({ results: [] as unknown[], quizQuestions: [] as unknown[] }));
+const submitState = vi.hoisted(() => ({
+  results: [] as unknown[],
+  quizQuestions: [] as unknown[],
+  // Khác `undefined` thì modal giả gửi đúng payload này thay cho video mặc định.
+  payload: undefined as unknown,
+}));
 const mockQuizCreate = vi.fn();
 const mockQuizDelete = vi.fn();
 const mockQuizCreateQuestion = vi.fn();
@@ -112,12 +118,14 @@ vi.mock("@/components/teacher/add-content-modal", () => ({
         type="button"
         onClick={async () => {
           submitState.results.push(
-            await onSubmit({
-              type: "video",
-              title: "Video mới",
-              videoUrl: "https://youtu.be/abc",
-              quizQuestions: submitState.quizQuestions,
-            }),
+            await onSubmit(
+              submitState.payload ?? {
+                type: "video",
+                title: "Video mới",
+                videoUrl: "https://youtu.be/abc",
+                quizQuestions: submitState.quizQuestions,
+              },
+            ),
           );
         }}
       >
@@ -136,6 +144,9 @@ function resetMocks() {
   mockCreateContent.mockReset().mockResolvedValue({ id: "ct-new" });
   submitState.results = [];
   submitState.quizQuestions = [];
+  submitState.payload = undefined;
+  vi.mocked(toast.success).mockClear();
+  vi.mocked(toast.error).mockClear();
   mockQuizCreate.mockReset().mockResolvedValue({ id: "quiz-1" });
   mockQuizDelete.mockReset().mockResolvedValue(undefined);
   mockDeleteContent.mockReset().mockResolvedValue(undefined);
@@ -205,5 +216,97 @@ describe("/teacher/courses/[id] — kết quả thêm nội dung trả cho modal
     expect(result).toEqual({ error: "Mỗi câu hỏi trắc nghiệm cần có đáp án đúng trước khi lưu" });
     expect(mockQuizDelete).toHaveBeenCalledWith("quiz-1");
     expect(mockDeleteContent).toHaveBeenCalledWith("les-1", "ct-new");
+  });
+});
+
+
+// QA 261008 T2/T5/T7 — quiz và bài viết phải thành hàng lesson_content; một lần lưu = đúng một toast.
+describe("/teacher/courses/[id] — nhánh trắc nghiệm và bài viết (T2/T5/T7)", () => {
+  const quizPayload = {
+    type: "exercise",
+    exerciseType: "quiz",
+    title: "Kiểm tra Git",
+    description: "",
+    timeLimit: 600,
+    quizQuestions: [
+      { id: "q1", question: "Git là gì?", correctId: "a", options: [{ id: "a", text: "VCS" }, { id: "b", text: "IDE" }] },
+    ],
+  };
+
+  async function submit(payload: unknown) {
+    submitState.payload = payload;
+    render(<TeacherCourseDetailPage />);
+    fireEvent.click(screen.getByText("Bài 1"));
+    fireEvent.click(screen.getByRole("button", { name: /Thêm nội dung/ }));
+    fireEvent.click(screen.getByRole("button", { name: "gui-video" }));
+    await waitFor(() => expect(submitState.results).toHaveLength(1));
+    return submitState.results[0];
+  }
+
+  beforeEach(resetMocks);
+
+  it("T2: lưu quiz xong thì tạo content type 'quiz' trỏ tới quiz đó, SAU khi câu hỏi đã lưu", async () => {
+    expect(await submit(quizPayload)).toBe(true);
+
+    expect(mockCreateContent).toHaveBeenCalledTimes(1);
+    expect(mockCreateContent).toHaveBeenCalledWith("les-1", {
+      type: "quiz",
+      title: "Kiểm tra Git",
+      quiz_id: "quiz-1",
+      is_mandatory: true,
+    });
+    expect(mockQuizCreateQuestion.mock.invocationCallOrder[0]).toBeLessThan(
+      mockCreateContent.mock.invocationCallOrder[0],
+    );
+    expect(mockInvalidate).toHaveBeenCalledWith({ queryKey: ["lesson-content", "contents", "les-1"] });
+  });
+
+  it("T2: tạo content lỗi (409 quiz không thuộc bài) -> xoá quiz vừa tạo, trả { error } của backend", async () => {
+    mockCreateContent.mockRejectedValue(
+      new ApiError(409, "QUIZ_LESSON_MISMATCH", "Bài kiểm tra không thuộc bài học này"),
+    );
+    const result = await submit(quizPayload);
+
+    expect(result).toEqual({ error: "Bài kiểm tra không thuộc bài học này" });
+    expect(mockQuizDelete).toHaveBeenCalledWith("quiz-1");
+    expect(mockInvalidate).not.toHaveBeenCalledWith({ queryKey: ["lesson-content", "contents", "les-1"] });
+  });
+
+  it("T5: lưu quiz thành công -> đúng MỘT toast thành công, không có toast lỗi", async () => {
+    await submit(quizPayload);
+    expect(toast.success).toHaveBeenCalledTimes(1);
+    expect(toast.success).toHaveBeenCalledWith("Đã tạo bài trắc nghiệm");
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("T5: lưu quiz thất bại -> đúng MỘT toast lỗi và KHÔNG có toast 'Đã tạo' mâu thuẫn", async () => {
+    mockCreateContent.mockRejectedValue(new Error("boom"));
+    await submit(quizPayload);
+    expect(toast.error).toHaveBeenCalledTimes(1);
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it("T7: bài viết -> createContent type 'article' mang article_body, rồi làm mới danh sách", async () => {
+    const result = await submit({ type: "article", title: "Bài đọc 1", articleBody: "<p>Nội dung</p>" });
+
+    expect(result).toBe(true);
+    expect(mockCreateContent).toHaveBeenCalledWith("les-1", {
+      type: "article",
+      title: "Bài đọc 1",
+      article_body: "<p>Nội dung</p>",
+      is_mandatory: true,
+    });
+    expect(mockInvalidate).toHaveBeenCalledWith({ queryKey: ["lesson-content", "contents", "les-1"] });
+    expect(toast.success).toHaveBeenCalledWith("Đã thêm bài viết");
+    expect(mockQuizCreate).not.toHaveBeenCalled();
+  });
+
+  it("T7: backend từ chối bài viết (400 ARTICLE_BODY_TOO_LONG) -> trả { error } để form giữ nguyên nội dung", async () => {
+    mockCreateContent.mockRejectedValue(
+      new ApiError(400, "ARTICLE_BODY_TOO_LONG", "Nội dung bài viết quá dài"),
+    );
+    const result = await submit({ type: "article", title: "Bài đọc 1", articleBody: "<p>x</p>" });
+    expect(result).toEqual({ error: "Nội dung bài viết quá dài" });
+    expect(toast.success).not.toHaveBeenCalled();
   });
 });

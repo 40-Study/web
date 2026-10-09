@@ -1,5 +1,5 @@
 /**
- * Lesson content service — video, livestream, exercise contents per lesson
+ * Lesson content service — video, livestream, exercise, article, quiz contents per lesson
  * Endpoints: /lessons/:lessonId/contents, /lesson-contents/:contentId/classes
  */
 
@@ -7,7 +7,7 @@ import { api } from "@/lib/api-client";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-export type ContentType = "video" | "livestream" | "exercise";
+export type ContentType = "video" | "livestream" | "exercise" | "article" | "quiz";
 
 export interface LessonContent {
   id: string;
@@ -28,6 +28,12 @@ export interface LessonContent {
   thumbnail_url?: string;
   duration?: number;
   exercise_id?: string;
+  /** Nội dung bài viết (HTML Tiptap) — chỉ có ở content `article`. Render qua `sanitizeHtml`. */
+  article_body?: string;
+  /** Thời gian đọc ước tính (phút) — server TÍNH khi trả response, không lưu. Chỉ `article`. */
+  reading_time_minutes?: number;
+  /** Quiz mà content `quiz` trỏ tới — chỉ có ở content `quiz`. */
+  quiz_id?: string;
   /**
    * id PHIÊN livestream của hàng nội dung type `livestream` (M-6).
    *
@@ -65,15 +71,37 @@ export interface CreateExerciseContentDTO {
   is_mandatory?: boolean;
 }
 
+/** Contract C1 — `article_body` là HTML Tiptap; backend giới hạn 200000 ký tự. */
+export interface CreateArticleContentDTO {
+  type: "article";
+  title: string;
+  article_body: string;
+  is_mandatory?: boolean;
+  display_order?: number;
+}
+
+/** Contract C1 — quiz phải thuộc CÙNG bài học và chưa được content khác giữ. */
+export interface CreateQuizContentDTO {
+  type: "quiz";
+  title: string;
+  quiz_id: string;
+  is_mandatory?: boolean;
+  display_order?: number;
+}
+
 export type CreateContentDTO =
   | CreateVideoContentDTO
   | CreateLivestreamContentDTO
-  | CreateExerciseContentDTO;
+  | CreateExerciseContentDTO
+  | CreateArticleContentDTO
+  | CreateQuizContentDTO;
 
+/** Không có `type`: backend trả 400 CONTENT_TYPE_IMMUTABLE nếu PUT đổi loại article/quiz. */
 export interface UpdateContentDTO {
   title?: string;
   duration?: number;
   is_mandatory?: boolean;
+  article_body?: string;
 }
 
 export interface ReorderItem {

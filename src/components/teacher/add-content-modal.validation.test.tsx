@@ -9,6 +9,13 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AddContentModal, type ContentSubmitResult } from "./add-content-modal";
 
+// Tiptap thật cần DOM/ProseMirror đầy đủ; test chỉ cần một ô nhập phát `onChange(html)`.
+vi.mock("@/components/editor/tiptap-editor", () => ({
+  TiptapEditor: ({ value, onChange }: { value?: string; onChange?: (html: string) => void }) => (
+    <textarea aria-label="Nội dung bài viết" value={value ?? ""} onChange={(e) => onChange?.(e.target.value)} />
+  ),
+}));
+
 function renderModal(onSubmit: (d: unknown) => ContentSubmitResult | Promise<ContentSubmitResult>) {
   const onOpenChange = vi.fn();
   render(
@@ -185,5 +192,76 @@ describe("AddContentModal — câu trắc nghiệm phải có đáp án đúng (
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByTestId("add-content-validation-error").textContent).toContain("chưa chọn đáp án đúng");
     expect(screen.getByTestId("quiz-question-0")).toBeTruthy(); // đã chuyển sang tab Quiz
+  });
+});
+
+
+// QA 261008 T1/T7 — loại nội dung "Bài viết".
+describe("AddContentModal — bài viết (T1/T7)", () => {
+  async function openArticleForm() {
+    await click(screen.getByText("Bài viết"));
+  }
+  const saveArticle = () => screen.getByRole("button", { name: "Lưu bài viết" });
+  const body = () => screen.getByLabelText("Nội dung bài viết");
+
+  it("bước chọn loại có thêm 'Bài viết' bên cạnh video, buổi live và bài tập", () => {
+    renderModal(vi.fn());
+    for (const label of ["Video bài giảng", "Buổi học trực tiếp", "Bài tập", "Bài viết"]) {
+      expect(screen.getByText(label)).toBeTruthy();
+    }
+  });
+
+  it("nội dung trống (Tiptap phát <p></p>) -> nút lưu bị vô hiệu hoá, không gửi", async () => {
+    const onSubmit = vi.fn();
+    renderModal(onSubmit);
+    await openArticleForm();
+    await type(screen.getByLabelText("Tiêu đề bài viết"), "Bài đọc");
+    await type(body(), "<p></p>");
+
+    expect((saveArticle() as HTMLButtonElement).disabled).toBe(true);
+    await click(saveArticle());
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("tiêu đề trống: KHÔNG gửi, báo lỗi ở ô tiêu đề, giữ nguyên nội dung đã viết", async () => {
+    const onSubmit = vi.fn();
+    const { onOpenChange } = renderModal(onSubmit);
+    await openArticleForm();
+    await type(body(), "<p>Đã viết khá dài</p>");
+
+    await click(saveArticle());
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+    expect(screen.getByText("Vui lòng nhập tiêu đề.")).toBeTruthy();
+    expect((body() as HTMLTextAreaElement).value).toBe("<p>Đã viết khá dài</p>");
+  });
+
+  it("hợp lệ -> gửi { type: 'article', title, articleBody } rồi đóng modal", async () => {
+    const onSubmit = vi.fn().mockResolvedValue(true);
+    const { onOpenChange } = renderModal(onSubmit);
+    await openArticleForm();
+    await type(screen.getByLabelText("Tiêu đề bài viết"), "  Bài đọc 1  ");
+    await type(body(), "<p>Nội dung</p>");
+
+    await click(saveArticle());
+
+    expect(onSubmit).toHaveBeenCalledWith({ type: "article", title: "Bài đọc 1", articleBody: "<p>Nội dung</p>" });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("backend từ chối ({ error }) -> modal GIỮ MỞ, hiện lý do và còn nguyên tiêu đề + nội dung", async () => {
+    const onSubmit = vi.fn().mockResolvedValue({ error: "Nội dung bài viết quá dài" });
+    const { onOpenChange } = renderModal(onSubmit);
+    await openArticleForm();
+    await type(screen.getByLabelText("Tiêu đề bài viết"), "Bài đọc 1");
+    await type(body(), "<p>Nội dung dài</p>");
+
+    await click(saveArticle());
+
+    expect(screen.getByTestId("article-submit-error").textContent).toBe("Nội dung bài viết quá dài");
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+    expect((screen.getByLabelText("Tiêu đề bài viết") as HTMLInputElement).value).toBe("Bài đọc 1");
+    expect((body() as HTMLTextAreaElement).value).toBe("<p>Nội dung dài</p>");
   });
 });

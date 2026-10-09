@@ -35,6 +35,37 @@ const COPY: Record<NonVideoLessonKind, { badge: string; hint: string }> = {
 };
 
 /**
+ * Gửi `status: "completed"` cho bài KHÔNG có video (bài tập, buổi live, bài viết) rồi làm mới tiến độ.
+ * Dùng chung với `ArticleContentView` — một đường duy nhất tới `PUT /lessons/:id/progress`.
+ */
+export function useMarkLessonCompleted({
+  lessonId,
+  courseId,
+  onProgress,
+}: {
+  lessonId: string;
+  courseId: string;
+  onProgress?: (progress: LessonProgressResponse) => void;
+}) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => enrollmentService.updateProgress(lessonId, { status: "completed" }),
+    onSuccess: (progress) => {
+      invalidateAfterLessonProgress(queryClient, courseId);
+      if (progress.status === "completed") {
+        toast.success("Đã ghi nhận hoàn thành bài học.");
+      } else {
+        toast.error("Chưa ghi nhận được hoàn thành. Vui lòng thử lại.");
+      }
+      onProgress?.(progress);
+    },
+    onError: () => {
+      toast.error("Không lưu được tiến độ. Vui lòng kiểm tra kết nối và thử lại.");
+    },
+  });
+}
+
+/**
  * Bài không có video (bài tập, buổi live) — A2, QA vòng 2 (N6).
  *
  * Trước đây trang học coi mọi bài là video: bài tập hiện "Video không khả dụng"
@@ -54,24 +85,8 @@ export function NonVideoLessonContent({
   livestreamHref,
   onProgress,
 }: NonVideoLessonContentProps) {
-  const queryClient = useQueryClient();
   const copy = COPY[kind];
-
-  const markCompleted = useMutation({
-    mutationFn: () => enrollmentService.updateProgress(lessonId, { status: "completed" }),
-    onSuccess: (progress) => {
-      invalidateAfterLessonProgress(queryClient, courseId);
-      if (progress.status === "completed") {
-        toast.success("Đã ghi nhận hoàn thành bài học.");
-      } else {
-        toast.error("Chưa ghi nhận được hoàn thành. Vui lòng thử lại.");
-      }
-      onProgress?.(progress);
-    },
-    onError: () => {
-      toast.error("Không lưu được tiến độ. Vui lòng kiểm tra kết nối và thử lại.");
-    },
-  });
+  const markCompleted = useMarkLessonCompleted({ lessonId, courseId, onProgress });
 
   const isDone = completed || markCompleted.data?.status === "completed";
 
