@@ -31,6 +31,7 @@ import type { TimetableEntry } from "@/services/parent-dashboard.service";
 import { ChildCoursesTab } from "@/components/parent/child-courses-tab";
 import { ChildOverviewTab } from "@/components/parent/child-overview-tab";
 import { assignmentTypeLabel, difficultyLabel, gradeTypeLabel, roomLabel } from "@/lib/display-labels";
+import { formatStudyMinutes } from "@/lib/format-study-time";
 
 type TabType = "overview" | "courses" | "grades" | "schedule" | "attendance" | "assignments";
 
@@ -238,7 +239,7 @@ export default function ChildDetailPage() {
             <Clock className="w-5 h-5" />
             <span className="text-sm font-medium">Thời gian học</span>
           </div>
-          <p className="text-2xl font-bold">{Math.round(overview.total_study_minutes / 60)}h</p>
+          <p className="text-2xl font-bold">{formatStudyMinutes(overview.total_study_minutes)}</p>
         </div>
       </div>
 
@@ -362,7 +363,7 @@ export default function ChildDetailPage() {
                 <>
                   {/* Stats */}
                   {attendanceData?.stats && (
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
                       <div className="text-center p-3 rounded-lg bg-gray-50">
                         <p className="text-2xl font-bold">{attendanceData.stats.total_sessions}</p>
                         <p className="text-xs text-gray-500">Tổng buổi</p>
@@ -384,6 +385,14 @@ export default function ChildDetailPage() {
                           {attendanceData.stats.absent_count}
                         </p>
                         <p className="text-xs text-gray-500">Vắng</p>
+                      </div>
+                      {/* P6: buổi nghỉ có phép phải có thẻ riêng, nếu không
+                          present+late+absent không bằng tổng. */}
+                      <div className="text-center p-3 rounded-lg bg-blue-50">
+                        <p className="text-2xl font-bold text-blue-600">
+                          {attendanceData.stats.excused_count}
+                        </p>
+                        <p className="text-xs text-gray-500">Có phép</p>
                       </div>
                       <div className="text-center p-3 rounded-lg bg-primary-50">
                         <p className="text-2xl font-bold text-primary-600">

@@ -14,12 +14,17 @@ import {
   useRevokeSystemRoleFromUser,
 } from "@/hooks/queries/use-admin";
 import { Can } from "@/components/guards";
-import { PERMISSIONS } from "@/lib/permissions";
+import { PERMISSIONS, SYSTEM_ROLES } from "@/lib/permissions";
 import { getSystemRoleLabel } from "@/lib/role-labels";
 import type { SystemRole, UserSystemRoleItem } from "@/services/role.service";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { formatVnDateTime } from "../_lib/format-vn-datetime";
+
+// A1: vai trò hệ thống dựng sẵn (seed từ data/roles.json) không xoá được — backend trả 409
+// SYSTEM_ROLE_PROTECTED. Danh sách lấy từ SYSTEM_ROLES (SSOT dùng chung) thay vì hardcode.
+const BUILT_IN_ROLE_NAMES = new Set<string>(Object.values(SYSTEM_ROLES));
+const BUILT_IN_ROLE_HINT = "Vai trò hệ thống dựng sẵn, không thể xoá";
 
 type RoleFormState = {
   id?: string;
@@ -53,7 +58,7 @@ export default function RolesPage() {
   const [confirmRevoke, setConfirmRevoke] = useState<UserSystemRoleItem | null>(null);
 
   // A-P1-1: không còn seedUsersForRole giả — gán vai trò cho user THẬT theo user_id (UUID).
-  // Chưa có API tìm-user-theo-tên/email (xem A-P1-6 trong báo cáo QA) nên admin phải biết UUID.
+  // Chưa có API tìm-user-theo-tên/email nên admin phải dán UUID (xem ghi chú ở form gán bên dưới).
   const [assignUserId, setAssignUserId] = useState("");
 
   useEffect(() => {
@@ -133,6 +138,12 @@ export default function RolesPage() {
     if (selectedRoleId === roleId) setSelectedRoleId(null);
   };
 
+  // A4: tên/email người giữ vai trò nếu backend trả (RoleMemberDTO); không có thì rơi về user_id
+  // (kèm nhãn để admin biết đó là UUID chứ không phải tên).
+  const memberLabel = (u: UserSystemRoleItem) =>
+    u.user?.full_name || u.user?.user_name || u.user?.email || u.user_id;
+  const memberEmail = (u: UserSystemRoleItem) => u.user?.email;
+
   const submitAssignUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRoleId || !assignUserId.trim()) return;
@@ -145,10 +156,9 @@ export default function RolesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý vai trò & user</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Quản lý vai trò &amp; user</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Số user và danh sách bên dưới lấy từ dữ liệu thật (GET /system-roles/:id/users). API chưa
-          trả tên/email user — chỉ có User ID, trạng thái và thời gian gán.
+          Xem danh sách vai trò, số người dùng theo vai trò, và gán hoặc gỡ vai trò khỏi người dùng.
         </p>
       </div>
 
@@ -159,6 +169,7 @@ export default function RolesPage() {
           ) : (
             rolesWithCounts.map((role) => {
               const active = selectedRole?.id === role.id;
+              const protectedRole = BUILT_IN_ROLE_NAMES.has(role.name);
 
               return (
                 <div key={role.id} className={`rounded-lg bg-white p-4 shadow-sm ${active ? "ring-2 ring-primary-200" : ""}`}>
@@ -185,7 +196,14 @@ export default function RolesPage() {
                       <Button size="sm" variant="outline" onClick={() => startEditRole(role)}>
                         Sửa role
                       </Button>
-                      <Button size="sm" variant="destructiveGhost" onClick={() => setConfirmDeleteRole(role)}>
+                      <Button
+                        size="sm"
+                        variant="destructiveGhost"
+                        // A1: vai trò hệ thống dựng sẵn không xoá được (backend 409 SYSTEM_ROLE_PROTECTED).
+                        disabled={protectedRole}
+                        title={protectedRole ? BUILT_IN_ROLE_HINT : undefined}
+                        onClick={() => setConfirmDeleteRole(role)}
+                      >
                         Xóa role
                       </Button>
                     </div>
@@ -241,7 +259,10 @@ export default function RolesPage() {
                   <div className="space-y-2">
                     {roleUsers.map((u) => (
                       <div key={u.id} className="rounded border border-gray-100 p-2">
-                        <p className="break-all font-mono text-xs text-gray-900">{u.user_id}</p>
+                        <p className="text-xs font-medium text-gray-900">{memberLabel(u)}</p>
+                        {memberEmail(u) && (
+                          <p className="break-all text-xs text-gray-600">{memberEmail(u)}</p>
+                        )}
                         <p className="mt-1 text-xs text-gray-500">
                           {USER_STATUS_LABEL[u.status] ?? u.status} · Gán lúc {formatVnDateTime(u.granted_at)}
                         </p>
@@ -260,7 +281,7 @@ export default function RolesPage() {
                 <Can permission={PERMISSIONS.MANAGE_ROLES}>
                   <form onSubmit={submitAssignUser} className="space-y-2 rounded border border-gray-200 p-2">
                     <label className="block text-xs font-medium text-gray-700">
-                      Gán vai trò cho user (User ID)
+                      Gán vai trò cho người dùng
                     </label>
                     <input
                       placeholder="UUID của user"
@@ -268,10 +289,6 @@ export default function RolesPage() {
                       onChange={(e) => setAssignUserId(e.target.value)}
                       className="h-9 w-full rounded border border-gray-200 px-2 font-mono text-xs"
                     />
-                    <p className="text-[11px] text-gray-400">
-                      Hệ thống chưa có API tìm user theo tên/email — cần biết UUID (xem trang chi
-                      tiết user hoặc DB).
-                    </p>
                     <button
                       type="submit"
                       disabled={assignUser.isPending}
@@ -316,9 +333,9 @@ export default function RolesPage() {
       {/* Xác nhận gỡ vai trò khỏi user (H-09) */}
       <Dialog open={!!confirmRevoke} onOpenChange={(open) => !open && setConfirmRevoke(null)}>
         <DialogContent>
-          <DialogTitle>Gỡ vai trò khỏi user này?</DialogTitle>
+          <DialogTitle>Gỡ vai trò khỏi người dùng này?</DialogTitle>
           <DialogDescription className="break-all">
-            User ID: {confirmRevoke?.user_id}. Hành động này không thể hoàn tác.
+            {confirmRevoke ? memberLabel(confirmRevoke) : ""}. Hành động này không thể hoàn tác.
           </DialogDescription>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmRevoke(null)}>

@@ -34,6 +34,9 @@ export const HAS_VIETNAMESE_DIACRITICS = /[à-ỹÀ-Ỹ]/;
 const CODE_MESSAGES: Record<string, string> = {
   ACCOUNT_LOCKED: "Tài khoản đã bị khoá. Vui lòng liên hệ quản trị viên.",
   ROLE_IN_USE: "Vai trò này vẫn đang được gán cho thành viên. Hãy gỡ vai trò khỏi các thành viên trước khi xoá.",
+  // A1 (QA 261008): DELETE built-in system role trả 409 `SYSTEM_ROLE_PROTECTED` — vai trò nền tảng,
+  // không xoá được. Backend nói rõ ở câu này nên UI hiện thẳng nó thay vì câu 409 chung.
+  SYSTEM_ROLE_PROTECTED: "Đây là vai trò hệ thống dựng sẵn, không thể xoá. Chỉ có thể xoá vai trò tự tạo.",
   // Ghi vào lớp lưu trữ (409): message của backend là lý do thật nên được ưu tiên (GENERIC_CODES), câu này chỉ là dự phòng.
   CLASS_ARCHIVED: "Lớp đã lưu trữ nên chỉ xem được. Hãy mở lại lớp để chỉnh sửa.",
   TEACHER_NOT_ORG_MEMBER: "Giảng viên này chưa là thành viên của tổ chức. Hãy thêm họ vào tổ chức trước khi gán vào lớp.",
@@ -192,6 +195,8 @@ const EXACT_MESSAGES: Record<string, string> = {
   "teacher profile already exists for this user": "Bạn đã có hồ sơ giảng viên",
   "this role cannot be self-assigned": "Vai trò này không thể tự đăng ký",
   "idempotency key already claimed by a concurrent request": "Yêu cầu đang được xử lý, vui lòng đợi",
+  // Thêm nội dung bài học (QA 261008 T4): quiz_handler.go trả 400 khi thiếu tiêu đề.
+  "title is required": "Vui lòng nhập tiêu đề",
 };
 
 // Mẫu tổng quát cho nhóm lỗi lặp lại hàng trăm biến thể ("x not found", "invalid x_id"...).
@@ -201,6 +206,12 @@ const PATTERN_MESSAGES: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
   [
     /account temporarily locked.*try again in\s*(\d+)\s*minutes?/i,
     (m) => `Tài khoản tạm khoá do nhập sai nhiều lần, vui lòng thử lại sau ${m[1]} phút`,
+  ],
+  // quiz_question_validation.go (QA 261008 T3): "invalid question answers: <type> question must have
+  // exactly 1 / at least 1 correct answer (got N)". Đặt TRƯỚC mẫu `^invalid ` để không bị nuốt.
+  [
+    /question must have (?:exactly|at least) 1 correct answer/i,
+    () => "Mỗi câu hỏi trắc nghiệm cần có đáp án đúng trước khi lưu",
   ],
   [/please login again|session expired|invalid or expired refresh token/i, () => SESSION_EXPIRED_MESSAGE],
   [/^forbidden|not the (owner|teacher)|insufficient permissions|does not belong to you/i, () => FORBIDDEN_MESSAGE],

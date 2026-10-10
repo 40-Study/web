@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatStudyTime } from "./format-study-time";
+import { formatStudyTime, formatStudyMinutes } from "./format-study-time";
 
 describe("formatStudyTime", () => {
   it("chưa xem giây nào thì hiển thị 0m", () => {
@@ -60,5 +60,32 @@ describe("formatStudyTime", () => {
   it("giây thập phân được cắt xuống", () => {
     expect(formatStudyTime(90.9)).toBe("1m");
     expect(formatStudyTime(0.5)).toBe("<1m");
+  });
+});
+
+describe("formatStudyMinutes (thời gian học của con, phụ huynh)", () => {
+  it("gộp giờ + phút, không làm tròn thành giờ", () => {
+    // P5: /home từng hiện "2 giờ 50 phút" còn trang con làm tròn "3h" — phải cùng một kết quả.
+    expect(formatStudyMinutes(170)).toBe("2 giờ 50 phút");
+  });
+
+  it("tròn giờ thì không kèm 0 phút", () => {
+    expect(formatStudyMinutes(180)).toBe("3 giờ");
+  });
+
+  it("dưới 1 giờ chỉ hiện phút", () => {
+    expect(formatStudyMinutes(45)).toBe("45 phút");
+  });
+
+  it("không có dữ liệu thì 0 phút", () => {
+    expect(formatStudyMinutes(0)).toBe("0 phút");
+  });
+
+  it("đầu vào rác quy về 0 phút", () => {
+    expect(formatStudyMinutes(-5)).toBe("0 phút");
+    expect(formatStudyMinutes(NaN)).toBe("0 phút");
+    expect(formatStudyMinutes(Infinity)).toBe("0 phút");
+    expect(formatStudyMinutes(undefined)).toBe("0 phút");
+    expect(formatStudyMinutes(null)).toBe("0 phút");
   });
 });

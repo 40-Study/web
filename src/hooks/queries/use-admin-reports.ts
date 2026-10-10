@@ -10,9 +10,12 @@ import {
 } from "@/services/admin-report.service";
 import { ApiError } from "@/lib/errors";
 
+/** Tiền tố query key của mọi cấu hình admin (platform-fee + trang /admin/settings). */
+export const ADMIN_SETTINGS_KEY_PREFIX = ["admin-settings"] as const;
+
 export const adminReportKeys = {
   revenue: (params?: RevenueReportParams) => ["admin-reports", "revenue", params ?? {}] as const,
-  platformFee: ["admin-settings", "platform-fee"] as const,
+  platformFee: [...ADMIN_SETTINGS_KEY_PREFIX, "platform-fee"] as const,
 };
 
 /** GET /admin/reports/revenue — doanh thu nền tảng thật (gộp/phí/phần GV), không phải ví admin. */
@@ -37,7 +40,8 @@ export function useUpdatePlatformFeeSetting() {
   return useMutation({
     mutationFn: (percent: number) => adminReportService.updatePlatformFee(percent),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: adminReportKeys.platformFee });
+      // Cả báo cáo (đọc platform-fee) lẫn trang /admin/settings (đọc toàn bộ cấu hình) cùng làm mới.
+      qc.invalidateQueries({ queryKey: ADMIN_SETTINGS_KEY_PREFIX });
       toast.success("Đã cập nhật % phí nền tảng");
     },
     onError: (error) => {

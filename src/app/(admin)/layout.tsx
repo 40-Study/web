@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, Banknote, Building2, Flag, FolderTree, LayoutDashboard, LogOut, Receipt, Settings, ShieldCheck, Users } from "lucide-react";
+import { BarChart3, Banknote, Bell, Building2, Flag, FolderTree, LayoutDashboard, LogOut, Receipt, ScrollText, Settings, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
 import { BookCheck, Ticket, Trophy, UserCheck } from "lucide-react";
 
 import { RoleGuard } from "@/components/guards";
@@ -11,9 +11,18 @@ import { Avatar } from "@/components/ui/avatar";
 import { useLogout } from "@/hooks/queries/use-auth";
 import { cn } from "@/lib/utils";
 import { isAdminNavActive } from "@/lib/admin-nav";
+import { PERMISSIONS, type Permission } from "@/lib/permissions";
 import { useAuthStore } from "@/stores/auth.store";
 
-const adminMenu = [
+interface AdminMenuItem {
+  label: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  /** Mục chỉ hiện khi admin có quyền này — API phía sau trả 403 với admin kém quyền (QA 261009 L6). */
+  permission?: Permission;
+}
+
+const adminMenu: AdminMenuItem[] = [
   { label: "Tổng quan", href: "/admin", icon: LayoutDashboard },
   { label: "Người dùng", href: "/admin/users", icon: Users },
   { label: "Quản lý vai trò", href: "/admin/roles", icon: ShieldCheck },
@@ -26,12 +35,10 @@ const adminMenu = [
   // "Ví của tôi" (PR #24) đã được thay bằng báo cáo doanh thu nền tảng THẬT (PR #29) —
   // xem admin/reports/page.tsx. Đổi lại tên mục nav cho khớp nội dung trang thật.
   { label: "Báo cáo hệ thống", href: "/admin/reports", icon: BarChart3 },
-  // TODO (Phase 3): "Nhật ký hoạt động" (/admin/audit-logs) tạm ẩn khỏi nav.
-  // Trang KHÔNG trắng — nó đã có banner amber nói rõ backend chưa có endpoint
-  // audit-log và hiển thị mảng rỗng có chủ đích. Lý do ẩn là mặt mục này chưa
-  // có dữ liệu thật để điều hướng tới. Route + page vẫn giữ nguyên (vào được
-  // bằng URL trực tiếp, vẫn qua RoleGuard của layout); bật lại mục nav khi
-  // backend có API nhật ký hoạt động.
+  // Nhật ký, thông báo hệ thống, cấu hình hệ thống: API đều cần SYSTEM_SETTINGS_MANAGE nên ẩn mục với admin thiếu quyền.
+  { label: "Nhật ký hoạt động", href: "/admin/audit-logs", icon: ScrollText, permission: PERMISSIONS.SYSTEM_SETTINGS_MANAGE },
+  { label: "Thông báo hệ thống", href: "/admin/notifications", icon: Bell, permission: PERMISSIONS.SYSTEM_SETTINGS_MANAGE },
+  { label: "Cấu hình hệ thống", href: "/admin/settings", icon: SlidersHorizontal, permission: PERMISSIONS.SYSTEM_SETTINGS_MANAGE },
   { label: "Duyệt khoá học", href: "/admin/courses", icon: BookCheck },
   { label: "Duyệt giáo viên", href: "/admin/teacher-applications", icon: UserCheck },
   // Cuộc thi (contract contest-feature §7): duyệt, gắn voucher, huỷ và CHỐT kết quả — chỉ admin chốt.
@@ -47,6 +54,8 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const { user } = useAuthStore();
+  const permissions = useAuthStore((s) => s.permissions);
+  const visibleMenu = adminMenu.filter((item) => !item.permission || permissions.includes(item.permission));
   const logoutMutation = useLogout();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -82,7 +91,7 @@ export default function AdminLayout({
             <h2 className="mt-1 font-heading text-lg font-semibold text-foreground">ForteX Admin</h2>
           </div>
           <nav className="space-y-2 p-3" aria-label="Menu quản trị">
-            {adminMenu.map((item) => {
+            {visibleMenu.map((item) => {
               const isActive = isAdminNavActive(pathname, item.href);
 
               return (
@@ -151,7 +160,7 @@ export default function AdminLayout({
               </div>
             </div>
             <nav className="flex gap-2 overflow-x-auto border-t border-border px-4 py-2 md:hidden">
-              {adminMenu.map((item) => {
+              {visibleMenu.map((item) => {
                 const isActive = isAdminNavActive(pathname, item.href);
 
                 return (

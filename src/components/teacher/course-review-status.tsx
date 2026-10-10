@@ -15,6 +15,7 @@ import { AlertTriangle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSubmitCourseReview, useWithdrawCourseReview } from "@/hooks/queries/use-course-approval";
+import { approvalErrorMessage, lessonsWithoutContent } from "@/lib/approval-errors";
 import { COURSE_STATUS_LABEL, isCourseStatus, type CourseStatus } from "@/types/approval";
 
 const BADGE_CLASS: Record<CourseStatus, string> = {
@@ -50,6 +51,34 @@ interface CourseReviewPanelProps {
 
 const EMPTY_COURSE_HINT = "Thêm ít nhất 1 bài học trước khi gửi duyệt.";
 
+/**
+ * T6 (QA 261008): backend chặn gửi duyệt bằng 422 COURSE_LESSON_NO_CONTENT kèm danh sách bài chưa có
+ * nội dung. Toast biến mất sau vài giây — giáo viên cần thấy tên từng bài ngay tại nút gửi duyệt.
+ */
+function SubmitReviewBlockedAlert({ error }: { error: unknown }) {
+  const lessons = lessonsWithoutContent(error);
+  if (!lessons) return null;
+  return (
+    <div
+      role="alert"
+      data-testid="submit-review-no-content"
+      className="w-full rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+    >
+      <p className="font-medium">{approvalErrorMessage(error, "Có bài học chưa có nội dung.")}</p>
+      {lessons.length > 0 && (
+        <>
+          <p className="mt-1 text-xs">Các bài học chưa có nội dung:</p>
+          <ul className="mt-1 list-disc pl-5 text-xs">
+            {lessons.map((lesson) => (
+              <li key={lesson.id}>{lesson.title}</li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
 /** Banner theo trạng thái + nút gửi duyệt/rút yêu cầu. Khoá đã xuất bản/lưu trữ không hiển thị gì. */
 export function CourseReviewPanel({ courseId, status, rejectionReason, lessonCount }: CourseReviewPanelProps) {
   const submitReview = useSubmitCourseReview();
@@ -74,6 +103,7 @@ export function CourseReviewPanel({ courseId, status, rejectionReason, lessonCou
             {EMPTY_COURSE_HINT}
           </span>
         )}
+        <SubmitReviewBlockedAlert error={submitReview.error} />
       </div>
     );
   }
@@ -137,6 +167,7 @@ export function CourseReviewPanel({ courseId, status, rejectionReason, lessonCou
           </Button>
           {isEmpty && <span className="text-xs text-red-700">{EMPTY_COURSE_HINT}</span>}
         </div>
+        <SubmitReviewBlockedAlert error={submitReview.error} />
       </div>
     );
   }

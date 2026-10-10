@@ -7,7 +7,9 @@ import { api } from "@/lib/api-client";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-export type ReportedType = "course" | "review" | "user" | "comment" | "lesson";
+// Backend gửi reported_type = course|user|discussion (xem demo_moderation.go / report DTO). Trước
+// đây union thiếu "discussion" nên nhãn trong REPORTED_TYPE_LABEL không bao giờ được dùng tới.
+export type ReportedType = "course" | "review" | "user" | "comment" | "lesson" | "discussion";
 export type ReportReason = "spam" | "inappropriate" | "copyright" | "harassment" | "other";
 export type ReportStatus = "pending" | "reviewing" | "resolved" | "dismissed";
 

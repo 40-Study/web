@@ -2,10 +2,12 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { AppShellLayout } from "@/components/layout/app-shell-layout";
 import { RoleGuard } from "@/components/guards/role-guard";
 import { canUseFriends } from "@/components/friends/friends-access";
 import { useAuthStore } from "@/stores/auth.store";
+import { getSystemRoleLabel } from "@/lib/role-labels";
 import {
   normalizeRole,
   AUTH_ROUTES,
@@ -117,6 +119,12 @@ export default function AppLayout({
     // → về home của role đó, không phải màn trắng vô thời hạn. Riêng route con cuộc thi
     // (phụ huynh mở /contests/x/play) về trang chi tiết cuộc thi đó (contract §7).
     if (isRoleRestrictedRoute) {
+      // P4: trước đây chuyển hướng IM LẶNG — người dùng tưởng trang trắng/lỗi. Báo một toast
+      // nêu đúng vai trò và vì sao (route chỉ dành cho học viên).
+      toast.warning(
+        `Trang này không dành cho ${getSystemRoleLabel(normalizedRole ?? "")}.`,
+        { description: "Bạn đã được đưa về trang chủ phù hợp với vai trò của mình." }
+      );
       router.replace(getRoleRestrictedRedirect(pathname, normalizedRole));
       return;
     }

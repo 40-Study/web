@@ -11,7 +11,7 @@ const cart: Cart = {
     { id: "ci-2", course_id: "c2", course: { id: "c2", title: "Khoá giá thường", price: 300000 } },
   ],
   total: 799000,
-  item_count: 2,
+  total_item: 2,
 };
 
 vi.mock("@/hooks/queries/use-cart", () => ({

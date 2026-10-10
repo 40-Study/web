@@ -5,7 +5,8 @@
  * Endpoints + envelope: xem withdrawal-contract.md (SSOT chung backend + web).
  */
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   useAdminWithdrawals,
@@ -48,6 +49,21 @@ const LIMIT = 20;
 const STATUS_LIST = Object.keys(WITHDRAWAL_STATUS_LABELS) as WithdrawalStatus[];
 const REASON_MAX_LEN = 500;
 
+/** A8: đọc ?teacher= (uuid) — giá trị không phải UUID coi như không có để khỏi gửi rác lên API. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function parseTeacherParam(raw: string | null): string | null {
+  return raw && UUID_RE.test(raw) ? raw : null;
+}
+
+function parseStatusParam(raw: string | null): WithdrawalStatus | "" {
+  return raw && (STATUS_LIST as string[]).includes(raw) ? (raw as WithdrawalStatus) : "";
+}
+
+function parsePageParam(raw: string | null): number {
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 1 ? n : 1;
+}
+
 function formatDate(iso: string | null): string {
   return iso ? new Date(iso).toLocaleString("vi-VN") : "—";
 }
@@ -57,15 +73,41 @@ function shortId(id: string): string {
 }
 
 export default function AdminWithdrawalsPage() {
-  const [status, setStatus] = useState<WithdrawalStatus | "">("");
-  // Lọc theo giảng viên bằng cách bấm tên trên 1 dòng (thay vì ô gõ UUID tự do: gõ dở UUID thì
-  // backend trả 400 và cả bảng rơi vào trạng thái lỗi).
-  const [teacherFilter, setTeacherFilter] = useState<{ id: string; label: string } | null>(null);
-  const [page, setPage] = useState(1);
+  // useSearchParams cần Suspense khi Next prerender trang client (cùng khuôn /admin/orders).
+  return (
+    <Suspense fallback={null}>
+      <AdminWithdrawalsContent />
+    </Suspense>
+  );
+}
+
+function AdminWithdrawalsContent() {
+  // A8 (QA 261008): trước đây bộ lọc trạng thái / giảng viên / trang là useState cục bộ nên F5 hay
+  // nút Back đều mất. Nay URL là nguồn sự thật (?status=&teacher=&page=) — bấm tên giảng viên, đổi
+  // trạng thái hay lật trang đều ghi lên URL; mở lại link giữ nguyên bộ lọc.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const status = parseStatusParam(searchParams.get("status"));
+  const teacherId = parseTeacherParam(searchParams.get("teacher"));
+  const page = parsePageParam(searchParams.get("page"));
+
+  const updateQuery = (patch: Record<string, string | number | null>) => {
+    const next = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === null || value === "" || (key === "page" && value === 1)) next.delete(key);
+      else next.set(key, String(value));
+    }
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
+  const setStatus = (value: WithdrawalStatus | "") => updateQuery({ status: value, page: null });
+  const setTeacherId = (id: string | null) => updateQuery({ teacher: id, page: null });
+  const setPage = (updater: (p: number) => number) => updateQuery({ page: updater(page) });
 
   const { data, isLoading, isError, error, refetch } = useAdminWithdrawals({
     status: status || undefined,
-    teacher_id: teacherFilter?.id,
+    teacher_id: teacherId ?? undefined,
     page,
     limit: LIMIT,
   });
@@ -83,6 +125,14 @@ export default function AdminWithdrawalsPage() {
 
   const items = data?.items ?? [];
   const totalPages = data?.total_pages ?? 1;
+
+  // Nhãn bộ lọc giảng viên lấy từ chính dòng đang hiển thị (URL chỉ mang id) — có thể vắng nếu
+  // giảng viên đó không còn dòng nào trong trang hiện tại, khi đó UI chỉ hiện mã rút gọn.
+  const teacherFilterLabel = teacherId
+    ? items.find((w) => w.teacher_id === teacherId)?.teacher_name ||
+      items.find((w) => w.teacher_id === teacherId)?.teacher_email ||
+      null
+    : null;
 
   function closeReject() {
     setRejectTarget(null);
@@ -153,10 +203,7 @@ export default function AdminWithdrawalsPage() {
         <div className="grid gap-3 sm:grid-cols-2">
           <Select
             value={status || "ALL"}
-            onValueChange={(v) => {
-              setStatus(v === "ALL" ? "" : (v as WithdrawalStatus));
-              setPage(1);
-            }}
+            onValueChange={(v) => setStatus(v === "ALL" ? "" : (v as WithdrawalStatus))}
           >
             <SelectTrigger>
               <SelectValue placeholder="Trạng thái" />
@@ -171,17 +218,10 @@ export default function AdminWithdrawalsPage() {
             </SelectContent>
           </Select>
           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-            {teacherFilter ? (
+            {teacherId ? (
               <span className="flex items-center gap-2">
-                Giảng viên: <strong>{teacherFilter.label}</strong>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setTeacherFilter(null);
-                    setPage(1);
-                  }}
-                >
+                Giảng viên: <strong>{teacherFilterLabel ?? shortId(teacherId)}</strong>
+                <Button size="sm" variant="outline" onClick={() => setTeacherId(null)}>
                   Bỏ lọc
                 </Button>
               </span>
@@ -226,10 +266,7 @@ export default function AdminWithdrawalsPage() {
                           type="button"
                           className="font-medium hover:underline"
                           title="Lọc theo giảng viên này"
-                          onClick={() => {
-                            setTeacherFilter({ id: w.teacher_id, label: w.teacher_name || w.teacher_email });
-                            setPage(1);
-                          }}
+                          onClick={() => setTeacherId(w.teacher_id)}
                         >
                           {w.teacher_name || w.teacher_email}
                         </button>

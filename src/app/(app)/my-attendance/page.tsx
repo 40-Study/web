@@ -6,16 +6,11 @@ import {
   summarizeAttendances,
 } from "@/components/attendance/attendance-stats";
 import { AttendanceStatusBadge } from "@/components/attendance/attendance-status-badge";
-import { useMyAttendances } from "@/hooks/queries/use-sessions";
+import { useAllMyAttendances, useMyAttendances } from "@/hooks/queries/use-sessions";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 /** Backend ép page_size tối đa 50 (schedule_service.go GetMyAttendances) */
 const PAGE_SIZE = 20;
-
-function formatDateTime(iso?: string) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("vi-VN");
-}
 
 export default function MyAttendancePage() {
   const [page, setPage] = useState(1);
@@ -23,11 +18,13 @@ export default function MyAttendancePage() {
     page,
     page_size: PAGE_SIZE,
   });
+  // S3: thống kê đầu trang phải phủ TOÀN BỘ lịch sử, không chỉ 20 dòng của trang hiện tại.
+  const { data: allAttendances, isLoading: isLoadingAll } = useAllMyAttendances();
 
   const attendances = useMemo(() => data?.attendances ?? [], [data]);
   const summary = useMemo(
-    () => summarizeAttendances(attendances),
-    [attendances]
+    () => summarizeAttendances(allAttendances ?? []),
+    [allAttendances]
   );
 
   const total = data?.total ?? 0;
@@ -52,12 +49,11 @@ export default function MyAttendancePage() {
         </div>
       ) : (
         <>
-          {/* Thống kê tính trên TRANG hiện tại, không phải toàn bộ lịch sử */}
+          {/* S3: số liệu tính trên TOÀN BỘ lịch sử (không phải chỉ trang đang xem). */}
           <AttendanceStats summary={summary} />
-          {totalPages > 1 && (
+          {isLoadingAll && (
             <p className="mt-2 text-xs text-gray-500">
-              Thống kê tính trên {attendances.length} buổi đang hiển thị (tổng{" "}
-              {total} buổi).
+              Đang tổng hợp toàn bộ lịch sử…
             </p>
           )}
 
@@ -74,8 +70,9 @@ export default function MyAttendancePage() {
               <tbody className="divide-y divide-gray-100">
                 {attendances.map((a) => (
                   <tr key={a.id} className="hover:bg-gray-50/60">
+                    {/* S11: dùng formatter chung (giờ VN, bỏ giây) thay vì toLocaleString thô. */}
                     <td className="px-4 py-3 text-gray-700">
-                      {formatDateTime(a.check_in_time ?? a.created_at)}
+                      {formatVnDateTime(a.check_in_time ?? a.created_at)}
                     </td>
                     <td className="px-4 py-3">
                       <AttendanceStatusBadge status={a.status} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ShoppingCart, Trash2, Loader2, ArrowLeft } from "lucide-react";
@@ -36,6 +36,15 @@ export default function CartPage() {
   // Number() phòng thủ: backend đã đổi decimal sang JSON number, nhưng vẫn cast
   // để chịu được trường hợp API cũ trả chuỗi.
   const total = Number(cartData?.total ?? 0);
+
+  // S5: chọn SẴN mọi khoá khi giỏ có dữ liệu, để nút "Thanh toán" dùng được ngay
+  // thay vì bắt người dùng tự tick từng khoá. Chỉ chạy một lần cho mỗi bộ khoá mới
+  // (thêm/xoá khoá sẽ đồng bộ lại theo danh sách mới), và TÔN TRỌNG lựa chọn người
+  // dùng đã bỏ tick — không ép chọn lại mọi lần render/refetch.
+  const itemIdsKey = items.map((item) => item.course_id).join(",");
+  useEffect(() => {
+    setSelectedIds(itemIdsKey ? itemIdsKey.split(",") : []);
+  }, [itemIdsKey]);
 
   // Tổng các dòng đã chọn theo GIÁ BÁN — cùng quy tắc backend dùng cho `total` và cho đơn hàng
   // (Course.EffectivePrice); cộng giá niêm yết sẽ hiện cao hơn số tiền thật sự bị tính.

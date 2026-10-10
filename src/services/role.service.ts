@@ -44,11 +44,25 @@ export interface CreateSystemRoleDTO {
   description?: string;
 }
 
-/** Một dòng gán vai trò hệ thống cho user — KHÔNG có tên/email (xem ghi chú ở getSystemRoleUsers) */
+/**
+ * Thông tin định danh người giữ vai trò — backend chỉ trả ở GET /system-roles/:id/users
+ * (RoleMemberDTO: full_name/avatar_url có thể vắng khi null; `user` có thể vắng nếu backend
+ * không join được user). Dùng để admin nhận ra ai đang giữ vai trò thay vì chỉ thấy UUID.
+ */
+export interface RoleMember {
+  id: string;
+  user_name: string;
+  full_name?: string;
+  email: string;
+  avatar_url?: string;
+}
+
+/** Một dòng gán vai trò hệ thống cho user. `user` có ở màn admin (GET /system-roles/:id/users) — A4. */
 export interface UserSystemRoleItem {
   id: string;
   user_id: string;
   system_role_id: string;
+  user?: RoleMember;
   granted_at: string;
   notes?: string;
   status: "active" | "suspended" | "revoked";
@@ -178,8 +192,8 @@ export const roleService = {
   /**
    * GET /system-roles/:id/users
    * Backend trả { user_system_roles: [...], total, page, page_size } — KHÔNG phải mảng trần.
-   * Từng phần tử chỉ có user_id/status/granted_at (backend chưa join bảng users nên không có
-   * tên/email — xem UserSystemRoleResponseDTO ở backend/internal/dto/user_system_role_dto.go).
+   * Mỗi phần tử có `user` (tên/email/avatar) để admin nhận ra người giữ vai trò (A4, backend
+   * RoleMemberDTO ở internal/dto/user_system_role_dto.go). `user` vắng thì UI rơi về user_id.
    */
   getSystemRoleUsers: (id: string, params?: { page?: number; page_size?: number; status?: string }) =>
     api

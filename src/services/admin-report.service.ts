@@ -35,6 +35,18 @@ export interface PlatformFeeSetting {
   platform_fee_percent: number;
 }
 
+/** GET /admin/settings (contract C4) — toàn bộ cấu hình hệ thống; updated_* null khi chưa từng sửa. */
+export interface AdminSettings {
+  platform_fee_percent: number;
+  updated_at: string | null;
+  updated_by: { id: string; name: string } | null;
+}
+
+/** Backend mã hoá decimal thành CHUỖI ("12.5"), cùng kiểu với GET /admin/settings/platform-fee. */
+type AdminSettingsWire = Omit<AdminSettings, "platform_fee_percent"> & {
+  platform_fee_percent: number | string;
+};
+
 type Envelope<T> = { message: string; data: T };
 
 // ─── Service ────────────────────────────────────────────────────────────────
@@ -51,6 +63,13 @@ export const adminReportService = {
     api
       .get<Envelope<PlatformFeeSetting>>("/admin/settings/platform-fee")
       .then((r) => r.data.data),
+
+  /** GET /admin/settings — trang "Cấu hình hệ thống" (quyền SYSTEM_SETTINGS_MANAGE). */
+  getAdminSettings: () =>
+    api.get<Envelope<AdminSettingsWire>>("/admin/settings").then((r): AdminSettings => {
+      const d = r.data.data;
+      return { ...d, platform_fee_percent: Number(d.platform_fee_percent) };
+    }),
 
   /** PUT /admin/settings/platform-fee — đổi % (chỉ áp dụng đơn hoàn tất SAU thời điểm đổi). */
   updatePlatformFee: (percent: number) =>

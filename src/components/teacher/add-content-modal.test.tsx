@@ -49,6 +49,11 @@ describe("AddContentModal — upload URL hook correctness (C-004)", () => {
       />
     );
 
+    // Tiêu đề là bắt buộc (QA 261008 T4)
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Tiêu đề video"), { target: { value: "Bài 1" } });
+    });
+
     // Submit the form ("Thêm video" button)
     const submitBtn = screen.getByRole("button", { name: /thêm video/i });
     await act(async () => {
@@ -76,6 +81,10 @@ describe("AddContentModal — upload URL hook correctness (C-004)", () => {
     const urlInput = screen.getByPlaceholderText("https://...");
     await act(async () => {
       fireEvent.change(urlInput, { target: { value: "https://manual-url.example.com/v.mp4" } });
+    });
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Tiêu đề video"), { target: { value: "Bài 1" } });
     });
 
     const submitBtn = screen.getByRole("button", { name: /thêm video/i });

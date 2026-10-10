@@ -30,10 +30,18 @@ function renderModal(props: Partial<Parameters<typeof AddContentModal>[0]> = {})
   );
 }
 
-/** Mở form livestream (bấm tile "Buổi học trực tiếp") rồi sang tab "Lịch trình". */
+/**
+ * Mở form livestream (bấm tile "Buổi học trực tiếp"), nhập tiêu đề (bắt buộc — QA 261008 T4) rồi
+ * sang tab "Lịch trình".
+ */
 async function openLivestreamForm() {
   await act(async () => {
     fireEvent.click(screen.getByText("Buổi học trực tiếp"));
+  });
+  await act(async () => {
+    fireEvent.change(screen.getByLabelText("Tiêu đề buổi học trực tiếp"), {
+      target: { value: "Buổi Q&A" },
+    });
   });
   await act(async () => {
     fireEvent.click(screen.getByText("Lịch trình"));

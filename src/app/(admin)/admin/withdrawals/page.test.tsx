@@ -16,6 +16,25 @@ const listParams = vi.fn();
 let mockItems: AdminWithdrawalItem[] = [];
 let mockNegative: NegativeBalanceItem[] = [];
 
+/**
+ * A8: bộ lọc (status / teacher / page) nay nằm trên URL. Mock `next/navigation` với chuỗi query
+ * THAY ĐỔI ĐƯỢC — `router.replace` cập nhật `mockSearch` để lần render kế tiếp đọc đúng bộ lọc,
+ * thay cho mock toàn cục (URLSearchParams rỗng, không phản ánh điều hướng).
+ */
+let mockSearch = "";
+const mockReplace = vi.fn((url: string) => {
+  mockSearch = url.includes("?") ? url.slice(url.indexOf("?") + 1) : "";
+});
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: mockReplace, push: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => "/admin/withdrawals",
+  useSearchParams: () => new URLSearchParams(mockSearch),
+  useParams: () => ({}),
+  redirect: vi.fn(),
+  notFound: vi.fn(),
+}));
+
 vi.mock("@/hooks/queries/use-wallet", () => ({
   useAdminWithdrawals: (params: unknown) => {
     listParams(params);
@@ -63,6 +82,8 @@ describe("AdminWithdrawalsPage", () => {
     mockReject.mockReset();
     mockComplete.mockReset();
     listParams.mockReset();
+    mockReplace.mockClear();
+    mockSearch = "";
     mockNegative = [];
     useAuthStore.setState({
       sessionStatus: "authenticated",
@@ -70,11 +91,11 @@ describe("AdminWithdrawalsPage", () => {
     } as Partial<ReturnType<typeof useAuthStore.getState>>);
   });
 
-  it("bộ lọc trạng thái có 'Đã huỷ' và gửi status=cancelled (review PR #79)", () => {
+  it("bộ lọc trạng thái có 'Đã huỷ' và ghi status=cancelled lên URL", () => {
     mockItems = [];
     render(<AdminWithdrawalsPage />);
     fireEvent.click(screen.getByText("Đã huỷ"));
-    expect(listParams).toHaveBeenLastCalledWith(expect.objectContaining({ status: "cancelled" }));
+    expect(mockReplace).toHaveBeenCalledWith("/admin/withdrawals?status=cancelled", { scroll: false });
   });
 
   it("yêu cầu 'pending' hiện nút Duyệt + Từ chối", () => {
@@ -170,13 +191,18 @@ describe("AdminWithdrawalsPage", () => {
     expect(screen.queryByText(/Cân nhắc từ chối/i)).toBeNull();
   });
 
-  it("bấm tên giảng viên -> lọc theo teacher_id đó, 'Bỏ lọc' xoá bộ lọc", () => {
-    mockItems = [itemFixture({ id: "wd-pending", teacher_id: "teacher-xyz" })];
-    render(<AdminWithdrawalsPage />);
+  it("bấm tên giảng viên -> ghi teacher lên URL, 'Bỏ lọc' xoá bộ lọc", () => {
+    mockItems = [itemFixture({ id: "wd-pending", teacher_id: "11111111-1111-1111-1111-111111111111" })];
+    const { rerender } = render(<AdminWithdrawalsPage />);
     fireEvent.click(screen.getByRole("button", { name: "Nguyễn Văn A" }));
-    expect(listParams).toHaveBeenLastCalledWith(expect.objectContaining({ teacher_id: "teacher-xyz" }));
+    expect(mockReplace).toHaveBeenCalledWith(
+      "/admin/withdrawals?teacher=11111111-1111-1111-1111-111111111111",
+      { scroll: false },
+    );
+    // Điều hướng qua router.replace không tự re-render trong jsdom — render lại để đọc URL mới.
+    rerender(<AdminWithdrawalsPage />);
     fireEvent.click(screen.getByRole("button", { name: "Bỏ lọc" }));
-    expect(listParams).toHaveBeenLastCalledWith(expect.objectContaining({ teacher_id: undefined }));
+    expect(mockReplace).toHaveBeenLastCalledWith("/admin/withdrawals", { scroll: false });
   });
 
   it("không có quyền WALLET_WITHDRAWALS_MANAGE -> không thấy nút hành động nào", () => {

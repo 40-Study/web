@@ -191,7 +191,12 @@ export default function AdminUsersPage() {
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Ngày tạo</TableHead>
                 <TableHead>Đăng nhập cuối</TableHead>
-                <TableHead className="text-right">Hành động</TableHead>
+                {/* A7 (mobile 390px): bảng rộng hơn màn hình nên cột hành động bị đẩy khỏi tầm
+                    nhìn, không có dấu hiệu cuộn. Ghim cột này vào mép phải để nút Khoá/Mở khoá
+                    luôn tới được. Nền đục để hàng không lộ qua khi cuộn ngang. */}
+                <TableHead className="sticky right-0 z-10 bg-gray-50 text-right dark:bg-gray-900">
+                  Hành động
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -225,7 +230,7 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{formatDate(user.created_at)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{formatDate(user.last_login_at)}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="sticky right-0 z-10 bg-white text-right dark:bg-gray-950">
                       <Can permission={PERMISSIONS.USERS_BAN}>
                         {user.is_active ? (
                           <Button

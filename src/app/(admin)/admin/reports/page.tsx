@@ -1,16 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import {
-  useAdminRevenueReport,
-  usePlatformFeeSetting,
-  useUpdatePlatformFeeSetting,
-} from "@/hooks/queries/use-admin-reports";
+import Link from "next/link";
+import { useAdminRevenueReport, usePlatformFeeSetting } from "@/hooks/queries/use-admin-reports";
 import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
 import { QueryState } from "@/components/common/query-state";
-import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { successRateHint } from "@/lib/revenue-report";
 
@@ -142,29 +137,12 @@ export default function AdminReportsPage() {
 
 function PlatformFeeSettingCard() {
   const { data, isLoading } = usePlatformFeeSetting();
-  const updateMutation = useUpdatePlatformFeeSetting();
-  const [draft, setDraft] = useState<string>("");
-  const [editing, setEditing] = useState(false);
-
-  const currentPercent = data?.platform_fee_percent ?? 0;
-
-  const startEdit = () => {
-    setDraft(String(currentPercent));
-    setEditing(true);
-  };
-
-  const onSave = () => {
-    const percent = Number(draft);
-    if (Number.isNaN(percent) || percent < 0 || percent > 100) {
-      toast.error("% phí nền tảng phải là số từ 0 đến 100");
-      return;
-    }
-    updateMutation.mutate(percent, { onSuccess: () => setEditing(false) });
-  };
+  // Backend mã hoá decimal thành chuỗi; Number() để hiển thị gọn ("5" -> "5%", "12.50" -> "12.5%").
+  const currentPercent = Number(data?.platform_fee_percent ?? 0);
 
   return (
     <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-      <h2 className="mb-1 text-base font-semibold">Cấu hình phí nền tảng</h2>
+      <h2 className="mb-1 text-base font-semibold">Phí nền tảng hiện hành</h2>
       <p className="mb-3 text-xs text-gray-500">
         % áp dụng cho đơn thanh toán SAU thời điểm lưu — không ảnh hưởng đơn đã hoàn tất trước đó
         (mỗi đơn chốt % ngay lúc thanh toán).
@@ -172,33 +150,15 @@ function PlatformFeeSettingCard() {
 
       {isLoading ? (
         <p className="text-sm text-gray-400">Đang tải...</p>
-      ) : editing ? (
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            min={0}
-            max={100}
-            step="0.1"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            className="h-10 w-28 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
-          />
-          <span className="text-sm text-gray-500">%</span>
-          <Button size="sm" isLoading={updateMutation.isPending} onClick={onSave}>
-            Lưu
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
-            Hủy
-          </Button>
-        </div>
       ) : (
         <div className="flex items-center gap-3">
           <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {currentPercent}%
           </span>
-          <Button size="sm" variant="outline" onClick={startEdit}>
-            Sửa
-          </Button>
+          {/* Nơi sửa duy nhất là trang cấu hình hệ thống (phase 5). */}
+          <Link href="/admin/settings" className="text-sm font-medium text-primary-700 hover:underline">
+            Chỉnh sửa tại Cấu hình hệ thống
+          </Link>
         </div>
       )}
     </section>

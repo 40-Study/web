@@ -34,7 +34,7 @@ export function CartDropdown() {
 
   const items = cartData?.items ?? [];
   const total = cartData?.total ?? 0;
-  const itemCount = cartData?.item_count ?? 0;
+  const itemCount = cartData?.total_item ?? 0;
 
   // Close dropdown when clicking outside
   useEffect(() => {

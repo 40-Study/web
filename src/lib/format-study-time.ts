@@ -29,3 +29,26 @@ export function formatStudyTime(totalSeconds: number | null | undefined): string
   }
   return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
 }
+
+/**
+ * Định dạng thời gian học từ số PHÚT (trường `total_study_minutes` của API phụ huynh).
+ *
+ * Dùng CHUNG cho mọi nơi hiển thị "Thời gian học" của con: trước đây `/home` hiện
+ * "2 giờ 50 phút" còn `/parent/children/[id]` làm tròn thành "3h" — hai trang cùng dữ
+ * liệu lại ra hai con số khác nhau (QA P5). Một hàm, một kết quả.
+ *
+ * Đầu vào rác (âm, NaN, Infinity) quy về "0 phút".
+ */
+export function formatStudyMinutes(totalMinutes: number | null | undefined): string {
+  if (typeof totalMinutes !== "number" || !Number.isFinite(totalMinutes) || totalMinutes <= 0) {
+    return "0 phút";
+  }
+
+  const minutes = Math.floor(totalMinutes);
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+
+  if (hours === 0) return `${rest} phút`;
+  if (rest === 0) return `${hours} giờ`;
+  return `${hours} giờ ${rest} phút`;
+}

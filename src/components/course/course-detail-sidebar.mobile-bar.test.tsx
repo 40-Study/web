@@ -16,7 +16,7 @@ vi.mock("@/services/order.service", () => ({
 }));
 vi.mock("@/services/cart.service", () => ({
   cartService: {
-    getCart: vi.fn().mockResolvedValue({ items: [], total: 0, item_count: 0 }),
+    getCart: vi.fn().mockResolvedValue({ items: [], total: 0, total_item: 0 }),
     addToCart: vi.fn(),
     isInCart: vi.fn().mockResolvedValue(false),
     removeFromCart: vi.fn(),

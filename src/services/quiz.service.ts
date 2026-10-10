@@ -108,6 +108,8 @@ export interface QuizAttempt {
   time_spent_seconds?: number;
   started_at: string;
   completed_at?: string;
+  /** Chỉ lượt `official` tính vào max_attempts; lượt `practice` thì không. */
+  mode?: QuizMode;
 }
 
 export interface StartQuizResponse {

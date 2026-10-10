@@ -6,7 +6,30 @@
  * message có dấu tiếng Việt, còn lại dùng fallback của nơi gọi.
  */
 
-import { ApiError, ForbiddenError, NotFoundError } from "@/lib/errors";
+import { ApiError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
+
+export const COURSE_LESSON_NO_CONTENT_CODE = "COURSE_LESSON_NO_CONTENT";
+
+export interface LessonWithoutContent {
+  id: string;
+  title: string;
+}
+
+/**
+ * 422 COURSE_LESSON_NO_CONTENT (T6, QA 261008): khoá còn bài học chưa có nội dung. Trả danh sách bài
+ * từ body (`lessons: [{id,title}]`); `null` nếu lỗi không phải loại này.
+ */
+export function lessonsWithoutContent(error: unknown): LessonWithoutContent[] | null {
+  if (!(error instanceof ApiError) || error.code !== COURSE_LESSON_NO_CONTENT_CODE) return null;
+  const raw = error instanceof ValidationError ? error.payload?.lessons : undefined;
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((item) => {
+    const { id, title } = (item ?? {}) as { id?: unknown; title?: unknown };
+    return typeof title === "string" && title.trim()
+      ? [{ id: typeof id === "string" ? id : title, title }]
+      : [];
+  });
+}
 
 const CODE_MESSAGES: Record<string, string> = {
   INVALID_COURSE_STATUS:
@@ -15,6 +38,8 @@ const CODE_MESSAGES: Record<string, string> = {
     "Không thể đổi trạng thái trực tiếp — hãy dùng chức năng gửi duyệt.",
   // QA vòng 2 (D2, Q5)
   COURSE_EMPTY: "Khoá học cần có ít nhất 1 bài học trước khi gửi duyệt.",
+  // T6 (QA 261008): danh sách bài thiếu nội dung hiển thị riêng (lessonsWithoutContent).
+  COURSE_LESSON_NO_CONTENT: "Mọi bài học cần có nội dung trước khi gửi duyệt.",
   COURSE_PENDING_REVIEW:
     "Khoá học đang chờ duyệt nên không thể chỉnh sửa hay xoá. Hãy rút yêu cầu duyệt trước.",
   // L1: backend từ chối giá khuyến mãi <= 0 hoặc >= giá bán (tạo và sửa khoá).
