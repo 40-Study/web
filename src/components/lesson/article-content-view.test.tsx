@@ -101,4 +101,13 @@ describe("ArticleContentView", () => {
     expect(screen.getByText("Đã hoàn thành")).toBeTruthy();
     expect(updateProgress).not.toHaveBeenCalled();
   });
+
+  it("embedded (bài viết đi kèm video): tiêu đề h2, không h1, không nút/trạng thái hoàn thành", () => {
+    renderView({ embedded: true, title: "Đọc thêm", completed: false });
+    expect(screen.getByRole("heading", { level: 2, name: "Đọc thêm" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Đánh dấu đã đọc/ })).toBeNull();
+    expect(screen.queryByText("Đã hoàn thành")).toBeNull();
+    expect(screen.getByText("Nội dung bài đọc")).toBeTruthy();
+  });
 });

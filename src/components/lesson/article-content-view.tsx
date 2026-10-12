@@ -16,6 +16,11 @@ interface ArticleContentViewProps {
   /** Bài đã `completed` theo curriculum của server. */
   completed: boolean;
   onProgress?: (progress: LessonProgressResponse) => void;
+  /**
+   * Bài viết đi kèm video: tiêu đề h2 (h1 là tiêu đề bài học của trang) và KHÔNG có "Đánh dấu đã đọc" —
+   * hoàn thành bài video do tiến độ xem quyết định, nút đọc xong sẽ cho bỏ qua video.
+   */
+  embedded?: boolean;
 }
 
 export const ARTICLE_EMPTY_MESSAGE = "Bài viết chưa có nội dung.";
@@ -35,6 +40,7 @@ export function ArticleContentView({
   readingTimeMinutes,
   completed,
   onProgress,
+  embedded = false,
 }: ArticleContentViewProps) {
   const markRead = useMarkLessonCompleted({ lessonId, courseId, onProgress });
   const isDone = completed || markRead.data?.status === "completed";
@@ -55,7 +61,11 @@ export function ArticleContentView({
           </span>
         ) : null}
       </div>
-      <h1 className="text-xl font-bold text-gray-900 break-words">{title}</h1>
+      {embedded ? (
+        <h2 className="text-xl font-bold text-gray-900 break-words">{title}</h2>
+      ) : (
+        <h1 className="text-xl font-bold text-gray-900 break-words">{title}</h1>
+      )}
 
       {hasBody ? (
         <div
@@ -69,24 +79,26 @@ export function ArticleContentView({
         <p className="text-sm text-gray-500">{ARTICLE_EMPTY_MESSAGE}</p>
       )}
 
-      <div className="flex flex-wrap items-center gap-3 pt-1">
-        {isDone ? (
-          <span className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg">
-            <CheckCircle2 className="w-4 h-4" />
-            Đã hoàn thành
-          </span>
-        ) : (
-          <button
-            type="button"
-            onClick={() => markRead.mutate()}
-            disabled={markRead.isPending}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-60"
-          >
-            {markRead.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            Đánh dấu đã đọc
-          </button>
-        )}
-      </div>
+      {!embedded && (
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          {isDone ? (
+            <span className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg">
+              <CheckCircle2 className="w-4 h-4" />
+              Đã hoàn thành
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => markRead.mutate()}
+              disabled={markRead.isPending}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-60"
+            >
+              {markRead.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              Đánh dấu đã đọc
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

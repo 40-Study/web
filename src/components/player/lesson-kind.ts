@@ -20,6 +20,19 @@ export function pickPrimaryContent<T extends KindSource>(contents: T[] | undefin
 }
 
 /**
+ * Bài viết ĐI KÈM video: bài có content video thì video là nội dung chính (`pickPrimaryContent`) nên
+ * bài viết cùng bài không còn chỗ hiển thị (QA 261010 2d, quan sát 2). Trả bài viết có `display_order`
+ * nhỏ nhất để trang học dựng nó dưới video. Bài không có video -> `undefined`: bài viết (nếu có) đã là
+ * nội dung chính, dựng thêm sẽ hiện hai lần.
+ */
+export function pickCompanionArticle<T extends KindSource>(contents: T[] | undefined): T | undefined {
+  if (pickPrimaryContent(contents)?.type !== "video") return undefined;
+  return contents
+    ?.filter((c) => c.type === "article")
+    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))[0];
+}
+
+/**
  * Loại nội dung chính của bài — A2, QA vòng 2 (N6); mở rộng article/quiz (QA 261008 T1/T7).
  *
  * Curriculum (`GET /courses/:id/sections`) KHÔNG trả `type` cho bài học
