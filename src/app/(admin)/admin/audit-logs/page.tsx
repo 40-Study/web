@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, Suspense, useEffect, useState } from "react";
+import { Fragment, Suspense, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuditLogActions, useAuditLogs } from "@/hooks/queries/use-audit-logs";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -11,6 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { formatVnDateTime } from "../_lib/format-vn-datetime";
 
 const PAGE_SIZE = 20;
+// Cột "Hành động" bị bảng co còn ~72px ở 390px nên nhãn như "Mở khóa tài khoản" rớt 4-5 dòng (ADM-L9).
+const ACTION_COLUMN_CLASS = "min-w-[10rem]";
+const DATE_RANGE_ERROR = "Từ ngày phải trước hoặc cùng ngày với Đến ngày.";
 const INPUT_CLASS =
   "h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900";
 
@@ -49,13 +52,22 @@ function AuditLogsContent() {
   const debouncedActor = useDebouncedValue(actorDraft.trim(), 400);
   const [expanded, setExpanded] = useState<string | null>(null);
 
+  // Query MỚI NHẤT đã gửi đi. Dựng từ `searchParams` của lần render trước thì hai thay đổi liên tiếp (chọn Từ
+  // ngày rồi Đến ngày trước khi kịp render lại) ghi đè nhau và mất Từ ngày (ADM-L8). Ref được đồng bộ lại
+  // theo URL mỗi khi URL thực sự đổi (Back/Forward, link chia sẻ).
+  const latestQuery = useRef(searchParams.toString());
+  useEffect(() => {
+    latestQuery.current = searchParams.toString();
+  }, [searchParams]);
+
   const updateQuery = (patch: Record<string, string | number | null>) => {
-    const next = new URLSearchParams(searchParams.toString());
+    const next = new URLSearchParams(latestQuery.current);
     for (const [key, value] of Object.entries(patch)) {
       if (value === null || value === "" || (key === "page" && value === 1)) next.delete(key);
       else next.set(key, String(value));
     }
     const qs = next.toString();
+    latestQuery.current = qs;
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
@@ -72,15 +84,20 @@ function AuditLogsContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedActor]);
 
-  const { data, isLoading, isError, error, refetch } = useAuditLogs({
-    page,
-    page_size: PAGE_SIZE,
-    action,
-    // Link chia sẻ có actor_id sai dạng cũng không được gửi đi (sẽ 400).
-    actor_id: isUuid(urlActor) ? urlActor : "",
-    from,
-    to,
-  });
+  // Khoảng ngày ngược (Từ > Đến): nói rõ cho admin thay vì trả bảng rỗng "không có thao tác" (ADM-L8).
+  const dateRangeError = from && to && from > to ? DATE_RANGE_ERROR : null;
+  const { data, isLoading, isError, error, refetch } = useAuditLogs(
+    {
+      page,
+      page_size: PAGE_SIZE,
+      action,
+      // Link chia sẻ có actor_id sai dạng cũng không được gửi đi (sẽ 400).
+      actor_id: isUuid(urlActor) ? urlActor : "",
+      from,
+      to,
+    },
+    { enabled: !dateRangeError }
+  );
   const { data: actions = [] } = useAuditLogActions();
   const items = data?.items ?? [];
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.page_size)) : 1;
@@ -135,6 +152,11 @@ function AuditLogsContent() {
             className={INPUT_CLASS}
           />
         </div>
+        {dateRangeError && (
+          <p role="alert" className="mt-2 text-xs text-red-600 dark:text-red-400">
+            {dateRangeError}
+          </p>
+        )}
         {!actorFilterShouldSync && (
           <p id="actor-id-hint" className="mt-2 text-xs text-amber-700 dark:text-amber-400">
             ID người thao tác phải là UUID đầy đủ (36 ký tự, dạng 3f2a9c1e-7b4d-4e0a-9d51-0c8f6a2b1e34) mới lọc được.
@@ -147,9 +169,13 @@ function AuditLogsContent() {
         isError={isError}
         error={error}
         onRetry={() => refetch()}
-        isEmpty={!isLoading && !isError && items.length === 0}
-        emptyTitle="Chưa có nhật ký hoạt động nào"
-        emptyDescription="Không có thao tác quản trị nào khớp bộ lọc hiện tại."
+        isEmpty={!!dateRangeError || (!isLoading && !isError && items.length === 0)}
+        emptyTitle={dateRangeError ? "Khoảng ngày chưa hợp lệ" : "Chưa có nhật ký hoạt động nào"}
+        emptyDescription={
+          dateRangeError
+            ? "Sửa Từ ngày / Đến ngày để xem nhật ký."
+            : "Không có thao tác quản trị nào khớp bộ lọc hiện tại."
+        }
       >
         {/* overflow-x-auto để bảng nhiều cột cuộn ngang được trên mobile (H-11) */}
         <div className="overflow-x-auto rounded-xl border bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
@@ -157,7 +183,10 @@ function AuditLogsContent() {
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
                 {["Thời gian", "Người thao tác", "Hành động", "Đối tượng", "Kết quả", "IP", ""].map((h) => (
-                  <th key={h || "expand"} className="px-4 py-3 text-left font-medium text-gray-500">
+                  <th
+                    key={h || "expand"}
+                    className={`px-4 py-3 text-left font-medium text-gray-500 ${h === "Hành động" ? ACTION_COLUMN_CLASS : ""}`}
+                  >
                     {h}
                   </th>
                 ))}
@@ -180,7 +209,9 @@ function AuditLogsContent() {
                         <span className="text-gray-400">Tài khoản không còn</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-900 dark:text-gray-100">{auditActionLabel(log.action)}</td>
+                    <td className={`px-4 py-3 text-gray-900 dark:text-gray-100 ${ACTION_COLUMN_CLASS}`}>
+                      {auditActionLabel(log.action)}
+                    </td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{targetText(log)}</td>
                     <td className="px-4 py-3">
                       <Badge variant="success">{log.status_code}</Badge>

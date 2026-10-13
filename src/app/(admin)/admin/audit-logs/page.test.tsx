@@ -130,16 +130,24 @@ describe("AdminAuditLogsPage", () => {
   it("đổi bộ lọc ghi lên URL và về trang 1; chọn Tất cả xoá tham số", () => {
     search = "page=4&action=user.lock";
     ok([log({})], 100);
-    render(<AdminAuditLogsPage />);
+    const { rerender } = render(<AdminAuditLogsPage />);
+    // Mô phỏng Next: sau mỗi router.replace URL đổi và trang render lại với query mới. (Mock cũ giữ URL
+    // cố định nên mỗi bước đều tính từ query gốc — khác thực tế, và che mất lỗi mất Từ ngày, ADM-L8.)
+    const commitUrl = () => {
+      search = String(replace.mock.lastCall?.[0]).split("?")[1] ?? "";
+      rerender(<AdminAuditLogsPage />);
+    };
 
     fireEvent.change(screen.getByLabelText("Lọc theo hành động"), { target: { value: "course.approve" } });
     expect(replace).toHaveBeenLastCalledWith("/admin/audit-logs?action=course.approve", { scroll: false });
+    commitUrl();
 
     fireEvent.change(screen.getByLabelText("Lọc theo hành động"), { target: { value: "" } });
     expect(replace).toHaveBeenLastCalledWith("/admin/audit-logs", { scroll: false });
+    commitUrl();
 
     fireEvent.change(screen.getByLabelText("Từ ngày"), { target: { value: "2026-10-02" } });
-    expect(replace).toHaveBeenLastCalledWith("/admin/audit-logs?action=user.lock&from=2026-10-02", { scroll: false });
+    expect(replace).toHaveBeenLastCalledWith("/admin/audit-logs?from=2026-10-02", { scroll: false });
   });
 
   it("phân trang: chỉ hiện khi nhiều trang, Sau/Trước đổi ?page=", () => {

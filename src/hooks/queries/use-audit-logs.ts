@@ -11,12 +11,16 @@ export const auditLogKeys = {
   actions: ["admin-audit-logs", "actions"] as const,
 };
 
-/** GET /admin/audit-logs — giữ trang cũ trên màn hình khi chuyển trang/đổi bộ lọc. */
-export function useAuditLogs(params?: AuditLogParams) {
+/**
+ * GET /admin/audit-logs — giữ trang cũ trên màn hình khi chuyển trang/đổi bộ lọc.
+ * `enabled: false` khi bộ lọc chưa hợp lệ (vd khoảng ngày ngược) để không gọi API với tham số sai.
+ */
+export function useAuditLogs(params?: AuditLogParams, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: auditLogKeys.list(params),
     queryFn: () => auditLogService.list(params),
     placeholderData: keepPreviousData,
+    enabled: options.enabled ?? true,
   });
 }
 
