@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { VoucherInput } from "./voucher-input";
 import { CheckoutModal } from "./checkout-modal";
 import { voucherService, type Voucher } from "@/services/voucher.service";
+import { ApiError, NotFoundError } from "@/lib/errors";
+import { toast } from "sonner";
 import type { VoucherValidateResponse } from "@/types/voucher";
 import type { CourseDetail } from "@/types/course";
 
@@ -115,5 +117,43 @@ describe("CheckoutModal — voucher có đơn tối thiểu áp được theo gi
     expect(screen.getByText("Chuyển khoản ngân hàng")).toBeTruthy();
     expect(screen.queryByText(/MoMo/)).toBeNull();
     expect(screen.queryByText(/Thẻ tín dụng/)).toBeNull();
+  });
+});
+
+
+describe("VoucherInput — hiện lý do thật khi tra mã lỗi (F-02 smoke 3)", () => {
+  const FIRST_ORDER_MESSAGE = "Mã giảm giá này chỉ áp dụng cho đơn hàng đầu tiên của bạn";
+
+  function applyCodeOnly() {
+    fireEvent.change(screen.getByPlaceholderText("Nhập mã voucher"), { target: { value: "WELCOME20" } });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+  }
+
+  it("409 VOUCHER_FIRST_ORDER_ONLY: hiện câu của backend, cả inline lẫn toast", async () => {
+    vi.spyOn(voucherService, "getVoucherByCode").mockRejectedValue(
+      new ApiError(409, "VOUCHER_FIRST_ORDER_ONLY", FIRST_ORDER_MESSAGE)
+    );
+    wrap(<VoucherInput courseIds={["c1"]} onApplied={vi.fn()} />);
+    applyCodeOnly();
+    expect(await screen.findByText(FIRST_ORDER_MESSAGE)).toBeTruthy();
+    expect(screen.queryByText("Không tìm thấy voucher hoặc mã không hợp lệ")).toBeNull();
+    expect(toast.error).toHaveBeenCalledWith(FIRST_ORDER_MESSAGE);
+  });
+
+  it("409 mà message không phải tiếng Việt: dịch theo code, không in tiếng Anh", async () => {
+    vi.spyOn(voucherService, "getVoucherByCode").mockRejectedValue(
+      new ApiError(409, "VOUCHER_FIRST_ORDER_ONLY", "voucher is first order only")
+    );
+    wrap(<VoucherInput courseIds={["c1"]} onApplied={vi.fn()} />);
+    applyCodeOnly();
+    expect(await screen.findByText(FIRST_ORDER_MESSAGE)).toBeTruthy();
+  });
+
+  it("404 thật: giữ câu chung 'Không tìm thấy voucher hoặc mã không hợp lệ'", async () => {
+    vi.spyOn(voucherService, "getVoucherByCode").mockRejectedValue(new NotFoundError("Resource not found"));
+    wrap(<VoucherInput courseIds={["c1"]} onApplied={vi.fn()} />);
+    applyCodeOnly();
+    expect(await screen.findByText("Không tìm thấy voucher hoặc mã không hợp lệ")).toBeTruthy();
+    expect(toast.error).toHaveBeenCalledWith("Không tìm thấy voucher hoặc mã không hợp lệ");
   });
 });

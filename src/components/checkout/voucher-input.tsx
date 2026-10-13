@@ -12,7 +12,7 @@ import { Tag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, formatCurrency } from "@/lib/utils";
-import { useVoucherLookup } from "@/hooks/queries/use-voucher";
+import { useVoucherLookup, voucherLookupErrorMessage } from "@/hooks/queries/use-voucher";
 import { calculateVoucherDiscount, type Voucher as ServiceVoucher } from "@/services/voucher.service";
 import type { VoucherValidateResponse } from "@/types/voucher";
 
@@ -80,8 +80,8 @@ export function VoucherInput({
         setApplied(result);
         onApplied(result);
       },
-      onError() {
-        clearApplied("Không tìm thấy voucher hoặc mã không hợp lệ");
+      onError(error) {
+        clearApplied(voucherLookupErrorMessage(error));
       },
     });
   }
