@@ -65,9 +65,10 @@ describe("AddContentModal — cài đặt chấm điểm trắc nghiệm (Q2-04)
   });
 
   it.each([
-    ["Điểm đạt (%)", "150", /Điểm đạt phải là số từ 1 đến 100/],
-    ["Điểm đạt (%)", "", /Điểm đạt phải là số từ 1 đến 100/],
+    ["Điểm đạt (%)", "150", /Điểm đạt phải là số từ 0 đến 100/],
+    ["Điểm đạt (%)", "", /Điểm đạt phải là số từ 0 đến 100/],
     ["Số lần làm tối đa", "0", /Số lần làm tối đa phải là số nguyên/],
+    ["Số lần làm tối đa", "101", /Số lần làm tối đa phải là số nguyên/],
     ["Số lần làm tối đa", "", /Số lần làm tối đa phải là số nguyên/],
   ])("%s = %j: chặn gửi và báo lỗi tại ô", async (label, value, message) => {
     const onSubmit = await openQuizForm();

@@ -23,14 +23,16 @@ describe("validateQuizSettings", () => {
     expect(validateQuizSettings({ passPercentage: "70", maxAttempts: "3" })).toEqual({});
     expect(validateQuizSettings({ passPercentage: "100", maxAttempts: "10" })).toEqual({});
     expect(validateQuizSettings({ passPercentage: "99.5", maxAttempts: "1" })).toEqual({});
+    // contract BE3 §5: 0 và 100 là biên hợp lệ ở backend
+    expect(validateQuizSettings({ passPercentage: "0", maxAttempts: "100" })).toEqual({});
   });
 
-  it.each(["", "  ", "0", "-5", "101", "abc", "1e2", "50.123"])("điểm đạt %j bị từ chối", (v) => {
+  it.each(["", "  ", "-5", "101", "abc", "1e2", "50.123"])("điểm đạt %j bị từ chối", (v) => {
     expect(validateQuizSettings({ passPercentage: v, maxAttempts: "3" }).passPercentage).toMatch(/Điểm đạt/);
   });
 
   // Để trống KHÔNG nghĩa là không giới hạn: backend (model.Quiz `gorm:"default:5"`) điền 5 khi vắng -> phải bắt nhập.
-  it.each(["", "  ", "0", "-1", "2.5", "abc", "1e2"])("số lần làm %j bị từ chối", (v) => {
+  it.each(["", "  ", "0", "-1", "101", "2.5", "abc", "1e2"])("số lần làm %j bị từ chối", (v) => {
     expect(validateQuizSettings({ passPercentage: "70", maxAttempts: v }).maxAttempts).toMatch(/Số lần làm/);
   });
 });

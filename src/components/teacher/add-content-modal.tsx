@@ -1008,7 +1008,7 @@ export function AddContentModal({
                 <Input
                   type="number"
                   inputMode="decimal"
-                  min={1}
+                  min={0}
                   max={100}
                   label="Điểm đạt (%)"
                   value={exPassPct}
@@ -1020,6 +1020,7 @@ export function AddContentModal({
                   type="number"
                   inputMode="numeric"
                   min={1}
+                  max={100}
                   step={1}
                   label="Số lần làm tối đa"
                   value={exMaxAttempts}

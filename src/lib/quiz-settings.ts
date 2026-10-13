@@ -6,11 +6,12 @@
  * sẽ lặng lẽ cho kết quả khác điều giảng viên thấy trên form.
  */
 
+// Khoảng hợp lệ theo contract BE3 §5: pass_percentage 0..100, max_attempts 1..100 (không có "không giới hạn").
 export const DEFAULT_QUIZ_PASS_PERCENTAGE = 70;
 export const DEFAULT_QUIZ_MAX_ATTEMPTS = 3;
 
-export const PASS_PERCENTAGE_INVALID_MESSAGE = "Điểm đạt phải là số từ 1 đến 100 (%).";
-export const MAX_ATTEMPTS_INVALID_MESSAGE = "Số lần làm tối đa phải là số nguyên từ 1 trở lên.";
+export const PASS_PERCENTAGE_INVALID_MESSAGE = "Điểm đạt phải là số từ 0 đến 100 (%).";
+export const MAX_ATTEMPTS_INVALID_MESSAGE = "Số lần làm tối đa phải là số nguyên từ 1 đến 100.";
 
 export interface QuizSettingsInput {
   passPercentage: string;
@@ -30,12 +31,13 @@ function isValidPassPercentage(raw: string): boolean {
   const value = raw.trim();
   if (!PERCENT_PATTERN.test(value)) return false;
   const n = Number(value);
-  return n >= 1 && n <= 100;
+  return n >= 0 && n <= 100;
 }
 
 function isValidMaxAttempts(raw: string): boolean {
   const value = raw.trim();
-  return INTEGER_PATTERN.test(value) && Number(value) >= 1;
+  const n = Number(value);
+  return INTEGER_PATTERN.test(value) && n >= 1 && n <= 100;
 }
 
 export function validateQuizSettings(input: QuizSettingsInput): QuizSettingsErrors {
