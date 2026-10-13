@@ -18,7 +18,7 @@ function documentRequest(path: string, headers: Record<string, string> = {}) {
 }
 
 function fakeFetch(status: number) {
-  return vi.fn(async () => new Response("{}", { status }));
+  return vi.fn(async (_url: string | URL | Request, _init?: RequestInit) => new Response("{}", { status }));
 }
 
 describe("isMissingResource — khoá học công khai", () => {
@@ -135,7 +135,7 @@ describe("isMissingResource — không đụng tới route khác", () => {
   });
 
   it("request RSC / prefetch của <Link> không bị dò (tránh N lần gọi backend mỗi trang danh mục)", async () => {
-    for (const headers of [{ rsc: "1" }, { "next-router-prefetch": "1" }]) {
+    for (const headers of [{ rsc: "1" }, { "next-router-prefetch": "1" }] as Array<Record<string, string>>) {
       const fetchImpl = fakeFetch(404);
       const missing = await isMissingResource(documentRequest("/courses/react", headers), {
         fetchImpl,
