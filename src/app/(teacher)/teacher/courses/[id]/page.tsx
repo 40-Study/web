@@ -471,7 +471,7 @@ function LessonContentsPanel({
                       {!readOnly && (
                         <>
                           {c.type === "quiz" && c.quiz_id && (
-                            <QuizDuplicateButton lessonId={lessonId} quizId={c.quiz_id} />
+                            <QuizDuplicateButton lessonId={lessonId} quizId={c.quiz_id} isMandatory={c.is_mandatory} />
                           )}
                           <button
                             onClick={() => onEditContent?.(c)}

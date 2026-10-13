@@ -51,6 +51,17 @@ describe("QuizDuplicateButton", () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["lesson-content", "contents", "les-1"] });
   });
 
+  // Review QA2 #8: bản sao luôn bị ép is_mandatory:true dù nội dung gốc là tuỳ chọn.
+  it("bản sao giữ is_mandatory của nội dung gốc (tuỳ chọn -> vẫn tuỳ chọn)", async () => {
+    mockDuplicateOk();
+    renderWithProviders(<QuizDuplicateButton lessonId="les-1" quizId="q1" isMandatory={false} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Nhân bản bài trắc nghiệm" }));
+
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+    expect(mockApi.post).toHaveBeenNthCalledWith(2, "/lessons/les-1/contents", expect.objectContaining({ is_mandatory: false }));
+  });
+
   it("tạo content thất bại: xoá bản sao vừa tạo (không để quiz mồ côi) và báo lỗi, không báo thành công", async () => {
     mockApi.post.mockImplementation((url: string) =>
       url === "/quizzes/q1/duplicate"

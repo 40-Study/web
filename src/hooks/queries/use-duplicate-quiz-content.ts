@@ -17,14 +17,15 @@ import { lessonContentKeys } from "@/hooks/queries/use-lesson-content";
 export function useDuplicateQuizContent(lessonId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (quizId: string) => {
+    mutationFn: async ({ quizId, isMandatory }: { quizId: string; isMandatory: boolean }) => {
       const copy = await quizService.duplicate(quizId);
       try {
         return await lessonContentService.createContent(lessonId, {
           type: "quiz",
           title: copy.title,
           quiz_id: copy.id,
-          is_mandatory: true,
+          // Bản sao giữ tính bắt buộc của nội dung gốc (review QA2 #8), không ép về bắt buộc.
+          is_mandatory: isMandatory,
         });
       } catch (err) {
         // Dọn bản sao; lỗi dọn không được che lỗi gốc nhưng cũng không được nuốt im lặng.

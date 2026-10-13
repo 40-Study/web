@@ -45,7 +45,7 @@ vi.mock("@/hooks/queries/use-lessons", () => ({
   useDeleteLesson: () => ({ mutate: vi.fn() }),
 }));
 const CONTENTS = [
-  { id: "ct-quiz", lesson_id: "les-1", type: "quiz", title: "Kiểm tra Git", quiz_id: "quiz-9", display_order: 1 },
+  { id: "ct-quiz", lesson_id: "les-1", type: "quiz", title: "Kiểm tra Git", quiz_id: "quiz-9", is_mandatory: false, display_order: 1 },
   { id: "ct-art", lesson_id: "les-1", type: "article", title: "Bài đọc", display_order: 2 },
 ];
 vi.mock("@/hooks/queries/use-lesson-content", () => ({
@@ -62,8 +62,8 @@ vi.mock("@/hooks/queries/use-classes", () => ({
 }));
 vi.mock("@/components/teacher/add-content-modal", () => ({ AddContentModal: () => null }));
 vi.mock("@/components/teacher/quiz-duplicate-button", () => ({
-  QuizDuplicateButton: ({ lessonId, quizId }: { lessonId: string; quizId: string }) => (
-    <button type="button" title="Nhân bản bài trắc nghiệm" data-lesson={lessonId} data-quiz={quizId} />
+  QuizDuplicateButton: ({ lessonId, quizId, isMandatory }: { lessonId: string; quizId: string; isMandatory?: boolean }) => (
+    <button type="button" title="Nhân bản bài trắc nghiệm" data-lesson={lessonId} data-quiz={quizId} data-mandatory={String(isMandatory)} />
   ),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
@@ -84,6 +84,7 @@ describe("/teacher/courses/[id] — nhân bản bài trắc nghiệm (Q2-03)", (
     expect(buttons).toHaveLength(1); // bài viết không có nút
     expect(buttons[0].getAttribute("data-quiz")).toBe("quiz-9");
     expect(buttons[0].getAttribute("data-lesson")).toBe("les-1");
+    expect(buttons[0].getAttribute("data-mandatory")).toBe("false"); // truyền is_mandatory của hàng gốc
   });
 
   it("khoá chờ duyệt (chỉ đọc): không có nút nhân bản", () => {
