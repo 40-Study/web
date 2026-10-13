@@ -42,8 +42,10 @@ export function useWishlistIds(enabled: boolean) {
 export function useToggleWishlist() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ courseId, saved }: { courseId: string; saved: boolean }) =>
-      saved ? wishlistService.remove(courseId) : wishlistService.add(courseId),
+    mutationFn: async ({ courseId, saved }: { courseId: string; saved: boolean }) => {
+      if (saved) await wishlistService.remove(courseId);
+      else await wishlistService.add(courseId);
+    },
     onMutate: async ({ courseId, saved }) => {
       await qc.cancelQueries({ queryKey: wishlistKeys.ids() });
       const previous = qc.getQueryData<string[]>(wishlistKeys.ids());

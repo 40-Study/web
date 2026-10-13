@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import {
   Play,
   Radio,
@@ -382,9 +382,10 @@ export function AddContentModal({
   const visibleErrors = submitAttempted ? formErrors : { questions: {} };
   // Q2-04: điểm đạt / số lần làm chỉ có ở bài trắc nghiệm (exercise); các nhánh khác không có hai ô này.
   const isQuizExercise = contentType === "exercise" && exerciseType === "quiz";
-  const quizSettingsErrors = isQuizExercise
-    ? validateQuizSettings({ passPercentage: exPassPct, maxAttempts: exMaxAttempts })
-    : {};
+  const quizSettingsErrors = useMemo(
+    () => (isQuizExercise ? validateQuizSettings({ passPercentage: exPassPct, maxAttempts: exMaxAttempts }) : {}),
+    [isQuizExercise, exPassPct, exMaxAttempts],
+  );
   const visibleSettingsErrors = submitAttempted ? quizSettingsErrors : {};
 
   // Submit
