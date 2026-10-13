@@ -61,6 +61,9 @@ export const emptyVoucherForm: VoucherFormState = {
 /** Nhãn công tắc "đơn hàng đầu tiên" trong form voucher admin. */
 export const FIRST_ORDER_ONLY_LABEL = "Chỉ áp dụng cho đơn hàng đầu tiên";
 
+/** Nhãn NGẮN của voucher "chỉ đơn đầu tiên" dùng cho huy hiệu trên danh sách admin. */
+export const FIRST_ORDER_ONLY_BADGE_LABEL = "Đơn đầu tiên";
+
 /** Nhãn hiển thị của voucher dành riêng (dùng chung form admin và trang "Voucher của tôi"). */
 export const HOLDERS_ONLY_LABEL = "Dành riêng";
 export const HOLDERS_ONLY_HINT =

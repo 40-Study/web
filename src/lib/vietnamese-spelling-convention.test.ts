@@ -9,6 +9,8 @@ import { describe, expect, it } from "vitest";
  */
 const NEW_STYLE = /[óòỏõọÓÒỎÕỌ][aeAE]|(?<![qQ])[úùủũụÚÙỦŨỤ][yY]/g;
 const SRC_ROOT = path.resolve(import.meta.dirname, "..");
+// e2e/ cũng được quét theo cùng quy ước (Playwright specs), không chỉ src/.
+const E2E_ROOT = path.resolve(import.meta.dirname, "..", "..", "e2e");
 const SELF = path.basename(import.meta.filename);
 
 function sourceFiles(dir: string): string[] {
@@ -19,18 +21,27 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
+/** Liệt kê mọi dòng vi phạm trong `root`, kèm đường dẫn tương đối + số dòng. */
+function scanRoot(root: string): string[] {
+  const offenders: string[] = [];
+  for (const file of sourceFiles(root)) {
+    readFileSync(file, "utf8")
+      .split("\n")
+      .forEach((line, i) => {
+        const hit = line.match(NEW_STYLE);
+        if (hit) offenders.push(`${path.relative(root, file)}:${i + 1} -> ${hit.join(", ")}`);
+      });
+  }
+  return offenders;
+}
+
 describe("chính tả tiếng Việt thống nhất kiểu cũ (oa/oe/uy)", () => {
   it("không còn từ đặt dấu ở nguyên âm đầu trong src/", () => {
-    const offenders: string[] = [];
-    for (const file of sourceFiles(SRC_ROOT)) {
-      readFileSync(file, "utf8")
-        .split("\n")
-        .forEach((line, i) => {
-          const hit = line.match(NEW_STYLE);
-          if (hit) offenders.push(`${path.relative(SRC_ROOT, file)}:${i + 1} -> ${hit.join(", ")}`);
-        });
-    }
-    expect(offenders).toEqual([]);
+    expect(scanRoot(SRC_ROOT)).toEqual([]);
+  });
+
+  it("không còn từ đặt dấu ở nguyên âm đầu trong e2e/", () => {
+    expect(scanRoot(E2E_ROOT)).toEqual([]);
   });
 
   it("regex bắt đúng kiểu mới và bỏ qua kiểu cũ / qu*", () => {

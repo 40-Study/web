@@ -9,6 +9,7 @@ import { Can } from "@/components/guards";
 import { QueryState } from "@/components/common/query-state";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatVnDateTime } from "@/lib/vn-datetime";
+import { getSystemRoleLabel } from "@/lib/role-labels";
 import { PERMISSIONS } from "@/lib/permissions";
 import { auditActionLabel } from "@/services/audit-log.service";
 
@@ -148,7 +149,7 @@ export default function AdminIndexPage() {
                 topRoles.map((role) => (
                   <div key={role.id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900">
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{role.name}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{getSystemRoleLabel(role.name)}</p>
                       <p className="text-xs text-gray-500">{role.description || "Không có mô tả"}</p>
                     </div>
                     <span
