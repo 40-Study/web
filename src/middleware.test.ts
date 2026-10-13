@@ -19,7 +19,7 @@ import { readdirSync } from "node:fs";
 import path from "node:path";
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
-import { middleware } from "./middleware";
+import { routeGuard as middleware } from "./middleware";
 
 const APP_ROOT = path.resolve(import.meta.dirname, "app");
 

@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CONTEST_PARTICIPANT_ROUTE_PATTERN } from "@/lib/routes";
 import { buildLoginRedirectUrl } from "@/lib/login-redirect";
+import { MISSING_RESOURCE_REWRITE_PATH, isMissingResource } from "@/lib/missing-resource-probe";
 
 // Routes accessible without authentication. Đối chiếu `find src/app -name
 // page.tsx` (B-02, plans/reports/code-reviewer-260909-1412-web-review.md) —
@@ -101,7 +102,8 @@ const PROTECTED_ROUTE_PREFIXES = [
 const ACCESS_TOKEN_COOKIE = "accessToken";
 const REFRESH_TOKEN_COOKIE = "rfToken";
 
-export function middleware(request: NextRequest) {
+/** Bảo vệ route theo cookie phiên (đồng bộ, không gọi mạng). */
+export function routeGuard(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public routes (trừ các route con cần đăng nhập của "/courses",
@@ -151,6 +153,18 @@ export function middleware(request: NextRequest) {
   }
 
   return NextResponse.next();
+}
+
+export async function middleware(request: NextRequest) {
+  const guarded = routeGuard(request);
+  // Đã bị chặn (redirect /login) thì thôi; chỉ dò tài nguyên khi request được cho qua.
+  if (guarded.headers.has("location")) return guarded;
+
+  // F-08: URL khoá học/bài học/quiz không tồn tại phải ra 404 THẬT, không phải 200 + chữ "không tìm thấy".
+  if (await isMissingResource(request)) {
+    return NextResponse.rewrite(new URL(MISSING_RESOURCE_REWRITE_PATH, request.url));
+  }
+  return guarded;
 }
 
 export const config = {
