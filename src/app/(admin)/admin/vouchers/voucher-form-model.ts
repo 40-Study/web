@@ -35,6 +35,8 @@ export interface VoucherFormState {
   end_date: string;
   is_active: boolean;
   holders_only: boolean;
+  /** Chỉ áp dụng cho đơn hàng đầu tiên của người dùng (contract-be1 F-02). */
+  first_order_only: boolean;
 }
 
 export const emptyVoucherForm: VoucherFormState = {
@@ -53,7 +55,11 @@ export const emptyVoucherForm: VoucherFormState = {
   end_date: "",
   is_active: true,
   holders_only: false,
+  first_order_only: false,
 };
+
+/** Nhãn công tắc "đơn hàng đầu tiên" trong form voucher admin. */
+export const FIRST_ORDER_ONLY_LABEL = "Chỉ áp dụng cho đơn hàng đầu tiên";
 
 /** Nhãn hiển thị của voucher dành riêng (dùng chung form admin và trang "Voucher của tôi"). */
 export const HOLDERS_ONLY_LABEL = "Dành riêng";
@@ -102,6 +108,7 @@ export function voucherToForm(v: Voucher): VoucherFormState {
     end_date: toDateTimeLocal(v.end_date),
     is_active: v.is_active,
     holders_only: !!v.holders_only,
+    first_order_only: !!v.first_order_only,
   };
 }
 
@@ -184,6 +191,7 @@ export function buildCreateVoucherPayload(f: VoucherFormState): VoucherBuildResu
     is_active: f.is_active,
     // Luôn gửi tường minh (kể cả false) để không phụ thuộc mặc định của backend.
     holders_only: f.holders_only,
+    first_order_only: f.first_order_only,
   };
   if (f.start_date) payload.start_date = new Date(f.start_date).toISOString();
   if (f.end_date) payload.end_date = new Date(f.end_date).toISOString();
@@ -211,6 +219,7 @@ export function buildUpdateVoucherPayload(f: VoucherFormState): VoucherBuildResu
     ...optionalNumbers(f),
     is_active: f.is_active,
     holders_only: f.holders_only,
+    first_order_only: f.first_order_only,
   };
   payload.start_date = f.start_date ? new Date(f.start_date).toISOString() : null;
   payload.end_date = f.end_date ? new Date(f.end_date).toISOString() : null;

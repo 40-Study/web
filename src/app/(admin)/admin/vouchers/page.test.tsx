@@ -134,6 +134,22 @@ describe("/admin/vouchers — voucher dành riêng (holders_only)", () => {
     expect(mockApi.put).toHaveBeenCalledWith("/vouchers/v-hidden", expect.objectContaining({ holders_only: false }));
   });
 
+  it("công tắc 'Chỉ áp dụng cho đơn hàng đầu tiên': mặc định tắt, bật rồi tạo thì body có first_order_only=true", async () => {
+    renderWithProviders(<AdminVouchersPage />);
+    await screen.findAllByTestId("admin-voucher-row");
+    fireEvent.change(screen.getByPlaceholderText("VD: GIAM50K"), { target: { value: "dau1" } });
+    const form = screen.getByTestId("voucher-form");
+    fireEvent.change(form.querySelectorAll("input")[1], { target: { value: "Đơn đầu" } });
+    fireEvent.change(screen.getByLabelText(/Số tiền giảm/), { target: { value: "20000" } });
+    const toggle = screen.getByRole("checkbox", { name: "Chỉ áp dụng cho đơn hàng đầu tiên" }) as HTMLInputElement;
+    expect(toggle.checked).toBe(false);
+    fireEvent.click(toggle);
+    fireEvent.click(screen.getByRole("button", { name: "Tạo voucher" }));
+
+    await waitFor(() => expect(mockApi.post).toHaveBeenCalledTimes(1));
+    expect(mockApi.post).toHaveBeenCalledWith("/vouchers", expect.objectContaining({ first_order_only: true }));
+  });
+
   it("form sai thì báo lỗi tại form và KHÔNG gọi API", async () => {
     renderWithProviders(<AdminVouchersPage />);
     await screen.findAllByTestId("admin-voucher-row");

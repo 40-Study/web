@@ -83,6 +83,8 @@ export interface CreateVoucherDTO {
   is_active?: boolean;
   /** Bỏ trống = công khai (mặc định). */
   holders_only?: boolean;
+  /** Chỉ áp dụng cho đơn hàng đầu tiên của người dùng (contract-be1 F-02). Bỏ trống = false. */
+  first_order_only?: boolean;
 }
 
 /**
@@ -107,6 +109,8 @@ export interface UpdateVoucherDTO {
   is_active?: boolean;
   /** Bỏ trống = giữ nguyên; true/false = đổi. */
   holders_only?: boolean;
+  /** Bỏ trống = giữ nguyên; true/false = đổi (contract-be1 F-02). */
+  first_order_only?: boolean;
 }
 
 export interface UserSavedVoucher {

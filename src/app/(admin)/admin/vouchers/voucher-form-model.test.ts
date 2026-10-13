@@ -101,3 +101,26 @@ describe("voucher-form-model (L1: holders_only)", () => {
     expect(res.payload).not.toHaveProperty("max_discount_money");
   });
 });
+
+describe("voucher-form-model (F-02: first_order_only)", () => {
+  it("mặc định tắt và GỬI first_order_only=false tường minh khi tạo", () => {
+    expect(emptyVoucherForm.first_order_only).toBe(false);
+    expect(buildCreateVoucherPayload(base()).payload).toHaveProperty("first_order_only", false);
+  });
+
+  it("bật thì tạo và sửa đều gửi first_order_only=true; tắt đi khi sửa gửi false (không để backend giữ giá trị cũ)", () => {
+    expect(buildCreateVoucherPayload(base({ first_order_only: true })).payload).toHaveProperty("first_order_only", true);
+    expect(buildUpdateVoucherPayload(base({ first_order_only: true })).payload).toHaveProperty("first_order_only", true);
+    expect(buildUpdateVoucherPayload(base({ first_order_only: false })).payload).toHaveProperty("first_order_only", false);
+  });
+
+  it("voucherToForm điền từ voucher; thiếu field thì coi như tắt", () => {
+    const v = {
+      id: "v1", code: "NEW1", name: "Mới", discount_unit: "MONEY", discount_method: "FIXED",
+      discount_amount_money: 50000, is_active: true, first_order_only: true, usage_limit: 0, usage_per_user: 1,
+    } as unknown as Voucher;
+    expect(voucherToForm(v).first_order_only).toBe(true);
+    expect(voucherToForm({ ...v, first_order_only: undefined }).first_order_only).toBe(false);
+  });
+});
+
