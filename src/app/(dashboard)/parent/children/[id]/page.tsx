@@ -141,11 +141,14 @@ export default function ChildDetailPage() {
   const [activeTab, setActiveTab] = useState<TabType>("overview");
 
   const { data: overview, isLoading: loadingOverview } = useChildOverview(childId);
-  const { data: coursesData, isLoading: loadingCourses } = useChildCourses(childId);
-  const { data: gradesData, isLoading: loadingGrades } = useChildGrades(childId);
-  const { data: timetableData, isLoading: loadingTimetable } = useChildTimetable(childId);
-  const { data: attendanceData, isLoading: loadingAttendance } = useChildAttendance(childId);
-  const { data: assignmentsData, isLoading: loadingAssignments } = useChildAssignments(childId);
+  // PG-L2: chỉ chạy các query còn lại SAU khi overview xác nhận đây là con của phụ huynh. Id lạ thì overview
+  // 403 và trước đây 5 query kia vẫn bắn song song (6 × 403). Id rỗng làm hook tự tắt qua `enabled: !!childId`.
+  const dataChildId = overview ? childId : "";
+  const { data: coursesData, isLoading: loadingCourses } = useChildCourses(dataChildId);
+  const { data: gradesData, isLoading: loadingGrades } = useChildGrades(dataChildId);
+  const { data: timetableData, isLoading: loadingTimetable } = useChildTimetable(dataChildId);
+  const { data: attendanceData, isLoading: loadingAttendance } = useChildAttendance(dataChildId);
+  const { data: assignmentsData, isLoading: loadingAssignments } = useChildAssignments(dataChildId);
 
   if (loadingOverview) {
     return (
