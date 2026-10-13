@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Star, Users, BookOpen, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +15,8 @@ export function InstructorCard({ instructor, className }: InstructorCardProps) {
   const displayName = instructor.name && instructor.name !== "Unknown"
     ? instructor.name
     : "Chưa cập nhật";
+  // PG-M2: chỉ link khi có người thật để xem (id có và tên đã cập nhật) — tránh link chết tới /teachers/.
+  const hasProfile = Boolean(instructor.id) && displayName !== "Chưa cập nhật";
 
   const hasAvatar = instructor.avatar && instructor.avatar.trim() !== "";
 
@@ -42,7 +45,15 @@ export function InstructorCard({ instructor, className }: InstructorCardProps) {
 
           <div className="flex-1 min-w-0">
             {/* Name and Title */}
-            <h3 className="text-lg font-semibold text-gray-900">{displayName}</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {hasProfile ? (
+                <Link href={`/teachers/${instructor.id}`} className="hover:text-primary-600 hover:underline">
+                  {displayName}
+                </Link>
+              ) : (
+                displayName
+              )}
+            </h3>
             {instructor.title && (
               <p className="text-sm text-muted-foreground mb-2">
                 {instructor.title}
