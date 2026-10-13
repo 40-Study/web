@@ -93,7 +93,11 @@ export default function AdminReportsPage() {
             <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               <MetricCard label="Doanh thu gộp" value={formatCurrency(report.gross_revenue)} />
               <MetricCard label="Đã hoàn tiền" value={formatCurrency(report.refund_amount)} />
-              <MetricCard label="Doanh thu ròng" value={formatCurrency(report.net_revenue)} />
+              <MetricCard
+                label="Doanh thu ròng (sau hoàn tiền)"
+                value={formatCurrency(report.net_revenue)}
+                hint="Doanh thu gộp trừ tiền đã hoàn; chưa trừ phí nền tảng."
+              />
               <MetricCard
                 label="Phí nền tảng"
                 value={formatCurrency(report.platform_fee_amount)}

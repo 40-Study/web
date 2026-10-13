@@ -62,6 +62,13 @@ describe("AdminReportsPage — real platform revenue report", () => {
     expect(screen.getByText("80.0%")).toBeTruthy();
   });
 
+  it("ADM-L6: nhãn 'ròng' nói rõ là sau hoàn tiền và chưa trừ phí nền tảng, cạnh dòng phí", () => {
+    render(<AdminReportsPage />);
+    expect(screen.getByText("Doanh thu ròng (sau hoàn tiền)")).toBeTruthy();
+    expect(screen.getByText("Doanh thu gộp trừ tiền đã hoàn; chưa trừ phí nền tảng.")).toBeTruthy();
+    expect(screen.queryByText("Doanh thu ròng")).toBeNull();
+  });
+
   it("shows the configured platform fee percentage read-only, with a link to /admin/settings", () => {
     render(<AdminReportsPage />);
     expect(screen.getByText("5%")).toBeTruthy();
