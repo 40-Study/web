@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AUTH_ROUTES } from "@/lib/routes";
 import { AUTH_CONFIG, STORAGE_KEYS } from "@/lib/constants";
-import { useRegisterRequest } from "@/hooks/queries/use-auth";
+import { authErrorMessage, useRegisterRequest } from "@/hooks/queries/use-auth";
 import { validateUserName } from "@/lib/user-name";
 
 interface FormData {
@@ -52,7 +52,12 @@ export default function RegisterFormPage() {
     const errors: FieldErrors = {};
     // Cùng luật với backend và trang sửa hồ sơ (lib/user-name.ts): cho '_', không cho '@'/email/dấu cách.
     if (!formData.username.trim()) errors.username = "Vui lòng nhập tên đăng nhập";
-    else errors.username = validateUserName(formData.username) ?? undefined;
+    else {
+      // Chỉ gán key khi CÓ lỗi: handleSubmit đếm Object.keys(errors), nên gán `undefined` cũng
+      // tính là lỗi và chặn mọi lần gửi (QA vòng 2 PG-C1).
+      const usernameError = validateUserName(formData.username);
+      if (usernameError) errors.username = usernameError;
+    }
     if (!formData.lastName.trim()) errors.lastName = "Vui lòng nhập họ";
     if (!formData.firstName.trim()) errors.firstName = "Vui lòng nhập tên";
     if (!formData.email.trim()) {
@@ -95,7 +100,8 @@ export default function RegisterFormPage() {
       router.push(AUTH_ROUTES.OTP);
     } catch (err) {
       console.error("Failed to request OTP:", err);
-      setFormError("Đăng ký thất bại. Vui lòng thử lại.");
+      // Hiện lý do thật (email đã đăng ký, tên đăng nhập trùng, rate-limit...) thay vì một câu chung.
+      setFormError(authErrorMessage(err, "Đăng ký thất bại. Vui lòng thử lại."));
     }
   };
 
