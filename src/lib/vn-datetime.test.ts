@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { courseLevelLabel } from "./course-level";
 import { formatVnDateOnly, formatVnDateTime, formatVnDateThenTime } from "./vn-datetime";
 
@@ -46,5 +46,20 @@ describe("formatVnDateThenTime", () => {
   it("rỗng/chuỗi hỏng thì — (không hiện Invalid Date)", () => {
     expect(formatVnDateThenTime(null)).toBe("—");
     expect(formatVnDateThenTime("khong-phai-ngay")).toBe("—");
+  });
+});
+
+
+describe("formatter dùng chung (F-11 review)", () => {
+  it("không dựng Intl.DateTimeFormat mới cho mỗi lần gọi (mỗi dòng bảng điểm danh)", () => {
+    const spy = vi.spyOn(Intl, "DateTimeFormat");
+    try {
+      formatVnDateThenTime("2026-10-07T19:00:00+07:00");
+      formatVnDateThenTime("2026-10-08T19:00:00+07:00");
+      formatVnDateTime("2026-10-09T19:00:00+07:00");
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
