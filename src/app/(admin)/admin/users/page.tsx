@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Lock, Unlock } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ChevronsUpDown, Lock, Unlock } from "lucide-react";
 
 import { useAdminUsers, useUpdateUserStatus } from "@/hooks/queries/use-admin-users";
 import { useSystemRoles } from "@/hooks/queries/use-admin";
@@ -13,6 +13,7 @@ import { getSystemRoleLabel } from "@/lib/role-labels";
 import { useAuthStore } from "@/stores/auth.store";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { getUserActiveLabel } from "../_lib/user-status-label";
+import { nextSort, sortAdminUsers, type SortDirection, type UserSortKey } from "../_lib/user-sort";
 import type { AdminUserListItem, AdminUserStatusFilter } from "@/types/user";
 import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,34 @@ function parsePageParam(raw: string | null): number {
 
 function parseStatusParam(raw: string | null): "ALL" | AdminUserStatusFilter {
   return raw === "active" || raw === "locked" ? raw : "ALL";
+}
+
+function SortableHead({
+  label,
+  sortKey,
+  sort,
+  onSort,
+}: {
+  label: string;
+  sortKey: UserSortKey;
+  sort: { key: UserSortKey | null; direction: SortDirection };
+  onSort: (key: UserSortKey) => void;
+}) {
+  const active = sort.key === sortKey;
+  const Icon = !active ? ChevronsUpDown : sort.direction === "asc" ? ChevronUp : ChevronDown;
+  return (
+    <TableHead aria-sort={!active ? "none" : sort.direction === "asc" ? "ascending" : "descending"}>
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        title="Sắp xếp trong trang đang xem"
+        className="inline-flex items-center gap-1 font-medium hover:text-foreground"
+      >
+        {label}
+        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+    </TableHead>
+  );
 }
 
 export default function AdminUsersPage() {
@@ -83,7 +112,9 @@ export default function AdminUsersPage() {
   const { data: systemRoles = [] } = useSystemRoles();
   const updateStatus = useUpdateUserStatus();
 
-  const items = data?.items ?? [];
+  // ADM-L2: backend chưa có tham số sort -> sắp xếp trong trang đang xem (xem _lib/user-sort.ts).
+  const [sort, setSort] = useState<{ key: UserSortKey | null; direction: SortDirection }>({ key: null, direction: "asc" });
+  const items = useMemo(() => sortAdminUsers(data?.items ?? [], sort.key, sort.direction), [data, sort]);
   const totalPages = data?.total_pages ?? 1;
 
   const [lockTarget, setLockTarget] = useState<AdminUserListItem | null>(null);
@@ -185,12 +216,12 @@ export default function AdminUsersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Tên</TableHead>
+                <SortableHead label="Email" sortKey="email" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
+                <SortableHead label="Tên" sortKey="name" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
                 <TableHead>Vai trò</TableHead>
                 <TableHead>Trạng thái</TableHead>
-                <TableHead>Ngày tạo</TableHead>
-                <TableHead>Đăng nhập cuối</TableHead>
+                <SortableHead label="Ngày tạo" sortKey="created_at" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
+                <SortableHead label="Đăng nhập cuối" sortKey="last_login_at" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
                 {/* A7 (mobile 390px): bảng rộng hơn màn hình nên cột hành động bị đẩy khỏi tầm
                     nhìn, không có dấu hiệu cuộn. Ghim cột này vào mép phải để nút Khoá/Mở khoá
                     luôn tới được. Nền đục để hàng không lộ qua khi cuộn ngang. */}

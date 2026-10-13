@@ -5,6 +5,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/errors";
+import { getErrorMessage } from "@/lib/error-messages";
 import {
   voucherService,
   type CreateVoucherDTO,
@@ -78,12 +79,26 @@ export function useVoucherByCode(code: string) {
   });
 }
 
+export const VOUCHER_NOT_FOUND_MESSAGE = "Không tìm thấy voucher hoặc mã không hợp lệ";
+
+/**
+ * Câu báo lỗi khi tra mã voucher. 404/400 = mã không có/sai dạng -> câu chung. Mọi lỗi khác mang lý do thật
+ * và phải hiện ra thay vì bị nuốt thành "không tìm thấy": vd 409 VOUCHER_FIRST_ORDER_ONLY (voucher chỉ cho đơn
+ * đầu tiên, F-02) hay mất kết nối. `getErrorMessage` giữ message tiếng Việt của backend / dịch theo `code`.
+ */
+export function voucherLookupErrorMessage(error: unknown): string {
+  if (error instanceof ApiError && (error.status === 404 || error.status === 400)) {
+    return VOUCHER_NOT_FOUND_MESSAGE;
+  }
+  return getErrorMessage(error);
+}
+
 /** Look up a voucher by code (mutation-style for form submission) */
 export function useVoucherLookup() {
   return useMutation({
     mutationFn: (code: string) => voucherService.getVoucherByCode(code),
-    onError: () => {
-      toast.error("Mã voucher không hợp lệ");
+    onError: (error) => {
+      toast.error(voucherLookupErrorMessage(error));
     },
   });
 }

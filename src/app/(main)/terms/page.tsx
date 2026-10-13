@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { siteConfig } from "@/lib/constants";
+import { buildPageMetadata } from "@/lib/page-metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "Điều khoản dịch vụ",
   description: "Điều khoản sử dụng nền tảng ForteX.",
-};
+  path: "/terms",
+});
 
 /**
  * Trang Điều khoản dịch vụ (H-06) — bản tối thiểu để footer và luồng thanh toán

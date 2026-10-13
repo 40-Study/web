@@ -86,6 +86,7 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "teacher_application.reject": "Từ chối hồ sơ giáo viên",
   "report.status_update": "Đổi trạng thái báo cáo vi phạm",
   "report.delete": "Xóa báo cáo vi phạm",
+  "report.moderate": "Kiểm duyệt từ báo cáo",
   "order.refund": "Hoàn tiền đơn hàng",
   "order.late_refund": "Ghi nhận hoàn tiền muộn",
   "withdrawal.approve": "Duyệt yêu cầu rút tiền",

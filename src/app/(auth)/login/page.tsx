@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { AUTH_ROUTES, getRoleHomeRoute } from "@/lib/routes";
 import { getRoleFromToken } from "@/lib/jwt";
+import { validateEmail } from "@/lib/email-validation";
 import { sanitizeRedirect } from "@/lib/safe-redirect";
 import { showComingSoon } from "@/lib/toast-helpers";
 import { useLogin } from "@/hooks/queries/use-auth";
@@ -23,6 +24,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   // Lưu redirect URL vào sessionStorage (accept-invitation, mất phiên giữa chừng). Chỉ nhận đường
   // dẫn nội bộ (chống open redirect). Vào /login KHÔNG kèm redirect hợp lệ thì xoá giá trị cũ, để
@@ -38,8 +40,18 @@ export default function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // noValidate trên <form>: tự kiểm để lỗi hiện bằng tiếng Việt thay vì tooltip tiếng Anh của trình duyệt
+    // (PG-M3 / F-12, QA2 261013) — cùng cách form đăng ký.
+    const nextErrors = {
+      email: validateEmail(email),
+      password: password ? undefined : "Vui lòng nhập mật khẩu",
+    };
+    if (nextErrors.email || nextErrors.password) {
+      setErrors(nextErrors);
+      return;
+    }
     loginMutation.mutate(
-      { email, password, device_info: getDeviceInfo() },
+      { email: email.trim(), password, device_info: getDeviceInfo() },
       {
         onSuccess: (response) => {
           const data = response.data;
@@ -82,13 +94,17 @@ export default function LoginPage() {
       <h2 className="mb-1 text-center text-xl font-semibold text-foreground">Đăng nhập</h2>
       <p className="mb-6 text-center text-sm text-muted-foreground">Chào mừng bạn quay trở lại</p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <Input
           type="email"
           label="Email"
           placeholder="Nhập email của bạn"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setErrors((prev) => ({ ...prev, email: undefined }));
+          }}
+          error={errors.email}
           className="h-12"
           required
         />
@@ -97,7 +113,11 @@ export default function LoginPage() {
           label="Mật khẩu"
           placeholder="Nhập mật khẩu"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setErrors((prev) => ({ ...prev, password: undefined }));
+          }}
+          error={errors.password}
           className="h-12"
           required
         />

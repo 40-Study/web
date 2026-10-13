@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Star, BookOpen } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
+import { formatLessonProgress } from "@/lib/lesson-progress-label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -143,7 +144,7 @@ export function CourseCard({ course, className, priority = false, showWishlist =
                   <ProgressBar value={course.progress} variant="course" size="sm" />
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-xs font-medium text-slate-600 tabular-nums dark:text-slate-400">
-                      {course.progress}% · Bài {course.completedLessons}/{course.totalLessons}
+                      {course.progress}% · {formatLessonProgress(course.completedLessons, course.totalLessons)}
                     </span>
                     {/* asChild → <span>: không lồng <button> trong <a>. */}
                     <Button asChild size="sm" variant="secondary">

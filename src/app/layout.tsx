@@ -5,6 +5,7 @@ import { Providers } from "@/components/providers";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SkipLink } from "@/components/ui";
 import { SITE_URL } from "@/lib/seo";
+import { SITE_OG_IMAGES } from "@/lib/page-metadata";
 import { THEME_STORAGE_KEY } from "@/lib/appearance-storage";
 
 const inter = Inter({
@@ -30,6 +31,9 @@ export const metadata: Metadata = {
         template: "%s | ForteX",
     },
     description: "ForteX - Learn Leap Lead | Nền tảng học tập và quản lý hiện đại",
+    // Canonical tương đối: Next dịch "./" theo đường dẫn của CHÍNH trang đang render (bỏ query), nên trang không
+    // tự khai báo canonical (landing, thảo luận chi tiết...) vẫn có canonical tự tham chiếu (PG-M1, QA2 261013).
+    alternates: { canonical: "./" },
     keywords: ["ForteX", "learning", "education"],
     openGraph: {
         type: "website",
@@ -38,7 +42,7 @@ export const metadata: Metadata = {
         title: "ForteX — Learn Leap Lead",
         description: "Nền tảng học tập và quản lý hiện đại",
         url: SITE_URL,
-        images: [{ url: "/logo.png", width: 512, height: 512, alt: "ForteX" }],
+        images: SITE_OG_IMAGES,
     },
     twitter: {
         card: "summary",

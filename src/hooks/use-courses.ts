@@ -181,12 +181,12 @@ export const courseKeys = {
 
 // ─── Hooks ────────────────────────────────────────────────────────────────
 
-/** Fetch courses list with optional client-side filters */
+/** Fetch courses list: `keyword` tìm ở backend (không phân biệt dấu), các filter còn lại áp ở client */
 export function useCourses(filters: CourseFilters = {}) {
   return useQuery({
     queryKey: courseKeys.list(filters),
     queryFn: async (): Promise<Course[]> => {
-      const raw = await courseService.getCourses();
+      const raw = await courseService.getCourses(filters.keyword ? { keyword: filters.keyword } : undefined);
       const mapped = raw.courses.map(mapApiCourse);
       return applyFilters(mapped, filters);
     },

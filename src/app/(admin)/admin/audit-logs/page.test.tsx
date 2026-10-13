@@ -80,6 +80,18 @@ describe("AdminAuditLogsPage", () => {
     expect(screen.queryByText(/chưa ghi nhận nhật ký/i)).toBeNull();
   });
 
+  // ADM-L9 (smoke 2): ở 390px bảng 7 cột cuộn ngang, cột "Hành động" bị cắt/rớt nhiều dòng. Dưới sm mỗi dòng
+  // thành thẻ xếp dọc; tiêu đề cột ẩn đi nên mỗi ô phải mang nhãn cột (data-label) để thẻ vẫn đọc được.
+  it("mỗi ô của dòng có data-label trùng tiêu đề cột, để dưới sm hiện thành thẻ có nhãn", () => {
+    ok([log({})]);
+    render(<AdminAuditLogsPage />);
+    const headers = screen.getAllByRole("columnheader").map((th) => th.textContent ?? "");
+    const row = screen.getByText("Quản Trị Viên").closest("tr")!;
+    const labels = Array.from(row.querySelectorAll("td")).map((td) => td.getAttribute("data-label"));
+    expect(labels).toEqual(headers.map((h) => h || null));
+    expect(labels.slice(0, 6)).toEqual(["Thời gian", "Người thao tác", "Hành động", "Đối tượng", "Kết quả", "IP"]);
+  });
+
   it("metadata chỉ mở khi bấm Chi tiết và hiện dạng văn bản (không render HTML)", () => {
     ok([log({ metadata: { old: "0", new: "10", note: "<img src=x onerror=alert(1)>" } })]);
     const { container } = render(<AdminAuditLogsPage />);
@@ -130,16 +142,24 @@ describe("AdminAuditLogsPage", () => {
   it("đổi bộ lọc ghi lên URL và về trang 1; chọn Tất cả xoá tham số", () => {
     search = "page=4&action=user.lock";
     ok([log({})], 100);
-    render(<AdminAuditLogsPage />);
+    const { rerender } = render(<AdminAuditLogsPage />);
+    // Mô phỏng Next: sau mỗi router.replace URL đổi và trang render lại với query mới. (Mock cũ giữ URL
+    // cố định nên mỗi bước đều tính từ query gốc — khác thực tế, và che mất lỗi mất Từ ngày, ADM-L8.)
+    const commitUrl = () => {
+      search = String(replace.mock.lastCall?.[0]).split("?")[1] ?? "";
+      rerender(<AdminAuditLogsPage />);
+    };
 
     fireEvent.change(screen.getByLabelText("Lọc theo hành động"), { target: { value: "course.approve" } });
     expect(replace).toHaveBeenLastCalledWith("/admin/audit-logs?action=course.approve", { scroll: false });
+    commitUrl();
 
     fireEvent.change(screen.getByLabelText("Lọc theo hành động"), { target: { value: "" } });
     expect(replace).toHaveBeenLastCalledWith("/admin/audit-logs", { scroll: false });
+    commitUrl();
 
     fireEvent.change(screen.getByLabelText("Từ ngày"), { target: { value: "2026-10-02" } });
-    expect(replace).toHaveBeenLastCalledWith("/admin/audit-logs?action=user.lock&from=2026-10-02", { scroll: false });
+    expect(replace).toHaveBeenLastCalledWith("/admin/audit-logs?from=2026-10-02", { scroll: false });
   });
 
   it("phân trang: chỉ hiện khi nhiều trang, Sau/Trước đổi ?page=", () => {

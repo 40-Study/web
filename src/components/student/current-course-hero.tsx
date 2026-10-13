@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
+import { formatLessonProgress } from "@/lib/lesson-progress-label";
 import type { EnrolledCourse } from "@/types/course";
 
 interface CurrentCourseHeroProps {
@@ -18,7 +19,6 @@ export function CurrentCourseHero({
   currentChapter,
   nextLessonTitle,
 }: CurrentCourseHeroProps) {
-  const completedLessons = Math.round((course.progress / 100) * course.totalLessons);
 
   return (
     <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 shadow-lg">
@@ -69,7 +69,7 @@ export function CurrentCourseHero({
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-600">Tiến độ khóa học: {course.progress}%</span>
               <span className="text-sm font-semibold text-primary-600">
-                {completedLessons} / {course.totalLessons} bài học
+                {formatLessonProgress(course.completedLessons, course.totalLessons)}
               </span>
             </div>
             <ProgressBar value={course.progress} variant="course" className="mb-2" />

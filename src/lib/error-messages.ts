@@ -56,6 +56,8 @@ const CODE_MESSAGES: Record<string, string> = {
   APPLICATION_NOT_REJECTED: "Chỉ có thể nộp lại hồ sơ đang bị từ chối.",
   APPLICATION_UNDER_REVIEW: "Hồ sơ của bạn đang chờ duyệt.",
   RESUBMISSION_LIMIT_REACHED: "Bạn đã nộp lại quá số lần cho phép. Vui lòng liên hệ hỗ trợ.",
+  // F-02: voucher chỉ áp dụng cho đơn đầu tiên (409). Backend gửi sẵn câu tiếng Việt này; mã để dự phòng khi message đổi.
+  VOUCHER_FIRST_ORDER_ONLY: "Mã giảm giá này chỉ áp dụng cho đơn hàng đầu tiên của bạn",
   // ── Nhóm (plans/260930-groups-friends/contract-api.md §2) ──
   GROUP_ALREADY_MEMBER: "Bạn đã là thành viên của nhóm này",
   GROUP_BANNED: "Bạn đã bị cấm khỏi nhóm này",

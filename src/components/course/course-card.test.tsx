@@ -53,7 +53,7 @@ describe("CourseCard", () => {
     } as EnrolledCourse;
     render(<CourseCard course={enrolled} />);
     expect(screen.queryByText("Miễn phí")).toBeNull();
-    expect(screen.getByText(/42% · Bài 5\/24/)).toBeTruthy();
+    expect(screen.getByText(/42% · 5\/24 bài học/)).toBeTruthy();
     expect(screen.getByText("Tiếp tục")).toBeTruthy();
     expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("42");
   });

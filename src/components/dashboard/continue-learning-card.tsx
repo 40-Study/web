@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { cn } from "@/lib/utils";
+import { formatLessonProgress } from "@/lib/lesson-progress-label";
 
 export interface ContinueLearningCourse {
   slug: string;
@@ -23,19 +24,12 @@ interface ContinueLearningCardProps {
   className?: string;
 }
 
-/** Bài đang học = bài kế tiếp sau số bài đã hoàn thành, không vượt tổng số bài. */
-export function getCurrentLessonNumber(completed: number, total: number): number {
-  if (total <= 0) return 0;
-  return Math.min(completed + 1, total);
-}
-
 /**
  * Thẻ "Tiếp tục học" — hành động chính duy nhất above the fold.
  * Cả thẻ là vùng bấm (stretched link trên tiêu đề); nút CTA nằm trên lớp phủ.
  */
 export function ContinueLearningCard({ course, className }: ContinueLearningCardProps) {
   const progress = Math.round(course.progress);
-  const current = getCurrentLessonNumber(course.completedLessons, course.totalLessons);
   // Tới route resume: nó chọn bài chưa học đầu tiên (A-11) thay vì dừng ở trang giới thiệu khoá.
   const href = `/courses/${course.slug}/learn`;
 
@@ -88,7 +82,7 @@ export function ContinueLearningCard({ course, className }: ContinueLearningCard
         <div className="space-y-2">
           <ProgressBar value={progress} variant="course" size="md" />
           <p className="text-body-sm tabular-nums text-slate-600 dark:text-slate-400">
-            Bài {current}/{course.totalLessons} · {progress}%
+            {formatLessonProgress(course.completedLessons, course.totalLessons)} · {progress}%
           </p>
         </div>
 

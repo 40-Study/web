@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { siteConfig } from "@/lib/constants";
+import { buildPageMetadata } from "@/lib/page-metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "Chính sách bảo mật",
   description: "Chính sách bảo mật dữ liệu người dùng của ForteX.",
-};
+  path: "/privacy",
+});
 
 /**
  * Trang Chính sách bảo mật (H-06) — bản tối thiểu để footer và luồng thanh toán
