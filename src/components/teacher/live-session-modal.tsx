@@ -153,7 +153,7 @@ export function LiveSessionModal({
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>Cài đặt phòng học trực tiếp</DialogTitle>
-          <DialogDescription>Lên lịch buổi học trực tiếp cho khóa học của bạn</DialogDescription>
+          <DialogDescription>Lên lịch buổi học trực tiếp cho khoá học của bạn</DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -325,7 +325,7 @@ export function LiveSessionModal({
                 />
                 <PlatformCard
                   icon={<Link2 className="h-6 w-6" />}
-                  label="Link tùy chọn"
+                  label="Link tuỳ chọn"
                   selected={form.platform === "custom"}
                   onClick={() => updateForm("platform", "custom")}
                 />
@@ -343,7 +343,7 @@ export function LiveSessionModal({
             {/* Additional options */}
             <div className="space-y-4">
               <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Tùy chọn bổ sung
+                Tuỳ chọn bổ sung
               </label>
 
               <div className="flex items-center justify-between p-3 border rounded-xl">
@@ -377,7 +377,7 @@ export function LiveSessionModal({
 
         <DialogFooter className="flex items-center justify-between sm:justify-between">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Hủy bỏ
+            Huỷ bỏ
           </Button>
           <div className="flex gap-2">
             {onSaveDraft && (

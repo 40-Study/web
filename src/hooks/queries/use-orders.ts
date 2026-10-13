@@ -7,13 +7,13 @@ import { toast } from "sonner";
 import { orderService, type CreateOrderDTO, type PaymentIntentDTO } from "@/services/order.service";
 import { ApiError } from "@/lib/errors";
 
-/** HTTP 402 = khóa học trong đơn cần thanh toán trước khi enroll (backend trả message tiếng Việt). */
+/** HTTP 402 = khoá học trong đơn cần thanh toán trước khi enroll (backend trả message tiếng Việt). */
 function orderErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof ApiError && error.message) return error.message;
   return fallback;
 }
 
-/** 409 ERR_ORDER_IN_PROGRESS: đã có đơn còn hạn cho khóa này (backend B4). */
+/** 409 ERR_ORDER_IN_PROGRESS: đã có đơn còn hạn cho khoá này (backend B4). */
 export const ORDER_IN_PROGRESS_CODE = "ERR_ORDER_IN_PROGRESS";
 
 /**
@@ -132,7 +132,7 @@ export function useCreateOrder() {
       qc.invalidateQueries({ queryKey: orderKeys.mine() });
     },
     onError: (error) => {
-      // Đơn trùng khóa đang chờ chuyển khoản: chỉ user tự quyết tiếp tục hay hủy đơn cũ, nên
+      // Đơn trùng khoá đang chờ chuyển khoản: chỉ user tự quyết tiếp tục hay huỷ đơn cũ, nên
       // dẫn thẳng sang "Đơn hàng của tôi" thay vì để user bấm lại "Mua ngay" vô ích.
       // Review #76 vòng 4: đơn trước cùng khoá đã cấp mã và đang đối chiếu (kể cả vừa huỷ) → 409
       // ERR_PAYMENT_VERIFYING, cũng dẫn về "Đơn hàng của tôi" để kiểm tra thanh toán.
@@ -159,7 +159,7 @@ export function useCancelOrder() {
     onSuccess: (_, id) => {
       qc.invalidateQueries({ queryKey: orderKeys.mine() });
       qc.invalidateQueries({ queryKey: orderKeys.detail(id) });
-      toast.success("Đã hủy đơn hàng");
+      toast.success("Đã huỷ đơn hàng");
     },
     onError: (error, id) => {
       // Backend đối chiếu ngân hàng trước khi huỷ (review #76 vòng 3): đơn có thể vừa được hoàn tất
@@ -169,7 +169,7 @@ export function useCancelOrder() {
         qc.invalidateQueries({ queryKey: orderKeys.mine() });
         qc.invalidateQueries({ queryKey: orderKeys.detail(id) });
       }
-      toast.error(orderErrorMessage(error, "Không thể hủy đơn hàng"));
+      toast.error(orderErrorMessage(error, "Không thể huỷ đơn hàng"));
     },
   });
 }

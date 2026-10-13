@@ -55,7 +55,7 @@ export default function RolesPage() {
 
   const [roleForm, setRoleForm] = useState<RoleFormState>(emptyRoleForm);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
-  // Xác nhận trước khi xóa (H-09) — xóa role/gỡ user không còn kích hoạt mutation ngay khi click.
+  // Xác nhận trước khi xoá (H-09) — xoá role/gỡ user không còn kích hoạt mutation ngay khi click.
   const [confirmDeleteRole, setConfirmDeleteRole] = useState<SystemRole | null>(null);
   const [confirmRevoke, setConfirmRevoke] = useState<UserSystemRoleItem | null>(null);
 
@@ -203,7 +203,7 @@ export default function RolesPage() {
                         title={protectedRole ? BUILT_IN_ROLE_HINT : undefined}
                         onClick={() => setConfirmDeleteRole(role)}
                       >
-                        Xóa role
+                        Xoá role
                       </Button>
                     </div>
                   </Can>
@@ -302,16 +302,16 @@ export default function RolesPage() {
         </div>
       </div>
 
-      {/* Xác nhận xóa role (H-09) */}
+      {/* Xác nhận xoá role (H-09) */}
       <Dialog open={!!confirmDeleteRole} onOpenChange={(open) => !open && setConfirmDeleteRole(null)}>
         <DialogContent>
-          <DialogTitle>Xóa vai trò &quot;{confirmDeleteRole?.name}&quot;?</DialogTitle>
+          <DialogTitle>Xoá vai trò &quot;{confirmDeleteRole?.name}&quot;?</DialogTitle>
           <DialogDescription>
             Hành động này không thể hoàn tác. Toàn bộ user đang gán cho vai trò này sẽ mất liên kết.
           </DialogDescription>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDeleteRole(null)}>
-              Hủy
+              Huỷ
             </Button>
             <Button
               variant="destructive"
@@ -320,7 +320,7 @@ export default function RolesPage() {
                 setConfirmDeleteRole(null);
               }}
             >
-              Xóa vai trò
+              Xoá vai trò
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -335,7 +335,7 @@ export default function RolesPage() {
           </DialogDescription>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmRevoke(null)}>
-              Hủy
+              Huỷ
             </Button>
             <Button
               variant="destructive"

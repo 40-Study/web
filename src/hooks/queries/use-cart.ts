@@ -59,10 +59,10 @@ export function useRemoveFromCart() {
     onSuccess: (_, courseId) => {
       qc.invalidateQueries({ queryKey: cartKeys.detail() });
       qc.invalidateQueries({ queryKey: cartKeys.check(courseId) });
-      toast.success("Đã xóa khỏi giỏ hàng");
+      toast.success("Đã xoá khỏi giỏ hàng");
     },
     onError: () => {
-      toast.error("Không thể xóa khỏi giỏ hàng");
+      toast.error("Không thể xoá khỏi giỏ hàng");
     },
   });
 }
@@ -74,10 +74,10 @@ export function useClearCart() {
     mutationFn: () => cartService.clearCart(),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: cartKeys.all });
-      toast.success("Đã xóa toàn bộ giỏ hàng");
+      toast.success("Đã xoá toàn bộ giỏ hàng");
     },
     onError: () => {
-      toast.error("Không thể xóa giỏ hàng");
+      toast.error("Không thể xoá giỏ hàng");
     },
   });
 }

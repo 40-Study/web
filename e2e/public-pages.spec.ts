@@ -7,7 +7,7 @@
  * => Group (main) — "/", "/courses", "/discussions" — không có guard nên public.
  *
  * Test này là hàng rào cho SEO: nếu ai đó thêm guard vào (main), Google sẽ
- * không crawl được trang khóa học nữa và test sẽ fail.
+ * không crawl được trang khoá học nữa và test sẽ fail.
  */
 
 import { expect, test } from "@playwright/test";
@@ -39,7 +39,7 @@ for (const path of PUBLIC_PATHS) {
   });
 }
 
-test("trang chi tiết khóa học xem được khi chưa đăng nhập (không bị đá về login)", async ({
+test("trang chi tiết khoá học xem được khi chưa đăng nhập (không bị đá về login)", async ({
   page,
 }) => {
   // Chỉ move file ra group (main) là CHƯA đủ: useEnrolledCourses từng gọi

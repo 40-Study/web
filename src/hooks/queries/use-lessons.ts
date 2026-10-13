@@ -69,9 +69,9 @@ export function useDeleteLesson(courseId: string, sectionId: string) {
     mutationFn: (id: string) => lessonService.deleteLesson(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: lessonKeys.bySection(courseId, sectionId) });
-      toast.success("Đã xóa bài học");
+      toast.success("Đã xoá bài học");
     },
-    onError: () => toast.error("Không thể xóa bài học"),
+    onError: () => toast.error("Không thể xoá bài học"),
   });
 }
 

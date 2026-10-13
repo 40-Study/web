@@ -261,7 +261,7 @@ export function useSearchSuggestions(query: string) {
  * Fetch currently authenticated user's enrolled courses.
  *
  * `enabled: isAuthenticated` là BẮT BUỘC: hook này được dùng cả trên trang chi
- * tiết khóa học — trang công khai, khách chưa đăng nhập vẫn xem được. Nếu vẫn
+ * tiết khoá học — trang công khai, khách chưa đăng nhập vẫn xem được. Nếu vẫn
  * gọi /enrollments khi chưa đăng nhập thì API trả 401, api-client thử refresh
  * token, thất bại, rồi `window.location.href = "/login"` — khách bị đá khỏi
  * trang công khai.
@@ -349,7 +349,7 @@ export function useEnrollCourse() {
     mutationFn: (courseId: string) => courseService.enroll(courseId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: courseKeys.enrolled() });
-      toast.success("Đăng ký khóa học thành công!");
+      toast.success("Đăng ký khoá học thành công!");
     },
     onError: (error: unknown) => {
       console.error("Enrollment failed:", error);

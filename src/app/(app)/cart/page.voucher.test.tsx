@@ -54,7 +54,7 @@ function renderCart() {
 async function applyCode(code: string) {
   fireEvent.change(screen.getByPlaceholderText("Nhập mã voucher"), { target: { value: code } });
   fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
-  await waitFor(() => expect(screen.getByLabelText("Xóa voucher")).toBeTruthy());
+  await waitFor(() => expect(screen.getByLabelText("Xoá voucher")).toBeTruthy());
 }
 
 const checkoutHref = () => (screen.getByRole("link", { name: /Thanh toán/ }) as HTMLAnchorElement).getAttribute("href") ?? "";
@@ -75,7 +75,7 @@ describe("CartPage — voucher sống sót khi chọn khoá (A-04)", () => {
     fireEvent.click(screen.getAllByRole("checkbox")[1]);
 
     // Chip còn thì tổng PHẢI còn giảm: lỗi cũ là chip "SUMMER50K — Giảm 50.000" nhưng "Giảm giá -0 ₫".
-    expect(screen.getByLabelText("Xóa voucher")).toBeTruthy();
+    expect(screen.getByLabelText("Xoá voucher")).toBeTruthy();
     expect(screen.getByText("-" + fmt(50000))).toBeTruthy();
     expect(screen.getByText(fmt(250000), { selector: "span.text-xl" })).toBeTruthy();
     expect(checkoutHref()).toContain("voucher=SUMMER50K");
@@ -90,7 +90,7 @@ describe("CartPage — voucher sống sót khi chọn khoá (A-04)", () => {
     // Mặc định chọn hết; bỏ chọn khoá giảm giá -> chỉ còn 300.000đ < 500.000đ.
     fireEvent.click(screen.getAllByRole("checkbox")[1]);
 
-    await waitFor(() => expect(screen.queryByLabelText("Xóa voucher")).toBeNull());
+    await waitFor(() => expect(screen.queryByLabelText("Xoá voucher")).toBeNull());
     expect(screen.getByText(/tối thiểu 500\.000đ/)).toBeTruthy();
     expect(screen.queryByText(/Giảm giá/)).toBeNull();
     expect(checkoutHref()).not.toContain("voucher=");

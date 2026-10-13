@@ -89,12 +89,12 @@ export interface EnrolledCourse extends Course {
   totalLessons: number;
   lastAccessedAt?: string;
   enrolledAt: string;
-  /** Tổng số giây video đã xem trong khóa này — nguồn dữ liệu thật cho chỉ số "thời gian học". */
+  /** Tổng số giây video đã xem trong khoá này — nguồn dữ liệu thật cho chỉ số "thời gian học". */
   watchedSeconds: number;
 }
 
 export interface CourseFilters {
-  /** Từ khóa tìm kiếm — gửi lên backend (`GET /courses?keyword=`, không phân biệt dấu), không lọc ở client. */
+  /** Từ khoá tìm kiếm — gửi lên backend (`GET /courses?keyword=`, không phân biệt dấu), không lọc ở client. */
   keyword?: string;
   category?: string;
   levels?: string[];

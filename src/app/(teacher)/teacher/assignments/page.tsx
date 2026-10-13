@@ -191,7 +191,7 @@ export default function TeacherAssignmentsPage() {
       <div>
         <h1 className="text-2xl font-bold">Quản lý bài tập</h1>
         <p className="text-sm text-muted-foreground">
-          Chọn khóa học → chọn buổi học trực tiếp → giao bài tập lập trình trực tiếp, bài tập về nhà hoặc dự án.
+          Chọn khoá học → chọn buổi học trực tiếp → giao bài tập lập trình trực tiếp, bài tập về nhà hoặc dự án.
         </p>
       </div>
 
@@ -199,9 +199,9 @@ export default function TeacherAssignmentsPage() {
         {/* Column 1: Course list */}
         <Card className="h-[calc(100vh-15rem)] overflow-hidden">
           <CardHeader className="border-b pb-3">
-            <CardTitle className="text-base">1) Tất cả khóa học ({courses.length})</CardTitle>
+            <CardTitle className="text-base">1) Tất cả khoá học ({courses.length})</CardTitle>
             <Input
-              placeholder="Tìm khóa học..."
+              placeholder="Tìm khoá học..."
               value={courseSearch}
               onChange={(e) => setCourseSearch(e.target.value)}
             />
@@ -212,7 +212,7 @@ export default function TeacherAssignmentsPage() {
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             ) : filteredCourses.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Không có khóa học phù hợp.</p>
+              <p className="text-sm text-muted-foreground">Không có khoá học phù hợp.</p>
             ) : (
               filteredCourses.map((course) => (
                 <button
@@ -245,19 +245,19 @@ export default function TeacherAssignmentsPage() {
           <CardHeader className="border-b pb-3">
             <CardTitle className="text-base">2) Buổi học trực tiếp</CardTitle>
             <p className="text-xs text-muted-foreground">
-              Bài tập gắn theo buổi học trực tiếp cụ thể của khóa học này.
+              Bài tập gắn theo buổi học trực tiếp cụ thể của khoá học này.
             </p>
           </CardHeader>
           <CardContent className="space-y-2 overflow-auto p-3">
             {!selectedCourseId ? (
-              <p className="text-sm text-muted-foreground">Chọn khóa học để xem buổi học.</p>
+              <p className="text-sm text-muted-foreground">Chọn khoá học để xem buổi học.</p>
             ) : sessionsLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             ) : sessions.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Khóa học này chưa có buổi học trực tiếp nào do bạn host.
+                Khoá học này chưa có buổi học trực tiếp nào do bạn host.
               </p>
             ) : (
               sessions.map((session) => (
@@ -293,7 +293,7 @@ export default function TeacherAssignmentsPage() {
             <CardContent className="p-4">
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground">Khóa học đang chọn</p>
+                  <p className="text-xs text-muted-foreground">Khoá học đang chọn</p>
                   <p className="mt-1 font-medium">{selectedCourse?.title ?? "Chưa chọn"}</p>
                 </div>
                 <div className="rounded-lg border p-3">
@@ -490,7 +490,7 @@ export default function TeacherAssignmentsPage() {
                         }}
                         disabled={publishMutation.isPending || unpublishMutation.isPending}
                       >
-                        {assignment.is_published ? "Hủy công bố" : "Công bố"}
+                        {assignment.is_published ? "Huỷ công bố" : "Công bố"}
                       </Button>
                       <Button
                         size="sm"
@@ -502,7 +502,7 @@ export default function TeacherAssignmentsPage() {
                         }}
                         disabled={deleteMutation.isPending}
                       >
-                        Xóa
+                        Xoá
                       </Button>
                     </div>
                   </div>

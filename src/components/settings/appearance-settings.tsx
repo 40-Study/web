@@ -78,7 +78,7 @@ export function AppearanceSettings({
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-gray-900">Giao diện</h2>
-        <p className="text-sm text-gray-500 mt-1">Tùy chỉnh giao diện ForteX theo ý bạn</p>
+        <p className="text-sm text-gray-500 mt-1">Tuỳ chỉnh giao diện ForteX theo ý bạn</p>
       </div>
 
       {/* Theme */}

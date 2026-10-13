@@ -194,7 +194,7 @@ export async function fetchCurriculum(courseSlug: string): Promise<PlayerCurricu
       sections: sectionsWithLessons,
     };
   } catch (error) {
-    // 404 = khóa học không tồn tại (sai slug, đã xoá) → trang not-found, đúng
+    // 404 = khoá học không tồn tại (sai slug, đã xoá) → trang not-found, đúng
     // như trước.
     //
     // 401/403 = chưa đăng nhập, hoặc access token đã hết hạn (TTL 15 phút — và
@@ -208,7 +208,7 @@ export async function fetchCurriculum(courseSlug: string): Promise<PlayerCurricu
     //
     // Mọi lỗi còn lại (backend 500, mất mạng) vẫn được ném tiếp lên error
     // boundary của Next: biến chúng thành `null` sẽ hiển thị trang "không tìm
-    // thấy khóa học" cho một sự cố hạ tầng — người học tưởng khóa học đã bị xoá.
+    // thấy khoá học" cho một sự cố hạ tầng — người học tưởng khoá học đã bị xoá.
     if (
       error instanceof HttpError &&
       (error.status === 404 || error.status === 401 || error.status === 403)

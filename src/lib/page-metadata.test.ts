@@ -2,17 +2,17 @@ import { describe, expect, it } from "vitest";
 import { buildPageMetadata, plainTextExcerpt } from "./page-metadata";
 
 describe("buildPageMetadata", () => {
-  const meta = buildPageMetadata({ title: "Khóa học", description: "Mô tả khóa học", path: "/courses" });
+  const meta = buildPageMetadata({ title: "Khoá học", description: "Mô tả khoá học", path: "/courses" });
 
   it("đặt title/description cho thẻ <title> và meta description", () => {
-    expect(meta.title).toBe("Khóa học");
-    expect(meta.description).toBe("Mô tả khóa học");
+    expect(meta.title).toBe("Khoá học");
+    expect(meta.description).toBe("Mô tả khoá học");
   });
 
   it("og:title/description/url riêng của trang (không rơi về mặc định toàn site)", () => {
     expect(meta.openGraph).toMatchObject({
-      title: "Khóa học",
-      description: "Mô tả khóa học",
+      title: "Khoá học",
+      description: "Mô tả khoá học",
       url: "http://localhost:3000/courses",
       type: "website",
     });
@@ -28,7 +28,7 @@ describe("buildPageMetadata", () => {
   });
 
   it("twitter card khớp title/description", () => {
-    expect(meta.twitter).toMatchObject({ title: "Khóa học", description: "Mô tả khóa học" });
+    expect(meta.twitter).toMatchObject({ title: "Khoá học", description: "Mô tả khoá học" });
   });
 
   it("cho ghi đè type và ảnh (vd bài viết có ảnh riêng)", () => {

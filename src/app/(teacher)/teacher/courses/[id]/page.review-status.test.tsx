@@ -86,7 +86,7 @@ import TeacherCourseDetailPage from "./page";
 function setCourse(overrides: Record<string, unknown>) {
   mockCourse = {
     id: "course-1",
-    title: "Khóa test",
+    title: "Khoá test",
     instructor_id: OWNER_ID,
     status: "draft",
     ...overrides,
@@ -155,13 +155,13 @@ describe("/teacher/courses/[id] — gửi duyệt thay cho tự xuất bản (Ph
   it.each([
     ["pending_review", 0],
     ["draft", 1],
-  ])("khoá %s: nút Chỉnh sửa/Xóa/Thêm nội dung trong bài có %i", (status, expected) => {
+  ])("khoá %s: nút Chỉnh sửa/Xoá/Thêm nội dung trong bài có %i", (status, expected) => {
     setCourse({ status });
     render(<TeacherCourseDetailPage />);
     fireEvent.click(screen.getByText("QA-Bai 1"));
     expect(screen.getByText("QA-Noi dung 1")).toBeTruthy();
     expect(screen.queryAllByTitle("Chỉnh sửa")).toHaveLength(expected);
-    expect(screen.queryAllByTitle("Xóa")).toHaveLength(expected);
+    expect(screen.queryAllByTitle("Xoá")).toHaveLength(expected);
     expect(screen.queryAllByRole("button", { name: /Thêm nội dung/ })).toHaveLength(expected);
   });
 

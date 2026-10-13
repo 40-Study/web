@@ -62,7 +62,7 @@ const OutputPanel = memo(({
                 {result.memory && <span style={{ color: T.textMuted, fontWeight: 400 }}>{" "}· {(result.memory / 1024).toFixed(1)}MB</span>}
               </span>
             )}
-            <button className="ibtn" onClick={() => setResult(null)} title="Xóa"
+            <button className="ibtn" onClick={() => setResult(null)} title="Xoá"
               style={{ background: "none", border: "none", color: T.textMuted, cursor: "pointer", padding: "1px 6px", borderRadius: 2, fontSize: 13 }}>
               ⊗
             </button>

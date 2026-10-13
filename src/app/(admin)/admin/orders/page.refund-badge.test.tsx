@@ -24,7 +24,7 @@ function item(overrides: Partial<AdminOrderListItem>): AdminOrderListItem {
     currency: "VND",
     status: "cancelled",
     created_at: "2026-09-28T01:00:00Z",
-    items: [{ course_id: "c1", course_title: "Khóa A", final_price: 499000 }],
+    items: [{ course_id: "c1", course_title: "Khoá A", final_price: 499000 }],
     ...overrides,
   };
 }

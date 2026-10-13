@@ -70,9 +70,9 @@ export function useDeleteSchedule(classId: string) {
     mutationFn: (scheduleId: string) => sessionService.deleteSchedule(classId, scheduleId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: sessionKeys.schedules(classId) });
-      toast.success("Đã xóa lịch học");
+      toast.success("Đã xoá lịch học");
     },
-    onError: (err) => toast.error("Không thể xóa lịch học", { description: getErrorMessage(err) }),
+    onError: (err) => toast.error("Không thể xoá lịch học", { description: getErrorMessage(err) }),
   });
 }
 
@@ -146,9 +146,9 @@ export function useCancelSession(classId: string) {
       sessionService.cancelSession(classId, sessionId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: sessionKeys.sessions(classId) });
-      toast.success("Đã hủy buổi học");
+      toast.success("Đã huỷ buổi học");
     },
-    onError: (err) => toast.error("Không thể hủy buổi học", { description: getErrorMessage(err) }),
+    onError: (err) => toast.error("Không thể huỷ buổi học", { description: getErrorMessage(err) }),
   });
 }
 

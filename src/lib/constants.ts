@@ -52,7 +52,7 @@ export const navItems = [
         href: "/",
     },
     {
-        title: "Khóa học",
+        title: "Khoá học",
         href: "/courses",
     },
     {

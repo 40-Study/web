@@ -77,7 +77,7 @@ export function AchievementCard({
           {isUnlocked ? (
             achievement.icon
           ) : (
-            <Lock className="h-6 w-6 text-slate-600 dark:text-slate-400" aria-label="Chưa mở khóa" />
+            <Lock className="h-6 w-6 text-slate-600 dark:text-slate-400" aria-label="Chưa mở khoá" />
           )}
         </div>
 
@@ -108,7 +108,7 @@ export function AchievementCard({
           {/* Unlock date */}
           {isUnlocked && achievement.unlockedAt && (
             <p className="text-xs text-slate-600 dark:text-slate-400">
-              Mở khóa {formatDate(achievement.unlockedAt)}
+              Mở khoá {formatDate(achievement.unlockedAt)}
             </p>
           )}
         </div>

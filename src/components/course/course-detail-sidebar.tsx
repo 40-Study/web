@@ -116,7 +116,7 @@ export function CourseDetailSidebar({
       ? Math.round((1 - course.price / course.originalPrice) * 100)
       : 0;
 
-  /** Khách chưa đăng nhập bấm mua/thêm giỏ → sang login, quay lại đúng khóa học sau khi đăng nhập. */
+  /** Khách chưa đăng nhập bấm mua/thêm giỏ → sang login, quay lại đúng khoá học sau khi đăng nhập. */
   function goToLoginWithReturn() {
     router.push(`/login?redirect=${encodeURIComponent(`/courses/${course.slug}`)}`);
   }
@@ -246,7 +246,7 @@ export function CourseDetailSidebar({
             )}
           </div>
           <Button className="shrink-0 bg-primary-600 text-white hover:bg-primary-700" onClick={handleBuyNowClick}>
-            Mua khóa học
+            Mua khoá học
           </Button>
         </div>
       )}
@@ -370,7 +370,7 @@ export function CourseDetailSidebar({
 
         {/* Course includes box */}
         <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <h3 className="mb-3 font-semibold text-gray-900">Khóa học này bao gồm:</h3>
+          <h3 className="mb-3 font-semibold text-gray-900">Khoá học này bao gồm:</h3>
           <ul className="space-y-2">
             {courseIncludes.map(({ icon: Icon, label }) => (
               <li key={label} className="flex items-center gap-2.5 text-sm text-gray-600">

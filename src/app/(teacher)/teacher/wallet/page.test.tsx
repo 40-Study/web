@@ -52,7 +52,7 @@ function txFixture(overrides: Partial<TeacherTransaction>): TeacherTransaction {
   return {
     order_id: "order-1",
     order_number: "DH001",
-    course_name: "Khóa test",
+    course_name: "Khoá test",
     course_id: "course-1",
     buyer_name: "Học viên A",
     amount: 499000,

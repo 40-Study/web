@@ -5,9 +5,9 @@
  * 260909-1340-web-logic-integration.md: route này KHÔNG có guard trong khi
  * bản song song (lesson)/learn/[courseSlug]/[lessonId] có RoleGuard.
  *
- * Yêu cầu: đã đăng nhập (STUDENT) VÀ đã enroll khóa học này — kiểm tra qua
- * danh sách khóa học đã enroll (GET /enrollments, đã có sẵn qua
- * useEnrolledCourses). Chưa enroll → redirect về trang chi tiết khóa học.
+ * Yêu cầu: đã đăng nhập (STUDENT) VÀ đã enroll khoá học này — kiểm tra qua
+ * danh sách khoá học đã enroll (GET /enrollments, đã có sẵn qua
+ * useEnrolledCourses). Chưa enroll → redirect về trang chi tiết khoá học.
  */
 
 import { useEffect } from "react";

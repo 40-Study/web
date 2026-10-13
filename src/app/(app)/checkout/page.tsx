@@ -100,7 +100,7 @@ export default function CheckoutPage() {
       setPaymentDialogOpen(true);
     } catch (error) {
       // Lỗi tạo đơn đã có toast riêng trong useCreateOrder.onError (kể cả 402
-      // "khóa học cần thanh toán" từ backend); ở đây chỉ log để debug.
+      // "khoá học cần thanh toán" từ backend); ở đây chỉ log để debug.
       console.error("Checkout error:", error);
     }
   };
@@ -111,7 +111,7 @@ export default function CheckoutPage() {
     try {
       await cancelOrderMutation.mutateAsync(activeOrder.id);
     } catch {
-      // Đơn có thể đã ở trạng thái không hủy được — vẫn tiếp tục tạo đơn mới,
+      // Đơn có thể đã ở trạng thái không huỷ được — vẫn tiếp tục tạo đơn mới,
       // đơn cũ (nếu còn "processing") không ảnh hưởng vì không cộng tiền/enroll.
     }
     setActiveOrder(null);
@@ -131,12 +131,12 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="container max-w-2xl mx-auto px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Không có khóa học nào</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Không có khoá học nào</h1>
         <p className="text-gray-500 mb-6">
-          Vui lòng thêm khóa học vào giỏ hàng trước khi thanh toán
+          Vui lòng thêm khoá học vào giỏ hàng trước khi thanh toán
         </p>
         <Link href="/courses">
-          <Button className="bg-primary-600 hover:bg-primary-700">Khám phá khóa học</Button>
+          <Button className="bg-primary-600 hover:bg-primary-700">Khám phá khoá học</Button>
         </Link>
       </div>
     );
@@ -151,7 +151,7 @@ export default function CheckoutPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-light text-black">Thanh toán</h1>
-          <p className="text-neutral-500">{items.length} khóa học</p>
+          <p className="text-neutral-500">{items.length} khoá học</p>
         </div>
       </div>
 
@@ -185,7 +185,7 @@ export default function CheckoutPage() {
           <Card>
             <CardContent className="p-6">
               <h2 className="text-lg font-light text-black mb-4">
-                Khóa học ({items.length})
+                Khoá học ({items.length})
               </h2>
               <div className="space-y-4">
                 {items.map((item) => (
@@ -204,7 +204,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-black line-clamp-2">
-                        {item.course?.title || "Khóa học"}
+                        {item.course?.title || "Khoá học"}
                       </p>
                       {item.course?.instructor && (
                         <p className="text-sm text-neutral-500 mt-0.5">
@@ -242,7 +242,7 @@ export default function CheckoutPage() {
               {/* Price breakdown */}
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-neutral-600">Tạm tính ({items.length} khóa học)</span>
+                  <span className="text-neutral-600">Tạm tính ({items.length} khoá học)</span>
                   <span className="font-medium">{formatPrice(subtotal)}</span>
                 </div>
                 {discount > 0 && (

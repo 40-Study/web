@@ -1,6 +1,6 @@
 /**
  * QA B-18: khoá không tồn tại / của giảng viên khác trước đây hiện bảng "Không có thành viên phù hợp" như thể khoá
- * chưa có ai. Phải từ chối rõ ràng, và tiêu đề không còn "Khóa học #<uuid>".
+ * chưa có ai. Phải từ chối rõ ràng, và tiêu đề không còn "Khoá học #<uuid>".
  */
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -48,7 +48,7 @@ describe("TeacherCourseMembersPage — quyền và tồn tại của khoá", () 
 
     expect(screen.getByRole("heading", { name: "Không tìm thấy khoá học" })).toBeTruthy();
     expect(screen.queryByText("Không có thành viên phù hợp.")).toBeNull();
-    expect(screen.getByRole("link", { name: "Về Khóa học của tôi" }).getAttribute("href")).toBe("/teacher/courses");
+    expect(screen.getByRole("link", { name: "Về Khoá học của tôi" }).getAttribute("href")).toBe("/teacher/courses");
   });
 
   it("khoá của giảng viên khác: hiện 'Không có quyền truy cập', không lộ danh sách", () => {
@@ -59,13 +59,13 @@ describe("TeacherCourseMembersPage — quyền và tồn tại của khoá", () 
     expect(screen.queryByText("Lê Văn C")).toBeNull();
   });
 
-  it("khoá của chính mình: hiện thành viên và tên khoá thật (không phải 'Khóa học #id')", () => {
+  it("khoá của chính mình: hiện thành viên và tên khoá thật (không phải 'Khoá học #id')", () => {
     state.course = { id: "course-1", title: "React + Next.js", instructor_id: "t1" };
     render(<TeacherCourseMembersPage />);
 
     expect(screen.getByText("Lê Văn C")).toBeTruthy();
     expect(screen.getByText("React + Next.js")).toBeTruthy();
-    expect(screen.queryByText(/Khóa học #/)).toBeNull();
+    expect(screen.queryByText(/Khoá học #/)).toBeNull();
   });
 
   it("lỗi 5xx khi tải khoá: hiện lỗi + Thử lại (gọi refetch), không báo 'Không tìm thấy'", () => {

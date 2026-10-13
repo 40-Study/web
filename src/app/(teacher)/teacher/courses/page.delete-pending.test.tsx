@@ -32,13 +32,13 @@ describe("/teacher/courses — nút xoá theo trạng thái", () => {
     render(<TeacherCoursesPage />);
     openTab("pending_review");
     expect(screen.getByText("QA-Khoa cho duyet")).toBeTruthy();
-    expect(screen.queryByTitle("Xóa khóa học")).toBeNull();
+    expect(screen.queryByTitle("Xoá khoá học")).toBeNull();
   });
 
   it("khoá nháp: vẫn có nút xoá", () => {
     render(<TeacherCoursesPage />);
     openTab("draft");
     expect(screen.getByText("QA-Khoa nhap")).toBeTruthy();
-    expect(screen.getByTitle("Xóa khóa học")).toBeTruthy();
+    expect(screen.getByTitle("Xoá khoá học")).toBeTruthy();
   });
 });

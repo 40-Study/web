@@ -46,7 +46,7 @@ export function CourseDetailHeader({ course, reviewsSummary, isEnrolled = false 
           </Link>
           <span>/</span>
           <Link href="/courses" className="hover:text-black transition-colors">
-            Khóa học
+            Khoá học
           </Link>
           <span>/</span>
           <span className="text-neutral-700">{course.category.name}</span>

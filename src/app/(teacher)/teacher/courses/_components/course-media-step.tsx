@@ -143,7 +143,7 @@ export function CourseMediaStep({
       {/* Thumbnail Upload */}
       <div className="space-y-2">
         <Label>
-          Ảnh bìa khóa học <span className="text-red-500">*</span>
+          Ảnh bìa khoá học <span className="text-red-500">*</span>
         </Label>
         <input
           ref={thumbnailInputRef}
@@ -282,7 +282,7 @@ export function CourseMediaStep({
           Mô tả chi tiết <span className="text-red-500">*</span>
         </Label>
         <Textarea
-          placeholder="Mô tả chi tiết khóa học: nội dung sẽ học, phương pháp giảng dạy, kết quả đạt được..."
+          placeholder="Mô tả chi tiết khoá học: nội dung sẽ học, phương pháp giảng dạy, kết quả đạt được..."
           value={formData.description}
           onChange={(e) => update("description", e.target.value)}
           rows={6}

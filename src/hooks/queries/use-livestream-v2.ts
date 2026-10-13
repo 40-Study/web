@@ -77,9 +77,9 @@ export function useDeleteLivestream() {
     mutationFn: (id: string) => livestreamService.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: livestreamV2Keys.all });
-      toast.success("Đã xóa livestream");
+      toast.success("Đã xoá livestream");
     },
-    onError: () => toast.error("Không thể xóa livestream"),
+    onError: () => toast.error("Không thể xoá livestream"),
   });
 }
 

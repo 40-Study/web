@@ -169,7 +169,7 @@ export const courseService = {
    *
    * P1 QA 260927 teacher: trước đây gọi `GET /courses?mine=true` — nhưng
    * `GetAllCourses` (course_router.go) KHÔNG BAO GIỜ đọc query `mine`, nên
-   * tham số này luôn bị bỏ qua và "Khóa của tôi" trả về TOÀN BỘ khoá học đã
+   * tham số này luôn bị bỏ qua và "Khoá của tôi" trả về TOÀN BỘ khoá học đã
    * published (của mọi giáo viên), không lọc theo instructor. Nay gọi route
    * `/courses/mine` mới (course_router.go, dùng GetMyCourses — lọc bằng
    * user_id từ access token, không nhận instructor_id qua query để tránh
@@ -187,9 +187,9 @@ export const courseService = {
    * H-04 (plans/reports/code-reviewer-260909-1412-web-review.md): backend
    * mặc định page_size=20 nếu không truyền tham số, tối đa page_size=100
    * (enrollment_service.go#GetMyEnrollments) — không có endpoint kiểm tra
-   * enrollment theo 1 khóa cụ thể. learn-route-guard.tsx cần TOÀN BỘ danh
-   * sách để không đá nhầm học viên có >20 khóa khỏi khóa đã mua — lặp trang
-   * tới khi đủ `total` (chặn tối đa 50 trang ~5000 khóa để tránh vòng lặp vô hạn).
+   * enrollment theo 1 khoá cụ thể. learn-route-guard.tsx cần TOÀN BỘ danh
+   * sách để không đá nhầm học viên có >20 khoá khỏi khoá đã mua — lặp trang
+   * tới khi đủ `total` (chặn tối đa 50 trang ~5000 khoá để tránh vòng lặp vô hạn).
    */
   getEnrolledCourses: async () => {
     type RawEnrollment = {

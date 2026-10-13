@@ -35,8 +35,8 @@ export function useUnlockAchievement() {
     mutationFn: (id: string) => achievementService.unlock(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: achievementKeys.mine() });
-      toast.success("Thành tích đã được mở khóa!");
+      toast.success("Thành tích đã được mở khoá!");
     },
-    onError: () => toast.error("Không thể mở khóa thành tích"),
+    onError: () => toast.error("Không thể mở khoá thành tích"),
   });
 }

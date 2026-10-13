@@ -68,7 +68,7 @@ describe("CourseSyllabus — khách xem thử", () => {
 
     fireEvent.click(screen.getByText("Bài trả phí"));
 
-    expect(await screen.findByText(/Đăng ký khóa học để xem nội dung/)).toBeTruthy();
+    expect(await screen.findByText(/Đăng ký khoá học để xem nội dung/)).toBeTruthy();
     expect(mockApi.get).not.toHaveBeenCalled();
     expect(screen.queryByText(/Chưa có nội dung/)).toBeNull();
   });

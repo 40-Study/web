@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Nối luồng thanh toán đơn hàng khóa học (mục 13,
+ * Nối luồng thanh toán đơn hàng khoá học (mục 13,
  * plans/reports/web-core-developer-260909-1412-web-logic-fixes.md).
  *
  * Trước đây `POST /orders` tạo xong là hết — không có cách nào trả tiền,
@@ -44,7 +44,7 @@ interface OrderPaymentDialogProps {
   onPaid: () => void;
   /**
    * Backend KHÔNG cho gọi lại payment-intent trên order đã "processing"
-   * (invalid state transition) — nên "tạo lại" khi hết hạn nghĩa là HỦY
+   * (invalid state transition) — nên "tạo lại" khi hết hạn nghĩa là HUỶ
    * order cũ + TẠO ĐƠN MỚI, việc này cần context giỏ hàng chỉ checkout/
    * page.tsx có. Truyền handler từ ngoài vào thay vì tự làm ở đây.
    */
@@ -61,7 +61,7 @@ export function OrderPaymentDialog({
 }: OrderPaymentDialogProps) {
   const [intent, setIntent] = useState<PaymentIntent | null>(null);
   // Lỗi tạo payment-intent (vd đơn đã "processing") → hiện trạng thái lỗi
-  // và mở khóa ref để đóng/mở lại dialog có thể thử lại.
+  // và mở khoá ref để đóng/mở lại dialog có thể thử lại.
   const [intentError, setIntentError] = useState(false);
   // Backend từ chối vì đơn quá hạn giữ (409 ERR_ORDER_EXPIRED): lưu câu tiếng Việt của backend để
   // hiện ở màn "hết hạn" kèm nút tạo đơn mới, thay vì màn lỗi chung "Giao dịch không thành công".
@@ -189,7 +189,7 @@ export function OrderPaymentDialog({
       expiresAt={intent?.expired_at}
       status={dialogStatus}
       successTitle="Thanh toán thành công!"
-      successDescription={<>Khóa học đã được thêm vào tài khoản của bạn.</>}
+      successDescription={<>Khoá học đã được thêm vào tài khoản của bạn.</>}
       onCheckNow={orderId ? () => checkPayment.mutate(orderId) : undefined}
       isCheckingNow={checkPayment.isPending}
       onRetryExpired={latePaymentReceived ? undefined : onRetryExpired}

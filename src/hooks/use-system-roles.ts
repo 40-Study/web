@@ -60,10 +60,10 @@ export function useDeleteSystemRole() {
     mutationFn: (id: string) => roleService.deleteSystemRole(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: systemRoleKeys.list() });
-      toast.success("Xóa vai trò hệ thống thành công");
+      toast.success("Xoá vai trò hệ thống thành công");
     },
     onError: (err: Error) => {
-      toast.error("Xóa vai trò hệ thống thất bại", { description: err.message });
+      toast.error("Xoá vai trò hệ thống thất bại", { description: err.message });
     },
   });
 }

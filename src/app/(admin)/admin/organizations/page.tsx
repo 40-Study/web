@@ -32,7 +32,7 @@ export default function OrganizationsPage() {
 
   const [form, setForm] = useState<OrgFormState>(emptyForm);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  // Xác nhận trước khi xóa tổ chức (đồng nhất với H-09 ở admin/roles)
+  // Xác nhận trước khi xoá tổ chức (đồng nhất với H-09 ở admin/roles)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
 
@@ -107,7 +107,7 @@ export default function OrganizationsPage() {
                       onClick={() => setConfirmDeleteId(org.id)}
                       className="rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-700"
                     >
-                      Xóa
+                      Xoá
                     </button>
                   </div>
                 </Can>
@@ -173,11 +173,11 @@ export default function OrganizationsPage() {
 
       <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
         <DialogContent>
-          <DialogTitle>Xóa tổ chức &quot;{confirmDeleteOrg?.name}&quot;?</DialogTitle>
+          <DialogTitle>Xoá tổ chức &quot;{confirmDeleteOrg?.name}&quot;?</DialogTitle>
           <DialogDescription>Hành động này không thể hoàn tác.</DialogDescription>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>
-              Hủy
+              Huỷ
             </Button>
             <Button
               variant="destructive"
@@ -186,7 +186,7 @@ export default function OrganizationsPage() {
                 setConfirmDeleteId(null);
               }}
             >
-              Xóa tổ chức
+              Xoá tổ chức
             </Button>
           </DialogFooter>
         </DialogContent>

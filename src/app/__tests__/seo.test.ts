@@ -67,7 +67,7 @@ describe("sitemap", () => {
     expect(p).toContain("/certificates/verify");
   });
 
-  it("có trang chi tiết từng khóa học (trang đã được mở công khai)", async () => {
+  it("có trang chi tiết từng khoá học (trang đã được mở công khai)", async () => {
     const p = await paths();
     expect(p).toContain("/courses/lap-trinh-go");
     expect(p).toContain("/courses/react-co-ban");

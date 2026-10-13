@@ -110,7 +110,7 @@ export default function TeacherWalletPage() {
       } while (nextPage <= pages);
 
       const rows: CsvCell[][] = [
-        ["Mã GD", "Ngày", "Khóa học", "Người mua", "Loại", "Số tiền", "Trạng thái"],
+        ["Mã GD", "Ngày", "Khoá học", "Người mua", "Loại", "Số tiền", "Trạng thái"],
         ...all.map((tx) => [
           tx.order_number,
           formatDate(tx.created_at),
@@ -274,7 +274,7 @@ export default function TeacherWalletPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 className="pl-9"
-                placeholder="Tìm mã GD, tên khóa học, tên người mua..."
+                placeholder="Tìm mã GD, tên khoá học, tên người mua..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -297,7 +297,7 @@ export default function TeacherWalletPage() {
                 <tr className="border-b text-left">
                   <th className="p-3 text-xs font-medium text-muted-foreground">MÃ GD</th>
                   <th className="p-3 text-xs font-medium text-muted-foreground">NGÀY</th>
-                  <th className="p-3 text-xs font-medium text-muted-foreground">KHÓA HỌC</th>
+                  <th className="p-3 text-xs font-medium text-muted-foreground">KHOÁ HỌC</th>
                   <th className="p-3 text-xs font-medium text-muted-foreground">NGƯỜI MUA</th>
                   <th className="p-3 text-xs font-medium text-muted-foreground text-right">
                     SỐ TIỀN

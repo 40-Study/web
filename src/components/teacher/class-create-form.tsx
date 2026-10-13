@@ -21,7 +21,7 @@ export function ClassCreateForm({
 }: {
   courseId: string;
   onCreated: (created: Class) => void;
-  /** Có thì hiện nút "Hủy" (khi đã có lớp khác để quay về danh sách). */
+  /** Có thì hiện nút "Huỷ" (khi đã có lớp khác để quay về danh sách). */
   onCancel?: () => void;
 }) {
   const [name, setName] = useState("");
@@ -70,7 +70,7 @@ export function ClassCreateForm({
       <ClassOrganizationField value={organizationId} onChange={setOrganizationId} />
       <div className="flex gap-2 pt-2">
         {onCancel && (
-          <Button variant="outline" onClick={onCancel}>Hủy</Button>
+          <Button variant="outline" onClick={onCancel}>Huỷ</Button>
         )}
         <Button onClick={handleCreate} disabled={!name.trim() || creating} className="flex-1">
           {creating && <Loader2 className="w-4 h-4 animate-spin mr-1" />}

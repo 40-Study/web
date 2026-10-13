@@ -44,7 +44,7 @@ export function FeaturedAchievements({
           </Button>
         </div>
         <p className="text-muted-foreground text-center py-8">
-          Chưa mở khóa thành tích nào. Học tiếp để nhận huy hiệu!
+          Chưa mở khoá thành tích nào. Học tiếp để nhận huy hiệu!
         </p>
       </Card>
     );

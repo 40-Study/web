@@ -28,7 +28,7 @@ function courseToResult(course: ApiCourse): SearchResult {
   return {
     id: course.id,
     title: course.title,
-    subtitle: course.instructor?.name ?? "Khóa học",
+    subtitle: course.instructor?.name ?? "Khoá học",
     href: `/courses/${course.slug ?? course.id}`,
     type: "course",
   };
@@ -192,8 +192,8 @@ export function GlobalSearch({
             setActiveIndex(-1);
           }}
           onKeyDown={handleInputKeyDown}
-          placeholder="Tìm khóa học, bài tập, hỏi đáp..."
-          aria-label="Tìm khóa học, bài tập, hỏi đáp"
+          placeholder="Tìm khoá học, bài tập, hỏi đáp..."
+          aria-label="Tìm khoá học, bài tập, hỏi đáp"
           // Khung ngoài đã có vòng focus; tắt box-shadow focus-visible toàn cục của input để không hiện vòng thứ hai khi click.
           className="flex-1 min-w-0 p-0 bg-transparent border-none outline-none shadow-none focus:ring-0 focus-visible:shadow-none text-sm text-foreground placeholder:text-muted-foreground"
         />
@@ -222,7 +222,7 @@ export function GlobalSearch({
           {results.length > 0 && (
             <div className="py-2 max-h-80 overflow-y-auto">
               <p className="px-4 py-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                Khóa học
+                Khoá học
               </p>
               {results.map((item, idx) => (
                 <button

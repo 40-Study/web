@@ -25,7 +25,7 @@ interface MyOrderCardProps {
   order: Order;
   onPay: (order: Order) => void;
   onCancel: (order: Order) => void;
-  /** Đơn hết hạn: tạo đơn mới cho đúng các khóa này theo giá hiện tại. */
+  /** Đơn hết hạn: tạo đơn mới cho đúng các khoá này theo giá hiện tại. */
   onReorder: (order: Order) => void;
   isReordering?: boolean;
   /** Đơn đang đối chiếu: hỏi backend kết quả đối chiếu ngân hàng ngay rồi tải lại danh sách. */
@@ -36,7 +36,7 @@ interface MyOrderCardProps {
 const RECONCILING_LABEL = "Đang đối chiếu";
 const REFUNDED_NOTICE = "Đơn đã được hoàn tiền";
 
-/** Một đơn trong "Đơn hàng của tôi": khóa học, tổng tiền, ngày tạo, hạn giữ đơn và hành động. */
+/** Một đơn trong "Đơn hàng của tôi": khoá học, tổng tiền, ngày tạo, hạn giữ đơn và hành động. */
 export function MyOrderCard({
   order,
   onPay,
@@ -49,7 +49,7 @@ export function MyOrderCard({
   const open = isOrderOpen(order);
   // Review #76 vòng 3: đơn "processing" (đã có mã chuyển khoản) quá hạn mã CHƯA phải hết hạn. Backend
   // còn đối chiếu ngân hàng (ân hạn 30 phút, hoặc ngân hàng tạm lỗi), không cho huỷ, không cho tạo
-  // đơn trùng. Hiện "Đang đối chiếu" + nút kiểm tra, không có "Hủy đơn" / "Tạo đơn mới".
+  // đơn trùng. Hiện "Đang đối chiếu" + nút kiểm tra, không có "Huỷ đơn" / "Tạo đơn mới".
   const isReconciling = !open && order.status === "processing";
   // Quyết định chủ dự án (review #76 final): đơn đã huỷ/hết hạn KHÔNG BAO GIỜ được khôi phục. Có tiền
   // về cho mã của nó thì backend gắn cờ refund_needed: hiện dòng hoàn tiền, bỏ nút kiểm tra (đã có kết
@@ -86,7 +86,7 @@ export function MyOrderCard({
         {order.items.map((item) => (
           <li key={item.id} className="flex items-start justify-between gap-3">
             <span className="min-w-0 text-gray-700 dark:text-gray-300">
-              {item.course_name || "Khóa học không còn tồn tại"}
+              {item.course_name || "Khoá học không còn tồn tại"}
             </span>
             <span className="shrink-0 font-medium">{formatCurrency(Number(item.final_price))}</span>
           </li>
@@ -113,7 +113,7 @@ export function MyOrderCard({
       {open && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
           <Button variant="outline" onClick={() => onCancel(order)}>
-            Hủy đơn
+            Huỷ đơn
           </Button>
           <Button onClick={() => onPay(order)}>Tiếp tục thanh toán</Button>
         </div>
@@ -122,7 +122,7 @@ export function MyOrderCard({
       {isReconciling && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-gray-500">
-            Hệ thống đang đối chiếu thanh toán của đơn này với ngân hàng nên chưa thể hủy hay tạo đơn mới.
+            Hệ thống đang đối chiếu thanh toán của đơn này với ngân hàng nên chưa thể huỷ hay tạo đơn mới.
             Nếu bạn đã chuyển khoản, đừng chuyển lại.
           </p>
           <Button variant="outline" className="shrink-0" isLoading={isCheckingPayment} onClick={() => onCheckPayment(order)}>

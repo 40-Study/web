@@ -165,7 +165,7 @@ export default function ScheduleQuickCreatePopover({
             onClick={handleMoreOptions}
             className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
           >
-            Thêm tùy chọn
+            Thêm tuỳ chọn
             <ChevronRight className="w-3 h-3" />
           </button>
 

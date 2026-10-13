@@ -112,7 +112,7 @@ export function DiscussionComment({
                   onClick={() => setShowReplyBox(false)}
                   className="text-xs text-slate-400 hover:text-slate-600 px-3 py-1.5"
                 >
-                  Hủy
+                  Huỷ
                 </button>
                 <button
                   onClick={handleReplySubmit}

@@ -46,16 +46,16 @@ function EmptyState() {
         <BookOpen className="w-10 h-10 text-gray-400" />
       </div>
       <h3 className="text-lg font-semibold text-gray-900 mb-2">
-        Chưa có khóa học nào
+        Chưa có khoá học nào
       </h3>
       <p className="text-sm text-gray-500 text-center mb-6 max-w-sm">
-        Bạn chưa đăng ký khóa học nào. Khám phá các khóa học để bắt đầu hành trình học tập!
+        Bạn chưa đăng ký khoá học nào. Khám phá các khoá học để bắt đầu hành trình học tập!
       </p>
       <Link
         href="/courses"
         className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors"
       >
-        Khám phá khóa học
+        Khám phá khoá học
         <ChevronRight className="w-4 h-4" />
       </Link>
     </div>
@@ -103,7 +103,7 @@ export default function MyCoursesPage() {
     const totalProgress = enrolledCourses.length
       ? Math.round(enrolledCourses.reduce((sum, c) => sum + c.progress, 0) / enrolledCourses.length)
       : 0;
-    // Thời gian học THẬT: cộng video_watched_seconds của mọi bài trong mọi khóa đã ghi danh
+    // Thời gian học THẬT: cộng video_watched_seconds của mọi bài trong mọi khoá đã ghi danh
     // (backend trả về ở trường watched_seconds của /enrollments). Trước đây ô này hiển thị
     // chuỗi cứng "1h 45m" cho mọi người học.
     const totalSeconds = enrolledCourses.reduce((sum, c) => sum + (c.watchedSeconds ?? 0), 0);
@@ -135,16 +135,16 @@ export default function MyCoursesPage() {
     return <LoadingSkeleton />;
   }
 
-  // Lỗi API phải hiển thị là LỖI, không được rơi vào empty-state "Chưa có khóa học nào".
+  // Lỗi API phải hiển thị là LỖI, không được rơi vào empty-state "Chưa có khoá học nào".
   // Trước đây `data = []` mặc định khiến /enrollments trả 500 trông y hệt "bạn chưa đăng ký
-  // khóa học nào" — học viên tưởng mất hết ghi danh. PR này còn khiến ô "Thời gian học" suy
+  // khoá học nào" — học viên tưởng mất hết ghi danh. PR này còn khiến ô "Thời gian học" suy
   // ra từ cùng query đó, nên hậu quả rộng hơn (0m trông như chưa từng học).
   // Đặt trước `currentCourse`/`stats` vì cả hai đều đọc từ `enrolledCourses` rỗng.
   if (coursesError) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="page-container !px-0">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Khóa học của tôi</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">Khoá học của tôi</h1>
           <QueryState
             isError
             error={coursesErrorObj}
@@ -167,7 +167,7 @@ export default function MyCoursesPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Khóa học của tôi</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Khoá học của tôi</h1>
             <p className="text-gray-500 mt-1">
               Chào mừng trở lại {firstName}, hãy tập trung vào mục tiêu hôm nay.
             </p>
@@ -195,13 +195,13 @@ export default function MyCoursesPage() {
                 </section>
               )}
 
-              {/* Khóa học của tôi - Grid */}
+              {/* Khoá học của tôi - Grid */}
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-primary-500" />
                     <h2 className="text-xs font-bold text-gray-600 uppercase tracking-wide">
-                      Khóa học của tôi
+                      Khoá học của tôi
                     </h2>
                   </div>
                   {allCourses.length > 4 && (
@@ -241,7 +241,7 @@ export default function MyCoursesPage() {
                     </h3>
                   </div>
                   <p className="text-sm text-gray-500 text-center py-4">
-                    Hoàn thành khóa học để nhận chứng chỉ đầu tiên!
+                    Hoàn thành khoá học để nhận chứng chỉ đầu tiên!
                   </p>
                   <Link
                     href="/achievements"

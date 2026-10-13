@@ -58,9 +58,9 @@ export function useDeleteSection(courseId: string) {
     mutationFn: (id: string) => sectionService.deleteSection(courseId, id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: sectionKeys.byCourse(courseId) });
-      toast.success("Đã xóa phần học");
+      toast.success("Đã xoá phần học");
     },
-    onError: () => toast.error("Không thể xóa phần học"),
+    onError: () => toast.error("Không thể xoá phần học"),
   });
 }
 

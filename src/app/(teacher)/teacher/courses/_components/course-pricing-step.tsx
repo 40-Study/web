@@ -33,7 +33,7 @@ export function CoursePricingStep({
       <div>
         <h2 className="text-xl font-semibold text-gray-900">Cài đặt giá</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Thiết lập chi phí và chương trình ưu đãi cho khóa học
+          Thiết lập chi phí và chương trình ưu đãi cho khoá học
         </p>
       </div>
 
@@ -131,7 +131,7 @@ export function CoursePricingStep({
         <CardContent className="p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium">Khóa học nổi bật</p>
+              <p className="font-medium">Khoá học nổi bật</p>
               <p className="text-sm text-muted-foreground">
                 Hiển thị trên trang chủ để tăng tiếp cận
               </p>

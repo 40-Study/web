@@ -2,13 +2,13 @@
 
 /**
  * "Đơn hàng của tôi" (B3, QA vòng 2 N1). Trước đây không có trang nào liệt kê đơn: đóng hộp
- * thanh toán là mất đường quay lại đơn đang chờ chuyển khoản, cũng không hủy được.
+ * thanh toán là mất đường quay lại đơn đang chờ chuyển khoản, cũng không huỷ được.
  * Đơn còn mở (pending/processing, chưa quá hạn) có 2 hành động:
  * - "Tiếp tục thanh toán": mở lại OrderPaymentDialog. Backend trả lại ĐÚNG mã chuyển khoản cũ nếu
  *   đơn đã "processing" và mã còn hạn, hoặc tạo phiên mới nếu đơn còn "pending".
- * - "Hủy đơn": xác nhận rồi POST /orders/:id/cancel.
+ * - "Huỷ đơn": xác nhận rồi POST /orders/:id/cancel.
  * Đơn hết hạn (backend trả 409 ERR_ORDER_EXPIRED khi mở thanh toán, hoặc đã "expired"): "Tạo đơn
- * mới" gọi POST /orders (buy_now) cho đúng các khóa của đơn đó, giá tính lại theo hiện tại, rồi mở
+ * mới" gọi POST /orders (buy_now) cho đúng các khoá của đơn đó, giá tính lại theo hiện tại, rồi mở
  * hộp thanh toán cho đơn mới.
  */
 
@@ -74,7 +74,7 @@ export default function MyOrdersPage() {
         return;
       }
       if (checked.status === "completed" || checked.status === "paid") {
-        toast.success("Đơn này đã được thanh toán, khóa học đã được thêm vào tài khoản của bạn.");
+        toast.success("Đơn này đã được thanh toán, khoá học đã được thêm vào tài khoản của bạn.");
         refetch();
         setReorderingId(null);
         return;
@@ -102,8 +102,8 @@ export default function MyOrdersPage() {
         onSuccess: (created) => {
           refetch();
           if (created.status === "completed") {
-            // Khóa đã chuyển miễn phí: backend hoàn tất đơn 0đ và ghi danh ngay.
-            toast.success("Đã ghi danh khóa học");
+            // Khoá đã chuyển miễn phí: backend hoàn tất đơn 0đ và ghi danh ngay.
+            toast.success("Đã ghi danh khoá học");
             return;
           }
           setPayingOrder(created);
@@ -121,7 +121,7 @@ export default function MyOrdersPage() {
     try {
       const checked = await checkPaymentMutation.mutateAsync(order.id);
       if (checked.status === "completed" || checked.status === "paid") {
-        toast.success("Đơn này đã được thanh toán, khóa học đã được thêm vào tài khoản của bạn.");
+        toast.success("Đơn này đã được thanh toán, khoá học đã được thêm vào tài khoản của bạn.");
       } else if (checked.late_payment_received) {
         toast.info(`${REFUND_NEEDED_NOTICE}. Vui lòng không chuyển khoản lại.`);
       } else if (checked.bank_unavailable) {
@@ -129,7 +129,7 @@ export default function MyOrdersPage() {
       } else if (checked.status === "expired") {
         toast.info("Không tìm thấy giao dịch cho đơn này, đơn đã hết hạn. Bạn có thể tạo đơn mới.");
       } else if (checked.status === "cancelled") {
-        toast.info("Chưa ghi nhận giao dịch nào cho đơn đã hủy này.");
+        toast.info("Chưa ghi nhận giao dịch nào cho đơn đã huỷ này.");
       } else {
         toast.info(PAYMENT_RECONCILING_NOTICE);
       }
@@ -157,7 +157,7 @@ export default function MyOrdersPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Đơn hàng của tôi</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Tiếp tục thanh toán hoặc hủy các đơn đang chờ. Cần hoàn tiền? Vui lòng liên hệ bộ phận hỗ trợ.
+          Tiếp tục thanh toán hoặc huỷ các đơn đang chờ. Cần hoàn tiền? Vui lòng liên hệ bộ phận hỗ trợ.
         </p>
       </div>
 
@@ -185,7 +185,7 @@ export default function MyOrdersPage() {
         onRetry={() => refetch()}
         isEmpty={!isLoading && !isError && orders.length === 0}
         emptyTitle="Chưa có đơn hàng nào"
-        emptyDescription={status ? "Không có đơn nào ở trạng thái này." : "Các đơn mua khóa học của bạn sẽ hiện ở đây."}
+        emptyDescription={status ? "Không có đơn nào ở trạng thái này." : "Các đơn mua khoá học của bạn sẽ hiện ở đây."}
       >
         <div className="space-y-4">
           {orders.map((order) => (
@@ -237,17 +237,17 @@ export default function MyOrdersPage() {
 
       <Dialog open={!!cancellingOrder} onOpenChange={(next) => !next && setCancellingOrder(null)}>
         <DialogContent>
-          <DialogTitle>Hủy đơn hàng?</DialogTitle>
+          <DialogTitle>Huỷ đơn hàng?</DialogTitle>
           <DialogDescription>
-            Đơn <strong>{cancellingOrder?.order_number}</strong> sẽ bị hủy. Nếu bạn đã chuyển khoản cho đơn này,
-            đừng hủy mà hãy liên hệ hỗ trợ.
+            Đơn <strong>{cancellingOrder?.order_number}</strong> sẽ bị huỷ. Nếu bạn đã chuyển khoản cho đơn này,
+            đừng huỷ mà hãy liên hệ hỗ trợ.
           </DialogDescription>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCancellingOrder(null)}>
               Giữ đơn
             </Button>
             <Button variant="destructive" isLoading={cancelMutation.isPending} onClick={confirmCancel}>
-              Hủy đơn
+              Huỷ đơn
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -71,7 +71,7 @@ function buildSidebarItems(homeHref: string, familyLabel: string): SidebarNavIte
     { label: "Trang chủ", href: homeHref, icon: Home, roles: ["GUEST", "STUDENT", "PARENT"] },
     { label: "Khám phá", href: "/courses", icon: BookOpen, roles: ["GUEST", "STUDENT", "PARENT"] },
     { label: "Cuộc thi", href: "/contests", icon: Trophy, roles: rolesFromRouteTable("/contests") },
-    { label: "Khóa học của tôi", href: "/my-courses", icon: GraduationCap, roles: rolesFromRouteTable("/my-courses") },
+    { label: "Khoá học của tôi", href: "/my-courses", icon: GraduationCap, roles: rolesFromRouteTable("/my-courses") },
     { label: "Lịch học", href: "/schedule", icon: Calendar, roles: rolesFromRouteTable("/schedule") },
     // A-08: đường vào danh sách buổi livestream; A-07: sổ điểm của học viên. Roles lấy từ ROLE_SCOPED_ROUTES như
     // mọi mục khác nên menu và route guard không lệch nhau.

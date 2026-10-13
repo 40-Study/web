@@ -103,7 +103,7 @@ export function VoucherInput({
   }
 
   // M-01: chỉ tự áp dụng 1 lần lúc mount (không phụ thuộc `subtotal` đổi theo
-  // mỗi lần tick chọn khóa — người dùng vẫn bấm "Áp dụng" lại nếu muốn).
+  // mỗi lần tick chọn khoá — người dùng vẫn bấm "Áp dụng" lại nếu muốn).
   useEffect(() => {
     if (initialCode) handleApply();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,7 +136,7 @@ export function VoucherInput({
           <span className="text-sm font-medium">{applied.voucher?.code}</span>
           <span className="text-sm">— Giảm {formatCurrency(applied.discount_amount)}</span>
         </div>
-        <button onClick={handleRemove} className="p-1 hover:bg-green-100 rounded" aria-label="Xóa voucher">
+        <button onClick={handleRemove} className="p-1 hover:bg-green-100 rounded" aria-label="Xoá voucher">
           <X className="h-4 w-4 text-green-600" />
         </button>
       </div>
@@ -170,7 +170,7 @@ export function VoucherInput({
         <p className="text-sm text-red-500">{errorMessage}</p>
       )}
       {courseIds.length === 0 && (
-        <p className="sr-only">Không có khóa học nào để áp dụng voucher</p>
+        <p className="sr-only">Không có khoá học nào để áp dụng voucher</p>
       )}
     </div>
   );

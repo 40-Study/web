@@ -72,10 +72,10 @@ export function useDeleteRole(organizationId?: string) {
     mutationFn: (id: string) => roleService.deleteOrgRole(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: roleKeys.list(organizationId) });
-      toast.success("Xóa vai trò thành công");
+      toast.success("Xoá vai trò thành công");
     },
     onError: (err: Error) => {
-      toast.error("Xóa vai trò thất bại", { description: getErrorMessage(err) });
+      toast.error("Xoá vai trò thất bại", { description: getErrorMessage(err) });
     },
   });
 }

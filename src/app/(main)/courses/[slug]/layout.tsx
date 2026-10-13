@@ -3,10 +3,10 @@ import { getCourseBySlugServer } from "@/lib/server-fetchers/course";
 import { SITE_URL } from "@/lib/seo";
 
 /**
- * Metadata cho trang chi tiết khóa học — TRANG CÔNG KHAI.
+ * Metadata cho trang chi tiết khoá học — TRANG CÔNG KHAI.
  *
  * Layout cũ (ở group (app)) chỉ biến slug thành title bằng cách thay dấu gạch
- * nối, không hề đọc dữ liệu thật. Nay trang đã public nên fetch khóa học để có
+ * nối, không hề đọc dữ liệu thật. Nay trang đã public nên fetch khoá học để có
  * title/description/ảnh OG đúng — đây mới là thứ hiện ra khi link được chia sẻ
  * lên Facebook/Zalo/LinkedIn.
  *
@@ -22,7 +22,7 @@ export async function generateMetadata({
 
   if (!course) {
     return {
-      title: "Khóa học",
+      title: "Khoá học",
       alternates: { canonical: url },
     };
   }
@@ -30,7 +30,7 @@ export async function generateMetadata({
   const description =
     course.short_description ||
     course.description?.slice(0, 200) ||
-    `Khóa học ${course.title} trên ForteX.`;
+    `Khoá học ${course.title} trên ForteX.`;
 
   return {
     title: course.title,

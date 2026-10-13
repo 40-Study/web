@@ -79,7 +79,7 @@ export default function CreateCoursePage() {
 
   const handleSaveDraft = async () => {
     if (!formData.title.trim()) {
-      toast.error("Vui lòng nhập tên khóa học");
+      toast.error("Vui lòng nhập tên khoá học");
       return;
     }
     if (!discountPriceOk()) return;
@@ -94,13 +94,13 @@ export default function CreateCoursePage() {
 
   const handlePublish = async () => {
     if (!formData.title.trim()) {
-      toast.error("Vui lòng nhập tên khóa học");
+      toast.error("Vui lòng nhập tên khoá học");
       return;
     }
     if (!discountPriceOk()) return;
     try {
       const course = await createCourse.mutateAsync(buildPayload());
-      toast.success("Khóa học đã được tạo! Thêm bài học ngay.");
+      toast.success("Khoá học đã được tạo! Thêm bài học ngay.");
       router.push(`/teacher/courses/${course.id}`);
     } catch {
       // error handled in hook
@@ -123,7 +123,7 @@ export default function CreateCoursePage() {
             Quay lại
           </Button>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Tạo khóa học mới</h1>
+            <h1 className="text-xl font-bold text-gray-900">Tạo khoá học mới</h1>
             <p className="text-sm text-muted-foreground">
               Bước {currentStep}/{STEPS.length} — {STEPS[currentStep - 1].title}
             </p>
@@ -224,7 +224,7 @@ export default function CreateCoursePage() {
               </Button>
             ) : (
               <Button variant="ghost" onClick={() => router.push("/teacher/courses")}>
-                Hủy bỏ
+                Huỷ bỏ
               </Button>
             )}
             <div className="flex gap-2">
@@ -308,7 +308,7 @@ function Step4Review({ formData }: { formData: CourseFormData }) {
             <div>
               <span className="text-sm text-muted-foreground">Ảnh bìa:</span>
               <div className="mt-2 relative rounded-lg overflow-hidden aspect-video max-w-xs bg-gray-100">
-                <Image src={formData.thumbnail_preview} alt="Ảnh bìa khóa học" fill className="object-cover" />
+                <Image src={formData.thumbnail_preview} alt="Ảnh bìa khoá học" fill className="object-cover" />
               </div>
             </div>
           )}
@@ -336,7 +336,7 @@ function Step4Review({ formData }: { formData: CourseFormData }) {
             {/* Left: Checklist */}
             <div className="space-y-3">
               <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Kiểm tra</h3>
-              <ChecklistItem done={!!formData.title} label="Tên khóa học" />
+              <ChecklistItem done={!!formData.title} label="Tên khoá học" />
               <ChecklistItem done={!!formData.thumbnail_url} label="Ảnh bìa" />
               <ChecklistItem done={!!formData.description} label="Mô tả chi tiết" />
               <ChecklistItem done={formData.is_free || !!formData.price} label="Thiết lập giá" />

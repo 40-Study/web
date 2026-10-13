@@ -238,7 +238,7 @@ export function ClassManagePanel({ classId }: { classId: string }) {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmingArchive(false)}>
-              Hủy
+              Huỷ
             </Button>
             <Button
               disabled={actions.update.isPending}
@@ -260,7 +260,7 @@ export function ClassManagePanel({ classId }: { classId: string }) {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPending(null)}>
-              Hủy
+              Huỷ
             </Button>
             <Button variant="destructive" onClick={confirmRemoval} disabled={actions.removeTeacher.isPending || actions.removeStudent.isPending}>
               Gỡ khỏi lớp

@@ -83,13 +83,13 @@ export default function AdminOrderDetailPage() {
       <QueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
         {order && (
           <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
-            {/* Danh sách khóa học trong đơn */}
+            {/* Danh sách khoá học trong đơn */}
             <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-              <h2 className="mb-3 text-base font-semibold">Khóa học trong đơn</h2>
+              <h2 className="mb-3 text-base font-semibold">Khoá học trong đơn</h2>
               <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 {order.items.map((item) => (
                   <div key={item.id} className="flex items-center justify-between py-2 text-sm">
-                    <span>{item.course_name || "Khóa học không còn tồn tại"}</span>
+                    <span>{item.course_name || "Khoá học không còn tồn tại"}</span>
                     <span className="font-medium">{formatCurrency(item.final_price)}</span>
                   </div>
                 ))}
@@ -213,7 +213,7 @@ export default function AdminOrderDetailPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>
-              Hủy
+              Huỷ
             </Button>
             <Button
               variant="destructive"

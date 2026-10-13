@@ -95,13 +95,13 @@ describe("useCreateOrder — lỗi 409", () => {
   });
 
   it("lỗi khác: chỉ toast message, không có nút", async () => {
-    vi.mocked(orderService.createOrder).mockRejectedValue(new ApiError(400, "ERR_CREATE_ORDER", "Khóa học không tồn tại"));
+    vi.mocked(orderService.createOrder).mockRejectedValue(new ApiError(400, "ERR_CREATE_ORDER", "Khoá học không tồn tại"));
     const { wrapper } = setup();
     const { result } = renderHook(() => useCreateOrder(), { wrapper });
 
     act(() => result.current.mutate({ source: "buy_now", course_ids: ["c1"], idempotency_key: "k" }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
-    expect(vi.mocked(toast.error).mock.calls[0]).toEqual(["Khóa học không tồn tại"]);
+    expect(vi.mocked(toast.error).mock.calls[0]).toEqual(["Khoá học không tồn tại"]);
   });
 });
 
@@ -163,7 +163,7 @@ describe("useCancelOrder — 409 do đối chiếu", () => {
 
   it.each([
     ["ERR_PAYMENT_VERIFYING", "Đơn hàng đang được đối chiếu thanh toán với ngân hàng. Vui lòng không chuyển khoản lại và thử lại sau ít phút."],
-    ["ERR_ORDER_ALREADY_PAID", "Đơn hàng đã được thanh toán, khóa học đã được thêm vào tài khoản của bạn."],
+    ["ERR_ORDER_ALREADY_PAID", "Đơn hàng đã được thanh toán, khoá học đã được thêm vào tài khoản của bạn."],
   ])("%s: toast câu của backend và làm mới đơn", async (code, msg) => {
     vi.mocked(orderService.cancelOrder).mockRejectedValue(new ApiError(409, code, msg));
     const { wrapper, invalidate } = setup();

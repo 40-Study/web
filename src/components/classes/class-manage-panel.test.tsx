@@ -91,7 +91,7 @@ describe("ClassManagePanel", () => {
     await userEvent.click(buttons[buttons.length - 1]);
     await waitFor(() => expect(mockApi.put).toHaveBeenCalledWith(`/classes/${CLASS_ID}`, { status: "archived" }));
     expect(mockApi.delete).not.toHaveBeenCalled();
-    expect(screen.queryByRole("button", { name: /Xoá lớp|Xóa lớp|Xoá vĩnh viễn/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Xoá lớp|Xoá lớp|Xoá vĩnh viễn/ })).toBeNull();
   });
 
   it("lớp đã lưu trữ: không còn nút 'Lưu trữ lớp'", async () => {

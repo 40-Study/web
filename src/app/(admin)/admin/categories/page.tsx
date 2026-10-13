@@ -119,7 +119,7 @@ export default function AdminCategoriesPage() {
                     onClick={() => setConfirmDeleteId(cat.id)}
                     className="rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-700"
                   >
-                    Xóa
+                    Xoá
                   </button>
                 </div>
               </div>
@@ -198,13 +198,13 @@ export default function AdminCategoriesPage() {
 
       <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
         <DialogContent>
-          <DialogTitle>Xóa danh mục &quot;{confirmDeleteCategory?.name}&quot;?</DialogTitle>
+          <DialogTitle>Xoá danh mục &quot;{confirmDeleteCategory?.name}&quot;?</DialogTitle>
           <DialogDescription>
             Hành động này không thể hoàn tác. Khoá học đang gắn danh mục này có thể bị ảnh hưởng.
           </DialogDescription>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>
-              Hủy
+              Huỷ
             </Button>
             <Button
               variant="destructive"
@@ -213,7 +213,7 @@ export default function AdminCategoriesPage() {
                 setConfirmDeleteId(null);
               }}
             >
-              Xóa danh mục
+              Xoá danh mục
             </Button>
           </DialogFooter>
         </DialogContent>

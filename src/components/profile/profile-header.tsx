@@ -129,7 +129,7 @@ export function ProfileHeader({
           </div>
           <div className="text-center">
             <p className="text-3xl font-bold">{stats.coursesCompleted}</p>
-            <p className="text-sm opacity-80">Khóa học</p>
+            <p className="text-sm opacity-80">Khoá học</p>
           </div>
           <div className="text-center">
             <p className="text-3xl font-bold">{stats.achievements}</p>

@@ -70,9 +70,9 @@ export function useDeleteCategory() {
     mutationFn: (id: string) => categoryService.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: categoryKeys.all });
-      toast.success("Đã xóa danh mục");
+      toast.success("Đã xoá danh mục");
     },
-    onError: (error) => toast.error(getErrorMessage(error, "Không thể xóa danh mục")),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể xoá danh mục")),
   });
 }
 
@@ -106,8 +106,8 @@ export function useDeleteTag() {
     mutationFn: (id: string) => categoryService.deleteTag(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: categoryKeys.tags });
-      toast.success("Đã xóa thẻ");
+      toast.success("Đã xoá thẻ");
     },
-    onError: () => toast.error("Không thể xóa thẻ"),
+    onError: () => toast.error("Không thể xoá thẻ"),
   });
 }

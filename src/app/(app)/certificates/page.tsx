@@ -26,7 +26,7 @@ export default function MyCertificatesPage() {
             Chứng chỉ của tôi
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Chứng chỉ nhận được sau khi hoàn thành khóa học.
+            Chứng chỉ nhận được sau khi hoàn thành khoá học.
           </p>
         </div>
         <Link
@@ -44,14 +44,14 @@ export default function MyCertificatesPage() {
       ) : certificates.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center">
           <p className="text-sm text-gray-500">
-            Bạn chưa có chứng chỉ nào. Hoàn thành một khóa học để nhận chứng
+            Bạn chưa có chứng chỉ nào. Hoàn thành một khoá học để nhận chứng
             chỉ đầu tiên.
           </p>
           <Link
             href="/my-courses"
             className="mt-4 inline-block rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
           >
-            Tới khóa học của tôi
+            Tới khoá học của tôi
           </Link>
         </div>
       ) : (

@@ -93,8 +93,8 @@ export function useDeleteClassSchedule() {
     mutationFn: (id: string) => classScheduleService.deleteSchedule(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: classScheduleKeys.all });
-      toast.success("Xóa lịch học thành công");
+      toast.success("Xoá lịch học thành công");
     },
-    onError: () => toast.error("Không thể xóa lịch học"),
+    onError: () => toast.error("Không thể xoá lịch học"),
   });
 }

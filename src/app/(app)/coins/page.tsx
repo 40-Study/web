@@ -58,7 +58,7 @@ function TransactionRow({ tx }: { tx: CoinTransaction }) {
     EARN_DAILY_LOGIN: "Đăng nhập hàng ngày",
     EARN_REFERRAL: "Giới thiệu bạn bè",
     EARN_PURCHASE: "Mua xu",
-    SPEND_COURSE_UNLOCK: "Mở khóa khóa học",
+    SPEND_COURSE_UNLOCK: "Mở khoá khoá học",
     SPEND_HINT: "Mua gợi ý",
     SPEND_STREAK_FREEZE: "Đóng băng chuỗi ngày",
     SPEND_GIFT: "Tặng xu",
@@ -209,7 +209,7 @@ function SendGiftDialog() {
             <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="100" min={1} />
           </div>
           <div className="space-y-2">
-            <Label>Lời nhắn (tùy chọn)</Label>
+            <Label>Lời nhắn (tuỳ chọn)</Label>
             <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Chúc bạn học tốt!" />
           </div>
           <Button className="w-full" onClick={handleSend} disabled={sendGift.isPending || !receiverId || !amount}>

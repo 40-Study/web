@@ -42,7 +42,7 @@ export default function TeacherCourseMembersPage() {
   );
 
   // Use class_name or course_name for the title
-  const courseTitle = course?.title ?? members[0]?.course_name ?? members[0]?.class_name ?? "Khóa học";
+  const courseTitle = course?.title ?? members[0]?.course_name ?? members[0]?.class_name ?? "Khoá học";
 
   const filteredMembers = useMemo(() => {
     return members.filter((member) => {
@@ -66,7 +66,7 @@ export default function TeacherCourseMembersPage() {
     return <ResourceLoadError resourceLabel="khoá học" onRetry={() => void refetchCourse()} />;
   }
   if (!course) {
-    return <ResourceUnavailable status={unavailableStatus(courseErrorValue)} resourceLabel="khoá học" backHref="/teacher/courses" backLabel="Về Khóa học của tôi" />;
+    return <ResourceUnavailable status={unavailableStatus(courseErrorValue)} resourceLabel="khoá học" backHref="/teacher/courses" backLabel="Về Khoá học của tôi" />;
   }
   // Store chưa có user thì chưa so được chủ khoá: chờ, không nháy "Không có quyền".
   if (!isAdmin && !teacherId) {
@@ -77,7 +77,7 @@ export default function TeacherCourseMembersPage() {
     );
   }
   if (!isAdmin && course.instructor_id !== teacherId) {
-    return <ResourceUnavailable status={403} resourceLabel="khoá học" backHref="/teacher/courses" backLabel="Về Khóa học của tôi" />;
+    return <ResourceUnavailable status={403} resourceLabel="khoá học" backHref="/teacher/courses" backLabel="Về Khoá học của tôi" />;
   }
 
   return (
@@ -91,7 +91,7 @@ export default function TeacherCourseMembersPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">Thành viên khóa học</h1>
+            <h1 className="text-2xl font-bold">Thành viên khoá học</h1>
             <p className="text-sm text-muted-foreground">{courseTitle}</p>
           </div>
         </div>
@@ -184,7 +184,7 @@ export default function TeacherCourseMembersPage() {
           name: member.name,
           phone: member.parent_phone,
         }))}
-        contextLabel={`Khóa học: ${courseTitle}`}
+        contextLabel={`Khoá học: ${courseTitle}`}
       />
     </div>
   );

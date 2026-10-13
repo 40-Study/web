@@ -255,7 +255,7 @@ export default function AdminModerationPage() {
           </DialogDescription>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmAction(null)}>
-              Hủy
+              Huỷ
             </Button>
             <Button
               variant={confirmAction?.status === "dismissed" ? "destructive" : "default"}

@@ -56,7 +56,7 @@ export function CourseCard({ course, className, priority = false, showWishlist =
     .filter(Boolean)
     .join(" · ");
 
-  // Dữ liệu có thể thiếu (vd. khóa đã ghi danh): chỉ hiện khi có giá trị thật.
+  // Dữ liệu có thể thiếu (vd. khoá đã ghi danh): chỉ hiện khi có giá trị thật.
   const instructorName = course.instructor?.name?.trim();
   const hasRating = (course.reviewCount ?? 0) > 0 && (course.rating ?? 0) > 0;
   const hasStudents = (course.studentCount ?? 0) > 0;

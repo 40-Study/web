@@ -2,7 +2,7 @@
  * QA 260927 guest P1 — bottom-tab nav mobile cho khách chưa đăng nhập.
  *
  * Proves: bộ tab "guest" KHÔNG còn dẫn thẳng vào tường đăng nhập
- * (/home, /schedule, /leaderboard) — chỉ còn Trang chủ (/), Khóa học
+ * (/home, /schedule, /leaderboard) — chỉ còn Trang chủ (/), Khoá học
  * (/courses), Đăng nhập (/login).
  *
  * Dự án chưa cài `@testing-library/jest-dom` (không có trong `vitest.setup.ts`),
@@ -21,13 +21,13 @@ vi.mock("@/hooks/queries/use-friends", () => ({
 }));
 
 describe("BottomNav — bộ tab guest", () => {
-  it("guest: chỉ Trang chủ(/), Khóa học(/courses), Đăng nhập(/login)", () => {
+  it("guest: chỉ Trang chủ(/), Khoá học(/courses), Đăng nhập(/login)", () => {
     render(<BottomNav role="guest" />);
 
     const home = screen.getByRole("link", { name: /Trang chủ/i });
     expect(home.getAttribute("href")).toBe("/");
 
-    const courses = screen.getByRole("link", { name: /Khóa học/i });
+    const courses = screen.getByRole("link", { name: /Khoá học/i });
     expect(courses.getAttribute("href")).toBe("/courses");
 
     const login = screen.getByRole("link", { name: /Đăng nhập/i });
@@ -143,7 +143,7 @@ describe("BottomNav — bộ tab teacher ở khung hẹp", () => {
 });
 
 // QA vòng 2 (F-15): bộ tab học viên có 7 tab. Đo thật ở 390px: nav inset 16px mỗi bên -> mỗi tab 51px, nhãn
-// "Trang chủ" 11px rộng 53px (tràn tab), "Khóa học"/"Xếp hạng" cách nhau 0.9px nên chữ dính nhau. Inset hẹp hơn
+// "Trang chủ" 11px rộng 53px (tràn tab), "Khoá học"/"Xếp hạng" cách nhau 0.9px nên chữ dính nhau. Inset hẹp hơn
 // ở màn hình nhỏ + nhãn 10px để có khoảng thở; từ `sm` trở lên trả về kích thước cũ.
 describe("BottomNav — nhãn không dính nhau ở 390px", () => {
   it("student (7 tab): nav dùng inset hẹp ở mobile và nhãn 10px (11px từ sm)", () => {

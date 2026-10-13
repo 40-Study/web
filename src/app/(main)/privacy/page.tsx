@@ -24,27 +24,27 @@ export default function PrivacyPage() {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">1. Dữ liệu chúng tôi thu thập</h2>
           <p className="mt-2">
             ForteX thu thập thông tin bạn cung cấp khi đăng ký (họ tên, email, số điện thoại) và dữ
-            liệu học tập (tiến độ, điểm số, thời gian học) để cá nhân hóa trải nghiệm học tập.
+            liệu học tập (tiến độ, điểm số, thời gian học) để cá nhân hoá trải nghiệm học tập.
           </p>
         </section>
         <section>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">2. Mục đích sử dụng</h2>
           <p className="mt-2">
             Dữ liệu được dùng để vận hành nền tảng, xử lý thanh toán, gửi thông báo học tập, và cải
-            thiện chất lượng khóa học. Chúng tôi không bán dữ liệu cá nhân cho bên thứ ba.
+            thiện chất lượng khoá học. Chúng tôi không bán dữ liệu cá nhân cho bên thứ ba.
           </p>
         </section>
         <section>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">3. Bảo mật thông tin</h2>
           <p className="mt-2">
-            Mật khẩu được mã hóa, kết nối được bảo vệ qua HTTPS. Chúng tôi áp dụng các biện pháp kỹ
+            Mật khẩu được mã hoá, kết nối được bảo vệ qua HTTPS. Chúng tôi áp dụng các biện pháp kỹ
             thuật hợp lý để ngăn chặn truy cập, sửa đổi hoặc tiết lộ dữ liệu trái phép.
           </p>
         </section>
         <section>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">4. Quyền của người dùng</h2>
           <p className="mt-2">
-            Bạn có quyền truy cập, chỉnh sửa hoặc yêu cầu xóa dữ liệu cá nhân của mình bất kỳ lúc
+            Bạn có quyền truy cập, chỉnh sửa hoặc yêu cầu xoá dữ liệu cá nhân của mình bất kỳ lúc
             nào thông qua trang Cài đặt tài khoản hoặc bằng cách liên hệ trực tiếp với chúng tôi.
           </p>
         </section>

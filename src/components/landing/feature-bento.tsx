@@ -21,14 +21,14 @@ const FEATURES: Feature[] = [
   },
   {
     icon: Route,
-    title: "Lộ trình khóa học rõ ràng",
-    description: "Mỗi khóa chia thành chương, bài học và bài tập theo thứ tự để bạn biết mình đang ở đâu.",
+    title: "Lộ trình khoá học rõ ràng",
+    description: "Mỗi khoá chia thành chương, bài học và bài tập theo thứ tự để bạn biết mình đang ở đâu.",
     span: "md:col-span-2",
   },
   {
     icon: BarChart3,
     title: "Theo dõi tiến độ",
-    description: "Xem phần trăm hoàn thành, điểm số và thành tích của từng khóa học.",
+    description: "Xem phần trăm hoàn thành, điểm số và thành tích của từng khoá học.",
     span: "md:col-span-3",
   },
   {

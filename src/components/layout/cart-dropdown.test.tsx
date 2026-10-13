@@ -1,6 +1,6 @@
 /**
- * QA vòng 2 (S1): header từng hiện "Giỏ hàng (0)" dù giỏ có 2 khóa. Nguyên nhân cũ là build cũ đọc
- * `item_count`; backend (CartListResponseDTO.TotalItem) trả `total_item`. Khóa hợp đồng đó: badge và
+ * QA vòng 2 (S1): header từng hiện "Giỏ hàng (0)" dù giỏ có 2 khoá. Nguyên nhân cũ là build cũ đọc
+ * `item_count`; backend (CartListResponseDTO.TotalItem) trả `total_item`. Khoá hợp đồng đó: badge và
  * tiêu đề dropdown phải theo `total_item` của GET /cart.
  */
 
@@ -21,7 +21,7 @@ import { useAuthStore } from "@/stores/auth.store";
 const item = (id: string) => ({
   id: `ci-${id}`,
   course_id: id,
-  course: { id, title: `Khóa ${id}`, slug: `khoa-${id}`, price: 100000 },
+  course: { id, title: `Khoá ${id}`, slug: `khoa-${id}`, price: 100000 },
 });
 
 beforeEach(() => {
@@ -30,7 +30,7 @@ beforeEach(() => {
 });
 
 describe("CartDropdown — số lượng theo total_item", () => {
-  it("giỏ 2 khóa: badge hiện 2 và tiêu đề dropdown là 'Giỏ hàng (2)'", async () => {
+  it("giỏ 2 khoá: badge hiện 2 và tiêu đề dropdown là 'Giỏ hàng (2)'", async () => {
     mockApi.get.mockResolvedValue(envelope({ items: [item("a"), item("b")], total: 200000, total_item: 2 }));
     renderWithProviders(<CartDropdown />);
 

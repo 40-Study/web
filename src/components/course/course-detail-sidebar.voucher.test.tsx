@@ -70,7 +70,7 @@ beforeEach(() => {
 async function applyInSidebar() {
   fireEvent.change(screen.getByPlaceholderText("Nhập mã voucher"), { target: { value: "SUMMER50K" } });
   fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
-  await waitFor(() => expect(screen.getByLabelText("Xóa voucher")).toBeTruthy());
+  await waitFor(() => expect(screen.getByLabelText("Xoá voucher")).toBeTruthy());
 }
 
 describe("CourseDetailSidebar — ô Mã giảm giá", () => {

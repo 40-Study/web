@@ -14,8 +14,8 @@ export async function generateMetadata({
   const title = slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   return {
-    title: `${title} - Khóa học`,
-    description: `Chi tiết khóa học ${title}`,
+    title: `${title} - Khoá học`,
+    description: `Chi tiết khoá học ${title}`,
   };
 }
 

@@ -40,7 +40,7 @@ const navConfigs: Record<UserRole, NavItem[]> = {
     { icon: <Calendar className="w-5 h-5" />, label: "Lịch học", href: "/schedule" },
     // Nhãn ngắn "Live": bottom-nav học viên có 7 tab, "Livestream" không vừa 390px.
     { icon: <Radio className="w-5 h-5" />, label: "Live", href: "/livestream" },
-    { icon: <BookOpen className="w-5 h-5" />, label: "Khóa học", href: "/courses" },
+    { icon: <BookOpen className="w-5 h-5" />, label: "Khoá học", href: "/courses" },
     { icon: <Trophy className="w-5 h-5" />, label: "Xếp hạng", href: "/leaderboard" },
     // Bạn bè chỉ dành cho học viên (Q1): các vai khác không có mục này.
     { icon: <UserCheck className="w-5 h-5" />, label: "Bạn bè", href: "/friends", badge: <FriendsNavBadge /> },
@@ -48,7 +48,7 @@ const navConfigs: Record<UserRole, NavItem[]> = {
   ],
   teacher: [
     { icon: <Calendar className="w-5 h-5" />, label: "Lịch", href: "/teacher/schedule" },
-    { icon: <BookOpen className="w-5 h-5" />, label: "Khóa học", href: "/teacher/courses" },
+    { icon: <BookOpen className="w-5 h-5" />, label: "Khoá học", href: "/teacher/courses" },
     { icon: <Users className="w-5 h-5" />, label: "Học sinh", href: "/teacher/students" },
     // B-11: Tin nhắn là route dùng chung nhưng giảng viên cần vào được từ menu (trước chỉ gõ URL).
     { icon: <MessageSquare className="w-5 h-5" />, label: "Tin nhắn", href: "/messages" },
@@ -66,7 +66,7 @@ const navConfigs: Record<UserRole, NavItem[]> = {
   // dùng được khi chưa đăng nhập.
   guest: [
     { icon: <Home className="w-5 h-5" />, label: "Trang chủ", href: "/" },
-    { icon: <BookOpen className="w-5 h-5" />, label: "Khóa học", href: "/courses" },
+    { icon: <BookOpen className="w-5 h-5" />, label: "Khoá học", href: "/courses" },
     { icon: <User className="w-5 h-5" />, label: "Đăng nhập", href: "/login" },
   ],
   // A-P2-4: admin chỉ ghé `(app)/**` cho vài trang tài khoản cá nhân

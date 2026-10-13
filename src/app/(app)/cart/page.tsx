@@ -17,7 +17,7 @@ import { sumCartItemPrices } from "@/lib/cart-pricing";
 import { CartItemPrice } from "@/components/cart/cart-item-price";
 
 function formatPrice(price: number | string | null | undefined): string {
-  // Phòng thủ: backend decimal có thể serialize thành number hoặc chuỗi tùy phiên bản.
+  // Phòng thủ: backend decimal có thể serialize thành number hoặc chuỗi tuỳ phiên bản.
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
@@ -134,7 +134,7 @@ export default function CartPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-light text-black">Giỏ hàng</h1>
-          <p className="text-neutral-500">{items.length} khóa học</p>
+          <p className="text-neutral-500">{items.length} khoá học</p>
         </div>
       </div>
 
@@ -142,9 +142,9 @@ export default function CartPage() {
         <Card className="p-12 text-center">
           <ShoppingCart className="w-16 h-16 mx-auto text-neutral-300 mb-4" />
           <h2 className="text-xl font-light text-black mb-2">Giỏ hàng trống</h2>
-          <p className="text-neutral-500 mb-6">Hãy khám phá các khóa học và thêm vào giỏ hàng</p>
+          <p className="text-neutral-500 mb-6">Hãy khám phá các khoá học và thêm vào giỏ hàng</p>
           <Link href="/courses">
-            <Button>Khám phá khóa học</Button>
+            <Button>Khám phá khoá học</Button>
           </Link>
         </Card>
       ) : (
@@ -158,7 +158,7 @@ export default function CartPage() {
                   <div className="flex items-center gap-3">
                     <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} />
                     <span className="text-sm font-medium text-gray-700">
-                      Chọn tất cả ({items.length} khóa học)
+                      Chọn tất cả ({items.length} khoá học)
                     </span>
                   </div>
                   <Button
@@ -169,7 +169,7 @@ export default function CartPage() {
                     disabled={clearCart.isPending}
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
-                    Xóa tất cả
+                    Xoá tất cả
                   </Button>
                 </div>
               </CardContent>
@@ -211,7 +211,7 @@ export default function CartPage() {
                         href={`/courses/${item.course_id}`}
                         className="text-base font-semibold text-gray-900 hover:text-primary-600 transition-colors line-clamp-2"
                       >
-                        {item.course?.title || "Khóa học"}
+                        {item.course?.title || "Khoá học"}
                       </Link>
                       {item.course?.instructor && (
                         <p className="text-sm text-gray-500 mt-1">
@@ -232,7 +232,7 @@ export default function CartPage() {
                         )}
                         onClick={() => removeFromCart.mutate(item.course_id)}
                       >
-                        Xóa
+                        Xoá
                       </button>
                     </div>
                   </div>
@@ -293,7 +293,7 @@ export default function CartPage() {
 
                 {selectedIds.length === 0 && items.length > 0 && (
                   <p className="text-xs text-center text-amber-600 mt-2" data-testid="cart-select-hint">
-                    Chọn ít nhất một khóa học để thanh toán.
+                    Chọn ít nhất một khoá học để thanh toán.
                   </p>
                 )}
 

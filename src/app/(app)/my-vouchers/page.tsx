@@ -149,7 +149,7 @@ export default function MyVouchersPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Voucher của tôi</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Các mã giảm giá bạn có thể sử dụng khi mua khóa học
+          Các mã giảm giá bạn có thể sử dụng khi mua khoá học
         </p>
       </div>
 

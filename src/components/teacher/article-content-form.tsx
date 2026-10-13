@@ -99,7 +99,7 @@ export function ArticleContentForm({
       <div className="flex justify-end gap-2">
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
-            Hủy
+            Huỷ
           </Button>
         )}
         <Button type="button" onClick={handleSubmit} isLoading={submitting} disabled={disabled || bodyBlank}>

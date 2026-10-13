@@ -37,14 +37,14 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">3. Thanh toán và hoàn tiền</h2>
           <p className="mt-2">
-            Các giao dịch mua khóa học được xử lý qua cổng thanh toán đối tác. Chính sách hoàn
-            tiền áp dụng theo quy định riêng của từng khóa học, được hiển thị trước khi thanh toán.
+            Các giao dịch mua khoá học được xử lý qua cổng thanh toán đối tác. Chính sách hoàn
+            tiền áp dụng theo quy định riêng của từng khoá học, được hiển thị trước khi thanh toán.
           </p>
         </section>
         <section>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">4. Nội dung học tập</h2>
           <p className="mt-2">
-            Toàn bộ nội dung khóa học, video và tài liệu thuộc bản quyền của ForteX và giảng viên
+            Toàn bộ nội dung khoá học, video và tài liệu thuộc bản quyền của ForteX và giảng viên
             liên quan. Nghiêm cấm sao chép, phân phối lại dưới mọi hình thức khi chưa được cho phép.
           </p>
         </section>

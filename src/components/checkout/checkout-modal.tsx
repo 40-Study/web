@@ -88,7 +88,7 @@ export function CheckoutModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Xác nhận mua khóa học</DialogTitle>
+          <DialogTitle>Xác nhận mua khoá học</DialogTitle>
         </DialogHeader>
 
         {/* Course summary */}
@@ -163,7 +163,7 @@ export function CheckoutModal({
             onClick={() => onOpenChange(false)}
             disabled={isConfirming}
           >
-            Hủy
+            Huỷ
           </Button>
           <Button
             className="flex-1 bg-primary-600 hover:bg-primary-700 text-white"

@@ -306,7 +306,7 @@ function WhiteboardTabInner({
               {/* Lock button - lock icon */}
               <button
                 onClick={handlePublish}
-                title={isPublished ? 'Khóa quyền vẽ' : 'Mở khóa quyền vẽ'}
+                title={isPublished ? 'Khoá quyền vẽ' : 'Mở khoá quyền vẽ'}
                 style={{
                   background: isPublished ? 'rgba(74,222,128,0.15)' : 'transparent',
                   border: 'none',

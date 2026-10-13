@@ -7,7 +7,7 @@ import { SITE_URL } from "@/lib/seo";
  * Tra cứu chứng chỉ — TRANG CÔNG KHAI (không cần đăng nhập).
  *
  * Là server component để có metadata động: link chứng chỉ thường được chia sẻ
- * lên LinkedIn/Facebook, cần OpenGraph đúng tên người học + khóa học.
+ * lên LinkedIn/Facebook, cần OpenGraph đúng tên người học + khoá học.
  * Nằm trong group (main) — group này không có RoleGuard (khác với (app)).
  */
 
@@ -33,7 +33,7 @@ export async function generateMetadata({
   }
 
   const title = `Chứng chỉ ${result.course_name ?? ""} — ${result.user_name ?? ""}`.trim();
-  const description = `Chứng chỉ hoàn thành khóa học${
+  const description = `Chứng chỉ hoàn thành khoá học${
     result.course_name ? ` "${result.course_name}"` : ""
   } do ForteX cấp. Mã: ${result.certificate_number}.`;
   const url = `${SITE_URL}/certificates/verify/${encodeURIComponent(params.number)}`;

@@ -5,8 +5,8 @@ import { SITE_URL, PUBLIC_INDEXABLE_PATHS } from "@/lib/seo";
 /**
  * Sitemap — chỉ trang xem được khi CHƯA đăng nhập.
  *
- * Trang chi tiết khóa học (/courses/[slug]) nằm ở group (main) nên công khai;
- * URL sinh động từ danh sách khóa học đã publish. Backend chết -> fetcher trả
+ * Trang chi tiết khoá học (/courses/[slug]) nằm ở group (main) nên công khai;
+ * URL sinh động từ danh sách khoá học đã publish. Backend chết -> fetcher trả
  * mảng rỗng, sitemap vẫn build với route tĩnh thay vì làm vỡ `next build`.
  *
  * KHÔNG đưa vào: mọi route trong group (app)/(teacher)/(admin) vì bị RoleGuard,

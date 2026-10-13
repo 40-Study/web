@@ -77,7 +77,7 @@ export function InstructorCard({ instructor, className }: InstructorCardProps) {
               {instructor.courseCount != null && instructor.courseCount > 0 && (
                 <div className="flex items-center gap-1">
                   <BookOpen className="h-4 w-4" />
-                  <span>{instructor.courseCount} khóa học</span>
+                  <span>{instructor.courseCount} khoá học</span>
                 </div>
               )}
             </div>

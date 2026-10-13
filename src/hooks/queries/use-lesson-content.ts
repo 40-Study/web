@@ -56,8 +56,8 @@ export function useDeleteLessonContent(lessonId: string) {
     mutationFn: (contentId: string) => lessonContentService.deleteContent(lessonId, contentId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: lessonContentKeys.contents(lessonId) });
-      toast.success("Đã xóa nội dung");
+      toast.success("Đã xoá nội dung");
     },
-    onError: () => toast.error("Không thể xóa nội dung"),
+    onError: () => toast.error("Không thể xoá nội dung"),
   });
 }

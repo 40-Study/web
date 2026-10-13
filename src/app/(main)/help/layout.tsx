@@ -8,7 +8,7 @@ import { buildPageMetadata } from "@/lib/page-metadata";
 export const metadata: Metadata = buildPageMetadata({
   title: "Trợ giúp",
   description:
-    "Câu hỏi thường gặp về tài khoản, khóa học, thanh toán và chứng chỉ trên ForteX, kèm kênh liên hệ hỗ trợ.",
+    "Câu hỏi thường gặp về tài khoản, khoá học, thanh toán và chứng chỉ trên ForteX, kèm kênh liên hệ hỗ trợ.",
   path: "/help",
 });
 

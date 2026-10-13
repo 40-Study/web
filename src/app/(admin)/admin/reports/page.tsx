@@ -21,7 +21,7 @@ const STATUS_LABEL: Record<string, string> = {
   completed: "Hoàn tất",
   failed: "Thất bại",
   refunded: "Đã hoàn tiền",
-  cancelled: "Đã hủy",
+  cancelled: "Đã huỷ",
   expired: "Hết hạn",
 };
 

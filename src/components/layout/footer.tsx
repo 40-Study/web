@@ -8,7 +8,7 @@ import { siteConfig } from "@/lib/constants";
 // cả với khách chưa đăng nhập trên trang landing (H-06). Các mục "Giới thiệu/Đội ngũ/
 // Tin tức/Tuyển dụng/Lộ trình học" trước đây trỏ tới trang không tồn tại nên đã bỏ.
 const exploreLinks = [
-  { label: "Khóa học", href: "/courses" },
+  { label: "Khoá học", href: "/courses" },
   { label: "Cuộc thi", href: "/contests" },
   { label: "Thảo luận", href: "/discussions" },
   // Trỏ tới trang tra cứu công khai: footer hiện cả với khách chưa đăng nhập,

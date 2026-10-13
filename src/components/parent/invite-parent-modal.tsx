@@ -191,7 +191,7 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
               {/* Optional message */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Lời nhắn <span className="text-slate-400 font-normal">(tùy chọn)</span>
+                  Lời nhắn <span className="text-slate-400 font-normal">(tuỳ chọn)</span>
                 </label>
                 <textarea
                   placeholder="Gửi lời nhắn kèm theo lời mời..."

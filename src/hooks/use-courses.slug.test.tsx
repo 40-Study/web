@@ -22,7 +22,7 @@ describe("slug dự phòng của danh mục", () => {
   it("useCategories: API thiếu slug thì sinh không dấu, có slug thì dùng nguyên slug của API", async () => {
     vi.spyOn(categoryService, "getAll").mockResolvedValue([
       { id: "k1", name: "Lập trình Web" },
-      { id: "k2", name: "Đồ họa", slug: "do-hoa-2" },
+      { id: "k2", name: "Đồ hoạ", slug: "do-hoa-2" },
     ] as unknown as Awaited<ReturnType<typeof categoryService.getAll>>);
 
     const { result } = renderHook(() => useCategories(), { wrapper: createWrapper() });

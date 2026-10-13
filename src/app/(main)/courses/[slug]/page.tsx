@@ -81,9 +81,9 @@ export default function CourseDetailPage() {
     // hook trả null → nhánh notFound() bên dưới. Còn lại là lỗi mạng/server thật.
     return (
       <div className="page-container py-16 text-center">
-        <h2 className="text-2xl font-bold text-destructive mb-2">Lỗi tải khóa học</h2>
+        <h2 className="text-2xl font-bold text-destructive mb-2">Lỗi tải khoá học</h2>
         <p className="text-muted-foreground mb-4">
-          {getErrorMessage(error, "Không thể tải thông tin khóa học, vui lòng thử lại")}
+          {getErrorMessage(error, "Không thể tải thông tin khoá học, vui lòng thử lại")}
         </p>
       </div>
     );
@@ -99,7 +99,7 @@ export default function CourseDetailPage() {
 
   const handleEnroll = async () => {
     // Trang này CÔNG KHAI — khách chưa đăng nhập vẫn xem được. Đăng ký thì
-    // cần tài khoản, nên đưa sang login kèm redirect quay lại đúng khóa học.
+    // cần tài khoản, nên đưa sang login kèm redirect quay lại đúng khoá học.
     if (!isAuthenticated) {
       router.push(`/login?redirect=${encodeURIComponent(`/courses/${courseSlug}`)}`);
       return;

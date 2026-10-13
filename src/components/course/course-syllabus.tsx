@@ -154,7 +154,7 @@ function LessonContentsPanel({
   if (!canAccess) {
     return (
       <div className="py-3 pl-16 pr-4 text-sm text-muted-foreground">
-        Đăng ký khóa học để xem nội dung bài học này.
+        Đăng ký khoá học để xem nội dung bài học này.
       </div>
     );
   }
@@ -476,7 +476,7 @@ export function CourseSyllabus({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Nội dung khóa học</h2>
+          <h2 className="text-xl font-semibold">Nội dung khoá học</h2>
           <p className="text-sm text-muted-foreground">
             {sections.length} phần • {totalLessons} bài học •{" "}
             {formatDuration(totalDuration)}

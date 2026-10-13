@@ -110,7 +110,7 @@ const tools: ToolItem[] = [
   { id: 'eraser', label: 'Tẩy', icon: icons.eraser },
   { id: 'text', label: 'Văn bản', icon: icons.text },
   { id: 'scissors', label: 'Cut', icon: icons.scissors },
-  { id: 'delete', label: 'Xóa', icon: icons.delete },
+  { id: 'delete', label: 'Xoá', icon: icons.delete },
   { id: 'shape', label: 'Hình', icon: icons.shape },
   { id: 'edit', label: 'Sửa', icon: icons.edit },
   { id: 'comment', label: 'Bình luận', icon: icons.comment },

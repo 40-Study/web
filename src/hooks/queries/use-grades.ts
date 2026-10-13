@@ -65,9 +65,9 @@ export function useDeleteGradeColumn(classId: string) {
     mutationFn: (columnId: string) => gradeService.deleteColumn(classId, columnId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: gradeKeys.columns(classId) });
-      toast.success("Đã xóa cột điểm");
+      toast.success("Đã xoá cột điểm");
     },
-    onError: () => toast.error("Không thể xóa cột điểm"),
+    onError: () => toast.error("Không thể xoá cột điểm"),
   });
 }
 
@@ -133,9 +133,9 @@ export function useDeleteGrade(classId: string) {
     mutationFn: (gradeId: string) => gradeService.deleteGrade(gradeId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: gradeKeys.book(classId) });
-      toast.success("Đã xóa điểm");
+      toast.success("Đã xoá điểm");
     },
-    onError: () => toast.error("Không thể xóa điểm"),
+    onError: () => toast.error("Không thể xoá điểm"),
   });
 }
 

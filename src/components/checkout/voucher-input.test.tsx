@@ -56,7 +56,7 @@ describe("VoucherInput — chip voucher luôn khớp với mức giảm thật (
 
     expect(onApplied).toHaveBeenLastCalledWith(null);
     // Chip không được còn hiện "đang áp dụng" khi tổng tiền không còn giảm.
-    expect(screen.queryByLabelText("Xóa voucher")).toBeNull();
+    expect(screen.queryByLabelText("Xoá voucher")).toBeNull();
     expect(screen.getByText(/tối thiểu 300\.000đ/)).toBeTruthy();
   });
 
@@ -92,7 +92,7 @@ describe("VoucherInput — chip voucher luôn khớp với mức giảm thật (
       rerender(<VoucherInput courseIds={["a"]} subtotal={699000} onApplied={onApplied} />);
     });
 
-    expect(screen.getByLabelText("Xóa voucher")).toBeTruthy();
+    expect(screen.getByLabelText("Xoá voucher")).toBeTruthy();
     expect(onApplied.mock.calls.length).toBe(calls);
   });
 });
@@ -185,7 +185,7 @@ describe("VoucherInput — voucher 'đơn hàng đầu tiên' với khách chưa
 
     expect(await screen.findByText(GUEST_MESSAGE)).toBeTruthy();
     expect(screen.queryByText(/Giảm/)).toBeNull();
-    expect(screen.queryByLabelText("Xóa voucher")).toBeNull();
+    expect(screen.queryByLabelText("Xoá voucher")).toBeNull();
     expect(onApplied).toHaveBeenLastCalledWith(null);
     expect(onApplied).not.toHaveBeenCalledWith(expect.objectContaining({ valid: true }));
   });

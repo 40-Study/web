@@ -99,7 +99,7 @@ export default function HelpPage() {
                 Bạn có thể gửi câu hỏi tới {SUPPORT_EMAIL}.
               </p>
               <Button variant="outline" size="sm" className="mt-3 rounded-xl" onClick={() => setSearch("")}>
-                Xóa tìm kiếm
+                Xoá tìm kiếm
               </Button>
             </div>
           ) : (

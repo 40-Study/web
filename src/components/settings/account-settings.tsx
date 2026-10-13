@@ -209,12 +209,12 @@ export function AccountSettings({
           <div className="flex items-center gap-4">
             <div className="p-2.5 bg-red-50 rounded-xl"><Trash2 className="h-5 w-5 text-red-500" /></div>
             <div>
-              <p className="font-medium text-red-600">Xóa tài khoản</p>
-              <p className="text-sm text-gray-500">Xóa vĩnh viễn tài khoản và toàn bộ dữ liệu</p>
+              <p className="font-medium text-red-600">Xoá tài khoản</p>
+              <p className="text-sm text-gray-500">Xoá vĩnh viễn tài khoản và toàn bộ dữ liệu</p>
             </div>
           </div>
           <Button variant="destructive" size="sm" className="rounded-xl" onClick={() => setDeleteDialogOpen(true)}>
-            Xóa
+            Xoá
           </Button>
         </div>
       </div>
@@ -228,7 +228,7 @@ export function AccountSettings({
             <Input label="Mật khẩu mới" type="password" {...passwordForm.register("newPassword")} error={passwordForm.formState.errors.newPassword?.message} />
             <Input label="Xác nhận mật khẩu mới" type="password" {...passwordForm.register("confirmPassword")} error={passwordForm.formState.errors.confirmPassword?.message} />
             <div className="flex justify-end gap-3 pt-2">
-              <Button type="button" variant="outline" className="rounded-xl" onClick={() => setPasswordDialogOpen(false)}>Hủy</Button>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={() => setPasswordDialogOpen(false)}>Huỷ</Button>
               <Button type="submit" className="rounded-xl" disabled={isLoading}>{isLoading ? "Đang cập nhật..." : "Cập nhật mật khẩu"}</Button>
             </div>
           </form>
@@ -238,15 +238,15 @@ export function AccountSettings({
       {/* Delete Account Dialog — requires password */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="rounded-2xl">
-          <DialogHeader><DialogTitle className="text-red-600">Xóa tài khoản</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-red-600">Xoá tài khoản</DialogTitle></DialogHeader>
           <p className="text-gray-600 text-sm">
-            Hành động này <strong>không thể hoàn tác</strong>. Toàn bộ dữ liệu bao gồm khóa học, tiến độ và thành tích sẽ bị xóa vĩnh viễn.
+            Hành động này <strong>không thể hoàn tác</strong>. Toàn bộ dữ liệu bao gồm khoá học, tiến độ và thành tích sẽ bị xoá vĩnh viễn.
           </p>
           <form onSubmit={deleteForm.handleSubmit(handleDeleteSubmit)} className="space-y-4 mt-2">
             <Input label="Mật khẩu xác nhận" type="password" placeholder="Nhập mật khẩu để xác nhận" {...deleteForm.register("password")} error={deleteForm.formState.errors.password?.message} />
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="outline" className="rounded-xl" onClick={() => setDeleteDialogOpen(false)}>Hủy</Button>
-              <Button type="submit" variant="destructive" className="rounded-xl" disabled={isLoading}>{isLoading ? "Đang xóa..." : "Xóa tài khoản"}</Button>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={() => setDeleteDialogOpen(false)}>Huỷ</Button>
+              <Button type="submit" variant="destructive" className="rounded-xl" disabled={isLoading}>{isLoading ? "Đang xoá..." : "Xoá tài khoản"}</Button>
             </div>
           </form>
         </DialogContent>

@@ -7,7 +7,7 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { cn } from "@/lib/utils";
 
 interface XPProgressCardProps {
-  /** Tổng XP tích lũy. */
+  /** Tổng XP tích luỹ. */
   totalXP: number;
   level: number;
   /** Tiến độ tới cấp kế tiếp, phần trăm 0-100 (đúng như API trả về). */
