@@ -162,7 +162,9 @@ export default function AdminVouchersPage() {
           )}
         </div>
 
-        <form onSubmit={onSubmit} className="h-fit space-y-3 rounded-xl bg-white p-4 shadow-sm" data-testid="voucher-form">
+        {/* noValidate: để buildCreate/UpdateVoucherPayload báo lỗi tiếng Việt trong khung đỏ bên dưới thay vì tooltip
+            tiếng Anh của trình duyệt cho min/max ("Value must be less than or equal to 100", ADM-L1, QA2 261013). */}
+        <form onSubmit={onSubmit} noValidate className="h-fit space-y-3 rounded-xl bg-white p-4 shadow-sm" data-testid="voucher-form">
           <h2 className="text-base font-semibold text-gray-900">{editingId ? "Cập nhật voucher" : "Tạo voucher mới"}</h2>
 
           <Field label="Mã voucher">
