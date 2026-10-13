@@ -109,6 +109,8 @@ export const ROLE_SCOPED_ROUTES: RoleScopedRoute[] = [
   // Bài tập là của học viên (QA P3): phụ huynh gõ thẳng URL từng thấy nav học sinh +
   // "Bạn có 0 bài tập" — cùng lớp bug role-leak với /friends. Menu cũng đọc bảng này.
   { href: "/my-assignments", roles: ["STUDENT"] },
+  // Danh sách khoá học yêu thích (QA2 F-10): của học viên; phụ huynh/admin không có wishlist.
+  { href: "/wishlist", roles: ["STUDENT"] },
   // Buổi livestream và sổ điểm là của học viên (A-08, A-07); sidebar/bottom-nav đọc roles từ đây.
   { href: "/livestream", roles: ["STUDENT"], realStudentOnly: true },
   { href: "/my-grades", roles: ["STUDENT"], realStudentOnly: true },

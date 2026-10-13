@@ -9,12 +9,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Course, EnrolledCourse } from "@/types/course";
+import { WishlistButton } from "@/components/course/wishlist-button";
 
 interface CourseCardProps {
   course: Course | EnrolledCourse;
   className?: string;
   /** Ảnh above-the-fold: tải ngay thay vì lazy. */
   priority?: boolean;
+  /** Hiện trái tim lưu yêu thích (QA2 F-10). Opt-in: chỉ nơi nào cần mới bật; khoá đã ghi danh không có tim. */
+  showWishlist?: boolean;
 }
 
 const LEVEL_LABELS: Record<Course["level"], string> = {
@@ -29,7 +32,7 @@ function isEnrolledCourse(
   return "progress" in course;
 }
 
-export function CourseCard({ course, className, priority = false }: CourseCardProps) {
+export function CourseCard({ course, className, priority = false, showWishlist = false }: CourseCardProps) {
   const enrolled = isEnrolledCourse(course);
   const [imgError, setImgError] = useState(false);
 
@@ -57,7 +60,7 @@ export function CourseCard({ course, className, priority = false }: CourseCardPr
   const hasRating = (course.reviewCount ?? 0) > 0 && (course.rating ?? 0) > 0;
   const hasStudents = (course.studentCount ?? 0) > 0;
 
-  return (
+  const card = (
     <Link
       href={`/courses/${course.slug}`}
       className="group block h-full rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -165,5 +168,14 @@ export function CourseCard({ course, className, priority = false }: CourseCardPr
         </div>
       </Card>
     </Link>
+  );
+
+  if (!showWishlist || enrolled) return card;
+  // Tim là anh em của link (không lồng trong <a>): click tim không điều hướng sang trang khoá học.
+  return (
+    <div className="relative h-full">
+      {card}
+      <WishlistButton courseId={String(course.id)} className="absolute right-3 top-3 z-10" />
+    </div>
   );
 }

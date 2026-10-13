@@ -125,6 +125,7 @@ export default function CourseDetailPage() {
     <div>
       <CourseDetailHeader
         course={course}
+        isEnrolled={isEnrolled}
         reviewsSummary={
           reviewsData
             ? { average: Number(reviewsData.average_rating ?? 0), total: reviewsData.total }

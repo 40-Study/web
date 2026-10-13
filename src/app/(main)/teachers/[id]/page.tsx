@@ -102,7 +102,7 @@ function ProfileBody({ profile }: { profile: PublicTeacherProfile }) {
         {courses.length === 0 ? (
           <p className="text-sm text-muted-foreground">Giảng viên này chưa có khoá học nào được xuất bản.</p>
         ) : (
-          <CourseGrid courses={courses} />
+          <CourseGrid courses={courses} showWishlist />
         )}
       </section>
     </div>

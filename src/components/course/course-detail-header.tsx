@@ -8,14 +8,17 @@
 import Link from "next/link";
 import { Star, Award, Globe, RefreshCw } from "lucide-react";
 import { CourseDetail } from "@/types/course";
+import { WishlistButton } from "@/components/course/wishlist-button";
 
 interface CourseDetailHeaderProps {
   course: CourseDetail;
   /** Số liệu đánh giá THẬT từ GET /courses/:id/reviews — xem page.tsx. */
   reviewsSummary?: { average: number; total: number };
+  /** Đã ghi danh khoá này thì không cần nút lưu yêu thích. */
+  isEnrolled?: boolean;
 }
 
-export function CourseDetailHeader({ course, reviewsSummary }: CourseDetailHeaderProps) {
+export function CourseDetailHeader({ course, reviewsSummary, isEnrolled = false }: CourseDetailHeaderProps) {
   // course.rating/reviewCount là cột lưu sẵn trên bảng courses, có thể lệch
   // với reviews thật (QA khách+học sinh P2, 260927) — ưu tiên số liệu thật từ
   // reviewsSummary khi đã tải xong.
@@ -97,6 +100,13 @@ export function CourseDetailHeader({ course, reviewsSummary }: CourseDetailHeade
             <span>{course.language}</span>
           </div>
         </div>
+
+        {/* QA2 F-10: lưu khoá vào danh sách yêu thích (trang /wishlist). */}
+        {!isEnrolled && (
+          <div className="mt-5">
+            <WishlistButton courseId={String(course.id)} variant="button" />
+          </div>
+        )}
       </div>
     </div>
   );

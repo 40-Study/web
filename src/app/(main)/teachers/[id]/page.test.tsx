@@ -10,6 +10,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const nav = vi.hoisted(() => ({ notFound: vi.fn(() => { throw new Error("NEXT_NOT_FOUND"); }) }));
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: "teacher-1" }),
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => "/teachers/teacher-1",
   notFound: nav.notFound,
 }));
 vi.mock("@/lib/api-client", async () => {

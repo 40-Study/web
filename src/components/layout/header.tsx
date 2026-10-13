@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ForteXLogoIcon } from "@/components/landing/fortex-logo-icon";
 import { useState, useRef, useEffect } from "react";
-import { Bell, FileText, Settings, LogOut, Menu, X, Ticket, ChevronDown, Check, UserCircle, Coins, Users, Receipt, GraduationCap, Presentation, Building2, ShieldCheck, type LucideIcon } from "lucide-react";
+import { Bell, FileText, Settings, LogOut, Menu, X, Ticket, ChevronDown, Check, UserCircle, Coins, Users, Receipt, Heart, GraduationCap, Presentation, Building2, ShieldCheck, type LucideIcon } from "lucide-react";
 import { siteConfig } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
@@ -44,6 +44,7 @@ function getRoleDisplay(roleName: string) {
 const studentMenuItems: MenuItem[] = [
   { label: "Bài tập", href: "/my-assignments", icon: FileText, badge: true },
   { label: "Voucher của tôi", href: "/my-vouchers", icon: Ticket },
+  { label: "Khoá học yêu thích", href: "/wishlist", icon: Heart },
 ];
 
 // "Đơn hàng của tôi" (lane B vòng 2 đã có trang /orders): chỉ vai học viên/phụ huynh thấy —
