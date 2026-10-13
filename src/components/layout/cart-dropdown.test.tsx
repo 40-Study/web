@@ -39,3 +39,15 @@ describe("CartDropdown — số lượng theo total_item", () => {
     expect(screen.getByText("Giỏ hàng (2)")).toBeTruthy();
   });
 });
+
+describe("CartDropdown — thumbnail (F-16)", () => {
+  it("khoá thiếu ảnh hiện placeholder chuẩn, không còn gradient xanh", async () => {
+    mockApi.get.mockResolvedValue(envelope({ items: [item("a")], total: 100000, total_item: 1 }));
+    renderWithProviders(<CartDropdown />);
+
+    await waitFor(() => expect(screen.getByText("1")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "Giỏ hàng" }));
+    expect(screen.getByTestId("course-thumbnail-placeholder")).toBeTruthy();
+    expect(document.body.innerHTML).not.toContain("from-primary-400");
+  });
+});

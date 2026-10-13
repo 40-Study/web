@@ -159,6 +159,7 @@ export function CourseMediaStep({
               src={formData.thumbnail_preview}
               alt="Xem trước ảnh bìa"
               fill
+              sizes="448px"
               className="object-cover"
             />
             {thumbnailUploading && (

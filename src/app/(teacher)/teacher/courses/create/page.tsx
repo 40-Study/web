@@ -308,7 +308,7 @@ function Step4Review({ formData }: { formData: CourseFormData }) {
             <div>
               <span className="text-sm text-muted-foreground">Ảnh bìa:</span>
               <div className="mt-2 relative rounded-lg overflow-hidden aspect-video max-w-xs bg-gray-100">
-                <Image src={formData.thumbnail_preview} alt="Ảnh bìa khoá học" fill className="object-cover" />
+                <Image src={formData.thumbnail_preview} alt="Ảnh bìa khoá học" fill sizes="320px" className="object-cover" />
               </div>
             </div>
           )}

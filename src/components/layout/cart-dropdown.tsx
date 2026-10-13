@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useCart, useRemoveFromCart } from "@/hooks/queries/use-cart";
 import { useCartStore } from "@/stores/cart.store";
 import { CartItemPrice } from "@/components/cart/cart-item-price";
+import { CourseThumbnailPlaceholder } from "@/components/course/course-thumbnail-placeholder";
 import { cn } from "@/lib/utils";
 
 function formatPrice(price: number): string {
@@ -114,10 +115,11 @@ export function CartDropdown() {
                           src={item.course.thumbnail}
                           alt={item.course.title || ""}
                           fill
+                          sizes="64px"
                           className="object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-600" />
+                        <CourseThumbnailPlaceholder iconClassName="h-5 w-5" />
                       )}
                     </div>
 

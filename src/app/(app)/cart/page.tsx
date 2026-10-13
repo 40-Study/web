@@ -15,6 +15,7 @@ import type { VoucherValidateResponse } from "@/types/voucher";
 import { cn } from "@/lib/utils";
 import { sumCartItemPrices } from "@/lib/cart-pricing";
 import { CartItemPrice } from "@/components/cart/cart-item-price";
+import { CourseThumbnailPlaceholder } from "@/components/course/course-thumbnail-placeholder";
 
 function formatPrice(price: number | string | null | undefined): string {
   // Phòng thủ: backend decimal có thể serialize thành number hoặc chuỗi tuỳ phiên bản.
@@ -192,16 +193,17 @@ export default function CartPage() {
                     />
 
                     {/* Thumbnail */}
-                    <div className="relative w-32 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                    <div className="relative w-32 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
                       {item.course?.thumbnail ? (
                         <Image
                           src={item.course.thumbnail}
                           alt={item.course.title || ""}
                           fill
+                          sizes="128px"
                           className="object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-600" />
+                        <CourseThumbnailPlaceholder iconClassName="h-7 w-7" />
                       )}
                     </div>
 

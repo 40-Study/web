@@ -23,6 +23,7 @@ import type { Order } from "@/services/order.service";
 import { v4 as uuidv4 } from "uuid";
 import { sumCartItemPrices } from "@/lib/cart-pricing";
 import { CartItemPrice } from "@/components/cart/cart-item-price";
+import { CourseThumbnailPlaceholder } from "@/components/course/course-thumbnail-placeholder";
 
 function formatPrice(price: number | string | null | undefined): string {
   return new Intl.NumberFormat("vi-VN", {
@@ -196,10 +197,11 @@ export default function CheckoutPage() {
                           src={item.course.thumbnail}
                           alt={item.course.title || ""}
                           fill
+                          sizes="96px"
                           className="object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300" />
+                        <CourseThumbnailPlaceholder iconClassName="h-6 w-6" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">

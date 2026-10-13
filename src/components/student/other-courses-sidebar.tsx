@@ -42,6 +42,7 @@ export function OtherCoursesSidebar({ courses, maxItems = 3 }: OtherCoursesSideb
                   src={course.thumbnail}
                   alt=""
                   fill
+                  sizes="48px"
                   className="object-cover group-hover:scale-105 transition-transform"
                 />
               ) : (

@@ -27,6 +27,10 @@ export function buildExtensions(options: TiptapConfigOptions = {}) {
         StarterKit.configure({
             // Disable built-in code block in favor of lowlight version
             codeBlock: false,
+            // StarterKit v3 đã gồm link + underline; tắt bản built-in để dùng bản cấu hình riêng bên dưới
+            // (nếu không: cảnh báo "Duplicate extension names: link, underline").
+            link: false,
+            underline: false,
         }),
         Underline,
         CodeBlockExtension,

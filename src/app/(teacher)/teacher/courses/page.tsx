@@ -138,7 +138,7 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: strin
       {/* Thumbnail */}
       <div className="relative aspect-video bg-gray-100">
         {course.thumbnail ? (
-          <Image src={course.thumbnail} alt={course.title} fill className="object-cover" />
+          <Image src={course.thumbnail} alt={course.title} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
             <FileEdit className="w-8 h-8 text-gray-200" />

@@ -49,6 +49,8 @@ export default function RichTextEditor({
         heading: {
           levels: [1, 2, 3],
         },
+        // StarterKit v3 đã gồm link; tắt bản built-in vì Link.configure bên dưới (tránh "Duplicate extension names").
+        link: false,
       }),
       Image.configure({
         inline: false,
