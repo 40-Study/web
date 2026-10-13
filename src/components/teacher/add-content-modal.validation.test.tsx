@@ -145,7 +145,7 @@ describe("AddContentModal — câu trắc nghiệm phải có đáp án đúng (
     await click(screen.getByText("Trắc nghiệm"));
     await type(screen.getByLabelText("Tiêu đề bài kiểm tra"), "Kiểm tra Go");
   }
-  const saveExercise = () => screen.getByRole("button", { name: /lưu bài tập/i });
+  const saveExercise = () => screen.getByRole("button", { name: /lưu bài trắc nghiệm/i });
 
   it("chưa chọn đáp án đúng: chặn gửi, báo lỗi ngay dưới câu hỏi, modal mở", async () => {
     const onSubmit = vi.fn();

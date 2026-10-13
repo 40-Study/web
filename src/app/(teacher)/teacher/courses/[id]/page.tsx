@@ -90,6 +90,7 @@ import { formatLessonDuration, parseLessonDuration } from "@/lib/lesson-duration
 import { VideoDurationField } from "@/components/teacher/video-duration-field";
 import { ClassCreateForm } from "@/components/teacher/class-create-form";
 import { getClassStatusLabel } from "@/lib/class-status";
+import { DEFAULT_QUIZ_MAX_ATTEMPTS, DEFAULT_QUIZ_PASS_PERCENTAGE } from "@/lib/quiz-settings";
 
 // ─── Content type config ────────────────────────────────────────────────────
 
@@ -787,9 +788,9 @@ export default function CourseDetailPage() {
             lesson_id: currentLessonId || "",
             title: `Quiz - ${data.title}`,
             time_limit_minutes: 5,
-            pass_percentage: 70,
+            pass_percentage: DEFAULT_QUIZ_PASS_PERCENTAGE,
             trigger_type: "scheduled",
-            max_attempts: 3,
+            max_attempts: DEFAULT_QUIZ_MAX_ATTEMPTS,
           });
           undoStack.push(() => quizService.delete(quiz.id));
           for (let i = 0; i < data.quizQuestions.length; i++) {
@@ -864,9 +865,11 @@ export default function CourseDetailPage() {
             lesson_id: currentLessonId || "",
             title: data.title,
             time_limit_minutes: Math.floor((data.timeLimit || 300) / 60),
-            pass_percentage: 70,
+            // Q2-04: giá trị giảng viên nhập trong modal; mặc định chỉ khi payload không mang (kiểu optional vì
+            // ExerciseContentData dùng chung cho code/tự luận).
+            pass_percentage: data.passPercentage ?? DEFAULT_QUIZ_PASS_PERCENTAGE,
             trigger_type: "scheduled",
-            max_attempts: 3,
+            max_attempts: data.maxAttempts ?? DEFAULT_QUIZ_MAX_ATTEMPTS,
           });
           undoStack.push(() => quizService.delete(quiz.id));
           for (let i = 0; i < data.quizQuestions.length; i++) {
