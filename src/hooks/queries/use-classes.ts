@@ -63,6 +63,7 @@ export function useCreateClass(courseId: string) {
     mutationFn: (data: CreateClassDTO) => classService.create(courseId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: classKeys.list(courseId) });
+      qc.invalidateQueries({ queryKey: classKeys.mine() });
       toast.success("Tạo lớp học thành công");
     },
   });
@@ -76,6 +77,7 @@ export function useUpdateClass(courseId: string) {
       classService.update(courseId, classId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: classKeys.list(courseId) });
+      qc.invalidateQueries({ queryKey: classKeys.mine() });
       toast.success("Cập nhật thành công");
     },
   });
@@ -88,6 +90,7 @@ export function useDeleteClass(courseId: string) {
     mutationFn: (classId: string) => classService.delete(courseId, classId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: classKeys.list(courseId) });
+      qc.invalidateQueries({ queryKey: classKeys.mine() });
       toast.success("Xóa lớp học thành công");
     },
   });
@@ -119,6 +122,7 @@ export function useAddStudent(courseId: string) {
       classService.addStudent(courseId, classId, studentId),
     onSuccess: (_, { classId }) => {
       qc.invalidateQueries({ queryKey: classKeys.students(courseId, classId) });
+      qc.invalidateQueries({ queryKey: classKeys.mine() }); // sĩ số trong /teacher/classes
       toast.success("Thêm học sinh thành công");
     },
   });
