@@ -98,6 +98,7 @@ export default function CoursesPage() {
             <CourseSearch
               onSearch={handleSearch}
               suggestions={suggestions}
+              suggestionsQuery={debouncedSearchQuery}
               placeholder="Tìm trong danh sách…"
             />
           </div>

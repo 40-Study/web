@@ -10,6 +10,11 @@ import { CourseSearchResult } from "@/types/course";
 interface CourseSearchProps {
   onSearch?: (query: string) => void;
   suggestions?: CourseSearchResult[];
+  /**
+   * Từ khoá mà `suggestions` được tải cho. Gợi ý tải theo từ khoá đã debounce nên chậm hơn ô nhập; khi khác nội
+   * dung ô nhập, gợi ý còn là của từ khoá cũ và bị ẩn tới khi gợi ý mới về. Bỏ trống = không kiểm.
+   */
+  suggestionsQuery?: string;
   className?: string;
   placeholder?: string;
   isLoading?: boolean;
@@ -22,6 +27,7 @@ const NO_SUGGESTIONS: CourseSearchResult[] = [];
 export function CourseSearch({
   onSearch,
   suggestions = NO_SUGGESTIONS,
+  suggestionsQuery,
   className,
   placeholder = "Tìm trong danh sách…",
   isLoading = false,
@@ -49,13 +55,14 @@ export function CourseSearch({
   // `toLowerCase().includes` làm "dai so" mất gợi ý "Đại số" mà backend đã trả đúng.
   useEffect(() => {
     if (query.length >= 2) {
-      setFilteredSuggestions(suggestions.slice(0, 5));
+      const isStale = suggestionsQuery !== undefined && suggestionsQuery !== query;
+      setFilteredSuggestions(isStale ? [] : suggestions.slice(0, 5));
       setShowSuggestions(true);
     } else {
       setFilteredSuggestions([]);
       setShowSuggestions(false);
     }
-  }, [query, suggestions]);
+  }, [query, suggestions, suggestionsQuery]);
 
   // Close suggestions when clicking outside
   useEffect(() => {

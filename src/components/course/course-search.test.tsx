@@ -115,6 +115,25 @@ describe("CourseSearch — gợi ý từ backend", () => {
     expect(screen.getByText("Hình học không gian")).toBeTruthy();
   });
 
+  // Gợi ý được tải theo từ khoá đã debounce nên luôn chậm hơn ô nhập: gõ java -> python thì gợi ý của "java"
+  // không được hiện dưới "python" trong lúc chờ.
+  it("gợi ý của từ khoá cũ (suggestionsQuery khác ô nhập) bị ẩn cho tới khi gợi ý mới về", () => {
+    const { rerender } = render(<CourseSearch suggestions={suggestions} suggestionsQuery="java" />);
+    fireEvent.change(input(), { target: { value: "java" } });
+    expect(screen.getByText("Đại số 10")).toBeTruthy();
+
+    fireEvent.change(input(), { target: { value: "python" } });
+    expect(screen.queryByText("Đại số 10")).toBeNull();
+
+    rerender(
+      <CourseSearch
+        suggestions={[{ ...suggestions[1], title: "Python cơ bản" }]}
+        suggestionsQuery="python"
+      />
+    );
+    expect(screen.getByText("Python cơ bản")).toBeTruthy();
+  });
+
   it("dưới 2 ký tự: không hiện gợi ý", () => {
     render(<CourseSearch suggestions={suggestions} />);
     fireEvent.change(input(), { target: { value: "d" } });
