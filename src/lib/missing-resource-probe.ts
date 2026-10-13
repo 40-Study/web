@@ -37,7 +37,7 @@ interface ProbeRule {
   /** Khớp pathname; nhóm bắt đầu tiên là định danh tài nguyên. */
   pattern: RegExp;
   endpoint: (resourceId: string) => string;
-  /** Endpoint cần phiên đăng nhập: chuyển tiếp cookie, không có cookie thì bỏ qua. */
+  /** Endpoint BẮT BUỘC có phiên: không có cookie thì bỏ qua. Rule công khai vẫn chuyển tiếp cookie nếu có. */
   requiresSession: boolean;
   /** Status backend được hiểu là "không có tài nguyên này". */
   missingStatuses: readonly number[];
@@ -99,12 +99,13 @@ export async function isMissingResource(
   const matched = matchRule(request.nextUrl.pathname);
   if (!matched) return false;
 
+  // Cookie phiên được chuyển tiếp ở MỌI rule: backend cho người đã ghi danh / chủ khoá / admin đọc khoá
+  // `archived` theo slug nhưng trả 404 cho khách ẩn danh, nên probe không cookie sẽ biến học viên hợp lệ
+  // thành 404. Rule công khai không có cookie vẫn dò ẩn danh; rule cần phiên thì bỏ qua.
   const headers: Record<string, string> = {};
-  if (matched.rule.requiresSession) {
-    const cookie = request.headers.get("cookie");
-    if (!cookie) return false;
-    headers.cookie = cookie;
-  }
+  const cookie = request.headers.get("cookie");
+  if (cookie) headers.cookie = cookie;
+  else if (matched.rule.requiresSession) return false;
 
   try {
     const response = await fetchImpl(`${apiBaseUrl}${matched.rule.endpoint(matched.resourceId)}`, {

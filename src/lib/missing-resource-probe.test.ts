@@ -117,6 +117,40 @@ describe("isMissingResource — trang học (/learn/<slug>/<bài>)", () => {
   });
 });
 
+describe("isMissingResource — khoá học đã lưu trữ (archived) chỉ đọc được khi có phiên", () => {
+  // Backend (PR #131): người đã ghi danh / chủ khoá / admin đọc được khoá archived theo slug; khách ẩn danh nhận 404.
+  // Probe gọi không cookie sẽ rewrite 404 cho chính học viên đã ghi danh.
+  const archivedForAnonymous = () =>
+    vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const cookie = (init?.headers as Record<string, string> | undefined)?.cookie;
+      return new Response("{}", { status: cookie ? 200 : 404 });
+    });
+  const cookie = "accessToken=abc; rfToken=def";
+
+  it.each(["/learn/archived-course/lesson-1", "/courses/archived-course"])(
+    "%s: có cookie phiên -> chuyển tiếp cookie nên backend 200, KHÔNG bị 404",
+    async (path) => {
+      const fetchImpl = archivedForAnonymous();
+      const missing = await isMissingResource(documentRequest(path, { cookie }), { fetchImpl, apiBaseUrl: API });
+      expect(missing).toBe(false);
+      const init = fetchImpl.mock.calls[0]?.[1] as RequestInit;
+      expect((init.headers as Record<string, string>).cookie).toBe(cookie);
+    }
+  );
+
+  it.each(["/learn/archived-course/lesson-1", "/courses/archived-course"])(
+    "%s: khách không cookie vẫn được dò ẩn danh và nhận 404",
+    async (path) => {
+      const fetchImpl = archivedForAnonymous();
+      const missing = await isMissingResource(documentRequest(path), { fetchImpl, apiBaseUrl: API });
+      expect(missing).toBe(true);
+      expect(fetchImpl).toHaveBeenCalledTimes(1);
+      const init = fetchImpl.mock.calls[0]?.[1] as RequestInit;
+      expect((init.headers as Record<string, string>).cookie).toBeUndefined();
+    }
+  );
+});
+
 describe("isMissingResource — quiz (cần đăng nhập)", () => {
   const id = "00000000-0000-0000-0000-000000000000";
 
