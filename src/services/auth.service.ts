@@ -5,6 +5,7 @@
 
 import { api } from "@/lib/api-client";
 import { STORAGE_KEYS, APP_VERSION } from "@/lib/constants";
+import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
@@ -59,7 +60,9 @@ export interface DeviceSessionDto {
   user_agent?: string;
   logged_in_at: string;
   is_current?: boolean;
-  ip_address?: string;
+  /** Số phiên mà dòng này đại diện (>= 1); backend gộp các phiên cùng thiết bị + user agent (contract-be4). */
+  session_count?: number;
+  device_ids?: string[];
 }
 
 // Backend EntryContext
@@ -231,9 +234,11 @@ export interface TokenResponse {
 export interface Device {
   device_id: string;
   device_name: string;
+  user_agent?: string;
   logged_in_at: string;
-  ip_address?: string;
   is_current?: boolean;
+  session_count?: number;
+  device_ids?: string[];
 }
 
 export interface DevicesResponse {
@@ -349,7 +354,7 @@ function resolveApiBaseUrl(): string {
   if (process.env.NODE_ENV === "production") {
     return "/api";
   }
-  return "http://localhost:5000/api";
+  return DEFAULT_API_BASE_URL;
 }
 
 /**
@@ -363,7 +368,7 @@ function getBackendUrl(): string {
   }
   // In development, always use full backend URL
   if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
-    return "http://localhost:5000/api";
+    return DEFAULT_API_BASE_URL;
   }
   return "/api";
 }

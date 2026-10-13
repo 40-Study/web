@@ -9,6 +9,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import axios, { AxiosRequestHeaders } from "axios";
+import { DEFAULT_BACKEND_ORIGIN } from "@/lib/default-backend-url";
 
 const BACKEND_TIMEOUT_MS = 15_000;
 const HOP_BY_HOP_HEADERS = new Set([
@@ -41,7 +42,7 @@ function resolveBackendUrl(request: NextRequest): string {
     request.nextUrl.hostname;
   const host = (hostHeader || "").toLowerCase();
   if (host.includes("localhost") || host.includes("127.0.0.1")) {
-    return "http://127.0.0.1:5000";
+    return DEFAULT_BACKEND_ORIGIN;
   }
 
   return "https://api.fortex.ai.vn";

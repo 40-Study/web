@@ -18,6 +18,7 @@ import {
 } from "./errors";
 import { AUTH_ROLE_CHANGED_EVENT, type AuthRoleChangedDetail } from "./auth-events";
 import { useAuthStore } from "@/stores/auth.store";
+import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
 
 function resolveApiBaseUrl(): string {
   if (typeof window !== "undefined") {
@@ -29,7 +30,7 @@ function resolveApiBaseUrl(): string {
   if (process.env.NODE_ENV === "production") {
     return "/api";
   }
-  return "http://localhost:5000/api";
+  return DEFAULT_API_BASE_URL;
 }
 
 const API_BASE_URL = resolveApiBaseUrl();

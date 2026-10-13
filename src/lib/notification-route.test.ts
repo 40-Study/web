@@ -23,6 +23,18 @@ describe("getNotificationHref", () => {
     expect(getNotificationHref({ notification_type: "group_added", reference_type: "group", reference_id: "g1" })).toBe("/groups");
   });
 
+  it("course_review (duyệt/từ chối khoá) -> trang quản lý khoá của giảng viên, KHÔNG phải /courses công khai", () => {
+    expect(
+      getNotificationHref({ notification_type: "course_update", reference_type: "course_review", reference_id: "c7" })
+    ).toBe("/teacher/courses/c7");
+  });
+
+  it("course_review thiếu reference_id: không dựng đường dẫn hỏng", () => {
+    expect(
+      getNotificationHref({ notification_type: "course_update", reference_type: "course_review", reference_id: null })
+    ).toBeNull();
+  });
+
   it("loại thông báo khác: null để nơi gọi giữ cách xử lý cũ", () => {
     for (const t of ["course_update", "achievement", "system"]) {
       expect(getNotificationHref({ notification_type: t, reference_type: "course", reference_id: "c1" })).toBeNull();

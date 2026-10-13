@@ -3,17 +3,13 @@
 import { Monitor, Smartphone, Tablet, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDevices, useLogoutAll } from "@/hooks/queries/use-auth";
+import { describeDevice, type DeviceKind } from "@/lib/device-label";
 import { formatVnDateTime } from "@/lib/vn-datetime";
 
-/** Pick device icon based on device_name heuristics */
-function DeviceIcon({ name, className }: { name: string; className?: string }) {
-  const lower = name.toLowerCase();
-  if (lower.includes("mobile") || lower.includes("iphone") || lower.includes("android")) {
-    return <Smartphone className={className} />;
-  }
-  if (lower.includes("tablet") || lower.includes("ipad")) {
-    return <Tablet className={className} />;
-  }
+/** Biểu tượng theo loại thiết bị (suy từ user agent, xem lib/device-label). */
+function DeviceIcon({ kind, className }: { kind: DeviceKind; className?: string }) {
+  if (kind === "mobile") return <Smartphone className={className} />;
+  if (kind === "tablet") return <Tablet className={className} />;
   return <Monitor className={className} />;
 }
 
@@ -64,29 +60,33 @@ export function DevicesSettings() {
       </div>
 
       <div className="space-y-3">
-        {devices.map((device) => (
-          <div
-            key={device.device_id}
-            className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex items-center gap-4"
-          >
-            <div className="p-2.5 bg-gray-50 rounded-xl shrink-0">
-              <DeviceIcon name={device.device_name} className="h-5 w-5 text-gray-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="font-medium text-gray-900 truncate">{device.device_name}</p>
-                {device.is_current && (
-                  <span className="shrink-0 inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-200">
-                    Thiết bị này
-                  </span>
-                )}
+        {devices.map((device) => {
+          const { label, kind, sessionLabel } = describeDevice(device);
+          return (
+            <div
+              key={device.device_id}
+              className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex items-center gap-4"
+            >
+              <div className="p-2.5 bg-gray-50 rounded-xl shrink-0">
+                <DeviceIcon kind={kind} className="h-5 w-5 text-gray-600" />
               </div>
-              <p className="text-sm text-gray-500 mt-0.5">
-                {device.ip_address || "IP không rõ"} &middot; Hoạt động {formatVnDateTime(device.logged_in_at)}
-              </p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-gray-900 truncate">{label}</p>
+                  {device.is_current && (
+                    <span className="shrink-0 inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-200">
+                      Thiết bị này
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {sessionLabel && `${sessionLabel} \u00b7 `}Hoạt động{" "}
+                  {formatVnDateTime(device.logged_in_at)}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {devices.length === 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center shadow-sm">

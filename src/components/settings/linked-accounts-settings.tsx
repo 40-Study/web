@@ -3,9 +3,10 @@
 import { Check, Link2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLinkedAccounts, useDisconnectProvider } from "@/hooks/queries/use-auth";
+import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
 
 // Backend URL for OAuth redirect - must go directly to backend, not through Next.js proxy
-const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE_URL;
 
 interface ProviderMeta {
   id: string;

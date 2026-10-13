@@ -286,8 +286,9 @@ export default function TeacherAssignmentsPage() {
           </CardContent>
         </Card>
 
-        {/* Column 3: Assignment management */}
-        <div className="space-y-4">
+        {/* Column 3: Assignment management. `min-w-0`: cột lưới `1fr` mặc định không co nhỏ hơn nội dung (nút
+            whitespace-nowrap) nên ở 1280px (breakpoint xl) cả trang tràn ngang 8px (Q2-07). */}
+        <div className="min-w-0 space-y-4">
           <Card>
             <CardContent className="p-4">
               <div className="grid gap-3 md:grid-cols-2">
@@ -401,6 +402,7 @@ export default function TeacherAssignmentsPage() {
 
               <div className="md:col-span-2">
                 <Button
+                  className="h-auto min-h-10 max-w-full whitespace-normal text-center"
                   onClick={handleCreateAssignment}
                   disabled={
                     !selectedSessionId ||

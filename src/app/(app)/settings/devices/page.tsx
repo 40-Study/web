@@ -2,6 +2,7 @@
 
 import { useDevices, useLogoutAll } from "@/hooks/queries/use-auth";
 import { Button } from "@/components/ui/button";
+import { describeDevice } from "@/lib/device-label";
 import { formatVnDateTime } from "@/lib/vn-datetime";
 
 export default function DevicesPage() {
@@ -39,26 +40,30 @@ export default function DevicesPage() {
       </div>
 
       <div className="space-y-4">
-        {devices.map((device) => (
-          <div
-            key={device.device_id}
-            className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm"
-          >
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-900">{device.device_name}</span>
-                {device.is_current && (
-                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                    Thiết bị này
-                  </span>
-                )}
+        {devices.map((device) => {
+          const { label, sessionLabel } = describeDevice(device);
+          return (
+            <div
+              key={device.device_id}
+              className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm"
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-900">{label}</span>
+                  {device.is_current && (
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                      Thiết bị này
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-sm text-gray-500">
+                  {sessionLabel && `${sessionLabel} • `}Hoạt động{" "}
+                  {formatVnDateTime(device.logged_in_at)}
+                </p>
               </div>
-              <p className="mt-1 text-sm text-gray-500">
-                {device.ip_address || "Không rõ"} • Hoạt động {formatVnDateTime(device.logged_in_at)}
-              </p>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {devices.length === 0 && (
           <div className="rounded-xl bg-white p-8 text-center shadow-sm">

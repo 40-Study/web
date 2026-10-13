@@ -12,6 +12,7 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { QueryState } from "@/components/common/query-state";
 import { Badge } from "@/components/ui/badge";
 import { ApproveConfirmDialog, RejectReasonDialog } from "@/components/admin/review-dialogs";
+import { CourseDeleteAction } from "@/components/admin/course-delete-action";
 import { CourseReviewDetailDialog } from "@/components/admin/course-review-detail-dialog";
 import { formatDate } from "@/lib/utils";
 import {
@@ -182,6 +183,16 @@ export default function AdminCoursesPage() {
                             >
                               Từ chối
                             </button>
+                          </Can>
+                        )}
+                        {/* Backend cho admin (SYSTEM_SETTINGS_MANAGE) xoá khoá; khoá chờ duyệt bị 409 COURSE_PENDING_REVIEW. */}
+                        {course.status !== "pending_review" && (
+                          <Can permission={PERMISSIONS.SYSTEM_SETTINGS_MANAGE}>
+                            <CourseDeleteAction
+                              courseId={course.id}
+                              title={course.title}
+                              className={`${ACTION_BTN} bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950 dark:text-red-300`}
+                            />
                           </Can>
                         )}
                       </div>

@@ -7,6 +7,8 @@
  * gốc nữa: URL không chữ ký luôn bị 403, và file gốc không được cấp cho học viên.
  */
 
+import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
+
 function resolveApiBaseUrl(): string {
   // Always use relative path for browser (proxied by Next.js)
   if (typeof window !== "undefined") {
@@ -16,7 +18,7 @@ function resolveApiBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
-  return "http://127.0.0.1:5000/api";
+  return DEFAULT_API_BASE_URL;
 }
 
 const API_BASE_URL = resolveApiBaseUrl();

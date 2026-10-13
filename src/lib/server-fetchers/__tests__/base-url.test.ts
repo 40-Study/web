@@ -17,6 +17,6 @@ describe("getPublicApiBaseUrl", () => {
     vi.stubEnv("BACKEND_URL", "");
     vi.stubEnv("NEXT_PUBLIC_API_URL", "/api");
 
-    expect(getPublicApiBaseUrl()).toBe("http://localhost:5000/api");
+    expect(getPublicApiBaseUrl()).toBe("http://localhost:5001/api");
   });
 });

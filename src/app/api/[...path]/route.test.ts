@@ -53,7 +53,7 @@ describe("same-origin API proxy", () => {
     expect(requestMock).toHaveBeenCalledTimes(1);
     const config = requestMock.mock.calls[0][0];
     expect(config).toMatchObject({
-      url: "http://127.0.0.1:5000/api/echo/%C4%91%C3%BAng?page=2&sort=asc",
+      url: "http://localhost:5001/api/echo/%C4%91%C3%BAng?page=2&sort=asc",
       method: "POST",
       timeout: 15_000,
       responseType: "arraybuffer",

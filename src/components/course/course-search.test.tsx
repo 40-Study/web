@@ -88,3 +88,55 @@ describe("CourseSearch — đồng bộ với URL", () => {
     expect(push).toHaveBeenCalledWith("/courses?q=" + encodeURIComponent("lập trình"));
   });
 });
+
+describe("CourseSearch — gợi ý từ backend", () => {
+  const suggestions = [
+    { id: "c1", title: "Đại số 10", thumbnail: "", instructor: "Nguyễn Văn A", slug: "dai-so-10" },
+    { id: "c2", title: "Hình học không gian", thumbnail: "", instructor: "Trần B", slug: "hinh-hoc" },
+  ];
+
+  beforeEach(() => {
+    currentParams = new URLSearchParams();
+    push.mockReset();
+    replace.mockReset();
+  });
+
+  // Backend tìm không phân biệt dấu (BE2 F-07); client không được lọc lại theo cách nhạy dấu rồi giấu kết quả đúng.
+  it('gõ không dấu "dai so" vẫn hiện gợi ý "Đại số 10" mà backend đã trả', () => {
+    render(<CourseSearch suggestions={[suggestions[0]]} />);
+    fireEvent.change(input(), { target: { value: "dai so" } });
+    expect(screen.getByText("Đại số 10")).toBeTruthy();
+  });
+
+  it("gợi ý khớp ở trường backend khác (không phải tiêu đề/giảng viên) vẫn hiện", () => {
+    render(<CourseSearch suggestions={suggestions} />);
+    fireEvent.change(input(), { target: { value: "toan nang cao" } });
+    expect(screen.getByText("Đại số 10")).toBeTruthy();
+    expect(screen.getByText("Hình học không gian")).toBeTruthy();
+  });
+
+  // Gợi ý được tải theo từ khoá đã debounce nên luôn chậm hơn ô nhập: gõ java -> python thì gợi ý của "java"
+  // không được hiện dưới "python" trong lúc chờ.
+  it("gợi ý của từ khoá cũ (suggestionsQuery khác ô nhập) bị ẩn cho tới khi gợi ý mới về", () => {
+    const { rerender } = render(<CourseSearch suggestions={suggestions} suggestionsQuery="java" />);
+    fireEvent.change(input(), { target: { value: "java" } });
+    expect(screen.getByText("Đại số 10")).toBeTruthy();
+
+    fireEvent.change(input(), { target: { value: "python" } });
+    expect(screen.queryByText("Đại số 10")).toBeNull();
+
+    rerender(
+      <CourseSearch
+        suggestions={[{ ...suggestions[1], title: "Python cơ bản" }]}
+        suggestionsQuery="python"
+      />
+    );
+    expect(screen.getByText("Python cơ bản")).toBeTruthy();
+  });
+
+  it("dưới 2 ký tự: không hiện gợi ý", () => {
+    render(<CourseSearch suggestions={suggestions} />);
+    fireEvent.change(input(), { target: { value: "d" } });
+    expect(screen.queryByText("Đại số 10")).toBeNull();
+  });
+});

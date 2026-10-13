@@ -5,14 +5,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { courseApprovalService } from "@/services/course-approval.service";
-import { courseKeys } from "@/hooks/queries/use-courses";
+import { adminCourseKeys, courseKeys } from "@/hooks/queries/use-courses";
 import { approvalErrorMessage } from "@/lib/approval-errors";
 import type { AdminCourseListParams } from "@/types/approval";
 
-export const adminCourseKeys = {
-  all: ["admin-courses"] as const,
-  list: (params?: AdminCourseListParams) => [...adminCourseKeys.all, "list", params ?? {}] as const,
-};
+// Định nghĩa ở use-courses (xoá/lưu trữ khoá cần làm mới danh sách admin); giữ tên export cũ.
+export { adminCourseKeys };
 
 /** POST /courses/:id/submit-review — giáo viên gửi khoá (nháp/bị từ chối) cho admin duyệt. */
 export function useSubmitCourseReview() {
