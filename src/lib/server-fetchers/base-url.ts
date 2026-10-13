@@ -1,3 +1,5 @@
+import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
+
 export function getPublicApiBaseUrl(): string {
   const backendUrl = process.env.BACKEND_URL?.replace(/\/$/, "");
   if (backendUrl) {
@@ -9,5 +11,5 @@ export function getPublicApiBaseUrl(): string {
     return publicApiUrl;
   }
 
-  return "http://localhost:5000/api";
+  return DEFAULT_API_BASE_URL;
 }

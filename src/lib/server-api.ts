@@ -4,8 +4,9 @@
  */
 
 import { cookies } from "next/headers";
+import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE_URL;
 
 interface FetchOptions {
   method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";

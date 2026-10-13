@@ -5,6 +5,7 @@
 
 import { api } from "@/lib/api-client";
 import { STORAGE_KEYS, APP_VERSION } from "@/lib/constants";
+import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
@@ -349,7 +350,7 @@ function resolveApiBaseUrl(): string {
   if (process.env.NODE_ENV === "production") {
     return "/api";
   }
-  return "http://localhost:5000/api";
+  return DEFAULT_API_BASE_URL;
 }
 
 /**
@@ -363,7 +364,7 @@ function getBackendUrl(): string {
   }
   // In development, always use full backend URL
   if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
-    return "http://localhost:5000/api";
+    return DEFAULT_API_BASE_URL;
   }
   return "/api";
 }
