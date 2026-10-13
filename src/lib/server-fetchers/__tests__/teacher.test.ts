@@ -7,7 +7,7 @@ import { getTeacherPublicProfileServer } from "../teacher";
 
 afterEach(() => vi.unstubAllGlobals());
 
-function stubFetch(impl: () => Promise<Partial<Response>>) {
+function stubFetch(impl: (...args: unknown[]) => Promise<Partial<Response>>) {
   const fn = vi.fn(impl);
   vi.stubGlobal("fetch", fn);
   return fn;

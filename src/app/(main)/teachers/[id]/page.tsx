@@ -27,7 +27,7 @@ function Stat({ icon: Icon, label, value }: { icon: typeof Users; label: string;
   );
 }
 
-function Fact({ label, value }: { label: string; value: string | null }) {
+function Fact({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
   return (
     <div>
