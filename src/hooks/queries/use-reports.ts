@@ -4,6 +4,7 @@ import {
   reportService,
   CreateReportDTO,
   UpdateReportStatusDTO,
+  ReportActionDTO,
   ReportStatus,
   ReportedType,
 } from "@/services/report.service";
@@ -90,6 +91,21 @@ export function useDeleteReport() {
     },
     onError: () => {
       toast.error("Không thể xóa báo cáo");
+    },
+  });
+}
+
+/**
+ * ADM-N4: hành động kiểm duyệt trên đối tượng bị báo cáo. Thông báo thành công/lỗi do nơi gọi đặt (nhãn phụ
+ * thuộc hành động). Làm mới danh sách cả khi lỗi: 404/409 nghĩa là đối tượng đã đổi trạng thái hoặc bị xoá.
+ */
+export function useApplyReportAction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: ReportActionDTO }) => reportService.applyAction(id, data),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: reportKeys.list() });
     },
   });
 }
