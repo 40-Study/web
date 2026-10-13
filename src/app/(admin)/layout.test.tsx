@@ -9,7 +9,8 @@
  */
 
 import { screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { usePathname } from "next/navigation";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import AdminLayout from "./layout";
 import { useAuthStore } from "@/stores/auth.store";
@@ -122,5 +123,45 @@ describe("(admin)/layout — RoleGuard", () => {
     await waitFor(() => {
       expect(screen.queryByText("NOI DUNG ADMIN")).toBeNull();
     });
+  });
+});
+
+
+describe("(admin)/layout — phụ đề theo trang (ADM-L3)", () => {
+  const OLD_GENERIC = "Quản lý vai trò, tổ chức và phân quyền";
+
+  it.each([
+    ["/admin/orders", "Theo dõi, đối soát và hoàn tiền đơn hàng"],
+    ["/admin/audit-logs", "Tra cứu ai đã làm gì trên hệ thống"],
+    ["/admin/orders/abc-123", "Theo dõi, đối soát và hoàn tiền đơn hàng"],
+  ])("trang %s hiện phụ đề riêng của trang, không còn câu chung cho mọi trang", async (pathname, subtitle) => {
+    vi.mocked(usePathname).mockReturnValue(pathname);
+    useAuthStore.getState().setSessionStatus("authenticated");
+    useAuthStore.getState().setActiveRole("SYSTEM_ADMIN");
+
+    renderWithProviders(
+      <AdminLayout>
+        <div>NOI DUNG ADMIN</div>
+      </AdminLayout>
+    );
+
+    await screen.findByText("NOI DUNG ADMIN");
+    expect(screen.getByText(subtitle)).toBeTruthy();
+    expect(screen.queryByText(OLD_GENERIC)).toBeNull();
+  });
+
+  it("trang ngoài menu rơi về phụ đề chung của khu quản trị", async () => {
+    vi.mocked(usePathname).mockReturnValue("/admin/khong-co-trong-menu");
+    useAuthStore.getState().setSessionStatus("authenticated");
+    useAuthStore.getState().setActiveRole("SYSTEM_ADMIN");
+
+    renderWithProviders(
+      <AdminLayout>
+        <div>NOI DUNG ADMIN</div>
+      </AdminLayout>
+    );
+
+    await screen.findByText("NOI DUNG ADMIN");
+    expect(screen.getByText("Quản trị nền tảng ForteX")).toBeTruthy();
   });
 });

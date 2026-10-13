@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * CategoryMenu — dropdown/popover liệt kê danh mục khóa học.
+ * CategoryMenu — dropdown/popover liệt kê danh mục khoá học.
  *
  * Nguồn dữ liệu: `useCategories` (src/hooks/use-courses.ts) — cùng hook mà các
  * pill lọc danh mục ở trang /courses đang dùng; không gọi API mới.
  *
  * Hành vi: mở/đóng bằng nút, đóng bằng Esc + click ngoài; aria-expanded,
  * aria-haspopup; focus ring trên nút. Mỗi mục là một link điều hướng tới
- * /courses?category=<slug>; có mục "Tất cả khóa học" ở cuối.
+ * /courses?category=<slug>; có mục "Tất cả khoá học" ở cuối.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -97,7 +97,7 @@ export function CategoryMenu({ onAfterNavigate }: { onAfterNavigate?: () => void
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label="Danh mục khóa học"
+        aria-label="Danh mục khoá học"
         className={cn(
           "flex items-center gap-1.5 h-8 px-3 rounded-full text-sm font-medium transition-colors",
           "bg-primary-50 text-primary-700 hover:bg-primary-100",
@@ -112,7 +112,7 @@ export function CategoryMenu({ onAfterNavigate }: { onAfterNavigate?: () => void
       {open && (
         <div
           role="menu"
-          aria-label="Danh mục khóa học"
+          aria-label="Danh mục khoá học"
           className="absolute left-0 top-full mt-2 w-[26rem] bg-popover rounded-2xl shadow-raised border border-border z-50 p-2"
         >
           {isLoading ? (
@@ -145,7 +145,7 @@ export function CategoryMenu({ onAfterNavigate }: { onAfterNavigate?: () => void
               >
                 <LayoutList className="w-4.5 h-4.5" />
               </span>
-              <span className="text-sm font-semibold text-foreground">Tất cả khóa học</span>
+              <span className="text-sm font-semibold text-foreground">Tất cả khoá học</span>
             </Link>
           </div>
         </div>

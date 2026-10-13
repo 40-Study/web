@@ -29,6 +29,7 @@ export function CurrentCourseHero({
             src={course.thumbnail}
             alt=""
             fill
+            sizes="100vw"
             className="object-cover opacity-30"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/70 to-transparent" />
@@ -67,7 +68,7 @@ export function CurrentCourseHero({
         <div className="bg-white rounded-xl p-4 md:p-5 max-w-2xl flex flex-col md:flex-row md:items-center gap-4">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Tiến độ khóa học: {course.progress}%</span>
+              <span className="text-sm text-gray-600">Tiến độ khoá học: {course.progress}%</span>
               <span className="text-sm font-semibold text-primary-600">
                 {formatLessonProgress(course.completedLessons, course.totalLessons)}
               </span>

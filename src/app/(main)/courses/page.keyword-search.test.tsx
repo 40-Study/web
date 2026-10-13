@@ -1,6 +1,6 @@
 /**
  * F-07 (smoke 2, QA2 261013): /courses lọc danh sách ở client bằng `toLowerCase().includes` nên gõ
- * "dai so" không ra "Đại số tuyến tính" dù backend `keyword` đã tìm không dấu. Trang phải đẩy từ khóa
+ * "dai so" không ra "Đại số tuyến tính" dù backend `keyword` đã tìm không dấu. Trang phải đẩy từ khoá
  * lên backend và hiển thị đúng kết quả backend trả, không lọc lại ở client.
  */
 
@@ -56,7 +56,7 @@ describe("CoursesPage — tìm kiếm qua backend keyword (F-07)", () => {
     currentParams = new URLSearchParams("q=dai so");
     render(<CoursesPage />);
     expect(screen.getByText("Đại số tuyến tính ứng dụng")).toBeTruthy();
-    expect(screen.getByText(/1 khóa học cho "dai so"/)).toBeTruthy();
+    expect(screen.getByText(/1 khoá học cho "dai so"/)).toBeTruthy();
   });
 
   it("không có q thì không gửi keyword", () => {

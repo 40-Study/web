@@ -6,7 +6,7 @@ import type { Metadata } from "next";
  */
 export const metadata: Metadata = {
   title: "Đăng nhập",
-  description: "Đăng nhập vào ForteX để tiếp tục học tập và quản lý khóa học của bạn.",
+  description: "Đăng nhập vào ForteX để tiếp tục học tập và quản lý khoá học của bạn.",
 };
 
 export default function LoginLayout({ children }: { children: React.ReactNode }) {

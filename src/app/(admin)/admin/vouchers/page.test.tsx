@@ -18,12 +18,12 @@ import { renderWithProviders } from "@/test/utils";
 const VOUCHERS = [
   {
     id: "v-hidden", code: "VIPONLY", name: "Thưởng cuộc thi", discount_unit: "MONEY", discount_method: "FIXED",
-    discount_amount_money: 50000, is_active: true, holders_only: true, used_count: 0, usage_limit: 0, usage_per_user: 1,
+    discount_amount_money: 50000, is_active: true, holders_only: true, first_order_only: false, used_count: 0, usage_limit: 0, usage_per_user: 1,
   },
   {
     id: "v-public", code: "GIAM10", name: "Giảm 10%", discount_unit: "MONEY", discount_method: "PERCENT",
     discount_percent: 10, max_discount_money: 30000, start_date: "2026-10-01T03:00:00Z", end_date: "2026-12-31T03:00:00Z",
-    is_active: true, holders_only: false, used_count: 3, usage_limit: 10, usage_per_user: 1,
+    is_active: true, holders_only: false, first_order_only: true, used_count: 3, usage_limit: 10, usage_per_user: 1,
   },
 ];
 
@@ -44,6 +44,16 @@ describe("/admin/vouchers — voucher dành riêng (holders_only)", () => {
     expect(rows).toHaveLength(2);
     expect(rows[0].textContent).toContain("VIPONLY");
     expect(rows[0].textContent).toContain("Dành riêng");
+    expect(rows[1].textContent).not.toContain("Dành riêng");
+  });
+
+  // ADM: danh sách chỉ gắn huy hiệu "Dành riêng", thiếu huy hiệu cho voucher "chỉ đơn đầu tiên"
+  // nên admin phải mở từng form mới biết. Test ĐỎ nếu huy hiệu "Đơn đầu tiên" biến mất hoặc gắn sai dòng.
+  it("đánh dấu 'Đơn đầu tiên' đúng dòng, không lẫn với 'Dành riêng'", async () => {
+    renderWithProviders(<AdminVouchersPage />);
+    const rows = await screen.findAllByTestId("admin-voucher-row");
+    expect(rows[0].textContent).not.toContain("Đơn đầu tiên");
+    expect(rows[1].textContent).toContain("Đơn đầu tiên");
     expect(rows[1].textContent).not.toContain("Dành riêng");
   });
 
@@ -132,6 +142,22 @@ describe("/admin/vouchers — voucher dành riêng (holders_only)", () => {
 
     await waitFor(() => expect(mockApi.put).toHaveBeenCalledTimes(1));
     expect(mockApi.put).toHaveBeenCalledWith("/vouchers/v-hidden", expect.objectContaining({ holders_only: false }));
+  });
+
+  it("công tắc 'Chỉ áp dụng cho đơn hàng đầu tiên': mặc định tắt, bật rồi tạo thì body có first_order_only=true", async () => {
+    renderWithProviders(<AdminVouchersPage />);
+    await screen.findAllByTestId("admin-voucher-row");
+    fireEvent.change(screen.getByPlaceholderText("VD: GIAM50K"), { target: { value: "dau1" } });
+    const form = screen.getByTestId("voucher-form");
+    fireEvent.change(form.querySelectorAll("input")[1], { target: { value: "Đơn đầu" } });
+    fireEvent.change(screen.getByLabelText(/Số tiền giảm/), { target: { value: "20000" } });
+    const toggle = screen.getByRole("checkbox", { name: "Chỉ áp dụng cho đơn hàng đầu tiên" }) as HTMLInputElement;
+    expect(toggle.checked).toBe(false);
+    fireEvent.click(toggle);
+    fireEvent.click(screen.getByRole("button", { name: "Tạo voucher" }));
+
+    await waitFor(() => expect(mockApi.post).toHaveBeenCalledTimes(1));
+    expect(mockApi.post).toHaveBeenCalledWith("/vouchers", expect.objectContaining({ first_order_only: true }));
   });
 
   it("form sai thì báo lỗi tại form và KHÔNG gọi API", async () => {

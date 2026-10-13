@@ -201,7 +201,7 @@ api.interceptors.response.use(
         // Refresh thành công — retry request gốc (cookies mới đã được set)
         return api(original);
       } catch {
-        // Refresh thất bại — phát tín hiệu để bootstrap xóa session authority. Không tự
+        // Refresh thất bại — phát tín hiệu để bootstrap xoá session authority. Không tự
         // chuyển public route sang login; RoleGuard sẽ điều hướng khi surface cần bảo vệ.
         if (typeof window !== "undefined") {
           try {

@@ -2,7 +2,7 @@
 
 /**
  * Dialog chuyển khoản ngân hàng — component CHUNG dùng cho cả mua xu
- * (coins) và thanh toán đơn hàng khóa học (checkout), theo yêu cầu DRY ở
+ * (coins) và thanh toán đơn hàng khoá học (checkout), theo yêu cầu DRY ở
  * mục 12/13 (plans/reports/web-core-developer-260909-1412-web-logic-fixes.md).
  *
  * Component này THUẦN HIỂN THỊ — không tự gọi API. Logic polling/verify
@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 
 /**
- * "reconciling" (review backend #76 vòng 3, chỉ đơn khóa học): server chưa có kết quả đối chiếu ngân
+ * "reconciling" (review backend #76 vòng 3, chỉ đơn khoá học): server chưa có kết quả đối chiếu ngân
  * hàng cuối cùng. Không cho tạo lại / tạo đơn mới, chỉ giải thích và cho kiểm tra lại.
  */
 export type BankTransferDialogStatus = "pending" | "success" | "error" | "expired" | "reconciling";
@@ -49,13 +49,13 @@ export interface BankTransferDialogProps {
   onCheckNow?: () => void;
   isCheckingNow?: boolean;
   onRetryExpired?: () => void;
-  /** Chữ riêng cho màn hết hạn (đơn khóa học khác mua xu: phải tạo ĐƠN mới, không chỉ mã mới). */
+  /** Chữ riêng cho màn hết hạn (đơn khoá học khác mua xu: phải tạo ĐƠN mới, không chỉ mã mới). */
   expiredTitle?: string;
   expiredDescription?: React.ReactNode;
   retryExpiredLabel?: string;
   /**
    * Đồng hồ về 0 KHÔNG tự chuyển sang màn "hết hạn": server còn đối chiếu giao dịch lần cuối (đơn
-   * khóa học). Hiện "đang kiểm tra" cho tới khi `status` do server trả đổi sang expired/success.
+   * khoá học). Hiện "đang kiểm tra" cho tới khi `status` do server trả đổi sang expired/success.
    */
   awaitServerAfterExpiry?: boolean;
   /** Nội dung màn "reconciling". */

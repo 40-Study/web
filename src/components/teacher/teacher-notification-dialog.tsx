@@ -178,7 +178,7 @@ export default function TeacherNotificationDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
-            Hủy
+            Huỷ
           </Button>
           <Button
             onClick={handleSubmit}

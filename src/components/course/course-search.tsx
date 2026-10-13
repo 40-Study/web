@@ -34,7 +34,7 @@ export function CourseSearch({
 }: CourseSearchProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // URL là nguồn sự thật cho từ khóa: điền sẵn khi tải trang và cập nhật khi back/forward.
+  // URL là nguồn sự thật cho từ khoá: điền sẵn khi tải trang và cập nhật khi back/forward.
   const urlQuery = searchParams.get("q") ?? "";
   const [query, setQuery] = useState(urlQuery);
   const onSearchRef = useRef(onSearch);
@@ -79,9 +79,9 @@ export function CourseSearch({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Báo từ khóa cho trang cha sau 300ms. Khóa theo `query` (onSearch lấy qua ref) để một lần
-  // render lại của cha không kích hoạt lại và không reset "Tải thêm". Từ khóa < 2 ký tự coi như
-  // rỗng: nếu không, xóa ô/xóa từ khóa sẽ để lại kết quả đã lọc cũ.
+  // Báo từ khoá cho trang cha sau 300ms. Khoá theo `query` (onSearch lấy qua ref) để một lần
+  // render lại của cha không kích hoạt lại và không reset "Tải thêm". Từ khoá < 2 ký tự coi như
+  // rỗng: nếu không, xoá ô/xoá từ khoá sẽ để lại kết quả đã lọc cũ.
   useEffect(() => {
     const effective = query.length >= 2 ? query : "";
     if (effective === lastNotifiedRef.current) return;
@@ -108,7 +108,7 @@ export function CourseSearch({
 
   const clearSearch = () => {
     setQuery("");
-    // Bỏ luôn `q` trên URL, nếu không tải lại trang sẽ điền lại từ khóa cũ.
+    // Bỏ luôn `q` trên URL, nếu không tải lại trang sẽ điền lại từ khoá cũ.
     if (urlQuery) router.replace("/courses");
     setShowSuggestions(false);
     inputRef.current?.focus();
@@ -125,7 +125,7 @@ export function CourseSearch({
           )}
           <Input
             ref={inputRef}
-            aria-label="Tìm khóa học"
+            aria-label="Tìm khoá học"
             type="text"
             placeholder={placeholder}
             className="h-11 pl-10 pr-11 text-base rounded-lg border-slate-300 bg-white hover:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600"
@@ -137,7 +137,7 @@ export function CourseSearch({
             <button
               type="button"
               onClick={clearSearch}
-              aria-label="Xóa từ khóa tìm kiếm"
+              aria-label="Xoá từ khoá tìm kiếm"
               className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-slate-400 dark:hover:text-slate-50"
             >
               <X className="h-4 w-4" />

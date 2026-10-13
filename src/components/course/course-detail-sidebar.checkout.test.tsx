@@ -147,13 +147,13 @@ describe("CourseDetailSidebar — idempotency_key khi Mua ngay (PR #25 BLOCKER #
 
     renderSidebar();
     clickBuyNow();
-    await waitFor(() => screen.getByText("Xác nhận mua khóa học"));
+    await waitFor(() => screen.getByText("Xác nhận mua khoá học"));
 
     clickConfirmPayment();
     await waitSettledAfterConfirm(1);
 
     // Modal PHẢI còn mở sau khi lỗi (không tự đóng) để bấm lại được.
-    expect(screen.queryByText("Xác nhận mua khóa học")).not.toBeNull();
+    expect(screen.queryByText("Xác nhận mua khoá học")).not.toBeNull();
 
     clickConfirmPayment();
     await waitSettledAfterConfirm(2);
@@ -167,17 +167,17 @@ describe("CourseDetailSidebar — idempotency_key khi Mua ngay (PR #25 BLOCKER #
 
     renderSidebar();
     clickBuyNow();
-    await waitFor(() => screen.getByText("Xác nhận mua khóa học"));
+    await waitFor(() => screen.getByText("Xác nhận mua khoá học"));
     clickConfirmPayment();
     await waitSettledAfterConfirm(1);
 
     // Đơn 0đ tạo xong -> modal tự đóng (điều hướng sang trang thành công).
-    await waitFor(() => expect(screen.queryByText("Xác nhận mua khóa học")).toBeNull());
+    await waitFor(() => expect(screen.queryByText("Xác nhận mua khoá học")).toBeNull());
 
     // Mở lại "Mua ngay" cho một lần mua khác.
     vi.mocked(orderService.createOrder).mockResolvedValueOnce(makeZeroAmountOrder("order-b"));
     clickBuyNow();
-    await waitFor(() => screen.getByText("Xác nhận mua khóa học"));
+    await waitFor(() => screen.getByText("Xác nhận mua khoá học"));
     clickConfirmPayment();
     await waitSettledAfterConfirm(2);
 
@@ -194,7 +194,7 @@ describe("CourseDetailSidebar — idempotency_key khi Mua ngay (PR #25 BLOCKER #
 
     renderSidebar();
     clickBuyNow();
-    await waitFor(() => screen.getByText("Xác nhận mua khóa học"));
+    await waitFor(() => screen.getByText("Xác nhận mua khoá học"));
     clickConfirmPayment();
     await waitSettledAfterConfirm(1);
 

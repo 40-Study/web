@@ -231,7 +231,7 @@ export function WithdrawalSection() {
 
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog} disabled={createWithdrawal.isPending}>
-              Hủy
+              Huỷ
             </Button>
             <Button
               disabled={!isAmountValid || createWithdrawal.isPending}

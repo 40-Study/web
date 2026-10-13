@@ -25,7 +25,7 @@ export interface TeacherMenuItem {
  */
 export const TEACHER_MENU_ITEMS: TeacherMenuItem[] = [
   { label: "Lịch giảng dạy", href: "/teacher/schedule", icon: Calendar },
-  { label: "Quản lý khóa học", href: "/teacher/courses", icon: BookOpen },
+  { label: "Quản lý khoá học", href: "/teacher/courses", icon: BookOpen },
   { label: "Lớp học", href: "/teacher/classes", icon: GraduationCap },
   { label: "Quản lý học sinh", href: "/teacher/students", icon: Users },
   { label: "Quản lý bài tập", href: "/teacher/assignments", icon: ClipboardList },

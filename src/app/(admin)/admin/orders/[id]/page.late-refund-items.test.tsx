@@ -18,7 +18,7 @@ const BASE = {
   currency: "VND",
   payment_method: "bank_transfer",
   created_at: "2026-09-28T00:00:00Z",
-  items: [{ id: "item-1", course_id: "course-1", course_name: "Khóa test", price: 499000, discount_amount: 0, final_price: 499000 }],
+  items: [{ id: "item-1", course_id: "course-1", course_name: "Khoá test", price: 499000, discount_amount: 0, final_price: 499000 }],
   refund_needed: true,
   late_refunds: {
     pending_count: 2,

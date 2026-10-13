@@ -39,7 +39,7 @@ export interface EventFormData {
    * P1 QA 260927 teacher: bắt buộc khi TẠO MỚI — mỗi buổi học ở trang này giờ
    * là một livestream session thật (POST /livestream), và backend đòi class_id
    * hợp lệ. Trước bản vá này trang lịch chỉ lưu state React cục bộ, không gọi
-   * API nào cả, nên buổi học "tạo" ở đây không gắn với khóa/lớp nào và không
+   * API nào cả, nên buổi học "tạo" ở đây không gắn với khoá/lớp nào và không
    * bao giờ xuất hiện lại ở trang Bài tập (vốn liệt kê session theo course_id
    * thật từ backend) — đây là nguyên nhân gốc khiến bài tập "không dùng được".
    */
@@ -98,7 +98,7 @@ export default function ScheduleEventFormDialog({
   const [classId, setClassId] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // P1 QA 260927 teacher: khóa/lớp thật của giáo viên — bắt buộc khi tạo mới.
+  // P1 QA 260927 teacher: khoá/lớp thật của giáo viên — bắt buộc khi tạo mới.
   const { data: apiCourses = [], isLoading: coursesLoading } = useMyCourses();
   const { data: classes = [], isLoading: classesLoading } = useClasses(courseId, {
     enabled: !isEditing && !!courseId,
@@ -134,7 +134,7 @@ export default function ScheduleEventFormDialog({
     }
   }, [event, defaultDate, defaultHour, defaultEndTime, open]);
 
-  // Đổi khóa học thì reset lớp đã chọn — lớp thuộc khóa cũ không còn hợp lệ.
+  // Đổi khoá học thì reset lớp đã chọn — lớp thuộc khoá cũ không còn hợp lệ.
   useEffect(() => {
     setClassId("");
   }, [courseId]);
@@ -204,19 +204,19 @@ export default function ScheduleEventFormDialog({
             />
           </div>
 
-          {/* Khóa học + Lớp — bắt buộc khi tạo mới, cố định sau khi tạo (backend
+          {/* Khoá học + Lớp — bắt buộc khi tạo mới, cố định sau khi tạo (backend
               không hỗ trợ đổi lớp của một buổi live đã tồn tại). */}
           {isEditing ? (
             <div className="rounded-lg border bg-gray-50 p-3 text-xs text-muted-foreground">
-              Buổi học đã gắn với lớp học của bạn — không thể đổi khóa/lớp sau khi tạo.
+              Buổi học đã gắn với lớp học của bạn — không thể đổi khoá/lớp sau khi tạo.
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="event-course">Khóa học *</Label>
+                <Label htmlFor="event-course">Khoá học *</Label>
                 <Select value={courseId} onValueChange={setCourseId}>
                   <SelectTrigger id="event-course" disabled={coursesLoading}>
-                    <SelectValue placeholder={coursesLoading ? "Đang tải..." : "Chọn khóa học"} />
+                    <SelectValue placeholder={coursesLoading ? "Đang tải..." : "Chọn khoá học"} />
                   </SelectTrigger>
                   <SelectContent>
                     {apiCourses.map((c) => (
@@ -233,7 +233,7 @@ export default function ScheduleEventFormDialog({
                   <SelectTrigger id="event-class" disabled={!courseId || classesLoading}>
                     <SelectValue
                       placeholder={
-                        !courseId ? "Chọn khóa học trước" : classesLoading ? "Đang tải..." : "Chọn lớp"
+                        !courseId ? "Chọn khoá học trước" : classesLoading ? "Đang tải..." : "Chọn lớp"
                       }
                     />
                   </SelectTrigger>
@@ -246,7 +246,7 @@ export default function ScheduleEventFormDialog({
                   </SelectContent>
                 </Select>
                 {courseId && !classesLoading && classes.length === 0 && (
-                  <p className="text-xs text-amber-600">Khóa học này chưa có lớp nào.</p>
+                  <p className="text-xs text-amber-600">Khoá học này chưa có lớp nào.</p>
                 )}
               </div>
             </div>
@@ -329,7 +329,7 @@ export default function ScheduleEventFormDialog({
                 }}
               >
                 <Trash2 className="w-4 h-4 mr-1" />
-                Xóa
+                Xoá
               </Button>
             )}
             <Button
@@ -337,7 +337,7 @@ export default function ScheduleEventFormDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Hủy
+              Huỷ
             </Button>
             <Button type="submit" disabled={!title || !dateStr || (!isEditing && !classId)}>
               {isEditing ? "Cập nhật" : "Tạo buổi học"}

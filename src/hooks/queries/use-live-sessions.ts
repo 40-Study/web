@@ -85,10 +85,10 @@ export function useDeleteLiveSession() {
     mutationFn: (id: string) => liveSessionService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: liveSessionKeys.all });
-      toast.success("Đã hủy buổi học trực tiếp");
+      toast.success("Đã huỷ buổi học trực tiếp");
     },
     onError: (error: Error) => {
-      toast.error("Không thể hủy", { description: error.message });
+      toast.error("Không thể huỷ", { description: error.message });
     },
   });
 }

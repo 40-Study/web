@@ -71,7 +71,7 @@ export function ReportActionDialog({ report, action, onClose }: ReportActionDial
         </label>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Hủy
+            Huỷ
           </Button>
           <Button variant="destructive" onClick={submit} disabled={!reasonValid || apply.isPending}>
             {spec.confirm}

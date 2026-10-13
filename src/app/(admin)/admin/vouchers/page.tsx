@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { useAdminVouchers, useCreateVoucher, useUpdateVoucher } from "@/hooks/queries/use-voucher";
 import { formatVoucherDiscountLabel, type Voucher } from "@/services/voucher.service";
 import {
+  FIRST_ORDER_ONLY_BADGE_LABEL,
+  FIRST_ORDER_ONLY_LABEL,
   HOLDERS_ONLY_ENABLE_NOTE,
   HOLDERS_ONLY_HINT,
   HOLDERS_ONLY_LABEL,
@@ -110,6 +112,11 @@ export default function AdminVouchersPage() {
                   {v.holders_only && (
                     <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-200">
                       {HOLDERS_ONLY_LABEL}
+                    </span>
+                  )}
+                  {v.first_order_only && (
+                    <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 ring-1 ring-sky-200">
+                      {FIRST_ORDER_ONLY_BADGE_LABEL}
                     </span>
                   )}
                   {!v.is_active && (
@@ -269,6 +276,15 @@ export default function AdminVouchersPage() {
               {HOLDERS_ONLY_ENABLE_NOTE}
             </p>
           </div>
+
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={form.first_order_only}
+              onChange={(e) => set("first_order_only", e.target.checked)}
+            />
+            {FIRST_ORDER_ONLY_LABEL}
+          </label>
 
           {error && (
             <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

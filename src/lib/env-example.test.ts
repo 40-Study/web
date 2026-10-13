@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 /**
  * QA vòng 2 (F-01): .env.example là thứ dev copy thành .env.local. Trỏ `127.0.0.1` làm cookie phiên
  * (host `localhost`) không đi kèm WebSocket -> 401; trỏ cổng 5000 trên macOS đụng AirPlay Receiver (403).
- * Khóa giá trị mẫu để lỗi cấu hình này không quay lại.
+ * Khoá giá trị mẫu để lỗi cấu hình này không quay lại.
  */
 const lines = fs
   .readFileSync(path.join(__dirname, "..", "..", ".env.example"), "utf8")

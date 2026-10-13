@@ -97,7 +97,7 @@ export default function ExercisePanel({
   const [user, setUser] = useState<User | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
-  // Xác nhận trước khi xóa bài tập (M-12) — thay confirm() gốc của trình duyệt
+  // Xác nhận trước khi xoá bài tập (M-12) — thay confirm() gốc của trình duyệt
   // bằng overlay theo đúng theme tối của phòng học, không lệch design system.
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   // Screen flow: 'list' -> 'select-type' -> 'create'
@@ -440,7 +440,7 @@ export default function ExercisePanel({
       await api.delete(`/assignments/${id}`);
       fetchAssignments();
     } catch (err: any) {
-      alert(err.message ?? 'Xóa thất bại');
+      alert(err.message ?? 'Xoá thất bại');
     } finally {
       setConfirmDeleteId(null);
     }
@@ -1296,7 +1296,7 @@ export default function ExercisePanel({
                 value={form.starter_code}
                 onChange={(e) => setForm({ ...form, starter_code: e.target.value })}
                 rows={3}
-                placeholder="# Code mẫu (tùy chọn)"
+                placeholder="# Code mẫu (tuỳ chọn)"
                 style={{ ...inputStyle, resize: 'vertical', fontFamily: "'JetBrains Mono', monospace", fontSize: '12px' }}
               />
             </div>
@@ -1734,7 +1734,7 @@ export default function ExercisePanel({
                   </button>
                   <button
                     onClick={() => setConfirmDeleteId(a.id)}
-                    title="Xóa"
+                    title="Xoá"
                     style={{
                       background: 'transparent',
                       border: 'none',
@@ -1744,7 +1744,7 @@ export default function ExercisePanel({
                       fontSize: '11px',
                     }}
                   >
-                    Xóa
+                    Xoá
                   </button>
                   {!a.is_published && (
                     <button
@@ -2193,7 +2193,7 @@ export default function ExercisePanel({
       `}</style>
     </DraggableExercisePanel>
 
-    {/* Xác nhận xóa bài tập (M-12) — overlay dark theo màu COLORS của phòng học */}
+    {/* Xác nhận xoá bài tập (M-12) — overlay dark theo màu COLORS của phòng học */}
     {confirmDeleteId && (
       <div
         style={{
@@ -2210,7 +2210,7 @@ export default function ExercisePanel({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Xác nhận xóa bài tập"
+          aria-label="Xác nhận xoá bài tập"
           onClick={(e) => e.stopPropagation()}
           style={{
             background: COLORS.surface,
@@ -2223,7 +2223,7 @@ export default function ExercisePanel({
           }}
         >
           <p style={{ color: COLORS.text, fontSize: '14px', fontWeight: 600, marginBottom: '6px' }}>
-            Xóa bài tập này?
+            Xoá bài tập này?
           </p>
           <p style={{ color: COLORS.textMuted, fontSize: '12px', marginBottom: '16px' }}>
             Hành động này không thể hoàn tác.
@@ -2241,7 +2241,7 @@ export default function ExercisePanel({
                 cursor: 'pointer',
               }}
             >
-              Hủy
+              Huỷ
             </button>
             <button
               onClick={() => confirmDeleteId && handleDelete(confirmDeleteId)}
@@ -2256,7 +2256,7 @@ export default function ExercisePanel({
                 cursor: 'pointer',
               }}
             >
-              Xóa bài tập
+              Xoá bài tập
             </button>
           </div>
         </div>

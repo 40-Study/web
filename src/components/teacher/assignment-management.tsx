@@ -520,7 +520,7 @@ export function AssignmentManagement({
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setReminderModalOpen(false)}>
-              Hủy
+              Huỷ
             </Button>
             <Button
               onClick={handleSendReminder}

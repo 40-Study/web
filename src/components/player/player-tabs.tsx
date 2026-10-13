@@ -108,13 +108,13 @@ export const PlayerTabs = forwardRef<PlayerTabsHandle, PlayerTabsProps>(
                     <p className="font-medium text-gray-900">{course.instructor.name}</p>
                     <p className="text-sm text-gray-500">{course.instructor.title}</p>
                     {/* A8: API khoá học không trả rating/số học viên/số khoá của giảng
-                        viên — trước đây hiện "0 ★ · 0 học viên · 0 khóa học". Chỉ hiện số có thật. */}
+                        viên — trước đây hiện "0 ★ · 0 học viên · 0 khoá học". Chỉ hiện số có thật. */}
                     <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-gray-500">
                       {course.instructor.rating > 0 && <span>{course.instructor.rating} ★</span>}
                       {course.instructor.studentCount > 0 && (
                         <span>{course.instructor.studentCount.toLocaleString("vi-VN")} học viên</span>
                       )}
-                      {course.instructor.courseCount > 0 && <span>{course.instructor.courseCount} khóa học</span>}
+                      {course.instructor.courseCount > 0 && <span>{course.instructor.courseCount} khoá học</span>}
                     </div>
                   </div>
                 </div>

@@ -16,7 +16,7 @@ import { courseService } from "@/services/course.service";
 import { useEnrollCourse } from "@/hooks/use-courses";
 import { useAddToCart } from "./use-cart";
 
-const notForSale = () => new ApiError(409, "COURSE_NOT_FOR_SALE", "Khóa học này đã ngừng bán nên không thể thêm vào giỏ hàng, mua hoặc ghi danh mới.");
+const notForSale = () => new ApiError(409, "COURSE_NOT_FOR_SALE", "Khoá học này đã ngừng bán nên không thể thêm vào giỏ hàng, mua hoặc ghi danh mới.");
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });

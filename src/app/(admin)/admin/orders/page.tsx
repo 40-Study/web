@@ -162,7 +162,7 @@ function AdminOrdersContent() {
                 <tr>
                   <th className="px-4 py-3 text-left">Mã đơn</th>
                   <th className="px-4 py-3 text-left">Học viên</th>
-                  <th className="px-4 py-3 text-left">Khóa học</th>
+                  <th className="px-4 py-3 text-left">Khoá học</th>
                   <th className="px-4 py-3 text-left">Tổng tiền</th>
                   <th className="px-4 py-3 text-left">Trạng thái</th>
                   <th className="px-4 py-3 text-left">Ngày tạo</th>

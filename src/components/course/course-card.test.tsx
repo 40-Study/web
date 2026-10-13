@@ -25,18 +25,18 @@ const base = {
 } as unknown as Course;
 
 describe("CourseCard", () => {
-  it("là một link duy nhất tới trang khóa học, không lồng <button>", () => {
+  it("là một link duy nhất tới trang khoá học, không lồng <button>", () => {
     const { container } = render(<CourseCard course={base} />);
     expect(screen.getByRole("link").getAttribute("href")).toBe("/courses/ngu-van");
     expect(container.querySelector("a button")).toBeNull();
   });
 
-  it("khóa miễn phí hiện đúng 1 badge 'Miễn phí' trên ảnh", () => {
+  it("khoá miễn phí hiện đúng 1 badge 'Miễn phí' trên ảnh", () => {
     render(<CourseCard course={{ ...base, price: 0 }} />);
     expect(screen.getAllByText("Miễn phí").length).toBe(2); // badge + giá ở footer
   });
 
-  it("khóa giảm giá hiện badge phần trăm và giá gốc gạch ngang", () => {
+  it("khoá giảm giá hiện badge phần trăm và giá gốc gạch ngang", () => {
     render(<CourseCard course={{ ...base, price: 300000, originalPrice: 600000 }} />);
     expect(screen.getByText("-50%")).toBeTruthy();
   });

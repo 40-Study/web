@@ -18,7 +18,7 @@ export async function generateMetadata({
 
   return {
     title: `${title} - Học`,
-    description: `Đang học khóa học ${title}`,
+    description: `Đang học khoá học ${title}`,
   };
 }
 

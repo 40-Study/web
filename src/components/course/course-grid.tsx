@@ -15,7 +15,7 @@ interface CourseGridProps {
   loading?: boolean;
   /** Enable staggered scroll-reveal animation per card */
   staggered?: boolean;
-  /** Hành động trong trạng thái rỗng (vd. nút "Xóa bộ lọc"). */
+  /** Hành động trong trạng thái rỗng (vd. nút "Xoá bộ lọc"). */
   emptyAction?: ReactNode;
   /** Hiện trái tim lưu yêu thích trên từng thẻ (QA2 F-10). */
   showWishlist?: boolean;
@@ -52,7 +52,7 @@ export function CourseGrid({
 }: CourseGridProps) {
   if (loading) {
     return (
-      <div className={cn(GRID_CLASS, className)} aria-busy="true" role="status" aria-label="Đang tải khóa học">
+      <div className={cn(GRID_CLASS, className)} aria-busy="true" role="status" aria-label="Đang tải khoá học">
         {Array.from({ length: 8 }).map((_, i) => (
           <CourseCardSkeleton key={i} />
         ))}
@@ -70,8 +70,8 @@ export function CourseGrid({
       >
         <EmptyState
           icon={SearchX}
-          title="Không tìm thấy khóa học nào"
-          description="Thử đổi từ khóa hoặc bỏ bớt bộ lọc để xem thêm khóa học."
+          title="Không tìm thấy khoá học nào"
+          description="Thử đổi từ khoá hoặc bỏ bớt bộ lọc để xem thêm khoá học."
           action={emptyAction}
         />
       </div>

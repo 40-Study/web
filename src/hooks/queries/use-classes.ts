@@ -91,7 +91,7 @@ export function useDeleteClass(courseId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: classKeys.list(courseId) });
       qc.invalidateQueries({ queryKey: classKeys.mine() });
-      toast.success("Xóa lớp học thành công");
+      toast.success("Xoá lớp học thành công");
     },
   });
 }

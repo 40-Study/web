@@ -18,7 +18,7 @@ vi.mock("next/navigation", () => ({
 // eslint-disable-next-line import/first
 import { CourseSearch } from "./course-search";
 
-const input = () => screen.getByLabelText("Tìm khóa học") as HTMLInputElement;
+const input = () => screen.getByLabelText("Tìm khoá học") as HTMLInputElement;
 
 describe("CourseSearch — đồng bộ với URL", () => {
   beforeEach(() => {
@@ -29,7 +29,7 @@ describe("CourseSearch — đồng bộ với URL", () => {
   });
   afterEach(() => vi.useRealTimers());
 
-  it("điền sẵn từ khóa `q` trên URL khi tải trang", () => {
+  it("điền sẵn từ khoá `q` trên URL khi tải trang", () => {
     currentParams = new URLSearchParams("q=react");
     render(<CourseSearch />);
     expect(input().value).toBe("react");
@@ -48,7 +48,7 @@ describe("CourseSearch — đồng bộ với URL", () => {
     expect(input().value).toBe("");
   });
 
-  it("URL đổi thì báo trang cha từ khóa mới (sau 300ms) để danh sách lọc theo", () => {
+  it("URL đổi thì báo trang cha từ khoá mới (sau 300ms) để danh sách lọc theo", () => {
     const onSearch = vi.fn();
     currentParams = new URLSearchParams("q=react");
     const { rerender } = render(<CourseSearch onSearch={onSearch} />);
@@ -65,7 +65,7 @@ describe("CourseSearch — đồng bộ với URL", () => {
     expect(onSearch).toHaveBeenLastCalledWith("");
   });
 
-  it("gõ từ khóa: báo trang cha sau 300ms; xoá bằng nút X thì báo rỗng và bỏ `q` khỏi URL", () => {
+  it("gõ từ khoá: báo trang cha sau 300ms; xoá bằng nút X thì báo rỗng và bỏ `q` khỏi URL", () => {
     const onSearch = vi.fn();
     currentParams = new URLSearchParams("q=react");
     render(<CourseSearch onSearch={onSearch} />);
@@ -74,7 +74,7 @@ describe("CourseSearch — đồng bộ với URL", () => {
     act(() => void vi.advanceTimersByTime(300));
     expect(onSearch).toHaveBeenLastCalledWith("reactjs");
 
-    fireEvent.click(screen.getByRole("button", { name: "Xóa từ khóa tìm kiếm" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xoá từ khoá tìm kiếm" }));
     act(() => void vi.advanceTimersByTime(300));
     expect(input().value).toBe("");
     expect(onSearch).toHaveBeenLastCalledWith("");

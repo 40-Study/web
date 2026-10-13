@@ -37,7 +37,7 @@ type TabType = "overview" | "courses" | "grades" | "schedule" | "attendance" | "
 
 const TABS: { id: TabType; label: string; icon: React.ElementType }[] = [
   { id: "overview", label: "Tổng quan", icon: Users },
-  { id: "courses", label: "Khóa học", icon: BookOpen },
+  { id: "courses", label: "Khoá học", icon: BookOpen },
   { id: "grades", label: "Điểm số", icon: GraduationCap },
   { id: "schedule", label: "Lịch học", icon: Calendar },
   { id: "attendance", label: "Điểm danh", icon: CheckCircle },
@@ -230,7 +230,7 @@ export default function ChildDetailPage() {
         <div className="bg-white rounded-xl p-4 shadow-sm border">
           <div className="flex items-center gap-2 text-blue-500 mb-2">
             <BookOpen className="w-5 h-5" />
-            <span className="text-sm font-medium">Khóa học</span>
+            <span className="text-sm font-medium">Khoá học</span>
           </div>
           <p className="text-2xl font-bold">
             {overview.completed_courses}/{overview.enrolled_courses}

@@ -14,7 +14,7 @@ type PermissionState = {
 };
 
 // A-P1-3: backend (permission_router.go) chỉ có GET / , GET /:id, PUT /:id — KHÔNG có
-// POST/DELETE. Trước đây trang có nút "Tạo"/"Xóa" nhưng chỉ setState cục bộ, không gọi API
+// POST/DELETE. Trước đây trang có nút "Tạo"/"Xoá" nhưng chỉ setState cục bộ, không gọi API
 // nào — dữ liệu biến mất khi reload. Đã bỏ hẳn, chỉ giữ "Sửa mô tả" nối vào PUT /permissions/:id
 // (API thật, có gate ROLES_MANAGE_SYSTEM ở backend).
 type PermissionForm = {
@@ -135,7 +135,7 @@ export default function AdminPermissionsPage() {
                       onClick={() => setForm(null)}
                       className="rounded bg-gray-100 px-3 py-2 text-sm font-medium dark:bg-gray-800"
                     >
-                      Hủy
+                      Huỷ
                     </button>
                   </div>
                 </div>

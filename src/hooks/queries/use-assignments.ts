@@ -82,7 +82,7 @@ export function useCreateAssignment() {
 
 /**
  * Update an existing assignment.
- * Các thao tác ghi (tạo/sửa/xóa/công bố) chỉ dành cho giảng viên chủ khoá (hoặc admin): backend trả 403
+ * Các thao tác ghi (tạo/sửa/xoá/công bố) chỉ dành cho giảng viên chủ khoá (hoặc admin): backend trả 403
  * khi bạn thấy bài tập nhưng không phải chủ, 404 khi không xem được. getErrorMessage đổi cả hai sang
  * câu tiếng Việt rõ ràng thay vì câu chung "Không thể ...".
  */
@@ -107,9 +107,9 @@ export function useDeleteAssignment() {
     mutationFn: ({ id }: { id: string; sessionId: string }) => assignmentService.delete(id),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: assignmentKeys.bySession(variables.sessionId) });
-      toast.success("Đã xóa bài tập");
+      toast.success("Đã xoá bài tập");
     },
-    onError: (error) => toast.error(getErrorMessage(error, "Không thể xóa bài tập")),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể xoá bài tập")),
   });
 }
 
@@ -135,8 +135,8 @@ export function useUnpublishAssignment() {
     mutationFn: ({ id }: { id: string; sessionId: string }) => assignmentService.unpublish(id),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: assignmentKeys.bySession(variables.sessionId) });
-      toast.success("Đã hủy công bố bài tập");
+      toast.success("Đã huỷ công bố bài tập");
     },
-    onError: (error) => toast.error(getErrorMessage(error, "Không thể hủy công bố bài tập")),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể huỷ công bố bài tập")),
   });
 }

@@ -10,7 +10,7 @@ import { RoleGuard } from "@/components/guards";
 import { Avatar } from "@/components/ui/avatar";
 import { useLogout } from "@/hooks/queries/use-auth";
 import { cn } from "@/lib/utils";
-import { isAdminNavActive } from "@/lib/admin-nav";
+import { findActiveAdminNavItem, isAdminNavActive } from "@/lib/admin-nav";
 import { PERMISSIONS, type Permission } from "@/lib/permissions";
 import { useAuthStore } from "@/stores/auth.store";
 
@@ -18,33 +18,35 @@ interface AdminMenuItem {
   label: string;
   href: string;
   icon: typeof LayoutDashboard;
+  /** Phụ đề dưới tiêu đề header khi đang ở trang này (ADM-L3: trước đây mọi trang dùng chung một câu). */
+  description: string;
   /** Mục chỉ hiện khi admin có quyền này — API phía sau trả 403 với admin kém quyền (QA 261009 L6). */
   permission?: Permission;
 }
 
 const adminMenu: AdminMenuItem[] = [
-  { label: "Tổng quan", href: "/admin", icon: LayoutDashboard },
-  { label: "Người dùng", href: "/admin/users", icon: Users },
-  { label: "Quản lý vai trò", href: "/admin/roles", icon: ShieldCheck },
-  { label: "Quản lý tổ chức", href: "/admin/organizations", icon: Building2 },
-  { label: "Phân quyền", href: "/admin/permissions", icon: Settings },
-  { label: "Danh mục khoá học", href: "/admin/categories", icon: FolderTree },
-  { label: "Báo cáo vi phạm", href: "/admin/moderation", icon: Flag },
-  { label: "Đơn hàng", href: "/admin/orders", icon: Receipt },
-  { label: "Rút tiền giảng viên", href: "/admin/withdrawals", icon: Banknote },
+  { label: "Tổng quan", href: "/admin", icon: LayoutDashboard, description: "Số liệu và hoạt động chính của nền tảng" },
+  { label: "Người dùng", href: "/admin/users", icon: Users, description: "Tìm kiếm, xem và khoá tài khoản người dùng" },
+  { label: "Quản lý vai trò", href: "/admin/roles", icon: ShieldCheck, description: "Gán và gỡ vai trò cho người dùng" },
+  { label: "Quản lý tổ chức", href: "/admin/organizations", icon: Building2, description: "Quản lý các tổ chức và chủ tổ chức" },
+  { label: "Phân quyền", href: "/admin/permissions", icon: Settings, description: "Quyền của từng vai trò hệ thống" },
+  { label: "Danh mục khoá học", href: "/admin/categories", icon: FolderTree, description: "Cây danh mục dùng để phân loại khoá học" },
+  { label: "Báo cáo vi phạm", href: "/admin/moderation", icon: Flag, description: "Xử lý báo cáo vi phạm từ người dùng" },
+  { label: "Đơn hàng", href: "/admin/orders", icon: Receipt, description: "Theo dõi, đối soát và hoàn tiền đơn hàng" },
+  { label: "Rút tiền giảng viên", href: "/admin/withdrawals", icon: Banknote, description: "Duyệt yêu cầu rút tiền của giảng viên" },
   // "Ví của tôi" (PR #24) đã được thay bằng báo cáo doanh thu nền tảng THẬT (PR #29) —
   // xem admin/reports/page.tsx. Đổi lại tên mục nav cho khớp nội dung trang thật.
-  { label: "Báo cáo hệ thống", href: "/admin/reports", icon: BarChart3 },
+  { label: "Báo cáo hệ thống", href: "/admin/reports", icon: BarChart3, description: "Doanh thu và hoạt động của toàn nền tảng" },
   // Nhật ký, thông báo hệ thống, cấu hình hệ thống: API đều cần SYSTEM_SETTINGS_MANAGE nên ẩn mục với admin thiếu quyền.
-  { label: "Nhật ký hoạt động", href: "/admin/audit-logs", icon: ScrollText, permission: PERMISSIONS.SYSTEM_SETTINGS_MANAGE },
-  { label: "Thông báo hệ thống", href: "/admin/notifications", icon: Bell, permission: PERMISSIONS.SYSTEM_SETTINGS_MANAGE },
-  { label: "Cấu hình hệ thống", href: "/admin/settings", icon: SlidersHorizontal, permission: PERMISSIONS.SYSTEM_SETTINGS_MANAGE },
-  { label: "Duyệt khoá học", href: "/admin/courses", icon: BookCheck },
-  { label: "Duyệt giáo viên", href: "/admin/teacher-applications", icon: UserCheck },
+  { label: "Nhật ký hoạt động", href: "/admin/audit-logs", icon: ScrollText, description: "Tra cứu ai đã làm gì trên hệ thống", permission: PERMISSIONS.SYSTEM_SETTINGS_MANAGE },
+  { label: "Thông báo hệ thống", href: "/admin/notifications", icon: Bell, description: "Gửi thông báo đến người dùng theo đối tượng", permission: PERMISSIONS.SYSTEM_SETTINGS_MANAGE },
+  { label: "Cấu hình hệ thống", href: "/admin/settings", icon: SlidersHorizontal, description: "Thiết lập chung của hệ thống", permission: PERMISSIONS.SYSTEM_SETTINGS_MANAGE },
+  { label: "Duyệt khoá học", href: "/admin/courses", icon: BookCheck, description: "Duyệt hoặc từ chối khoá học chờ xuất bản" },
+  { label: "Duyệt giáo viên", href: "/admin/teacher-applications", icon: UserCheck, description: "Xét duyệt đơn đăng ký làm giảng viên" },
   // Cuộc thi (contract contest-feature §7): duyệt, gắn voucher, huỷ và CHỐT kết quả — chỉ admin chốt.
-  { label: "Cuộc thi", href: "/admin/contests", icon: Trophy },
+  { label: "Cuộc thi", href: "/admin/contests", icon: Trophy, description: "Duyệt cuộc thi, gắn voucher và chốt kết quả" },
   // Voucher (L1): tạo/sửa mã giảm giá, gồm công tắc voucher "dành riêng" (holders_only).
-  { label: "Voucher", href: "/admin/vouchers", icon: Ticket },
+  { label: "Voucher", href: "/admin/vouchers", icon: Ticket, description: "Tạo và sửa mã giảm giá" },
 ];
 
 export default function AdminLayout({
@@ -56,6 +58,7 @@ export default function AdminLayout({
   const { user } = useAuthStore();
   const permissions = useAuthStore((s) => s.permissions);
   const visibleMenu = adminMenu.filter((item) => !item.permission || permissions.includes(item.permission));
+  const pageSubtitle = findActiveAdminNavItem(pathname, adminMenu)?.description ?? "Quản trị nền tảng ForteX";
   const logoutMutation = useLogout();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -118,7 +121,7 @@ export default function AdminLayout({
             <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 md:px-6">
               <div>
                 <h1 className="font-heading text-base font-semibold text-foreground">Trang quản trị</h1>
-                <p className="text-xs text-muted-foreground">Quản lý vai trò, tổ chức và phân quyền</p>
+                <p className="text-xs text-muted-foreground">{pageSubtitle}</p>
               </div>
               <div className="relative" ref={profileMenuRef}>
                 <button

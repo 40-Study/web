@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Star, BookOpen } from "lucide-react";
+import { Star } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { formatLessonProgress } from "@/lib/lesson-progress-label";
 import { Card } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Course, EnrolledCourse } from "@/types/course";
 import { WishlistButton } from "@/components/course/wishlist-button";
+import { CourseThumbnailPlaceholder } from "@/components/course/course-thumbnail-placeholder";
 
 interface CourseCardProps {
   course: Course | EnrolledCourse;
@@ -56,7 +57,7 @@ export function CourseCard({ course, className, priority = false, showWishlist =
     .filter(Boolean)
     .join(" · ");
 
-  // Dữ liệu có thể thiếu (vd. khóa đã ghi danh): chỉ hiện khi có giá trị thật.
+  // Dữ liệu có thể thiếu (vd. khoá đã ghi danh): chỉ hiện khi có giá trị thật.
   const instructorName = course.instructor?.name?.trim();
   const hasRating = (course.reviewCount ?? 0) > 0 && (course.rating ?? 0) > 0;
   const hasStudents = (course.studentCount ?? 0) > 0;
@@ -80,12 +81,7 @@ export function CourseCard({ course, className, priority = false, showWishlist =
               onError={() => setImgError(true)}
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <BookOpen
-                className="h-10 w-10 text-slate-300 dark:text-slate-600"
-                aria-hidden="true"
-              />
-            </div>
+            <CourseThumbnailPlaceholder />
           )}
           {badge && (
             <Badge

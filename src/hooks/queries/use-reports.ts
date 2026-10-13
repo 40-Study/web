@@ -87,10 +87,10 @@ export function useDeleteReport() {
     mutationFn: (id: string) => reportService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: reportKeys.my() });
-      toast.success("Đã xóa báo cáo");
+      toast.success("Đã xoá báo cáo");
     },
     onError: () => {
-      toast.error("Không thể xóa báo cáo");
+      toast.error("Không thể xoá báo cáo");
     },
   });
 }

@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 const MAX_COURSES = 4;
 
-/** Khóa học nổi bật. Không có dữ liệu (hoặc lỗi API) thì ẩn cả section, không hiện khung trống. */
+/** Khoá học nổi bật. Không có dữ liệu (hoặc lỗi API) thì ẩn cả section, không hiện khung trống. */
 export function FeaturedCourses() {
   const { data, isLoading } = useFeaturedCourses();
   const courses = (data ?? []).slice(0, MAX_COURSES);
@@ -24,9 +24,9 @@ export function FeaturedCourses() {
         <div className="mb-8 flex items-end justify-between gap-4">
           <div>
             <p className="mb-3 text-sm font-semibold text-primary-600 dark:text-primary-400">
-              Khóa học nổi bật
+              Khoá học nổi bật
             </p>
-            <h2 className="text-h2 text-slate-900 dark:text-slate-50">Bắt đầu với khóa học được chọn</h2>
+            <h2 className="text-h2 text-slate-900 dark:text-slate-50">Bắt đầu với khoá học được chọn</h2>
           </div>
           <Link
             href="/courses"

@@ -4,12 +4,12 @@
  */
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
-import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Mention from "@tiptap/extension-mention";
+import { ReadOnlyOpenLink } from "@/lib/tiptap-link-open";
 import { CodeBlockExtension } from "@/components/editor/extensions/code-block-extension";
 import { TableExtensions } from "@/components/editor/extensions/table-extension";
 import type { SuggestionOptions } from "@tiptap/suggestion";
@@ -27,6 +27,10 @@ export function buildExtensions(options: TiptapConfigOptions = {}) {
         StarterKit.configure({
             // Disable built-in code block in favor of lowlight version
             codeBlock: false,
+            // StarterKit v3 đã gồm link + underline; tắt bản built-in để dùng bản cấu hình riêng bên dưới
+            // (nếu không: cảnh báo "Duplicate extension names: link, underline").
+            link: false,
+            underline: false,
         }),
         Underline,
         CodeBlockExtension,
@@ -34,8 +38,7 @@ export function buildExtensions(options: TiptapConfigOptions = {}) {
             allowBase64: true,
             HTMLAttributes: { class: "tiptap-image" },
         }),
-        Link.configure({
-            openOnClick: false,
+        ReadOnlyOpenLink.configure({
             HTMLAttributes: {
                 class: "tiptap-link",
                 rel: "noopener noreferrer",

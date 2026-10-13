@@ -103,7 +103,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Cài đặt</h1>
-              <p className="text-sm text-gray-500">Quản lý tài khoản và tùy chỉnh trải nghiệm</p>
+              <p className="text-sm text-gray-500">Quản lý tài khoản và tuỳ chỉnh trải nghiệm</p>
             </div>
           </div>
         </div>

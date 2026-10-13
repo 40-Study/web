@@ -79,7 +79,7 @@ export function DiscussionComposer({ onSubmit, isSubmitting }: DiscussionCompose
               onClick={() => setExpanded(false)}
               className="text-sm text-slate-400 hover:text-slate-600 px-4 py-2"
             >
-              Hủy
+              Huỷ
             </button>
             <button
               onClick={handleSubmit}

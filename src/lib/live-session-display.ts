@@ -14,7 +14,7 @@ export const LIVE_STATUS_LABEL: Record<LiveSessionStatus, string> = {
   scheduled: "Sắp diễn ra",
   live: "Đang trực tiếp",
   ended: "Đã kết thúc",
-  cancelled: "Đã hủy",
+  cancelled: "Đã huỷ",
 };
 
 function parse(iso: string | null | undefined): Date | null {

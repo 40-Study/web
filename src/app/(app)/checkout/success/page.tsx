@@ -31,7 +31,7 @@ export default function CheckoutSuccessPage() {
           {/* Title */}
           <h1 className="text-2xl font-light text-black mb-2">Đặt hàng thành công!</h1>
           <p className="text-neutral-500 mb-8">
-            Cảm ơn bạn đã mua khóa học. Bạn có thể bắt đầu học ngay bây giờ.
+            Cảm ơn bạn đã mua khoá học. Bạn có thể bắt đầu học ngay bây giờ.
           </p>
 
           {/* Order details */}
@@ -53,13 +53,13 @@ export default function CheckoutSuccessPage() {
             <Link href="/home" className="block">
               <Button className="w-full" size="lg">
                 <BookOpen className="w-4 h-4 mr-2" />
-                Đi đến khóa học của tôi
+                Đi đến khoá học của tôi
               </Button>
             </Link>
 
             <Link href="/courses" className="block">
               <Button variant="outline" className="w-full" size="lg">
-                Khám phá thêm khóa học
+                Khám phá thêm khoá học
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
@@ -68,7 +68,7 @@ export default function CheckoutSuccessPage() {
           {/* Receipt info */}
           <div className="mt-8 pt-6" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
             <p className="text-sm text-neutral-500">
-              Hóa đơn điện tử đã được gửi đến email của bạn.
+              Hoá đơn điện tử đã được gửi đến email của bạn.
               <br />
               Nếu cần hỗ trợ, vui lòng liên hệ{" "}
               <Link href="/help" className="text-black hover:underline">

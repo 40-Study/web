@@ -30,12 +30,12 @@ type CourseType = "video" | "livestream" | "hybrid";
 const TAB_ORDER: ApiCourseStatus[] = ["published", "pending_review", "rejected", "draft", "archived"];
 
 const TAB_EMPTY_MESSAGE: Record<CourseStatus, string> = {
-  published: "Không có khóa học đang xuất bản",
-  pending_review: "Không có khóa học nào đang chờ duyệt",
-  rejected: "Không có khóa học bị từ chối",
+  published: "Không có khoá học đang xuất bản",
+  pending_review: "Không có khoá học nào đang chờ duyệt",
+  rejected: "Không có khoá học bị từ chối",
   draft: "Không có bản nháp nào",
-  archived: "Không có khóa học lưu trữ",
-  other: "Không có khóa học nào",
+  archived: "Không có khoá học lưu trữ",
+  other: "Không có khoá học nào",
 };
 
 const CARD_STATUS_BADGE: Partial<Record<CourseStatus, { label: string; className: string }>> = {
@@ -125,10 +125,10 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: strin
     e.preventDefault();
     e.stopPropagation();
     if (!canDelete) {
-      toast.error("Không thể xóa khóa học đã có học viên đăng ký");
+      toast.error("Không thể xoá khoá học đã có học viên đăng ký");
       return;
     }
-    if (confirm(`Bạn có chắc muốn xóa khóa học "${course.title}"?`)) {
+    if (confirm(`Bạn có chắc muốn xoá khoá học "${course.title}"?`)) {
       onDelete(course.id);
     }
   };
@@ -138,7 +138,7 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: strin
       {/* Thumbnail */}
       <div className="relative aspect-video bg-gray-100">
         {course.thumbnail ? (
-          <Image src={course.thumbnail} alt={course.title} fill className="object-cover" />
+          <Image src={course.thumbnail} alt={course.title} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
             <FileEdit className="w-8 h-8 text-gray-200" />
@@ -162,7 +162,7 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: strin
           <button
             onClick={handleDelete}
             className="absolute bottom-2 right-2 p-1.5 rounded-full bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-            title="Xóa khóa học"
+            title="Xoá khoá học"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -275,11 +275,11 @@ export default function TeacherCoursesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold">Khóa học của tôi</h1>
+        <h1 className="text-2xl font-bold">Khoá học của tôi</h1>
         <Button asChild>
           <Link href="/teacher/courses/create" className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
-            Tạo khóa học mới
+            Tạo khoá học mới
           </Link>
         </Button>
       </div>
@@ -302,7 +302,7 @@ export default function TeacherCoursesPage() {
             </div>
             <Input
               type="text"
-              placeholder="Tìm kiếm khóa học..."
+              placeholder="Tìm kiếm khoá học..."
               className="pl-9"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

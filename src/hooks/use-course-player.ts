@@ -440,7 +440,7 @@ export function useUpdateProgress(courseSlug?: string) {
         qc.invalidateQueries({ queryKey: ["player", "curriculum", courseSlug] });
       }
       // Đây là hook THẬT đang chạy trong player (`player-client.tsx` gọi nó). Tiến độ vừa
-      // đổi làm `watched_seconds` / `progress` của trang "Khóa học của tôi" thay đổi, nhưng
+      // đổi làm `watched_seconds` / `progress` của trang "Khoá học của tôi" thay đổi, nhưng
       // trang đó đọc key `courseKeys.enrolled()` (["enrolled-courses"]) — không nằm dưới key
       // curriculum vừa invalidate ở trên. Không invalidate thì quay lại trang trong vòng
       // staleTime 60s sẽ thấy số phút học đứng yên.

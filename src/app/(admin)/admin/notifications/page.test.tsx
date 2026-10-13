@@ -91,12 +91,12 @@ describe("AdminBroadcastNotificationsPage", () => {
     // audience=roles mà chưa chọn vai trò: không gọi preview (backend sẽ 400 VALIDATION_FAILED)
     expect(mockApi.post.mock.calls.filter(([url, b]) => url === PREVIEW_URL && b.audience === "roles")).toHaveLength(0);
 
-    await user.click(await screen.findByLabelText("STUDENT"));
+    await user.click(await screen.findByLabelText("Học viên"));
     expect(await screen.findByText("Sẽ gửi tới 40 người.")).toBeTruthy();
     expect(mockApi.post).toHaveBeenCalledWith(PREVIEW_URL, { audience: "roles", roles: ["STUDENT"], notification_type: "system" });
     expect((submitButton() as HTMLButtonElement).disabled).toBe(false);
 
-    await user.click(screen.getByLabelText("STUDENT")); // bỏ chọn -> lại không gửi được
+    await user.click(screen.getByLabelText("Học viên")); // bỏ chọn -> lại không gửi được
     expect(await screen.findByText("Chọn ít nhất một vai trò để xem số người nhận.")).toBeTruthy();
     expect((submitButton() as HTMLButtonElement).disabled).toBe(true);
   });

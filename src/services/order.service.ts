@@ -26,7 +26,7 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   pending: "Chờ thanh toán",
   processing: "Đang chờ chuyển khoản",
   completed: "Hoàn tất",
-  cancelled: "Đã hủy",
+  cancelled: "Đã huỷ",
   refunded: "Đã hoàn tiền",
   expired: "Hết hạn",
 };
@@ -44,7 +44,7 @@ export function formatOrderDateTime(iso: string): string {
   }).format(new Date(iso));
 }
 
-/** Đơn còn mở (chưa thanh toán) — được tiếp tục thanh toán hoặc hủy nếu chưa quá hạn. */
+/** Đơn còn mở (chưa thanh toán) — được tiếp tục thanh toán hoặc huỷ nếu chưa quá hạn. */
 export function isOrderOpen(order: Pick<Order, "status" | "expires_at">, now = Date.now()): boolean {
   if (order.status !== "pending" && order.status !== "processing") return false;
   return !order.expires_at || new Date(order.expires_at).getTime() > now;
@@ -188,7 +188,7 @@ export interface PaymentStatus {
 // ─── Service ────────────────────────────────────────────────────────────────
 
 export const orderService = {
-  /** POST /orders — create order (buy_now or cart). 402 nếu khóa học cần thanh toán trước. */
+  /** POST /orders — create order (buy_now or cart). 402 nếu khoá học cần thanh toán trước. */
   createOrder: (dto: CreateOrderDTO) => api.post<Order>("/orders", dto).then((r) => r.data),
 
   /** GET /orders/me?page=&limit=&status= */

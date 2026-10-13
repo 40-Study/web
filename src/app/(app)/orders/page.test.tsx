@@ -1,5 +1,5 @@
 /**
- * "Đơn hàng của tôi" (B3, QA vòng 2 N1): đơn còn mở phải tiếp tục thanh toán và hủy được; đơn đã
+ * "Đơn hàng của tôi" (B3, QA vòng 2 N1): đơn còn mở phải tiếp tục thanh toán và huỷ được; đơn đã
  * xong/đã quá hạn thì không còn nút hành động.
  */
 
@@ -72,9 +72,9 @@ describe("MyOrdersPage", () => {
   });
 
   // Review backend #76 MAJOR 2: đơn hết hạn (đã "expired" hoặc quá hạn giữ) → "Tạo đơn mới" cho
-  // đúng các khóa của đơn đó, rồi mở thanh toán cho ĐƠN MỚI. Re-review vòng 2: đơn từng có mã phải
+  // đúng các khoá của đơn đó, rồi mở thanh toán cho ĐƠN MỚI. Re-review vòng 2: đơn từng có mã phải
   // được backend đối chiếu lần cuối (check-payment) TRƯỚC khi tạo đơn mới.
-  it("đơn hết hạn có nút Tạo đơn mới: đối chiếu trước, tạo đơn cho đúng khóa rồi mở thanh toán đơn mới", async () => {
+  it("đơn hết hạn có nút Tạo đơn mới: đối chiếu trước, tạo đơn cho đúng khoá rồi mở thanh toán đơn mới", async () => {
     mockCheckPayment.mockResolvedValue({ order_id: "old-expired", status: "expired", amount: 499000 });
     mockOrders = [
       makeOrder({ id: "old-expired", status: "expired", expires_at: null }),
@@ -123,7 +123,7 @@ describe("MyOrdersPage", () => {
     render(<MyOrdersPage />);
 
     expect(screen.getByText("Đang đối chiếu")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Hủy đơn" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Huỷ đơn" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Tạo đơn mới" })).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Kiểm tra thanh toán" }));
@@ -149,16 +149,16 @@ describe("MyOrdersPage", () => {
     expect(infoTexts.some((t) => notFoundText.test(t))).toBe(false);
   });
 
-  it("kiểm tra đơn đã hủy, ngân hàng trả không có giao dịch: báo chưa ghi nhận giao dịch", async () => {
+  it("kiểm tra đơn đã huỷ, ngân hàng trả không có giao dịch: báo chưa ghi nhận giao dịch", async () => {
     mockCheckPayment.mockResolvedValue({ order_id: "closed", status: "cancelled", amount: 499000 });
     mockOrders = [makeOrder({ id: "closed", status: "cancelled", expires_at: null, payment_code_issued: true })];
     render(<MyOrdersPage />);
 
     fireEvent.click(screen.getByRole("button", { name: "Kiểm tra thanh toán" }));
-    await waitFor(() => expect(toast.info).toHaveBeenCalledWith("Chưa ghi nhận giao dịch nào cho đơn đã hủy này."));
+    await waitFor(() => expect(toast.info).toHaveBeenCalledWith("Chưa ghi nhận giao dịch nào cho đơn đã huỷ này."));
   });
 
-  it("hiện tên khóa, ngày tạo và 2 hành động cho đơn đang chờ", () => {
+  it("hiện tên khoá, ngày tạo và 2 hành động cho đơn đang chờ", () => {
     mockOrders = [makeOrder({})];
     render(<MyOrdersPage />);
 
@@ -166,7 +166,7 @@ describe("MyOrdersPage", () => {
     // Ngày tạo lấy đúng created_at của backend (giờ Việt Nam), không phải thời điểm render.
     expect(screen.getByText("08:00 28/09/2026")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Tiếp tục thanh toán" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Hủy đơn" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Huỷ đơn" })).toBeTruthy();
   });
 
   it("Tiếp tục thanh toán mở hộp thanh toán cho đúng đơn", () => {
@@ -177,15 +177,15 @@ describe("MyOrdersPage", () => {
     expect(screen.getByTestId("payment-dialog").textContent).toBe("order-processing");
   });
 
-  it("Hủy đơn phải xác nhận rồi mới gọi hủy đúng đơn", () => {
+  it("Huỷ đơn phải xác nhận rồi mới gọi huỷ đúng đơn", () => {
     mockOrders = [makeOrder({ id: "order-cancel" })];
     render(<MyOrdersPage />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Hủy đơn" }));
+    fireEvent.click(screen.getByRole("button", { name: "Huỷ đơn" }));
     expect(mockCancel).not.toHaveBeenCalled();
 
     const dialog = screen.getByRole("dialog");
-    fireEvent.click(within(dialog).getByRole("button", { name: "Hủy đơn" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Huỷ đơn" }));
     expect(mockCancel).toHaveBeenCalledTimes(1);
     expect(mockCancel.mock.calls[0][0]).toBe("order-cancel");
   });
@@ -198,7 +198,7 @@ describe("MyOrdersPage", () => {
     render(<MyOrdersPage />);
 
     expect(screen.queryByRole("button", { name: "Tiếp tục thanh toán" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Hủy đơn" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Huỷ đơn" })).toBeNull();
     const cards = screen.getAllByRole("article");
     expect(within(cards[0]).getByText("Hoàn tất")).toBeTruthy();
     expect(within(cards[1]).getByText("Hết hạn")).toBeTruthy();

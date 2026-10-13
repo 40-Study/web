@@ -18,7 +18,7 @@ const TEXT_ZONE_MASK =
 
 /**
  * Lớp hiệu ứng nền của hero: particle wave + hình trôi. Đặt trong section `relative`.
- * Nút tạm dừng thỏa WCAG 2.2.2 (chuyển động tự chạy > 5 giây).
+ * Nút tạm dừng thoả WCAG 2.2.2 (chuyển động tự chạy > 5 giây).
  */
 export function HeroEffects() {
   const [paused, setPaused] = useState(false);

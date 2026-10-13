@@ -482,7 +482,7 @@ export function useDeleteAccount() {
       window.location.href = "/login";
     },
     onError: () => {
-      toast.error("Xóa tài khoản thất bại, vui lòng kiểm tra lại mật khẩu");
+      toast.error("Xoá tài khoản thất bại, vui lòng kiểm tra lại mật khẩu");
     },
   });
 }

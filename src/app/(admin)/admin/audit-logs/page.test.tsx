@@ -70,7 +70,7 @@ describe("AdminAuditLogsPage", () => {
 
     const row = screen.getByText("Quản Trị Viên").closest("tr")!;
     expect(within(row).getByText("admin@40study.test")).toBeTruthy();
-    expect(within(row).getByText("Khóa tài khoản")).toBeTruthy();
+    expect(within(row).getByText("Khoá tài khoản")).toBeTruthy();
     expect(within(row).getByText("user: u-123")).toBeTruthy();
     expect(within(row).getByText("203.0.113.7")).toBeTruthy();
     expect(within(row).getByText("10:00 03/10/2026")).toBeTruthy(); // giờ Việt Nam

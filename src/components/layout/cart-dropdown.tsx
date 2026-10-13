@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useCart, useRemoveFromCart } from "@/hooks/queries/use-cart";
 import { useCartStore } from "@/stores/cart.store";
 import { CartItemPrice } from "@/components/cart/cart-item-price";
+import { CourseThumbnailPlaceholder } from "@/components/course/course-thumbnail-placeholder";
 import { cn } from "@/lib/utils";
 
 function formatPrice(price: number): string {
@@ -96,7 +97,7 @@ export function CartDropdown() {
                 <p className="text-sm text-muted-foreground">Giỏ hàng trống</p>
                 <Link href="/courses" onClick={() => setIsOpen(false)}>
                   <Button variant="link" className="mt-2 text-primary-600">
-                    Khám phá khóa học
+                    Khám phá khoá học
                   </Button>
                 </Link>
               </div>
@@ -114,10 +115,11 @@ export function CartDropdown() {
                           src={item.course.thumbnail}
                           alt={item.course.title || ""}
                           fill
+                          sizes="64px"
                           className="object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-600" />
+                        <CourseThumbnailPlaceholder iconClassName="h-5 w-5" />
                       )}
                     </div>
 
@@ -128,7 +130,7 @@ export function CartDropdown() {
                         className="text-sm font-medium text-foreground line-clamp-2 hover:text-primary-600 transition-colors"
                         onClick={() => setIsOpen(false)}
                       >
-                        {item.course?.title || "Khóa học"}
+                        {item.course?.title || "Khoá học"}
                       </Link>
                       <p className="text-sm font-semibold text-primary-600 mt-0.5">
                         <CartItemPrice item={item} />
@@ -142,7 +144,7 @@ export function CartDropdown() {
                         removeFromCart.isPending && "opacity-50 pointer-events-none"
                       )}
                       onClick={() => removeFromCart.mutate(item.course_id)}
-                      aria-label="Xóa khỏi giỏ hàng"
+                      aria-label="Xoá khỏi giỏ hàng"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -152,7 +154,7 @@ export function CartDropdown() {
                 {items.length > 5 && (
                   <div className="px-4 py-2 text-center">
                     <p className="text-xs text-muted-foreground">
-                      +{items.length - 5} khóa học khác
+                      +{items.length - 5} khoá học khác
                     </p>
                   </div>
                 )}

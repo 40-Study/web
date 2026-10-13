@@ -10,7 +10,7 @@ import { MISSING_RESOURCE_REWRITE_PATH, isMissingResource } from "@/lib/missing-
 // Routes accessible without authentication. Đối chiếu `find src/app -name
 // page.tsx` (B-02, plans/reports/code-reviewer-260909-1412-web-review.md) —
 // thiếu các route này khiến OAuth login hỏng hoàn toàn + toàn bộ trang công
-// khai (catalog khóa học, discussions, tra cứu chứng chỉ, footer links) bị
+// khai (catalog khoá học, discussions, tra cứu chứng chỉ, footer links) bị
 // middleware redirect về /login.
 const PUBLIC_ROUTES = [
   "/",
@@ -35,7 +35,7 @@ const PUBLIC_ROUTES = [
   "/403",
 ];
 
-// /courses là public (catalog + chi tiết khóa học) NHƯNG /courses/[slug]/learn
+// /courses là public (catalog + chi tiết khoá học) NHƯNG /courses/[slug]/learn
 // (trang học bài) vẫn phải qua middleware — guard thật sự nằm ở client
 // (learn-route-guard.tsx) nên không thể để middleware coi nó là public.
 const LEARN_ROUTE_PATTERN = /^\/courses\/[^/]+\/learn(?:\/|$)/;

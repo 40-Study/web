@@ -147,7 +147,7 @@ export function SubmissionGradeDialog({ row, canGrade, isSaving, onClose, onSave
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            {canGrade ? "Hủy" : "Đóng"}
+            {canGrade ? "Huỷ" : "Đóng"}
           </Button>
           {canGrade && (
             <Button onClick={handleSave} isLoading={isSaving}>

@@ -365,8 +365,8 @@ export function AddContentModal({
 
   // Sinh quiz bằng AI: backend CHƯA có endpoint nào (không có tích hợp Qwen trong repo).
   // Bản trước đây chờ setTimeout 2 giây rồi chèn 2 câu hỏi cứng và tự chọn đáp án đúng là
-  // phương án A — giáo viên tưởng đang dùng AI thật và có thể lưu quiz rác vào khóa học.
-  // Đã bỏ hẳn; nút được vô hiệu hóa cho tới khi có API thật.
+  // phương án A — giáo viên tưởng đang dùng AI thật và có thể lưu quiz rác vào khoá học.
+  // Đã bỏ hẳn; nút được vô hiệu hoá cho tới khi có API thật.
   // Tiêu đề + câu trắc nghiệm của form đang mở — nguồn cho việc kiểm tra và hiện lỗi (T3/T4).
   const formTitle =
     contentType === "video" ? videoTitle : contentType === "livestream" ? liveTitle : exTitle;
@@ -1187,7 +1187,7 @@ export function AddContentModal({
               </p>
             )}
             <div className="flex flex-col-reverse gap-2 sm:ml-auto sm:flex-row">
-              <Button variant="outline" onClick={handleClose}>Hủy</Button>
+              <Button variant="outline" onClick={handleClose}>Huỷ</Button>
               <Button
                 onClick={handleSubmit}
                 isLoading={isLoading || submitting}

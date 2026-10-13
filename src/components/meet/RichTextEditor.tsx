@@ -4,7 +4,7 @@ import { sanitizeHtml } from "@/lib/sanitize-html";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
+import { ReadOnlyOpenLink, openLinkInNewTab } from '@/lib/tiptap-link-open';
 import Placeholder from '@tiptap/extension-placeholder';
 import { useState, useCallback, useRef } from 'react';
 
@@ -49,13 +49,14 @@ export default function RichTextEditor({
         heading: {
           levels: [1, 2, 3],
         },
+        // StarterKit v3 đã gồm link; tắt bản built-in vì ReadOnlyOpenLink.configure bên dưới (tránh "Duplicate extension names").
+        link: false,
       }),
       Image.configure({
         inline: false,
         allowBase64: true,
       }),
-      Link.configure({
-        openOnClick: false,
+      ReadOnlyOpenLink.configure({
         HTMLAttributes: {
           class: 'text-link',
         },
@@ -583,6 +584,13 @@ export function RichTextViewer({ content }: { content: string }) {
     <>
       <div
         className="rich-text-viewer"
+        onClick={(event) => {
+          // HTML tĩnh (không phải editor): link chỉ đọc luôn mở ở tab mới, không điều hướng khỏi phòng học.
+          const anchor = (event.target as Element).closest('a');
+          if (!anchor || !event.currentTarget.contains(anchor)) return;
+          event.preventDefault();
+          openLinkInNewTab(anchor.getAttribute('href'));
+        }}
         dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
         style={{
           fontFamily: "var(--font-plus-jakarta), 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",

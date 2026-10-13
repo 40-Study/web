@@ -34,7 +34,7 @@ export default function TeacherStudentProfilePage() {
   // Classmates: same class, different id.
   //
   // Review đối kháng backend PR #70 (MAJOR): `class_id` giờ optional (`omitempty` khi học viên
-  // ghi danh thẳng vào khóa, không qua lớp) — so `s.class_id === student.class_id` một mình sẽ
+  // ghi danh thẳng vào khoá, không qua lớp) — so `s.class_id === student.class_id` một mình sẽ
   // khớp `undefined === undefined` khi CẢ HAI chưa có lớp, gộp nhầm TOÀN BỘ học viên "chưa có
   // lớp" thành bạn cùng lớp của nhau. Đòi `student.class_id` phải có giá trị thật trước khi so.
   const classmates = student.class_id

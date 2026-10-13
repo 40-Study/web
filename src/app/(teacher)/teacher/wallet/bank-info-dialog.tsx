@@ -94,7 +94,7 @@ export function BankInfoDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-            Hủy
+            Huỷ
           </Button>
           <Button onClick={handleSubmit} disabled={!isValid || isPending}>
             {isPending && <Loader2 className="animate-spin w-4 h-4 mr-2" />}

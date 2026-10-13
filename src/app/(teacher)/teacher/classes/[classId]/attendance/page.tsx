@@ -85,7 +85,7 @@ export default function ClassAttendancePage() {
   const selectedSession = sessions.find((s) => s.id === sessionId);
   // B-18: lớp không tồn tại hoặc của giảng viên khác (API 404/403) trước đây hiện trang điểm danh rỗng như lớp chưa có buổi.
   if (sessionsError && isResourceUnavailableError(sessionsErrorValue)) {
-    return (<ResourceUnavailable status={unavailableStatus(sessionsErrorValue)} resourceLabel="lớp học" backHref="/teacher/courses" backLabel="Về Khóa học của tôi" />);
+    return (<ResourceUnavailable status={unavailableStatus(sessionsErrorValue)} resourceLabel="lớp học" backHref="/teacher/courses" backLabel="Về Khoá học của tôi" />);
   }
   const loading = sessionsLoading || studentsLoading || attendancesLoading;
 
@@ -153,7 +153,7 @@ export default function ClassAttendancePage() {
 
           {selectedSession?.status === "cancelled" && (
             <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-              Buổi học này đã bị hủy
+              Buổi học này đã bị huỷ
               {selectedSession.cancel_reason
                 ? `: ${selectedSession.cancel_reason}`
                 : "."}

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const HIGHLIGHTS = [
   { icon: Video, label: "Video bài giảng và buổi học trực tiếp" },
-  { icon: Route, label: "Lộ trình khóa học rõ ràng" },
+  { icon: Route, label: "Lộ trình khoá học rõ ràng" },
   { icon: Smartphone, label: "Học trên web và di động" },
 ];
 
@@ -58,7 +58,7 @@ export function HeroSection() {
               "min-h-11 gap-2 rounded-pill"
             )}
           >
-            Khám phá khóa học
+            Khám phá khoá học
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
           <Link

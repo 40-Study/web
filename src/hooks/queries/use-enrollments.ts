@@ -28,9 +28,9 @@ export function useEnroll() {
     mutationFn: (courseId: string) => enrollmentService.enroll(courseId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: enrollmentKeys.all });
-      toast.success("Đăng ký khóa học thành công");
+      toast.success("Đăng ký khoá học thành công");
     },
-    onError: () => toast.error("Không thể đăng ký khóa học"),
+    onError: () => toast.error("Không thể đăng ký khoá học"),
   });
 }
 
@@ -41,9 +41,9 @@ export function useUnenroll() {
     mutationFn: (courseId: string) => enrollmentService.unenroll(courseId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: enrollmentKeys.all });
-      toast.success("Hủy đăng ký thành công");
+      toast.success("Huỷ đăng ký thành công");
     },
-    onError: () => toast.error("Không thể hủy đăng ký"),
+    onError: () => toast.error("Không thể huỷ đăng ký"),
   });
 }
 
@@ -55,7 +55,7 @@ export function useUpdateProgress() {
       enrollmentService.updateProgress(lessonId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: enrollmentKeys.all });
-      // "Khóa học của tôi" đọc `watched_seconds` / tiến độ từ key `courseKeys.enrolled()`
+      // "Khoá học của tôi" đọc `watched_seconds` / tiến độ từ key `courseKeys.enrolled()`
       // (["enrolled-courses"]), KHÔNG phải `enrollmentKeys.all` (["enrollments"]). Thiếu dòng
       // này thì học xong một video rồi quay lại trang trong vòng staleTime 60s vẫn thấy số
       // phút học cũ — trước đây là chuỗi cứng nên không ai thấy, giờ là dữ liệu thật nên nó

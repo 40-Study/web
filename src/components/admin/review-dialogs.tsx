@@ -44,7 +44,7 @@ export function ApproveConfirmDialog({
         <DialogDescription>{description}</DialogDescription>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Hủy
+            Huỷ
           </Button>
           <Button isLoading={isPending} onClick={onConfirm} data-testid="approve-confirm">
             {confirmLabel}
@@ -126,7 +126,7 @@ function RejectReasonBody({
       </div>
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>
-          Hủy
+          Huỷ
         </Button>
         <Button
           variant="destructive"

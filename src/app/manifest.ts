@@ -16,7 +16,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "ForteX — Learn Leap Lead",
     short_name: "ForteX",
     description:
-      "Nền tảng học tập và quản lý hiện đại: khóa học, lớp học trực tuyến, bài tập và chứng chỉ.",
+      "Nền tảng học tập và quản lý hiện đại: khoá học, lớp học trực tuyến, bài tập và chứng chỉ.",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",

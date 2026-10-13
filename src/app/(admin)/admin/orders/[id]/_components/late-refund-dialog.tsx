@@ -186,7 +186,7 @@ export function LateRefundDialog({ orderId, orderNumber, totalAmount, pendingIte
 
           <DialogFooter>
             <Button variant="outline" onClick={close}>
-              Hủy
+              Huỷ
             </Button>
             <Button isLoading={mutation.isPending} disabled={!canConfirm} onClick={confirm}>
               Xác nhận đã hoàn tiền

@@ -85,7 +85,7 @@ export function CourseFiltersComponent({
         <div className="relative min-w-0 flex-1">
         <div
           role="group"
-          aria-label="Danh mục khóa học"
+          aria-label="Danh mục khoá học"
           className="-mx-1 flex gap-2 overflow-x-auto px-1 py-1 pr-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           <Button
@@ -144,7 +144,7 @@ export function CourseFiltersComponent({
             {activeFilterCount > 0 && (
               <Button type="button" variant="ghost" size="sm" onClick={clearFilters} className="gap-1">
                 <X className="h-4 w-4" aria-hidden="true" />
-                Xóa bộ lọc
+                Xoá bộ lọc
               </Button>
             )}
           </div>

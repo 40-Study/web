@@ -2,7 +2,7 @@
  * Review đối kháng web PR #27 (MAJOR): select.tsx dùng ở 18 nơi trong toàn app nhưng không có
  * test tự động nào — nếu ai đó sau này vô tình đổi lại `SelectValue` về in thẳng `value` thô
  * (bug gốc P2/P3 QA 260927 teacher: "all"/"MIXED" hiện raw thay vì nhãn tiếng Việt, và giá trị
- * rỗng "" làm ô "Danh mục" trống trơn lúc tạo khóa học vì `label ?? value ?? placeholder` không
+ * rỗng "" làm ô "Danh mục" trống trơn lúc tạo khoá học vì `label ?? value ?? placeholder` không
  * rơi về placeholder khi value là "" — "" không phải null/undefined nên "??" dừng lại ở đó),
  * suite hiện tại vẫn xanh 100% vì không file nào chạm tới component này.
  */

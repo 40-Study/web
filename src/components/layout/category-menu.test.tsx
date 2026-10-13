@@ -1,6 +1,6 @@
 /**
  * Nút Danh mục trên header (kiểu F8): mở dropdown các danh mục từ useCategories (nguồn chung với
- * pill lọc ở /courses), đóng bằng Esc + click ngoài, mục "Tất cả khóa học" ở cuối, link trỏ
+ * pill lọc ở /courses), đóng bằng Esc + click ngoài, mục "Tất cả khoá học" ở cuối, link trỏ
  * /courses?category=<slug>.
  */
 
@@ -22,7 +22,7 @@ vi.mock("@/hooks/use-courses", () => ({
 import { CategoryMenu } from "./category-menu";
 
 function openMenu() {
-  fireEvent.click(screen.getByRole("button", { name: "Danh mục khóa học" }));
+  fireEvent.click(screen.getByRole("button", { name: "Danh mục khoá học" }));
 }
 
 describe("CategoryMenu — dropdown Danh mục", () => {
@@ -41,10 +41,10 @@ describe("CategoryMenu — dropdown Danh mục", () => {
     );
   });
 
-  it("có mục 'Tất cả khóa học' ở cuối trỏ /courses", () => {
+  it("có mục 'Tất cả khoá học' ở cuối trỏ /courses", () => {
     render(<CategoryMenu />);
     openMenu();
-    expect(screen.getByRole("link", { name: /Tất cả khóa học/ }).getAttribute("href")).toBe("/courses");
+    expect(screen.getByRole("link", { name: /Tất cả khoá học/ }).getAttribute("href")).toBe("/courses");
   });
 
   it("đóng bằng phím Esc", () => {
@@ -78,7 +78,7 @@ describe("CategoryMenu — dropdown Danh mục", () => {
 
   it("nút có aria-expanded cập nhật khi mở/đóng", () => {
     render(<CategoryMenu />);
-    const button = screen.getByRole("button", { name: "Danh mục khóa học" });
+    const button = screen.getByRole("button", { name: "Danh mục khoá học" });
     expect(button.getAttribute("aria-expanded")).toBe("false");
     openMenu();
     expect(button.getAttribute("aria-expanded")).toBe("true");

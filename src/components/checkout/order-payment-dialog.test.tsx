@@ -50,7 +50,7 @@ describe("OrderPaymentDialog — đối chiếu ngân hàng", () => {
 
   it("409 ERR_ORDER_ALREADY_PAID: màn thành công và gọi onPaid", async () => {
     vi.mocked(orderService.createPaymentIntent).mockRejectedValue(
-      new ApiError(409, "ERR_ORDER_ALREADY_PAID", "Đơn hàng đã được thanh toán, khóa học đã được thêm vào tài khoản của bạn.")
+      new ApiError(409, "ERR_ORDER_ALREADY_PAID", "Đơn hàng đã được thanh toán, khoá học đã được thêm vào tài khoản của bạn.")
     );
     const { onPaid } = renderDialog("order-paid");
 

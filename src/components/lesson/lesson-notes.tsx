@@ -118,7 +118,7 @@ export function LessonNotes({
                   variant="ghost"
                   className="h-7 w-7 flex-shrink-0"
                   onClick={() => onDeleteNote(note.id)}
-                  aria-label="Xóa ghi chú"
+                  aria-label="Xoá ghi chú"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

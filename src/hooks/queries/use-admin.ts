@@ -67,7 +67,7 @@ export function useDeleteOrganization() {
     mutationFn: organizationService.delete,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: adminKeys.orgs() });
-      toast.success("Xóa tổ chức thành công");
+      toast.success("Xoá tổ chức thành công");
     },
   });
 }
@@ -202,10 +202,10 @@ export function useDeleteSystemRole() {
       // Bỏ role khỏi danh sách đang chọn để bảng user bên cạnh không còn trỏ vào role vừa xoá.
       qc.removeQueries({ queryKey: adminKeys.systemRoleUsers(roleId) });
       qc.invalidateQueries({ queryKey: adminKeys.systemRoles() });
-      toast.success("Xóa vai trò hệ thống thành công");
+      toast.success("Xoá vai trò hệ thống thành công");
     },
     // A1: backend từ chối xoá vai trò dựng sẵn bằng 409 `SYSTEM_ROLE_PROTECTED`. Trước đây hook
-    // không có onError nên lỗi bị nuốt — admin bấm "Xóa role" mà không thấy gì xảy ra. Hiện thẳng
+    // không có onError nên lỗi bị nuốt — admin bấm "Xoá role" mà không thấy gì xảy ra. Hiện thẳng
     // câu backend (bảng dịch đã có nhánh cho code này).
     onError: (error) => {
       toast.error(getErrorMessage(error, "Không thể xoá vai trò, thử lại sau."));

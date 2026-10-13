@@ -1,6 +1,6 @@
 /**
  * Re-review PR #79: xoá khoá đang chờ duyệt -> backend 409 COURSE_PENDING_REVIEW. Trước đây toast
- * chỉ báo chung "Không thể xóa khóa học"; giờ phải nói rõ lý do bằng tiếng Việt.
+ * chỉ báo chung "Không thể xoá khoá học"; giờ phải nói rõ lý do bằng tiếng Việt.
  */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -45,7 +45,7 @@ describe("useDeleteCourse — thông báo lỗi", () => {
     vi.mocked(courseService.deleteCourse).mockRejectedValue(new Error("network"));
     const { result } = renderHook(() => useDeleteCourse(), { wrapper });
     act(() => result.current.mutate("course-1"));
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Không thể xóa khóa học"));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Không thể xoá khoá học"));
   });
 
   // Smoke2 Q2-01b: khoá còn học viên -> 409 COURSE_HAS_ENROLLMENTS; toast chỉ khuyên "Lưu trữ" mà không có nút.

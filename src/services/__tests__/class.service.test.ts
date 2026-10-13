@@ -13,7 +13,7 @@ beforeEach(() => {
 });
 
 describe("getStudentsByClassId", () => {
-  it("unwrap roster và chuẩn hóa tên theo StudentClassListResponseDTO", async () => {
+  it("unwrap roster và chuẩn hoá tên theo StudentClassListResponseDTO", async () => {
     mockApi.get.mockResolvedValue(
       envelope({
         students: [

@@ -48,7 +48,7 @@ export default function EditCoursePage() {
       <Notice title="Không tìm thấy khoá học">
         <p className="text-sm text-muted-foreground">Khoá học không tồn tại hoặc bạn không có quyền xem.</p>
         <Button asChild>
-          <Link href="/teacher/courses">Về Khóa học của tôi</Link>
+          <Link href="/teacher/courses">Về Khoá học của tôi</Link>
         </Button>
       </Notice>
     );
@@ -57,9 +57,9 @@ export default function EditCoursePage() {
   if (!isAdmin && course.instructor_id !== teacherId) {
     return (
       <Notice title="Không có quyền truy cập">
-        <p className="text-sm text-muted-foreground">Bạn không phải giảng viên phụ trách khóa học này.</p>
+        <p className="text-sm text-muted-foreground">Bạn không phải giảng viên phụ trách khoá học này.</p>
         <Button asChild>
-          <Link href="/teacher/courses">Về Khóa học của tôi</Link>
+          <Link href="/teacher/courses">Về Khoá học của tôi</Link>
         </Button>
       </Notice>
     );

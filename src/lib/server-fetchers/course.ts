@@ -1,11 +1,11 @@
 /**
- * Server-side fetch cho endpoint khóa học CÔNG KHAI.
+ * Server-side fetch cho endpoint khoá học CÔNG KHAI.
  *
  * Backend không đặt auth middleware cho các route đọc này
  * (course_router.go:29-31), nên KHÔNG dùng `serverFetch` — hàm đó forward
  * cookie người dùng, thừa và làm mọi trang thành dynamic.
  *
- * Dùng cho: generateMetadata của trang chi tiết khóa học (OpenGraph khi chia
+ * Dùng cho: generateMetadata của trang chi tiết khoá học (OpenGraph khi chia
  * sẻ link) và sitemap.xml.
  */
 
@@ -41,7 +41,7 @@ export async function getCourseBySlugServer(
 }
 
 /**
- * Danh sách khóa học đã publish, dùng sinh sitemap.
+ * Danh sách khoá học đã publish, dùng sinh sitemap.
  *
  * Trả mảng rỗng khi backend không phản hồi — sitemap vẫn build được với các
  * route tĩnh thay vì làm vỡ cả `next build`.

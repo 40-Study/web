@@ -61,10 +61,10 @@ export function useDeleteReview(courseId: string) {
     mutationFn: (reviewId: string) => reviewService.delete(reviewId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: reviewKeys.list(courseId) });
-      toast.success("Đã xóa đánh giá");
+      toast.success("Đã xoá đánh giá");
     },
     onError: () => {
-      toast.error("Không thể xóa đánh giá");
+      toast.error("Không thể xoá đánh giá");
     },
   });
 }

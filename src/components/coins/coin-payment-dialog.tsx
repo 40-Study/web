@@ -6,7 +6,7 @@
  * (POST /coins/purchases/:id/verify — không giống payment-status của order).
  *
  * Backend KHÔNG có endpoint trả bank name/account cho mua xu (chỉ đơn hàng
- * khóa học có qua /orders/:id/payment-intent) — dùng NEXT_PUBLIC_BANK_*
+ * khoá học có qua /orders/:id/payment-intent) — dùng NEXT_PUBLIC_BANK_*
  * (thông tin công khai, không phải secret; PHẢI khớp giá trị MB_BANK_NAME
  * thật phía backend).
  */

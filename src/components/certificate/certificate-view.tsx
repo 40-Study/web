@@ -60,7 +60,7 @@ export function CertificateView({
         {userName}
       </p>
 
-      <p className="mt-5 text-sm text-gray-500">đã hoàn thành khóa học</p>
+      <p className="mt-5 text-sm text-gray-500">đã hoàn thành khoá học</p>
       <p className="mt-2 text-xl font-semibold text-primary-700 sm:text-2xl">
         {courseName}
       </p>

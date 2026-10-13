@@ -31,7 +31,7 @@ vi.mock("@/stores/auth.store", () => ({
 
 vi.mock("@/hooks/queries/use-courses", () => ({
   useCourse: () => ({
-    data: { id: "course-1", title: "Khóa test", instructor_id: OWNER_ID, status: "draft" },
+    data: { id: "course-1", title: "Khoá test", instructor_id: OWNER_ID, status: "draft" },
     isLoading: false,
   }),
   useUpdateCourse: () => ({ mutate: vi.fn(), isPending: false }),

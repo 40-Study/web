@@ -20,7 +20,7 @@ const CARD =
   "rounded-2xl border border-slate-200 bg-white p-4 shadow-card dark:border-slate-800 dark:bg-slate-950";
 
 /**
- * Minh họa giao diện học viên: khung code gõ dần, thẻ "Tiếp tục học", biểu đồ tuần,
+ * Minh hoạ giao diện học viên: khung code gõ dần, thẻ "Tiếp tục học", biểu đồ tuần,
  * chuỗi ngày và XP. Mọi chuyển động chạy một lần khi cuộn tới; HTML server-render
  * luôn ở trạng thái cuối (không JS / reduced-motion vẫn thấy đủ nội dung).
  */
@@ -28,7 +28,7 @@ export function ShowcasePanel() {
   return (
     <div
       role="img"
-      aria-label="Minh họa giao diện học tập của học viên: bài học lập trình React, khóa học đang học, thời gian học trong tuần, chuỗi ngày học và điểm kinh nghiệm"
+      aria-label="Minh hoạ giao diện học tập của học viên: bài học lập trình React, khoá học đang học, thời gian học trong tuần, chuỗi ngày học và điểm kinh nghiệm"
       className="mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-raised dark:border-slate-800 dark:bg-slate-900"
     >
       <div className="flex">

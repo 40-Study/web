@@ -46,8 +46,8 @@ export function useDeletePersonalEvent() {
     mutationFn: (id: string) => personalEventService.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: personalEventKeys.all });
-      toast.success("Đã xóa sự kiện");
+      toast.success("Đã xoá sự kiện");
     },
-    onError: () => toast.error("Không thể xóa"),
+    onError: () => toast.error("Không thể xoá"),
   });
 }

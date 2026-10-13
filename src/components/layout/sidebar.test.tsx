@@ -138,11 +138,11 @@ describe("Sidebar — menu data-driven theo role", () => {
     render(<Sidebar />);
 
     expect(screen.getByRole("link", { name: /Lịch giảng dạy/ }).getAttribute("href")).toBe("/teacher/schedule");
-    expect(screen.getByRole("link", { name: /Quản lý khóa học/ }).getAttribute("href")).toBe("/teacher/courses");
+    expect(screen.getByRole("link", { name: /Quản lý khoá học/ }).getAttribute("href")).toBe("/teacher/courses");
     expect(screen.getByRole("link", { name: /Tin nhắn/ }).getAttribute("href")).toBe("/messages");
     // Q2-06: lớp học có mục menu riêng thay vì chỉ vào được từ chi tiết khoá học.
     expect(screen.getByRole("link", { name: /Lớp học/ }).getAttribute("href")).toBe("/teacher/classes");
-    for (const studentOnly of ["Khám phá", "Khóa học của tôi", "Nhóm", "Xu", "Gia đình", "Thành tích", "Chứng chỉ"]) {
+    for (const studentOnly of ["Khám phá", "Khoá học của tôi", "Nhóm", "Xu", "Gia đình", "Thành tích", "Chứng chỉ"]) {
       expect(screen.queryByText(studentOnly)).toBeNull();
     }
   });

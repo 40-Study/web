@@ -63,7 +63,7 @@ describe("groupLiveSessions", () => {
       scheduled: "Sắp diễn ra",
       live: "Đang trực tiếp",
       ended: "Đã kết thúc",
-      cancelled: "Đã hủy",
+      cancelled: "Đã huỷ",
     });
   });
 });

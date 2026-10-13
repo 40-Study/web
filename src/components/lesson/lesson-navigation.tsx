@@ -67,7 +67,7 @@ export function LessonNavigation({
           </Link>
         </Button>
       ) : (
-        <Button onClick={onCompleteCourse}>Hoàn thành khóa học</Button>
+        <Button onClick={onCompleteCourse}>Hoàn thành khoá học</Button>
       )}
     </div>
   );

@@ -84,7 +84,7 @@ import TeacherCourseDetailPage from "./page";
 
 /** Hàng 0 = quiz "Kiểm tra Git", hàng 1 = bài viết "Bài đọc" (thứ tự CONTENTS). */
 function openEditFor(rowTitle: "Kiểm tra Git" | "Bài đọc") {
-  mockCourse = { id: "course-1", title: "Khóa test", instructor_id: OWNER_ID, status: "draft" };
+  mockCourse = { id: "course-1", title: "Khoá test", instructor_id: OWNER_ID, status: "draft" };
   render(<TeacherCourseDetailPage />);
   fireEvent.click(screen.getByText("Bài 1"));
   fireEvent.click(screen.getAllByTitle("Chỉnh sửa")[rowTitle === "Kiểm tra Git" ? 0 : 1]);

@@ -310,7 +310,7 @@ export default function Sidebar({
           { separator: true },
           { label: "Đổi tên",     action: () => startRename(ctxMenu.fullPath!, ctxMenu.name) },
           { separator: true },
-          { label: "Xóa",  danger: true, action: () => handleDelete(ctxMenu.fullPath!, ctxMenu.name, true) },
+          { label: "Xoá",  danger: true, action: () => handleDelete(ctxMenu.fullPath!, ctxMenu.name, true) },
         ]
       : [
           { label: "Tệp mới",   action: () => startCreate(ctxMenu.parentPath, "file")   },
@@ -318,7 +318,7 @@ export default function Sidebar({
           { separator: true },
           { label: "Đổi tên",     action: () => startRename(ctxMenu.fullPath!, ctxMenu.name) },
           { separator: true },
-          { label: "Xóa",  danger: true, action: () => handleDelete(ctxMenu.fullPath!, ctxMenu.name, false) },
+          { label: "Xoá",  danger: true, action: () => handleDelete(ctxMenu.fullPath!, ctxMenu.name, false) },
         ]
     : [];
 

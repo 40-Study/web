@@ -27,7 +27,7 @@ const COMPLETED_ORDER = {
     {
       id: "item-1",
       course_id: "course-1",
-      course_name: "Khóa test",
+      course_name: "Khoá test",
       price: 699000,
       discount_amount: 0,
       final_price: 699000,

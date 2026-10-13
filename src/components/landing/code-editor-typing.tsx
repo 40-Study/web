@@ -14,7 +14,7 @@ const TAG = "text-primary-400";
 const CMT = "text-slate-400";
 const TXT = "text-slate-300";
 
-// Bài học thật của khóa "Lập trình Web với React": useState.
+// Bài học thật của khoá "Lập trình Web với React": useState.
 const CODE: Segment[] = [
   { cls: CMT, text: "// Bài 5: useState trong React\n" },
   { cls: KW, text: "import" },

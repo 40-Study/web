@@ -416,7 +416,7 @@ export const MIN_WIRE_RANGE_SECONDS = 1;
  * (mảng thô 10.3s): pha 0.80 và 0.95 cho **50 giây** trên dây, pha 0.50 cho
  * 1 giây — mở lại đúng lỗ 4x mà V-F tồn tại để chặn.
  *
- * KHÓA CỦA LỜI GIẢI nằm ở chỗ LỌC TRƯỚC, không phải ở chỗ đổi hàm làm tròn.
+ * KHOÁ CỦA LỜI GIẢI nằm ở chỗ LỌC TRƯỚC, không phải ở chỗ đổi hàm làm tròn.
  * Một khoảng ngắn do tua sinh ra luôn ngắn hơn 1 giây (sàn tín dụng mỗi mẫu
  * không liên tục là `MIN_RANGE_SECONDS` = 0.5s, xem `boundedOpenCredit`), nên
  * BỎ nó ngay từ đầu thì không còn gì để `floor` thổi lên nữa. Lọc SAU khi

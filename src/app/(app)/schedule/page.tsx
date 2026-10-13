@@ -30,7 +30,7 @@ const EVENT_COLORS = [
   { name: "Văn", bg: "bg-emerald-100", border: "border-emerald-300", text: "text-emerald-800", dot: "bg-emerald-500" },
   { name: "Anh", bg: "bg-violet-100", border: "border-violet-300", text: "text-violet-800", dot: "bg-violet-500" },
   { name: "Lý", bg: "bg-rose-100", border: "border-rose-300", text: "text-rose-800", dot: "bg-rose-500" },
-  { name: "Hóa", bg: "bg-amber-100", border: "border-amber-300", text: "text-amber-800", dot: "bg-amber-500" },
+  { name: "Hoá", bg: "bg-amber-100", border: "border-amber-300", text: "text-amber-800", dot: "bg-amber-500" },
   { name: "Sinh", bg: "bg-pink-100", border: "border-pink-300", text: "text-pink-800", dot: "bg-pink-500" },
   { name: "Sử", bg: "bg-cyan-100", border: "border-cyan-300", text: "text-cyan-800", dot: "bg-cyan-500" },
   { name: "Khác", bg: "bg-gray-100", border: "border-gray-300", text: "text-gray-800", dot: "bg-gray-500" },
@@ -226,7 +226,7 @@ function QuickAddPopup({
             onClick={onMore}
             className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
           >
-            Thêm tùy chọn
+            Thêm tuỳ chọn
             <ChevronRight className="h-3 w-3" />
           </button>
           <Button
@@ -486,14 +486,14 @@ function FullEventDialog({
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
             >
               <Trash2 className="h-4 w-4 mr-1" />
-              Xóa
+              Xoá
             </Button>
           ) : (
             <div />
           )}
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
-              Hủy
+              Huỷ
             </Button>
             <Button onClick={handleSave} disabled={!title.trim()}>
               {isEditing ? "Cập nhật" : "Thêm lịch"}

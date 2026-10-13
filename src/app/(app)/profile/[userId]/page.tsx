@@ -208,10 +208,10 @@ export default function PublicProfilePage() {
 
                 <Card className="p-6">
                   <h2 className="font-semibold mb-4 text-gray-900 dark:text-white">
-                    Khóa học đã hoàn thành
+                    Khoá học đã hoàn thành
                   </h2>
                   {completedCourses.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Chưa hoàn thành khóa học nào.</p>
+                    <p className="text-sm text-muted-foreground">Chưa hoàn thành khoá học nào.</p>
                   ) : (
                     <div className="space-y-3">
                       {completedCourses.map((course) => (
@@ -264,7 +264,7 @@ export default function PublicProfilePage() {
                       <Badge variant="streak">{stats.streak} ngày</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Khóa học</span>
+                      <span className="text-muted-foreground">Khoá học</span>
                       <span className="text-sm font-medium">{stats.coursesCompleted}</span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -283,7 +283,7 @@ export default function PublicProfilePage() {
                     Huy hiệu nổi bật
                   </h3>
                   {achievements.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Chưa mở khóa huy hiệu nào.</p>
+                    <p className="text-sm text-muted-foreground">Chưa mở khoá huy hiệu nào.</p>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {achievements.slice(0, 6).map((achievement) => (
@@ -308,7 +308,7 @@ export default function PublicProfilePage() {
                 Toàn bộ thành tích ({stats.achievements})
               </h2>
               {achievements.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Chưa mở khóa thành tích nào.</p>
+                <p className="text-sm text-muted-foreground">Chưa mở khoá thành tích nào.</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {achievements.map((achievement) => (

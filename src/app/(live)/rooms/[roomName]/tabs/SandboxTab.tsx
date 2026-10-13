@@ -557,7 +557,7 @@ const Sidebar = memo(({ tabs, activeTabId, width, onSelectTab, onNewFile, onDele
           items={contextMenu.tabId ? [
             { label: 'Đổi tên', icon: '✏️', onClick: () => handleStartRename(contextMenu.tabId) },
             { label: 'Nhân bản', icon: '📋', onClick: () => onDuplicateTab(contextMenu.tabId) },
-            { label: 'Xóa', icon: '🗑️', onClick: () => onDeleteTab(contextMenu.tabId), danger: true },
+            { label: 'Xoá', icon: '🗑️', onClick: () => onDeleteTab(contextMenu.tabId), danger: true },
           ] : [
             { label: 'Tệp mới', icon: '📄', onClick: onNewFile },
           ]}
@@ -752,7 +752,7 @@ const Panel = memo(({
         )}
         <button
           onClick={onClear}
-          title="Xóa kết quả"
+          title="Xoá kết quả"
           style={{
             background: VS.surfaceHigh,
             border: 'none',

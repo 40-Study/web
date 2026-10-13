@@ -34,7 +34,7 @@ export function PlayerHeader({ courseTitle, courseSlug, exerciseCount = 0 }: Pla
           href="/my-courses"
           className="text-sm text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
         >
-          Khóa học của tôi
+          Khoá học của tôi
         </Link>
 
         <Link

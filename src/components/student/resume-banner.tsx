@@ -16,7 +16,7 @@ export function ResumeBanner({ course }: ResumeBannerProps) {
         {/* Left: Course Info */}
         <div className="flex-1">
           <span className="inline-block px-3 py-1 bg-primary-100 text-primary-700 text-xs font-semibold rounded-full mb-4">
-            KHÓA HỌC ĐANG HỌC
+            KHOÁ HỌC ĐANG HỌC
           </span>
 
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -30,7 +30,7 @@ export function ResumeBanner({ course }: ResumeBannerProps) {
         {/* Right: Progress */}
         <div className="w-80">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">Tiến độ khóa học</span>
+            <span className="text-sm text-gray-600">Tiến độ khoá học</span>
             <span className="text-sm font-semibold text-primary-600">
               {course.progress}%
             </span>

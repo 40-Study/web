@@ -25,15 +25,15 @@ const ITEMS: NotificationItem[] = [
   },
   {
     id: "achievements",
-    title: "Mở khóa thành tích",
+    title: "Mở khoá thành tích",
     description: "Khi bạn đạt được thành tích mới",
     emailField: null,
     pushField: "push_achievements",
   },
   {
     id: "course-updates",
-    title: "Cập nhật khóa học",
-    description: "Nội dung mới trong các khóa học đã đăng ký",
+    title: "Cập nhật khoá học",
+    description: "Nội dung mới trong các khoá học đã đăng ký",
     emailField: "email_course_updates",
     pushField: "push_course_updates",
   },
@@ -136,7 +136,7 @@ export function NotificationSettings() {
       </div>
 
       <p className="text-xs text-gray-400 px-1">
-        Bạn có thể hủy đăng ký nhận email bất cứ lúc nào bằng cách nhấn vào liên kết hủy đăng ký trong email.
+        Bạn có thể huỷ đăng ký nhận email bất cứ lúc nào bằng cách nhấn vào liên kết huỷ đăng ký trong email.
       </p>
     </div>
   );

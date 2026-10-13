@@ -16,7 +16,7 @@ vi.mock("@/hooks/queries/use-admin-reports", () => ({
       refund_amount: 249000,
       net_revenue: 1497400,
       platform_fee_amount: 87320,
-      teacher_share_amount: 1659080,
+      teacher_share_amount: 1410080, // net 1.497.400 − phí 87.320
       transaction_count: 7,
       completed_count: 4,
       refunded_count: 1,
@@ -58,8 +58,22 @@ describe("AdminReportsPage — real platform revenue report", () => {
     expect(screen.getByText(/249\.000/)).toBeTruthy();
     // platform_fee_amount / teacher_share_amount — new fields from decision #2.
     expect(screen.getByText(/87\.320/)).toBeTruthy();
-    expect(screen.getByText(/1\.659\.080/)).toBeTruthy();
+    expect(screen.getByText(/1\.410\.080/)).toBeTruthy();
     expect(screen.getByText("80.0%")).toBeTruthy();
+  });
+
+  it("ADM-L6: nhãn 'ròng' nói rõ là sau hoàn tiền và chưa trừ phí nền tảng, cạnh dòng phí", () => {
+    render(<AdminReportsPage />);
+    expect(screen.getByText("Doanh thu ròng (sau hoàn tiền)")).toBeTruthy();
+    expect(screen.getByText("Sau hoàn tiền, trước phí nền tảng.")).toBeTruthy();
+    expect(screen.queryByText("Doanh thu ròng")).toBeNull();
+  });
+
+  it("hint 'Phần giảng viên' là ròng trừ phí, và trang ghi rõ số liệu tính theo đơn tạo trong kỳ", () => {
+    render(<AdminReportsPage />);
+    expect(screen.getByText("Doanh thu ròng trừ phí nền tảng.")).toBeTruthy();
+    expect(screen.getByText("Số liệu tính theo đơn tạo trong kỳ đã chọn.")).toBeTruthy();
+    expect(screen.queryByText("Doanh thu gộp trừ phí nền tảng.")).toBeNull();
   });
 
   it("shows the configured platform fee percentage read-only, with a link to /admin/settings", () => {

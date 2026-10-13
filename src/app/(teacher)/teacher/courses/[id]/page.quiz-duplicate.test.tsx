@@ -72,7 +72,7 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.f
 import TeacherCourseDetailPage from "./page";
 
 function openLesson(status: string) {
-  mockCourse = { id: "course-1", title: "Khóa test", instructor_id: OWNER_ID, status };
+  mockCourse = { id: "course-1", title: "Khoá test", instructor_id: OWNER_ID, status };
   render(<TeacherCourseDetailPage />);
   fireEvent.click(screen.getByText("Bài 1"));
 }

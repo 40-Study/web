@@ -39,8 +39,8 @@ export function useDeleteChatMessage() {
       chatService.deleteMessage(id),
     onSuccess: (_, { sessionId }) => {
       qc.invalidateQueries({ queryKey: chatKeys.messages(sessionId) });
-      toast.success("Đã xóa tin nhắn");
+      toast.success("Đã xoá tin nhắn");
     },
-    onError: () => toast.error("Không thể xóa tin nhắn"),
+    onError: () => toast.error("Không thể xoá tin nhắn"),
   });
 }

@@ -93,10 +93,10 @@ export function useCreateCourse() {
     mutationFn: (data: CreateCourseDTO) => courseService.createCourse(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: courseKeys.all });
-      toast.success("Tạo khóa học thành công");
+      toast.success("Tạo khoá học thành công");
     },
     // 400 DISCOUNT_PRICE_INVALID -> lý do tiếng Việt cụ thể thay vì lỗi chung.
-    onError: (error) => toast.error(approvalErrorMessage(error, "Không thể tạo khóa học")),
+    onError: (error) => toast.error(approvalErrorMessage(error, "Không thể tạo khoá học")),
   });
 }
 
@@ -109,9 +109,9 @@ export function useUpdateCourse() {
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: courseKeys.all });
       qc.invalidateQueries({ queryKey: courseKeys.detail(id) });
-      toast.success("Cập nhật khóa học thành công");
+      toast.success("Cập nhật khoá học thành công");
     },
-    onError: (error) => toast.error(approvalErrorMessage(error, "Không thể cập nhật khóa học")),
+    onError: (error) => toast.error(approvalErrorMessage(error, "Không thể cập nhật khoá học")),
   });
 }
 
@@ -143,12 +143,12 @@ export function useDeleteCourse() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: courseKeys.all });
       qc.invalidateQueries({ queryKey: adminCourseKeys.all });
-      toast.success("Xóa khóa học thành công");
+      toast.success("Xoá khoá học thành công");
     },
     // 409 COURSE_PENDING_REVIEW (khoá đang chờ duyệt) -> câu tiếng Việt rõ nghĩa thay vì lỗi chung.
     // 409 COURSE_HAS_ENROLLMENTS -> kèm nút "Lưu trữ" thay vì chỉ khuyên bằng chữ.
     onError: (error, id) => {
-      const message = approvalErrorMessage(error, "Không thể xóa khóa học");
+      const message = approvalErrorMessage(error, "Không thể xoá khoá học");
       if (error instanceof ApiError && error.code === COURSE_HAS_ENROLLMENTS_CODE) {
         toast.error(message, { action: { label: "Lưu trữ", onClick: () => archive(id) } });
         return;
@@ -165,8 +165,8 @@ export function useEnrollCourse() {
     mutationFn: (courseId: string) => courseService.enroll(courseId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: courseKeys.enrolled() });
-      toast.success("Đăng ký khóa học thành công");
+      toast.success("Đăng ký khoá học thành công");
     },
-    onError: () => toast.error("Không thể đăng ký khóa học"),
+    onError: () => toast.error("Không thể đăng ký khoá học"),
   });
 }

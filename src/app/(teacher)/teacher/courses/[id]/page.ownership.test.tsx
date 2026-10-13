@@ -1,13 +1,13 @@
 /**
- * Review đối kháng web PR #27 (MAJOR): trang quản lý khóa `/teacher/courses/[id]` không có
- * test tự động nào cho phần kiểm quyền chủ khóa (`isOwner`) — nếu sau này ai đó refactor
+ * Review đối kháng web PR #27 (MAJOR): trang quản lý khoá `/teacher/courses/[id]` không có
+ * test tự động nào cho phần kiểm quyền chủ khoá (`isOwner`) — nếu sau này ai đó refactor
  * (VD gộp trang xem-trước công khai với trang quản lý) mà vô tình xoá đoạn check, suite
  * `vitest run` vẫn xanh 100%, không có gì bắt lại lỗi lộ quyền (teacher2 xem được trang quản
- * lý khóa của teacher1 — P1 QA 260927 teacher).
+ * lý khoá của teacher1 — P1 QA 260927 teacher).
  *
- * 3 kịch bản: chủ khóa thật sự → thấy trang quản lý; giáo viên KHÁC → "Không có quyền truy
- * cập"; SYSTEM_ADMIN → vào được dù không phải chủ khóa (nhất quán với isAdmin-bypass sẵn có ở
- * mọi endpoint quản lý khóa phía backend, xem `course_handler.go` isAdminActor).
+ * 3 kịch bản: chủ khoá thật sự → thấy trang quản lý; giáo viên KHÁC → "Không có quyền truy
+ * cập"; SYSTEM_ADMIN → vào được dù không phải chủ khoá (nhất quán với isAdmin-bypass sẵn có ở
+ * mọi endpoint quản lý khoá phía backend, xem `course_handler.go` isAdminActor).
  */
 
 import { fireEvent, render, screen } from "@testing-library/react";
@@ -105,7 +105,7 @@ function setScenario(opts: { userId?: string; activeRole?: string; instructorId:
   mockRefetchCourse.mockReset();
   mockCourse = {
     id: "course-1",
-    title: "Khóa test",
+    title: "Khoá test",
     short_description: "Mô tả ngắn",
     thumbnail_url: undefined,
     status: "published",
@@ -113,20 +113,20 @@ function setScenario(opts: { userId?: string; activeRole?: string; instructorId:
   };
 }
 
-describe("/teacher/courses/[id] — kiểm quyền chủ khóa (review đối kháng PR #27)", () => {
-  it("giáo viên KHÔNG phải chủ khóa: thấy 'Không có quyền truy cập', không thấy giao diện quản lý", () => {
+describe("/teacher/courses/[id] — kiểm quyền chủ khoá (review đối kháng PR #27)", () => {
+  it("giáo viên KHÔNG phải chủ khoá: thấy 'Không có quyền truy cập', không thấy giao diện quản lý", () => {
     setScenario({ userId: "teacher-2-uuid", instructorId: COURSE_OWNER_ID });
     render(<TeacherCourseDetailPage />);
     expect(screen.getByText("Không có quyền truy cập")).toBeTruthy();
   });
 
-  it("chủ khóa thật sự: KHÔNG thấy màn 'Không có quyền truy cập'", () => {
+  it("chủ khoá thật sự: KHÔNG thấy màn 'Không có quyền truy cập'", () => {
     setScenario({ userId: COURSE_OWNER_ID, instructorId: COURSE_OWNER_ID });
     render(<TeacherCourseDetailPage />);
     expect(screen.queryByText("Không có quyền truy cập")).toBeNull();
   });
 
-  it("SYSTEM_ADMIN không phải chủ khóa: vẫn vào được (không thấy 'Không có quyền truy cập')", () => {
+  it("SYSTEM_ADMIN không phải chủ khoá: vẫn vào được (không thấy 'Không có quyền truy cập')", () => {
     setScenario({ userId: "some-admin-uuid", activeRole: "SYSTEM_ADMIN", instructorId: COURSE_OWNER_ID });
     render(<TeacherCourseDetailPage />);
     expect(screen.queryByText("Không có quyền truy cập")).toBeNull();
@@ -138,7 +138,7 @@ describe("/teacher/courses/[id] — kiểm quyền chủ khóa (review đối kh
     render(<TeacherCourseDetailPage />);
 
     expect(screen.queryByRole("heading", { name: "Không tải được khoá học" })).toBeNull();
-    expect(screen.getByText("Khóa test")).toBeTruthy();
+    expect(screen.getByText("Khoá test")).toBeTruthy();
     expect(screen.getByRole("status").textContent).toContain("Không làm mới được");
     fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
     expect(mockRefetchCourse).toHaveBeenCalledTimes(1);

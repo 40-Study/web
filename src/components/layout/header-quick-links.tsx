@@ -14,7 +14,7 @@ interface QuickLink {
 }
 
 interface HeaderQuickLinksProps {
-  /** Chỉ học viên mua khóa (cùng điều kiện với CartDropdown ở header desktop). */
+  /** Chỉ học viên mua khoá (cùng điều kiện với CartDropdown ở header desktop). */
   isStudent: boolean;
   unreadCount: number;
   onNavigate: () => void;
@@ -39,7 +39,7 @@ export function HeaderQuickLinks({ isStudent, unreadCount, onNavigate }: HeaderQ
             href: "/cart",
             icon: ShoppingCart,
             count: cartCount,
-            countLabel: (n: number) => `${n} khóa học trong giỏ`,
+            countLabel: (n: number) => `${n} khoá học trong giỏ`,
           },
         ]
       : []),

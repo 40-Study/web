@@ -68,7 +68,7 @@ export default function NotificationsPage() {
         error={error}
         isEmpty={notifications.length === 0}
         emptyTitle="Chưa có thông báo nào"
-        emptyDescription="Thông báo về khóa học, bài tập và tin nhắn sẽ xuất hiện ở đây."
+        emptyDescription="Thông báo về khoá học, bài tập và tin nhắn sẽ xuất hiện ở đây."
         onRetry={() => refetch()}
       >
         <ul className="divide-y divide-gray-100 dark:divide-gray-800 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">

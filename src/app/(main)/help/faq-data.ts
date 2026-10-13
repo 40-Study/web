@@ -40,17 +40,17 @@ export const faqCategories: FAQCategory[] = [
     ],
   },
   {
-    title: "Khóa học & Học tập",
+    title: "Khoá học & Học tập",
     faqs: [
       {
-        question: "Làm sao để mua khóa học?",
+        question: "Làm sao để mua khoá học?",
         answer:
-          "Mở trang chi tiết khóa học, chọn \"Thêm vào giỏ hàng\" hoặc \"Mua ngay\" rồi làm theo các bước thanh toán. Sau khi đơn hàng được xác nhận, khóa học sẽ xuất hiện trong mục \"Khóa học của tôi\".",
+          "Mở trang chi tiết khoá học, chọn \"Thêm vào giỏ hàng\" hoặc \"Mua ngay\" rồi làm theo các bước thanh toán. Sau khi đơn hàng được xác nhận, khoá học sẽ xuất hiện trong mục \"Khoá học của tôi\".",
       },
       {
         question: "Tôi có thể học thử trước khi mua không?",
         answer:
-          "Một số bài học được giảng viên mở \"Xem thử\" trong phần nội dung khóa học. Bạn có thể xem các bài này mà không cần đăng nhập.",
+          "Một số bài học được giảng viên mở \"Xem thử\" trong phần nội dung khoá học. Bạn có thể xem các bài này mà không cần đăng nhập.",
       },
       {
         question: "Làm sao để xem lại các đơn hàng của tôi?",

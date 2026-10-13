@@ -41,7 +41,7 @@ describe("HelpPage", () => {
 
     fireEvent.change(screen.getByLabelText("Tìm kiếm câu hỏi"), { target: { value: "zzzkhongco" } });
     expect(screen.getByText(/Không tìm thấy kết quả/)).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Xóa tìm kiếm" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xoá tìm kiếm" }));
     expect(screen.getByRole("button", { name: /Tôi quên mật khẩu/ })).toBeTruthy();
   });
 });

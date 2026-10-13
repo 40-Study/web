@@ -23,9 +23,10 @@ import { renderWithProviders } from "@/test/utils";
 import { useAuthStore } from "@/stores/auth.store";
 
 // STUDENT có ít user hơn TEACHER — nếu sort đúng, TEACHER phải đứng TRƯỚC STUDENT trong "Top".
+// `description` khác nhãn vai trò để test không nhầm dòng tên với dòng mô tả.
 const ROLES = [
-  { id: "role-student", name: "STUDENT", description: "Học viên" },
-  { id: "role-teacher", name: "TEACHER", description: "Giảng viên" },
+  { id: "role-student", name: "STUDENT", description: "Mô tả học viên" },
+  { id: "role-teacher", name: "TEACHER", description: "Mô tả giảng viên" },
 ];
 
 const USER_COUNT_BY_ROLE: Record<string, number> = {
@@ -70,12 +71,28 @@ describe("/admin dashboard — A-P2-2", () => {
     const panel = heading.closest("div");
     if (!panel) throw new Error("Không tìm thấy panel Top vai trò");
 
-    await screen.findByText("STUDENT", { selector: "p" });
+    await screen.findByText("Giảng viên", { selector: "p" });
     const rowTexts = within(panel)
-      .getAllByText(/^(STUDENT|TEACHER)$/)
+      .getAllByText(/^(Học viên|Giảng viên)$/)
       .map((el) => el.textContent);
 
-    expect(rowTexts.indexOf("TEACHER")).toBeLessThan(rowTexts.indexOf("STUDENT"));
+    expect(rowTexts).toHaveLength(2);
+    expect(rowTexts.indexOf("Giảng viên")).toBeLessThan(rowTexts.indexOf("Học viên"));
+  });
+
+  // ADM-L4: dashboard hiển thị mã enum thô (STUDENT, TEACHER) thay vì nhãn tiếng Việt.
+  it("Top vai trò hiển thị nhãn tiếng Việt, không hiện mã enum thô (ADM-L4)", async () => {
+    renderWithProviders(<AdminIndexPage />);
+
+    const heading = await screen.findByText("Top vai trò theo số lượng user");
+    const panel = heading.closest("div");
+    if (!panel) throw new Error("Không tìm thấy panel Top vai trò");
+
+    await screen.findByText("Giảng viên", { selector: "p" });
+    expect(within(panel).getByText("Giảng viên", { selector: "p" })).toBeTruthy();
+    expect(within(panel).getByText("Học viên", { selector: "p" })).toBeTruthy();
+    expect(panel.textContent).not.toContain("STUDENT");
+    expect(panel.textContent).not.toContain("TEACHER");
   });
 
   it("Hoạt động gần đây hiện nhật ký thật (hành động, người thao tác, giờ VN) kèm link Xem tất cả", async () => {

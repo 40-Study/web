@@ -40,14 +40,14 @@ export function CourseBasicInfoStep({
       <div>
         <h2 className="text-xl font-semibold text-gray-900">Thông tin cơ bản</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Thiết lập thông tin cốt lõi cho khóa học của bạn
+          Thiết lập thông tin cốt lõi cho khoá học của bạn
         </p>
       </div>
 
       {/* Course Title */}
       <div className="space-y-2">
         <Label htmlFor="title">
-          Tên khóa học <span className="text-red-500">*</span>
+          Tên khoá học <span className="text-red-500">*</span>
         </Label>
         <Input
           id="title"
@@ -57,7 +57,7 @@ export function CourseBasicInfoStep({
           className="h-11"
         />
         <p className="text-xs text-muted-foreground">
-          Đường dẫn khóa học (slug) sẽ được tạo tự động từ tên này.
+          Đường dẫn khoá học (slug) sẽ được tạo tự động từ tên này.
         </p>
       </div>
 
@@ -149,7 +149,7 @@ export function CourseBasicInfoStep({
           </span>
         </div>
         <Textarea
-          placeholder="Tóm tắt ngắn gọn nội dung khóa học để thu hút học viên..."
+          placeholder="Tóm tắt ngắn gọn nội dung khoá học để thu hút học viên..."
           value={formData.short_description}
           onChange={(e) => update("short_description", e.target.value)}
           maxLength={200}

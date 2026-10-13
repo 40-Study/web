@@ -114,7 +114,7 @@ export default function CourseExercisesPage() {
           className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"
         >
           <ChevronLeft className="w-4 h-4" />
-          Quay lại khóa học
+          Quay lại khoá học
         </Link>
 
         {/* Header */}
@@ -138,7 +138,7 @@ export default function CourseExercisesPage() {
         {/* Exercise cards */}
         <div className="space-y-3">
           {exercises.length === 0 ? (
-            <p className="text-gray-500 text-center py-10">Khóa học chưa có bài tập nào.</p>
+            <p className="text-gray-500 text-center py-10">Khoá học chưa có bài tập nào.</p>
           ) : (
             exercises.map((ex) => {
               const kind = KIND_BADGE[ex.kind];
@@ -184,7 +184,7 @@ export default function CourseExercisesPage() {
                     {ex.locked ? (
                       <div className="flex items-center gap-2 text-gray-400">
                         <Lock className="w-4 h-4" />
-                        <span className="text-sm">Khóa</span>
+                        <span className="text-sm">Khoá</span>
                       </div>
                     ) : ex.completed ? (
                       <div className="flex flex-col items-end gap-2">

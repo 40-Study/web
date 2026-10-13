@@ -5,10 +5,10 @@ export default function CourseNotFound() {
     <div className="flex-1 flex items-center justify-center">
       <div className="text-center">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Không tìm thấy khóa học
+          Không tìm thấy khoá học
         </h1>
         <p className="text-gray-500 mb-6">
-          Khóa học này không tồn tại hoặc bạn không có quyền truy cập.
+          Khoá học này không tồn tại hoặc bạn không có quyền truy cập.
         </p>
         <Link
           href="/courses"
@@ -17,7 +17,7 @@ export default function CourseNotFound() {
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Quay lại danh sách khóa học
+          Quay lại danh sách khoá học
         </Link>
       </div>
     </div>

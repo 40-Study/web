@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useSystemRoles } from "@/hooks/use-system-roles";
+import { getSystemRoleLabel } from "@/lib/role-labels";
 import {
   BROADCAST_MAX_PER_HOUR,
   isBroadcastAudienceComplete,
@@ -122,7 +123,7 @@ export default function AdminBroadcastNotificationsPage() {
               {rolesQuery.data?.map((role) => (
                 <label key={role.id} className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={roles.includes(role.name)} onChange={() => toggleRole(role.name)} />
-                  {role.name}
+                  {getSystemRoleLabel(role.name)}
                 </label>
               ))}
             </div>

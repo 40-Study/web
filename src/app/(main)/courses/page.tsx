@@ -27,7 +27,7 @@ export default function CoursesPage() {
   // Debounce 300ms: `useSearchSuggestions` gọi API gợi ý theo từng ký tự.
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
-  // Từ khóa tìm ở backend (`keyword`, không phân biệt dấu) — trước đây lọc ở client bằng
+  // Từ khoá tìm ở backend (`keyword`, không phân biệt dấu) — trước đây lọc ở client bằng
   // `toLowerCase().includes` nên "dai so" không ra "Đại số" (F-07). `searchQuery` đã được CourseSearch debounce 300ms.
   const { data: allCourses = [], isLoading: coursesLoading } = useCourses({
     ...filters,
@@ -89,7 +89,7 @@ export default function CoursesPage() {
         {/* Header: tiêu đề + tìm kiếm */}
         <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="text-h1 text-slate-900 dark:text-slate-50">Khám phá khóa học</h1>
+            <h1 className="text-h1 text-slate-900 dark:text-slate-50">Khám phá khoá học</h1>
             <p className="text-body mt-2 text-slate-600 dark:text-slate-400">
               Cập nhật liên tục
             </p>
@@ -115,7 +115,7 @@ export default function CoursesPage() {
 
           {!isLoading && (
             <p className="text-sm text-slate-600 dark:text-slate-400" aria-live="polite">
-              {allCourses.length} khóa học
+              {allCourses.length} khoá học
               {searchQuery && ` cho "${searchQuery}"`}
             </p>
           )}
@@ -128,7 +128,7 @@ export default function CoursesPage() {
             emptyAction={
               hasActiveFilters ? (
                 <Button type="button" variant="outline" onClick={clearAll}>
-                  Xóa bộ lọc
+                  Xoá bộ lọc
                 </Button>
               ) : undefined
             }
@@ -142,7 +142,7 @@ export default function CoursesPage() {
                 className="dark:bg-slate-800 dark:text-primary-300 dark:hover:bg-slate-700"
                 onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
               >
-                Tải thêm khóa học
+                Tải thêm khoá học
               </Button>
             </div>
           )}

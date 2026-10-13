@@ -134,11 +134,11 @@ function StudentHomeContent() {
           <Card className="rounded-3xl lg:col-span-2">
             <EmptyState
               icon={BookOpen}
-              title="Bạn chưa đăng ký khóa học nào"
-              description="Chọn một khóa học để bắt đầu lộ trình học của bạn."
+              title="Bạn chưa đăng ký khoá học nào"
+              description="Chọn một khoá học để bắt đầu lộ trình học của bạn."
               action={
                 <Link href="/courses" className={buttonVariants({ size: "lg" })}>
-                  Khám phá khóa học
+                  Khám phá khoá học
                   <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                 </Link>
               }
@@ -164,7 +164,7 @@ function StudentHomeContent() {
       {/* In-progress courses */}
       {otherEnrolled.length > 0 && (
         <section>
-          <SectionHeader title="Khóa học đang học" href="/my-courses" linkLabel="Xem tất cả" />
+          <SectionHeader title="Khoá học đang học" href="/my-courses" linkLabel="Xem tất cả" />
           <CourseGrid>
             {otherEnrolled.map((c) => (
               <CourseCard key={String(c.id)} course={c} />

@@ -162,7 +162,7 @@ function InvitationItem({
                 onClick={() => setConfirmReject(false)}
                 className="flex-1 h-9 rounded-full"
               >
-                Hủy
+                Huỷ
               </Button>
               <Button
                 size="sm"

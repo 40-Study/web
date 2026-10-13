@@ -24,7 +24,7 @@ const VALID: VerifyCertificateResponse = {
 };
 
 describe("chứng chỉ hợp lệ", () => {
-  it("hiện tên người học, khóa học và mã", () => {
+  it("hiện tên người học, khoá học và mã", () => {
     render(
       <CertificateVerifyResult
         result={VALID}

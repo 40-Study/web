@@ -328,7 +328,7 @@ function SortableLessonRow({
           <p className="text-sm font-medium truncate">{lesson.title}</p>
           <p className="text-xs text-muted-foreground">
             {lesson.duration_minutes ? `${lesson.duration_minutes} phút` : "Bài học"}
-            {lesson.is_mandatory === false && " · Tùy chọn"}
+            {lesson.is_mandatory === false && " · Tuỳ chọn"}
           </p>
         </button>
         {lesson.is_preview && (
@@ -486,7 +486,7 @@ function LessonContentsPanel({
                           <button
                             onClick={() => deleteContent.mutate(c.id)}
                             className="p-0.5 text-gray-300 hover:text-red-500"
-                            title="Xóa"
+                            title="Xoá"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -644,7 +644,7 @@ export default function CourseDetailPage() {
   };
 
   const handleDeleteSection = (sectionId: string) => {
-    if (confirm("Xóa chương này và tất cả bài học bên trong?")) {
+    if (confirm("Xoá chương này và tất cả bài học bên trong?")) {
       deleteSection.mutate(sectionId);
     }
   };
@@ -976,7 +976,7 @@ export default function CourseDetailPage() {
     return <ResourceLoadError resourceLabel="khoá học" onRetry={() => void refetchCourse()} />;
   }
   if (!course) {
-    return <ResourceUnavailable status={unavailableStatus(courseErrorValue)} resourceLabel="khoá học" backHref="/teacher/courses" backLabel="Về Khóa học của tôi" />;
+    return <ResourceUnavailable status={unavailableStatus(courseErrorValue)} resourceLabel="khoá học" backHref="/teacher/courses" backLabel="Về Khoá học của tôi" />;
   }
 
   // P1 QA 260927 teacher: GET /courses/:id (dùng bởi useCourse) là endpoint xem-trước dùng
@@ -993,10 +993,10 @@ export default function CourseDetailPage() {
       <div className="max-w-md mx-auto mt-16 text-center space-y-4">
         <h1 className="text-lg font-semibold">Không có quyền truy cập</h1>
         <p className="text-sm text-muted-foreground">
-          Bạn không phải giảng viên phụ trách khóa học này nên không thể xem trang quản lý.
+          Bạn không phải giảng viên phụ trách khoá học này nên không thể xem trang quản lý.
         </p>
         <Button asChild>
-          <Link href="/teacher/courses">Về Khóa học của tôi</Link>
+          <Link href="/teacher/courses">Về Khoá học của tôi</Link>
         </Button>
       </div>
     );
@@ -1069,7 +1069,7 @@ export default function CourseDetailPage() {
       {sections.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground mb-3">Khóa học chưa có chương nào</p>
+            <p className="text-muted-foreground mb-3">Khoá học chưa có chương nào</p>
             {!isLocked && (
               <Button onClick={() => setSectionDialog(true)}>
                 <Plus className="w-4 h-4 mr-1" /> Thêm chương đầu tiên
@@ -1145,7 +1145,7 @@ export default function CourseDetailPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSectionDialog(false)}>Hủy</Button>
+            <Button variant="outline" onClick={() => setSectionDialog(false)}>Huỷ</Button>
             <Button onClick={handleCreateSection} disabled={!sectionTitle.trim() || createSection.isPending}>
               {createSection.isPending && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
               Tạo chương
@@ -1190,7 +1190,7 @@ export default function CourseDetailPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLessonDialog(null)}>Hủy</Button>
+            <Button variant="outline" onClick={() => setLessonDialog(null)}>Huỷ</Button>
             <Button onClick={handleCreateLesson} disabled={!lessonTitle.trim() || createLessonMutation.isPending}>
               {createLessonMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
               Tạo bài học
@@ -1283,15 +1283,15 @@ function ClassManagementDialog({
   }, [open, courseId]);
 
   const handleDelete = async (classId: string) => {
-    if (!confirm("Bạn có chắc muốn xóa lớp này?")) return;
+    if (!confirm("Bạn có chắc muốn xoá lớp này?")) return;
     setDeleting(classId);
     try {
       const { classService } = await import("@/services/class.service");
       await classService.delete(courseId, classId);
-      toast.success("Đã xóa lớp học");
+      toast.success("Đã xoá lớp học");
       setClasses((prev) => prev.filter((c) => c.id !== classId));
     } catch {
-      toast.error("Không thể xóa lớp học");
+      toast.error("Không thể xoá lớp học");
     } finally {
       setDeleting(null);
     }
@@ -1304,7 +1304,7 @@ function ClassManagementDialog({
           <DialogTitle>Quản lý lớp học</DialogTitle>
           <DialogDescription>
             {classes.length > 0
-              ? `Có ${classes.length} lớp trong khóa học này`
+              ? `Có ${classes.length} lớp trong khoá học này`
               : "Chưa có lớp nào. Tạo lớp để quản lý học viên."}
           </DialogDescription>
         </DialogHeader>
@@ -1613,7 +1613,7 @@ function EditContentModal({
                 disabled
               />
               <p className="text-xs text-muted-foreground">
-                URL video không thể thay đổi. Để đổi video, vui lòng xóa và tạo mới.
+                URL video không thể thay đổi. Để đổi video, vui lòng xoá và tạo mới.
               </p>
             </div>
           )}
@@ -1637,7 +1637,7 @@ function EditContentModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Huỷ</Button>
           <Button onClick={handleSave} disabled={!title.trim() || isSaving || durationInvalid || quizSettings.blocked}>
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Lưu thay đổi

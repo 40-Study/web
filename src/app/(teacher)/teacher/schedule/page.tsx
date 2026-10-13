@@ -35,8 +35,8 @@ import type { UpdateLiveSessionDTO } from "@/services/live-session.service";
  * "giao bài tập không dùng được".
  *
  * Nay mỗi "buổi học" ở trang này là một `livestream_sessions` row thật
- * (POST /livestream, khớp đúng luồng đã hoạt động ở trang chi tiết khóa học >
- * Thêm nội dung > Livestream), đòi buộc chọn khóa học + lớp lúc tạo.
+ * (POST /livestream, khớp đúng luồng đã hoạt động ở trang chi tiết khoá học >
+ * Thêm nội dung > Livestream), đòi buộc chọn khoá học + lớp lúc tạo.
  *
  * QA hồi quy 03/10:
  * - B-09: form gửi đủ giờ kết thúc và phòng học; PUT /livestream/:id nay nhận cả lịch nên sửa buổi đổi

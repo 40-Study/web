@@ -8,7 +8,7 @@ import { useCreateDirectConversation } from "@/hooks/queries/use-conversations";
 import type { ChildCourse } from "@/services/parent-dashboard.service";
 
 /**
- * Tab "Khóa học" của trang chi tiết con. E2 (QA vòng 2): mỗi khoá có nút "Nhắn giảng viên" —
+ * Tab "Khoá học" của trang chi tiết con. E2 (QA vòng 2): mỗi khoá có nút "Nhắn giảng viên" —
  * tạo/mở hội thoại trực tiếp (`POST /conversations/direct`) rồi chuyển sang /messages với hội
  * thoại đó được chọn sẵn. Khoá chưa gắn giảng viên (không có instructor_id) thì không hiện nút. Từ QA hồi quy
  * 03/10 backend cho phép nhắn giảng viên đang dạy con (conversation_service.go, nhánh phụ huynh -> giảng viên).
@@ -31,7 +31,7 @@ export function ChildCoursesTab({ courses, isLoading }: { courses?: ChildCourse[
     );
   }
   if (!courses || courses.length === 0) {
-    return <p className="text-center text-gray-500 py-8">Chưa đăng ký khóa học nào</p>;
+    return <p className="text-center text-gray-500 py-8">Chưa đăng ký khoá học nào</p>;
   }
 
   const messageTeacher = (teacherId: string) =>

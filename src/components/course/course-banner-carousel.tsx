@@ -32,7 +32,7 @@ export const BANNERS: BannerSlide[] = [
   {
     id: "certificate",
     title: "Chứng chỉ hoàn thành",
-    subtitle: "Hoàn thành khóa học để nhận chứng chỉ, tra cứu công khai bằng mã",
+    subtitle: "Hoàn thành khoá học để nhận chứng chỉ, tra cứu công khai bằng mã",
     icon: Award,
     cta: "Tra cứu chứng chỉ",
     href: "/certificates/verify",

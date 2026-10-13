@@ -1,9 +1,9 @@
 /**
- * A-P1-3 + A-P2-3 regression — trang /admin/permissions trước đây có nút "Tạo"/"Xóa" chỉ
+ * A-P1-3 + A-P2-3 regression — trang /admin/permissions trước đây có nút "Tạo"/"Xoá" chỉ
  * setState cục bộ (không gọi API nào — backend không có POST/DELETE /permissions), và mô tả
- * đầu trang nói "CRUD chi tiết: tạo, xem, sửa, xóa" dù Tạo/Xóa không hoạt động thật.
+ * đầu trang nói "CRUD chi tiết: tạo, xem, sửa, xoá" dù Tạo/Xoá không hoạt động thật.
  *
- * Test ĐỎ nếu nút "Tạo"/"Xóa" xuất hiện trở lại, hoặc nếu "Sửa mô tả" không gọi PUT thật.
+ * Test ĐỎ nếu nút "Tạo"/"Xoá" xuất hiện trở lại, hoặc nếu "Sửa mô tả" không gọi PUT thật.
  */
 
 import { fireEvent, screen, waitFor } from "@testing-library/react";
@@ -36,15 +36,15 @@ beforeEach(() => {
 });
 
 describe("/admin/permissions — A-P1-3/A-P2-3", () => {
-  it("KHÔNG hiện nút Tạo/Xóa quyền (backend chưa có POST/DELETE)", async () => {
+  it("KHÔNG hiện nút Tạo/Xoá quyền (backend chưa có POST/DELETE)", async () => {
     renderWithProviders(<AdminPermissionsPage />);
 
     await screen.findByText(PERMISSION.name);
 
     expect(screen.queryByRole("button", { name: /^tạo$/i })).toBeNull();
-    expect(screen.queryByRole("button", { name: /^xóa$/i })).toBeNull();
-    // Mô tả đầu trang không còn nói "tạo... xóa" như bug cũ
-    expect(screen.queryByText(/tạo, xem, sửa, xóa/i)).toBeNull();
+    expect(screen.queryByRole("button", { name: /^xoá$/i })).toBeNull();
+    // Mô tả đầu trang không còn nói "tạo... xoá" như bug cũ
+    expect(screen.queryByText(/tạo, xem, sửa, xoá/i)).toBeNull();
   });
 
   it("Sửa mô tả gọi PUT /permissions/:id thật, không chỉ setState cục bộ", async () => {

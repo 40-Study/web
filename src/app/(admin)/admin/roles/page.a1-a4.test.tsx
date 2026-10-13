@@ -1,5 +1,5 @@
 /**
- * A1 (QA 261008): vai trò hệ thống dựng sẵn không xoá được — nút "Xóa role" phải disabled.
+ * A1 (QA 261008): vai trò hệ thống dựng sẵn không xoá được — nút "Xoá role" phải disabled.
  * A4: danh sách người giữ vai trò hiện tên + email từ `user` lồng nhau, không chỉ UUID.
  */
 
@@ -57,11 +57,11 @@ beforeEach(() => {
 });
 
 describe("/admin/roles — A1: chặn xoá vai trò hệ thống dựng sẵn", () => {
-  it("nút 'Xóa role' của vai trò dựng sẵn bị disabled kèm tooltip; vai trò tự tạo vẫn bấm được", async () => {
+  it("nút 'Xoá role' của vai trò dựng sẵn bị disabled kèm tooltip; vai trò tự tạo vẫn bấm được", async () => {
     renderWithProviders(<RolesPage />);
     await screen.findByText("Vai trò tự tạo");
 
-    const deleteButtons = screen.getAllByRole("button", { name: "Xóa role" }) as HTMLButtonElement[];
+    const deleteButtons = screen.getAllByRole("button", { name: "Xoá role" }) as HTMLButtonElement[];
     expect(deleteButtons).toHaveLength(2);
 
     const teacherBtn = deleteButtons.find((b) =>

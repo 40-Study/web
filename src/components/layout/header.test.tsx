@@ -98,7 +98,7 @@ describe("Header — menu tài khoản", () => {
 });
 
 // Lane U (UX-5): phụ huynh không học -> không hiện xu, nút chính trỏ về nơi có tổng quan các con
-// (/home) thay vì "Khóa học của tôi" (/my-courses, route chỉ dành cho học viên).
+// (/home) thay vì "Khoá học của tôi" (/my-courses, route chỉ dành cho học viên).
 describe("Header — vai phụ huynh", () => {
   beforeEach(() => {
     authState = {
@@ -115,11 +115,11 @@ describe("Header — vai phụ huynh", () => {
     expect(document.querySelector('a[href="/coins"]')).toBeNull();
   });
 
-  it("nút chính là 'Con của tôi' -> /home, không có 'Khóa học của tôi'", () => {
+  it("nút chính là 'Con của tôi' -> /home, không có 'Khoá học của tôi'", () => {
     render(<Header />);
     const link = screen.getAllByRole("link", { name: "Con của tôi" })[0];
     expect(link.getAttribute("href")).toBe("/home");
-    expect(screen.queryByText("Khóa học của tôi")).toBeNull();
+    expect(screen.queryByText("Khoá học của tôi")).toBeNull();
   });
 
   // L4: chip xu dùng cùng điều kiện với useCoinWallet — vai không có ví thì không hiện "0" giả.
@@ -129,11 +129,11 @@ describe("Header — vai phụ huynh", () => {
     expect(document.querySelector('a[href="/coins"]')).toBeNull();
   });
 
-  it("học viên vẫn thấy xu và 'Khóa học của tôi'", () => {
+  it("học viên vẫn thấy xu và 'Khoá học của tôi'", () => {
     authState.activeRole = "STUDENT";
     render(<Header />);
     expect(document.querySelector('a[href="/coins"]')).not.toBeNull();
-    expect(screen.getAllByRole("link", { name: "Khóa học của tôi" })[0].getAttribute("href")).toBe("/my-courses");
+    expect(screen.getAllByRole("link", { name: "Khoá học của tôi" })[0].getAttribute("href")).toBe("/my-courses");
   });
 });
 
@@ -169,7 +169,7 @@ describe("Header — hamburger mobile có lối vào giỏ hàng, thông báo, t
 
     expect(hrefOf(menu, /Giỏ hàng/)).toBe("/cart");
     expect(menu.textContent).toContain("Giỏ hàng");
-    expect(screen.getByLabelText("2 khóa học trong giỏ")).toBeTruthy();
+    expect(screen.getByLabelText("2 khoá học trong giỏ")).toBeTruthy();
     expect(hrefOf(menu, /Thông báo/)).toBe("/notifications");
     expect(screen.getByLabelText("3 thông báo chưa đọc")).toBeTruthy();
     expect(hrefOf(menu, /Tin nhắn/)).toBe("/messages");
@@ -181,11 +181,11 @@ describe("Header — hamburger mobile có lối vào giỏ hàng, thông báo, t
     render(<Header />);
     openMobileMenu();
 
-    expect(screen.queryByLabelText(/khóa học trong giỏ/)).toBeNull();
+    expect(screen.queryByLabelText(/khoá học trong giỏ/)).toBeNull();
     expect(screen.queryByLabelText(/thông báo chưa đọc/)).toBeNull();
   });
 
-  it("giảng viên và phụ huynh: có Thông báo + Tin nhắn nhưng KHÔNG có Giỏ hàng (chỉ học viên mua khóa)", () => {
+  it("giảng viên và phụ huynh: có Thông báo + Tin nhắn nhưng KHÔNG có Giỏ hàng (chỉ học viên mua khoá)", () => {
     for (const role of ["TEACHER", "PARENT"]) {
       authState.activeRole = role;
       const { unmount } = render(<Header />);
