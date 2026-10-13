@@ -9,6 +9,7 @@ import { teacherService } from "@/services/teacher.service";
 
 export const classKeys = {
   all: ["classes"] as const,
+  mine: () => [...classKeys.all, "mine"] as const,
   list: (courseId: string) => [...classKeys.all, "list", courseId] as const,
   detail: (courseId: string, classId: string) =>
     [...classKeys.all, "detail", courseId, classId] as const,
@@ -35,6 +36,14 @@ export function useClasses(courseId: string, options: { enabled?: boolean } = {}
     queryKey: classKeys.list(courseId),
     queryFn: () => classService.list(courseId),
     enabled: enabled && !!courseId,
+  });
+}
+
+/** Mọi lớp giảng viên đang phụ trách (trang /teacher/classes). */
+export function useMyClasses() {
+  return useQuery({
+    queryKey: classKeys.mine(),
+    queryFn: () => classService.listMine(),
   });
 }
 
