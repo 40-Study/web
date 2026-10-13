@@ -80,6 +80,18 @@ describe("AdminAuditLogsPage", () => {
     expect(screen.queryByText(/chưa ghi nhận nhật ký/i)).toBeNull();
   });
 
+  // ADM-L9 (smoke 2): ở 390px bảng 7 cột cuộn ngang, cột "Hành động" bị cắt/rớt nhiều dòng. Dưới sm mỗi dòng
+  // thành thẻ xếp dọc; tiêu đề cột ẩn đi nên mỗi ô phải mang nhãn cột (data-label) để thẻ vẫn đọc được.
+  it("mỗi ô của dòng có data-label trùng tiêu đề cột, để dưới sm hiện thành thẻ có nhãn", () => {
+    ok([log({})]);
+    render(<AdminAuditLogsPage />);
+    const headers = screen.getAllByRole("columnheader").map((th) => th.textContent ?? "");
+    const row = screen.getByText("Quản Trị Viên").closest("tr")!;
+    const labels = Array.from(row.querySelectorAll("td")).map((td) => td.getAttribute("data-label"));
+    expect(labels).toEqual(headers.map((h) => h || null));
+    expect(labels.slice(0, 6)).toEqual(["Thời gian", "Người thao tác", "Hành động", "Đối tượng", "Kết quả", "IP"]);
+  });
+
   it("metadata chỉ mở khi bấm Chi tiết và hiện dạng văn bản (không render HTML)", () => {
     ok([log({ metadata: { old: "0", new: "10", note: "<img src=x onerror=alert(1)>" } })]);
     const { container } = render(<AdminAuditLogsPage />);
