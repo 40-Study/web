@@ -39,6 +39,8 @@ const CODE_MESSAGES: Record<string, string> = {
   SYSTEM_ROLE_PROTECTED: "Đây là vai trò hệ thống dựng sẵn, không thể xoá. Chỉ có thể xoá vai trò tự tạo.",
   // Ghi vào lớp lưu trữ (409): message của backend là lý do thật nên được ưu tiên (GENERIC_CODES), câu này chỉ là dự phòng.
   CLASS_ARCHIVED: "Lớp đã lưu trữ nên chỉ xem được. Hãy mở lại lớp để chỉnh sửa.",
+  // Khoá đã lưu trữ (archived) ngừng bán: giỏ hàng, mua và ghi danh mới trả 409 này; người đã ghi danh vẫn học được.
+  COURSE_NOT_FOR_SALE: "Khoá học này đã ngừng bán nên không thể thêm vào giỏ hàng, mua hoặc ghi danh mới.",
   TEACHER_NOT_ORG_MEMBER: "Giảng viên này chưa là thành viên của tổ chức. Hãy thêm họ vào tổ chức trước khi gán vào lớp.",
   ERR_UNAUTHORIZED: SESSION_EXPIRED_MESSAGE,
   ERR_FORBIDDEN: FORBIDDEN_MESSAGE,

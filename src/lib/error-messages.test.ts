@@ -202,3 +202,12 @@ describe("getErrorMessage — thêm nội dung bài học (T3/T4)", () => {
     expect(message).toBe("Mỗi câu hỏi trắc nghiệm cần có đáp án đúng trước khi lưu");
   });
 });
+
+// Quyết định chủ dự án 13/10: khoá `archived` ngừng bán (409 COURSE_NOT_FOR_SALE) — giỏ hàng, mua, ghi danh mới.
+describe("getErrorMessage — khoá đã ngừng bán (409 COURSE_NOT_FOR_SALE)", () => {
+  it("dịch theo code: nói rõ khoá ngừng bán, không phải câu xung đột chung", () => {
+    const message = getErrorMessage(new ApiError(409, "COURSE_NOT_FOR_SALE", "course is not for sale"));
+    expect(message).toMatch(/ngừng bán/);
+    expect(message).not.toMatch(/xung đột/);
+  });
+});
