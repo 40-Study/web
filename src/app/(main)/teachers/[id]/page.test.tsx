@@ -109,6 +109,18 @@ describe("/teachers/[id] — hồ sơ giảng viên công khai (PG-M2)", () => {
     expect(screen.getByText("Giảng viên này chưa có khoá học nào được xuất bản.")).toBeTruthy();
   });
 
+  // contract-be3 §3: `stats` và `joined_at` là null (không phải vắng) khi hồ sơ chưa có số liệu.
+  it("stats và joined_at null (không ẩn hồ sơ): bỏ khối số liệu và ngày tham gia, không crash", async () => {
+    mockApi.get.mockResolvedValue(envelope({ ...PROFILE, stats: null, joined_at: null }));
+    renderPage();
+    await screen.findByRole("heading", { level: 1 });
+
+    expect(screen.queryByLabelText("Thống kê")).toBeNull();
+    expect(screen.queryByText(/Tham gia từ/)).toBeNull();
+    expect(screen.queryByText(/undefined|NaN|Invalid|null/)).toBeNull();
+    expect(screen.getByText("Next.js từ cơ bản")).toBeTruthy();
+  });
+
   // BE review (quyết định chủ dự án): giảng viên có thể ẩn hồ sơ cá nhân -> chỉ còn tên + khoá học.
   it("profile_hidden: chỉ hiện tên và khoá học kèm ghi chú, không số liệu / giới thiệu / ngày tham gia", async () => {
     mockApi.get.mockResolvedValue(
