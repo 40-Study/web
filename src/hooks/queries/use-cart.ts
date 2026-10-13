@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error-messages";
 import { cartService } from "@/services/cart.service";
 import { useAuthStore } from "@/stores/auth.store";
 
@@ -43,8 +44,9 @@ export function useAddToCart() {
       qc.invalidateQueries({ queryKey: cartKeys.check(courseId) });
       toast.success("Đã thêm vào giỏ hàng");
     },
-    onError: () => {
-      toast.error("Không thể thêm vào giỏ hàng");
+    onError: (error) => {
+      // 409 COURSE_NOT_FOR_SALE (khoá đã ngừng bán) nói rõ lý do; lỗi khác giữ câu chung.
+      toast.error(getErrorMessage(error, "Không thể thêm vào giỏ hàng"));
     },
   });
 }

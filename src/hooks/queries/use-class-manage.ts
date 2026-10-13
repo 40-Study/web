@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/error-messages";
 import { classService, type UpdateClassDTO } from "@/services/class.service";
+import { classKeys } from "@/hooks/queries/use-classes";
 
 export const classManageKeys = {
   all: ["class-manage"] as const,
@@ -42,7 +43,11 @@ export function useClassStudentsById(classId: string) {
 /** Gom các thao tác ghi của một lớp; mỗi thao tác làm mới đúng phần dữ liệu bị đổi và báo bằng toast. */
 export function useClassManageActions(classId: string) {
   const qc = useQueryClient();
-  const refreshAll = () => qc.invalidateQueries({ queryKey: classManageKeys.all });
+  // Cả danh sách lớp của giảng viên (/teacher/classes): trạng thái và sĩ số hiện ở đó.
+  const refreshAll = () => {
+    qc.invalidateQueries({ queryKey: classManageKeys.all });
+    qc.invalidateQueries({ queryKey: classKeys.mine() });
+  };
   const fail = (title: string) => (err: unknown) => toast.error(title, { description: getErrorMessage(err) });
 
   const update = useMutation({

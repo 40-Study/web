@@ -13,9 +13,33 @@ export type ReportedType = "course" | "review" | "user" | "comment" | "lesson" |
 export type ReportReason = "spam" | "inappropriate" | "copyright" | "harassment" | "other";
 export type ReportStatus = "pending" | "reviewing" | "resolved" | "dismissed";
 
+/** Hành động kiểm duyệt trên đối tượng bị báo cáo (contract BE3 §1b). */
+export type ReportModerationAction = "unpublish_course" | "hide_discussion" | "unhide_discussion";
+
+/**
+ * Đối tượng bị báo cáo, backend tra sẵn (contract BE3 §1a). Chỉ có khi người gọi là moderator. Mọi khoá luôn
+ * có mặt, trường không áp dụng là `null` (không bao giờ vắng). `available_actions` là NGUỒN DUY NHẤT cho nút
+ * hành động: render theo mảng này, không suy từ `reported_type`.
+ */
+export interface ReportTarget {
+  type: ReportedType;
+  id: string;
+  /** false = đối tượng đã bị xoá: name/status/slug là null, available_actions là []. */
+  exists: boolean;
+  name: string | null;
+  status: string | null;
+  slug: string | null;
+  course_id: string | null;
+  course_slug: string | null;
+  owner_id: string | null;
+  available_actions: ReportModerationAction[];
+}
+
 export interface Report {
   id: string;
   reporter_id: string;
+  reporter_name?: string;
+  target?: ReportTarget;
   reported_type: ReportedType;
   reported_id: string;
   reason: ReportReason;
@@ -37,6 +61,19 @@ export interface CreateReportDTO {
   reported_id: string;
   reason: ReportReason;
   description?: string;
+}
+
+export interface ReportActionDTO {
+  action: ReportModerationAction;
+  /** Bắt buộc (3..500 ký tự) với unpublish_course và hide_discussion. */
+  reason?: string;
+  /** Mặc định backend là true: đồng thời chuyển báo cáo sang "resolved". */
+  resolve?: boolean;
+}
+
+export interface ReportActionResult {
+  action: ReportModerationAction;
+  report: Report;
 }
 
 export interface UpdateReportStatusDTO {
@@ -86,6 +123,10 @@ export const reportService = {
   /** PUT /reports/:id/status — update report status (admin) */
   updateStatus: (id: string, data: UpdateReportStatusDTO) =>
     api.put<R<Report>>(`/reports/${id}/status`, data).then((r) => r.data.data),
+
+  /** POST /reports/:id/actions — hành động kiểm duyệt trên đối tượng bị báo cáo (admin). */
+  applyAction: (id: string, data: ReportActionDTO) =>
+    api.post<R<ReportActionResult>>(`/reports/${id}/actions`, data).then((r) => r.data.data),
 
   /** DELETE /reports/:id — delete report */
   delete: (id: string) =>

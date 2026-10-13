@@ -76,6 +76,13 @@ describe("isRouteAllowedForRole — ma trận role x route (ROLE_SCOPED_ROUTES)"
     expect(getRoleRestrictedRedirect("/friends", "PARENT")).toBe("/home");
   });
 
+  // QA2 F-10: bỏ entry "/wishlist" làm test này ĐỎ (phụ huynh gõ URL vẫn vào trang yêu thích của học viên).
+  it("/wishlist: phụ huynh bị chặn và được đưa về /home, học viên vẫn vào", () => {
+    expect(isRouteAllowedForRole("/wishlist", "PARENT")).toBe(false);
+    expect(isRouteAllowedForRole("/wishlist", "STUDENT")).toBe(true);
+    expect(getRoleRestrictedRedirect("/wishlist", "PARENT")).toBe("/home");
+  });
+
   // Bỏ hai entry khỏi ROLE_SCOPED_ROUTES làm test này ĐỎ: menu của học viên mất mục và phụ huynh gõ URL vẫn vào được.
   it("/livestream và /my-grades: chỉ học viên, phụ huynh bị đưa về /home", () => {
     for (const href of ["/livestream", "/my-grades"]) {

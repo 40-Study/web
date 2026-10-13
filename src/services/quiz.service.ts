@@ -86,6 +86,8 @@ export interface UpdateQuizDTO {
   description?: string;
   time_limit_minutes?: number;
   pass_percentage?: number;
+  /** 1..100; bỏ trường = giữ nguyên (backend không cho xoá về "không giới hạn"). */
+  max_attempts?: number;
 }
 
 export interface CreateQuestionDTO {
@@ -191,6 +193,13 @@ export const quizService = {
   /** PUT /quizzes/:quizId */
   update: (quizId: string, data: UpdateQuizDTO) =>
     api.put<R<Quiz>>(`/quizzes/${quizId}`, data).then((r) => r.data.data),
+
+  /**
+   * POST /quizzes/:quizId/duplicate — nhân bản quiz + câu hỏi cùng bài học (title thêm " (Copy)").
+   * Backend KHÔNG tạo lesson_content cho bản sao: caller phải tạo content type `quiz` trỏ tới nó.
+   */
+  duplicate: (quizId: string) =>
+    api.post<R<Quiz>>(`/quizzes/${quizId}/duplicate`).then((r) => r.data.data),
 
   /** DELETE /quizzes/:quizId */
   delete: (quizId: string) =>

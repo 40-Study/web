@@ -17,6 +17,8 @@ interface CourseGridProps {
   staggered?: boolean;
   /** Hành động trong trạng thái rỗng (vd. nút "Xóa bộ lọc"). */
   emptyAction?: ReactNode;
+  /** Hiện trái tim lưu yêu thích trên từng thẻ (QA2 F-10). */
+  showWishlist?: boolean;
 }
 
 const GRID_CLASS =
@@ -46,6 +48,7 @@ export function CourseGrid({
   loading,
   staggered,
   emptyAction,
+  showWishlist,
 }: CourseGridProps) {
   if (loading) {
     return (
@@ -80,10 +83,10 @@ export function CourseGrid({
       {courses.map((course, i) =>
         staggered ? (
           <ScrollReveal key={course.id} delay={Math.min(i * 60, 300)} direction="up" className="h-full">
-            <CourseCard course={course} priority={i < PRIORITY_COUNT} />
+            <CourseCard course={course} priority={i < PRIORITY_COUNT} showWishlist={showWishlist} />
           </ScrollReveal>
         ) : (
-          <CourseCard key={course.id} course={course} priority={i < PRIORITY_COUNT} />
+          <CourseCard key={course.id} course={course} priority={i < PRIORITY_COUNT} showWishlist={showWishlist} />
         )
       )}
     </div>

@@ -42,6 +42,9 @@ const CODE_MESSAGES: Record<string, string> = {
   COURSE_LESSON_NO_CONTENT: "Mọi bài học cần có nội dung trước khi gửi duyệt.",
   COURSE_PENDING_REVIEW:
     "Khoá học đang chờ duyệt nên không thể chỉnh sửa hay xoá. Hãy rút yêu cầu duyệt trước.",
+  // Smoke2 Q2-01b: xoá khoá còn học viên -> gợi ý Lưu trữ (nút ở useDeleteCourse).
+  COURSE_HAS_ENROLLMENTS:
+    "Khoá học đã có học viên đăng ký nên không thể xoá. Hãy lưu trữ để ngừng bán mà không ảnh hưởng học viên.",
   // L1: backend từ chối giá khuyến mãi <= 0 hoặc >= giá bán (tạo và sửa khoá).
   DISCOUNT_PRICE_INVALID:
     "Giá khuyến mãi phải lớn hơn 0 và thấp hơn giá bán. Muốn bỏ khuyến mãi, hãy để trống ô giá khuyến mãi.",

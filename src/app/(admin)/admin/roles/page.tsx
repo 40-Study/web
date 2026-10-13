@@ -14,6 +14,8 @@ import {
   useRevokeSystemRoleFromUser,
 } from "@/hooks/queries/use-admin";
 import { Can } from "@/components/guards";
+import { PersonPicker } from "@/components/classes/person-picker";
+import { userService } from "@/services/user.service";
 import { PERMISSIONS, SYSTEM_ROLES } from "@/lib/permissions";
 import { getSystemRoleLabel } from "@/lib/role-labels";
 import type { SystemRole, UserSystemRoleItem } from "@/services/role.service";
@@ -56,10 +58,6 @@ export default function RolesPage() {
   // Xác nhận trước khi xóa (H-09) — xóa role/gỡ user không còn kích hoạt mutation ngay khi click.
   const [confirmDeleteRole, setConfirmDeleteRole] = useState<SystemRole | null>(null);
   const [confirmRevoke, setConfirmRevoke] = useState<UserSystemRoleItem | null>(null);
-
-  // A-P1-1: không còn seedUsersForRole giả — gán vai trò cho user THẬT theo user_id (UUID).
-  // Chưa có API tìm-user-theo-tên/email nên admin phải dán UUID (xem ghi chú ở form gán bên dưới).
-  const [assignUserId, setAssignUserId] = useState("");
 
   useEffect(() => {
     setSelectedRoleId((prev) => prev || rolesWithCounts[0]?.id || null);
@@ -144,13 +142,14 @@ export default function RolesPage() {
     u.user?.full_name || u.user?.user_name || u.user?.email || u.user_id;
   const memberEmail = (u: UserSystemRoleItem) => u.user?.email;
 
-  const submitAssignUser = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedRoleId || !assignUserId.trim()) return;
-    assignUser.mutate(
-      { userId: assignUserId.trim(), roleId: selectedRoleId },
-      { onSuccess: () => setAssignUserId("") }
-    );
+  // ADM-A4: tìm người theo tên/email (GET /users?keyword=) thay vì dán UUID. Người đã giữ vai trò bị loại ở ô chọn.
+  const searchUsers = async (keyword: string) => {
+    const page = await userService.list({ keyword: keyword || undefined, page: 1, limit: 10 });
+    return page.items.map((u) => ({
+      id: u.id,
+      name: u.full_name || u.user_name || u.email,
+      detail: u.email,
+    }));
   };
 
   return (
@@ -237,7 +236,9 @@ export default function RolesPage() {
                   >
                     {roleForm.id ? "Lưu role" : "Tạo role"}
                   </button>
-                  <button type="button" onClick={() => setRoleForm(emptyRoleForm)} className="rounded bg-gray-100 px-3 py-2 text-sm font-medium">Reset</button>
+                  <button type="button" onClick={() => setRoleForm(emptyRoleForm)} className="rounded bg-gray-100 px-3 py-2 text-sm font-medium">
+                    {roleForm.id ? "Huỷ sửa" : "Xoá nội dung đã nhập"}
+                  </button>
                 </div>
               </div>
             </form>
@@ -279,24 +280,19 @@ export default function RolesPage() {
                 )}
 
                 <Can permission={PERMISSIONS.MANAGE_ROLES}>
-                  <form onSubmit={submitAssignUser} className="space-y-2 rounded border border-gray-200 p-2">
-                    <label className="block text-xs font-medium text-gray-700">
-                      Gán vai trò cho người dùng
-                    </label>
-                    <input
-                      placeholder="UUID của user"
-                      value={assignUserId}
-                      onChange={(e) => setAssignUserId(e.target.value)}
-                      className="h-9 w-full rounded border border-gray-200 px-2 font-mono text-xs"
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-gray-700">Gán vai trò cho người dùng</p>
+                    <PersonPicker
+                      queryKey={["admin-role-assign-search", selectedRoleId]}
+                      search={searchUsers}
+                      onPick={(userId) => assignUser.mutate({ userId, roleId: selectedRoleId! })}
+                      isPicking={assignUser.isPending}
+                      placeholder="Tìm người dùng theo tên hoặc email"
+                      addLabel="Gán vai trò"
+                      emptyText="Không tìm thấy người dùng phù hợp."
+                      excludeIds={roleUsers.map((u) => u.user_id)}
                     />
-                    <button
-                      type="submit"
-                      disabled={assignUser.isPending}
-                      className="rounded bg-primary-600 px-2.5 py-1.5 text-xs font-medium text-white disabled:opacity-60"
-                    >
-                      Gán vai trò
-                    </button>
-                  </form>
+                  </div>
                 </Can>
               </div>
             ) : (

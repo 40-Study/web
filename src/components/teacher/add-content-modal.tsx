@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import {
   Play,
   Radio,
@@ -51,6 +51,12 @@ import { requiresClassSelection } from "@/lib/livestream";
 import { parseLessonDuration } from "@/lib/lesson-duration";
 import { getErrorMessage } from "@/lib/error-messages";
 import { hasContentFormErrors, validateContentForm } from "@/lib/add-content-validation";
+import {
+  DEFAULT_QUIZ_MAX_ATTEMPTS,
+  DEFAULT_QUIZ_PASS_PERCENTAGE,
+  parseQuizSettings,
+  validateQuizSettings,
+} from "@/lib/quiz-settings";
 import { VideoDurationField } from "@/components/teacher/video-duration-field";
 import { ArticleContentForm, type ArticleFormValue, type ArticleSubmitResult } from "@/components/teacher/article-content-form";
 import type { Class } from "@/services/class.service";
@@ -129,6 +135,9 @@ export interface ExerciseContentData {
   // Quiz specific
   quizQuestions?: QuizQuestion[];
   timeLimit?: number;
+  /** Điểm đạt (%) và số lần làm tối đa của bài trắc nghiệm (Q2-04); chỉ có khi `exerciseType === "quiz"`. */
+  passPercentage?: number;
+  maxAttempts?: number;
   // Code specific
   language?: string;
   testCases?: TestCase[];
@@ -305,6 +314,8 @@ export function AddContentModal({
   const [exDesc, setExDesc] = useState("");
   const [exQuiz, setExQuiz] = useState<QuizQuestion[]>([emptyQuestion()]);
   const [exTimeLimit, setExTimeLimit] = useState(300);
+  const [exPassPct, setExPassPct] = useState(String(DEFAULT_QUIZ_PASS_PERCENTAGE));
+  const [exMaxAttempts, setExMaxAttempts] = useState(String(DEFAULT_QUIZ_MAX_ATTEMPTS));
   const [exLanguage, setExLanguage] = useState("javascript");
   const [exTestCases, setExTestCases] = useState<TestCase[]>([emptyTestCase()]);
   const [exSolution, setExSolution] = useState("");
@@ -331,6 +342,7 @@ export function AddContentModal({
     setLiveClassId(""); setLiveRecording(true); setLiveDocs([]); setLiveQuiz([]);
     setExerciseType(null); setExTitle(""); setExDesc("");
     setExQuiz([emptyQuestion()]); setExTimeLimit(300);
+    setExPassPct(String(DEFAULT_QUIZ_PASS_PERCENTAGE)); setExMaxAttempts(String(DEFAULT_QUIZ_MAX_ATTEMPTS));
     setExLanguage("javascript"); setExTestCases([emptyTestCase()]); setExSolution("");
     setExMinWords(50); setExMaxWords(500);
   }, []);
@@ -368,12 +380,20 @@ export function AddContentModal({
           : [];
   const formErrors = validateContentForm(formTitle, formQuestions);
   const visibleErrors = submitAttempted ? formErrors : { questions: {} };
+  // Q2-04: điểm đạt / số lần làm chỉ có ở bài trắc nghiệm (exercise); các nhánh khác không có hai ô này.
+  const isQuizExercise = contentType === "exercise" && exerciseType === "quiz";
+  const quizSettingsErrors = useMemo(
+    () => (isQuizExercise ? validateQuizSettings({ passPercentage: exPassPct, maxAttempts: exMaxAttempts }) : {}),
+    [isQuizExercise, exPassPct, exMaxAttempts],
+  );
+  const visibleSettingsErrors = submitAttempted ? quizSettingsErrors : {};
 
   // Submit
   const handleSubmit = useCallback(async () => {
     if (submitting) return;
     setSubmitAttempted(true);
     setSubmitError(null);
+    if (Object.keys(quizSettingsErrors).length > 0) return;
     if (hasContentFormErrors(formErrors)) {
       // Tiêu đề nằm ở tab "content", quiz ở tab "quiz" — nhảy tới tab có lỗi đầu tiên.
       if (contentType === "video" || contentType === "livestream") {
@@ -419,6 +439,9 @@ export function AddContentModal({
         quizQuestions: liveQuiz,
       };
     } else if (contentType === "exercise" && exerciseType) {
+      // Đã qua kiểm tra ở trên nên hai ô hợp lệ.
+      const quizSettings =
+        exerciseType === "quiz" ? parseQuizSettings({ passPercentage: exPassPct, maxAttempts: exMaxAttempts }) : null;
       data = {
         type: "exercise",
         exerciseType,
@@ -426,6 +449,8 @@ export function AddContentModal({
         description: exDesc,
         quizQuestions: exerciseType === "quiz" ? exQuiz : undefined,
         timeLimit: exerciseType === "quiz" ? exTimeLimit : undefined,
+        passPercentage: quizSettings?.pass_percentage,
+        maxAttempts: quizSettings?.max_attempts,
         language: exerciseType === "code" ? exLanguage : undefined,
         testCases: exerciseType === "code" ? exTestCases : undefined,
         solutionCode: exerciseType === "code" ? exSolution : undefined,
@@ -452,7 +477,7 @@ export function AddContentModal({
     } finally {
       setSubmitting(false);
     }
-  }, [submitting, formErrors, contentType, exerciseType, videoTitle, videoDesc, videoUrl, videoDuration, uploadedVideoUrl, videoDocs, videoQuiz, liveTitle, liveDesc, liveDate, liveTime, effectiveClassId, liveRecording, liveDocs, liveQuiz, exTitle, exDesc, exQuiz, exTimeLimit, exLanguage, exTestCases, exSolution, exMinWords, exMaxWords, onSubmit, handleClose]);
+  }, [submitting, formErrors, quizSettingsErrors, exPassPct, exMaxAttempts, contentType, exerciseType, videoTitle, videoDesc, videoUrl, videoDuration, uploadedVideoUrl, videoDocs, videoQuiz, liveTitle, liveDesc, liveDate, liveTime, effectiveClassId, liveRecording, liveDocs, liveQuiz, exTitle, exDesc, exQuiz, exTimeLimit, exLanguage, exTestCases, exSolution, exMinWords, exMaxWords, onSubmit, handleClose]);
 
   // Bài viết: form tự giữ tiêu đề/nội dung; ở đây chỉ chuyển kết quả của cha về cho form (lỗi -> form
   // hiện và giữ nguyên nội dung, thành công -> đóng modal).
@@ -980,6 +1005,31 @@ export function AddContentModal({
                   className="w-32"
                 />
               </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  max={100}
+                  label="Điểm đạt (%)"
+                  value={exPassPct}
+                  onChange={(e) => setExPassPct(e.target.value)}
+                  error={visibleSettingsErrors.passPercentage}
+                  helperText="Học viên đạt từ mức này trở lên được tính là qua bài."
+                />
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={100}
+                  step={1}
+                  label="Số lần làm tối đa"
+                  value={exMaxAttempts}
+                  onChange={(e) => setExMaxAttempts(e.target.value)}
+                  error={visibleSettingsErrors.maxAttempts}
+                  helperText="Chỉ tính các lượt làm bài chính thức."
+                />
+              </div>
               <QuizQuestionsEditor
                 errors={visibleErrors.questions}
                 questions={exQuiz}
@@ -1143,7 +1193,7 @@ export function AddContentModal({
                 isLoading={isLoading || submitting}
                 disabled={(contentType === "livestream" && !effectiveClassId) || durationInvalid}
               >
-                {contentType === "video" ? "Thêm video" : contentType === "livestream" ? "Tạo buổi học trực tiếp" : "Lưu bài tập"}
+                {contentType === "video" ? "Thêm video" : contentType === "livestream" ? "Tạo buổi học trực tiếp" : isQuizExercise ? "Lưu bài trắc nghiệm" : "Lưu bài tập"}
               </Button>
             </div>
           </DialogFooter>

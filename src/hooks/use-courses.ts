@@ -10,6 +10,7 @@ import {
 import { categoryService } from "@/services/category.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { NotFoundError } from "@/lib/errors";
+import { getErrorMessage } from "@/lib/error-messages";
 import { resolveEffectivePrice } from "@/lib/course-pricing";
 import { slugifyName } from "@/lib/slug";
 import {
@@ -353,7 +354,8 @@ export function useEnrollCourse() {
     onError: (error: unknown) => {
       console.error("Enrollment failed:", error);
       toast.error("Đăng ký thất bại", {
-        description: "Vui lòng thử lại sau",
+        // 409 COURSE_NOT_FOR_SALE (khoá đã ngừng bán) nói rõ lý do; 5xx/mạng giữ câu chung.
+        description: getErrorMessage(error, "Vui lòng thử lại sau"),
       });
     },
   });

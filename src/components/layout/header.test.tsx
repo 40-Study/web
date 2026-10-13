@@ -77,6 +77,20 @@ describe("Header — menu tài khoản", () => {
     expect(screen.queryByRole("link", { name: /Đơn hàng của tôi/ })).toBeNull();
   });
 
+  // QA2 F-10: wishlist có trang riêng nhưng không có đường vào từ menu.
+  it("học viên thấy 'Khoá học yêu thích' trỏ /wishlist; giảng viên và phụ huynh thì không", () => {
+    render(<Header />);
+    openMenu();
+    expect(screen.getAllByRole("link", { name: /Khoá học yêu thích/ })[0].getAttribute("href")).toBe("/wishlist");
+  });
+
+  it.each(["TEACHER", "PARENT"])("%s KHÔNG thấy 'Khoá học yêu thích' (route chỉ dành cho học viên)", (role) => {
+    authState.activeRole = role;
+    render(<Header />);
+    openMenu();
+    expect(screen.queryByRole("link", { name: /Khoá học yêu thích/ })).toBeNull();
+  });
+
   it("logo dùng siteConfig.name", () => {
     render(<Header />);
     expect(screen.getAllByText(siteConfig.name).length).toBeGreaterThan(0);

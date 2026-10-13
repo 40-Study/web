@@ -286,6 +286,20 @@ describe("/teacher/courses/[id] — nhánh trắc nghiệm và bài viết (T2/T
     expect(toast.success).not.toHaveBeenCalled();
   });
 
+  it("Q2-04: điểm đạt và số lần làm giảng viên nhập đi vào quizService.create (không còn ghi cứng 70/3)", async () => {
+    await submit({ ...quizPayload, passPercentage: 85, maxAttempts: 5 });
+
+    expect(mockQuizCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ pass_percentage: 85, max_attempts: 5, title: "Kiểm tra Git" }),
+    );
+  });
+
+  it("Q2-04: payload không mang cài đặt -> vẫn dùng mặc định 70 / 3 như trước", async () => {
+    await submit(quizPayload);
+
+    expect(mockQuizCreate).toHaveBeenCalledWith(expect.objectContaining({ pass_percentage: 70, max_attempts: 3 }));
+  });
+
   it("T7: bài viết -> createContent type 'article' mang article_body, rồi làm mới danh sách", async () => {
     const result = await submit({ type: "article", title: "Bài đọc 1", articleBody: "<p>Nội dung</p>" });
 

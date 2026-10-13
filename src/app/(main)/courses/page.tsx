@@ -128,6 +128,7 @@ export default function CoursesPage() {
             courses={visibleCourses}
             loading={isLoading}
             staggered
+            showWishlist
             emptyAction={
               hasActiveFilters ? (
                 <Button type="button" variant="outline" onClick={clearAll}>

@@ -47,3 +47,23 @@ describe("reportService.list", () => {
     expect(result.total).toBe(1);
   });
 });
+
+describe("reportService.applyAction (ADM-N4, contract BE3 §1b)", () => {
+  it("POST /reports/:id/actions với action + reason + resolve, trả { action, report }", async () => {
+    const report = { id: "r1", status: "resolved", target: { type: "course", id: "c1", exists: true, available_actions: [] } };
+    mockApi.post.mockResolvedValue(envelope({ action: "unpublish_course", report }));
+
+    const result = await reportService.applyAction("r1", {
+      action: "unpublish_course",
+      reason: "Vi phạm bản quyền",
+      resolve: true,
+    });
+
+    expect(mockApi.post).toHaveBeenCalledWith("/reports/r1/actions", {
+      action: "unpublish_course",
+      reason: "Vi phạm bản quyền",
+      resolve: true,
+    });
+    expect(result).toEqual({ action: "unpublish_course", report });
+  });
+});

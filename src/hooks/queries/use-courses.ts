@@ -12,6 +12,7 @@ import {
   type UpdateCourseDTO,
 } from "@/services/course.service";
 import { approvalErrorMessage } from "@/lib/approval-errors";
+import { ApiError } from "@/lib/errors";
 
 export const courseKeys = {
   all: ["courses"] as const,
@@ -103,9 +104,28 @@ export function useUpdateCourse() {
   });
 }
 
+/** Mã 409 khi xoá khoá còn học viên ghi danh hoạt động (backend: handler/course_edit_lock.go). */
+const COURSE_HAS_ENROLLMENTS_CODE = "COURSE_HAS_ENROLLMENTS";
+
 /** Delete course mutation */
 export function useDeleteCourse() {
   const qc = useQueryClient();
+
+  /**
+   * "Lưu trữ" = PUT /courses/:id {status:"archived"} (published -> archived: ngừng bán, học viên cũ không bị
+   * ảnh hưởng). Backend không có endpoint riêng; khoá chưa xuất bản sẽ bị 400 COURSE_STATUS_CHANGE_NOT_ALLOWED
+   * và lý do được báo lại cho giảng viên.
+   */
+  const archive = (id: string) => {
+    courseService
+      .updateCourse(id, { status: "archived" })
+      .then(() => {
+        qc.invalidateQueries({ queryKey: courseKeys.all });
+        toast.success("Đã lưu trữ khoá học");
+      })
+      .catch((error: unknown) => toast.error(approvalErrorMessage(error, "Không thể lưu trữ khoá học")));
+  };
+
   return useMutation({
     mutationFn: (id: string) => courseService.deleteCourse(id),
     onSuccess: () => {
@@ -113,7 +133,15 @@ export function useDeleteCourse() {
       toast.success("Xóa khóa học thành công");
     },
     // 409 COURSE_PENDING_REVIEW (khoá đang chờ duyệt) -> câu tiếng Việt rõ nghĩa thay vì lỗi chung.
-    onError: (error) => toast.error(approvalErrorMessage(error, "Không thể xóa khóa học")),
+    // 409 COURSE_HAS_ENROLLMENTS -> kèm nút "Lưu trữ" thay vì chỉ khuyên bằng chữ.
+    onError: (error, id) => {
+      const message = approvalErrorMessage(error, "Không thể xóa khóa học");
+      if (error instanceof ApiError && error.code === COURSE_HAS_ENROLLMENTS_CODE) {
+        toast.error(message, { action: { label: "Lưu trữ", onClick: () => archive(id) } });
+        return;
+      }
+      toast.error(message);
+    },
   });
 }
 

@@ -144,6 +144,10 @@ type R<T> = { message: string; data: T };
 export const classService = {
   // ── Classes CRUD ──────────────────────────────────────────────────────────
 
+  /** GET /classes/me — mọi lớp giảng viên đang phụ trách (backend bọc trong `data.classes`). */
+  listMine: () =>
+    api.get<R<{ classes: Class[] | null }>>("/classes/me").then((r) => r.data.data?.classes ?? []),
+
   /** GET /courses/:courseId/classes */
   list: (courseId: string) =>
     api.get<R<Class[]>>(`/courses/${courseId}/classes`).then((r) => r.data.data),

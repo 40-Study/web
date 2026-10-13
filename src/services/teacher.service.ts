@@ -70,6 +70,57 @@ export interface UpdateTeacherProfileDTO {
   department?: string;
 }
 
+/**
+ * Hồ sơ giảng viên CÔNG KHAI (contract BE3 §3, PG-M2). Không có email, điện thoại, ngày sinh, ngân hàng hay
+ * trạng thái duyệt. `specialization/education/experience_years/department` là null trừ khi hồ sơ đã được duyệt.
+ */
+export interface PublicTeacherCourse {
+  id: string;
+  title: string;
+  slug: string;
+  short_description: string | null;
+  thumbnail_url: string | null;
+  level: string;
+  price: number;
+  discount_price: number | null;
+  is_free: boolean;
+  average_rating: number;
+  total_reviews: number;
+  total_students: number;
+  total_lessons: number;
+  total_duration_minutes: number;
+  published_at: string | null;
+}
+
+export interface PublicTeacherStats {
+  course_count: number;
+  student_count: number;
+  review_count: number;
+  /** Trung bình có trọng số theo số đánh giá; 0 khi chưa có đánh giá. */
+  average_rating: number;
+}
+
+export interface PublicTeacherProfile {
+  id: string;
+  user_name: string;
+  full_name: string | null;
+  /**
+   * `true` khi giảng viên ẩn thông tin cá nhân: backend chỉ còn trả tên + khoá học, mọi trường dưới đây (trừ `courses`)
+   * có thể vắng. Trang phải vẽ trạng thái này thay vì số liệu/giới thiệu rỗng.
+   */
+  profile_hidden?: boolean;
+  avatar_url?: string | null;
+  bio?: string | null;
+  is_verified?: boolean;
+  joined_at?: string;
+  specialization?: string | null;
+  education?: string | null;
+  experience_years?: number | null;
+  department?: string | null;
+  stats?: PublicTeacherStats | null;
+  courses?: PublicTeacherCourse[] | null;
+}
+
 type R<T> = { message: string; data: T };
 
 // ─── Service ────────────────────────────────────────────────────────────────
@@ -84,6 +135,10 @@ export const teacherService = {
   /** GET /teachers/:teacherId */
   getById: (teacherId: string) =>
     api.get<R<Teacher>>(`/teachers/${teacherId}`).then((r) => r.data.data),
+
+  /** GET /teachers/:teacherId/public-profile — không cần đăng nhập; 404 khi không phải giảng viên đang hoạt động. */
+  getPublicProfile: (teacherId: string) =>
+    api.get<R<PublicTeacherProfile>>(`/teachers/${teacherId}/public-profile`).then((r) => r.data.data),
 
   /** DELETE /teachers/:teacherId */
   delete: (teacherId: string) =>

@@ -3,11 +3,13 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useAllReports, useUpdateReportStatus } from "@/hooks/queries/use-reports";
-import type { Report, ReportStatus } from "@/services/report.service";
+import type { Report, ReportModerationAction, ReportStatus } from "@/services/report.service";
 import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
-import { reportTargetKey, useReportTargetMeta } from "./_lib/report-target";
+import { ReportActionDialog } from "./_components/report-action-dialog";
+import { ReportTargetLabel } from "./_components/report-target-label";
+import { REPORT_ACTION_SPECS, isKnownReportAction } from "./_lib/report-actions";
 
 // A-P2-5: trước đây có API nghiệp vụ report (POST/GET/PUT/DELETE /api/reports) nhưng KHÔNG có
 // trang admin nào để xử lý — chủ trường không có cách nào nhìn thấy report của học viên. Trang
@@ -56,19 +58,22 @@ export default function AdminModerationPage() {
   const updateStatus = useUpdateReportStatus();
 
   const reports = useMemo(() => data?.data ?? [], [data]);
-  const targetMeta = useReportTargetMeta(reports);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [confirmAction, setConfirmAction] = useState<{ report: Report; status: ReportStatus } | null>(null);
+  const [moderationAction, setModerationAction] = useState<ReportModerationAction | null>(null);
 
   const selected = useMemo(() => reports.find((r) => r.id === selectedId) || null, [reports, selectedId]);
-  const selectedTarget = selected
-    ? targetMeta.get(reportTargetKey(selected.reported_type, selected.reported_id))
-    : undefined;
+  const availableActions = (selected?.target?.exists ? selected.target.available_actions : []).filter(
+    isKnownReportAction,
+  );
+  // Lối sang trang người dùng chỉ có nghĩa khi đối tượng còn tồn tại (đã xoá thì không có trang để mở).
+  const canOpenUserPage = selected?.reported_type === "user" && selected.target?.exists === true;
 
   const openReport = (r: Report) => {
     setSelectedId(r.id);
+    setModerationAction(null);
     setAdminNotes(r.admin_notes || "");
   };
 
@@ -132,21 +137,7 @@ export default function AdminModerationPage() {
                     <tr key={r.id} className={selected?.id === r.id ? "bg-primary-50/60 dark:bg-primary-900/20" : ""}>
                       <td className="px-4 py-3">
                         <p className="font-medium">{REPORTED_TYPE_LABEL[r.reported_type] ?? r.reported_type}</p>
-                        {(() => {
-                          const meta = targetMeta.get(reportTargetKey(r.reported_type, r.reported_id));
-                          if (meta?.name) {
-                            return meta.href ? (
-                              <Link href={meta.href} className="text-primary-700 hover:underline dark:text-primary-400">
-                                {meta.name}
-                              </Link>
-                            ) : (
-                              <p className="text-xs text-gray-600 dark:text-gray-300">{meta.name}</p>
-                            );
-                          }
-                          return (
-                            <p className="break-all font-mono text-[11px] text-gray-400">{r.reported_id}</p>
-                          );
-                        })()}
+                        <ReportTargetLabel report={r} />
                       </td>
                       <td className="px-4 py-3">{REASON_LABEL[r.reason] ?? r.reason}</td>
                       <td className="px-4 py-3">{STATUS_LABEL[r.status] ?? r.status}</td>
@@ -173,17 +164,7 @@ export default function AdminModerationPage() {
             <div className="space-y-3 text-sm">
               <p>
                 <span className="text-gray-500">Đối tượng:</span>{" "}
-                {selectedTarget?.name ? (
-                  selectedTarget.href ? (
-                    <Link href={selectedTarget.href} className="text-primary-700 hover:underline dark:text-primary-400">
-                      {selectedTarget.name}
-                    </Link>
-                  ) : (
-                    selectedTarget.name
-                  )
-                ) : (
-                  REPORTED_TYPE_LABEL[selected.reported_type] ?? selected.reported_type
-                )}
+                <ReportTargetLabel report={selected} />
               </p>
               <p><span className="text-gray-500">Loại:</span> {REPORTED_TYPE_LABEL[selected.reported_type] ?? selected.reported_type}</p>
               <p className="break-all"><span className="text-gray-500">ID đối tượng:</span> {selected.reported_id}</p>
@@ -226,12 +207,42 @@ export default function AdminModerationPage() {
                   Từ chối báo cáo
                 </Button>
               </div>
+
+              {(availableActions.length > 0 || canOpenUserPage) && (
+                <div className="space-y-2 border-t pt-3 dark:border-gray-800">
+                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Xử lý đối tượng</p>
+                  <div className="flex flex-wrap gap-2">
+                    {availableActions.map((action) => (
+                      <Button
+                        key={action}
+                        size="sm"
+                        variant={action === "unhide_discussion" ? "outline" : "destructive"}
+                        onClick={() => setModerationAction(action)}
+                      >
+                        {REPORT_ACTION_SPECS[action].button}
+                      </Button>
+                    ))}
+                    {canOpenUserPage && (
+                      <Link
+                        href={`/admin/users/${selected.reported_id}`}
+                        className="inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-900"
+                      >
+                        Mở trang người dùng để khoá tài khoản
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <p className="text-sm text-gray-500">Chọn một báo cáo để xem chi tiết.</p>
           )}
         </div>
       </div>
+
+      {selected && moderationAction && (
+        <ReportActionDialog report={selected} action={moderationAction} onClose={() => setModerationAction(null)} />
+      )}
 
       <Dialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
         <DialogContent>
