@@ -1,4 +1,3 @@
-import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
 /**
  * HLS streaming service
  * Backend endpoints: /api/hls/:uploadId/*
@@ -7,6 +6,8 @@ import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
  * `video_hls_url` — xem `lib/hls-playback.ts`. Service này KHÔNG tự dựng URL playlist/segment/file
  * gốc nữa: URL không chữ ký luôn bị 403, và file gốc không được cấp cho học viên.
  */
+
+import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
 
 function resolveApiBaseUrl(): string {
   // Always use relative path for browser (proxied by Next.js)
