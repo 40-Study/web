@@ -1,4 +1,5 @@
-import { render, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Editor } from "@tiptap/core";
 
@@ -17,7 +18,7 @@ vi.mock("@tiptap/react", async (importOriginal) => {
   };
 });
 
-import RichTextEditor from "./RichTextEditor";
+import RichTextEditor, { RichTextViewer } from "./RichTextEditor";
 
 describe("RichTextEditor (F-17: tiptap duplicate extension)", () => {
   afterEach(() => {
@@ -45,12 +46,47 @@ describe("RichTextEditor (F-17: tiptap duplicate extension)", () => {
     expect(names.filter((n) => n === "underline")).toHaveLength(1);
   });
 
-  it("link chỉ mở khi editor ở chế độ chỉ đọc (openOnClick: whenNotEditable)", async () => {
-    const { container } = render(<RichTextEditor content="<p>xin chào</p>" />);
-    await waitFor(() => expect(container.querySelector(".ProseMirror")).not.toBeNull());
+  it("editable: click link không mở; chuyển chỉ đọc: click mở href ở tab mới", async () => {
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    const { container } = render(<RichTextEditor content='<p><a href="https://example.com/x">liên kết</a></p>' />);
+    await waitFor(() => expect(container.querySelector(".ProseMirror a")).not.toBeNull());
     await waitFor(() => expect(captured.editor).not.toBeNull());
+    captured.editor!.view.posAtCoords = () => ({ pos: 1, inside: 1 });
+    const anchor = container.querySelector(".ProseMirror a") as HTMLAnchorElement;
 
-    const link = captured.editor!.extensionManager.extensions.find((e) => e.name === "link");
-    expect(link?.options.openOnClick).toBe("whenNotEditable");
+    await userEvent.click(anchor);
+    expect(open).not.toHaveBeenCalled();
+
+    act(() => captured.editor!.setEditable(false));
+    await userEvent.click(anchor);
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(open).toHaveBeenCalledWith("https://example.com/x", "_blank", "noopener,noreferrer");
+  });
+});
+
+describe("RichTextViewer (HTML tĩnh, đường chỉ đọc thật của phòng học)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("click link mở href ở tab mới và chặn điều hướng cùng tab", async () => {
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    const { container } = render(<RichTextViewer content='<p><a href="https://example.com/y">xem</a></p>' />);
+    const anchor = container.querySelector("a") as HTMLAnchorElement;
+
+    const notPrevented = fireEvent.click(anchor);
+
+    expect(notPrevented).toBe(false);
+    expect(open).toHaveBeenCalledWith("https://example.com/y", "_blank", "noopener,noreferrer");
+  });
+
+  it("không mở href javascript:", () => {
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    const { container } = render(<RichTextViewer content="<p>x</p>" />);
+    const a = document.createElement("a");
+    a.setAttribute("href", "javascript:alert(1)");
+    container.querySelector(".rich-text-viewer")!.appendChild(a);
+
+    fireEvent.click(a);
+
+    expect(open).not.toHaveBeenCalled();
   });
 });

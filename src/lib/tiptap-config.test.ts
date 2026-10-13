@@ -16,13 +16,6 @@ describe("buildExtensions (F-17: tiptap duplicate extension)", () => {
     expect(names.filter((n) => n === "underline")).toHaveLength(1);
   });
 
-  it("link chỉ mở khi editor ở chế độ chỉ đọc (openOnClick: whenNotEditable)", () => {
-    const editor = new Editor({ extensions: buildExtensions(), element: document.createElement("div") });
-    const link = editor.extensionManager.extensions.find((e) => e.name === "link");
-    editor.destroy();
-    expect(link?.options.openOnClick).toBe("whenNotEditable");
-  });
-
   it("giữ cấu hình link tuỳ biến (class/rel/target), không bị bản mặc định của StarterKit đè", () => {
     const editor = new Editor({
       extensions: buildExtensions(),
