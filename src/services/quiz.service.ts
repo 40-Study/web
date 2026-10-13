@@ -86,6 +86,8 @@ export interface UpdateQuizDTO {
   description?: string;
   time_limit_minutes?: number;
   pass_percentage?: number;
+  /** 1..100; bỏ trường = giữ nguyên (backend không cho xoá về "không giới hạn"). */
+  max_attempts?: number;
 }
 
 export interface CreateQuestionDTO {

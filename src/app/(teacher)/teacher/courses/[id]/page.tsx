@@ -90,6 +90,8 @@ import { formatLessonDuration, parseLessonDuration } from "@/lib/lesson-duration
 import { VideoDurationField } from "@/components/teacher/video-duration-field";
 import { ClassCreateForm } from "@/components/teacher/class-create-form";
 import { QuizDuplicateButton } from "@/components/teacher/quiz-duplicate-button";
+import { QuizSettingsEditor, type QuizSettingsEditState } from "@/components/teacher/quiz-settings-editor";
+import { quizKeys } from "@/hooks/queries/use-quiz";
 import { getClassStatusLabel } from "@/lib/class-status";
 import { DEFAULT_QUIZ_MAX_ATTEMPTS, DEFAULT_QUIZ_PASS_PERCENTAGE } from "@/lib/quiz-settings";
 
@@ -1511,6 +1513,8 @@ function EditContentModal({
   /** Ô thời lượng ở dạng chuỗi `phút:giây`; rỗng = không đổi (xem `handleSave`). */
   const [durationText, setDurationText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  /** Q2-04: phần điểm đạt / số lần làm tối đa của quiz đã đổi (do QuizSettingsEditor báo lên). */
+  const [quizSettings, setQuizSettings] = useState<QuizSettingsEditState>({ payload: null, blocked: false });
   const queryClient = useQueryClient();
 
   // Sync state when content changes
@@ -1526,12 +1530,25 @@ function EditContentModal({
   // Ô thời lượng gõ sai thì chặn lưu (xem ghi chú ở form tạo nội dung).
   const durationInvalid =
     content?.type === "video" && parseLessonDuration(durationText).kind === "invalid";
+  const quizSettingsId = content?.type === "quiz" ? content.quiz_id : undefined;
 
   const handleSave = async () => {
-    if (!content || !title.trim() || durationInvalid) return;
+    if (!content || !title.trim() || durationInvalid || quizSettings.blocked) return;
     setIsSaving(true);
     try {
       const { lessonContentService } = await import("@/services/lesson-content.service");
+
+      // Q2-04: lưu cài đặt quiz TRƯỚC tiêu đề — lỗi (vd. 400 ngoài khoảng) thì dừng, không để lưu nửa chừng.
+      if (quizSettingsId && quizSettings.payload) {
+        try {
+          const { quizService } = await import("@/services/quiz.service");
+          await quizService.update(quizSettingsId, quizSettings.payload);
+          queryClient.invalidateQueries({ queryKey: quizKeys.byId(quizSettingsId) });
+        } catch (err) {
+          toast.error(getErrorMessage(err, "Không thể lưu cài đặt bài trắc nghiệm"));
+          return;
+        }
+      }
 
       /*
         C-6: chỉ video mới có thời lượng, và chỉ gửi khi giáo viên thực sự nhập.
@@ -1611,11 +1628,14 @@ function EditContentModal({
               isEditing
             />
           )}
+
+          {/* Q2-04: điểm đạt (%) và số lần làm tối đa của bài trắc nghiệm đã tạo. */}
+          {quizSettingsId && <QuizSettingsEditor quizId={quizSettingsId} onChange={setQuizSettings} />}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
-          <Button onClick={handleSave} disabled={!title.trim() || isSaving || durationInvalid}>
+          <Button onClick={handleSave} disabled={!title.trim() || isSaving || durationInvalid || quizSettings.blocked}>
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Lưu thay đổi
           </Button>
