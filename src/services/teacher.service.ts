@@ -112,7 +112,7 @@ export interface PublicTeacherProfile {
   avatar_url?: string | null;
   bio?: string | null;
   is_verified?: boolean;
-  joined_at?: string;
+  joined_at?: string | null;
   specialization?: string | null;
   education?: string | null;
   experience_years?: number | null;
