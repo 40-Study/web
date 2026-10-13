@@ -60,7 +60,9 @@ export interface DeviceSessionDto {
   user_agent?: string;
   logged_in_at: string;
   is_current?: boolean;
-  ip_address?: string;
+  /** Số phiên mà dòng này đại diện (>= 1); backend gộp các phiên cùng thiết bị + user agent (contract-be4). */
+  session_count?: number;
+  device_ids?: string[];
 }
 
 // Backend EntryContext
@@ -232,9 +234,11 @@ export interface TokenResponse {
 export interface Device {
   device_id: string;
   device_name: string;
+  user_agent?: string;
   logged_in_at: string;
-  ip_address?: string;
   is_current?: boolean;
+  session_count?: number;
+  device_ids?: string[];
 }
 
 export interface DevicesResponse {
