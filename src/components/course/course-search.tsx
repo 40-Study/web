@@ -45,15 +45,11 @@ export function CourseSearch({
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Filter suggestions based on query
+  // Gợi ý do backend tìm (không phân biệt dấu/hoa thường) nên KHÔNG lọc lại ở client: lọc nhạy dấu bằng
+  // `toLowerCase().includes` làm "dai so" mất gợi ý "Đại số" mà backend đã trả đúng.
   useEffect(() => {
     if (query.length >= 2) {
-      const filtered = suggestions.filter(
-        (course) =>
-          course.title.toLowerCase().includes(query.toLowerCase()) ||
-          course.instructor.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredSuggestions(filtered.slice(0, 5));
+      setFilteredSuggestions(suggestions.slice(0, 5));
       setShowSuggestions(true);
     } else {
       setFilteredSuggestions([]);
