@@ -39,7 +39,7 @@ export function buildExtensions(options: TiptapConfigOptions = {}) {
             HTMLAttributes: { class: "tiptap-image" },
         }),
         Link.configure({
-            openOnClick: false,
+            openOnClick: "whenNotEditable",
             HTMLAttributes: {
                 class: "tiptap-link",
                 rel: "noopener noreferrer",

@@ -65,6 +65,9 @@ export default function AdminReportsPage() {
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Doanh thu thật tính trực tiếp từ đơn hàng — không phải ví của người xem báo cáo.
         </p>
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Số liệu tính theo đơn tạo trong kỳ đã chọn.
+        </p>
       </div>
 
       {/* Filter khoảng thời gian */}
@@ -96,7 +99,7 @@ export default function AdminReportsPage() {
               <MetricCard
                 label="Doanh thu ròng (sau hoàn tiền)"
                 value={formatCurrency(report.net_revenue)}
-                hint="Doanh thu gộp trừ tiền đã hoàn; chưa trừ phí nền tảng."
+                hint="Sau hoàn tiền, trước phí nền tảng."
               />
               <MetricCard
                 label="Phí nền tảng"
@@ -106,7 +109,7 @@ export default function AdminReportsPage() {
               <MetricCard
                 label="Phần giảng viên"
                 value={formatCurrency(report.teacher_share_amount)}
-                hint="Doanh thu gộp trừ phí nền tảng."
+                hint="Doanh thu ròng trừ phí nền tảng."
               />
               <MetricCard
                 label="Tỷ lệ thành công"

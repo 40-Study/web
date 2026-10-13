@@ -57,7 +57,7 @@ export default function RichTextEditor({
         allowBase64: true,
       }),
       Link.configure({
-        openOnClick: false,
+        openOnClick: "whenNotEditable",
         HTMLAttributes: {
           class: 'text-link',
         },

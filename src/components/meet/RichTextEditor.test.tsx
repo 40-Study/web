@@ -44,4 +44,13 @@ describe("RichTextEditor (F-17: tiptap duplicate extension)", () => {
     expect(names.filter((n) => n === "link")).toHaveLength(1);
     expect(names.filter((n) => n === "underline")).toHaveLength(1);
   });
+
+  it("link chỉ mở khi editor ở chế độ chỉ đọc (openOnClick: whenNotEditable)", async () => {
+    const { container } = render(<RichTextEditor content="<p>xin chào</p>" />);
+    await waitFor(() => expect(container.querySelector(".ProseMirror")).not.toBeNull());
+    await waitFor(() => expect(captured.editor).not.toBeNull());
+
+    const link = captured.editor!.extensionManager.extensions.find((e) => e.name === "link");
+    expect(link?.options.openOnClick).toBe("whenNotEditable");
+  });
 });
