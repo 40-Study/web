@@ -12,6 +12,11 @@ export interface NotificationTarget {
 
 /** Trả `null` khi loại thông báo không thuộc nhóm bạn bè/nhóm hoặc thiếu dữ liệu để dựng đường dẫn. */
 export function getNotificationHref(n: NotificationTarget): string | null {
+  // Admin duyệt/từ chối khoá (contract-be1 ADM-N1): notification_type "course_update" nhưng đích nằm ở
+  // reference_type. /courses/<id> công khai không tồn tại với khoá chưa xuất bản/bị từ chối.
+  if (n.reference_type === "course_review") {
+    return n.reference_id ? `/teacher/courses/${n.reference_id}` : null;
+  }
   switch (n.notification_type) {
     case "friend_request":
       return "/friends?tab=requests";
