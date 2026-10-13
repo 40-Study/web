@@ -1,10 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import { Heart } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useToggleWishlist, useWishlistIds } from "@/hooks/queries/use-wishlist";
+import { buildLoginRedirectUrl } from "@/lib/login-redirect";
 import { normalizeRole, resolveNavRole } from "@/lib/routes";
+import { consumeWishlistIntent, rememberWishlistIntent } from "@/lib/wishlist-intent";
 import { useAuthStore } from "@/stores/auth.store";
 
 interface WishlistButtonProps {
@@ -26,19 +29,33 @@ export function WishlistButton({ courseId, variant = "icon", className }: Wishli
   const navRole = resolveNavRole(isAuthenticated, normalizeRole(activeRole));
   const canUse = navRole === "GUEST" || navRole === "STUDENT";
 
-  const { data: savedIds = [] } = useWishlistIds(isAuthenticated && canUse);
+  const { data: savedIds = [], isSuccess: idsLoaded } = useWishlistIds(isAuthenticated && canUse);
   const toggle = useToggleWishlist();
+  const alreadySaved = savedIds.includes(courseId);
+
+  // Khách đã bấm tim này trước khi đăng nhập (review QA2 #7): lưu nốt khi quay lại, sau khi biết trạng thái thật.
+  const shouldCompleteIntent = isAuthenticated && canUse && idsLoaded;
+  useEffect(() => {
+    if (shouldCompleteIntent && consumeWishlistIntent(courseId) && !alreadySaved) {
+      toggle.mutate({ courseId, saved: false });
+    }
+    // `toggle`/`alreadySaved` cố ý ngoài deps: chỉ chạy khi trạng thái đã tải xong, một lần mỗi lần gắn.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldCompleteIntent, courseId]);
 
   if (!canUse) return null;
 
-  const saved = savedIds.includes(courseId);
+  const saved = alreadySaved;
   const label = saved ? "Bỏ khỏi danh sách yêu thích" : "Thêm vào danh sách yêu thích";
 
   const handleClick = (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
     if (!isAuthenticated) {
-      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      // Cùng helper với middleware: giữ query string (bộ lọc/trang) và luôn qua sanitizeRedirect.
+      rememberWishlistIntent(courseId);
+      const login = buildLoginRedirectUrl(pathname, window.location.search, window.location.origin);
+      router.push(`${login.pathname}${login.search}`);
       return;
     }
     toggle.mutate({ courseId, saved });

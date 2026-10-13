@@ -45,6 +45,8 @@ function signIn(role = "STUDENT") {
 }
 
 beforeEach(() => {
+  window.history.replaceState({}, "", "/courses");
+  window.sessionStorage.clear();
   resetMockApi();
   nav.push.mockClear();
   vi.mocked(toast.success).mockClear();
@@ -63,6 +65,52 @@ describe("WishlistButton", () => {
     expect(nav.push).toHaveBeenCalledWith("/login?redirect=%2Fcourses");
     expect(mockApi.post).not.toHaveBeenCalled();
     expect(mockApi.get).not.toHaveBeenCalled();
+  });
+
+  // Review QA2 #7: đường dẫn quay lại mất query string (bộ lọc/trang của danh mục) vì tự ghép `/login?redirect=`.
+  it("khách: giữ nguyên query string của trang trong ?redirect=", () => {
+    window.history.replaceState({}, "", "/courses?category=web&page=2");
+    renderWithProviders(<WishlistButton courseId="c1" />);
+    fireEvent.click(screen.getByRole("button", { name: addLabel }));
+
+    expect(nav.push).toHaveBeenCalledWith("/login?redirect=%2Fcourses%3Fcategory%3Dweb%26page%3D2");
+  });
+
+  it("khách bấm tim rồi đăng nhập quay lại: tim đó được lưu nốt, đúng một lần", async () => {
+    renderWithProviders(<WishlistButton courseId="c1" />);
+    fireEvent.click(screen.getByRole("button", { name: addLabel }));
+    expect(mockApi.post).not.toHaveBeenCalled();
+
+    // Sau đăng nhập trang tải lại: một WishlistButton mới gắn vào, ý định đã lưu từ lần bấm của khách.
+    signIn();
+    mockWishlist([]);
+    renderWithProviders(<WishlistButton courseId="c1" />);
+
+    await waitFor(() => expect(mockApi.post).toHaveBeenCalledWith("/wishlist", { course_id: "c1" }));
+    expect(await screen.findAllByRole("button", { name: removeLabel })).not.toHaveLength(0);
+    // Ý định đã dùng xong: gắn lại nút không lưu thêm lần nữa.
+    mockApi.post.mockClear();
+    renderWithProviders(<WishlistButton courseId="c1" />);
+    await waitFor(() => expect(mockApi.get).toHaveBeenCalled());
+    expect(mockApi.post).not.toHaveBeenCalled();
+  });
+
+  it("ý định của khoá khác, hoặc đã quá hạn, không tự lưu", async () => {
+    renderWithProviders(<WishlistButton courseId="c-other" />);
+    fireEvent.click(screen.getByRole("button", { name: addLabel }));
+
+    signIn();
+    mockWishlist([]);
+    renderWithProviders(<WishlistButton courseId="c1" />);
+    await waitFor(() => expect(mockApi.get).toHaveBeenCalledWith("/wishlist/ids"));
+    expect(mockApi.post).not.toHaveBeenCalled();
+
+    // Quá hạn: ý định cũ hơn 10 phút bị bỏ.
+    const key = window.sessionStorage.key(0) as string;
+    window.sessionStorage.setItem(key, JSON.stringify({ courseId: "c1", at: Date.now() - 11 * 60_000 }));
+    renderWithProviders(<WishlistButton courseId="c1" />);
+    await waitFor(() => expect(mockApi.get.mock.calls.length).toBeGreaterThan(0));
+    expect(mockApi.post).not.toHaveBeenCalled();
   });
 
   it("học viên, khoá chưa lưu: bấm -> POST /wishlist và tim chuyển sang trạng thái đã lưu", async () => {
