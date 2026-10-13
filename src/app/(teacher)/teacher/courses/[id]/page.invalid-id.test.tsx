@@ -19,7 +19,7 @@ vi.mock("@tanstack/react-query", () => ({
 }));
 
 // ─── auth store — controllable qua biến module-level ─────────────────────────────────────────
-let mockAuthState: { userId?: string; activeRole?: string } = {};
+const mockAuthState: { userId?: string; activeRole?: string } = {};
 vi.mock("@/stores/auth.store", () => ({
   useAuthStore: (selector: (s: { user?: { id: string }; activeRole?: string }) => unknown) =>
     selector({
