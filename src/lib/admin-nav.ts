@@ -7,3 +7,8 @@ export function isAdminNavActive(pathname: string, href: string): boolean {
   if (href === "/admin") return pathname === "/admin";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
+
+/** Mục menu admin ứng với trang đang xem (cùng quy tắc khớp với `isAdminNavActive`); không thuộc menu nào thì undefined. */
+export function findActiveAdminNavItem<T extends { href: string }>(pathname: string, items: readonly T[]): T | undefined {
+  return items.find((item) => isAdminNavActive(pathname, item.href));
+}
