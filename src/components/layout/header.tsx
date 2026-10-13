@@ -11,6 +11,7 @@ import { AuthModal } from "@/components/auth/auth-modal";
 import { GlobalSearch } from "@/components/layout/global-search";
 import { CategoryMenu } from "@/components/layout/category-menu";
 import { CartDropdown } from "@/components/layout/cart-dropdown";
+import { HeaderQuickLinks } from "@/components/layout/header-quick-links";
 import { useLogout, useSwitchRole, useMyRoles } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCoinWallet } from "@/hooks/queries/use-coins";
@@ -372,6 +373,14 @@ export function Header() {
                     )}
 
                     <div className="py-2">
+                      {/* 640–767px: chuông + giỏ hàng (md:) chưa hiện và hamburger đã ẩn -> đưa vào đây (F-04). */}
+                      <div className="md:hidden">
+                        <HeaderQuickLinks
+                          isStudent={isStudent}
+                          unreadCount={unreadCount}
+                          onNavigate={() => setIsDropdownOpen(false)}
+                        />
+                      </div>
                       {userMenuItems.map((item) => {
                         const Icon = item.icon;
                         return (
@@ -447,6 +456,11 @@ export function Header() {
                     </div>
 
                     <div className="py-2">
+                      <HeaderQuickLinks
+                        isStudent={isStudent}
+                        unreadCount={unreadCount}
+                        onNavigate={() => setIsMobileMenuOpen(false)}
+                      />
                       {userMenuItems.map((item) => {
                         const Icon = item.icon;
                         return (

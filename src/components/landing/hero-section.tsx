@@ -36,9 +36,10 @@ export function HeroSection() {
           Trường học trực tuyến
         </Badge>
 
-        <h1 className="text-display max-w-4xl text-balance text-slate-900 dark:text-slate-50">
+        {/* Mobile (390px): text-4xl + cụm nhấn mạnh được xuống dòng; nowrap chỉ từ sm (PG-H2). */}
+        <h1 className="text-display max-w-4xl break-words text-balance text-4xl text-slate-900 dark:text-slate-50 sm:text-5xl md:text-6xl">
           Khai phóng tiềm năng{" "}
-          <span className="whitespace-nowrap text-primary-600 dark:text-primary-400">
+          <span className="text-primary-600 dark:text-primary-400 sm:whitespace-nowrap">
             công nghệ của bạn
           </span>
         </h1>

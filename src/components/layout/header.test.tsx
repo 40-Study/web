@@ -24,9 +24,10 @@ vi.mock("@/hooks/queries/use-auth", () => ({
   useMyRoles: () => ({ data: undefined }),
 }));
 vi.mock("@/hooks/queries/use-coins", () => ({ useCoinWallet: () => ({ data: { balance: 0 } }) }));
+let unreadCountData: { unread_count: number } | undefined;
 vi.mock("@/hooks/queries/use-notifications", () => ({
   useNotifications: () => ({ data: undefined }),
-  useUnreadCount: () => ({ data: undefined }),
+  useUnreadCount: () => ({ data: unreadCountData }),
   useMarkNotificationRead: () => ({ mutate: vi.fn() }),
   useMarkAllNotificationsRead: () => ({ mutate: vi.fn(), isPending: false }),
 }));
@@ -37,6 +38,8 @@ vi.mock("@/components/auth/auth-modal", () => ({ AuthModal: () => null }));
 
 // eslint-disable-next-line import/first
 import { Header } from "./header";
+// eslint-disable-next-line import/first
+import { useCartStore } from "@/stores/cart.store";
 
 function openMenu() {
   fireEvent.click(screen.getByRole("button", { name: /Menu tài khoản/ }));
@@ -117,5 +120,77 @@ describe("Header — vai phụ huynh", () => {
     render(<Header />);
     expect(document.querySelector('a[href="/coins"]')).not.toBeNull();
     expect(screen.getAllByRole("link", { name: "Khóa học của tôi" })[0].getAttribute("href")).toBe("/my-courses");
+  });
+});
+
+// QA vòng 2 (F-04): ở 390px header chỉ còn logo + hamburger; chuông, giỏ hàng (md:) bị ẩn và bottom-nav
+// không có chỗ cho chúng nên học viên không có lối vào giỏ hàng / thông báo / tin nhắn trên mobile.
+describe("Header — hamburger mobile có lối vào giỏ hàng, thông báo, tin nhắn", () => {
+  beforeEach(() => {
+    authState = {
+      isAuthenticated: true,
+      user: { name: "Học Viên", email: "hv@demo.com" },
+      activeRole: "STUDENT",
+      activeUnifiedRole: null,
+      roles: [],
+    };
+    unreadCountData = { unread_count: 3 };
+    useCartStore.setState({ items: [], total: 0, total_item: 2 });
+  });
+
+  function openMobileMenu() {
+    fireEvent.click(screen.getByRole("button", { name: "Mở menu" }));
+    return screen.getByRole("button", { name: "Đóng menu" }).parentElement as HTMLElement;
+  }
+
+  function hrefOf(menu: HTMLElement, name: RegExp) {
+    return Array.from(menu.querySelectorAll("a"))
+      .find((a) => name.test(a.textContent ?? ""))
+      ?.getAttribute("href");
+  }
+
+  it("học viên: Giỏ hàng -> /cart kèm số lượng, Thông báo -> /notifications kèm số chưa đọc, Tin nhắn -> /messages", () => {
+    render(<Header />);
+    const menu = openMobileMenu();
+
+    expect(hrefOf(menu, /Giỏ hàng/)).toBe("/cart");
+    expect(menu.textContent).toContain("Giỏ hàng");
+    expect(screen.getByLabelText("2 khóa học trong giỏ")).toBeTruthy();
+    expect(hrefOf(menu, /Thông báo/)).toBe("/notifications");
+    expect(screen.getByLabelText("3 thông báo chưa đọc")).toBeTruthy();
+    expect(hrefOf(menu, /Tin nhắn/)).toBe("/messages");
+  });
+
+  it("giỏ trống / không có thông báo mới: không hiện chấm số", () => {
+    useCartStore.setState({ total_item: 0 });
+    unreadCountData = { unread_count: 0 };
+    render(<Header />);
+    openMobileMenu();
+
+    expect(screen.queryByLabelText(/khóa học trong giỏ/)).toBeNull();
+    expect(screen.queryByLabelText(/thông báo chưa đọc/)).toBeNull();
+  });
+
+  it("giảng viên và phụ huynh: có Thông báo + Tin nhắn nhưng KHÔNG có Giỏ hàng (chỉ học viên mua khóa)", () => {
+    for (const role of ["TEACHER", "PARENT"]) {
+      authState.activeRole = role;
+      const { unmount } = render(<Header />);
+      const menu = openMobileMenu();
+
+      expect(hrefOf(menu, /Thông báo/)).toBe("/notifications");
+      expect(hrefOf(menu, /Tin nhắn/)).toBe("/messages");
+      expect(hrefOf(menu, /Giỏ hàng/)).toBeUndefined();
+      unmount();
+    }
+  });
+
+  it("khách chưa đăng nhập: menu chỉ có Đăng nhập / Đăng ký", () => {
+    authState.isAuthenticated = false;
+    render(<Header />);
+    const menu = openMobileMenu();
+
+    expect(menu.textContent).not.toContain("Giỏ hàng");
+    expect(menu.textContent).not.toContain("Thông báo");
+    expect(menu.textContent).not.toContain("Tin nhắn");
   });
 });
