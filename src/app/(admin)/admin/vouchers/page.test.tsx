@@ -161,6 +161,18 @@ describe("/admin/vouchers — voucher dành riêng (holders_only)", () => {
     expect(mockApi.post).not.toHaveBeenCalled();
   });
 
+  // Smoke vòng 2: noValidate đã chặn tooltip, nhưng `input.validationMessage` vẫn là tiếng Anh ("Value must be
+  // less than or equal to 100.") chừng nào input còn ràng buộc min/max native — công cụ kiểm thử và trình đọc
+  // màn hình đọc được chuỗi đó. Giới hạn 0-100 do voucher-form-model kiểm bằng tiếng Việt, nên input bỏ min/max.
+  it("ô Giảm (%) không mang ràng buộc native min/max (thông báo native là tiếng Anh)", async () => {
+    renderWithProviders(<AdminVouchersPage />);
+    await screen.findAllByTestId("admin-voucher-row");
+    fireEvent.change(screen.getByLabelText("Cách giảm"), { target: { value: "PERCENT" } });
+    const percent = screen.getByLabelText("Giảm (%)") as HTMLInputElement;
+    expect(percent.hasAttribute("max")).toBe(false);
+    expect(percent.hasAttribute("min")).toBe(false);
+  });
+
   // L6 mục 8: phân trang thật thay cho giới hạn 100 voucher đầu.
   it("phân trang: hiện Trang 1/3, bấm Sau gọi backend với offset của trang kế", async () => {
     mockApi.get.mockImplementation(async (url: string, config?: { params?: { limit?: number; offset?: number } }) => {

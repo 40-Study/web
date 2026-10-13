@@ -211,7 +211,7 @@ export default function AdminVouchersPage() {
           {isPercent ? (
             <div className="grid grid-cols-2 gap-3">
               <Field label="Giảm (%)">
-                <input className={inputClass} type="number" min={0} max={100} value={form.discount_percent} onChange={(e) => set("discount_percent", e.target.value)} />
+                <input className={inputClass} type="number" value={form.discount_percent} onChange={(e) => set("discount_percent", e.target.value)} />
               </Field>
               <Field label={isMoney ? "Giảm tối đa (VNĐ)" : "Giảm tối đa (điểm)"} hint={editingId ? "Để trống rồi lưu = bỏ trần giảm" : "Để trống = không giới hạn"}>
                 <input className={inputClass} type="number" min={0} value={form.max_discount} onChange={(e) => set("max_discount", e.target.value)} />
