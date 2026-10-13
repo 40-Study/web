@@ -56,7 +56,10 @@ export default function AppLayout({
   // Cuộc thi (contract §7): admin xem danh sách/chi tiết ở chế độ chỉ đọc. Route con làm bài/kết
   // quả để backend trả 403/404 và trang hiện thông báo, không đẩy admin về /admin im lặng.
   const isAdminAllowedRoute =
-    ADMIN_ALLOWED_EXACT_ROUTES.includes(pathname) || pathname.startsWith("/profile/") || isContestRoute;
+    ADMIN_ALLOWED_EXACT_ROUTES.includes(pathname) ||
+    pathname === "/profile" ||
+    pathname.startsWith("/profile/") ||
+    isContestRoute;
 
   // Review PR #26 MAJOR #1: menu ẩn "Cuộc thi"/"Nhóm"/"Xu"/"Thành tích"/
   // "Bảng xếp hạng"... với phụ huynh (`sidebar.tsx`/`bottom-nav.tsx`) nhưng
