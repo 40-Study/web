@@ -13,6 +13,7 @@ import {
 } from "@/services/course.service";
 import { approvalErrorMessage } from "@/lib/approval-errors";
 import { ApiError } from "@/lib/errors";
+import type { AdminCourseListParams } from "@/types/approval";
 
 export const courseKeys = {
   all: ["courses"] as const,
@@ -22,6 +23,16 @@ export const courseKeys = {
   my: (status?: string) => [...courseKeys.all, "my", status] as const,
   enrolled: () => [...courseKeys.all, "enrolled"] as const,
   featured: () => [...courseKeys.all, "featured"] as const,
+};
+
+/**
+ * Danh sách khoá của admin (`/admin/courses`) có khoá query riêng, không nằm dưới `courseKeys.all`.
+ * Đặt ở đây (không ở use-course-approval) để xoá/lưu trữ khoá làm mới được cả danh sách admin mà
+ * không tạo vòng import; use-course-approval re-export lại tên cũ.
+ */
+export const adminCourseKeys = {
+  all: ["admin-courses"] as const,
+  list: (params?: AdminCourseListParams) => [...adminCourseKeys.all, "list", params ?? {}] as const,
 };
 
 /** List all courses with optional filters */
@@ -121,6 +132,7 @@ export function useDeleteCourse() {
       .updateCourse(id, { status: "archived" })
       .then(() => {
         qc.invalidateQueries({ queryKey: courseKeys.all });
+        qc.invalidateQueries({ queryKey: adminCourseKeys.all });
         toast.success("Đã lưu trữ khoá học");
       })
       .catch((error: unknown) => toast.error(approvalErrorMessage(error, "Không thể lưu trữ khoá học")));
@@ -130,6 +142,7 @@ export function useDeleteCourse() {
     mutationFn: (id: string) => courseService.deleteCourse(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: courseKeys.all });
+      qc.invalidateQueries({ queryKey: adminCourseKeys.all });
       toast.success("Xóa khóa học thành công");
     },
     // 409 COURSE_PENDING_REVIEW (khoá đang chờ duyệt) -> câu tiếng Việt rõ nghĩa thay vì lỗi chung.
