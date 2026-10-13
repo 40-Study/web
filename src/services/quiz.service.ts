@@ -192,6 +192,13 @@ export const quizService = {
   update: (quizId: string, data: UpdateQuizDTO) =>
     api.put<R<Quiz>>(`/quizzes/${quizId}`, data).then((r) => r.data.data),
 
+  /**
+   * POST /quizzes/:quizId/duplicate — nhân bản quiz + câu hỏi cùng bài học (title thêm " (Copy)").
+   * Backend KHÔNG tạo lesson_content cho bản sao: caller phải tạo content type `quiz` trỏ tới nó.
+   */
+  duplicate: (quizId: string) =>
+    api.post<R<Quiz>>(`/quizzes/${quizId}/duplicate`).then((r) => r.data.data),
+
   /** DELETE /quizzes/:quizId */
   delete: (quizId: string) =>
     api.delete<R<null>>(`/quizzes/${quizId}`).then((r) => r.data),

@@ -89,6 +89,7 @@ import { LIVESTREAM_NOT_READY_HINT, resolveLivestreamRoomHref } from "@/lib/less
 import { formatLessonDuration, parseLessonDuration } from "@/lib/lesson-duration";
 import { VideoDurationField } from "@/components/teacher/video-duration-field";
 import { ClassCreateForm } from "@/components/teacher/class-create-form";
+import { QuizDuplicateButton } from "@/components/teacher/quiz-duplicate-button";
 import { getClassStatusLabel } from "@/lib/class-status";
 import { DEFAULT_QUIZ_MAX_ATTEMPTS, DEFAULT_QUIZ_PASS_PERCENTAGE } from "@/lib/quiz-settings";
 
@@ -469,6 +470,9 @@ function LessonContentsPanel({
                       )}
                       {!readOnly && (
                         <>
+                          {c.type === "quiz" && c.quiz_id && (
+                            <QuizDuplicateButton lessonId={lessonId} quizId={c.quiz_id} />
+                          )}
                           <button
                             onClick={() => onEditContent?.(c)}
                             className="p-0.5 text-gray-400 hover:text-primary-600"
