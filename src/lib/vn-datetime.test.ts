@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { courseLevelLabel } from "./course-level";
-import { formatVnDateOnly, formatVnDateTime } from "./vn-datetime";
+import { formatVnDateOnly, formatVnDateTime, formatVnDateThenTime } from "./vn-datetime";
 
 describe("courseLevelLabel", () => {
   it("dịch mã trình độ sang tiếng Việt", () => {
@@ -34,5 +34,17 @@ describe("formatVnDateTime", () => {
   });
   it("chuỗi hỏng thì —", () => {
     expect(formatVnDateTime("khong-phai-ngay")).toBe("—");
+  });
+});
+describe("formatVnDateThenTime", () => {
+  it("ngày trước, giờ sau (dd/MM/yyyy HH:mm) theo giờ Việt Nam", () => {
+    expect(formatVnDateThenTime("2026-10-07T19:00:00+07:00")).toBe("07/10/2026 19:00");
+  });
+  it("đổi múi giờ sang giờ Việt Nam, kể cả khi qua nửa đêm", () => {
+    expect(formatVnDateThenTime("2026-10-07T17:30:00Z")).toBe("08/10/2026 00:30");
+  });
+  it("rỗng/chuỗi hỏng thì — (không hiện Invalid Date)", () => {
+    expect(formatVnDateThenTime(null)).toBe("—");
+    expect(formatVnDateThenTime("khong-phai-ngay")).toBe("—");
   });
 });

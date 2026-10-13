@@ -24,6 +24,21 @@ export function formatVnDateTime(iso: string | null | undefined): string {
   return date.toLocaleString("vi-VN", VN_DATE_TIME_OPTIONS);
 }
 
+/**
+ * "07/10/2026 19:00" — NGÀY trước, giờ sau (F-18, QA2 261013). `formatVnDateTime` giữ nguyên "19:00 07/10/2026"
+ * cho các trang đã dùng nó; dựng từ `formatToParts` thay vì cắt chuỗi để không phụ thuộc thứ tự mà locale in ra.
+ */
+export function formatVnDateThenTime(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    new Intl.DateTimeFormat("vi-VN", VN_DATE_TIME_OPTIONS)
+      .formatToParts(date)
+      .find((p) => p.type === type)?.value ?? "";
+  return `${part("day")}/${part("month")}/${part("year")} ${part("hour")}:${part("minute")}`;
+}
+
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 /**

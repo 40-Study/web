@@ -7,7 +7,7 @@ import {
 } from "@/components/attendance/attendance-stats";
 import { AttendanceStatusBadge } from "@/components/attendance/attendance-status-badge";
 import { useAllMyAttendances, useMyAttendances } from "@/hooks/queries/use-sessions";
-import { formatVnDateTime } from "@/lib/vn-datetime";
+import { formatVnDateThenTime } from "@/lib/vn-datetime";
 
 /** Backend ép page_size tối đa 50 (schedule_service.go GetMyAttendances) */
 const PAGE_SIZE = 20;
@@ -70,9 +70,9 @@ export default function MyAttendancePage() {
               <tbody className="divide-y divide-gray-100">
                 {attendances.map((a) => (
                   <tr key={a.id} className="hover:bg-gray-50/60">
-                    {/* S11: dùng formatter chung (giờ VN, bỏ giây) thay vì toLocaleString thô. */}
+                    {/* S11: formatter chung (giờ VN, bỏ giây); F-18: ngày trước, giờ sau. */}
                     <td className="px-4 py-3 text-gray-700">
-                      {formatVnDateTime(a.check_in_time ?? a.created_at)}
+                      {formatVnDateThenTime(a.check_in_time ?? a.created_at)}
                     </td>
                     <td className="px-4 py-3">
                       <AttendanceStatusBadge status={a.status} />
