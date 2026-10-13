@@ -109,6 +109,37 @@ describe("/teachers/[id] — hồ sơ giảng viên công khai (PG-M2)", () => {
     expect(screen.getByText("Giảng viên này chưa có khoá học nào được xuất bản.")).toBeTruthy();
   });
 
+  // BE review (quyết định chủ dự án): giảng viên có thể ẩn hồ sơ cá nhân -> chỉ còn tên + khoá học.
+  it("profile_hidden: chỉ hiện tên và khoá học kèm ghi chú, không số liệu / giới thiệu / ngày tham gia", async () => {
+    mockApi.get.mockResolvedValue(
+      envelope({
+        id: "teacher-1",
+        user_name: "gv_a",
+        full_name: "Trần Thị Giảng Viên",
+        profile_hidden: true,
+        courses: PROFILE.courses,
+      }),
+    );
+    renderPage();
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Trần Thị Giảng Viên" })).toBeTruthy();
+    expect(screen.getByText("Giảng viên đã ẩn thông tin cá nhân. Bạn vẫn có thể xem các khoá học của họ.")).toBeTruthy();
+    expect(screen.queryByLabelText("Thống kê")).toBeNull();
+    expect(screen.queryByText("Giới thiệu")).toBeNull();
+    expect(screen.queryByText(/Tham gia từ/)).toBeNull();
+    expect(screen.queryByText(/undefined|NaN|Invalid/)).toBeNull();
+    expect(screen.getByText("Next.js từ cơ bản").closest("a")?.getAttribute("href")).toBe("/courses/nextjs-co-ban");
+  });
+
+  it("profile_hidden không có khoá học nào: vẫn có trạng thái rỗng, không crash", async () => {
+    mockApi.get.mockResolvedValue(
+      envelope({ id: "teacher-1", user_name: "gv_a", full_name: null, profile_hidden: true, courses: null }),
+    );
+    renderPage();
+    expect(await screen.findByRole("heading", { level: 1, name: "gv_a" })).toBeTruthy();
+    expect(screen.getByText("Giảng viên này chưa có khoá học nào được xuất bản.")).toBeTruthy();
+  });
+
   it("thiếu full_name: dùng user_name", async () => {
     mockApi.get.mockResolvedValue(envelope({ ...PROFILE, full_name: null }));
     renderPage();

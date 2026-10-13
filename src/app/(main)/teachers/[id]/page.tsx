@@ -40,8 +40,17 @@ function Fact({ label, value }: { label: string; value: string | null }) {
 function ProfileBody({ profile }: { profile: PublicTeacherProfile }) {
   const name = profile.full_name?.trim() || profile.user_name;
   const { stats } = profile;
+  // Giảng viên ẩn thông tin cá nhân: chỉ tên + khoá học; số liệu, giới thiệu, ngày tham gia không vẽ.
+  const hidden = profile.profile_hidden === true;
+  const hasIntro = Boolean(
+    profile.bio ||
+    profile.specialization ||
+    profile.education ||
+    profile.experience_years != null ||
+    profile.department
+  );
   // Khoá học hiển thị bằng CourseCard chung; thẻ cần tên giảng viên nên gắn chính hồ sơ này.
-  const courses = profile.courses.map((c) =>
+  const courses = (profile.courses ?? []).map((c) =>
     mapApiCourse({
       ...c,
       short_description: c.short_description ?? undefined,
@@ -50,7 +59,7 @@ function ProfileBody({ profile }: { profile: PublicTeacherProfile }) {
       published_at: c.published_at ?? undefined,
       instructor_id: profile.id,
       instructor: { id: profile.id, name },
-    }),
+    })
   );
 
   return (
@@ -60,37 +69,61 @@ function ProfileBody({ profile }: { profile: PublicTeacherProfile }) {
         <div className="min-w-0 space-y-1">
           <h1 className="text-2xl font-bold">{name}</h1>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-            {profile.is_verified && (
+            {!hidden && profile.is_verified && (
               <span className="inline-flex items-center gap-1 text-emerald-600">
                 <BadgeCheck className="h-4 w-4" aria-hidden="true" /> Đã xác minh
               </span>
             )}
-            <span>Tham gia từ {formatDate(profile.joined_at)}</span>
+            {!hidden && profile.joined_at && (
+              <span>Tham gia từ {formatDate(profile.joined_at)}</span>
+            )}
           </div>
         </div>
       </header>
 
-      <section aria-label="Thống kê" className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat icon={BookOpen} label="Khoá học" value={stats.course_count.toLocaleString("vi-VN")} />
-        <Stat icon={Users} label="Học viên" value={stats.student_count.toLocaleString("vi-VN")} />
-        <Stat icon={GraduationCap} label="Lượt đánh giá" value={stats.review_count.toLocaleString("vi-VN")} />
-        <Stat
-          icon={Star}
-          label="Điểm trung bình"
-          value={stats.review_count > 0 ? stats.average_rating.toFixed(1) : "Chưa có"}
-        />
-      </section>
+      {hidden && (
+        <p className="rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">
+          Giảng viên đã ẩn thông tin cá nhân. Bạn vẫn có thể xem các khoá học của họ.
+        </p>
+      )}
 
-      {(profile.bio || profile.specialization || profile.education || profile.experience_years != null || profile.department) && (
+      {!hidden && stats && (
+        <section aria-label="Thống kê" className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Stat
+            icon={BookOpen}
+            label="Khoá học"
+            value={stats.course_count.toLocaleString("vi-VN")}
+          />
+          <Stat icon={Users} label="Học viên" value={stats.student_count.toLocaleString("vi-VN")} />
+          <Stat
+            icon={GraduationCap}
+            label="Lượt đánh giá"
+            value={stats.review_count.toLocaleString("vi-VN")}
+          />
+          <Stat
+            icon={Star}
+            label="Điểm trung bình"
+            value={stats.review_count > 0 ? stats.average_rating.toFixed(1) : "Chưa có"}
+          />
+        </section>
+      )}
+
+      {!hidden && hasIntro && (
         <section className="space-y-4">
           <h2 className="text-lg font-semibold">Giới thiệu</h2>
-          {profile.bio && <p className="max-w-3xl whitespace-pre-line text-sm leading-relaxed">{profile.bio}</p>}
+          {profile.bio && (
+            <p className="max-w-3xl whitespace-pre-line text-sm leading-relaxed">{profile.bio}</p>
+          )}
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Fact label="Chuyên môn" value={profile.specialization} />
             <Fact label="Học vấn" value={profile.education} />
             <Fact
               label="Kinh nghiệm"
-              value={profile.experience_years != null ? `${profile.experience_years} năm kinh nghiệm` : null}
+              value={
+                profile.experience_years != null
+                  ? `${profile.experience_years} năm kinh nghiệm`
+                  : null
+              }
             />
             <Fact label="Đơn vị" value={profile.department} />
           </dl>
@@ -100,7 +133,9 @@ function ProfileBody({ profile }: { profile: PublicTeacherProfile }) {
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Khoá học của {name}</h2>
         {courses.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Giảng viên này chưa có khoá học nào được xuất bản.</p>
+          <p className="text-sm text-muted-foreground">
+            Giảng viên này chưa có khoá học nào được xuất bản.
+          </p>
         ) : (
           <CourseGrid courses={courses} showWishlist />
         )}
@@ -111,7 +146,13 @@ function ProfileBody({ profile }: { profile: PublicTeacherProfile }) {
 
 export default function TeacherPublicProfilePage() {
   const params = useParams<{ id: string }>();
-  const { data: profile, isLoading, error, refetch, isRefetching } = useTeacherPublicProfile(params.id);
+  const {
+    data: profile,
+    isLoading,
+    error,
+    refetch,
+    isRefetching,
+  } = useTeacherPublicProfile(params.id);
 
   if (isLoading) {
     return (
@@ -126,7 +167,9 @@ export default function TeacherPublicProfilePage() {
   if (error) {
     return (
       <div className="page-container py-16 text-center" role="alert">
-        <h2 className="mb-2 text-xl font-semibold text-destructive">Không tải được hồ sơ giảng viên</h2>
+        <h2 className="mb-2 text-xl font-semibold text-destructive">
+          Không tải được hồ sơ giảng viên
+        </h2>
         <p className="mb-4 text-muted-foreground">
           {getErrorMessage(error, "Vui lòng thử lại sau ít phút.")}
         </p>

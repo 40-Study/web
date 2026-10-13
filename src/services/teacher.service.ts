@@ -104,16 +104,21 @@ export interface PublicTeacherProfile {
   id: string;
   user_name: string;
   full_name: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-  is_verified: boolean;
-  joined_at: string;
-  specialization: string | null;
-  education: string | null;
-  experience_years: number | null;
-  department: string | null;
-  stats: PublicTeacherStats;
-  courses: PublicTeacherCourse[];
+  /**
+   * `true` khi giảng viên ẩn thông tin cá nhân: backend chỉ còn trả tên + khoá học, mọi trường dưới đây (trừ `courses`)
+   * có thể vắng. Trang phải vẽ trạng thái này thay vì số liệu/giới thiệu rỗng.
+   */
+  profile_hidden?: boolean;
+  avatar_url?: string | null;
+  bio?: string | null;
+  is_verified?: boolean;
+  joined_at?: string;
+  specialization?: string | null;
+  education?: string | null;
+  experience_years?: number | null;
+  department?: string | null;
+  stats?: PublicTeacherStats | null;
+  courses?: PublicTeacherCourse[] | null;
 }
 
 type R<T> = { message: string; data: T };
