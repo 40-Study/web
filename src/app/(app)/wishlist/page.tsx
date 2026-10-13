@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { BookOpen, Heart } from "lucide-react";
 import { QueryState } from "@/components/common/query-state";
@@ -28,7 +29,7 @@ function WishlistRow({ item }: { item: WishlistItem }) {
     <li className="flex gap-4 rounded-xl border bg-card p-3 sm:p-4">
       <div className="relative h-20 w-32 shrink-0 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
         {course.thumbnail_url ? (
-          <img src={course.thumbnail_url} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+          <Image src={course.thumbnail_url} alt="" fill sizes="128px" className="object-cover" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <BookOpen className="h-8 w-8 text-slate-300" aria-hidden="true" />

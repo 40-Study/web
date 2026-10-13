@@ -56,6 +56,20 @@ describe("/wishlist — danh sách yêu thích (F-10)", () => {
     expect(screen.getByText("2 khoá học")).toBeTruthy();
   });
 
+  it("có ảnh bìa thì vẽ ảnh (next/image), không có thì vẽ biểu tượng", async () => {
+    mockApi.get.mockResolvedValue(
+      envelope({
+        items: [{ ...ITEMS[0], course: { ...ITEMS[0].course, thumbnail_url: "https://cdn.example.com/c1.png" } }, ITEMS[1]],
+        total_item: 2,
+      }),
+    );
+    const { container } = renderWithProviders(<WishlistPage />);
+    await screen.findByText("Next.js từ cơ bản");
+    const imgs = container.querySelectorAll("li img");
+    expect(imgs).toHaveLength(1);
+    expect(imgs[0].getAttribute("src")).toContain("c1.png");
+  });
+
   it("bỏ lưu: DELETE /wishlist/:courseId rồi làm mới danh sách", async () => {
     renderWithProviders(<WishlistPage />);
     const link = await screen.findByRole("link", { name: /Next\.js từ cơ bản/ });
