@@ -8,8 +8,15 @@ import { NextRequest } from "next/server";
 import { describe, expect, it, vi } from "vitest";
 import {
   MISSING_RESOURCE_REWRITE_PATH,
+  PROBE_TIMEOUT_MS,
   isMissingResource,
 } from "./missing-resource-probe";
+
+// Trạng thái "đã cảnh báo" nằm ở module; nạp bản mới cho test về log.
+async function freshProbe() {
+  vi.resetModules();
+  return import("./missing-resource-probe");
+}
 
 const API = "http://api.test/api";
 
@@ -47,15 +54,48 @@ describe("isMissingResource — khoá học công khai", () => {
   });
 
   it("backend chết (fetch ném lỗi) -> không chặn trang, có cảnh báo", async () => {
+    const { isMissingResource: probe } = await freshProbe();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const missing = await isMissingResource(documentRequest("/courses/react"), {
+    const missing = await probe(documentRequest("/courses/react"), {
       fetchImpl: vi.fn(async () => {
         throw new Error("ECONNREFUSED");
       }),
       apiBaseUrl: API,
     });
     expect(missing).toBe(false);
-    expect(warn).toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it("backend chết kéo dài chỉ log MỘT lần, không ngập log mỗi request", async () => {
+    const { isMissingResource: probe } = await freshProbe();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const fetchImpl = vi.fn(async () => {
+      throw new Error("ECONNREFUSED");
+    });
+    for (const path of ["/courses/a", "/courses/b", "/learn/c/d"]) {
+      expect(await probe(documentRequest(path), { fetchImpl, apiBaseUrl: API })).toBe(false);
+    }
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it("backend treo: bỏ cuộc trong ngân sách ngắn (không chặn TTFB tới 2 giây) và coi là không biết", async () => {
+    expect(PROBE_TIMEOUT_MS).toBeLessThanOrEqual(500);
+    const { isMissingResource: probe } = await freshProbe();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const hangUntilAborted = vi.fn(
+      (_url: string | URL | Request, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+        })
+    );
+    const startedAt = Date.now();
+    const missing = await probe(documentRequest("/courses/react"), { fetchImpl: hangUntilAborted, apiBaseUrl: API });
+    expect(missing).toBe(false);
+    expect(Date.now() - startedAt).toBeLessThan(1000);
+    warn.mockRestore();
   });
 
   it("slug có ký tự đặc biệt được encode khi gọi backend", async () => {

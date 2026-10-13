@@ -7,6 +7,12 @@
  * Status chỉ đặt được trước khi render — tức ở middleware. Các trang vẫn giữ `notFound()` riêng
  * làm lưới đỡ cho điều hướng client (request RSC không bị dò, xem `shouldProbe`).
  *
+ * Đã thử phương án đơn giản hơn trên Next 14.2.20 (review #91, finding 2): gọi `notFound()` trong
+ * `generateMetadata` HOẶC trong thân server layout, rồi `next build` + `next start` và `curl`:
+ * cả hai đều vẫn trả HTTP 200 (HTML có `NEXT_NOT_FOUND` + `noindex`, tức soft 404) cho
+ * /courses/<slug-sai>. Nên middleware vẫn là chỗ duy nhất đặt được 404 thật — giữ probe, nhưng
+ * rẻ: timeout ngắn, chỉ coi 404 (và 400 id quiz sai định dạng) là "thiếu", chỉ log một lần.
+ *
  * Quy tắc an toàn: CHỈ phản hồi "thiếu" khi backend nói rõ (404, hoặc 400 với id sai định dạng
  * ở quiz). Backend chết/5xx/401/403 -> coi như không biết, để trang tự xử lý như trước.
  */
@@ -16,7 +22,16 @@ import { getPublicApiBaseUrl } from "@/lib/server-fetchers/base-url";
 /** Đường dẫn chắc chắn không khớp route nào: Next render app/not-found.tsx với HTTP 404. */
 export const MISSING_RESOURCE_REWRITE_PATH = "/__missing-resource__";
 
-const PROBE_TIMEOUT_MS = 2000;
+/**
+ * Probe nằm TRƯỚC TTFB của mọi lần tải trang khoá học/bài học/quiz, nên ngân sách chờ phải nhỏ:
+ * quá hạn thì coi như "không biết" và để trang tự xử lý. (Backend không có endpoint "tồn tại?"
+ * nhẹ hơn `/courses/slug/:slug`; thêm endpoint đó là việc của lane backend.)
+ */
+export const PROBE_TIMEOUT_MS = 400;
+
+// Backend chết thì MỌI request trang đều hỏng probe; chỉ log lần đầu để khỏi ngập log. Biến theo
+// vòng đời isolate của middleware, đủ để lộ sự cố mà không lặp.
+let hasWarnedProbeFailure = false;
 
 interface ProbeRule {
   /** Khớp pathname; nhóm bắt đầu tiên là định danh tài nguyên. */
@@ -99,11 +114,14 @@ export async function isMissingResource(
     });
     return matched.rule.missingStatuses.includes(response.status);
   } catch (error) {
-    // Không chặn trang vì sự cố của lớp dò, nhưng phải để lại dấu vết (không nuốt lỗi im lặng).
-    console.warn(
-      `[middleware] không dò được ${request.nextUrl.pathname} — trang sẽ tự xử lý not-found:`,
-      error instanceof Error ? error.message : error
-    );
+    // Không chặn trang vì sự cố của lớp dò, nhưng phải để lại dấu vết (không nuốt lỗi im lặng) — một lần.
+    if (!hasWarnedProbeFailure) {
+      hasWarnedProbeFailure = true;
+      console.warn(
+        `[middleware] không dò được ${request.nextUrl.pathname} (sẽ không log lại các lần sau) — trang tự xử lý not-found:`,
+        error instanceof Error ? error.message : error
+      );
+    }
     return false;
   }
 }
