@@ -13,8 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useVoucherLookup, voucherLookupErrorMessage } from "@/hooks/queries/use-voucher";
+import { useAuthStore } from "@/stores/auth.store";
 import { calculateVoucherDiscount, type Voucher as ServiceVoucher } from "@/services/voucher.service";
 import type { VoucherValidateResponse } from "@/types/voucher";
+
+/** Khách chưa đăng nhập tra mã "đơn hàng đầu tiên": chưa kiểm được quyền hưởng nên không hiện mức giảm. */
+export const GUEST_FIRST_ORDER_VOUCHER_MESSAGE =
+  "Mã này chỉ áp dụng cho đơn hàng đầu tiên của tài khoản. Hãy đăng nhập để kiểm tra và áp dụng.";
 
 interface VoucherInputProps {
   /** Course ID(s) áp dụng voucher — dùng để hiển thị ngữ cảnh, chưa gửi lên backend */
@@ -51,6 +56,8 @@ export function VoucherInput({
   const appliedVoucherRef = useRef<ServiceVoucher | null>(null);
 
   const lookupMutation = useVoucherLookup();
+  // Chỉ chặn khi ĐÃ biết là khách; "checking" (đang khôi phục phiên) không được coi là khách.
+  const isGuest = useAuthStore((s) => s.sessionStatus === "anonymous");
 
   function clearApplied(message: string | null) {
     appliedVoucherRef.current = null;
@@ -66,6 +73,10 @@ export function VoucherInput({
     setErrorMessage(null);
     lookupMutation.mutate(trimmed, {
       onSuccess(voucher: ServiceVoucher) {
+        if (voucher.first_order_only && isGuest) {
+          clearApplied(GUEST_FIRST_ORDER_VOUCHER_MESSAGE);
+          return;
+        }
         const calc = calculateVoucherDiscount(voucher, subtotal);
         if (!calc.ok) {
           clearApplied(calc.errorMessage ?? "Mã voucher không hợp lệ");

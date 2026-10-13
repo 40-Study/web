@@ -53,6 +53,11 @@ export interface Voucher {
    * luôn trả field này; thiếu (dữ liệu cũ/mock) coi như công khai.
    */
   holders_only?: boolean;
+  /**
+   * Chỉ áp dụng cho đơn hàng ĐẦU TIÊN của người dùng (contract-be1 F-02). Tra mã cho KHÁCH vẫn trả 200 kèm cờ này
+   * (chưa biết khách đã mua chưa); quyền hưởng chỉ được backend kiểm khi đã đăng nhập (409 VOUCHER_FIRST_ORDER_ONLY).
+   */
+  first_order_only?: boolean;
 }
 
 export interface CreateVoucherDTO {

@@ -1,11 +1,12 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { VoucherInput } from "./voucher-input";
 import { CheckoutModal } from "./checkout-modal";
 import { voucherService, type Voucher } from "@/services/voucher.service";
 import { ApiError, NotFoundError } from "@/lib/errors";
 import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth.store";
 import type { VoucherValidateResponse } from "@/types/voucher";
 import type { CourseDetail } from "@/types/course";
 
@@ -155,5 +156,55 @@ describe("VoucherInput — hiện lý do thật khi tra mã lỗi (F-02 smoke 3)
     applyCodeOnly();
     expect(await screen.findByText("Không tìm thấy voucher hoặc mã không hợp lệ")).toBeTruthy();
     expect(toast.error).toHaveBeenCalledWith("Không tìm thấy voucher hoặc mã không hợp lệ");
+  });
+});
+
+describe("VoucherInput — voucher 'đơn hàng đầu tiên' với khách chưa đăng nhập (Wave-2 W2-9)", () => {
+  // Backend (contract-be1 F-02): tra mã cho KHÁCH vẫn 200 kèm `first_order_only: true` vì chưa biết khách đã mua chưa;
+  // quyền hưởng chỉ được kiểm khi đã đăng nhập. Web không được hiện mức giảm như thể mã đã chắc chắn áp dụng được.
+  const GUEST_MESSAGE = "Mã này chỉ áp dụng cho đơn hàng đầu tiên của tài khoản. Hãy đăng nhập để kiểm tra và áp dụng.";
+  const welcome: Voucher = { ...summer50k, code: "WELCOME20", min_purchase_money: 0, first_order_only: true };
+
+  beforeEach(() => {
+    vi.spyOn(voucherService, "getVoucherByCode").mockResolvedValue(welcome);
+  });
+  afterEach(() => {
+    useAuthStore.setState({ sessionStatus: "checking", isAuthenticated: false });
+  });
+
+  function applyWelcome() {
+    fireEvent.change(screen.getByPlaceholderText("Nhập mã voucher"), { target: { value: "WELCOME20" } });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+  }
+
+  it("khách: không hiện chip 'Giảm ...', báo cần đăng nhập và không báo parent có giảm giá", async () => {
+    useAuthStore.setState({ sessionStatus: "anonymous", isAuthenticated: false });
+    const onApplied = vi.fn<(r: VoucherValidateResponse | null) => void>();
+    wrap(<VoucherInput courseIds={["c1"]} subtotal={500000} onApplied={onApplied} />);
+    applyWelcome();
+
+    expect(await screen.findByText(GUEST_MESSAGE)).toBeTruthy();
+    expect(screen.queryByText(/Giảm/)).toBeNull();
+    expect(screen.queryByLabelText("Xóa voucher")).toBeNull();
+    expect(onApplied).toHaveBeenLastCalledWith(null);
+    expect(onApplied).not.toHaveBeenCalledWith(expect.objectContaining({ valid: true }));
+  });
+
+  it("đã đăng nhập: áp dụng bình thường (backend đã kiểm quyền hưởng)", async () => {
+    useAuthStore.setState({ sessionStatus: "authenticated", isAuthenticated: true });
+    const onApplied = vi.fn<(r: VoucherValidateResponse | null) => void>();
+    wrap(<VoucherInput courseIds={["c1"]} subtotal={500000} onApplied={onApplied} />);
+    applyWelcome();
+
+    await waitFor(() => expect(screen.getByText(/Giảm/)).toBeTruthy());
+    expect(onApplied).toHaveBeenLastCalledWith(expect.objectContaining({ valid: true, discount_amount: 50000 }));
+  });
+
+  it("khách + voucher thường (không first_order_only): vẫn áp dụng", async () => {
+    useAuthStore.setState({ sessionStatus: "anonymous", isAuthenticated: false });
+    vi.spyOn(voucherService, "getVoucherByCode").mockResolvedValue({ ...welcome, first_order_only: false });
+    wrap(<VoucherInput courseIds={["c1"]} subtotal={500000} onApplied={vi.fn()} />);
+    applyWelcome();
+    await waitFor(() => expect(screen.getByText(/Giảm/)).toBeTruthy());
   });
 });
