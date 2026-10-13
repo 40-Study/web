@@ -27,7 +27,12 @@ export default function CoursesPage() {
   // Debounce 300ms: `useSearchSuggestions` gọi API gợi ý theo từng ký tự.
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
-  const { data: allCourses = [], isLoading: coursesLoading } = useCourses(filters);
+  // Từ khóa tìm ở backend (`keyword`, không phân biệt dấu) — trước đây lọc ở client bằng
+  // `toLowerCase().includes` nên "dai so" không ra "Đại số" (F-07). `searchQuery` đã được CourseSearch debounce 300ms.
+  const { data: allCourses = [], isLoading: coursesLoading } = useCourses({
+    ...filters,
+    keyword: searchQuery || undefined,
+  });
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: suggestions = [] } = useSearchSuggestions(debouncedSearchQuery);
 
@@ -51,18 +56,8 @@ export default function CoursesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy khi danh sách danh mục hoặc slug trên URL đổi
   }, [categories, filters.category]);
 
-  // Filter courses by search query (API filters handled by useCourses)
-  const filteredCourses = searchQuery
-    ? allCourses.filter(
-        (c) =>
-          c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          c.instructor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          c.description.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : allCourses;
-
-  const visibleCourses = filteredCourses.slice(0, visibleCount);
-  const hasMore = filteredCourses.length > visibleCount;
+  const visibleCourses = allCourses.slice(0, visibleCount);
+  const hasMore = allCourses.length > visibleCount;
   const isLoading = coursesLoading || categoriesLoading;
   const hasActiveFilters = Boolean(
     searchQuery ||
@@ -119,7 +114,7 @@ export default function CoursesPage() {
 
           {!isLoading && (
             <p className="text-sm text-slate-600 dark:text-slate-400" aria-live="polite">
-              {filteredCourses.length} khóa học
+              {allCourses.length} khóa học
               {searchQuery && ` cho "${searchQuery}"`}
             </p>
           )}

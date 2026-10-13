@@ -94,6 +94,8 @@ export interface EnrolledCourse extends Course {
 }
 
 export interface CourseFilters {
+  /** Từ khóa tìm kiếm — gửi lên backend (`GET /courses?keyword=`, không phân biệt dấu), không lọc ở client. */
+  keyword?: string;
   category?: string;
   levels?: string[];
   priceRange?: "free" | "paid" | "all";
