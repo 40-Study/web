@@ -5,7 +5,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { EnrollableStudent } from "@/services/class.service";
+
+/** Một ứng viên trong ô chọn người. `detail` (vd. email) hiện dưới tên để phân biệt người trùng tên. */
+export interface PersonCandidate {
+  id: string;
+  name: string;
+  detail?: string;
+}
 
 const DEBOUNCE_MS = 300;
 
@@ -25,7 +31,7 @@ export function PersonPicker({
 }: {
   /** Khoá cache; phải khác nhau giữa các ô (giảng viên / học viên / từng lớp). */
   queryKey: readonly unknown[];
-  search: (keyword: string) => Promise<EnrollableStudent[]>;
+  search: (keyword: string) => Promise<PersonCandidate[]>;
   onPick: (id: string) => void;
   isPicking?: boolean;
   placeholder: string;
@@ -76,7 +82,10 @@ export function PersonPicker({
         <ul className="max-h-48 divide-y divide-border overflow-y-auto">
           {candidates.map((c) => (
             <li key={c.id} className="flex items-center justify-between gap-2 py-1.5">
-              <span className="truncate text-sm">{c.name}</span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm">{c.name}</span>
+                {c.detail && <span className="block truncate text-xs text-muted-foreground">{c.detail}</span>}
+              </span>
               <Button
                 type="button"
                 size="sm"
