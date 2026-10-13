@@ -189,6 +189,59 @@ describe("isMissingResource — quiz (cần đăng nhập)", () => {
   });
 });
 
+describe("isMissingResource — hồ sơ giảng viên công khai (/teachers/<id>)", () => {
+  const id = "11111111-1111-1111-1111-111111111111";
+
+  it("backend 404 -> thiếu, dò đúng endpoint public-profile", async () => {
+    const fetchImpl = fakeFetch(404);
+    const missing = await isMissingResource(documentRequest(`/teachers/${id}`), { fetchImpl, apiBaseUrl: API });
+    expect(missing).toBe(true);
+    expect(String(fetchImpl.mock.calls[0]?.[0])).toBe(`${API}/teachers/${id}/public-profile`);
+  });
+
+  it("id sai định dạng (backend 400) cũng là không tìm thấy", async () => {
+    const missing = await isMissingResource(documentRequest("/teachers/abc"), {
+      fetchImpl: fakeFetch(400),
+      apiBaseUrl: API,
+    });
+    expect(missing).toBe(true);
+  });
+
+  it("backend 200 -> có thật; 5xx không bị coi là thiếu", async () => {
+    for (const [status, expected] of [
+      [200, false],
+      [500, false],
+    ] as const) {
+      const missing = await isMissingResource(documentRequest(`/teachers/${id}`), {
+        fetchImpl: fakeFetch(status),
+        apiBaseUrl: API,
+      });
+      expect(missing, `status ${status}`).toBe(expected);
+    }
+  });
+
+  it("công khai: khách không cookie vẫn được dò; có cookie thì chuyển tiếp", async () => {
+    const anonymous = fakeFetch(404);
+    expect(await isMissingResource(documentRequest(`/teachers/${id}`), { fetchImpl: anonymous, apiBaseUrl: API })).toBe(
+      true
+    );
+    expect((anonymous.mock.calls[0]?.[1]?.headers as Record<string, string>).cookie).toBeUndefined();
+
+    const withSession = fakeFetch(200);
+    await isMissingResource(documentRequest(`/teachers/${id}`, { cookie: "accessToken=abc" }), {
+      fetchImpl: withSession,
+      apiBaseUrl: API,
+    });
+    expect((withSession.mock.calls[0]?.[1]?.headers as Record<string, string>).cookie).toBe("accessToken=abc");
+  });
+
+  it("danh sách /teachers (không có id) không bị dò", async () => {
+    const fetchImpl = fakeFetch(404);
+    expect(await isMissingResource(documentRequest("/teachers"), { fetchImpl, apiBaseUrl: API })).toBe(false);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
 describe("isMissingResource — không đụng tới route khác", () => {
   it.each([
     "/courses",

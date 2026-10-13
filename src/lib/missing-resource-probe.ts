@@ -66,6 +66,14 @@ const PROBE_RULES: readonly ProbeRule[] = [
     requiresSession: true,
     missingStatuses: [400, 404],
   },
+  {
+    // Hồ sơ giảng viên công khai. Backend: 404 cho id không có / không phải giảng viên đang hoạt động,
+    // 400 cho id không phải UUID (contract-be3 §3).
+    pattern: /^\/teachers\/([^/]+)\/?$/,
+    endpoint: (id) => `/teachers/${id}/public-profile`,
+    requiresSession: false,
+    missingStatuses: [400, 404],
+  },
 ];
 
 interface ProbeOptions {
