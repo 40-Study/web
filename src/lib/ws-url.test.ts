@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { deriveWsUrlFromApi, getWsUrl } from "./ws-url";
+import { alignLoopbackHost, deriveWsUrlFromApi, getWsUrl } from "./ws-url";
 
 /**
  * QA S2/P1: fallback cũ hardcode `ws://localhost:5000` khiến realtime chết ở dev
@@ -80,5 +80,79 @@ describe("getWsUrl", () => {
   it("server-side (không có window) -> chuỗi rỗng", () => {
     vi.stubGlobal("window", undefined);
     expect(getWsUrl()).toBe("");
+  });
+});
+
+/**
+ * QA vòng 2 (F-01): cookie `accessToken`/`rfToken` đặt cho host `localhost` nên WebSocket tới
+ * `127.0.0.1:5001` không mang cookie -> handshake 401, thông báo và chat không bao giờ realtime.
+ * Với hai bí danh loopback khác nhau (localhost / 127.0.0.1) phải căn host WS theo host của trang.
+ */
+describe("alignLoopbackHost", () => {
+  it("API ở 127.0.0.1 nhưng trang ở localhost -> WS đổi sang localhost, giữ port và path", () => {
+    expect(alignLoopbackHost("ws://127.0.0.1:5001/api/ws", "localhost")).toBe("ws://localhost:5001/api/ws");
+  });
+
+  it("chiều ngược lại: trang ở 127.0.0.1, WS ở localhost -> đổi sang 127.0.0.1", () => {
+    expect(alignLoopbackHost("ws://localhost:5001/api/ws", "127.0.0.1")).toBe("ws://127.0.0.1:5001/api/ws");
+  });
+
+  it("cùng host thì giữ nguyên", () => {
+    expect(alignLoopbackHost("ws://localhost:5001/api/ws", "localhost")).toBe("ws://localhost:5001/api/ws");
+  });
+
+  it("host WS không phải loopback (prod: api.fortex.ai.vn) thì KHÔNG đụng tới", () => {
+    expect(alignLoopbackHost("wss://api.fortex.ai.vn/api/ws", "fortex.ai.vn")).toBe("wss://api.fortex.ai.vn/api/ws");
+    expect(alignLoopbackHost("wss://api.fortex.ai.vn/api/ws", "localhost")).toBe("wss://api.fortex.ai.vn/api/ws");
+  });
+
+  it("trang không phải loopback (LAN IP, domain) thì KHÔNG đụng tới", () => {
+    expect(alignLoopbackHost("ws://localhost:5001/api/ws", "192.168.1.10")).toBe("ws://localhost:5001/api/ws");
+  });
+
+  it("URL không hợp lệ thì trả nguyên", () => {
+    expect(alignLoopbackHost("không-phải-url", "localhost")).toBe("không-phải-url");
+  });
+});
+
+describe("getWsUrl — căn host loopback với trang", () => {
+  const originalWs = process.env.NEXT_PUBLIC_WS_URL;
+  const originalApi = process.env.NEXT_PUBLIC_API_URL;
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    if (originalWs === undefined) delete process.env.NEXT_PUBLIC_WS_URL;
+    else process.env.NEXT_PUBLIC_WS_URL = originalWs;
+    if (originalApi === undefined) delete process.env.NEXT_PUBLIC_API_URL;
+    else process.env.NEXT_PUBLIC_API_URL = originalApi;
+  });
+
+  it("env trỏ 127.0.0.1 nhưng trang mở ở localhost -> dùng localhost và cảnh báo trong console", () => {
+    delete process.env.NEXT_PUBLIC_WS_URL;
+    process.env.NEXT_PUBLIC_API_URL = "http://127.0.0.1:5001/api";
+    vi.stubGlobal("window", { location: { protocol: "http:", host: "localhost:3000", hostname: "localhost" } });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    expect(getWsUrl()).toBe("ws://localhost:5001/api/ws");
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain("127.0.0.1");
+  });
+
+  it("NEXT_PUBLIC_WS_URL tường minh cũng được căn host", () => {
+    process.env.NEXT_PUBLIC_WS_URL = "ws://127.0.0.1:5001/api/ws";
+    vi.stubGlobal("window", { location: { protocol: "http:", host: "localhost:3000", hostname: "localhost" } });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    expect(getWsUrl()).toBe("ws://localhost:5001/api/ws");
+  });
+
+  it("host đã khớp thì không cảnh báo", () => {
+    process.env.NEXT_PUBLIC_WS_URL = "ws://localhost:5001/api/ws";
+    vi.stubGlobal("window", { location: { protocol: "http:", host: "localhost:3000", hostname: "localhost" } });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    expect(getWsUrl()).toBe("ws://localhost:5001/api/ws");
+    expect(warn).not.toHaveBeenCalled();
   });
 });
