@@ -233,3 +233,52 @@ describe("/admin/moderation — hành động trên đối tượng (ADM-N4)", (
     expect(screen.getByRole("button", { name: "Từ chối báo cáo" })).toBeTruthy();
   });
 });
+
+describe("/admin/moderation — độ bền của khối 'Xử lý đối tượng' (review QA2 #5, #6)", () => {
+  function listWith(...reports: unknown[]) {
+    mockApi.get.mockResolvedValue(envelope({ data: reports, total: reports.length, page: 1, page_size: 50 }));
+  }
+
+  it("#5: available_actions có giá trị web chưa biết (vd. ban_user) -> không crash, chỉ hiện nút đã biết", async () => {
+    listWith({
+      ...base, id: "r-future", reported_type: "course", reported_id: COURSE_ID, reason: "spam",
+      target: target({ type: "course", id: COURSE_ID, name: "Khoá có hành động lạ", status: "published", slug: "k", available_actions: ["ban_user", "unpublish_course"] }),
+    });
+    renderWithProviders(<AdminModerationPage />);
+    await screen.findByText("Khoá có hành động lạ");
+    await openReport("Khoá có hành động lạ");
+
+    expect(screen.getByRole("button", { name: "Gỡ khoá học khỏi danh mục" })).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: /Gỡ khoá học|ban_user/ })).toHaveLength(1);
+  });
+
+  it("#5: chỉ có hành động lạ -> không có tiêu đề 'Xử lý đối tượng' rỗng", async () => {
+    listWith({
+      ...base, id: "r-future2", reported_type: "course", reported_id: COURSE_ID, reason: "spam",
+      target: target({ type: "course", id: COURSE_ID, name: "Chỉ hành động lạ", status: "published", slug: "k", available_actions: ["ban_user"] }),
+    });
+    renderWithProviders(<AdminModerationPage />);
+    await screen.findByText("Chỉ hành động lạ");
+    await openReport("Chỉ hành động lạ");
+    expect(screen.queryByText("Xử lý đối tượng")).toBeNull();
+  });
+
+  it("#6: báo cáo người dùng mà đối tượng đã bị xoá -> không có tiêu đề 'Xử lý đối tượng' rỗng", async () => {
+    listWith({
+      ...base, id: "r-user-gone", reported_type: "user", reported_id: USER_ID, reason: "spam",
+      target: target({ type: "user", id: USER_ID, exists: false }),
+    });
+    renderWithProviders(<AdminModerationPage />);
+    await screen.findByText("Đối tượng đã bị xoá");
+    fireEvent.click(screen.getByRole("button", { name: "Xem" }));
+    expect(screen.queryByText("Xử lý đối tượng")).toBeNull();
+  });
+
+  it("#6: báo cáo người dùng không có target (backend cũ) -> cũng không có khối rỗng", async () => {
+    listWith({ ...base, id: "r-user-legacy", reported_type: "user", reported_id: USER_ID, reason: "spam" });
+    renderWithProviders(<AdminModerationPage />);
+    await screen.findByText(USER_ID);
+    fireEvent.click(screen.getByRole("button", { name: "Xem" }));
+    expect(screen.queryByText("Xử lý đối tượng")).toBeNull();
+  });
+});

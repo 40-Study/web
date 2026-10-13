@@ -51,6 +51,14 @@ export const REPORT_ACTION_SPECS: Record<ReportModerationAction, ReportActionSpe
   },
 };
 
+/**
+ * `available_actions` do backend quyết nên có thể chứa hành động web chưa biết (backend ra trước web): bỏ qua thay vì
+ * để `REPORT_ACTION_SPECS[action]` undefined làm sập trang.
+ */
+export function isKnownReportAction(action: string): action is ReportModerationAction {
+  return Object.prototype.hasOwnProperty.call(REPORT_ACTION_SPECS, action);
+}
+
 /** Backend yêu cầu lý do 3..500 ký tự (đã cắt khoảng trắng) cho hành động có `reasonLabel`. */
 export const MIN_REASON_LENGTH = 3;
 export const MAX_REASON_LENGTH = 500;

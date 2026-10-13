@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { ReportActionDialog } from "./_components/report-action-dialog";
 import { ReportTargetLabel } from "./_components/report-target-label";
-import { REPORT_ACTION_SPECS } from "./_lib/report-actions";
+import { REPORT_ACTION_SPECS, isKnownReportAction } from "./_lib/report-actions";
 
 // A-P2-5: trước đây có API nghiệp vụ report (POST/GET/PUT/DELETE /api/reports) nhưng KHÔNG có
 // trang admin nào để xử lý — chủ trường không có cách nào nhìn thấy report của học viên. Trang
@@ -65,7 +65,11 @@ export default function AdminModerationPage() {
   const [moderationAction, setModerationAction] = useState<ReportModerationAction | null>(null);
 
   const selected = useMemo(() => reports.find((r) => r.id === selectedId) || null, [reports, selectedId]);
-  const availableActions = selected?.target?.exists ? selected.target.available_actions : [];
+  const availableActions = (selected?.target?.exists ? selected.target.available_actions : []).filter(
+    isKnownReportAction,
+  );
+  // Lối sang trang người dùng chỉ có nghĩa khi đối tượng còn tồn tại (đã xoá thì không có trang để mở).
+  const canOpenUserPage = selected?.reported_type === "user" && selected.target?.exists === true;
 
   const openReport = (r: Report) => {
     setSelectedId(r.id);
@@ -204,7 +208,7 @@ export default function AdminModerationPage() {
                 </Button>
               </div>
 
-              {(availableActions.length > 0 || selected.reported_type === "user") && (
+              {(availableActions.length > 0 || canOpenUserPage) && (
                 <div className="space-y-2 border-t pt-3 dark:border-gray-800">
                   <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Xử lý đối tượng</p>
                   <div className="flex flex-wrap gap-2">
@@ -218,7 +222,7 @@ export default function AdminModerationPage() {
                         {REPORT_ACTION_SPECS[action].button}
                       </Button>
                     ))}
-                    {selected.reported_type === "user" && selected.target?.exists && (
+                    {canOpenUserPage && (
                       <Link
                         href={`/admin/users/${selected.reported_id}`}
                         className="inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-900"
