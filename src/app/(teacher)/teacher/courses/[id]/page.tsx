@@ -60,6 +60,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { isUuid } from "@/lib/uuid";
 import { useCourse } from "@/hooks/queries/use-courses";
 import { CourseReviewPanel, CourseStatusBadge } from "@/components/teacher/course-review-status";
 import { useSections, useCreateSection, useReorderSections, useDeleteSection, sectionKeys } from "@/hooks/queries/use-sections";
@@ -526,7 +527,9 @@ export default function CourseDetailPage() {
   const queryClient = useQueryClient();
 
   const { data: course, isLoading: courseLoading, isError: courseError, error: courseErrorValue, refetch: refetchCourse } = useCourse(courseId);
-  const { data: sectionsRaw = [], isLoading: sectionsLoading } = useSections(courseId);
+  // Id không phải UUID thì backend trả 400 cho cả /sections lẫn /courses/:id. Request khoá học vẫn chạy (nó quyết
+  // định trang "Không tìm thấy"); sections thì chặn bằng id rỗng (`enabled: !!courseId` của hook).
+  const { data: sectionsRaw = [], isLoading: sectionsLoading } = useSections(isUuid(courseId) ? courseId : "");
   const sections = Array.isArray(sectionsRaw) ? sectionsRaw : [];
   const createSection = useCreateSection(courseId);
   const reorderSections = useReorderSections(courseId);
