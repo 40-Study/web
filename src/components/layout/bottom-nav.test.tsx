@@ -141,3 +141,24 @@ describe("BottomNav — bộ tab teacher ở khung hẹp", () => {
     }
   });
 });
+
+// QA vòng 2 (F-15): bộ tab học viên có 7 tab. Đo thật ở 390px: nav inset 16px mỗi bên -> mỗi tab 51px, nhãn
+// "Trang chủ" 11px rộng 53px (tràn tab), "Khóa học"/"Xếp hạng" cách nhau 0.9px nên chữ dính nhau. Inset hẹp hơn
+// ở màn hình nhỏ + nhãn 10px để có khoảng thở; từ `sm` trở lên trả về kích thước cũ.
+describe("BottomNav — nhãn không dính nhau ở 390px", () => {
+  it("student (7 tab): nav dùng inset hẹp ở mobile và nhãn 10px (11px từ sm)", () => {
+    useAuthStore.setState({ activeRole: "STUDENT" });
+    const { container } = render(<BottomNav role="student" />);
+
+    const navClasses = container.querySelector("nav")!.className.split(/\s+/);
+    expect(navClasses).toContain("left-2");
+    expect(navClasses).toContain("right-2");
+    expect(navClasses).toContain("sm:left-4");
+    expect(navClasses).toContain("sm:right-4");
+
+    const label = screen.getByText("Trang chủ");
+    expect(label.className).toContain("text-[10px]");
+    expect(label.className).toContain("sm:text-[11px]");
+    useAuthStore.setState({ activeRole: null });
+  });
+});

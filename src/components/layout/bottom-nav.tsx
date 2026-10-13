@@ -95,7 +95,7 @@ export function BottomNav({ role = "student", className }: BottomNavProps) {
   return (
     <nav
       className={cn(
-        "fixed bottom-4 left-4 right-4 bg-card/95 backdrop-blur-md border border-border rounded-2xl shadow-raised lg:hidden z-50",
+        "fixed bottom-4 left-2 right-2 sm:left-4 sm:right-4 bg-card/95 backdrop-blur-md border border-border rounded-2xl shadow-raised lg:hidden z-50",
         className
       )}
     >
@@ -114,6 +114,7 @@ export function BottomNav({ role = "student", className }: BottomNavProps) {
               href={tab.href}
               className={cn(
                 // flex-1 + min-w-0 (không còn min-w-[56px]): 7 tab × 56px = 392px tràn khung 390px.
+                // Nav inset left-2/right-2 + nhãn 10px ở mobile: 7 tab × 53px, nhãn dài nhất ("Trang chủ") ~48px (F-15).
                 "flex flex-1 min-w-0 flex-col items-center gap-1 px-1 py-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                 isActive
                   ? "text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30"
@@ -124,7 +125,7 @@ export function BottomNav({ role = "student", className }: BottomNavProps) {
                 {tab.icon}
                 {tab.badge}
               </span>
-              <span className="whitespace-nowrap text-[11px] font-medium leading-none">{tab.label}</span>
+              <span className="whitespace-nowrap text-[10px] font-medium leading-none sm:text-[11px]">{tab.label}</span>
             </Link>
           );
         })}
