@@ -55,11 +55,32 @@ export function buildPageMetadata({
   };
 }
 
+const NAMED_ENTITIES: Readonly<Record<string, string>> = {
+  nbsp: " ",
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+};
+
+/**
+ * Giải mã entity HTML thường gặp trong MỘT lượt (không giải mã lại kết quả: "&amp;lt;" -> "&lt;", không phải "<").
+ * Next tự escape giá trị khi in ra `<meta>`; để nguyên "&amp;" thì meta thành "&amp;amp;" (escape hai lần).
+ * Entity lạ hoặc số ngoài dải Unicode được giữ nguyên.
+ */
+function decodeHtmlEntities(text: string): string {
+  return text.replace(/&(?:#(\d+)|#[xX]([0-9a-fA-F]+)|([a-zA-Z]+));/g, (whole, dec, hex, name) => {
+    if (name) return NAMED_ENTITIES[name] ?? whole;
+    const codePoint = dec ? Number.parseInt(dec, 10) : Number.parseInt(hex, 16);
+    return codePoint > 0 && codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : whole;
+  });
+}
+
 /** HTML -> đoạn mô tả thuần chữ (≤ `max` ký tự, cắt ở ranh giới từ khi có thể) cho meta description. */
 export function plainTextExcerpt(html: string, max = 160): string {
-  const text = html
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/g, " ")
+  // Bỏ thẻ TRƯỚC khi giải mã: "&lt;b&gt;" là chữ "<b>" của bài viết, không phải thẻ để xoá.
+  const text = decodeHtmlEntities(html.replace(/<[^>]*>/g, " "))
     .replace(/\s+/g, " ")
     .trim();
   if (text.length <= max) return text;

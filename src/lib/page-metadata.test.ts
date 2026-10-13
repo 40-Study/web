@@ -56,6 +56,28 @@ describe("plainTextExcerpt", () => {
     expect(text.startsWith(out.slice(0, -1).trimEnd())).toBe(true);
   });
 
+  it("giải mã entity thường gặp để Next không escape lần hai trong <meta>", () => {
+    expect(plainTextExcerpt("<p>Tom &amp; Jerry &quot;vui&quot; &lt;3 &gt; 2 &#39;ok&#39;&nbsp;nhé</p>")).toBe(
+      "Tom & Jerry \"vui\" <3 > 2 'ok' nhé"
+    );
+  });
+
+  it("giải mã entity số (thập phân và hex)", () => {
+    expect(plainTextExcerpt("caf&#233; &#x1F600; &#xe9;")).toBe("café 😀 é");
+  });
+
+  it("chỉ giải mã một lượt: &amp;lt; ra &lt; chứ không thành <", () => {
+    expect(plainTextExcerpt("&amp;lt;b&amp;gt;")).toBe("&lt;b&gt;");
+  });
+
+  it("&lt;b&gt; là chữ của bài viết, không bị coi là thẻ để xoá", () => {
+    expect(plainTextExcerpt("dùng thẻ &lt;b&gt; để in đậm")).toBe("dùng thẻ <b> để in đậm");
+  });
+
+  it("entity lạ hoặc số ngoài dải Unicode giữ nguyên", () => {
+    expect(plainTextExcerpt("a &foo; b &#99999999; c &#0;")).toBe("a &foo; b &#99999999; c &#0;");
+  });
+
   it("văn bản ngắn giữ nguyên, rỗng trả chuỗi rỗng", () => {
     expect(plainTextExcerpt("ngắn")).toBe("ngắn");
     expect(plainTextExcerpt("")).toBe("");
