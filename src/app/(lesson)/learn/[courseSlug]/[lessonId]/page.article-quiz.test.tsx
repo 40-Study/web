@@ -163,6 +163,51 @@ describe("/learn/[courseSlug]/[lessonId] — bài viết và trắc nghiệm", (
     expect(screen.getByTestId("tab-quizzes").textContent).toContain("Kiểm tra cuối bài");
   });
 
+  // QA 261010 follow-up 2d, observation 2: bài có CẢ video lẫn bài viết chỉ phát video, bài viết biến mất.
+  it("video + bài viết: hiện video VÀ bài viết đã sanitize bên dưới, không có nút 'Đánh dấu đã đọc'", () => {
+    mockContents = [
+      { id: "c-v", type: "video", title: "Video", display_order: 0 },
+      {
+        id: "c-a",
+        type: "article",
+        title: "Tài liệu đọc thêm",
+        display_order: 1,
+        reading_time_minutes: 2,
+        article_body: '<p>Bài viết đi kèm video</p><script>window.__pwn=1</script><img src="x" onerror="window.__pwn=2">',
+      },
+    ];
+    const { container } = renderPage();
+
+    expect(screen.getByText("Bài viết đi kèm video")).toBeTruthy();
+    expect(screen.getByText(/2 phút đọc/)).toBeTruthy();
+    expect(container.innerHTML).not.toMatch(/<script|onerror/i);
+    // Hoàn thành bài video do tiến độ xem quyết định — nút đọc xong sẽ cho bỏ qua video.
+    expect(screen.queryByRole("button", { name: /Đánh dấu đã đọc/ })).toBeNull();
+    // Chỉ một h1 (tiêu đề bài học) — bài viết nhúng không thêm h1 thứ hai.
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.getByText("les-1:video")).toBeTruthy();
+  });
+
+  it("video + bài viết + quiz: bài viết hiện, quiz vẫn nằm trong tab Quiz", () => {
+    mockContents = [
+      { id: "c-v", type: "video", title: "Video", display_order: 0 },
+      { id: "c-a", type: "article", title: "Đọc thêm", display_order: 1, article_body: "<p>Nội dung đọc thêm</p>" },
+      { id: "c-q", type: "quiz", title: "Kiểm tra", display_order: 2, quiz_id: "q1" },
+    ];
+    mockLessonQuizzes = [{ id: "q1", title: "Kiểm tra cuối bài" }];
+    renderPage();
+
+    expect(screen.getByText("Nội dung đọc thêm")).toBeTruthy();
+    expect(screen.getByTestId("tab-quizzes").textContent).toContain("Kiểm tra cuối bài");
+  });
+
+  it("chỉ video (không có bài viết): không dựng khối bài viết", () => {
+    mockContents = [{ id: "c-v", type: "video", title: "Video", display_order: 0 }];
+    renderPage();
+    expect(screen.queryByTestId("article-body")).toBeNull();
+    expect(screen.queryByText("Bài viết chưa có nội dung.")).toBeNull();
+  });
+
   it("quiz: màn hình bắt đầu lấy quiz THEO quiz_id của content (không phải quizzes[0])", () => {
     mockContents = [{ id: "c2", type: "quiz", title: "Kiểm tra", display_order: 0, quiz_id: "q-b" }];
     mockLessonQuizzes = [

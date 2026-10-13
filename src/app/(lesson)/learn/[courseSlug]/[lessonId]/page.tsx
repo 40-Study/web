@@ -25,10 +25,11 @@ import {
   invalidateAfterLessonProgress,
   isCourseCompleted,
 } from "@/components/player/lesson-progress-sync";
-import { pickPrimaryContent, quizzesForTab, resolveLessonKind, toPlayerLessonType } from "@/components/player/lesson-kind";
+import { pickCompanionArticle, pickPrimaryContent, quizzesForTab, resolveLessonKind, toPlayerLessonType } from "@/components/player/lesson-kind";
 import { ArticleContentView } from "@/components/lesson/article-content-view";
 import { resolveLivestreamRoomHref } from "@/lib/lesson-content-link";
 import type { LessonProgressResponse } from "@/services/enrollment.service";
+import type { LessonContent } from "@/services/lesson-content.service";
 import type { Quiz } from "@/services/quiz.service";
 import { QuizAttemptReview } from "@/components/quiz";
 import { useCourseBySlug } from "@/hooks/queries/use-courses";
@@ -207,6 +208,7 @@ function VideoLessonContent({
   studentCount,
   lessonQuizzes,
   onProgress,
+  companionArticle,
 }: {
   videoSrc: string | null;
   /** Lý do chưa phát được (vd video đang được xử lý) — hiện thay cho "Video không khả dụng". */
@@ -226,6 +228,8 @@ function VideoLessonContent({
   studentCount: number;
   lessonQuizzes?: Quiz[];
   onProgress?: (progress: LessonProgressResponse) => void;
+  /** Bài viết cùng bài với video — hiện dưới video (QA 261010 2d, quan sát 2). */
+  companionArticle?: LessonContent;
 }) {
   const lessonId = currentLesson?.id ?? "";
   const sectionId = course.chapters.find((ch) =>
@@ -328,6 +332,18 @@ function VideoLessonContent({
         />
       )}
 
+      {companionArticle && lessonId && (
+        <ArticleContentView
+          embedded
+          lessonId={lessonId}
+          courseId={course.id}
+          title={companionArticle.title}
+          body={companionArticle.article_body}
+          readingTimeMinutes={companionArticle.reading_time_minutes}
+          completed={!!currentLesson?.completed}
+        />
+      )}
+
       <div className="bg-white rounded-2xl shadow-sm px-4 sm:px-6 pt-5 pb-4">
         {/* A7: xếp dọc dưới sm — nút "Bài tiếp theo" shrink-0 cạnh tiêu đề dài
             từng tràn ra ngoài khung ở 390px. */}
@@ -424,6 +440,8 @@ export default function CourseLessonPage() {
   const lessonVideo = lessonContents?.find((c) => c.type === "video");
   const lessonKind = resolveLessonKind(lessonContents);
   const primaryContent = pickPrimaryContent(lessonContents);
+  // Bài viết cùng bài với video (video là nội dung chính) — hiện dưới video thay vì biến mất.
+  const companionArticle = pickCompanionArticle(lessonContents);
 
   /**
    * A4: báo hoàn thành khoá đúng MỘT lần — chỉ khi khoá CHƯA hoàn thành lúc mở
@@ -812,6 +830,7 @@ export default function CourseLessonPage() {
         studentCount={apiCourse.total_students ?? 0}
         lessonQuizzes={tabQuizzes}
         onProgress={handleLessonProgress}
+        companionArticle={companionArticle}
       />
     );
   };

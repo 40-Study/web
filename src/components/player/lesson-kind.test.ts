@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  pickCompanionArticle,
   pickPrimaryContent,
   quizIdsShownAsContent,
   quizzesForTab,
@@ -112,5 +113,31 @@ describe("toPlayerLessonType", () => {
     expect(toPlayerLessonType("exercise")).toBe("exercise");
     expect(toPlayerLessonType("video")).toBe("video");
     expect(toPlayerLessonType("livestream")).toBe("video");
+  });
+});
+
+describe("pickCompanionArticle — bài viết đi kèm video (QA 261010 2d, quan sát 2)", () => {
+  const video = { type: "video", display_order: 0 } as const;
+
+  it("bài có video + bài viết -> trả bài viết (display_order nhỏ nhất)", () => {
+    const late = { type: "article", display_order: 3, article_body: "<p>b</p>" } as const;
+    const early = { type: "article", display_order: 1, article_body: "<p>a</p>" } as const;
+    expect(pickCompanionArticle([video, late, early])).toBe(early);
+  });
+
+  it("bài viết đứng trước video vẫn là bài viết đi kèm (video luôn là nội dung chính)", () => {
+    const article = { type: "article", display_order: 0 } as const;
+    expect(pickCompanionArticle([article, { type: "video", display_order: 1 }])).toBe(article);
+  });
+
+  it("chỉ bài viết -> undefined (đã hiện làm nội dung chính, không hiện hai lần)", () => {
+    expect(pickCompanionArticle([{ type: "article", display_order: 0 }])).toBeUndefined();
+  });
+
+  it("chỉ video / quiz-only / chưa tải -> undefined", () => {
+    expect(pickCompanionArticle([video])).toBeUndefined();
+    expect(pickCompanionArticle([{ type: "quiz", display_order: 0 }])).toBeUndefined();
+    expect(pickCompanionArticle(undefined)).toBeUndefined();
+    expect(pickCompanionArticle([])).toBeUndefined();
   });
 });
