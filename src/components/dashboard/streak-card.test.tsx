@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { getWeekStreakFlags } from "./streak-card";
-import { getCurrentLessonNumber } from "./continue-learning-card";
 
 describe("getWeekStreakFlags", () => {
   it("đánh dấu hôm nay và các ngày trước trong chuỗi khi đã học hôm nay", () => {
@@ -19,19 +18,5 @@ describe("getWeekStreakFlags", () => {
 
   it("chuỗi 0 thì không ô nào sáng", () => {
     expect(getWeekStreakFlags(0, false, 4).some(Boolean)).toBe(false);
-  });
-});
-
-describe("getCurrentLessonNumber", () => {
-  it("là bài kế tiếp sau số bài đã xong", () => {
-    expect(getCurrentLessonNumber(4, 24)).toBe(5);
-  });
-
-  it("không vượt tổng số bài", () => {
-    expect(getCurrentLessonNumber(24, 24)).toBe(24);
-  });
-
-  it("bằng 0 khi khoá chưa có bài", () => {
-    expect(getCurrentLessonNumber(0, 0)).toBe(0);
   });
 });

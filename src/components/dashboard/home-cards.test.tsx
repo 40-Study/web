@@ -20,6 +20,18 @@ const baseCourse = {
   progress: 42,
 };
 
+describe("ContinueLearningCard progress label", () => {
+  // F-11 (QA2 261013): "Bài 6/9" khi mới xong 5 bài đọc như đã xong 6; trang Khoá học của tôi ghi 5/9.
+  it("hiện số bài ĐÃ HỌC cùng cách ghi với trang Khoá học của tôi", () => {
+    const html = renderToStaticMarkup(
+      <ContinueLearningCard course={{ ...baseCourse, completedLessons: 5, totalLessons: 9, progress: 55.56 }} />
+    );
+    expect(html).toContain("5/9 bài học");
+    expect(html).toContain("56%");
+    expect(html).not.toContain("Bài 6/9");
+  });
+});
+
 describe("ContinueLearningCard thumbnail", () => {
   it("renders the BookOpen fallback in the same box when there is no thumbnail", () => {
     const html = renderToStaticMarkup(<ContinueLearningCard course={baseCourse} />);
