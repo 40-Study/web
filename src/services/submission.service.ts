@@ -4,6 +4,7 @@
  */
 
 import { api } from "@/lib/api-client";
+import type { SubmissionVerdict as CodeEditorVerdict } from "@/services/exercise.service";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -75,6 +76,36 @@ export interface RunResultDTO {
   status: string;
 }
 
+/** POST /submissions/execute (E1): chạy code tự do (sandbox, nút Run của bài tập). */
+export interface ExecuteRequest {
+  /** khoá trong `RUNNABLE_LANGUAGES` */
+  language: string;
+  code: string;
+  stdin: string;
+}
+
+/** Payload thô của E1 (không bọc `{message, data}`). */
+export interface ExecuteResult {
+  stdout: string;
+  stderr: string;
+  compile_output: string;
+  /** compile output nhắc lại cho client cũ; có thể vắng */
+  error?: string;
+  exit_code: number;
+  time: string;
+  memory: number;
+  /** verdict (contract sec. 2) */
+  status: CodeEditorVerdict;
+  /** id trạng thái Judge0 (1-14) */
+  status_id: number;
+}
+
+/** Một dòng của GET /submissions/languages (E2). */
+export interface RunnableLanguageOption {
+  key: string;
+  label: string;
+}
+
 type R<T> = { message: string; data: T };
 
 // ─── Service ────────────────────────────────────────────────────────────────
@@ -109,6 +140,14 @@ export const submissionService = {
     api
       .get<R<SubmissionResponseDTO[]>>(`/submissions/my/${assignmentId}`)
       .then((r) => r.data.data),
+
+  /** POST /submissions/execute (E1) — payload thô, KHÔNG `.data.data`; lỗi mang `ApiError.code` */
+  execute: (body: ExecuteRequest) =>
+    api.post<ExecuteResult>("/submissions/execute", body).then((r) => r.data),
+
+  /** GET /submissions/languages (E2) — payload thô */
+  getRunnableLanguages: () =>
+    api.get<RunnableLanguageOption[]>("/submissions/languages").then((r) => r.data),
 
   /** GET /submissions/user/:userId — all submissions by a user */
   getByUser: (userId: string) =>
