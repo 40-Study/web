@@ -58,8 +58,9 @@ export function useContestParticipants(id: string | undefined, page: number) {
   });
 }
 
-export function useContestQuizOptions() {
+export function useContestQuizOptions(enabled = true) {
   return useQuery({
+    enabled, staleTime: 60_000, refetchOnWindowFocus: false,
     queryKey: contestManageKeys.quizOptions(),
     queryFn: () => contestManageService.quizOptions(),
   });

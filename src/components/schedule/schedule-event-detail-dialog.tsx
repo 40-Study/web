@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Clock, User, MapPin, FileText, Users, Video, Radio, Layers } from "lucide-react";
@@ -92,6 +93,7 @@ export default function ScheduleEventDetailDialog({
               <span className="text-gray-600 dark:text-gray-300">{event.description}</span>
             </DetailRow>
           )}
+          {event.meetingUrl?.startsWith("/rooms/") && event.status === "ongoing" && <Link href={event.meetingUrl} prefetch={false} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white"><Radio className="h-4 w-4" />Vào lớp học</Link>}
         </div>
       </DialogContent>
     </Dialog>

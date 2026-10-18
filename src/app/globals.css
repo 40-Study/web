@@ -3,6 +3,13 @@
 @tailwind utilities;
 
 :root {
+  /* Native San Francisco on macOS/iOS, with the platform UI font elsewhere.
+     Legacy variables resolve to the same family so embedded editors stay consistent. */
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-inter: var(--font-ui);
+  --font-heading: var(--font-ui);
+  --font-plus-jakarta: var(--font-ui);
+
   --radius: 0.625rem; /* 10px — control (Button/Input/Select/Textarea) = rounded-lg */
 
   /* Educational Platform Design System */
@@ -121,10 +128,11 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  font-family: var(--font-ui);
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
-/* Heading font (Plus Jakarta Sans). Tiếng Việt: line-height >= 1.15, tracking không chặt hơn -0.03em. */
+/* Unified native UI font. Tiếng Việt: line-height >= 1.15, tracking không chặt hơn -0.03em. */
 @layer base {
   h1, h2, h3 {
     @apply font-heading;
@@ -266,7 +274,7 @@ body {
 /* ─── Code Sandbox ─────────────────────────────────────────────────────────── */
 .cs-editor {
   --font-mono: 'Consolas', 'Cascadia Code', 'Menlo', 'Monaco', 'Courier New', monospace;
-  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+
 }
 .cs-editor *, .cs-editor *::before, .cs-editor *::after {
   box-sizing: border-box;
@@ -726,7 +734,7 @@ html {
 
 /* Base font + reset */
 .fc-custom-wrap {
-  font-family: 'Inter', 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   color: #3c4043;
 }
@@ -1041,3 +1049,37 @@ html {
     margin: 14mm;
   }
 }
+
+/* Teaching tools: presentation surfaces inherit ForteX semantic tokens. */
+.teaching-tools {
+  --tool-accent: var(--primary);
+  --tool-accent-foreground: var(--primary-foreground);
+  --tool-canvas: var(--muted);
+  --slide-surface: var(--card);
+  --slide-ink: var(--foreground);
+  --slide-subtle: var(--muted-foreground);
+  --slide-radius: 1rem;
+}
+.teaching-tools [data-slide-theme="ink"] {
+  --tool-accent: 222 47% 16%;
+  --tool-accent-foreground: 0 0% 100%;
+}
+.teaching-tools [data-slide-theme="forest"] {
+  --tool-accent: 158 64% 25%;
+  --tool-accent-foreground: 0 0% 100%;
+}
+.slide-sheet {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  container-type: inline-size;
+  background: hsl(var(--slide-surface));
+  color: hsl(var(--slide-ink));
+  border-radius: var(--slide-radius);
+}
+.slide-sheet .slide-inner { padding: 5cqw 6cqw; height: 100%; display: flex; flex-direction: column; }
+.slide-sheet .slide-title { font-size: clamp(16px, 4cqw, 44px); line-height: 1.2; overflow-wrap: anywhere; }
+.slide-sheet .slide-subtitle { font-size: clamp(10px, 1.8cqw, 20px); line-height: 1.5; }
+.slide-sheet .slide-bullet { font-size: clamp(10px, 2cqw, 22px); line-height: 1.45; }
+.slide-sheet[data-layout="cover"] { background: hsl(var(--tool-accent)); color: hsl(var(--tool-accent-foreground)); }
+.slide-sheet[data-layout="cover"] .slide-inner { justify-content: center; }
+.slide-sheet[data-layout="split"] .slide-bullets { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2cqw 3cqw; }

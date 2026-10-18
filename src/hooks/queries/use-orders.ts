@@ -30,7 +30,9 @@ export function isOrderExpiredError(error: unknown): error is ApiError {
 export const ORDER_ALREADY_PAID_CODE = "ERR_ORDER_ALREADY_PAID";
 
 export function isOrderAlreadyPaidError(error: unknown): error is ApiError {
-  return error instanceof ApiError && error.status === 409 && error.code === ORDER_ALREADY_PAID_CODE;
+  return (
+    error instanceof ApiError && error.status === 409 && error.code === ORDER_ALREADY_PAID_CODE
+  );
 }
 
 /**
@@ -93,7 +95,13 @@ export function useOrder(id: string) {
 }
 
 const PAYMENT_STATUS_POLL_INTERVAL_MS = 5_000;
-const PAYMENT_TERMINAL_STATUSES = new Set(["completed", "paid", "cancelled", "refunded", "expired"]);
+const PAYMENT_TERMINAL_STATUSES = new Set([
+  "completed",
+  "paid",
+  "cancelled",
+  "refunded",
+  "expired",
+]);
 /**
  * Re-review #76 vòng 2: hết hạn mã KHÔNG phải kết quả cuối. Backend đối chiếu ngân hàng lần cuối rồi
  * mới chốt completed/expired (và giữ nguyên trạng thái nếu chưa xác minh được), nên vẫn poll thêm
@@ -108,9 +116,14 @@ export const PAYMENT_FINAL_CHECK_WINDOW_MS = 10 * 60_000;
  * web-core-developer-260909-1412-web-logic-fixes.md).
  */
 /** Nhịp poll kế tiếp (ms) hoặc false để dừng: dừng khi có kết quả cuối hoặc quá hạn + cửa sổ đối chiếu. */
-export function nextPaymentPollDelay(status: string | undefined, expiresAt?: string | null, now = Date.now()): number | false {
+export function nextPaymentPollDelay(
+  status: string | undefined,
+  expiresAt?: string | null,
+  now = Date.now()
+): number | false {
   if (status && PAYMENT_TERMINAL_STATUSES.has(status)) return false;
-  if (expiresAt && now > new Date(expiresAt).getTime() + PAYMENT_FINAL_CHECK_WINDOW_MS) return false;
+  if (expiresAt && now > new Date(expiresAt).getTime() + PAYMENT_FINAL_CHECK_WINDOW_MS)
+    return false;
   return PAYMENT_STATUS_POLL_INTERVAL_MS;
 }
 
@@ -118,8 +131,12 @@ export function usePaymentStatus(id: string, enabled = false, expiresAt?: string
   return useQuery({
     queryKey: orderKeys.paymentStatus(id),
     queryFn: () => orderService.getPaymentStatus(id),
+    staleTime: 4000,
     enabled: !!id && enabled,
     refetchInterval: (query) => nextPaymentPollDelay(query.state.data?.status, expiresAt),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: false,
   });
 }
 
@@ -184,7 +201,11 @@ export function useCreatePaymentIntent() {
       // Đơn hết hạn: backend vừa chuyển đơn sang "expired" nên làm mới danh sách; hộp thanh toán
       // tự hiện thông báo + nút "Tạo đơn mới", không toast thêm cho trùng lặp.
       // Review #76 vòng 3: đã thanh toán / đang đối chiếu cũng do hộp thanh toán tự hiện màn riêng.
-      if (isOrderExpiredError(error) || isOrderAlreadyPaidError(error) || isPaymentVerifyingError(error)) {
+      if (
+        isOrderExpiredError(error) ||
+        isOrderAlreadyPaidError(error) ||
+        isPaymentVerifyingError(error)
+      ) {
         qc.invalidateQueries({ queryKey: orderKeys.mine() });
         return;
       }
@@ -201,7 +222,7 @@ export function useCheckPayment() {
     onSuccess: (data, id) => {
       // Làm mới ngay trạng thái thanh toán để dialog chuyển màn thành công
       // mà không phải chờ nhịp poll kế tiếp.
-      qc.invalidateQueries({ queryKey: orderKeys.paymentStatus(id) });
+      qc.setQueryData(orderKeys.paymentStatus(id), data);
       // Toast ở đây (một chỗ cho cả hộp thanh toán lẫn trang đơn hàng): caller thấy bank_unavailable
       // thì không báo thêm "chưa có giao dịch".
       if (data.bank_unavailable) toast.warning(BANK_UNAVAILABLE_NOTICE);

@@ -34,3 +34,6 @@ cards/
 DEBT.md
 RETRO.md
 .npm-cache/
+
+# Monaco browser runtime, copied from the installed package
+/public/monaco/

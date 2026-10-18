@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -8,77 +7,61 @@ import { SITE_URL } from "@/lib/seo";
 import { SITE_OG_IMAGES } from "@/lib/page-metadata";
 import { THEME_STORAGE_KEY } from "@/lib/appearance-storage";
 
-const inter = Inter({
-    subsets: ["latin", "vietnamese"],
-    variable: "--font-inter",
-    display: "swap", // Prevent FOIT - show fallback font immediately, swap when loaded
-});
-
-// Font heading (h1-h3, CardTitle, .font-heading). Variable font nên không cần khai báo weight;
-// subset "vietnamese" bắt buộc để dấu chồng (ẩ, ỗ, ự...) không rơi về font dự phòng.
-const plusJakartaSans = Plus_Jakarta_Sans({
-    subsets: ["latin", "vietnamese"],
-    variable: "--font-heading",
-    display: "swap",
-});
-
 export const metadata: Metadata = {
-    // Bắt buộc có: thiếu metadataBase thì mọi URL ảnh OG tương đối sẽ hỏng
-    // khi link được chia sẻ ra Facebook/Zalo/LinkedIn.
-    metadataBase: new URL(SITE_URL),
-    title: {
-        default: "ForteX",
-        template: "%s | ForteX",
-    },
-    description: "ForteX - Learn Leap Lead | Nền tảng học tập và quản lý hiện đại",
-    // Canonical tương đối: Next dịch "./" theo đường dẫn của CHÍNH trang đang render (bỏ query), nên trang không
-    // tự khai báo canonical (landing, thảo luận chi tiết...) vẫn có canonical tự tham chiếu (PG-M1, QA2 261013).
-    alternates: { canonical: "./" },
-    keywords: ["ForteX", "learning", "education"],
-    openGraph: {
-        type: "website",
-        siteName: "ForteX",
-        locale: "vi_VN",
-        title: "ForteX — Learn Leap Lead",
-        description: "Nền tảng học tập và quản lý hiện đại",
-        url: SITE_URL,
-        images: SITE_OG_IMAGES,
-    },
-    twitter: {
-        card: "summary",
-        title: "ForteX — Learn Leap Lead",
-        description: "Nền tảng học tập và quản lý hiện đại",
-        images: ["/logo.png"],
-    },
+  // Bắt buộc có: thiếu metadataBase thì mọi URL ảnh OG tương đối sẽ hỏng
+  // khi link được chia sẻ ra Facebook/Zalo/LinkedIn.
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "ForteX",
+    template: "%s | ForteX",
+  },
+  description: "ForteX - Learn Leap Lead | Nền tảng học tập và quản lý hiện đại",
+  // Canonical tương đối: Next dịch "./" theo đường dẫn của CHÍNH trang đang render (bỏ query), nên trang không
+  // tự khai báo canonical (landing, thảo luận chi tiết...) vẫn có canonical tự tham chiếu (PG-M1, QA2 261013).
+  alternates: { canonical: "./" },
+  keywords: ["ForteX", "learning", "education"],
+  openGraph: {
+    type: "website",
+    siteName: "ForteX",
+    locale: "vi_VN",
+    title: "ForteX — Learn Leap Lead",
+    description: "Nền tảng học tập và quản lý hiện đại",
+    url: SITE_URL,
+    images: SITE_OG_IMAGES,
+  },
+  twitter: {
+    card: "summary",
+    title: "ForteX — Learn Leap Lead",
+    description: "Nền tảng học tập và quản lý hiện đại",
+    images: ["/logo.png"],
+  },
 };
 
 export default function RootLayout({
-    children,
+  children,
 }: Readonly<{
-    children: React.ReactNode;
+  children: React.ReactNode;
 }>) {
-    return (
-        <html lang="vi" suppressHydrationWarning>
-            <body className={`${inter.variable} ${plusJakartaSans.variable} font-sans antialiased`}>
-                {/*
+  return (
+    <html lang="vi" suppressHydrationWarning>
+      <body className="font-sans antialiased">
+        {/*
                   Chống nháy màn hình (FOUC) dark mode (H-01): script chạy TRƯỚC khi
                   React hydrate, đọc theme đã lưu và gắn class .dark lên <html> ngay
                   lập tức. Phải cùng quy tắc với applyTheme (appearance-storage.ts):
                   chỉ "dark" chọn tay mới bật, "system" chưa theo OS (xem ghi chú ở đó).
                 */}
-                <script
-                    dangerouslySetInnerHTML={{
-                        __html: `(function(){try{var t=localStorage.getItem(${JSON.stringify(
-                            THEME_STORAGE_KEY
-                        )});document.documentElement.classList.toggle("dark",t==="dark");}catch(e){}})();`,
-                    }}
-                />
-                <ThemeProvider />
-                <SkipLink targetId="main-content">
-                    Bỏ qua điều hướng
-                </SkipLink>
-                <Providers>{children}</Providers>
-            </body>
-        </html>
-    );
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem(${JSON.stringify(
+              THEME_STORAGE_KEY
+            )});document.documentElement.classList.toggle("dark",t==="dark");}catch(e){}})();`,
+          }}
+        />
+        <ThemeProvider />
+        <SkipLink targetId="main-content">Bỏ qua điều hướng</SkipLink>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
 }

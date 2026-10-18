@@ -14,6 +14,7 @@ export interface CurrentUser {
 
 export interface JoinAttempt {
   result: JoinLivestreamResult | null;
+  user?: CurrentUser;
   /**
    * Mã lỗi 403 uy quyền (issue #58 review vòng 2, §7.4) — `NOT_SESSION_MEMBER`,
    * `KICKED`, `NOT_SESSION_HOST`, v.v. Chỉ có giá trị khi backend trả 403; các
@@ -36,7 +37,7 @@ export async function joinLivestream(sessionId: string): Promise<JoinAttempt> {
     const result = await serverApi.post<JoinLivestreamResult>(`/livestream/${sessionId}/join`, {
       name: me.full_name || me.username,
     });
-    return { result };
+    return { result, user: me };
   } catch (err) {
     if (err instanceof HttpError && err.status === 403) {
       return { result: null, forbiddenCode: err.body?.message };

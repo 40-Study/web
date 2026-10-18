@@ -817,7 +817,7 @@ function ParticipantListPanel({ onClose, hostId }: { onClose: () => void; hostId
   const { localParticipant } = useLocalParticipant();
   const isMobile = useIsMobile();
 
-  // Build unique list - useParticipants() includes remote only, add local manually
+  // useParticipants includes local and remote; keep the local entry once.
   const allParticipants = [
     {
       identity: localParticipant.identity,
@@ -1038,7 +1038,7 @@ function BottomBar({
 }) {
   const participants = useParticipants();
   const { localParticipant } = useLocalParticipant();
-  const totalCount = participants.length + 1;
+  const totalCount = participants.length;
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   // Lỗi chia sẻ màn hình (PR #18) — hiện rõ cho học sinh khi quyền publish
   // không kịp áp dụng sau khi được duyệt, thay vì fail âm thầm.
@@ -1284,6 +1284,7 @@ function BottomBar({
 
       {/* Participants button */}
       <button
+        aria-label={`Người tham gia (${totalCount})`}
         onClick={onParticipantsClick}
         title="Người tham gia"
         style={{

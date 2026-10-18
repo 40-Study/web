@@ -9,6 +9,7 @@ import {
   Trophy,
   MessageSquare,
   GraduationCap,
+  Sparkles,
 } from "lucide-react";
 
 export interface TeacherMenuItem {
@@ -24,6 +25,7 @@ export interface TeacherMenuItem {
  * "Tin nhắn" trỏ route `(app)/messages`: giảng viên trả lời học viên ở đó, trước đây chỉ vào được bằng gõ URL.
  */
 export const TEACHER_MENU_ITEMS: TeacherMenuItem[] = [
+  { label: "AI Studio", href: "/teacher/ai", icon: Sparkles },
   { label: "Lịch giảng dạy", href: "/teacher/schedule", icon: Calendar },
   { label: "Quản lý khoá học", href: "/teacher/courses", icon: BookOpen },
   { label: "Lớp học", href: "/teacher/classes", icon: GraduationCap },

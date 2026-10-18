@@ -115,6 +115,7 @@ export function NonVideoLessonContent({
           (livestreamHref ? (
             <Link
               href={livestreamHref}
+          prefetch={false}
               className="px-4 py-2 text-sm font-medium text-primary-600 border border-primary-200 rounded-lg hover:bg-primary-50"
             >
               Vào phòng học trực tiếp

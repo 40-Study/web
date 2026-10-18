@@ -1,12 +1,15 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { runJudge0 } from "../api/judgeApi";
 import type { JudgeResult } from "../types";
 
 export function useCodeRunner() {
+  const active = useRef(false);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<JudgeResult | null>(null);
 
   const runCode = useCallback(async (langId: number, code: string, stdin: string) => {
+    if(active.current)return;
+    active.current=true;
     setRunning(true);
     setResult(null);
     try {
@@ -27,6 +30,7 @@ export function useCodeRunner() {
           : "Không kết nối được máy chạy mã. Kiểm tra mạng rồi thử lại.",
       });
     }
+    active.current=false;
     setRunning(false);
   }, []);
 

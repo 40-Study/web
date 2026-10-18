@@ -6,6 +6,7 @@ export type NotificationType =
   | "course_update"
   | "new_lesson"
   | "quiz_reminder"
+  | "lesson_reminder"
   | "certificate_earned"
   | "payment_success"
   | "payment_failed"

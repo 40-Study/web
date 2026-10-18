@@ -1,9 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight, Clock, Send, CheckCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { UnsureToggle, UnsureSummary, toggleUnsure, countUnsure } from "@/components/quiz/unsure-toggle";
+import {
+  UnsureToggle,
+  UnsureSummary,
+  toggleUnsure,
+  countUnsure,
+} from "@/components/quiz/unsure-toggle";
 import type { StartQuizResponse, AttemptQuestion } from "@/services/quiz.service";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -44,7 +49,10 @@ interface QuizLessonContentProps {
   /** API quiz data format (from startQuiz) */
   apiQuiz?: ApiQuizData;
   /** Submit answers - for demo format: Record<questionId, optionKey>, for API: Array<{question_id, selected_answer_ids}> */
-  onSubmit: (answers: Record<string, string> | Array<{ question_id: string; selected_answer_ids: string[] }>, timeSpentSeconds: number) => void;
+  onSubmit: (
+    answers: Record<string, string> | Array<{ question_id: string; selected_answer_ids: string[] }>,
+    timeSpentSeconds: number
+  ) => void | boolean | Promise<void | boolean>;
   /** Auto-save answer callback (optional) */
   onSaveAnswer?: (questionId: string, answerIds: string[]) => void;
   onBack?: () => void;
@@ -150,7 +158,14 @@ function normalizeQuestions(quiz?: QuizData, apiQuiz?: ApiQuizData): NormalizedQ
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function QuizLessonContent({ quiz, apiQuiz, onSubmit, onSaveAnswer, onBack, isSubmitting }: QuizLessonContentProps) {
+export function QuizLessonContent({
+  quiz,
+  apiQuiz,
+  onSubmit,
+  onSaveAnswer,
+  onBack,
+  isSubmitting,
+}: QuizLessonContentProps) {
   const isApiMode = !!apiQuiz;
   const title = apiQuiz?.title || quiz?.title || "Quiz";
   const timeLimitMins = apiQuiz?.time_limit_minutes || quiz?.timeLimitMinutes || 15;
@@ -159,6 +174,10 @@ export function QuizLessonContent({ quiz, apiQuiz, onSubmit, onSaveAnswer, onBac
   const [currentIndex, setCurrentIndex] = useState(0);
   // For API mode: store answer IDs. For demo mode: store option keys
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const answersRef = useRef<Record<string, string>>({});
+  const submittingRef = useRef(false);
+  const autoSubmittedRef = useRef(false);
+  const [submitError, setSubmitError] = useState("");
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
   const [timeLeft, setTimeLeft] = useState(timeLimitMins * 60);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -184,16 +203,14 @@ export function QuizLessonContent({ quiz, apiQuiz, onSubmit, onSaveAnswer, onBac
     return () => clearInterval(timer);
   }, [isSubmitted, timeLeft]);
 
-
-
   const handleSelectAnswer = (optionId: string, optionKey: string) => {
     if (isSubmitted || isSubmitting) return;
     // Store the option ID for API mode, but we also track by question ID
     const answerValue = isApiMode ? optionId : optionKey;
-    setAnswers((prev) => ({
-      ...prev,
-      [currentQuestion.id]: answerValue,
-    }));
+    if (answersRef.current[currentQuestion.id] === answerValue) return;
+    const next = { ...answersRef.current, [currentQuestion.id]: answerValue };
+    answersRef.current = next;
+    setAnswers(next);
     // Auto-save for API mode
     if (isApiMode && onSaveAnswer) {
       onSaveAnswer(currentQuestion.id, [optionId]);
@@ -216,30 +233,50 @@ export function QuizLessonContent({ quiz, apiQuiz, onSubmit, onSaveAnswer, onBac
     setCurrentIndex(idx);
   };
 
-  const handleSubmit = useCallback(() => {
-    if (isSubmitted || isSubmitting) return;
+  const handleSubmit = useCallback(async () => {
+    if (isSubmitted || isSubmitting || submittingRef.current) return;
+    submittingRef.current = true;
     setIsSubmitted(true);
+    setSubmitError("");
     const timeSpent = timeLimitMins * 60 - timeLeft;
-
-    if (isApiMode) {
-      // Convert to API format: array of {question_id, selected_answer_ids}
-      const apiAnswers = Object.entries(answers).map(([questionId, answerId]) => ({
-        question_id: questionId,
-        selected_answer_ids: [answerId],
-      }));
-      onSubmit(apiAnswers, timeSpent);
-    } else {
-      // Demo format: Record<questionId, optionKey>
-      onSubmit(answers, timeSpent);
+    try {
+      let saved: void | boolean;
+      if (isApiMode)
+        saved = await onSubmit(
+          Object.entries(answersRef.current).map(([question_id, id]) => ({
+            question_id,
+            selected_answer_ids: [id],
+          })),
+          timeSpent
+        );
+      else saved = await onSubmit(answersRef.current, timeSpent);
+      if (saved === false) throw new Error("submit failed");
+    } catch {
+      setIsSubmitted(false);
+      setSubmitError("Không nộp được bài. Câu trả lời vẫn được giữ, hãy bấm Nộp bài để thử lại.");
+    } finally {
+      submittingRef.current = false;
     }
-  }, [answers, timeLeft, timeLimitMins, onSubmit, isSubmitted, isSubmitting, isApiMode]);
+  }, [timeLeft, timeLimitMins, onSubmit, isSubmitted, isSubmitting, isApiMode]);
 
-  // Auto submit when time runs out — placed after handleSubmit to satisfy TypeScript declaration order
   useEffect(() => {
-    if (timeLeft === 0 && !isSubmitted) {
-      handleSubmit();
+    if (timeLeft === 0 && !autoSubmittedRef.current && !isSubmitted) {
+      autoSubmittedRef.current = true;
+      void handleSubmit();
     }
   }, [timeLeft, isSubmitted, handleSubmit]);
+
+  if (!currentQuestion)
+    return (
+      <div role="alert" className="p-6">
+        Bài kiểm tra chưa có câu hỏi.
+        {onBack && (
+          <button onClick={onBack} className="ml-2 underline">
+            Quay lại
+          </button>
+        )}
+      </div>
+    );
 
   const selectedAnswer = answers[currentQuestion.id];
 
@@ -296,17 +333,13 @@ export function QuizLessonContent({ quiz, apiQuiz, onSubmit, onSaveAnswer, onBac
                   <span
                     className={cn(
                       "w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0",
-                      isSelected
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-100 text-gray-600"
+                      isSelected ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-600"
                     )}
                   >
                     {option.key}
                   </span>
                   <span className="flex-1 text-gray-700 pt-1">{option.text}</span>
-                  {isSelected && (
-                    <CheckCircle className="w-5 h-5 text-blue-500 shrink-0 mt-1" />
-                  )}
+                  {isSelected && <CheckCircle className="w-5 h-5 text-blue-500 shrink-0 mt-1" />}
                 </button>
               );
             })}
@@ -398,8 +431,8 @@ export function QuizLessonContent({ quiz, apiQuiz, onSubmit, onSaveAnswer, onBac
                     isCurrent
                       ? "bg-blue-500 text-white ring-2 ring-blue-300"
                       : isAnswered
-                      ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
-                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                        ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
+                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                   )}
                 >
                   {idx + 1}
@@ -431,8 +464,13 @@ export function QuizLessonContent({ quiz, apiQuiz, onSubmit, onSaveAnswer, onBac
           <UnsureSummary count={countUnsure(flagged)} />
 
           {/* Submit Button */}
+          {submitError && (
+            <p role="alert" className="mb-3 text-sm text-destructive">
+              {submitError}
+            </p>
+          )}
           <button
-            onClick={handleSubmit}
+            onClick={() => void handleSubmit()}
             disabled={isSubmitted || isSubmitting}
             className={cn(
               "mt-auto w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors",

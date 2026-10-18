@@ -670,7 +670,7 @@ export default function ExercisePanel({
               fontSize: '18px',
               fontWeight: 700,
               color: COLORS.text,
-              fontFamily: "var(--font-plus-jakarta), 'Plus Jakarta Sans', sans-serif",
+              fontFamily: "var(--font-ui)",
               lineHeight: 1.2,
             }}>
               Quản lý <span style={{ color: COLORS.primary }}>bài tập</span>
@@ -771,7 +771,7 @@ export default function ExercisePanel({
                   fontSize: '18px',
                   fontWeight: 700,
                   color: COLORS.text,
-                  fontFamily: "var(--font-plus-jakarta), 'Plus Jakarta Sans', sans-serif",
+                  fontFamily: "var(--font-ui)",
                 }}>
                   {editingId ? 'Sửa bài tập' : exerciseType === 'code' ? 'Tạo bài Code' : exerciseType === 'essay' ? 'Tạo bài Tự luận' : 'Tạo trắc nghiệm'}
                 </h2>
@@ -2333,7 +2333,7 @@ function DraggableExercisePanel({
         display: 'flex',
         flexDirection: 'column',
         boxShadow: '0 32px 64px rgba(0,0,0,0.6)',
-        fontFamily: "var(--font-plus-jakarta), 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+        fontFamily: "var(--font-ui)",
         overflow: 'hidden',
         cursor: dragging ? 'grabbing' : 'default',
       }}
@@ -2362,5 +2362,5 @@ const inputStyle: React.CSSProperties = {
   fontSize: '14px',
   outline: 'none',
   transition: 'border-color 0.2s, box-shadow 0.2s',
-  fontFamily: "var(--font-plus-jakarta), 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+  fontFamily: "var(--font-ui)",
 };

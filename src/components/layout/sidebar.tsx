@@ -53,7 +53,7 @@ function rolesFromRouteTable(href: string): SidebarRole[] {
  *
  * - "Bạn bè": chỉ STUDENT (roles lấy từ ROLE_SCOPED_ROUTES) — phụ huynh/giáo viên
  *   không có tính năng này (plans/260930-groups-friends Q1). Kèm badge số lời mời chờ.
- * - "AI Chat": bỏ hẳn khỏi menu mọi vai trò — sản phẩm không làm AI (H8).
+ * - Công cụ tạo slide/trắc nghiệm chỉ xuất hiện trong menu giảng viên.
  * - Phụ huynh không cần Nhóm/Xu (tính năng game-hoá của học sinh);
  *   "Gia đình" đổi nhãn "Con của tôi" khi xem bằng vai phụ huynh.
  * - "Cuộc thi": phụ huynh THẤY (xem chỉ đọc danh sách + chi tiết, contract

@@ -95,3 +95,23 @@ describe("QuizLessonContent — hook correctness (C-004)", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 });
+
+
+describe("QuizLessonContent — retry after failure",()=>{
+ it("failed timeout submits once and allows explicit retry with the retained answers",async()=>{
+  vi.useFakeTimers();
+  try {
+   const submit=vi.fn().mockRejectedValueOnce(new Error("network")).mockResolvedValue(undefined);
+   render(<QuizLessonContent quiz={{...QUIZ,timeLimitMinutes:0.01}} onSubmit={submit} />);
+   fireEvent.click(screen.getByRole("button",{name:/B\s*2/}));
+   await act(async()=>{vi.advanceTimersByTime(1000)});
+   expect(submit).toHaveBeenCalledTimes(1);expect(screen.getByRole("alert").textContent).toContain("Câu trả lời vẫn được giữ");
+   await act(async()=>{vi.advanceTimersByTime(5000)});expect(submit).toHaveBeenCalledTimes(1);
+   await act(async()=>{fireEvent.click(screen.getByRole("button",{name:"Nộp bài"}))});expect(submit).toHaveBeenCalledTimes(2);expect(submit.mock.calls[1][0]).toEqual({"qst-1":"B"});
+  } finally {vi.useRealTimers()}
+ });
+ it("double selection of the same answer saves once",()=>{
+  const save=vi.fn();render(<QuizLessonContent apiQuiz={{attempt_id:'att',quiz_id:'quiz',title:'Quiz',started_at:new Date().toISOString(),questions:[{id:'q',question_text:'1+1?',question_type:'single_choice',points:1,display_order:0,answers:[{id:'a',answer_text:'2',display_order:0}]}]}} onSubmit={vi.fn()} onSaveAnswer={save} />);
+  const answer=screen.getByRole('button',{name:/A\s*2/});fireEvent.click(answer);fireEvent.click(answer);expect(save).toHaveBeenCalledTimes(1);
+ });
+});

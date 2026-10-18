@@ -1,29 +1,17 @@
 "use client";
-
-import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import {
-  Loader2, ChevronLeft, ChevronRight, Plus, Clock, X, MapPin, Bell,
-  Repeat, Trash2, BookOpen,
-} from "lucide-react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { Plus, Clock, X, MapPin, Bell, Repeat, Trash2, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { parseClockTime } from "@/lib/schedule-time";
-import { useMySchedules } from "@/hooks/queries/use-class-schedule";
-import type { ClassSchedule } from "@/types/class-schedule";
-
-// ─── Constants ──────────────────────────────────────────────────────────────
-
-const HOURS = Array.from({ length: 17 }, (_, i) => i + 7);
-const WEEKDAYS_SHORT = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
-const WEEKDAYS_MINI = ["Cn", "T2", "T3", "T4", "T5", "T6", "T7"];
-const MONTHS_VN = [
-  "Tháng 1","Tháng 2","Tháng 3","Tháng 4","Tháng 5","Tháng 6",
-  "Tháng 7","Tháng 8","Tháng 9","Tháng 10","Tháng 11","Tháng 12",
-];
+import { useMyTimetableEntries } from "@/hooks/queries/use-class-schedule";
+import { useLiveSessions } from "@/hooks/queries/use-live-sessions";
+import WeekCalendarGrid, { type ScheduleEvent } from "@/components/schedule/week-calendar-grid";
+import ScheduleEventDetailDialog from "@/components/schedule/schedule-event-detail-dialog";
+import { liveSessionToEvent, timetableEntriesToEvents, visibleDateRange, toVnWallClock } from "@/lib/teacher-schedule-events";
 
 const EVENT_COLORS = [
   { name: "Toán", bg: "bg-blue-100", border: "border-blue-300", text: "text-blue-800", dot: "bg-blue-500" },
@@ -43,18 +31,6 @@ const RECURRENCE_OPTIONS = [
   { value: "weekdays", label: "Thứ 2 - Thứ 6" },
 ];
 
-interface CalEvent {
-  id: string;
-  title: string;
-  dow: number;
-  startH: number; startM: number;
-  endH: number; endM: number;
-  colorIdx: number;
-  teacher?: string;
-  room?: string;
-  isPersonal?: boolean;
-}
-
 interface PersonalNote {
   id: string;
   dateStr: string; // YYYY-MM-DD
@@ -68,186 +44,8 @@ interface PersonalNote {
   recurrence?: string;
 }
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
 
-function getWeekDates(base: Date): Date[] {
-  const d = new Date(base);
-  const dayOfWeek = d.getDay();
-  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
-  return Array.from({ length: 7 }, (_, i) => {
-    const dt = new Date(monday);
-    dt.setDate(monday.getDate() + i);
-    return dt;
-  });
-}
-
-function sameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
-function fmtDate(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
-
-// Giờ 24h kiểu Việt Nam ("07:00"); trước đây AM/PM ("7 AM") lạc quẻ với phần còn lại của lịch (A-21).
-function fmtHour(h: number) {
-  return `${String(h).padStart(2, "0")}:00`;
-}
-
-function fmtHM(h: number, m: number) {
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-
-function toEvents(schedules: ClassSchedule[]): CalEvent[] {
-  return schedules.flatMap((s, i) => {
-    // /me/timetable trả timestamp ISO đầy đủ, không phải "HH:MM" — xem lib/schedule-time.
-    const start = parseClockTime(s.start_time);
-    const end = parseClockTime(s.end_time);
-    // Giờ không đọc được thì bỏ mục đó, không vẽ khối lịch ở toạ độ NaN.
-    if (!start || !end) return [];
-    return [{
-      id: s.id, title: s.title || "Buổi học", dow: s.day_of_week,
-      startH: start.hours, startM: start.minutes, endH: end.hours, endM: end.minutes,
-      colorIdx: i % EVENT_COLORS.length, teacher: s.teacher_name, room: s.room,
-    }];
-  });
-}
-
-// ─── Mini Calendar ──────────────────────────────────────────────────────────
-
-function MiniCal({ selected, onSelect }: { selected: Date; onSelect: (d: Date) => void }) {
-  const [view, setView] = useState(new Date(selected));
-  const today = new Date();
-  const y = view.getFullYear(), m = view.getMonth();
-  const dim = new Date(y, m + 1, 0).getDate();
-  const fi = (new Date(y, m, 1).getDay() + 6) % 7;
-  const isCur = today.getFullYear() === y && today.getMonth() === m;
-
-  const cells = useMemo(() => {
-    const a: (number | null)[] = [];
-    for (let i = 0; i < fi; i++) a.push(null);
-    for (let d = 1; d <= dim; d++) a.push(d);
-    return a;
-  }, [fi, dim]);
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs font-semibold text-gray-700">{MONTHS_VN[m]}, {y}</span>
-        <div className="flex">
-          <button onClick={() => setView(new Date(y, m-1, 1))} className="p-0.5 rounded hover:bg-gray-100"><ChevronLeft className="h-3.5 w-3.5 text-gray-500" /></button>
-          <button onClick={() => setView(new Date(y, m+1, 1))} className="p-0.5 rounded hover:bg-gray-100"><ChevronRight className="h-3.5 w-3.5 text-gray-500" /></button>
-        </div>
-      </div>
-      <div className="grid grid-cols-7 text-center">
-        {WEEKDAYS_MINI.map(d => <div key={d} className="text-[9px] font-medium text-gray-400 py-0.5">{d}</div>)}
-        {cells.map((day, i) => {
-          if (!day) return <div key={`e${i}`} className="h-5" />;
-          const dt = new Date(y, m, day);
-          const isT = isCur && day === today.getDate();
-          const isS = sameDay(dt, selected);
-          return (
-            <button key={i} onClick={() => onSelect(dt)} className={cn(
-              "h-5 w-5 mx-auto rounded-full text-[10px] flex items-center justify-center",
-              isS && "bg-blue-600 text-white font-bold",
-              isT && !isS && "bg-blue-100 text-blue-700 font-bold",
-              !isT && !isS && "text-gray-600 hover:bg-gray-100"
-            )}>{day}</button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ─── Quick Add Popup (single click) ─────────────────────────────────────────
-
-function QuickAddPopup({
-  x, y, date, hour,
-  onSave, onMore, onClose,
-}: {
-  x: number; y: number; date: Date; hour: number;
-  onSave: (title: string) => void;
-  onMore: () => void;
-  onClose: () => void;
-}) {
-  const [title, setTitle] = useState("");
-  const ref = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => { inputRef.current?.focus(); }, []);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [onClose]);
-
-  const dateLabel = date.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long" });
-  const timeLabel = `${String(hour).padStart(2, "0")}:00 – ${String(hour + 1).padStart(2, "0")}:00`;
-
-  return (
-    <div
-      ref={ref}
-      className="fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 w-80 overflow-hidden"
-      style={{ left: Math.min(x, window.innerWidth - 340), top: Math.min(y, window.innerHeight - 280) }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <span className="text-xs font-medium text-gray-500">Sự kiện mới</span>
-        <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
-          <X className="h-4 w-4 text-gray-400" />
-        </button>
-      </div>
-
-      <div className="px-4 pb-4 space-y-3">
-        <Input
-          ref={inputRef}
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          placeholder="Thêm tiêu đề"
-          className="text-base border-0 border-b-2 border-gray-200 rounded-none px-0 focus-visible:ring-0 focus-visible:border-blue-500 font-medium transition-colors"
-          onKeyDown={e => { if (e.key === "Enter" && title.trim()) onSave(title.trim()); }}
-        />
-
-        <div className="flex items-center gap-3 text-sm text-gray-600">
-          <div className="w-3 h-3 rounded-full bg-blue-500 shrink-0" />
-          <div className="flex flex-col">
-            <span className="font-medium">{dateLabel}</span>
-            <span className="text-xs text-gray-400">{timeLabel}</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-2">
-          <button
-            onClick={onMore}
-            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
-          >
-            Thêm tuỳ chọn
-            <ChevronRight className="h-3 w-3" />
-          </button>
-          <Button
-            size="sm"
-            onClick={() => { if (title.trim()) onSave(title.trim()); }}
-            disabled={!title.trim()}
-            className={cn(
-              "px-4 rounded-full transition-all",
-              title.trim() ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-100 text-gray-400"
-            )}
-          >
-            Lưu
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Full Event Dialog (Student Schedule) ──────────────────────────────────
-
+function fmtDate(d: Date) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
 function FullEventDialog({
   open,
   onOpenChange,
@@ -507,266 +305,34 @@ function FullEventDialog({
 
 // ─── Page ───────────────────────────────────────────────────────────────────
 
+
 export default function SchedulePage() {
-  const today = useMemo(() => new Date(), []);
-  const [baseDate, setBaseDate] = useState(new Date(today));
+  const today = useMemo(() => toVnWallClock(new Date()), []);
+  const [range, setRange] = useState<{ from: string; to: string }>();
   const [notes, setNotes] = useState<PersonalNote[]>([]);
-  const [quickAdd, setQuickAdd] = useState<{ x: number; y: number; date: Date; hour: number } | null>(null);
-  const [fullDialog, setFullDialog] = useState<{
-    open: boolean;
-    date: Date;
-    hour: number;
-    editingNote?: PersonalNote | null;
-  }>({ open: false, date: today, hour: 9, editingNote: null });
-  const gridRef = useRef<HTMLDivElement>(null);
-  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const { data: schedules, isLoading } = useMySchedules();
-
-  const weekDates = useMemo(() => getWeekDates(baseDate), [baseDate]);
-  const weekEvents = useMemo(() => toEvents(schedules || []), [schedules]);
-
-  useEffect(() => {
-    if (gridRef.current) {
-      const scrollTo = Math.max(0, (today.getHours() - 7) * 60 - 100);
-      gridRef.current.scrollTop = scrollTo;
-    }
-  }, [today]);
-
-  const prevWeek = useCallback(() => {
-    setBaseDate(prev => {
-      const d = new Date(prev);
-      d.setDate(d.getDate() - 7);
-      return d;
-    });
+  const [detail, setDetail] = useState<ScheduleEvent | null>(null);
+  const [fullDialog, setFullDialog] = useState<{ open: boolean; date: Date; hour: number; editingNote?: PersonalNote | null }>({ open: false, date: today, hour: 9 });
+  const { data: timetable, isLoading, isError } = useMyTimetableEntries(range);
+  const { data: sessions, isError: liveError } = useLiveSessions({ page_size: 100 });
+  const handleRange = useCallback((start: Date, end: Date) => {
+    const next = visibleDateRange(start, end);
+    setRange(current => current?.from === next.from && current?.to === next.to ? current : next);
   }, []);
-
-  const nextWeek = useCallback(() => {
-    setBaseDate(prev => {
-      const d = new Date(prev);
-      d.setDate(d.getDate() + 7);
-      return d;
-    });
-  }, []);
-
-  const goToday = useCallback(() => setBaseDate(new Date()), []);
-
-  const weekStart = weekDates[0];
-  const weekEnd = weekDates[6];
-  const weekLabel = `${weekStart.getDate()} – ${weekEnd.getDate()} thg ${weekEnd.getMonth()+1}, ${weekEnd.getFullYear()}`;
-
-  const nowH = today.getHours();
-  const nowM = today.getMinutes();
-  const nowPx = (nowH - 7) * 60 + nowM;
-  const showNowLine = weekDates.some(d => sameDay(d, today)) && nowH >= 7 && nowH <= 23;
-
-  const dayEvents = (dow: number) => weekEvents.filter(e => e.dow === dow);
-  const dayNotes = (date: Date) => notes.filter(n => n.dateStr === fmtDate(date));
-
-  // Single click = quick popup, double click = full dialog
-  const handleCellClick = (e: React.MouseEvent, date: Date, hour: number) => {
-    e.stopPropagation();
-    if (clickTimer.current) {
-      // Double click
-      clearTimeout(clickTimer.current);
-      clickTimer.current = null;
-      setQuickAdd(null);
-      setFullDialog({ open: true, date, hour, editingNote: null });
-    } else {
-      // Single click - wait to see if double
-      clickTimer.current = setTimeout(() => {
-        clickTimer.current = null;
-        const rect = (e.target as HTMLElement).getBoundingClientRect();
-        setQuickAdd({ x: rect.left + rect.width / 2, y: rect.top, date, hour });
-      }, 250);
-    }
-  };
-
-  // Click on existing note to edit
-  const handleNoteClick = (e: React.MouseEvent, note: PersonalNote) => {
-    e.stopPropagation();
-    const noteDate = new Date(note.dateStr + "T00:00:00");
-    setQuickAdd(null);
-    setFullDialog({ open: true, date: noteDate, hour: note.startH, editingNote: note });
-  };
-
-  const handleQuickSave = (title: string) => {
-    if (!quickAdd) return;
-    const note: PersonalNote = {
-      id: crypto.randomUUID(),
-      dateStr: fmtDate(quickAdd.date),
-      startH: quickAdd.hour,
-      startM: 0,
-      endH: quickAdd.hour + 1,
-      endM: 0,
-      title,
-      colorIdx: 0,
-    };
-    setNotes(prev => [...prev, note]);
-    setQuickAdd(null);
-  };
-
-  const handleQuickMore = () => {
-    if (!quickAdd) return;
-    setFullDialog({ open: true, date: quickAdd.date, hour: quickAdd.hour, editingNote: null });
-    setQuickAdd(null);
-  };
-
-  const handleFullSave = (note: PersonalNote) => {
-    setNotes(prev => {
-      const existingIdx = prev.findIndex(n => n.id === note.id);
-      if (existingIdx >= 0) {
-        // Update existing
-        const updated = [...prev];
-        updated[existingIdx] = note;
-        return updated;
-      }
-      // Add new
-      return [...prev, note];
-    });
-  };
-
-  const handleDeleteNote = (id: string) => setNotes(prev => prev.filter(n => n.id !== id));
-
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-96"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>;
-  }
-
-  return (
-    <div className="flex h-[calc(100vh-4rem)] bg-white overflow-hidden" onClick={() => setQuickAdd(null)}>
-      {/* Sidebar */}
-      <div className="w-52 border-r border-gray-100 p-3 flex-col gap-4 shrink-0 overflow-y-auto hidden lg:flex">
-        <Button variant="outline" className="w-full justify-start gap-2 shadow-sm text-sm" onClick={() => setFullDialog({ open: true, date: today, hour: today.getHours(), editingNote: null })}>
-          <Plus className="h-4 w-4" /> Tạo
-        </Button>
-        <MiniCal selected={baseDate} onSelect={d => setBaseDate(d)} />
-        <div className="space-y-1.5 mt-2">
-          <p className="text-[10px] font-semibold text-gray-400 uppercase">Lịch của tôi</p>
-          <label className="flex items-center gap-2 text-xs text-gray-600"><span className="w-2.5 h-2.5 rounded-sm bg-blue-500" />Buổi học</label>
-          <label className="flex items-center gap-2 text-xs text-gray-600"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />Ghi chú</label>
-        </div>
-      </div>
-
-      {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 shrink-0">
-          <button onClick={prevWeek} className="p-1.5 rounded-full hover:bg-gray-100"><ChevronLeft className="h-5 w-5 text-gray-600" /></button>
-          <button onClick={nextWeek} className="p-1.5 rounded-full hover:bg-gray-100"><ChevronRight className="h-5 w-5 text-gray-600" /></button>
-          <Button variant="outline" size="sm" className="text-xs h-7" onClick={goToday}>Hôm nay</Button>
-          <h2 className="text-sm font-medium text-gray-700 ml-2 flex-1">{weekLabel}</h2>
-        </div>
-
-        {/* Mobile: 7 cột tuần cần ≥ 640px để tên lớp/giờ đọc được — cuộn ngang thay vì ép cột (A-21).
-            Một vùng cuộn chung cho hàng thứ-ngày và lưới giờ để hai phần luôn thẳng cột. */}
-        <div className="flex-1 min-h-0 overflow-x-auto">
-        <div className="flex h-full min-w-[640px] flex-col">
-        {/* Day headers */}
-        <div className="grid grid-cols-[48px_repeat(7,1fr)] border-b border-gray-100 shrink-0">
-          <div />
-          {weekDates.map((date, i) => {
-            const dow = date.getDay();
-            const isT = sameDay(date, today);
-            return (
-              <div key={i} className={cn("text-center py-1.5 border-l border-gray-50", isT && "bg-blue-50/50")}>
-                <p className={cn("text-[10px] uppercase font-medium", isT ? "text-blue-600" : "text-gray-400")}>{WEEKDAYS_SHORT[dow]}</p>
-                <span className={cn(
-                  "inline-flex items-center justify-center text-lg font-medium mt-0.5",
-                  isT ? "w-9 h-9 rounded-full bg-blue-600 text-white" : "text-gray-800"
-                )}>{date.getDate()}</span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Grid */}
-        <div ref={gridRef} className="flex-1 overflow-y-auto relative">
-          <div className="grid grid-cols-[48px_repeat(7,1fr)]">
-            {HOURS.map(hour => (
-              <div key={hour} className="contents">
-                <div className="h-[60px] flex items-start justify-end pr-1.5 -mt-2">
-                  <span className="text-[10px] text-gray-400 leading-none">{fmtHour(hour)}</span>
-                </div>
-                {weekDates.map((date, di) => {
-                  const dow = date.getDay();
-                  const isT = sameDay(date, today);
-                  const evs = dayEvents(dow).filter(e => e.startH === hour);
-                  const nts = dayNotes(date).filter(n => n.startH === hour);
-
-                  return (
-                    <div
-                      key={di}
-                      className={cn("h-[60px] border-l border-t border-gray-100 relative cursor-pointer hover:bg-blue-50/30", isT && "bg-blue-50/20")}
-                      onClick={e => handleCellClick(e, date, hour)}
-                    >
-                      {evs.map(ev => {
-                        const dur = (ev.endH - ev.startH) * 60 + (ev.endM - ev.startM);
-                        const c = EVENT_COLORS[ev.colorIdx];
-                        return (
-                          <div key={ev.id} className={cn("absolute left-0.5 right-0.5 rounded-md border px-1.5 py-0.5 text-[11px] overflow-hidden z-10", c.bg, c.border, c.text)}
-                            style={{ top: `${ev.startM}px`, height: `${Math.max(dur, 22)}px` }} onClick={e => e.stopPropagation()}>
-                            <p className="font-semibold truncate">{ev.title}</p>
-                            {dur >= 35 && <p className="truncate opacity-70">{fmtHM(ev.startH, ev.startM)} – {fmtHM(ev.endH, ev.endM)}</p>}
-                          </div>
-                        );
-                      })}
-                      {nts.map(nt => {
-                        const dur = (nt.endH - nt.startH) * 60 + (nt.endM - nt.startM);
-                        const c = EVENT_COLORS[nt.colorIdx] || EVENT_COLORS[0];
-                        const fmtTime = (h: number, m: number) => `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-                        return (
-                          <div
-                            key={nt.id}
-                            className={cn(
-                              "absolute left-0.5 right-0.5 rounded-md border px-1.5 py-0.5 text-[11px] z-10 cursor-pointer",
-                              "hover:shadow-md hover:scale-[1.02] transition-all",
-                              c.bg, c.border, c.text
-                            )}
-                            style={{ top: `${nt.startM}px`, height: `${Math.max(dur, 22)}px` }}
-                            onClick={e => handleNoteClick(e, nt)}
-                          >
-                            <p className="font-semibold truncate">{nt.title}</p>
-                            {dur >= 35 && <p className="truncate opacity-70">{fmtTime(nt.startH, nt.startM)} – {fmtTime(nt.endH, nt.endM)}</p>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-
-          {/* Now line */}
-          {showNowLine && (
-            <div className="absolute left-12 right-0 flex items-center z-20 pointer-events-none" style={{ top: `${nowPx}px` }}>
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500 -ml-1" />
-              <div className="flex-1 h-[2px] bg-red-500" />
-            </div>
-          )}
-        </div>
-        </div>
-        </div>
-      </div>
-
-      {/* Quick Add Popup */}
-      {quickAdd && (
-        <QuickAddPopup
-          x={quickAdd.x} y={quickAdd.y} date={quickAdd.date} hour={quickAdd.hour}
-          onSave={handleQuickSave} onMore={handleQuickMore} onClose={() => setQuickAdd(null)}
-        />
-      )}
-
-      {/* Full Event Dialog */}
-      <FullEventDialog
-        open={fullDialog.open}
-        onOpenChange={v => setFullDialog(p => ({ ...p, open: v, editingNote: v ? p.editingNote : null }))}
-        date={fullDialog.date}
-        hour={fullDialog.hour}
-        editingNote={fullDialog.editingNote}
-        onSave={handleFullSave}
-        onDelete={handleDeleteNote}
-      />
-    </div>
-  );
+  const events = useMemo(() => {
+    const classEvents = timetableEntriesToEvents(timetable?.entries ?? [], { range, cancelled: timetable?.cancelled }).map(event => ({ ...event, teacher: undefined }));
+    const liveEvents = (sessions?.sessions ?? []).map(session => ({ ...liveSessionToEvent(session), teacher: undefined, meetingUrl: session.status === "live" ? `/rooms/${session.id}` : undefined }));
+    const personal: ScheduleEvent[] = notes.map(note => ({ id: note.id, title: note.title, startTime: new Date(`${note.dateStr}T${String(note.startH).padStart(2,"0")}:${String(note.startM).padStart(2,"0")}:00`).toISOString(), endTime: new Date(`${note.dateStr}T${String(note.endH).padStart(2,"0")}:${String(note.endM).padStart(2,"0")}:00`).toISOString(), type: "hybrid", status: "upcoming", location: note.location, description: note.description }));
+    return [...classEvents, ...liveEvents, ...personal];
+  }, [timetable, range, sessions, notes]);
+  return <div>
+    {isLoading && <p role="status" className="mb-2 text-xs text-muted-foreground">Đang tải lịch học…</p>}
+    {(isError || liveError) && <p role="alert" className="mb-2 text-sm text-red-600">Chưa tải được đầy đủ lịch học. Vui lòng tải lại trang.</p>}
+    <WeekCalendarGrid events={events} selectable onRangeChange={handleRange}
+      onSelectMore={start => setFullDialog({ open: true, date: start, hour: start.getHours(), editingNote: null })}
+      onEventClick={event => { const note = notes.find(item => item.id === event.id); if (note) setFullDialog({ open: true, date: new Date(`${note.dateStr}T00:00:00`), hour: note.startH, editingNote: note }); else setDetail(event); }}
+      headerActions={<Button size="sm" className="rounded-lg gap-1.5" onClick={() => setFullDialog({ open: true, date: today, hour: today.getHours(), editingNote: null })}><Plus className="h-4 w-4" />Ghi chú</Button>}
+    />
+    <FullEventDialog open={fullDialog.open} onOpenChange={open => setFullDialog(current => ({ ...current, open }))} date={fullDialog.date} hour={fullDialog.hour} editingNote={fullDialog.editingNote} onSave={note => setNotes(current => [...current.filter(item => item.id !== note.id), note])} onDelete={id => setNotes(current => current.filter(item => item.id !== id))} />
+    <ScheduleEventDetailDialog event={detail} open={!!detail} onOpenChange={open => { if (!open) setDetail(null); }} />
+  </div>;
 }

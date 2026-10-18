@@ -63,10 +63,11 @@ export function useCourseBySlug(slug: string) {
 }
 
 /** Get teacher's own courses */
-export function useMyCourses(status?: string) {
+export function useMyCourses(status?: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: courseKeys.my(status),
     queryFn: () => courseService.getMyCourses({ status }),
+    enabled: options?.enabled,
   });
 }
 

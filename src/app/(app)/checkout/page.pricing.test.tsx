@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import CheckoutPage from "./page";
@@ -45,12 +46,12 @@ const fmt = (n: number) =>
 
 describe("CheckoutPage — tạm tính/tổng cộng theo giá bán", () => {
   it("subtotal truyền cho voucher = tổng giá bán", () => {
-    render(<CheckoutPage />);
+    render(<QueryClientProvider client={new QueryClient()}><CheckoutPage /></QueryClientProvider>);
     expect(screen.getByTestId("voucher-subtotal").textContent).toBe("799000");
   });
 
   it("nút thanh toán hiện tổng giá bán", () => {
-    render(<CheckoutPage />);
+    render(<QueryClientProvider client={new QueryClient()}><CheckoutPage /></QueryClientProvider>);
     // accessible name giữ nguyên NBSP của Intl -> chuẩn hoá trước khi so
     expect(
       screen.getByRole("button", {
@@ -60,7 +61,7 @@ describe("CheckoutPage — tạm tính/tổng cộng theo giá bán", () => {
   });
 
   it("dòng giảm giá hiện giá bán, giá niêm yết bị gạch", () => {
-    render(<CheckoutPage />);
+    render(<QueryClientProvider client={new QueryClient()}><CheckoutPage /></QueryClientProvider>);
     expect(screen.getByText(fmt(499000))).toBeTruthy();
     expect(screen.getByText(fmt(999000)).tagName).toBe("DEL");
   });

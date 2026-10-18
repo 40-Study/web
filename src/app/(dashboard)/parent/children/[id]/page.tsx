@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,7 +18,9 @@ import {
   XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { clockTimeToMinutes, formatClockTime } from "@/lib/schedule-time";
+import WeekCalendarGrid, { type ScheduleEvent } from "@/components/schedule/week-calendar-grid";
+import ScheduleEventDetailDialog from "@/components/schedule/schedule-event-detail-dialog";
+import { timetableEntriesToEvents } from "@/lib/teacher-schedule-events";
 import {
   useChildOverview,
   useChildCourses,
@@ -44,94 +46,13 @@ const TABS: { id: TabType; label: string; icon: React.ElementType }[] = [
   { id: "assignments", label: "Bài tập", icon: Trophy },
 ];
 
-const DAY_NAMES = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
-const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 - 20:00
-
 function ScheduleGrid({ entries }: { entries: TimetableEntry[] }) {
-  // Group entries by day
-  const entriesByDay = useMemo(() => {
-    const grouped: Record<number, TimetableEntry[]> = {};
-    for (let i = 0; i < 7; i++) grouped[i] = [];
-    entries.forEach((e) => {
-      if (grouped[e.day_of_week]) {
-        grouped[e.day_of_week].push(e);
-      }
-    });
-    return grouped;
-  }, [entries]);
-
-  const colors = [
-    "bg-blue-100 border-blue-300 text-blue-800",
-    "bg-green-100 border-green-300 text-green-800",
-    "bg-purple-100 border-purple-300 text-purple-800",
-    "bg-orange-100 border-orange-300 text-orange-800",
-    "bg-pink-100 border-pink-300 text-pink-800",
-    "bg-cyan-100 border-cyan-300 text-cyan-800",
-  ];
-
-  return (
-    <div className="overflow-x-auto">
-      <div className="min-w-[800px]">
-        {/* Header */}
-        <div className="grid grid-cols-8 border-b">
-          <div className="p-2 text-center text-sm font-medium text-gray-500 border-r">Giờ</div>
-          {[1, 2, 3, 4, 5, 6, 0].map((day) => (
-            <div key={day} className="p-2 text-center text-sm font-medium text-gray-700">
-              {DAY_NAMES[day]}
-            </div>
-          ))}
-        </div>
-
-        {/* Time grid */}
-        <div className="relative">
-          {HOURS.map((hour) => (
-            <div key={hour} className="grid grid-cols-8 border-b h-16">
-              <div className="p-1 text-xs text-gray-400 border-r flex items-start justify-center">
-                {hour}:00
-              </div>
-              {[1, 2, 3, 4, 5, 6, 0].map((day) => (
-                <div key={day} className="relative border-r last:border-r-0" />
-              ))}
-            </div>
-          ))}
-
-          {/* Render entries */}
-          {[1, 2, 3, 4, 5, 6, 0].map((day, colIndex) =>
-            entriesByDay[day]?.map((entry, idx) => {
-              // API trả timestamp ISO đầy đủ; giờ không đọc được thì bỏ khối, không vẽ NaN.
-              const startMins = clockTimeToMinutes(entry.start_time);
-              const endMins = clockTimeToMinutes(entry.end_time);
-              if (startMins === null || endMins === null) return null;
-              const top = ((startMins - 7 * 60) / 60) * 64; // 64px per hour
-              const height = ((endMins - startMins) / 60) * 64;
-
-              return (
-                <div
-                  key={`${day}-${idx}`}
-                  className={cn(
-                    "absolute rounded-md border p-1 text-xs overflow-hidden",
-                    colors[idx % colors.length]
-                  )}
-                  style={{
-                    top: `${top}px`,
-                    height: `${height}px`,
-                    left: `calc(${(colIndex + 1) * 12.5}% + 2px)`,
-                    width: "calc(12.5% - 4px)",
-                  }}
-                >
-                  <div className="font-medium truncate">{entry.class_name}</div>
-                  <div className="truncate">
-                    {formatClockTime(entry.start_time)} - {formatClockTime(entry.end_time)}
-                  </div>
-                  {entry.room && <div className="truncate text-[10px]">{roomLabel(entry.room)}</div>}
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  const [detail, setDetail] = useState<ScheduleEvent | null>(null);
+  const events = useMemo(() => timetableEntriesToEvents(entries).map(event => ({ ...event, teacher: undefined })), [entries]);
+  return <>
+    <WeekCalendarGrid events={events} onEventClick={setDetail} />
+    <ScheduleEventDetailDialog event={detail} open={!!detail} onOpenChange={open => { if (!open) setDetail(null); }} />
+  </>;
 }
 
 export default function ChildDetailPage() {
@@ -139,14 +60,17 @@ export default function ChildDetailPage() {
   const router = useRouter();
   const childId = params.id as string;
   const [activeTab, setActiveTab] = useState<TabType>("overview");
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "schedule") setActiveTab("schedule");
+  }, []);
 
   const { data: overview, isLoading: loadingOverview } = useChildOverview(childId);
   // PG-L2: chỉ chạy các query còn lại SAU khi overview xác nhận đây là con của phụ huynh. Id lạ thì overview
   // 403 và trước đây 5 query kia vẫn bắn song song (6 × 403). Id rỗng làm hook tự tắt qua `enabled: !!childId`.
   const dataChildId = overview ? childId : "";
   const { data: coursesData, isLoading: loadingCourses } = useChildCourses(dataChildId);
-  const { data: gradesData, isLoading: loadingGrades } = useChildGrades(dataChildId);
-  const { data: timetableData, isLoading: loadingTimetable } = useChildTimetable(dataChildId);
+  const { data: gradesData, isLoading: loadingGrades } = useChildGrades(activeTab === "grades" ? dataChildId : "");
+  const { data: timetableData, isLoading: loadingTimetable } = useChildTimetable(activeTab === "schedule" ? dataChildId : "");
   const { data: attendanceData, isLoading: loadingAttendance } = useChildAttendance(dataChildId);
   const { data: assignmentsData, isLoading: loadingAssignments } = useChildAssignments(dataChildId);
 
@@ -347,8 +271,6 @@ export default function ChildDetailPage() {
                 <div className="flex justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin" />
                 </div>
-              ) : timetableData?.entries.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">Chưa có lịch học</p>
               ) : (
                 <ScheduleGrid entries={timetableData?.entries || []} />
               )}

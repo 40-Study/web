@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "design:sync": "node scripts/sync-open-design.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -12,7 +13,11 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "monaco:sync": "node scripts/sync-monaco.mjs",
+    "postinstall": "npm run monaco:sync",
+    "predev": "npm run monaco:sync",
+    "prebuild": "npm run monaco:sync"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -58,6 +63,7 @@
     "lucide-react": "^0.577.0",
     "monaco-editor": "^0.55.1",
     "next": "14.2.20",
+    "pptxgenjs": "^4.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.71.2",

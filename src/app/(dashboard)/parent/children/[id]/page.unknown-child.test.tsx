@@ -3,7 +3,7 @@
  * (overview + courses/grades/timetable/attendance/assignments) vì mọi query chạy song song, không đợi overview xác nhận
  * con có thuộc phụ huynh này. Test đi qua hook + service THẬT (chỉ giả lập tầng HTTP) để đếm đúng số request.
  */
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ForbiddenError } from "@/lib/errors";
 import { renderWithProviders } from "@/test/utils";
@@ -56,7 +56,7 @@ describe("ChildDetailPage — id học sinh không thuộc phụ huynh", () => {
     for (const name of OTHER_QUERIES) expect(svc[name], name).not.toHaveBeenCalled();
   });
 
-  it("id hợp lệ: overview xong thì các query còn lại mới chạy", async () => {
+  it("id hợp lệ: tải dữ liệu cần cho overview; lịch và điểm chỉ tải khi mở tab", async () => {
     svc.getChildOverview.mockResolvedValue({
       id: "child-x", username: "be_an", full_name: "Bé An", relationship: "parent", total_xp: 1, current_streak: 1,
       enrolled_courses: 0, completed_courses: 0, total_study_minutes: 0,
@@ -65,6 +65,11 @@ describe("ChildDetailPage — id học sinh không thuộc phụ huynh", () => {
     renderWithProviders(<ChildDetailPage />);
 
     await screen.findByRole("heading", { name: "Bé An" });
-    for (const name of OTHER_QUERIES) await waitFor(() => expect(svc[name], name).toHaveBeenCalled());
+    for (const name of ["getChildCourses", "getChildAttendance", "getChildAssignments"] as const) await waitFor(() => expect(svc[name], name).toHaveBeenCalledTimes(1));
+    expect(svc.getChildGrades).not.toHaveBeenCalled();
+    expect(svc.getChildTimetable).not.toHaveBeenCalled();
+    svc.getChildTimetable.mockResolvedValue({ entries: [] });
+    fireEvent.click(screen.getByRole("tab", { name: "Lịch học" }));
+    await waitFor(() => expect(svc.getChildTimetable).toHaveBeenCalledTimes(1));
   });
 });

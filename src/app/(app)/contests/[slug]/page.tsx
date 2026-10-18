@@ -81,7 +81,7 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
             <InfoRow icon={CalendarClock} label="Mở lúc" value={formatContestDateTime(detail.start_time)} />
             <InfoRow icon={CalendarClock} label="Đóng lúc" value={formatContestDateTime(detail.end_time)} />
             <InfoRow icon={Clock} label="Thời gian làm bài" value={`${detail.duration_minutes} phút`} />
-            <InfoRow icon={HelpCircle} label="Đề thi" value={`${detail.question_count} câu · ${formatContestScore(detail.total_points)} điểm`} />
+            <InfoRow icon={HelpCircle} label="Đề thi" value={`${detail.question_count} ${detail.type === "CODING" ? "bài code" : "câu"} · ${formatContestScore(detail.total_points)} điểm`} />
             <InfoRow icon={Users} label="Người tham gia" value={seats} />
             <InfoRow icon={User} label="Người tạo" value={detail.creator_name} />
             {detail.course && (
@@ -122,7 +122,7 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
               <Trophy className="h-5 w-5 text-amber-500" aria-hidden="true" />
               Bảng xếp hạng
             </h2>
-            <ContestLeaderboard contestId={detail.id} phase={detail.phase} endTime={detail.end_time} serverTime={detail.server_time} receivedAt={receivedAt} />
+            <ContestLeaderboard live={detail.type === "CODING" && ["ACTIVE", "ENDED", "FINALIZED"].includes(detail.phase)} contestId={detail.id} phase={detail.phase} endTime={detail.end_time} serverTime={detail.server_time} receivedAt={receivedAt} />
           </section>
         </section>
 

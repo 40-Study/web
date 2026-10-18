@@ -17,12 +17,13 @@ export const notificationKeys = {
 // ─── Queries ─────────────────────────────────────────────────────────────────
 
 /** List notifications, paginated — only fetches when authenticated */
-export function useNotifications(page?: number) {
+export function useNotifications(page = 1, enabled = true) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: notificationKeys.list(page),
     queryFn: () => notificationService.list({ page: page ?? 1, page_size: 20 }),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && enabled,
+    staleTime: 30_000,
   });
 }
 

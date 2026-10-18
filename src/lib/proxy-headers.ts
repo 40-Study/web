@@ -141,7 +141,8 @@ export async function proxyRequest(request: NextRequest, path: string[]) {
       headers: Object.fromEntries(requestHeaders.entries()) as AxiosRequestHeaders,
       data: requestBody,
       responseType: "arraybuffer",
-      timeout: BACKEND_TIMEOUT_MS,
+      timeout: request.method === "POST" && (encodedPath === "open-design/generate" || /^contests\/[^/]+\/code\/(run|submit)$/.test(encodedPath) || /^lessons\/[^/]+\/exercises\/[^/]+\/(run|submit)$/.test(encodedPath) || encodedPath === "submissions/execute") ? 100_000 : BACKEND_TIMEOUT_MS,
+      signal: request.signal,
       maxRedirects: 0,
       validateStatus: () => true,
     });

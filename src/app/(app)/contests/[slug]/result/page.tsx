@@ -21,12 +21,15 @@ import { ContestPhaseBadge } from "../../_components/contest-card";
 import { ContestAnswersPending, ContestAwardPanel } from "../../_components/contest-result-parts";
 import { ContestErrorState, ContestLoading } from "../../_components/contest-states";
 
+import { ContestCodePlayer } from "../../_components/contest-code-player";
+
 export default function ContestResultPage() {
   const params = useParams<{ slug: string }>();
   const slug = params?.slug ?? "";
   const detailQuery = useContestDetail(slug);
-  const resultQuery = useContestMyResult(detailQuery.data?.id);
+  const resultQuery = useContestMyResult(detailQuery.data?.type === "CODING" ? undefined : detailQuery.data?.id);
 
+  if(detailQuery.data?.type === "CODING") return <ContestCodePlayer detail={detailQuery.data} readOnly />;
   if (detailQuery.isLoading || (detailQuery.data && resultQuery.isLoading)) return <ContestLoading label="Đang tải kết quả…" />;
   const error = detailQuery.error ?? resultQuery.error;
   if (error || !detailQuery.data || !resultQuery.data) {

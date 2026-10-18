@@ -3,7 +3,7 @@
  * và chặn giờ sai ngay trên form (backend cũng trả 400, nhưng người dùng cần thấy lý do tại chỗ).
  */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/hooks/queries/use-courses", () => ({ useMyCourses: () => ({ data: [], isLoading: false }) }));
@@ -58,7 +58,7 @@ describe("ScheduleEventFormDialog — sửa buổi", () => {
 
     fireEvent.change(screen.getByLabelText(/Kết thúc/), { target: { value: "16:30" } });
     fireEvent.change(screen.getByLabelText(/Phòng học/), { target: { value: "Phòng A101" } });
-    fireEvent.click(screen.getByRole("button", { name: "Cập nhật" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
 
     expect(onSave).toHaveBeenCalledTimes(1);
     const [data, id] = onSave.mock.calls[0];
@@ -70,7 +70,7 @@ describe("ScheduleEventFormDialog — sửa buổi", () => {
   it("giờ kết thúc không sau giờ bắt đầu: hiện lỗi và KHÔNG lưu", () => {
     const onSave = setup(event());
     fireEvent.change(screen.getByLabelText(/Kết thúc/), { target: { value: "13:00" } });
-    fireEvent.click(screen.getByRole("button", { name: "Cập nhật" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
 
     expect(onSave).not.toHaveBeenCalled();
     expect(screen.getByRole("alert").textContent).toMatch(/sau giờ bắt đầu/);
@@ -79,7 +79,7 @@ describe("ScheduleEventFormDialog — sửa buổi", () => {
   it("đổi giờ bắt đầu sang quá khứ: hiện lỗi; không đổi giờ thì sửa tiêu đề vẫn lưu được", () => {
     const onSave = setup(event());
     fireEvent.change(screen.getByLabelText(/Ngày/), { target: { value: "2020-01-01" } });
-    fireEvent.click(screen.getByRole("button", { name: "Cập nhật" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     expect(onSave).not.toHaveBeenCalled();
     expect(screen.getByRole("alert").textContent).toMatch(/quá khứ/);
   });
@@ -95,5 +95,40 @@ describe("ScheduleEventFormDialog — sửa buổi", () => {
     setup(event());
     expect((screen.getByLabelText(/Ngày/) as HTMLInputElement).disabled).toBe(false);
     expect((screen.getByLabelText(/Bắt đầu/) as HTMLInputElement).disabled).toBe(false);
+  });
+});
+
+describe("ScheduleEventFormDialog — lưu bất đồng bộ", () => {
+  it("chặn double submit, giữ bản nháp và mở lại nút khi API lỗi", async () => {
+    let reject: (error: Error) => void = () => {};
+    const onSave = vi.fn(() => new Promise<void>((_, fail) => { reject = fail; }));
+    const onOpenChange = vi.fn();
+    render(<ScheduleEventFormDialog open onOpenChange={onOpenChange} event={event()} onSave={onSave} />);
+    const save = screen.getByRole("button", { name: "Lưu thay đổi" });
+    fireEvent.click(save); fireEvent.click(save);
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).not.toHaveBeenCalled();
+    await act(async () => reject(new Error("Máy chủ tạm ngừng")));
+    expect(screen.getByRole("alert").textContent).toContain("Máy chủ tạm ngừng");
+    expect((screen.getByLabelText(/Tiêu đề/) as HTMLInputElement).value).toBe("Buổi cũ");
+    expect((save as HTMLButtonElement).disabled).toBe(false);
+  });
+  it("chỉ đóng form sau khi lưu thành công", async () => {
+    const onOpenChange = vi.fn();
+    render(<ScheduleEventFormDialog open onOpenChange={onOpenChange} event={event()} onSave={async () => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+  });
+  it("hủy buổi cần xác nhận, cancel form không mutation", async () => {
+    const onDelete = vi.fn(async () => {});
+    const onSave = vi.fn();
+    const onOpenChange = vi.fn();
+    render(<ScheduleEventFormDialog open onOpenChange={onOpenChange} event={event()} onSave={onSave} onDelete={onDelete} />);
+    fireEvent.click(screen.getByRole("button", { name: "Huỷ buổi học" }));
+    expect(onDelete).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Huỷ" }));
+    expect(onDelete).not.toHaveBeenCalled(); expect(onSave).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận huỷ buổi" }));
+    await waitFor(() => expect(onDelete).toHaveBeenCalledTimes(1));
   });
 });

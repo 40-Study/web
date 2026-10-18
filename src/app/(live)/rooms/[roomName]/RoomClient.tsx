@@ -10,7 +10,6 @@ import ExercisePanel from './tabs/ExercisePanel';
 import AssignmentWorkOverlay from './tabs/AssignmentWorkOverlay';
 import { TimerModal, MinimizedTimer, RandomPickerModal, HandRaisedNotification, LeaveRequestNotification, ShareRequestNotification, ResponseNotification } from './tabs/HostTools';
 import SharedBoardPanel, { StudentMiniBoard, BoardData } from './tabs/SharedBoardPanel';
-import { getMe } from '@/lib/meet/auth';
 import { api, MeetApiError } from '@/lib/meet/api';
 import { resolveTimerRestartDuration } from './room-timer';
 import { useIsMobile } from '@/lib/meet/use-is-mobile';
@@ -37,11 +36,13 @@ export default function RoomClient({
   token,
   serverUrl,
   livekitRoomName,
+  initialUser,
 }: {
   sessionId: string;
   token: string;
   serverUrl: string;
   livekitRoomName: string;
+  initialUser: { id: string; name: string };
 }) {
   const router = useRouter();
   // Layout dựng bằng inline style nên không dùng được breakpoint Tailwind — panel
@@ -74,8 +75,8 @@ export default function RoomClient({
   const [assignmentList, setAssignmentList] = useState<AssignmentNotification[]>([]);
   const [submittedAssignments, setSubmittedAssignments] = useState<Set<string>>(new Set());
   const [showAssignmentList, setShowAssignmentList] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentUserName, setCurrentUserName] = useState<string>('User');
+  const currentUserId = initialUser.id;
+  const currentUserName = initialUser.name;
   const [hostId, setHostId] = useState<string | null>(null);
   // I3 (review vòng 2 web PR #18): tách "chưa biết/lỗi" khỏi "hostId=null vì
   // chưa fetch xong" để hiện lỗi rõ ràng thay vì âm thầm chặn hết thao tác
@@ -165,14 +166,6 @@ export default function RoomClient({
   const isHost = currentUserId !== null && hostId !== null && currentUserId === hostId;
 
   useEffect(() => {
-    // Fetch current user
-    getMe()
-      .then((u) => {
-        setCurrentUserId(u.id);
-        setCurrentUserName(u.username || u.email || 'User');
-      })
-      .catch(() => setCurrentUserId(null));
-
     // Fetch session để lấy host_id VÀ trạng thái khoá bảng ban đầu (C1 —
     // whiteboard_locked là nguồn sự thật server, học sinh/host vào muộn đọc
     // ngay ở đây thay vì đợi một gói LiveKit không bao giờ tới nếu là chính
@@ -213,7 +206,7 @@ export default function RoomClient({
         setAssignmentList(mapped);
 
         // Check which assignments have been submitted by this user
-        if (currentUserId && mapped.length > 0) {
+        if (mapped.length > 0) {
           const submitted = new Set<string>();
           for (const a of mapped) {
             try {

@@ -19,6 +19,8 @@ import type { ContestDetail } from "@/types/contest";
 import { ContestErrorState, ContestLoading } from "../../_components/contest-states";
 import { ContestPlayer } from "../../_components/contest-player";
 
+import { ContestCodePlayer } from "../../_components/contest-code-player";
+
 export default function ContestPlayPage() {
   const params = useParams<{ slug: string }>();
   const slug = params?.slug ?? "";
@@ -32,6 +34,7 @@ export default function ContestPlayPage() {
       </div>
     );
   }
+  if(detailQuery.data.type === "CODING") return <ContestCodePlayer detail={detailQuery.data} />;
   return <PlayGate detail={detailQuery.data} />;
 }
 

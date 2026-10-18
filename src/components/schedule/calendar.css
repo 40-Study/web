@@ -1,0 +1,51 @@
+.school-calendar { color: #1f2937; background: #fff; border: 1px solid #e5e7eb; border-radius: 18px; overflow: hidden; }
+.calendar-toolbar { display: flex; gap: 12px; align-items: center; min-height: 76px; padding: 16px 20px; border-bottom: 1px solid #edf0f4; }
+.calendar-heading { display: flex; align-items: center; gap: 9px; margin-right: 8px; }
+.calendar-heading h1 { font-size: 18px; font-weight: 600; white-space: nowrap; }
+.calendar-icon { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; flex-shrink: 0; }
+.calendar-icon:hover { background: #f1f5f9; }
+.calendar-today, .calendar-view { border: 1px solid #e1e5eb; border-radius: 8px; padding: 8px 12px; font-size: 12px; background: white; white-space: nowrap; }
+.calendar-today:hover { background: #f8fafc; }
+.calendar-title { flex: 1; font-size: 16px; font-weight: 500; }
+.calendar-layout { display: grid; grid-template-columns: 204px minmax(0, 1fr); }
+.calendar-rail { padding: 22px 14px; border-right: 1px solid #edf0f4; }
+.mini-calendar-heading { display: flex; align-items: center; gap: 1px; font-size: 12px; font-weight: 600; text-transform: capitalize; margin-bottom: 12px; }
+.mini-calendar-heading > span { flex: 1; }
+.mini-calendar-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px 0; text-align: center; font-size: 10px; }
+.mini-calendar-days > span { padding: 4px 0; color: #6b7280; font-size: 9px; }
+.mini-calendar-days button { border-radius: 50%; width: 24px; height: 24px; margin: auto; }
+.mini-calendar-days button:hover { background: #f1f5f9; }
+.mini-calendar-days button[data-outside="true"] { color: #b1b9c5; }
+.mini-calendar-days button[aria-pressed="true"] { color: #1d4ed8; background: #dbeafe; }
+.mini-calendar-days button[data-today="true"] { color: white; background: #2563eb; }
+.calendar-rail-label { font-size: 12px; font-weight: 600; margin: 26px 0 14px 6px; }
+.calendar-filter { display: flex; align-items: center; gap: 9px; font-size: 11px; padding: 8px 6px; cursor: pointer; }
+.calendar-filter input { width: 14px; height: 14px; border-radius: 3px; }
+.calendar-reminder-note { display: flex; gap: 8px; font-size: 10px; line-height: 1.7; color: #64748b; margin-top: 28px; border-top: 1px solid #edf0f4; padding: 18px 4px 0; }
+.calendar-reminder-note span { color: #94a3b8; font-size: 9px; }
+.calendar-rail-help { font-size: 10px; line-height: 1.7; color: #94a3b8; padding: 12px 4px; }
+.calendar-surface { min-width: 0; height: clamp(430px, calc(100dvh - 225px), 780px); }
+.school-calendar .fc-custom-wrap .fc-timegrid-slot { height: 26px; }
+.school-calendar .fc-custom-wrap .fc-col-header-cell { padding: 10px 0 9px; font-size: 10px; }
+.calendar-day-heading { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.calendar-day-heading span { font-size: 10px; font-weight: 500; color: #64748b; }
+.calendar-day-heading strong { display: grid; place-items: center; font-size: 23px; font-weight: 400; height: 34px; width: 34px; border-radius: 50%; color: #334155; }
+.fc-day-today .calendar-day-heading strong { background: #2563eb; color: white; }
+.school-calendar .fc-custom-wrap .fc-day-today { background: transparent !important; }
+.school-calendar .fc-custom-wrap .fc-col-header-cell-cushion::after { content: none; }
+.school-calendar .fc-custom-wrap .fc-timegrid-slot-label { font-size: 10px; color: #8490a1; }
+.school-calendar .fc-custom-wrap .fc-timegrid-slot-minor { border-top-style: dotted !important; }
+.school-calendar .fc-custom-wrap .fc-timegrid-event { border-radius: 5px !important; min-height: 18px; }
+.school-calendar .fc-custom-wrap .fc-timegrid-event-harness { margin: 0 3px; }
+.school-calendar > .grid { border-top: 1px solid #edf0f4; gap: 0; padding: 0 16px; }
+.school-calendar [data-testid="schedule-stat"] { border: 0; box-shadow: none; padding: 14px 10px; }
+.school-calendar [data-testid="schedule-stat"] p:last-child { font-size: 14px; }
+.school-calendar button:focus-visible, .school-calendar select:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
+@media (max-width: 1200px) { .calendar-rail { display: none; } .calendar-layout { grid-template-columns: minmax(0, 1fr); } .calendar-heading { display: none; } }
+@media (max-width: 640px) {
+  .calendar-toolbar { flex-wrap: wrap; gap: 7px; padding: 12px; }
+  .calendar-title { font-size: 13px; min-width: 120px; }
+  .calendar-surface { height: 540px; }
+  .calendar-day-heading strong { font-size: 18px; width: 27px; height: 27px; }
+  .calendar-day-heading span { font-size: 9px; }
+}

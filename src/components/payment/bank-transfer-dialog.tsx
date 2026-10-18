@@ -13,14 +13,9 @@
  */
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Clock, Copy, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Copy, Loader2, XCircle, Building2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 
@@ -43,6 +38,7 @@ export interface BankTransferDialogProps {
   expiresAt?: string | null;
   status: BankTransferDialogStatus;
   errorMessage?: string;
+  isLoading?: boolean;
   successTitle?: string;
   successDescription?: React.ReactNode;
   /** Nút "Tôi đã chuyển khoản" — chỉ order có (coins không có endpoint ép check tương đương). */
@@ -64,14 +60,19 @@ export interface BankTransferDialogProps {
 
 function CopyRow({ label, value }: { label: string; value: string }) {
   const handleCopy = () => {
-    navigator.clipboard.writeText(value).then(() => toast.success(`Đã sao chép ${label.toLowerCase()}`));
+    navigator.clipboard
+      .writeText(value)
+      .then(() => toast.success(`Đã sao chép ${label.toLowerCase()}`))
+      .catch(() =>
+        toast.error("Chưa sao chép được. Bạn có thể chọn và sao chép thông tin bên dưới.")
+      );
   };
 
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2">
       <div className="min-w-0">
         <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="truncate font-medium">{value}</p>
+        <p className="break-all font-mono text-sm font-medium select-all">{value}</p>
       </div>
       <Button size="icon" variant="ghost" onClick={handleCopy} aria-label={`Sao chép ${label}`}>
         <Copy className="h-4 w-4" />
@@ -118,6 +119,7 @@ export function BankTransferDialog({
   expiresAt,
   status,
   errorMessage,
+  isLoading = false,
   successTitle = "Thanh toán thành công!",
   successDescription,
   onCheckNow,
@@ -129,7 +131,7 @@ export function BankTransferDialog({
   awaitServerAfterExpiry = false,
   reconcilingDescription,
 }: BankTransferDialogProps) {
-  const remainingMs = useCountdown(expiresAt);
+  const remainingMs = useCountdown(open ? expiresAt : null);
   const countdownOver = status === "pending" && remainingMs !== null && remainingMs <= 0;
   const isExpired = countdownOver && !awaitServerAfterExpiry;
   const isFinalChecking = countdownOver && awaitServerAfterExpiry;
@@ -137,13 +139,24 @@ export function BankTransferDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Chuyển khoản ngân hàng</DialogTitle>
+      <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto p-0">
+        <DialogHeader className="border-b bg-slate-50/70 px-6 py-5">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Building2 className="h-4 w-4 text-primary" />
+            Chuyển khoản ngân hàng
+          </DialogTitle>
         </DialogHeader>
 
-        {effectiveStatus === "success" ? (
-          <div className="flex flex-col items-center gap-3 py-6 text-center">
+        {isLoading ? (
+          <div
+            role="status"
+            className="flex items-center justify-center gap-3 p-12 text-sm text-slate-500"
+          >
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Đang chuẩn bị thông tin chuyển khoản…
+          </div>
+        ) : effectiveStatus === "success" ? (
+          <div className="flex flex-col items-center gap-3 p-8 text-center">
             <CheckCircle2 className="h-14 w-14 text-green-500" />
             <p className="text-lg font-semibold">{successTitle}</p>
             {successDescription && (
@@ -154,7 +167,7 @@ export function BankTransferDialog({
             </Button>
           </div>
         ) : effectiveStatus === "expired" ? (
-          <div className="flex flex-col items-center gap-3 py-6 text-center">
+          <div className="flex flex-col items-center gap-3 p-8 text-center">
             <Clock className="h-14 w-14 text-amber-500" />
             <p className="text-lg font-semibold">{expiredTitle}</p>
             <p className="text-sm text-muted-foreground">{expiredDescription}</p>
@@ -170,7 +183,7 @@ export function BankTransferDialog({
             </div>
           </div>
         ) : effectiveStatus === "reconciling" ? (
-          <div className="flex flex-col items-center gap-3 py-6 text-center">
+          <div className="flex flex-col items-center gap-3 p-8 text-center">
             <Loader2 className="h-14 w-14 animate-spin text-amber-500" />
             <p className="text-lg font-semibold">Đang đối chiếu thanh toán</p>
             {reconcilingDescription && (
@@ -178,7 +191,7 @@ export function BankTransferDialog({
             )}
             <div className="flex w-full gap-2">
               <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
-                Đóng
+                Để sau
               </Button>
               {onCheckNow && (
                 <Button className="flex-1" onClick={onCheckNow} disabled={isCheckingNow}>
@@ -189,7 +202,7 @@ export function BankTransferDialog({
             </div>
           </div>
         ) : effectiveStatus === "error" ? (
-          <div className="flex flex-col items-center gap-3 py-6 text-center">
+          <div className="flex flex-col items-center gap-3 p-8 text-center">
             <XCircle className="h-14 w-14 text-red-500" />
             <p className="text-lg font-semibold">Giao dịch không thành công</p>
             <p className="text-sm text-muted-foreground">
@@ -200,15 +213,15 @@ export function BankTransferDialog({
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-5 px-6 pb-6">
             <p className="text-sm text-muted-foreground">
-              Chuyển khoản đúng số tiền và NỘI DUNG bên dưới. Hệ thống sẽ tự động xác nhận sau khi nhận
-              được giao dịch.
+              Chuyển đúng số tiền và nội dung bên dưới từ ứng dụng ngân hàng của bạn. Khoá học hoặc
+              xu sẽ được cập nhật sau khi giao dịch được xác nhận.
             </p>
 
-            <div className="rounded-lg bg-primary-50 px-4 py-3 text-center">
+            <div className="rounded-lg bg-slate-50 px-4 py-5 text-center">
               <p className="text-xs text-muted-foreground">Số tiền cần chuyển</p>
-              <p className="text-2xl font-bold text-primary-600">{formatCurrency(amount)}</p>
+              <p className="text-2xl font-bold text-slate-900">{formatCurrency(amount)}</p>
             </div>
 
             <div className="space-y-2">
@@ -220,14 +233,23 @@ export function BankTransferDialog({
 
             {(!bankName || !accountNumber) && (
               <p className="text-xs text-amber-600">
-                Chưa có đầy đủ thông tin ngân hàng. Vui lòng liên hệ hỗ trợ để lấy thông tin chuyển khoản.
+                Chưa cấu hình đầy đủ tài khoản nhận tiền. Vui lòng quay lại sau hoặc liên hệ hỗ trợ;
+                bạn chưa cần chuyển khoản.
               </p>
             )}
 
+            {errorMessage && (
+              <p
+                role="alert"
+                className="rounded-lg bg-amber-50 p-3 text-xs leading-relaxed text-amber-800"
+              >
+                {errorMessage}
+              </p>
+            )}
             {isFinalChecking ? (
               <p className="text-center text-xs text-amber-600">
-                Đã hết thời gian chuyển khoản. Hệ thống đang kiểm tra lần cuối các giao dịch đã nhận,
-                vui lòng không chuyển khoản lại.
+                Đã hết thời gian chuyển khoản. Hệ thống đang kiểm tra lần cuối các giao dịch đã
+                nhận, vui lòng không chuyển khoản lại.
               </p>
             ) : (
               remainingMs !== null && (
@@ -244,13 +266,11 @@ export function BankTransferDialog({
 
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
-                Đóng
+                Để sau
               </Button>
               {onCheckNow && (
                 <Button className="flex-1" onClick={onCheckNow} disabled={isCheckingNow}>
-                  {isCheckingNow ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
+                  {isCheckingNow ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Tôi đã chuyển khoản
                 </Button>
               )}

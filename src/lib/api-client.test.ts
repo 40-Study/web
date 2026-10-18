@@ -1,7 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/stores/auth.store";
-import { api } from "./api-client";
+import { api, refreshSession } from "./api-client";
 import { ApiError, NetworkError, RateLimitError, ValidationError } from "./errors";
 
 function unauthorized(config: InternalAxiosRequestConfig) {
@@ -25,6 +25,16 @@ function errorResponse(config: InternalAxiosRequestConfig, status: number, data:
 }
 
 describe("API cookie refresh boundary", () => {
+  it("shares one pending refresh with the live classroom", async () => {
+    let release!: (value: { data: object }) => void;
+    const refresh = vi.spyOn(axios, "post").mockImplementation(() => new Promise(resolve => { release = resolve; }));
+    const first = refreshSession();
+    const second = refreshSession();
+    expect(refresh).toHaveBeenCalledTimes(1);
+    release({ data: {} });
+    await Promise.all([first, second]);
+  });
+
   it("attempts refresh at most once for the original request", async () => {
     const refresh = vi.spyOn(axios, "post").mockResolvedValue({ data: {} });
     let requestAttempts = 0;

@@ -13,7 +13,13 @@
 
 // ─── Enum (§1.1) ───────────────────────────────────────────────────────────
 
-export const CONTEST_STATUSES = ["DRAFT", "PENDING_REVIEW", "PUBLISHED", "REJECTED", "CANCELLED"] as const;
+export const CONTEST_STATUSES = [
+  "DRAFT",
+  "PENDING_REVIEW",
+  "PUBLISHED",
+  "REJECTED",
+  "CANCELLED",
+] as const;
 export type ContestStatus = (typeof CONTEST_STATUSES)[number];
 
 export const CONTEST_PHASES = [
@@ -32,7 +38,12 @@ export type ContestPhase = (typeof CONTEST_PHASES)[number];
 export const PUBLIC_CONTEST_PHASES = ["UPCOMING", "ACTIVE", "ENDED", "FINALIZED"] as const;
 export type PublicContestPhase = (typeof PUBLIC_CONTEST_PHASES)[number];
 
-export const CONTEST_ATTEMPT_STATUSES = ["NOT_STARTED", "IN_PROGRESS", "SUBMITTED", "EXPIRED"] as const;
+export const CONTEST_ATTEMPT_STATUSES = [
+  "NOT_STARTED",
+  "IN_PROGRESS",
+  "SUBMITTED",
+  "EXPIRED",
+] as const;
 export type ContestAttemptStatus = (typeof CONTEST_ATTEMPT_STATUSES)[number];
 
 export const CONTEST_JOIN_BLOCK_REASONS = [
@@ -128,7 +139,7 @@ export interface ContestBase {
   title: string;
   description: string | null;
   banner_url: string | null;
-  type: "QUIZ";
+  type: "QUIZ" | "CODING";
   status: ContestStatus;
   phase: ContestPhase;
   start_time: string;
@@ -194,6 +205,7 @@ export interface ContestQuizBrief {
 }
 
 export interface ContestManage extends ContestBase {
+  problems?: ContestCodeProblem[];
   prizes: ContestPrizeAdmin[];
   quiz: ContestQuizBrief | null;
   course_id: string | null;
@@ -336,6 +348,8 @@ export interface ContestPrizeInput {
 }
 
 export interface ContestUpsertRequest {
+  type?: "QUIZ" | "CODING";
+  problems?: ContestCodeProblemInput[];
   title: string;
   description?: string | null;
   banner_url?: string | null;
@@ -382,4 +396,56 @@ export function toContestNumber(value: ContestDecimal | null | undefined): numbe
   if (value === null || value === undefined || value === "") return null;
   const n = typeof value === "number" ? value : Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+export interface ContestCodeTest {
+  input: string;
+  expected_output: string;
+  hidden: boolean;
+}
+export interface ContestCodeProblemInput {
+  title: string;
+  description: string;
+  difficulty: "EASY" | "MEDIUM" | "HARD";
+  points: number;
+  time_limit_seconds: number;
+  memory_limit_mb: number;
+  tests: ContestCodeTest[];
+}
+export interface ContestCodeProblem extends Omit<ContestCodeProblemInput, "tests"> {
+  id: string;
+  samples: ContestCodeTest[];
+  tests?: ContestCodeTest[];
+}
+export interface ContestCodeResult {
+  id?: string;
+  problem_id: string;
+  language: string;
+  status: string;
+  score: number;
+  max_score: number;
+  passed: number;
+  total: number;
+  execution_time_ms: number;
+  memory_used_kb: number;
+  created_at: string;
+  tests: {
+    number: number;
+    hidden: boolean;
+    status: string;
+    output?: string;
+    expected?: string;
+    error?: string;
+  }[];
+}
+export interface ContestCodeSession {
+  problems: ContestCodeProblem[];
+  submissions: ContestCodeResult[];
+  started_at: string | null;
+  deadline_at: string | null;
+  finished_at: string | null;
+  server_time: string;
+  score: number;
+  total_points: number;
+  can_submit: boolean;
 }

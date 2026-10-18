@@ -1,6 +1,7 @@
+import { refreshSession } from "@/lib/api-client";
 import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_BASE_URL;
+const API_URL = typeof window !== "undefined" ? "/api" : process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_BASE_URL;
 
 /**
  * Lỗi HTTP của client "meet" (phòng live). Backend Fiber trả `{message, error}`
@@ -29,11 +30,23 @@ export class MeetApiError extends Error {
   }
 }
 
+async function authenticatedFetch(path: string, options: RequestInit): Promise<Response> {
+  const send = () => fetch(`${API_URL}${path}`, { ...options, credentials: "include" });
+  let response = await send();
+  if (response.status === 401) {
+    try {
+      await refreshSession();
+      response = await send();
+    } catch { /* Keep the original unauthorized response for the classroom error boundary. */ }
+  }
+  return response;
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await authenticatedFetch(path, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -59,7 +72,7 @@ export const api = {
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
   // Upload files (FormData) - no Content-Type header to let browser set multipart boundary
   upload: async <T>(path: string, formData: FormData): Promise<T> => {
-    const res = await fetch(`${API_URL}${path}`, {
+    const res = await authenticatedFetch(path, {
       method: 'POST',
       body: formData,
       credentials: 'include',

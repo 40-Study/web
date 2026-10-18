@@ -1,0 +1,8 @@
+{
+  "scope": "Open teacher and student boards, draw one rectangle, close both, reopen student board then close",
+  "source": "Next proxy logs; DevTools Network not directly inspected",
+  "requests": {
+    "GET /api/whiteboard/26c09eaa-f686-40ea-b710-2ba11575a3ed/snapshot 200": 3,
+    "POST /api/whiteboard/26c09eaa-f686-40ea-b710-2ba11575a3ed/snapshot 200": 1
+  }
+}

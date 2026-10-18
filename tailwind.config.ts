@@ -10,14 +10,14 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-inter)", "Inter", "system-ui", "sans-serif"],
-        // Heading/display: Plus Jakarta Sans (có subset vietnamese), rơi về Inter nếu font chưa nạp.
-        heading: ["var(--font-heading)", "var(--font-inter)", "Inter", "system-ui", "sans-serif"],
-        display: ["var(--font-heading)", "var(--font-inter)", "Inter", "system-ui", "sans-serif"],
+        // One native UI family for body, headings and controls. Apple platforms use San Francisco.
+        sans: ["var(--font-ui)"],
+        heading: ["var(--font-ui)"],
+        display: ["var(--font-ui)"],
         // 'Geist Mono' chưa từng được nạp -> dùng system mono stack (không thêm package).
         code: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
-        ui: ["-apple-system", "BlinkMacSystemFont", "'SF Pro Text'", "system-ui", "sans-serif"],
+        ui: ["var(--font-ui)"],
       },
       colors: {
         // Educational Platform - Clean Blue & White
@@ -144,7 +144,7 @@ const config: Config = {
         subtle: "var(--shadow-card)",
       },
       letterSpacing: {
-        "body": "0.16px",
+        body: "0.16px",
         "body-wide": "0.18px",
       },
       fontSize: {

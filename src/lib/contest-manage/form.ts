@@ -25,6 +25,8 @@ export interface PrizeDraft {
 }
 
 export interface ContestFormValues {
+  type?: "QUIZ" | "CODING";
+  problems?: import("@/types/contest").ContestCodeProblemInput[];
   title: string;
   description: string;
   banner_url: string;
@@ -114,8 +116,37 @@ export function validateContestForm(
   const title = values.title.trim();
   if (title.length < 2 || title.length > 255) errors.title = "Tên cuộc thi từ 2 đến 255 ký tự.";
 
-  if (!values.quiz_id) errors.quiz_id = "Chọn bài trắc nghiệm cho cuộc thi.";
+  if (values.type !== "CODING" && !values.quiz_id)
+    errors.quiz_id = "Chọn bài trắc nghiệm cho cuộc thi.";
 
+  if (values.type === "CODING") {
+    const problems = values.problems ?? [];
+    if (!problems.length || problems.length > 10) errors.problems = "Thêm từ 1 đến 10 bài code.";
+    else
+      for (const p of problems) {
+        if (p.title.trim().length < 2 || !p.description.trim())
+          errors.problems = "Mỗi bài cần tiêu đề và đề bài.";
+        else if (
+          !Number.isInteger(p.points) ||
+          p.points < 1 ||
+          p.points > 1000 ||
+          !Number.isInteger(p.time_limit_seconds) ||
+          p.time_limit_seconds < 1 ||
+          p.time_limit_seconds > 10 ||
+          !Number.isInteger(p.memory_limit_mb) ||
+          p.memory_limit_mb < 32 ||
+          p.memory_limit_mb > 256
+        )
+          errors.problems = "Kiểm tra điểm, CPU và RAM của mỗi bài.";
+        else if (
+          !p.tests.length ||
+          p.tests.length > 10 ||
+          p.tests.some((t) => !t.expected_output.trim()) ||
+          p.tests.every((t) => t.hidden)
+        )
+          errors.problems = "Mỗi bài cần 1–10 test có đầu ra và ít nhất một test mẫu.";
+      }
+  }
   const banner = values.banner_url.trim();
   if (banner && (!/^https?:\/\/\S+$/i.test(banner) || banner.length > 500)) {
     errors.banner_url = "Ảnh bìa phải là đường dẫn http(s) hợp lệ, tối đa 500 ký tự.";
@@ -174,10 +205,11 @@ export function prizeDraftsToInput(prizes: PrizeDraft[]): ContestPrizeInput[] {
 export function toUpsertRequest(values: ContestFormValues): ContestUpsertRequest {
   const pct = values.certificate_min_percentage.trim();
   return {
+    ...(values.type === "CODING" ? { type: "CODING" as const, problems: values.problems } : {}),
     title: values.title.trim(),
     description: values.description.trim() || null,
     banner_url: values.banner_url.trim() || null,
-    quiz_id: values.quiz_id,
+    quiz_id: values.type === "CODING" ? "00000000-0000-0000-0000-000000000000" : values.quiz_id,
     course_id: values.course_id,
     start_time: new Date(values.start_time).toISOString(),
     end_time: new Date(values.end_time).toISOString(),
@@ -209,6 +241,8 @@ export function prizesToDrafts(contest: Pick<ContestManage, "prizes">): PrizeDra
 
 export function contestToForm(contest: ContestManage): ContestFormValues {
   return {
+    type: contest.type,
+    problems: contest.problems?.map((p) => ({ ...p, tests: p.tests ?? p.samples })),
     title: contest.title,
     description: contest.description ?? "",
     banner_url: contest.banner_url ?? "",

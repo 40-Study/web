@@ -43,6 +43,7 @@ export function LiveClassCard({ liveClass }: LiveClassCardProps) {
       {/* Action */}
       <Link
         href={`/rooms/${liveClass.id}`}
+          prefetch={false}
         className="w-full h-12 mt-4 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
       >
         <ArrowRight className="w-5 h-5" />

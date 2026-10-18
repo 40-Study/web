@@ -1,0 +1,8 @@
+Bài giảng Tin học lớp 10: Vòng lặp trong Python
+Mục tiêu: Học sinh hiểu vòng lặp for và sử dụng range().
+Vòng lặp for duyệt lần lượt từng phần tử trong một tập hợp.
+range(3) sinh các số 0, 1, 2; giá trị dừng không được bao gồm.
+Ví dụ: for i in range(3): print(i) in ra 0, 1, 2.
+Bài tập thực hành: Tính tổng các số từ 1 đến 10.
+Câu hỏi ôn tập: 2 + 2 bằng 4. range(3) có 3 phần tử.
+Tổng kết: Chọn vòng lặp khi cần lặp lại thao tác với nhiều giá trị.

@@ -1,25 +1,15 @@
 "use client";
 
-/**
- * Adapter mỏng cho mua xu — logic hiển thị dùng chung `BankTransferDialog`
- * (mục 13, DRY với checkout). Chỉ còn phần polling status riêng của coins
- * (POST /coins/purchases/:id/verify — không giống payment-status của order).
- *
- * Backend KHÔNG có endpoint trả bank name/account cho mua xu (chỉ đơn hàng
- * khoá học có qua /orders/:id/payment-intent) — dùng NEXT_PUBLIC_BANK_*
- * (thông tin công khai, không phải secret; PHẢI khớp giá trị MB_BANK_NAME
- * thật phía backend).
- */
+/** Bank details come from the backend for both course orders and coin purchases. */
 
 import { useEffect, useState } from "react";
 import { usePurchaseVerificationPolling } from "@/hooks/queries/use-coins";
 import type { CoinPurchase } from "@/services/coin.service";
-import { BankTransferDialog, type BankTransferDialogStatus } from "@/components/payment/bank-transfer-dialog";
-import { ApiError } from "@/lib/errors";
-
-const BANK_NAME = process.env.NEXT_PUBLIC_BANK_NAME || "";
-const BANK_ACCOUNT_NUMBER = process.env.NEXT_PUBLIC_BANK_ACCOUNT_NUMBER || "";
-const BANK_ACCOUNT_NAME = process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME || "";
+import {
+  BankTransferDialog,
+  type BankTransferDialogStatus,
+} from "@/components/payment/bank-transfer-dialog";
+import { getErrorMessage } from "@/lib/error-messages";
 
 interface CoinPaymentDialogProps {
   purchase: CoinPurchase | null;
@@ -42,23 +32,28 @@ export function CoinPaymentDialog({ purchase, open, onOpenChange }: CoinPaymentD
     setPollingEnabled(true);
   }, [purchase?.id]);
 
-  const { data: polled, error: pollError } = usePurchaseVerificationPolling(
-    purchase?.id ?? "",
-    open && pollingEnabled
-  );
+  const {
+    data: polled,
+    error: pollError,
+    refetch,
+    isFetching,
+  } = usePurchaseVerificationPolling(purchase?.id ?? "", open && pollingEnabled);
 
   if (!purchase) return null;
 
   const status = polled?.status ?? purchase.status;
-  const dialogStatus: BankTransferDialogStatus = pollError
-    ? "error"
-    : status === "COMPLETED"
-    ? "success"
-    : status === "FAILED" || status === "REFUNDED"
-    ? "error"
-    : "pending";
-  const errorMessage =
-    pollError instanceof ApiError && pollError.message ? pollError.message : undefined;
+  const dialogStatus: BankTransferDialogStatus =
+    status === "COMPLETED"
+      ? "success"
+      : status === "FAILED" || status === "REFUNDED"
+        ? "error"
+        : "pending";
+  const errorMessage = pollError
+    ? getErrorMessage(
+        pollError,
+        "Chưa thể kiểm tra thanh toán. Bạn có thể thử lại; vui lòng không chuyển khoản lần nữa."
+      )
+    : undefined;
 
   const handleOpenChange = (next: boolean) => {
     if (!next) setPollingEnabled(false);
@@ -70,15 +65,22 @@ export function CoinPaymentDialog({ purchase, open, onOpenChange }: CoinPaymentD
       open={open}
       onOpenChange={handleOpenChange}
       amount={purchase.price}
-      bankName={BANK_NAME}
-      accountNumber={BANK_ACCOUNT_NUMBER}
-      accountName={BANK_ACCOUNT_NAME}
-      paymentContent={`40STUDY ${purchase.payment_reference ?? ""}`.trim()}
+      bankName={purchase.bank_transfer_info?.bank_name}
+      accountNumber={purchase.bank_transfer_info?.account_number}
+      accountName={purchase.bank_transfer_info?.account_name}
+      paymentContent={
+        purchase.bank_transfer_info?.content ?? `40STUDY ${purchase.payment_reference ?? ""}`.trim()
+      }
+      onCheckNow={() => void refetch({ cancelRefetch: false })}
+      isCheckingNow={isFetching}
       status={dialogStatus}
       errorMessage={errorMessage}
       successTitle="Thanh toán thành công!"
       successDescription={
-        <>{formatNumber(purchase.coin_amount + purchase.bonus_amount)} xu đã được cộng vào ví của bạn.</>
+        <>
+          {formatNumber(purchase.coin_amount + purchase.bonus_amount)} xu đã được cộng vào ví của
+          bạn.
+        </>
       }
     />
   );

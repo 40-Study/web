@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Coins,
   ArrowUpRight,
@@ -8,22 +8,17 @@ import {
   Gift,
   ShoppingBag,
   Loader2,
-  Sparkles,
-  TrendingUp,
-  Wallet,
+  CheckCircle2,
+  Circle,
+  ArrowRight,
+  History,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -40,8 +35,12 @@ import {
   useCoinPackages,
   usePurchaseCoins,
   useSendCoinGift,
+  useCoinPurchases,
 } from "@/hooks/queries/use-coins";
-import type { CoinPackage, CoinPurchase, CoinTransaction } from "@/services/coin.service";
+import "@/components/commerce/commerce.css";
+import Link from "next/link";
+import { QueryState } from "@/components/common/query-state";
+import type { CoinPurchase, CoinTransaction } from "@/services/coin.service";
 import { CoinPaymentDialog } from "@/components/coins/coin-payment-dialog";
 
 function formatNumber(n: number) {
@@ -83,9 +82,7 @@ function TransactionRow({ tx }: { tx: CoinTransaction }) {
           )}
         </div>
         <div>
-          <p className="text-sm font-medium">
-            {TYPE_LABELS[tx.type] ?? tx.description ?? tx.type}
-          </p>
+          <p className="text-sm font-medium">{TYPE_LABELS[tx.type] ?? tx.description ?? tx.type}</p>
           <p className="text-xs text-muted-foreground">
             {new Date(tx.created_at).toLocaleString("vi-VN")}
           </p>
@@ -99,58 +96,7 @@ function TransactionRow({ tx }: { tx: CoinTransaction }) {
   );
 }
 
-function PackageCard({
-  pkg,
-  onPurchase,
-}: {
-  pkg: CoinPackage;
-  onPurchase: (id: string) => void;
-}) {
-  return (
-    <Card
-      className={cn(
-        "relative overflow-hidden transition-all hover:shadow-lg cursor-pointer",
-        pkg.is_featured && "border-primary ring-1 ring-primary/20"
-      )}
-    >
-      {pkg.is_featured && (
-        <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs gap-1">
-          <Sparkles className="h-3 w-3" />
-          Phổ biến
-        </Badge>
-      )}
-      <CardContent className="p-5 space-y-4">
-        <div className="text-center">
-          <div className="text-3xl font-bold text-primary">
-            {formatNumber(pkg.total_coins)}
-          </div>
-          <p className="text-sm text-muted-foreground">xu</p>
-          {pkg.bonus_amount > 0 && (
-            <Badge variant="outline" className="mt-1 text-xs text-green-600 border-green-200">
-              +{formatNumber(pkg.bonus_amount)} bonus
-            </Badge>
-          )}
-        </div>
-
-        <div className="text-center">
-          {pkg.discount_percent > 0 && (
-            <span className="text-xs line-through text-muted-foreground mr-2">
-              {formatNumber(pkg.price * (100 / (100 - pkg.discount_percent)))}đ
-            </span>
-          )}
-          <span className="text-lg font-bold">{formatNumber(pkg.price)}đ</span>
-        </div>
-
-        <Button className="w-full" onClick={() => onPurchase(pkg.id)}>
-          <ShoppingBag className="h-4 w-4 mr-2" />
-          Mua ngay
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
-function SendGiftDialog() {
+function SendGiftDialog({ balance }: { balance: number }) {
   const [open, setOpen] = useState(false);
   const [receiverId, setReceiverId] = useState("");
   const [amount, setAmount] = useState("");
@@ -160,12 +106,28 @@ function SendGiftDialog() {
   const { data: friendsData, isLoading: friendsLoading } = useFriends({ limit: 100 }, open);
   const friends = friendsData?.friends ?? [];
 
-  const handleSend = () => {
-    if (!receiverId || !amount) return;
-    sendGift.mutate(
-      { receiverId, amount: parseInt(amount), message: message || undefined },
-      { onSuccess: () => { setOpen(false); setReceiverId(""); setAmount(""); setMessage(""); } }
-    );
+  const sending = useRef(false);
+  const [validationError, setValidationError] = useState("");
+  const handleSend = async () => {
+    if (sending.current) return;
+    const quantity = Number(amount);
+    if (!receiverId || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > balance) {
+      setValidationError(`Chọn người nhận và nhập số xu nguyên từ 1 đến ${formatNumber(balance)}.`);
+      return;
+    }
+    sending.current = true;
+    setValidationError("");
+    try {
+      await sendGift.mutateAsync({ receiverId, amount: quantity, message: message || undefined });
+      setOpen(false);
+      setReceiverId("");
+      setAmount("");
+      setMessage("");
+    } catch {
+      /* API error is displayed by the mutation. */
+    } finally {
+      sending.current = false;
+    }
   };
 
   return (
@@ -174,49 +136,84 @@ function SendGiftDialog() {
         <Gift className="h-4 w-4 mr-2" />
         Tặng xu
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(value) => {
+          if (!sending.current) {
+            setOpen(value);
+            setValidationError("");
+          }
+        }}
+      >
         <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Tặng xu cho bạn bè</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          {/* A-19: trước đây bắt nhập UUID thô, sai thì chỉ báo "Không thể tặng xu". Chọn từ danh sách bạn bè. */}
-          <div className="space-y-2">
-            <Label>Người nhận</Label>
-            {friendsLoading ? (
-              <p className="text-sm text-muted-foreground">Đang tải danh sách bạn bè...</p>
-            ) : friends.length === 0 ? (
-              <p className="text-sm text-muted-foreground" data-testid="gift-no-friends">
-                Bạn chưa có bạn bè nào để tặng xu. Hãy kết bạn trước.
+          <DialogHeader>
+            <DialogTitle>Tặng xu cho bạn bè</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* A-19: trước đây bắt nhập UUID thô, sai thì chỉ báo "Không thể tặng xu". Chọn từ danh sách bạn bè. */}
+            <div className="space-y-2">
+              <Label>Người nhận</Label>
+              {friendsLoading ? (
+                <p className="text-sm text-muted-foreground">Đang tải danh sách bạn bè...</p>
+              ) : friends.length === 0 ? (
+                <p className="text-sm text-muted-foreground" data-testid="gift-no-friends">
+                  Bạn chưa có bạn bè nào để tặng xu. Hãy kết bạn trước.
+                </p>
+              ) : (
+                <Select value={receiverId} onValueChange={setReceiverId}>
+                  <SelectTrigger aria-label="Người nhận">
+                    <SelectValue placeholder="Chọn một người bạn" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {friends.map((f) => (
+                      <SelectItem key={f.user.user_id} value={f.user.user_id}>
+                        {friendDisplayName(f.user)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gift-coins">Số xu</Label>
+              <Input
+                id="gift-coins"
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="100"
+                min={1}
+                step={1}
+                max={balance}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gift-message">Lời nhắn (tuỳ chọn)</Label>
+              <Input
+                id="gift-message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Chúc bạn học tốt!"
+              />
+            </div>
+            {validationError && (
+              <p role="alert" className="text-xs text-red-600">
+                {validationError}
               </p>
-            ) : (
-              <Select value={receiverId} onValueChange={setReceiverId}>
-                <SelectTrigger aria-label="Người nhận">
-                  <SelectValue placeholder="Chọn một người bạn" />
-                </SelectTrigger>
-                <SelectContent>
-                  {friends.map((f) => (
-                    <SelectItem key={f.user.user_id} value={f.user.user_id}>
-                      {friendDisplayName(f.user)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             )}
+            <Button
+              className="w-full"
+              onClick={() => void handleSend()}
+              disabled={sendGift.isPending || !receiverId || !amount}
+            >
+              {sendGift.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Gift className="h-4 w-4 mr-2" />
+              )}
+              Gửi tặng
+            </Button>
           </div>
-          <div className="space-y-2">
-            <Label>Số xu</Label>
-            <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="100" min={1} />
-          </div>
-          <div className="space-y-2">
-            <Label>Lời nhắn (tuỳ chọn)</Label>
-            <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Chúc bạn học tốt!" />
-          </div>
-          <Button className="w-full" onClick={handleSend} disabled={sendGift.isPending || !receiverId || !amount}>
-            {sendGift.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Gift className="h-4 w-4 mr-2" />}
-            Gửi tặng
-          </Button>
-        </div>
         </DialogContent>
       </Dialog>
     </>
@@ -225,114 +222,292 @@ function SendGiftDialog() {
 
 export default function CoinsPage() {
   const [tab, setTab] = useState("packages");
-  const { data: wallet, isLoading: walletLoading } = useCoinWallet();
-  const { data: txData, isLoading: txLoading } = useCoinTransactions({ limit: 50 });
-  const { data: packages } = useCoinPackages();
+  const [selectedID, setSelectedID] = useState("");
+  const [page, setPage] = useState(1);
+  const wallet = useCoinWallet();
+  const transactions = useCoinTransactions({ limit: 50 }, tab === "transactions");
+  const packages = useCoinPackages();
+  const purchases = useCoinPurchases(page, tab === "purchases");
   const purchaseCoins = usePurchaseCoins();
+  const buying = useRef(false);
   const [paymentPurchase, setPaymentPurchase] = useState<CoinPurchase | null>(null);
-
-  const transactions = txData?.transactions ?? [];
-
+  const selected =
+    packages.data?.find((p) => p.id === selectedID) ??
+    packages.data?.find((p) => p.is_featured) ??
+    packages.data?.[0];
+  async function purchase() {
+    if (!selected || buying.current) return;
+    buying.current = true;
+    try {
+      setPaymentPurchase(
+        await purchaseCoins.mutateAsync({ packageId: selected.id, paymentMethod: "bank_transfer" })
+      );
+    } catch {
+      /* The mutation displays the API error. */
+    } finally {
+      buying.current = false;
+    }
+  }
+  const statusLabel = {
+    PENDING: "Chờ thanh toán",
+    COMPLETED: "Đã cộng xu",
+    FAILED: "Không thành công",
+    REFUNDED: "Đã hoàn tiền",
+  };
   return (
-    <div className="page-container py-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="commerce-page">
+      <div className="commerce-heading">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Coins className="h-7 w-7 text-yellow-500" />
-            Ví xu
-          </h1>
-          <p className="text-muted-foreground mt-1">Quản lý xu và mua sắm</p>
+          <div className="commerce-eyebrow">FORTEX / TÀI KHOẢN</div>
+          <h1>Ví xu của bạn</h1>
+          <p>Nạp thêm xu, theo dõi giao dịch và tặng bạn bè.</p>
         </div>
-        <SendGiftDialog />
+        <SendGiftDialog balance={wallet.data?.balance ?? 0} />
       </div>
-
-      {/* Wallet summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-yellow-100 flex items-center justify-center">
-              <Wallet className="h-6 w-6 text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Số dư</p>
-              <p className="text-2xl font-bold">{walletLoading ? "..." : formatNumber(wallet?.balance ?? 0)}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-green-100 flex items-center justify-center">
-              <TrendingUp className="h-6 w-6 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Đã kiếm</p>
-              <p className="text-2xl font-bold text-green-600">{walletLoading ? "..." : formatNumber(wallet?.total_earned ?? 0)}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-red-100 flex items-center justify-center">
-              <ShoppingBag className="h-6 w-6 text-red-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Đã tiêu</p>
-              <p className="text-2xl font-bold text-red-600">{walletLoading ? "..." : formatNumber(wallet?.total_spent ?? 0)}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="packages">Mua xu</TabsTrigger>
-          <TabsTrigger value="transactions">Lịch sử giao dịch</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="packages" className="mt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {(packages ?? []).map((pkg) => (
-              <PackageCard
-                key={pkg.id}
-                pkg={pkg}
-                onPurchase={(id) =>
-                  purchaseCoins.mutate(
-                    { packageId: id, paymentMethod: "bank_transfer" },
-                    { onSuccess: (purchase) => setPaymentPurchase(purchase) }
-                  )
-                }
-              />
-            ))}
+      {wallet.isError ? (
+        <QueryState isError error={wallet.error} onRetry={() => wallet.refetch()}>
+          {null}
+        </QueryState>
+      ) : (
+        <section className="commerce-balance" aria-label="Số dư ví xu">
+          <div>
+            <small>XU HIỆN CÓ</small>
+            <strong>
+              {wallet.isLoading ? "…" : formatNumber(wallet.data?.balance ?? 0)} <span>xu</span>
+            </strong>
           </div>
-          {(!packages || packages.length === 0) && (
-            <div className="text-center py-12 text-muted-foreground">
-              <Coins className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p>Chưa có gói xu nào</p>
+          <div className="commerce-balance-stats">
+            <div>
+              <small>Tổng xu đã nhận</small>
+              <b>{wallet.isLoading ? "…" : formatNumber(wallet.data?.total_earned ?? 0)}</b>
             </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="transactions" className="mt-4">
-          <Card>
-            <CardContent className="p-0">
-              <div className="p-4">
-                {txLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div>
+              <small>Xu đã sử dụng</small>
+              <b>{wallet.isLoading ? "…" : formatNumber(wallet.data?.total_spent ?? 0)}</b>
+            </div>
+          </div>
+        </section>
+      )}
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="mb-6">
+          <TabsTrigger value="packages">
+            <Coins className="mr-2 h-3.5 w-3.5" />
+            Nạp xu
+          </TabsTrigger>
+          <TabsTrigger value="purchases">
+            <ShoppingBag className="mr-2 h-3.5 w-3.5" />
+            Đơn nạp xu
+          </TabsTrigger>
+          <TabsTrigger value="transactions">
+            <History className="mr-2 h-3.5 w-3.5" />
+            Biến động số dư
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="packages">
+          <QueryState
+            isLoading={packages.isLoading}
+            isError={packages.isError}
+            error={packages.error}
+            onRetry={() => packages.refetch()}
+          >
+            <div className="commerce-checkout-grid">
+              <section>
+                <h2 className="mb-2 text-base font-semibold">Chọn gói xu phù hợp</h2>
+                <p className="mb-5 text-xs text-slate-400">
+                  Số xu nhận được đã bao gồm xu tặng thêm.
+                </p>
+                <div className="coin-package-grid">
+                  {packages.data?.map((pkg) => (
+                    <button
+                      key={pkg.id}
+                      type="button"
+                      className="coin-package-choice"
+                      aria-pressed={selected?.id === pkg.id}
+                      disabled={purchaseCoins.isPending}
+                      onClick={() => setSelectedID(pkg.id)}
+                      aria-label={`Chọn ${pkg.name}: ${formatNumber(pkg.total_coins)} xu`}
+                    >
+                      <span className="text-[11px] text-slate-500">{pkg.name}</span>
+                      {selected?.id === pkg.id ? (
+                        <CheckCircle2 className="coin-choice-indicator h-4 w-4" />
+                      ) : (
+                        <Circle className="coin-choice-indicator h-4 w-4" />
+                      )}
+                      <strong>
+                        {formatNumber(pkg.total_coins)} <small>xu</small>
+                      </strong>
+                      <span className="coin-bonus">
+                        {pkg.bonus_amount > 0
+                          ? `Tặng thêm ${formatNumber(pkg.bonus_amount)} xu`
+                          : "Gói xu tiêu chuẩn"}
+                      </span>
+                      <div className="coin-package-price">
+                        {formatNumber(Number(pkg.price))} ₫{" "}
+                        {pkg.is_featured && (
+                          <span className="ml-1 rounded bg-indigo-50 px-2 py-1 text-[9px] text-indigo-500">
+                            Phổ biến
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                {packages.data?.length === 0 && (
+                  <div className="commerce-panel p-10 text-center text-sm text-slate-400">
+                    Hiện chưa có gói xu. Vui lòng quay lại sau.
                   </div>
-                ) : transactions.length === 0 ? (
-                  <p className="text-center py-8 text-muted-foreground">
-                    Chưa có giao dịch nào
-                  </p>
-                ) : (
-                  transactions.map((tx) => <TransactionRow key={tx.id} tx={tx} />)
                 )}
-              </div>
-            </CardContent>
-          </Card>
+              </section>
+              <aside className="commerce-panel commerce-summary">
+                <div className="mb-4 inline-grid h-10 w-10 place-items-center rounded-xl bg-amber-50 text-amber-500">
+                  <Coins className="h-5 w-5" />
+                </div>
+                <h2>Thông tin nạp xu</h2>
+                <dl>
+                  <div>
+                    <dt>Gói đã chọn</dt>
+                    <dd>{selected?.name ?? "—"}</dd>
+                  </div>
+                  <div>
+                    <dt>Xu trong gói</dt>
+                    <dd>{formatNumber(selected?.coin_amount ?? 0)} xu</dd>
+                  </div>
+                  <div>
+                    <dt>Xu tặng thêm</dt>
+                    <dd className="text-emerald-600">
+                      +{formatNumber(selected?.bonus_amount ?? 0)} xu
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Tổng xu nhận</dt>
+                    <dd className="font-semibold">{formatNumber(selected?.total_coins ?? 0)} xu</dd>
+                  </div>
+                  <div className="commerce-total">
+                    <dt>Thanh toán</dt>
+                    <dd>{formatNumber(Number(selected?.price ?? 0))} ₫</dd>
+                  </div>
+                </dl>
+                <Button
+                  className="w-full"
+                  onClick={() => void purchase()}
+                  disabled={!selected || purchaseCoins.isPending}
+                >
+                  {purchaseCoins.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                  )}
+                  Tiếp tục nạp xu
+                </Button>
+                <p className="commerce-help">
+                  Chuyển khoản bằng VND. Xu được cộng sau khi ngân hàng xác nhận. Bạn có thể mở lại
+                  đơn trong “Đơn nạp xu”.
+                </p>
+                <Link href="/orders" className="mt-5 block border-t pt-4 text-xs text-indigo-600">
+                  Xem đơn mua khoá học →
+                </Link>
+              </aside>
+            </div>
+          </QueryState>
+        </TabsContent>
+        <TabsContent value="purchases">
+          <QueryState
+            isLoading={purchases.isLoading}
+            isError={purchases.isError}
+            error={purchases.error}
+            onRetry={() => purchases.refetch()}
+          >
+            <div className="commerce-panel overflow-x-auto">
+              <table className="commerce-table">
+                <thead>
+                  <tr>
+                    <th>ĐƠN NẠP XU</th>
+                    <th>SỐ TIỀN</th>
+                    <th>TRẠNG THÁI</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {purchases.data?.purchases.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <strong>{formatNumber(item.coin_amount + item.bonus_amount)} xu</strong>
+                        <p className="coin-ref">
+                          {new Date(item.created_at).toLocaleString("vi-VN")}
+                        </p>
+                        <p className="coin-ref">{item.payment_reference}</p>
+                      </td>
+                      <td className="whitespace-nowrap">{formatNumber(Number(item.price))} ₫</td>
+                      <td>
+                        <Badge
+                          variant={
+                            item.status === "COMPLETED"
+                              ? "success"
+                              : item.status === "PENDING"
+                                ? "warning"
+                                : "secondary"
+                          }
+                        >
+                          {statusLabel[item.status]}
+                        </Badge>
+                      </td>
+                      <td>
+                        {item.status === "PENDING" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setPaymentPurchase(item)}
+                          >
+                            Tiếp tục thanh toán
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!purchases.data?.purchases.length && (
+                <p className="p-10 text-center text-sm text-slate-400">Bạn chưa có đơn nạp xu.</p>
+              )}
+            </div>
+            <div className="mt-4 flex items-center justify-end gap-3 text-xs text-slate-500">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={page === 1 || purchases.isFetching}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Trước
+              </Button>
+              Trang {page}
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={page * 10 >= (purchases.data?.total_count ?? 0) || purchases.isFetching}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Sau
+              </Button>
+            </div>
+          </QueryState>
+        </TabsContent>
+        <TabsContent value="transactions">
+          <QueryState
+            isLoading={transactions.isLoading}
+            isError={transactions.isError}
+            error={transactions.error}
+            onRetry={() => transactions.refetch()}
+          >
+            <div className="commerce-panel p-5">
+              {transactions.data?.transactions.length ? (
+                transactions.data.transactions.map((tx) => <TransactionRow key={tx.id} tx={tx} />)
+              ) : (
+                <p className="p-8 text-center text-sm text-slate-400">Chưa có biến động số dư.</p>
+              )}
+            </div>
+          </QueryState>
         </TabsContent>
       </Tabs>
-
       <CoinPaymentDialog
         purchase={paymentPurchase}
         open={!!paymentPurchase}

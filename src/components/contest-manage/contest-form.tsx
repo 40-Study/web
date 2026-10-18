@@ -7,6 +7,7 @@
 
 import { useState } from "react";
 
+import { CodeProblemBuilder, emptyCodeProblem } from "./code-problem-builder";
 import { QuizBuilder } from "@/components/contest-manage/quiz-builder";
 import { PrizeEditor } from "@/components/contest-manage/prize-editor";
 import { Button } from "@/components/ui/button";
@@ -41,11 +42,17 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
-export function ContestForm({ initialValues, currentQuiz, submitLabel, isPending, onSubmit }: ContestFormProps) {
+export function ContestForm({
+  initialValues,
+  currentQuiz,
+  submitLabel,
+  isPending,
+  onSubmit,
+}: ContestFormProps) {
   const [values, setValues] = useState<ContestFormValues>(initialValues);
   const [errors, setErrors] = useState<ContestFormErrors>({});
   const [buildingQuiz, setBuildingQuiz] = useState(false);
-  const quizOptions = useContestQuizOptions();
+  const quizOptions = useContestQuizOptions(values.type !== "CODING");
 
   const set = <K extends keyof ContestFormValues>(key: K, value: ContestFormValues[K]) =>
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -65,58 +72,101 @@ export function ContestForm({ initialValues, currentQuiz, submitLabel, isPending
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-6" data-testid="contest-form">
-      <section className="space-y-3 rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
-        <h2 className="font-semibold">1. Bài trắc nghiệm</h2>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          Chỉ dùng bài trắc nghiệm riêng cho cuộc thi (không gắn bài học), có ít nhất 1 câu, không có câu tự luận
-          và chưa ai làm. Sau khi gửi duyệt, đề bị khoá không sửa được.
-        </p>
-        {quizOptions.isError && (
-          <p role="alert" className="text-sm text-red-600">
-            Không tải được danh sách bài trắc nghiệm.{" "}
-            <button type="button" className="underline" onClick={() => quizOptions.refetch()}>
-              Thử lại
-            </button>
-          </p>
-        )}
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <select
-            value={values.quiz_id}
-            onChange={(e) => set("quiz_id", e.target.value)}
-            className={FIELD}
-            aria-label="Chọn bài trắc nghiệm"
-            aria-describedby="err-quiz"
-            data-testid="quiz-select"
-            disabled={quizOptions.isLoading}
+      <div className="flex gap-2" aria-label="Loại cuộc thi">
+        {(
+          [
+            ["QUIZ", "Trắc nghiệm"],
+            ["CODING", "Lập trình · Judge0"],
+          ] as const
+        ).map(([type, label]) => (
+          <Button
+            key={type}
+            type="button"
+            variant={(values.type ?? "QUIZ") === type ? "default" : "outline"}
+            disabled={Boolean(currentQuiz) || Boolean(initialValues.type)}
+            onClick={() =>
+              setValues((v) => ({
+                ...v,
+                type,
+                problems: type === "CODING" ? (v.problems ?? [emptyCodeProblem()]) : v.problems,
+                prizes: [],
+                certificate_min_percentage: "",
+              }))
+            }
           >
-            <option value="">{quizOptions.isLoading ? "Đang tải..." : "Chọn bài trắc nghiệm"}</option>
-            {options.map((q) => (
-              <option key={q.id} value={q.id}>
-                {q.title} ({q.question_count} câu)
-              </option>
-            ))}
-          </select>
-          {!buildingQuiz && (
-            <Button type="button" variant="outline" onClick={() => setBuildingQuiz(true)} data-testid="open-quiz-builder">
-              Tạo bài mới
-            </Button>
+            {label}
+          </Button>
+        ))}
+      </div>
+      {values.type === "CODING" ? (
+        <section className="space-y-3 rounded-xl border bg-card p-4">
+          <h2 className="font-semibold">1. Đề lập trình</h2>
+          <CodeProblemBuilder value={values.problems ?? []} onChange={(v) => set("problems", v)} />
+          <FieldError id="err-problems" message={errors.problems} />
+        </section>
+      ) : (
+        <section className="space-y-3 rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+          <h2 className="font-semibold">1. Bài trắc nghiệm</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Chỉ dùng bài trắc nghiệm riêng cho cuộc thi (không gắn bài học), có ít nhất 1 câu, không
+            có câu tự luận và chưa ai làm. Sau khi gửi duyệt, đề bị khoá không sửa được.
+          </p>
+          {quizOptions.isError && (
+            <p role="alert" className="text-sm text-red-600">
+              Không tải được danh sách bài trắc nghiệm.{" "}
+              <button type="button" className="underline" onClick={() => quizOptions.refetch()}>
+                Thử lại
+              </button>
+            </p>
           )}
-        </div>
-        {!quizOptions.isLoading && options.length === 0 && !buildingQuiz && (
-          <p className="text-sm text-gray-500">Bạn chưa có bài trắc nghiệm đủ điều kiện. Hãy tạo bài mới.</p>
-        )}
-        <FieldError id="err-quiz" message={errors.quiz_id} />
-        {buildingQuiz && (
-          <QuizBuilder
-            onCancel={() => setBuildingQuiz(false)}
-            onCreated={async (quizId) => {
-              setBuildingQuiz(false);
-              await quizOptions.refetch();
-              set("quiz_id", quizId);
-            }}
-          />
-        )}
-      </section>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <select
+              value={values.quiz_id}
+              onChange={(e) => set("quiz_id", e.target.value)}
+              className={FIELD}
+              aria-label="Chọn bài trắc nghiệm"
+              aria-describedby="err-quiz"
+              data-testid="quiz-select"
+              disabled={quizOptions.isLoading}
+            >
+              <option value="">
+                {quizOptions.isLoading ? "Đang tải..." : "Chọn bài trắc nghiệm"}
+              </option>
+              {options.map((q) => (
+                <option key={q.id} value={q.id}>
+                  {q.title} ({q.question_count} câu)
+                </option>
+              ))}
+            </select>
+            {!buildingQuiz && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setBuildingQuiz(true)}
+                data-testid="open-quiz-builder"
+              >
+                Tạo bài mới
+              </Button>
+            )}
+          </div>
+          {!quizOptions.isLoading && options.length === 0 && !buildingQuiz && (
+            <p className="text-sm text-gray-500">
+              Bạn chưa có bài trắc nghiệm đủ điều kiện. Hãy tạo bài mới.
+            </p>
+          )}
+          <FieldError id="err-quiz" message={errors.quiz_id} />
+          {buildingQuiz && (
+            <QuizBuilder
+              onCancel={() => setBuildingQuiz(false)}
+              onCreated={async (quizId) => {
+                setBuildingQuiz(false);
+                await quizOptions.refetch();
+                set("quiz_id", quizId);
+              }}
+            />
+          )}
+        </section>
+      )}
 
       <section className="space-y-4 rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
         <h2 className="font-semibold">2. Thông tin cuộc thi</h2>
@@ -215,21 +265,23 @@ export function ContestForm({ initialValues, currentQuiz, submitLabel, isPending
             />
             <FieldError id="err-max" message={errors.max_participants} />
           </div>
-          <div>
-            <label htmlFor="contest-cert" className="mb-1 block text-sm font-medium">
-              Ngưỡng % để nhận chứng nhận (bỏ trống = không phát theo ngưỡng)
-            </label>
-            <input
-              id="contest-cert"
-              type="number"
-              min={0}
-              max={100}
-              value={values.certificate_min_percentage}
-              onChange={(e) => set("certificate_min_percentage", e.target.value)}
-              className={FIELD}
-            />
-            <FieldError id="err-cert" message={errors.certificate_min_percentage} />
-          </div>
+          {values.type !== "CODING" && (
+            <div>
+              <label htmlFor="contest-cert" className="mb-1 block text-sm font-medium">
+                Ngưỡng % để nhận chứng nhận (bỏ trống = không phát theo ngưỡng)
+              </label>
+              <input
+                id="contest-cert"
+                type="number"
+                min={0}
+                max={100}
+                value={values.certificate_min_percentage}
+                onChange={(e) => set("certificate_min_percentage", e.target.value)}
+                className={FIELD}
+              />
+              <FieldError id="err-cert" message={errors.certificate_min_percentage} />
+            </div>
+          )}
           <div className="flex items-center gap-3 pt-6">
             <Switch
               checked={values.is_public}
@@ -241,18 +293,20 @@ export function ContestForm({ initialValues, currentQuiz, submitLabel, isPending
         </div>
       </section>
 
-      <section className="space-y-3 rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
-        <h2 className="font-semibold">3. Giải thưởng</h2>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          Giảng viên chỉ trao chứng nhận theo hạng. Giải voucher do quản trị viên gắn khi duyệt.
-        </p>
-        <PrizeEditor
-          value={values.prizes}
-          onChange={(prizes) => set("prizes", prizes)}
-          allowVoucher={false}
-          error={errors.prizes}
-        />
-      </section>
+      {values.type !== "CODING" && (
+        <section className="space-y-3 rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+          <h2 className="font-semibold">3. Giải thưởng</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Giảng viên chỉ trao chứng nhận theo hạng. Giải voucher do quản trị viên gắn khi duyệt.
+          </p>
+          <PrizeEditor
+            value={values.prizes}
+            onChange={(prizes) => set("prizes", prizes)}
+            allowVoucher={false}
+            error={errors.prizes}
+          />
+        </section>
+      )}
 
       <div className="flex justify-end">
         <Button type="submit" isLoading={isPending} data-testid="contest-form-submit">

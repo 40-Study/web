@@ -806,7 +806,8 @@ export default function CourseDetailPage() {
             const q = data.quizQuestions[i];
             await quizService.createQuestion(quiz.id, {
               question_text: q.question,
-              question_type: "multiple_choice",
+              question_type: "single_choice",
+              explanation: q.explanation?.trim() || undefined,
               points: 10,
               display_order: i,
               answers: q.options.map((o, idx) => ({
@@ -885,7 +886,8 @@ export default function CourseDetailPage() {
             const q = data.quizQuestions[i];
             await quizService.createQuestion(quiz.id, {
               question_text: q.question,
-              question_type: "multiple_choice",
+              question_type: "single_choice",
+              explanation: q.explanation?.trim() || undefined,
               points: 10,
               display_order: i,
               answers: q.options.map((o, idx) => ({
@@ -915,14 +917,20 @@ export default function CourseDetailPage() {
             title: data.title,
             description: data.description,
             difficulty: "medium",
-            language: ["javascript", "python"],
+            language: [data.language || "python"],
+            starter_code: data.starterCode,
           });
-          await lessonContentService.createContent(currentLessonId || "", {
+          undoStack.push(() => exerciseService.delete(exercise.id));
+          await exerciseService.importTestCases(exercise.id, (data.testCases ?? []).map((test, index) => ({
+            input: test.input, expected_output: test.output, is_hidden: test.hidden, display_order: index,
+          })));
+          const content = await lessonContentService.createContent(currentLessonId || "", {
             type: "exercise",
             title: data.title,
             exercise_id: exercise.id,
             is_mandatory: true,
           });
+          if (content?.id) undoStack.push(() => lessonContentService.deleteContent(currentLessonId || "", content.id));
           successMessage = "Đã tạo bài tập code";
         } else {
           // Essay exercise - create exercise first

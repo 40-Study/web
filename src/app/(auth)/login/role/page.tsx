@@ -18,6 +18,8 @@ export default function LoginRolePage() {
   const [allSystemRoles, setAllSystemRoles] = useState<SystemRoleOption[]>([]);
   const [selectedSystemRole, setSelectedSystemRole] = useState<SystemRoleOption | null>(null);
   const [loadingRoles, setLoadingRoles] = useState(false);
+  const [hasLoadedSystemRoles, setHasLoadedSystemRoles] = useState(false);
+  const [roleLoadError, setRoleLoadError] = useState<string | null>(null);
 
   const hasRoles = roles.length > 0;
 
@@ -30,13 +32,18 @@ export default function LoginRolePage() {
 
   const fetchAllSystemRoles = async () => {
     setLoadingRoles(true);
+    setRoleLoadError(null);
     try {
       const data = await authService.getAllSystemRoles();
       setAllSystemRoles(data.system_roles || []);
-    } catch {
-      // ignore
+    } catch (error) {
+      console.error("Không tải được danh sách vai trò:", error);
+      setRoleLoadError(
+        "Không tải được danh sách vai trò. Hãy kiểm tra kết nối hoặc tắt extension đang chặn localhost rồi thử lại."
+      );
     } finally {
       setLoadingRoles(false);
+      setHasLoadedSystemRoles(true);
     }
   };
 
@@ -94,7 +101,7 @@ export default function LoginRolePage() {
       <div className="space-y-3" role="radiogroup" aria-label="Chọn vai trò">
         {isNewRoleMode ? (
           // Mode chọn system role mới
-          loadingRoles ? (
+          loadingRoles || !hasLoadedSystemRoles ? (
             <div className="flex justify-center py-4">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
             </div>
@@ -110,6 +117,13 @@ export default function LoginRolePage() {
                 }}
               />
             ))
+          ) : roleLoadError ? (
+            <div className="space-y-3 rounded-lg border border-red-200 bg-red-50 p-4 text-center" role="alert">
+              <p className="text-sm text-red-700">{roleLoadError}</p>
+              <Button variant="outline" onClick={fetchAllSystemRoles} className="h-10">
+                Thử lại
+              </Button>
+            </div>
           ) : (
             <p className="text-center text-sm text-muted-foreground">
               {showAddRole ? "Bạn đã có tất cả vai trò." : "Không tìm thấy vai trò nào."}

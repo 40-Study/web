@@ -61,10 +61,10 @@ describe("CartPage — giá dòng và tạm tính theo giá bán", () => {
     expect(screen.getAllByText(fmt(499000)).length).toBeGreaterThanOrEqual(3);
   });
 
-  it("bỏ chọn hết -> tạm tính = total của server, nút thanh toán tắt", () => {
+  it("bỏ chọn hết -> tạm tính bằng 0, nút thanh toán tắt", () => {
     render(<CartPage />);
     fireEvent.click(screen.getAllByRole("checkbox")[0]); // đang chọn hết -> bỏ chọn hết
-    expect(screen.getByTestId("voucher-subtotal").textContent).toBe("799000");
+    expect(screen.getByTestId("voucher-subtotal").textContent).toBe("0");
     expect(screen.getByTestId("cart-select-hint")).toBeTruthy();
   });
 });

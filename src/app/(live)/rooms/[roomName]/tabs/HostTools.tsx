@@ -246,7 +246,7 @@ function TimerDigitBox({ value, label }: { value: string; label: string }) {
           fontSize: '1.8rem',
           fontWeight: 500,
           color: COLORS.text,
-          fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+          fontFamily: "var(--font-ui)",
         }}>
           {value}
         </span>
@@ -295,7 +295,7 @@ function DigitInput({ value, label, onIncrement, onDecrement }: {
           fontSize: '1.8rem',
           fontWeight: 500,
           color: COLORS.text,
-          fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+          fontFamily: "var(--font-ui)",
         }}>
           {value.toString().padStart(2, '0')}
         </span>
@@ -551,7 +551,7 @@ export function TimerModal({
                   fontSize: '48px',
                   fontWeight: 200,
                   color: COLORS.text,
-                  fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif",
+                  fontFamily: "var(--font-ui)",
                   width: '64px',
                   textAlign: 'center',
                   lineHeight: 1,
@@ -562,7 +562,7 @@ export function TimerModal({
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 16l6-6H6z"/></svg>
                 </button>
               </div>
-              <span style={{ fontSize: '48px', fontWeight: 200, color: COLORS.border, fontFamily: "'SF Pro Display', -apple-system" }}>:</span>
+              <span style={{ fontSize: '48px', fontWeight: 200, color: COLORS.border, fontFamily: "var(--font-ui)" }}>:</span>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <button onClick={() => setSeconds(s => Math.min(59, s + 1))} style={{ background: 'none', border: 'none', color: COLORS.border, cursor: 'pointer', padding: '4px' }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8l-6 6h12z"/></svg>
@@ -571,7 +571,7 @@ export function TimerModal({
                   fontSize: '48px',
                   fontWeight: 200,
                   color: COLORS.text,
-                  fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif",
+                  fontFamily: "var(--font-ui)",
                   width: '64px',
                   textAlign: 'center',
                   lineHeight: 1,
@@ -630,7 +630,7 @@ export function TimerModal({
                   fontSize: '36px',
                   fontWeight: 200,
                   color: COLORS.text,
-                  fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif",
+                  fontFamily: "var(--font-ui)",
                   letterSpacing: '1px',
                 }}>
                   {displayM}:{displayS}
@@ -657,7 +657,7 @@ export function TimerModal({
                   fontSize: '12px',
                   fontWeight: 500,
                   color: isPaused ? COLORS.warning : COLORS.danger,
-                  fontFamily: "'SF Pro Text', -apple-system",
+                  fontFamily: "var(--font-ui)",
                 }}>
                   {isPaused ? 'PAUSED' : 'DONE'}
                 </span>

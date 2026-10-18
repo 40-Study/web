@@ -61,6 +61,8 @@ import { VideoDurationField } from "@/components/teacher/video-duration-field";
 import { ArticleContentForm, type ArticleFormValue, type ArticleSubmitResult } from "@/components/teacher/article-content-form";
 import type { Class } from "@/services/class.service";
 
+import { LessonQuizBuilder, newLessonQuestion, type LessonQuizQuestion } from "@/components/teacher/lesson-quiz-builder";
+
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 export type ContentType = "video" | "livestream" | "exercise" | "article";
@@ -74,12 +76,7 @@ interface UploadedFile {
   status: "pending" | "uploading" | "done" | "error";
 }
 
-interface QuizQuestion {
-  id: string;
-  question: string;
-  options: { id: string; text: string }[];
-  correctId: string;
-}
+type QuizQuestion = LessonQuizQuestion;
 
 interface TestCase {
   id: string;
@@ -141,7 +138,7 @@ export interface ExerciseContentData {
   // Code specific
   language?: string;
   testCases?: TestCase[];
-  solutionCode?: string;
+  starterCode?: string;
   // Essay specific
   minWords?: number;
   maxWords?: number;
@@ -213,17 +210,7 @@ const LANGUAGES = [
 
 const genId = () => Math.random().toString(36).slice(2, 9);
 
-const emptyQuestion = (): QuizQuestion => ({
-  id: genId(),
-  question: "",
-  options: [
-    { id: genId(), text: "" },
-    { id: genId(), text: "" },
-    { id: genId(), text: "" },
-    { id: genId(), text: "" },
-  ],
-  correctId: "",
-});
+const emptyQuestion = newLessonQuestion;
 
 const emptyTestCase = (): TestCase => ({ id: genId(), input: "", output: "", hidden: false });
 
@@ -363,10 +350,6 @@ export function AddContentModal({
     }
   }, [contentType, exerciseType]);
 
-  // Sinh quiz bằng AI: backend CHƯA có endpoint nào (không có tích hợp Qwen trong repo).
-  // Bản trước đây chờ setTimeout 2 giây rồi chèn 2 câu hỏi cứng và tự chọn đáp án đúng là
-  // phương án A — giáo viên tưởng đang dùng AI thật và có thể lưu quiz rác vào khoá học.
-  // Đã bỏ hẳn; nút được vô hiệu hoá cho tới khi có API thật.
   // Tiêu đề + câu trắc nghiệm của form đang mở — nguồn cho việc kiểm tra và hiện lỗi (T3/T4).
   const formTitle =
     contentType === "video" ? videoTitle : contentType === "livestream" ? liveTitle : exTitle;
@@ -453,11 +436,18 @@ export function AddContentModal({
         maxAttempts: quizSettings?.max_attempts,
         language: exerciseType === "code" ? exLanguage : undefined,
         testCases: exerciseType === "code" ? exTestCases : undefined,
-        solutionCode: exerciseType === "code" ? exSolution : undefined,
+        starterCode: exerciseType === "code" ? exSolution : undefined,
         minWords: exerciseType === "essay" ? exMinWords : undefined,
         maxWords: exerciseType === "essay" ? exMaxWords : undefined,
       };
     } else {
+      return;
+    }
+
+    if (data.type === "exercise" && data.exerciseType === "code" &&
+      (!data.description.trim() || !data.testCases?.length || data.testCases.length > 20 ||
+        !data.testCases.some(test => !test.hidden) || data.testCases.some(test => !test.output.trim()))) {
+      setSubmitError("Nhập đề bài và từ 1 đến 20 test có kết quả mong đợi, gồm ít nhất một test mẫu công khai.");
       return;
     }
 
@@ -501,50 +491,6 @@ export function AddContentModal({
   const removeDocs = useCallback((idx: number, target: "video" | "live") => {
     if (target === "video") setVideoDocs((p) => p.filter((_, i) => i !== idx));
     else setLiveDocs((p) => p.filter((_, i) => i !== idx));
-  }, []);
-
-  // Quiz question handlers
-  const updateQuestion = useCallback((
-    qId: string,
-    field: "question" | "correctId",
-    value: string,
-    target: "video" | "live" | "exercise"
-  ) => {
-    const updater = (qs: QuizQuestion[]) =>
-      qs.map((q) => (q.id === qId ? { ...q, [field]: value } : q));
-    if (target === "video") setVideoQuiz(updater);
-    else if (target === "live") setLiveQuiz(updater);
-    else setExQuiz(updater);
-  }, []);
-
-  const updateOption = useCallback((
-    qId: string,
-    optId: string,
-    text: string,
-    target: "video" | "live" | "exercise"
-  ) => {
-    const updater = (qs: QuizQuestion[]) =>
-      qs.map((q) =>
-        q.id === qId
-          ? { ...q, options: q.options.map((o) => (o.id === optId ? { ...o, text } : o)) }
-          : q
-      );
-    if (target === "video") setVideoQuiz(updater);
-    else if (target === "live") setLiveQuiz(updater);
-    else setExQuiz(updater);
-  }, []);
-
-  const addQuestion = useCallback((target: "video" | "live" | "exercise") => {
-    if (target === "video") setVideoQuiz((p) => [...p, emptyQuestion()]);
-    else if (target === "live") setLiveQuiz((p) => [...p, emptyQuestion()]);
-    else setExQuiz((p) => [...p, emptyQuestion()]);
-  }, []);
-
-  const removeQuestion = useCallback((qId: string, target: "video" | "live" | "exercise") => {
-    const updater = (qs: QuizQuestion[]) => qs.filter((q) => q.id !== qId);
-    if (target === "video") setVideoQuiz(updater);
-    else if (target === "live") setLiveQuiz(updater);
-    else setExQuiz(updater);
   }, []);
 
   // Test case handlers
@@ -758,14 +704,7 @@ export function AddContentModal({
               </TabsContent>
 
               <TabsContent value="quiz" className="space-y-4 mt-4">
-                <QuizPanel
-                  errors={visibleErrors.questions}
-                  questions={videoQuiz}
-                  onUpdateQuestion={(qId, field, val) => updateQuestion(qId, field, val, "video")}
-                  onUpdateOption={(qId, optId, text) => updateOption(qId, optId, text, "video")}
-                  onAddQuestion={() => addQuestion("video")}
-                  onRemoveQuestion={(qId) => removeQuestion(qId, "video")}
-                />
+                <LessonQuizBuilder errors={visibleErrors.questions} title={videoTitle} questions={videoQuiz} onChange={setVideoQuiz} />
               </TabsContent>
             </Tabs>
           )}
@@ -953,14 +892,7 @@ export function AddContentModal({
               </TabsContent>
 
               <TabsContent value="quiz" className="space-y-4 mt-4">
-                <QuizPanel
-                  errors={visibleErrors.questions}
-                  questions={liveQuiz}
-                  onUpdateQuestion={(qId, field, val) => updateQuestion(qId, field, val, "live")}
-                  onUpdateOption={(qId, optId, text) => updateOption(qId, optId, text, "live")}
-                  onAddQuestion={() => addQuestion("live")}
-                  onRemoveQuestion={(qId) => removeQuestion(qId, "live")}
-                />
+                <LessonQuizBuilder errors={visibleErrors.questions} title={liveTitle} questions={liveQuiz} onChange={setLiveQuiz} />
               </TabsContent>
             </Tabs>
           )}
@@ -1030,14 +962,7 @@ export function AddContentModal({
                   helperText="Chỉ tính các lượt làm bài chính thức."
                 />
               </div>
-              <QuizQuestionsEditor
-                errors={visibleErrors.questions}
-                questions={exQuiz}
-                onUpdate={(qId, field, val) => updateQuestion(qId, field, val, "exercise")}
-                onUpdateOption={(qId, optId, text) => updateOption(qId, optId, text, "exercise")}
-                onAdd={() => addQuestion("exercise")}
-                onRemove={(qId) => removeQuestion(qId, "exercise")}
-              />
+              <LessonQuizBuilder errors={visibleErrors.questions} title={exTitle} questions={exQuiz} onChange={setExQuiz} />
             </div>
           )}
 
@@ -1088,6 +1013,10 @@ export function AddContentModal({
                         </Button>
                       )}
                     </div>
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <input type="checkbox" checked={tc.hidden} onChange={(e) => updateTestCase(tc.id, "hidden", e.target.checked)} />
+                      Test ẩn {idx + 1}
+                    </label>
                     <div className="grid grid-cols-2 gap-2">
                       <Textarea
                         placeholder="Đầu vào"
@@ -1110,8 +1039,8 @@ export function AddContentModal({
               </div>
 
               <Textarea
-                label="Giải pháp (Solution)"
-                placeholder="function solve() { ... }"
+                label="Mã khởi đầu (tuỳ chọn)"
+                placeholder="Mã gợi ý ban đầu cho học sinh, không đặt lời giải đầy đủ ở đây."
                 value={exSolution}
                 onChange={(e) => setExSolution(e.target.value)}
                 rows={6}
@@ -1250,138 +1179,6 @@ function DocumentsPanel({
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-// ─── Quiz Panel (with AI generation) ───────────────────────────────────────
-
-function QuizPanel({
-  errors,
-  questions,
-  onUpdateQuestion,
-  onUpdateOption,
-  onAddQuestion,
-  onRemoveQuestion,
-}: {
-  /** `questionId` -> lỗi kiểm tra (T3); rỗng khi chưa bấm gửi hoặc không có lỗi. */
-  errors: Record<string, string>;
-  questions: QuizQuestion[];
-  onUpdateQuestion: (qId: string, field: "question" | "correctId", value: string) => void;
-  onUpdateOption: (qId: string, optId: string, text: string) => void;
-  onAddQuestion: () => void;
-  onRemoveQuestion: (qId: string) => void;
-}) {
-  return (
-    <div className="space-y-4">
-      {/* Tạo Quiz bằng AI — chưa có backend, xem ghi chú ở handleGenerateQuiz cũ */}
-      <div className="p-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
-        <div className="flex items-start gap-3">
-          <Sparkles className="w-5 h-5 text-gray-400 mt-0.5" />
-          <div className="flex-1">
-            <p className="font-medium text-gray-700 dark:text-gray-300">Tạo Quiz bằng AI</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Tính năng đang được phát triển. Hiện tại hãy soạn câu hỏi thủ công bên dưới.
-            </p>
-          </div>
-          <Button size="sm" variant="outline" disabled>
-            Sắp có
-          </Button>
-        </div>
-      </div>
-
-      <div className="relative flex items-center">
-        <div className="flex-1 border-t" />
-        <span className="px-3 text-sm text-muted-foreground">soạn thủ công</span>
-        <div className="flex-1 border-t" />
-      </div>
-
-      <QuizQuestionsEditor
-        errors={errors}
-        questions={questions}
-        onUpdate={onUpdateQuestion}
-        onUpdateOption={onUpdateOption}
-        onAdd={onAddQuestion}
-        onRemove={onRemoveQuestion}
-      />
-    </div>
-  );
-}
-
-// ─── Quiz Questions Editor ─────────────────────────────────────────────────
-
-function QuizQuestionsEditor({
-  errors,
-  questions,
-  onUpdate,
-  onUpdateOption,
-  onAdd,
-  onRemove,
-}: {
-  errors: Record<string, string>;
-  questions: QuizQuestion[];
-  onUpdate: (qId: string, field: "question" | "correctId", value: string) => void;
-  onUpdateOption: (qId: string, optId: string, text: string) => void;
-  onAdd: () => void;
-  onRemove: (qId: string) => void;
-}) {
-  return (
-    <div className="space-y-4">
-      {questions.map((q, idx) => (
-        <div
-          key={q.id}
-          className={cn("border rounded-xl p-4 space-y-3", errors[q.id] && "border-destructive")}
-          data-testid={`quiz-question-${idx}`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Câu hỏi {idx + 1}</span>
-            {questions.length > 1 && (
-              <Button variant="ghost" size="sm" onClick={() => onRemove(q.id)}>
-                <Trash2 className="w-4 h-4 text-destructive" />
-              </Button>
-            )}
-          </div>
-          <Input
-            placeholder="Nhập câu hỏi..."
-            value={q.question}
-            onChange={(e) => onUpdate(q.id, "question", e.target.value)}
-          />
-          <div className="space-y-2">
-            {q.options.map((opt) => (
-              <div key={opt.id} className="flex items-center gap-2">
-                <button
-                  type="button"
-                  aria-label={`Chọn phương án làm đáp án đúng của câu ${idx + 1}`}
-                  aria-pressed={q.correctId === opt.id}
-                  onClick={() => onUpdate(q.id, "correctId", opt.id)}
-                  className={cn(
-                    "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0",
-                    q.correctId === opt.id
-                      ? "border-primary-600 bg-primary-600 text-white"
-                      : "border-input hover:border-primary-400"
-                  )}
-                >
-                  {q.correctId === opt.id && <Check className="w-3 h-3" />}
-                </button>
-                <Input
-                  placeholder="Phương án..."
-                  value={opt.text}
-                  onChange={(e) => onUpdateOption(q.id, opt.id, e.target.value)}
-                  className="flex-1"
-                />
-              </div>
-            ))}
-          </div>
-          {errors[q.id] && (
-            <p role="alert" className="text-xs text-destructive">
-              {errors[q.id]}
-            </p>
-          )}
-        </div>
-      ))}
-      <Button variant="outline" onClick={onAdd} className="w-full">
-        <Plus className="w-4 h-4 mr-1" /> Thêm câu hỏi
-      </Button>
     </div>
   );
 }

@@ -153,7 +153,7 @@ describe("mapSectionsToExercises — trắc nghiệm", () => {
     const [exercise] = mapSectionsToExercises(sections, contents);
     const [quiz] = mapSectionsToExercises(gitSections, gitContents, gitQuizzes);
     expect(courseTaskHref("react-nextjs-tu-co-ban-den-nang-cao", exercise)).toBe(
-      "/learn/react-nextjs-tu-co-ban-den-nang-cao/33dfd05c"
+      "/learn/react-nextjs-tu-co-ban-den-nang-cao/33dfd05c?exercise=1decbba7-820f-4272-b53e-e52d424394a0"
     );
     expect(courseTaskHref("git-github-cho-nguoi-moi-bat-dau", quiz)).toBe(
       "/quizzes/359ce8f7-c675-439d-962e-8b36098813b6"

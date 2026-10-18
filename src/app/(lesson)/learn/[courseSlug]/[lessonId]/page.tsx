@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useParams, notFound, useRouter } from "next/navigation";
+import { useParams, useSearchParams, notFound, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Loader2, Star } from "lucide-react";
 import Link from "next/link";
@@ -9,8 +9,6 @@ import {
   PlayerHeader,
   PlayerLessonSidebar,
   PlayerTabs,
-  FloatingButtons,
-  CodeEditorModal,
   QuizLessonContent,
   HeartbeatVideo,
   LessonLockedNotice,
@@ -19,10 +17,10 @@ import {
   LessonLoadError,
 } from "@/components/player";
 import type { StudyToolKey } from "@/components/player";
+import { LessonCodeWorkspace } from "@/components/player/lesson-code-workspace";
 import { NonVideoLessonContent } from "@/components/player/non-video-lesson-content";
 import {
   announceCourseCompleted,
-  invalidateAfterLessonProgress,
   isCourseCompleted,
 } from "@/components/player/lesson-progress-sync";
 import { pickCompanionArticle, pickPrimaryContent, quizzesForTab, resolveLessonKind, toPlayerLessonType } from "@/components/player/lesson-kind";
@@ -398,11 +396,11 @@ function VideoLessonContent({
 export default function CourseLessonPage() {
   const params = useParams<{ courseSlug: string; lessonId: string }>();
   const { courseSlug, lessonId } = params;
+  const requestedExerciseID = useSearchParams().get("exercise");
   const router = useRouter();
   const queryClient = useQueryClient();
   const completionAnnouncedRef = useRef(false);
 
-  const [isCodeEditorOpen, setCodeEditorOpen] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<StartQuizResponse | null>(null);
   // BLOCKER review vòng 1 (#5, quyết định Q5): KHÔNG dựng lại đúng/sai ở
   // client. Sau khi nộp chỉ giữ `attempt_id`, kết quả thật đọc qua
@@ -438,8 +436,9 @@ export default function CourseLessonPage() {
     isLessonLocked ? "" : lessonId
   );
   const lessonVideo = lessonContents?.find((c) => c.type === "video");
-  const lessonKind = resolveLessonKind(lessonContents);
-  const primaryContent = pickPrimaryContent(lessonContents);
+  const requestedExercise = lessonContents?.find(content => content.type === "exercise" && content.exercise_id === requestedExerciseID);
+  const lessonKind = requestedExercise ? "exercise" : resolveLessonKind(lessonContents);
+  const primaryContent = requestedExercise ?? pickPrimaryContent(lessonContents);
   // Bài viết cùng bài với video (video là nội dung chính) — hiện dưới video thay vì biến mất.
   const companionArticle = pickCompanionArticle(lessonContents);
 
@@ -466,7 +465,7 @@ export default function CourseLessonPage() {
   const { data: lessonQuiz, isError: lessonQuizError } = useQuiz(lessonKind === "quiz" ? primaryContent?.quiz_id : undefined);
   const tabQuizzes = quizzesForTab(quizzes, lessonContents);
   const startQuizMutation = useStartQuiz();
-  const submitQuizMutation = useSubmitQuiz();
+  const submitQuizMutation = useSubmitQuiz(apiCourse?.id);
   const saveAnswerMutation = useSaveQuizAnswer();
   const {
     data: submittedAttempt,
@@ -619,11 +618,10 @@ export default function CourseLessonPage() {
         data: { answers },
       });
       setSubmittedAttemptId(result.id || activeQuiz.attempt_id);
-      // H1 (QA 261009): backend hoàn thành bài khi lượt official đạt. Tải lại curriculum + tiến độ ngay (cùng
-      // đường với bài video/bài viết) để sidebar hiện bài xong và bài kế tiếp mở khoá, không đợi F5.
-      invalidateAfterLessonProgress(queryClient, apiCourse?.id);
+
     } catch (err: unknown) {
       setQuizError(err instanceof Error ? err.message : "Không nộp được bài. Câu trả lời vẫn được lưu tạm, hãy thử nộp lại.");
+      return false;
     }
   };
 
@@ -790,7 +788,10 @@ export default function CourseLessonPage() {
       const livestreamContent = lessonContents?.find((c) => c.type === "livestream");
       return (
         <div className="flex-1 min-w-0 overflow-y-auto p-3 sm:p-5 pb-40 lg:pb-5 space-y-4">
-          <NonVideoLessonContent
+          {lessonKind === "exercise" && primaryContent?.exercise_id ? (
+            <LessonCodeWorkspace key={primaryContent.exercise_id} lessonId={lessonId} exerciseId={primaryContent.exercise_id}
+              courseId={course.id} courseSlug={courseSlug} completed={currentLesson.completed} onProgress={handleLessonProgress} />
+          ) : <NonVideoLessonContent
             kind={lessonKind}
             lessonId={lessonId}
             courseId={course.id}
@@ -800,7 +801,7 @@ export default function CourseLessonPage() {
             completed={currentLesson.completed}
             livestreamHref={livestreamContent ? resolveLivestreamRoomHref(livestreamContent) : null}
             onProgress={handleLessonProgress}
-          />
+          />}
           {next && (
             <Link
               href={`/learn/${courseSlug}/${next.id}`}
@@ -854,11 +855,7 @@ export default function CourseLessonPage() {
         />
       </div>
 
-      <FloatingButtons onSandboxOpen={() => setCodeEditorOpen(true)} />
 
-      {isCodeEditorOpen && (
-        <CodeEditorModal onClose={() => setCodeEditorOpen(false)} />
-      )}
     </div>
   );
 }

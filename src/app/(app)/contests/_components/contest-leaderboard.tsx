@@ -26,6 +26,7 @@ interface ContestLeaderboardProps {
   serverTime: string;
   /** `dataUpdatedAt` của truy vấn chi tiết — xem useServerCountdown. */
   receivedAt?: number;
+  live?: boolean;
 }
 
 /**
@@ -33,11 +34,11 @@ interface ContestLeaderboardProps {
  * 30 giây ân hạn component tự đếm ngược theo giờ server và bật truy vấn đúng lúc qua mốc — không
  * gọi sớm (sẽ nhận 403) và không bắt người dùng tải lại trang.
  */
-export function ContestLeaderboard({ contestId, phase, endTime, serverTime, receivedAt }: ContestLeaderboardProps) {
+export function ContestLeaderboard({ contestId, phase, endTime, serverTime, receivedAt, live = false }: ContestLeaderboardProps) {
   const [page, setPage] = useState(1);
   const revealAt = contestRevealAt(endTime);
   const revealRemaining = useServerCountdown(phase === "ENDED" ? revealAt : null, serverTime, undefined, receivedAt);
-  const visibility = resolveLeaderboardVisibility(phase, revealAt, revealRemaining);
+  const visibility = live ? { visible: true as const } : resolveLeaderboardVisibility(phase, revealAt, revealRemaining);
   const query = useContestLeaderboard(contestId, page, visibility.visible);
 
   if (!visibility.visible) {

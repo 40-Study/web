@@ -46,7 +46,12 @@ function WhiteboardTabInner({
   const excalidrawRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<CursorManager | null>(null);
-  const lastBroadcastRef = useRef('');
+  const lastBroadcastRef = useRef('[]');
+  const loadedRef = useRef(false);
+  const loadReadyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const remoteResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [editorReady, setEditorReady] = useState(false);
+  const [snapshotReady, setSnapshotReady] = useState(false);
   const isRemoteRef = useRef(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -92,7 +97,7 @@ function WhiteboardTabInner({
 
   // ===== BROADCAST CHANGES =====
   const broadcastChanges = useCallback((elements: readonly any[]) => {
-    if (isRemoteRef.current) return;
+    if (!loadedRef.current || isRemoteRef.current) return;
     if (!isHost && !isPublished) return;
 
     const serialized = JSON.stringify(elements);
@@ -138,25 +143,50 @@ function WhiteboardTabInner({
     }
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    const serialized = JSON.stringify(elements);
+    if (isRemoteRef.current) { lastBroadcastRef.current = serialized; return; }
+    if (!loadedRef.current || serialized === lastBroadcastRef.current) return;
     debounceRef.current = setTimeout(() => broadcastChanges(elements), 100);
   }, [broadcastChanges]);
 
-  // ===== LOAD INITIAL DATA =====
   useEffect(() => {
+    if (!canEdit && debounceRef.current) clearTimeout(debounceRef.current);
+  }, [canEdit]);
+
+  // Load before enabling edits. Initial Excalidraw onChange must never overwrite a saved board.
+  useEffect(() => {
+    if (!editorReady) return;
+    let cancelled = false;
+    loadedRef.current = false;
+    setSnapshotReady(false);
     const load = async () => {
       try {
-        const res = await api.get<any>(`/whiteboard/${sessionId}/snapshot`);
-        const snapshot = res?.data ?? res;
-        if (snapshot?.elements?.length && excalidrawRef.current) {
-          isRemoteRef.current = true;
-          excalidrawRef.current.updateScene({ elements: snapshot.elements });
-          setTimeout(() => { isRemoteRef.current = false; }, 50);
-        }
-      } catch {}
+        const res = await api.get(`/whiteboard/${sessionId}/snapshot`);
+        if (cancelled || !excalidrawRef.current) return;
+        const snapshot = (res as { data?: { elements?: unknown[] }; elements?: unknown[] });
+        const elements = (snapshot.data ?? snapshot).elements ?? [];
+        isRemoteRef.current = true;
+        lastBroadcastRef.current = JSON.stringify(elements);
+        excalidrawRef.current.updateScene({ elements });
+        loadReadyRef.current = setTimeout(() => {
+          if (cancelled) return;
+          isRemoteRef.current = false;
+          loadedRef.current = true;
+          setSnapshotReady(true);
+        }, 50);
+      } catch {
+        if (!cancelled) setSaveError('Không tải được bảng vẽ. Hãy đóng và mở lại bảng để thử lại.');
+      }
     };
-    const t = setTimeout(load, 300);
-    return () => clearTimeout(t);
-  }, [sessionId]);
+    void load();
+    return () => {
+      cancelled = true;
+      loadedRef.current = false;
+      if (loadReadyRef.current) clearTimeout(loadReadyRef.current);
+      if (remoteResetRef.current) clearTimeout(remoteResetRef.current);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [sessionId, editorReady]);
 
   // ===== HANDLE REMOTE EVENTS =====
   useEffect(() => {
@@ -195,8 +225,12 @@ function WhiteboardTabInner({
             }
           });
 
-          excalidrawRef.current.updateScene({ elements: Array.from(localMap.values()) });
-          setTimeout(() => { isRemoteRef.current = false; }, 50);
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+          const merged = Array.from(localMap.values());
+          lastBroadcastRef.current = JSON.stringify(merged);
+          excalidrawRef.current.updateScene({ elements: merged });
+          if (remoteResetRef.current) clearTimeout(remoteResetRef.current);
+          remoteResetRef.current = setTimeout(() => { isRemoteRef.current = false; }, 50);
         }
       } catch {}
     }
@@ -364,13 +398,14 @@ function WhiteboardTabInner({
         <Excalidraw
           excalidrawAPI={(api) => {
             excalidrawRef.current = api;
+            setEditorReady(true);
           }}
           onChange={handleChange}
           initialData={{
             elements: [],
             appState: { theme: 'dark' }
           }}
-          viewModeEnabled={!canEdit}
+          viewModeEnabled={!canEdit || !snapshotReady}
           theme="dark"
         />
       </div>

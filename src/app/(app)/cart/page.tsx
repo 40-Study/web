@@ -15,6 +15,7 @@ import type { VoucherValidateResponse } from "@/types/voucher";
 import { cn } from "@/lib/utils";
 import { sumCartItemPrices } from "@/lib/cart-pricing";
 import { CartItemPrice } from "@/components/cart/cart-item-price";
+import "@/components/commerce/commerce.css";
 import { CourseThumbnailPlaceholder } from "@/components/course/course-thumbnail-placeholder";
 
 function formatPrice(price: number | string | null | undefined): string {
@@ -36,7 +37,6 @@ export default function CartPage() {
   const items = cartData?.items ?? [];
   // Number() phòng thủ: backend đã đổi decimal sang JSON number, nhưng vẫn cast
   // để chịu được trường hợp API cũ trả chuỗi.
-  const total = Number(cartData?.total ?? 0);
 
   // S5: chọn SẴN mọi khoá khi giỏ có dữ liệu, để nút "Thanh toán" dùng được ngay
   // thay vì bắt người dùng tự tick từng khoá. Chỉ chạy một lần cho mỗi bộ khoá mới
@@ -53,7 +53,7 @@ export default function CartPage() {
     items.filter((item) => selectedIds.includes(item.course_id))
   );
 
-  const effectiveSubtotal = selectedIds.length > 0 ? selectedTotal : total;
+  const effectiveSubtotal = selectedTotal;
   const discount = voucherResult?.discount_amount ?? 0;
   const finalTotal = Math.max(0, effectiveSubtotal - discount);
 
@@ -104,19 +104,14 @@ export default function CartPage() {
 
   if (showErrorScreen) {
     return (
-      <QueryState
-        isError
-        error={error}
-        onRetry={() => refetch()}
-        className="page-container py-16"
-      >
+      <QueryState isError error={error} onRetry={() => refetch()} className="page-container py-16">
         {null}
       </QueryState>
     );
   }
 
   return (
-    <div className="page-container py-8">
+    <div className="commerce-page">
       {showRefetchBanner && (
         <div
           role="alert"
@@ -134,7 +129,7 @@ export default function CartPage() {
           <ArrowLeft className="w-5 h-5 text-neutral-600" />
         </Link>
         <div>
-          <h1 className="text-2xl font-light text-black">Giỏ hàng</h1>
+          <h1 className="text-[28px] font-semibold tracking-tight text-slate-900">Giỏ hàng</h1>
           <p className="text-neutral-500">{items.length} khoá học</p>
         </div>
       </div>
@@ -157,7 +152,11 @@ export default function CartPage() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} />
+                    <Checkbox
+                      aria-label="Chọn tất cả khoá học"
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
+                    />
                     <span className="text-sm font-medium text-gray-700">
                       Chọn tất cả ({items.length} khoá học)
                     </span>
@@ -188,6 +187,7 @@ export default function CartPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
                     <Checkbox
+                      aria-label={`Chọn ${item.course?.title ?? "khoá học"}`}
                       checked={selectedIds.includes(item.course_id)}
                       onCheckedChange={() => toggleSelect(item.course_id)}
                     />
@@ -247,7 +247,7 @@ export default function CartPage() {
           <div className="lg:w-80 flex-shrink-0">
             <Card className="sticky top-24">
               <CardContent className="p-6">
-                <h2 className="text-lg font-light text-black mb-4">Tóm tắt đơn hàng</h2>
+                <h2 className="text-base font-semibold text-slate-900 mb-4">Tóm tắt đơn hàng</h2>
 
                 {/* Voucher input */}
                 <div className="mb-4">
@@ -261,7 +261,7 @@ export default function CartPage() {
                   />
                 </div>
 
-                <div className="pt-4 space-y-3" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                <div className="pt-4 space-y-3" style={{ borderTop: "1px solid rgba(0,0,0,0.05)" }}>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-neutral-600">Tạm tính</span>
                     <span className="font-medium">{formatPrice(effectiveSubtotal)}</span>
@@ -272,16 +272,23 @@ export default function CartPage() {
                       <span className="font-medium text-green-600">-{formatPrice(discount)}</span>
                     </div>
                   )}
-                  <div className="pt-3 flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                  <div
+                    className="pt-3 flex items-center justify-between"
+                    style={{ borderTop: "1px solid rgba(0,0,0,0.05)" }}
+                  >
                     <span className="font-medium text-black">Tổng cộng</span>
-                    <span className="text-xl font-medium text-black">{formatPrice(finalTotal)}</span>
+                    <span className="text-xl font-medium text-black">
+                      {formatPrice(finalTotal)}
+                    </span>
                   </div>
                 </div>
 
                 <Link
                   href={`/checkout?${new URLSearchParams({
                     ...(selectedIds.length > 0 ? { items: selectedIds.join(",") } : {}),
-                    ...(voucherResult?.voucher?.code ? { voucher: voucherResult.voucher.code } : {}),
+                    ...(voucherResult?.voucher?.code
+                      ? { voucher: voucherResult.voucher.code }
+                      : {}),
                   }).toString()}`}
                 >
                   <Button
@@ -294,7 +301,10 @@ export default function CartPage() {
                 </Link>
 
                 {selectedIds.length === 0 && items.length > 0 && (
-                  <p className="text-xs text-center text-amber-600 mt-2" data-testid="cart-select-hint">
+                  <p
+                    className="text-xs text-center text-amber-600 mt-2"
+                    data-testid="cart-select-hint"
+                  >
                     Chọn ít nhất một khoá học để thanh toán.
                   </p>
                 )}

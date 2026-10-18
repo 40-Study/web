@@ -34,7 +34,10 @@ import {
   usePaymentStatus,
 } from "@/hooks/queries/use-orders";
 import type { PaymentIntent } from "@/services/order.service";
-import { BankTransferDialog, type BankTransferDialogStatus } from "@/components/payment/bank-transfer-dialog";
+import {
+  BankTransferDialog,
+  type BankTransferDialogStatus,
+} from "@/components/payment/bank-transfer-dialog";
 
 interface OrderPaymentDialogProps {
   orderId: string | null;
@@ -73,6 +76,7 @@ export function OrderPaymentDialog({
   // Quá hạn mã + cửa sổ poll mà server vẫn chưa có kết quả cuối → màn "đang đối chiếu".
   const [finalWindowOver, setFinalWindowOver] = useState(false);
   const requestedForOrderId = useRef<string | null>(null);
+  const notifiedOrder = useRef<string | null>(null);
 
   const createIntent = useCreatePaymentIntent();
   const checkPayment = useCheckPayment();
@@ -119,7 +123,11 @@ export function OrderPaymentDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, orderId]);
 
-  const { data: polled } = usePaymentStatus(orderId ?? "", open && !!intent, intent?.expired_at);
+  const { data: polled, isFetching: isPolling } = usePaymentStatus(
+    orderId ?? "",
+    open && !!intent && !checkPayment.isPending,
+    intent?.expired_at
+  );
   // Khi đang đối chiếu (không có intent nên không poll), kết quả "Kiểm tra lại" lấy từ check-payment.
   const checked = checkPayment.variables === orderId ? checkPayment.data : undefined;
   const latest = polled ?? checked;
@@ -143,19 +151,14 @@ export function OrderPaymentDialog({
   }, [expiredAt]);
 
   useEffect(() => {
-    if (isCompleted) onPaid();
+    if (open && isCompleted && orderId && notifiedOrder.current !== orderId) {
+      notifiedOrder.current = orderId;
+      onPaid();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCompleted]);
+  }, [isCompleted, open, orderId]);
 
   const handleOpenChange = (next: boolean) => {
-    if (!next) {
-      setIntent(null);
-      setIntentError(false);
-      setExpiredMessage(null);
-      setAlreadyPaid(false);
-      setVerifyingMessage(null);
-      requestedForOrderId.current = null;
-    }
     onOpenChange(next);
   };
 
@@ -190,14 +193,24 @@ export function OrderPaymentDialog({
       status={dialogStatus}
       successTitle="Thanh toán thành công!"
       successDescription={<>Khoá học đã được thêm vào tài khoản của bạn.</>}
-      onCheckNow={orderId ? () => checkPayment.mutate(orderId) : undefined}
-      isCheckingNow={checkPayment.isPending}
+      onCheckNow={
+        orderId
+          ? () => {
+              if (!checkPayment.isPending && !isPolling) checkPayment.mutate(orderId);
+            }
+          : undefined
+      }
+      isCheckingNow={checkPayment.isPending || isPolling}
+      isLoading={createIntent.isPending}
       onRetryExpired={latePaymentReceived ? undefined : onRetryExpired}
-      expiredTitle={latePaymentReceived ? "Đã nhận tiền sau khi đơn hết hạn" : "Đơn hàng đã hết hạn"}
+      expiredTitle={
+        latePaymentReceived ? "Đã nhận tiền sau khi đơn hết hạn" : "Đơn hàng đã hết hạn"
+      }
       expiredDescription={
         latePaymentReceived
           ? `${REFUND_NEEDED_NOTICE}. Vui lòng không chuyển khoản lại.`
-          : expiredMessage ?? "Đơn đã hết hạn giữ chỗ. Tạo đơn mới để thanh toán theo giá hiện tại."
+          : (expiredMessage ??
+            "Đơn đã hết hạn giữ chỗ. Tạo đơn mới để thanh toán theo giá hiện tại.")
       }
       retryExpiredLabel="Tạo đơn mới"
       // Hết giờ trên đồng hồ chưa phải hết hạn thật: chờ server đối chiếu giao dịch lần cuối.

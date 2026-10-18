@@ -13,7 +13,8 @@ export const CORRECT_ANSWER_REQUIRED_MESSAGE = "Chọn đáp án đúng cho câu
 export interface ChoiceQuestionLike {
   id: string;
   correctId: string;
-  options: { id: string }[];
+  question?: string;
+  options: { id: string; text?: string }[];
 }
 
 export interface ContentFormErrors {
@@ -32,6 +33,12 @@ export function validateContentForm(
     // `correctId` phải trỏ tới một phương án CÒN TỒN TẠI; chuỗi rỗng là trạng thái ban đầu.
     if (!q.correctId || !q.options.some((o) => o.id === q.correctId)) {
       errors.questions[q.id] = CORRECT_ANSWER_REQUIRED_MESSAGE;
+    } else if (q.question !== undefined && !q.question.trim()) {
+      errors.questions[q.id] = "Nhập nội dung câu hỏi.";
+    } else if (q.options.some((o) => o.text !== undefined && !o.text.trim())) {
+      errors.questions[q.id] = "Điền đầy đủ các phương án trả lời.";
+    } else if (q.options.every((o) => o.text !== undefined) && new Set(q.options.map((o) => o.text!.trim().toLocaleLowerCase())).size !== q.options.length) {
+      errors.questions[q.id] = "Các phương án trả lời không được trùng nhau.";
     }
   }
   return errors;

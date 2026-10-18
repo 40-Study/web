@@ -39,7 +39,7 @@ export default function TeacherContestsPage() {
             Cuộc thi của tôi
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Tạo cuộc thi trắc nghiệm, gửi quản trị viên duyệt. Kết quả do quản trị viên chốt sau khi cuộc thi kết thúc.
+            Tạo cuộc thi trắc nghiệm hoặc lập trình, gửi quản trị viên duyệt. Kết quả do quản trị viên chốt sau khi cuộc thi kết thúc.
           </p>
         </div>
         <Button asChild>

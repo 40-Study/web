@@ -435,7 +435,7 @@ export default function RichTextEditor({
         <EditorContent
           editor={editor}
           style={{
-            fontFamily: "var(--font-plus-jakarta), 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+            fontFamily: "var(--font-ui)",
           }}
         />
         {/* Upload indicator overlay */}
@@ -593,7 +593,7 @@ export function RichTextViewer({ content }: { content: string }) {
         }}
         dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
         style={{
-          fontFamily: "var(--font-plus-jakarta), 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+          fontFamily: "var(--font-ui)",
           color: COLORS.text,
           fontSize: '14px',
           lineHeight: 1.7,

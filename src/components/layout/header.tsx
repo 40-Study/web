@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { getNotificationHref } from "@/lib/notification-route";
 import { ForteXLogoIcon } from "@/components/landing/fortex-logo-icon";
 import { useState, useRef, useEffect } from "react";
-import { Bell, FileText, Settings, LogOut, Menu, X, Ticket, ChevronDown, Check, UserCircle, Coins, Users, Receipt, Heart, GraduationCap, Presentation, Building2, ShieldCheck, type LucideIcon } from "lucide-react";
+import { Bell, FileText, Settings, LogOut, Menu, X, Ticket, ChevronDown, Check, UserCircle, Coins, Users, Receipt, Heart, GraduationCap, Presentation, Building2, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
 import { siteConfig } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
@@ -67,6 +69,7 @@ function timeAgo(dateStr: string): string {
 }
 
 export function Header() {
+  const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -87,7 +90,7 @@ export function Header() {
 
   // Notification hooks — only fetch when authenticated
   const { data: unreadData } = useUnreadCount();
-  const { data: notifData } = useNotifications();
+  const { data: notifData } = useNotifications(1, isNotificationOpen);
   const markReadMutation = useMarkNotificationRead();
   const markAllReadMutation = useMarkAllNotificationsRead();
 
@@ -118,6 +121,7 @@ export function Header() {
 
   // Students: Bài tập + Đơn hàng + Cài đặt; Parents: Đơn hàng + Cài đặt; Teachers/Admins: only Cài đặt
   const userMenuItems = [
+    ...(normalizedRole === "TEACHER" ? [{ label: "AI Studio", href: "/teacher/ai", icon: Sparkles }] : []),
     ...(isStudent ? studentMenuItems : []),
     ...(canSeeOrders ? [ordersMenuItem] : []),
     ...commonMenuItems,
@@ -186,7 +190,7 @@ export function Header() {
             </div>
           )}
 
-          <div className="relative hidden md:block" ref={notificationRef}>
+          <div className="relative" ref={notificationRef}>
             <button
               className="relative p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               onClick={() => {
@@ -206,7 +210,7 @@ export function Header() {
             </button>
 
             {isNotificationOpen && (
-              <div className="absolute right-0 top-12 w-96 bg-popover rounded-2xl overflow-hidden z-50 shadow-raised border border-border">
+              <div role="dialog" aria-label="Danh sách thông báo" className="absolute right-0 top-12 w-96 max-w-[90vw] bg-popover rounded-2xl overflow-hidden z-50 shadow-raised border border-border">
                 <div className="px-5 py-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Bell className="w-5 h-5 text-foreground" />
@@ -243,6 +247,8 @@ export function Header() {
                         onClick={() => {
                           if (!item.is_read) markReadMutation.mutate(item.id);
                           setIsNotificationOpen(false);
+                          const href = getNotificationHref(item);
+                          if (href) router.push(href);
                         }}
                       >
                         <div className="flex items-start gap-3">

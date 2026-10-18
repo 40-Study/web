@@ -11,6 +11,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(mockExerciseID ? `exercise=${mockExerciseID}` : ""),
   useParams: () => ({ courseSlug: "git-co-ban", lessonId: "les-1" }),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   notFound: () => {
@@ -58,7 +59,9 @@ interface MockContent {
   article_body?: string;
   reading_time_minutes?: number;
   quiz_id?: string;
+  exercise_id?: string;
 }
+let mockExerciseID = "";
 let mockContents: MockContent[] = [];
 vi.mock("@/hooks/queries/use-lesson-content", () => ({
   useLessonContents: () => ({ data: mockContents, refetch: vi.fn() }),
@@ -68,12 +71,13 @@ vi.mock("@/hooks/use-hls", () => ({ useHlsInfo: () => ({ data: undefined, isLoad
 const mockUseQuiz = vi.fn();
 const mockStartQuiz = vi.fn();
 const mockSubmitQuiz = vi.fn();
+const mockSubmitCourse = vi.fn();
 let mockLessonQuizzes: { id: string; title: string }[] = [];
 vi.mock("@/hooks/queries/use-quiz", () => ({
   useQuiz: (id?: string) => mockUseQuiz(id),
   useQuizzesByLesson: () => ({ data: mockLessonQuizzes }),
   useStartQuiz: () => ({ mutateAsync: mockStartQuiz, isPending: false }),
-  useSubmitQuiz: () => ({ mutateAsync: mockSubmitQuiz, isPending: false }),
+  useSubmitQuiz: (courseId?: string) => {mockSubmitCourse(courseId);return { mutateAsync: mockSubmitQuiz, isPending: false }},
   useSaveQuizAnswer: () => ({ mutate: vi.fn() }),
   useQuizAttemptDetail: () => ({ data: undefined, isLoading: false, isError: false }),
 }));
@@ -110,6 +114,10 @@ vi.mock("@/components/player", () => ({
   LessonLoadError: () => null,
 }));
 
+vi.mock("@/components/player/lesson-code-workspace", () => ({
+  LessonCodeWorkspace: ({ exerciseId }: { exerciseId: string }) => <div data-testid="context-code">{exerciseId}</div>,
+}));
+
 // eslint-disable-next-line import/first
 import CourseLessonPage from "./page";
 
@@ -123,11 +131,24 @@ function renderPage(client = new QueryClient()) {
 
 describe("/learn/[courseSlug]/[lessonId] — bài viết và trắc nghiệm", () => {
   beforeEach(() => {
+    mockExerciseID = "";
     mockContents = [];
     mockLessonQuizzes = [];
     mockUseQuiz.mockReset().mockReturnValue({ data: undefined, isError: false });
     mockStartQuiz.mockReset();
     mockSubmitQuiz.mockReset();
+  });
+
+  it("mở bài tập đã chọn bằng link khoá học dù lesson có video", () => {
+    mockExerciseID = "ex-2";
+    mockContents = [
+      { id: "v", type: "video", title: "Video", display_order: 0 },
+      { id: "e1", type: "exercise", title: "Bài 1", display_order: 1, exercise_id: "ex-1" },
+      { id: "e2", type: "exercise", title: "Bài 2", display_order: 2, exercise_id: "ex-2" },
+    ];
+    renderPage();
+    expect(screen.getByTestId("context-code").textContent).toBe("ex-2");
+    expect(screen.getByText("les-1:exercise")).toBeTruthy();
   });
 
   it("bài viết: hiện nội dung đã sanitize (không script/onerror) và thời gian đọc, không phải 'Video không khả dụng'", () => {
@@ -236,7 +257,7 @@ describe("/learn/[courseSlug]/[lessonId] — bài viết và trắc nghiệm", (
   });
   // H1 (QA 261009): backend hoàn thành bài khi nộp lượt official đạt; nếu web không tải lại curriculum thì
   // sidebar vẫn "chưa xong" và bài kế tiếp vẫn khoá cho tới khi F5.
-  it("H1: nộp quiz xong -> tải lại curriculum + tiến độ để bài hiện hoàn thành và bài kế mở khoá", async () => {
+  it("H1: nộp quiz truyền courseId cho hook và trang không invalidate lần hai", async () => {
     mockContents = [{ id: "c2", type: "quiz", title: "Kiểm tra", display_order: 0, quiz_id: "q-b" }];
     mockUseQuiz.mockReturnValue({ data: { id: "q-b", title: "Kiểm tra", max_attempts: 3 }, isError: false });
     mockStartQuiz.mockResolvedValue({ attempt_id: "att-1", quiz_id: "q-b", title: "Kiểm tra", questions: [] });
@@ -249,10 +270,9 @@ describe("/learn/[courseSlug]/[lessonId] — bài viết và trắc nghiệm", (
     fireEvent.click(await screen.findByRole("button", { name: "nộp-quiz" }));
 
     await waitFor(() => expect(mockSubmitQuiz).toHaveBeenCalledTimes(1));
-    const keys = invalidate.mock.calls.map((c) => (c[0] as { queryKey: unknown }).queryKey);
-    expect(keys).toContainEqual(["sections", "course", "course-1"]); // sidebar + khoá bài kế đọc từ đây
-    expect(keys).toContainEqual(["courses", "enrolled"]);
-    expect(keys).toContainEqual(["enrollments"]); // % tiến độ khoá
+    expect(mockSubmitCourse).toHaveBeenCalledWith("course-1");
+    expect(invalidate).not.toHaveBeenCalled(); // The real hook owns progress invalidation.
+
   });
 
   it("H1: nộp quiz LỖI -> không tải lại curriculum (không có gì đổi)", async () => {

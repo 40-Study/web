@@ -75,6 +75,18 @@ async function doRefresh(): Promise<void> {
   }
 }
 
+/** Shares the single cookie refresh between the main app and the live classroom. */
+export async function refreshSession(): Promise<void> {
+  if (!isRefreshing) {
+    isRefreshing = true;
+    refreshPromise = doRefresh().finally(() => {
+      isRefreshing = false;
+      refreshPromise = null;
+    });
+  }
+  await refreshPromise;
+}
+
 // ─── Khi nào 401 KHÔNG được gọi refresh (C2, QA khách 260928) ───────────────
 //
 // `/auth/refresh-token` dùng chung bucket rate-limit 5 lần/phút/IP với `/auth/login`. Trước đây
@@ -188,15 +200,7 @@ api.interceptors.response.use(
 
       try {
         // Deduplicate: nhiều request 401 cùng lúc chỉ gọi refresh 1 lần
-        if (!isRefreshing) {
-          isRefreshing = true;
-          refreshPromise = doRefresh().finally(() => {
-            isRefreshing = false;
-            refreshPromise = null;
-          });
-        }
-
-        await refreshPromise;
+        await refreshSession();
 
         // Refresh thành công — retry request gốc (cookies mới đã được set)
         return api(original);

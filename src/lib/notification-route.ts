@@ -12,6 +12,12 @@ export interface NotificationTarget {
 
 /** Trả `null` khi loại thông báo không thuộc nhóm bạn bè/nhóm hoặc thiếu dữ liệu để dựng đường dẫn. */
 export function getNotificationHref(n: NotificationTarget): string | null {
+  if (n.notification_type === "lesson_reminder") {
+    if (n.reference_type === "child_schedule") return n.reference_id ? `/parent/children/${n.reference_id}?tab=schedule` : null;
+    if (n.reference_type === "teacher_schedule") return "/teacher/schedule";
+    if (n.reference_type === "student_schedule") return "/schedule";
+    if (n.reference_type === "livestream") return n.reference_id ? `/rooms/${n.reference_id}` : null;
+  }
   // Admin duyệt/từ chối khoá (contract-be1 ADM-N1): notification_type "course_update" nhưng đích nằm ở
   // reference_type. /courses/<id> công khai không tồn tại với khoá chưa xuất bản/bị từ chối.
   if (n.reference_type === "course_review") {

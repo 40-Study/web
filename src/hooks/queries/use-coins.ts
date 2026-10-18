@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { coinService, type CoinPurchase } from "@/services/coin.service";
@@ -28,12 +28,15 @@ export function useCoinWallet() {
   });
 }
 
-export function useCoinTransactions(params?: { type?: string; page?: number; limit?: number }) {
+export function useCoinTransactions(
+  params?: { type?: string; page?: number; limit?: number },
+  enabled = true
+) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: coinKeys.transactions(params),
     queryFn: () => coinService.getTransactions(params),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && enabled,
   });
 }
 
@@ -50,8 +53,8 @@ export function usePurchaseCoins() {
     mutationFn: ({ packageId, paymentMethod }: { packageId: string; paymentMethod: string }) =>
       coinService.createPurchase(packageId, paymentMethod),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: coinKeys.all });
-      toast.success("Tạo đơn mua xu thành công");
+      qc.invalidateQueries({ queryKey: coinKeys.purchases(), refetchType: "none" });
+      toast.success("Đã mở đơn nạp xu");
     },
     onError: () => toast.error("Không thể mua xu"),
   });
@@ -98,13 +101,10 @@ export function usePurchaseVerificationPolling(purchaseId: string, enabled: bool
     startedAtRef.current = null;
   }
 
-  return useQuery({
+  const query = useQuery({
     queryKey: [...coinKeys.all, "verify-poll", purchaseId],
     queryFn: async (): Promise<CoinPurchase> => {
       const result = await coinService.verifyPurchase(purchaseId);
-      if (result.status === "COMPLETED") {
-        qc.invalidateQueries({ queryKey: coinKeys.all });
-      }
       return result;
     },
     enabled: enabled && !!purchaseId,
@@ -120,7 +120,18 @@ export function usePurchaseVerificationPolling(purchaseId: string, enabled: bool
       return VERIFY_POLL_INTERVAL_MS;
     },
     retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
+  const credited = useRef("");
+  useEffect(() => {
+    if (query.data?.status !== "COMPLETED" || credited.current === purchaseId) return;
+    credited.current = purchaseId;
+    void qc.invalidateQueries({ queryKey: coinKeys.wallet() });
+    void qc.invalidateQueries({ queryKey: [...coinKeys.all, "transactions"] });
+    void qc.invalidateQueries({ queryKey: coinKeys.purchases() });
+  }, [query.data?.status, purchaseId, qc]);
+  return query;
 }
 
 export function useSendCoinGift() {
@@ -141,5 +152,15 @@ export function useSendCoinGift() {
       toast.success("Tặng xu thành công");
     },
     onError: () => toast.error("Không thể tặng xu"),
+  });
+}
+
+export function useCoinPurchases(page = 1, enabled = true) {
+  const authenticated = useAuthStore((s) => s.isAuthenticated);
+  return useQuery({
+    queryKey: [...coinKeys.purchases(), page],
+    queryFn: () => coinService.listPurchases({ page, limit: 10 }),
+    enabled: authenticated && enabled,
+    refetchOnWindowFocus: false,
   });
 }

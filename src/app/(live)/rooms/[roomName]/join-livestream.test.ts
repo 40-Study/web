@@ -41,6 +41,7 @@ describe("joinLivestream (I4)", () => {
     expect(serverApi.post).toHaveBeenCalledWith("/livestream/session-1/join", { name: "Học Sinh" });
     expect(attempt.result).toEqual({ token: "tok", server_url: "wss://x", room_name: "r1" });
     expect(attempt.forbiddenCode).toBeUndefined();
+    expect(attempt.user).toEqual({ id: "u1", username: "hs1", full_name: "Học Sinh" });
   });
 
   it("map lỗi 403 KICKED sang forbiddenCode='KICKED'", async () => {
@@ -73,5 +74,6 @@ describe("joinLivestream (I4)", () => {
 
     expect(attempt.result).toBeNull();
     expect(attempt.forbiddenCode).toBeUndefined();
+    expect(attempt.user).toBeUndefined();
   });
 });

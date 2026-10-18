@@ -20,7 +20,11 @@ import type {
   EventContentArg,
   DateSelectArg,
 } from "@fullcalendar/core";
-import { Clock, CheckCircle, TrendingUp } from "lucide-react";
+import { Bell, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
+import { addDays, addMonths, format, isSameDay, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
+import { vi } from "date-fns/locale";
+import { toVnWallClock } from "@/lib/teacher-schedule-events";
+import "./calendar.css";
 import CalendarEventCard, { getEventColor } from "./calendar-event-card";
 import ScheduleQuickCreatePopover, {
   type QuickCreateData,
@@ -74,10 +78,11 @@ export interface SelectionInfo {
 interface WeekCalendarGridProps {
   events: ScheduleEvent[];
   editable?: boolean;
+  selectable?: boolean;
   snapDuration?: string;
   onCellClick?: (day: Date, hour: number) => void;
   onEventClick?: (event: ScheduleEvent) => void;
-  onEventChange?: (eventId: string, newStart: string, newEnd: string) => void;
+  onEventChange?: (eventId: string, newStart: string, newEnd: string) => Promise<void> | void;
   /** Called when user quick-saves from the drag popover */
   onQuickCreate?: (data: QuickCreateData) => void;
   /** Called when user clicks "More options" in the drag popover */
@@ -153,6 +158,7 @@ export function toFcEvents(events: ScheduleEvent[]) {
 export default function WeekCalendarGrid({
   events,
   editable = false,
+  selectable = editable,
   snapDuration = "00:15:00",
   onCellClick,
   onEventClick,
@@ -168,7 +174,22 @@ export default function WeekCalendarGrid({
   const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
   const [selection, setSelection] = useState<SelectionInfo | null>(null);
 
-  const fcEvents = useMemo(() => toFcEvents(events), [events]);
+  const [title, setTitle] = useState("");
+  const [view, setView] = useState("timeGridWeek");
+  const [focusDate, setFocusDate] = useState(() => toVnWallClock(new Date()));
+  const [month, setMonth] = useState(() => startOfMonth(toVnWallClock(new Date())));
+  const [hiddenKinds, setHiddenKinds] = useState<string[]>([]);
+  const changingRef = useRef(false);
+  const fcEvents = useMemo(() => toFcEvents(events.filter(event => !hiddenKinds.includes(event.kind ?? "livestream"))).map(event => ({
+    ...event,
+    editable: editable && (!event.extendedProps.scheduleEvent.kind || event.extendedProps.scheduleEvent.kind === "livestream") && event.extendedProps.scheduleEvent.status === "upcoming",
+  })), [events, hiddenKinds, editable]);
+  const navigate = (date: Date) => {
+    calendarRef.current?.getApi().gotoDate(date);
+    setFocusDate(date);
+    setMonth(startOfMonth(date));
+  };
+  const miniStart = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
 
   // ── Event rendering ──────────────────────────────────────────────────────
 
@@ -221,18 +242,21 @@ export default function WeekCalendarGrid({
 
   const handleEventClick = (arg: EventClickArg) => {
     const ev: ScheduleEvent = arg.event.extendedProps.scheduleEvent;
-    onEventClick?.(ev);
+    onEventClick?.({ ...ev, startTime: arg.event.start?.toISOString() ?? ev.startTime, endTime: arg.event.end?.toISOString() ?? ev.endTime });
   };
 
-  const handleEventDrop = (arg: EventDropArg) => {
-    if (!arg.event.start || !arg.event.end) { arg.revert(); return; }
-    onEventChange?.(arg.event.id, arg.event.start.toISOString(), arg.event.end.toISOString());
-  };
-
-  const handleEventResize = (arg: EventResizeDoneArg) => {
-    if (!arg.event.start || !arg.event.end) { arg.revert(); return; }
-    onEventChange?.(arg.event.id, arg.event.start.toISOString(), arg.event.end.toISOString());
-  };
+  const handleEventMove = useCallback(async (arg: EventDropArg | EventResizeDoneArg) => {
+    const original = events.find(event => event.id === arg.event.id);
+    const rollback = () => {
+      arg.revert();
+      if (original) calendarRef.current?.getApi().getEventById(original.id)?.setDates(original.startTime, original.endTime);
+    };
+    if (changingRef.current || !onEventChange || !arg.event.start || !arg.event.end) { rollback(); return; }
+    changingRef.current = true;
+    try { await onEventChange(arg.event.id, arg.event.start.toISOString(), arg.event.end.toISOString()); }
+    catch { rollback(); }
+    finally { changingRef.current = false; }
+  }, [events, onEventChange]);
 
   /**
    * FullCalendar select callback — fires when user finishes drag-selecting.
@@ -242,8 +266,11 @@ export default function WeekCalendarGrid({
     const jsEvent = arg.jsEvent as MouseEvent | null;
     const x = jsEvent?.clientX ?? window.innerWidth / 2;
     const y = jsEvent?.clientY ?? window.innerHeight / 2;
-    setSelection({ start: arg.start, end: arg.end, x, y });
-  }, []);
+    if (onSelectMore && !onQuickCreate) {
+      onSelectMore(arg.start, arg.end);
+      calendarRef.current?.getApi().unselect();
+    } else if (onQuickCreate) setSelection({ start: arg.start, end: arg.end, x, y });
+  }, [onSelectMore, onQuickCreate]);
 
   const handleUnselect = useCallback(() => {
     // Called by FullCalendar when selection is cleared externally
@@ -279,33 +306,72 @@ export default function WeekCalendarGrid({
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4">
-      {headerActions && (
-        <div className="flex items-center justify-end">{headerActions}</div>
-      )}
-
-      <div className="bg-white rounded-2xl border shadow-sm overflow-hidden fc-custom-wrap">
+    <div className="school-calendar">
+      <div className="calendar-toolbar">
+        <div className="calendar-heading"><CalendarDays className="h-5 w-5 text-blue-600" /><h1>Lịch học</h1></div>
+        <button className="calendar-today" onClick={() => navigate(toVnWallClock(new Date()))}>Hôm nay</button>
+        <div className="flex items-center">
+          <button className="calendar-icon" aria-label="Khoảng trước" onClick={() => calendarRef.current?.getApi().prev()}><ChevronLeft className="h-4 w-4" /></button>
+          <button className="calendar-icon" aria-label="Khoảng tiếp theo" onClick={() => calendarRef.current?.getApi().next()}><ChevronRight className="h-4 w-4" /></button>
+        </div>
+        <h2 className="calendar-title" aria-live="polite">{title}</h2>
+        <select aria-label="Chế độ xem lịch" className="calendar-view" value={view} onChange={event => { setView(event.target.value); calendarRef.current?.getApi().changeView(event.target.value); }}>
+          <option value="dayGridMonth">Tháng</option><option value="timeGridWeek">Tuần</option><option value="timeGridDay">Ngày</option>
+        </select>
+        {headerActions}
+      </div>
+      <div className="calendar-layout">
+        <aside className="calendar-rail" aria-label="Điều hướng lịch">
+          <div className="mini-calendar-heading">
+            <span>{format(month, "MMMM yyyy", { locale: vi })}</span>
+            <button className="calendar-icon" aria-label="Tháng trước" onClick={() => setMonth(addMonths(month, -1))}><ChevronLeft className="h-3.5 w-3.5" /></button>
+            <button className="calendar-icon" aria-label="Tháng sau" onClick={() => setMonth(addMonths(month, 1))}><ChevronRight className="h-3.5 w-3.5" /></button>
+          </div>
+          <div className="mini-calendar-days">
+            {["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map(day => <span key={day}>{day}</span>)}
+            {Array.from({ length: 42 }, (_, index) => {
+              const day = addDays(miniStart, index);
+              return <button key={day.toISOString()} aria-label={format(day, "dd/MM/yyyy")} aria-pressed={isSameDay(day, focusDate)} data-outside={!isSameMonth(day, month)} data-today={isSameDay(day, toVnWallClock(new Date()))} onClick={() => navigate(day)}>{day.getDate()}</button>;
+            })}
+          </div>
+          <p className="calendar-rail-label">Lịch của tôi</p>
+          {([{ key: "livestream", label: "Lớp học trực tuyến", color: "#2563eb" }, { key: "class-schedule", label: "Thời khoá biểu", color: "#0d9488" }, { key: "class-session", label: "Buổi học của lớp", color: "#7c3aed" }] as const).map(item => (
+            <label className="calendar-filter" key={item.key}><input type="checkbox" style={{ accentColor: item.color }} checked={!hiddenKinds.includes(item.key)} onChange={() => setHiddenKinds(current => current.includes(item.key) ? current.filter(key => key !== item.key) : [...current, item.key])} />{item.label}</label>
+          ))}
+          <div className="calendar-reminder-note"><Bell className="h-4 w-4 shrink-0" /><p>Nhắc trước 15 phút và khi đến giờ.<br /><span>Giáo viên · Học sinh · Phụ huynh</span></p></div>
+          {selectable && <p className="calendar-rail-help">Bấm hoặc kéo trên lịch để chọn giờ cho buổi học mới.</p>}
+        </aside>
+        <div className="fc-custom-wrap calendar-surface">
         <FullCalendar
           ref={calendarRef}
           plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]}
           initialView="timeGridWeek"
-          headerToolbar={{
-            left: "prev,next today",
-            center: "title",
-            right: "dayGridMonth,timeGridWeek,timeGridDay",
-          }}
+          initialDate={focusDate}
+          headerToolbar={false}
+          dayHeaderContent={arg => arg.view.type === "dayGridMonth" ? arg.text : <div className="calendar-day-heading"><span>{format(arg.date, "EEE", { locale: vi })}</span><strong>{arg.date.getDate()}</strong></div>}
+          dayMaxEvents={3}
           locale="vi"
           firstDay={1}
-          slotMinTime="07:00:00"
-          slotMaxTime="23:00:00"
-          slotDuration="01:00:00"
+          slotMinTime="00:00:00"
+          slotMaxTime="24:00:00"
+          slotDuration="00:30:00"
+          slotLabelInterval="01:00:00"
+          scrollTime="07:00:00"
+          scrollTimeReset={false}
           snapDuration={snapDuration}
-          height="auto"
+          height="100%"
           events={fcEvents}
-          datesSet={(arg) => onRangeChange?.(arg.start, arg.end)}
+          datesSet={(arg) => {
+            setTitle(arg.view.title);
+            const date = calendarRef.current?.getApi().getDate() ?? arg.start;
+            setFocusDate(current => current.getTime() === date.getTime() ? current : date);
+            setMonth(current => current.getTime() === startOfMonth(date).getTime() ? current : startOfMonth(date));
+            onRangeChange?.(arg.start, arg.end);
+          }}
           editable={editable}
           droppable={editable}
-          selectable={editable}
+          eventAllow={info => info.start.getTime() >= toVnWallClock(new Date()).getTime() - 60_000}
+          selectable={selectable}
           selectMirror={true}
           unselectAuto={false}
           selectAllow={(info) => {
@@ -316,10 +382,10 @@ export default function WeekCalendarGrid({
                 new Date(info.end.getTime() - 1).toDateString() === info.start.toDateString());
           }}
           eventContent={renderEventContent}
-          dateClick={handleDateClick}
+          dateClick={onSelectMore || onQuickCreate ? undefined : handleDateClick}
           eventClick={handleEventClick}
-          eventDrop={handleEventDrop}
-          eventResize={handleEventResize}
+          eventDrop={handleEventMove}
+          eventResize={handleEventMove}
           select={handleSelect}
           unselect={handleUnselect}
           nowIndicator
@@ -333,6 +399,7 @@ export default function WeekCalendarGrid({
             day: "Ngày",
           }}
         />
+        </div>
       </div>
 
       {stats && stats.length > 0 && (

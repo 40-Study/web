@@ -17,6 +17,14 @@ const nextConfig = {
   output: "standalone",
   productionBrowserSourceMaps: true,
   webpack: (config, { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack }) => {
+    // PptxGenJS guards its Node-only dynamic imports at runtime. Next 14's
+    // client compiler still resolves node: URLs before its browser aliases.
+    if (!isServer) {
+      config.plugins.push(new webpack.IgnorePlugin({
+        resourceRegExp: /^node:(?:fs|https)$/,
+        contextRegExp: /[\\/]pptxgenjs[\\/]/,
+      }));
+    }
     // Handle source maps for LiveKit
     config.module.rules.push({
       test: /\.mjs$/,

@@ -84,7 +84,7 @@ export function ContestCard({ contest, participation }: ContestCardProps) {
         <div className="flex items-center gap-1.5">
           <HelpCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <dt className="sr-only">Số câu</dt>
-          <dd>{contest.question_count} câu · {formatContestScore(contest.total_points)} điểm</dd>
+          <dd>{contest.question_count} {contest.type === "CODING" ? "bài code" : "câu"} · {formatContestScore(contest.total_points)} điểm</dd>
         </div>
         <div className="flex items-center gap-1.5">
           <Users className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />

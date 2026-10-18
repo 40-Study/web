@@ -21,9 +21,9 @@ export default async function RoomPage({
   params: Promise<{ roomName: string }>;
 }) {
   const { roomName } = await params;
-  const { result: join, forbiddenCode } = await joinLivestream(roomName);
+  const { result: join, forbiddenCode, user } = await joinLivestream(roomName);
 
-  if (!join?.token || !join?.server_url) {
+  if (!join?.token || !join?.server_url || !user) {
     // I2 (review vòng 2 web PR #18): trước đây chỉ phân nhánh NOT_SESSION_MEMBER
     // — học sinh bị đuổi (KICKED) rồi F5 thấy nhầm thông báo chung chung.
     const { isNotMember, isKicked } = forbiddenFlagsFromCode(forbiddenCode);
@@ -58,6 +58,7 @@ export default async function RoomPage({
   return (
     <RoomClient
       sessionId={roomName}
+      initialUser={{ id: user.id, name: user.full_name || user.username }}
       token={join.token}
       serverUrl={join.server_url}
       livekitRoomName={join.room_name ?? ''}

@@ -1,8 +1,10 @@
+import axios from "axios";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { api, MeetApiError } from "./api";
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 /**
@@ -15,6 +17,19 @@ afterEach(() => {
  * ưu tiên `error.error` để không đổi UX chỗ khác.
  */
 describe("MeetApiError (I4)", () => {
+  it("uses the same-origin proxy and retries an unauthorized mutation once after refreshing", async () => {
+    const refresh = vi.spyOn(axios, "post").mockResolvedValue({ data: {} });
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({ error: "expired" }) })
+      .mockResolvedValueOnce({ ok: true, status: 201, json: async () => ({ data: { id: "one-message" } }) });
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(api.post("/chat/send", { message: "QA" })).resolves.toEqual({ data: { id: "one-message" } });
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/chat/send");
+    expect(fetchMock.mock.calls[1][1].body).toBe(fetchMock.mock.calls[0][1].body);
+  });
+
   it("tách .code từ message của envelope 403, giữ .message = error gốc", async () => {
     vi.stubGlobal(
       "fetch",

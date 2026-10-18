@@ -40,6 +40,12 @@ export interface CoinPackage {
 export type CoinPurchaseStatus = "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
 
 export interface CoinPurchase {
+  bank_transfer_info?: {
+    bank_name: string;
+    account_number: string;
+    account_name: string;
+    content: string;
+  };
   id: string;
   user_id: string;
   package_id?: string;
@@ -70,19 +76,20 @@ type R<T> = { message: string; data: T };
 
 export const coinService = {
   // Wallet
-  getWallet: () =>
-    api.get<R<CoinWallet>>("/coins/wallet").then((r) => r.data.data),
+  getWallet: () => api.get<R<CoinWallet>>("/coins/wallet").then((r) => r.data.data),
 
   getTransactions: (params?: { type?: string; page?: number; limit?: number }) =>
     api
-      .get<R<{ transactions: CoinTransaction[]; total_count: number }>>("/coins/wallet/transactions", {
-        params,
-      })
+      .get<R<{ transactions: CoinTransaction[]; total_count: number }>>(
+        "/coins/wallet/transactions",
+        {
+          params,
+        }
+      )
       .then((r) => r.data.data),
 
   // Packages
-  listPackages: () =>
-    api.get<R<CoinPackage[]>>("/coins/packages").then((r) => r.data.data),
+  listPackages: () => api.get<R<CoinPackage[]>>("/coins/packages").then((r) => r.data.data),
 
   getPackage: (id: string) =>
     api.get<R<CoinPackage>>(`/coins/packages/${id}`).then((r) => r.data.data),
@@ -102,9 +109,7 @@ export const coinService = {
       .then((r) => r.data.data),
 
   verifyPurchase: (purchaseId: string) =>
-    api
-      .post<R<CoinPurchase>>(`/coins/purchases/${purchaseId}/verify`)
-      .then((r) => r.data.data),
+    api.post<R<CoinPurchase>>(`/coins/purchases/${purchaseId}/verify`).then((r) => r.data.data),
 
   // Gift
   sendGift: (receiverId: string, amount: number, message?: string) =>

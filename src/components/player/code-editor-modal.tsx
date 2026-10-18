@@ -7,7 +7,7 @@ import { useState } from "react";
 
 // Lazy-load the full IDE to avoid Monaco bundle hitting SSR
 const CodeEditor = dynamic(
-  () => import("@/components/code_sanbox/CodeEditor"),
+  () => import("@/components/code-workspace/code-playground").then(m=>m.CodePlayground),
   {
     ssr: false,
     loading: () => (
@@ -59,8 +59,8 @@ export function CodeEditorModal({ onClose }: CodeEditorModalProps) {
       <div
         className={
           isExpanded
-            ? "fixed inset-0 flex flex-col bg-gray-900 rounded-none"
-            : "w-full max-w-5xl h-[80vh] flex flex-col bg-gray-900 rounded-xl overflow-hidden shadow-2xl"
+            ? "fixed inset-0 flex flex-col bg-background text-foreground rounded-none"
+            : "w-full max-w-5xl h-[80vh] flex flex-col bg-background text-foreground rounded-xl overflow-hidden shadow-2xl"
         }
       >
         {/* Title bar */}
@@ -70,7 +70,7 @@ export function CodeEditorModal({ onClose }: CodeEditorModalProps) {
             <span className="w-3 h-3 rounded-full bg-red-500" />
             <span className="w-3 h-3 rounded-full bg-yellow-400" />
             <span className="w-3 h-3 rounded-full bg-green-500" />
-            <span className="ml-3 text-sm text-gray-300 font-medium">Sandbox - Code Editor</span>
+            <span className="ml-3 text-sm text-gray-300 font-medium">Luyện code · Judge0</span>
           </div>
 
           <div className="flex items-center gap-1">

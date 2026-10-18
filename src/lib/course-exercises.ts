@@ -115,5 +115,5 @@ export function mapSectionsToExercises(
 export function courseTaskHref(slug: string, item: ExerciseItem): string {
   return item.kind === "quiz" && item.quizId
     ? `/quizzes/${item.quizId}`
-    : `/learn/${slug}/${item.lessonId}`;
+    : `/learn/${slug}/${item.lessonId}${item.exerciseId ? `?exercise=${encodeURIComponent(item.exerciseId)}` : ""}`;
 }

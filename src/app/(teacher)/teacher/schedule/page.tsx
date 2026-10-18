@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { differenceInMinutes } from "date-fns";
+import { differenceInMinutes, format } from "date-fns";
 import { CalendarCheck, Clock, Plus } from "lucide-react";
+import { LiveSessionLaunch } from "@/components/teacher/live-session-launch";
 import { Button } from "@/components/ui/button";
 import WeekCalendarGrid from "@/components/schedule/week-calendar-grid";
+import ScheduleEventDetailDialog from "@/components/schedule/schedule-event-detail-dialog";
 import ScheduleEventTooltip from "@/components/schedule/schedule-event-tooltip";
 import ScheduleEventFormDialog from "@/components/schedule/schedule-event-form-dialog";
 import type { ScheduleEvent, ScheduleStat } from "@/components/schedule/week-calendar-grid";
@@ -25,38 +27,21 @@ import {
 } from "@/lib/teacher-schedule-events";
 import type { UpdateLiveSessionDTO } from "@/services/live-session.service";
 
-/**
- * P1 QA 260927 teacher: trang này trước bản vá chỉ có state React cục bộ
- * (`useState<ScheduleEvent[]>([])`) — "Tạo buổi học" không gọi API nào cả.
- * Buổi học tạo ở đây biến mất khi tải lại trang, và vì không có bản ghi thật
- * ở backend (không có class_id/course_id) nên nó không bao giờ xuất hiện ở
- * trang Bài tập (liệt kê session thật theo course qua
- * `useTeacherLivestreamsForCourse`) — đây là NGUYÊN NHÂN GỐC của phát hiện
- * "giao bài tập không dùng được".
- *
- * Nay mỗi "buổi học" ở trang này là một `livestream_sessions` row thật
- * (POST /livestream, khớp đúng luồng đã hoạt động ở trang chi tiết khoá học >
- * Thêm nội dung > Livestream), đòi buộc chọn khoá học + lớp lúc tạo.
- *
- * QA hồi quy 03/10:
- * - B-09: form gửi đủ giờ kết thúc và phòng học; PUT /livestream/:id nay nhận cả lịch nên sửa buổi đổi
- *   được giờ (chỉ khi buổi chưa bắt đầu). Kéo-thả đổi giờ vẫn tắt (`editable={false}`): chỉnh giờ qua form
- *   để có kiểm tra giờ và thông báo lỗi rõ ràng.
- * - B-08: ngoài livestream, lịch còn vẽ lịch học lặp tuần và buổi học cụ thể của các lớp mình dạy
- *   (`GET /me/timetable?sessions_from&sessions_to`). Hai loại này chỉ để xem; chỉnh ở trang Quản lý lớp.
- */
+/** Shared calendar: persisted class livestreams plus the current teaching timetable. */
 export default function TeacherSchedulePage() {
   const { user } = useAuthStore();
+  const [detail, setDetail] = useState<ScheduleEvent | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<ScheduleEvent | null>(null);
   const [defaultDate, setDefaultDate] = useState<Date | undefined>();
   const [defaultHour, setDefaultHour] = useState<number | undefined>();
+  const [defaultEndTime, setDefaultEndTime] = useState<string>();
   const [range, setRange] = useState<{ from: string; to: string } | undefined>();
 
-  const { data: sessionsData, isLoading } = useLiveSessions(
+  const { data: sessionsData, isLoading, isError, refetch } = useLiveSessions(
     user?.id ? { host_id: user.id, page_size: 100 } : undefined
   );
-  const { data: timetableEntries } = useMyTimetableEntries(range);
+  const { data: timetableEntries, isError: timetableError, refetch: refetchTimetable } = useMyTimetableEntries(range);
   const createLiveSession = useCreateLiveSession();
   const updateLiveSession = useUpdateLiveSession();
   const deleteLiveSession = useDeleteLiveSession();
@@ -120,15 +105,16 @@ export default function TeacherSchedulePage() {
 
   const handleEventClick = useCallback((event: ScheduleEvent) => {
     // Lịch lặp/buổi học của lớp chỉ để xem — form này sửa buổi livestream.
-    if (event.kind && event.kind !== "livestream") return;
+    if (event.kind && event.kind !== "livestream") { setDetail(event); return; }
     setEditingEvent(event);
     setDefaultDate(undefined);
     setDefaultHour(undefined);
+    setDefaultEndTime(undefined);
     setDialogOpen(true);
   }, []);
 
   const handleSave = useCallback(
-    (data: EventFormData, eventId?: string) => {
+    async (data: EventFormData, eventId?: string) => {
       const location = data.location.trim();
       if (eventId) {
         const dto: UpdateLiveSessionDTO = {
@@ -146,11 +132,11 @@ export default function TeacherSchedulePage() {
         // không gửi sai khoảnh khắc.
         if (startChanged) dto.scheduled_at = vnWallClockToIso(new Date(data.startTime));
         if (startChanged || endChanged) dto.scheduled_end_at = vnWallClockToIso(new Date(data.endTime));
-        updateLiveSession.mutate({ id: eventId, dto });
+        await updateLiveSession.mutateAsync({ id: eventId, dto });
         return;
       }
       if (!data.classId) return;
-      createLiveSession.mutate({
+      await createLiveSession.mutateAsync({
         title: data.title,
         description: data.description || undefined,
         class_id: data.classId,
@@ -164,20 +150,30 @@ export default function TeacherSchedulePage() {
   );
 
   const handleDelete = useCallback(
-    (eventId: string) => {
-      deleteLiveSession.mutate(eventId);
+    async (eventId: string) => {
+      await deleteLiveSession.mutateAsync(eventId);
     },
     [deleteLiveSession]
   );
 
   return (
-    <div className="p-6">
+    <div>
       {isLoading && <p className="mb-3 text-sm text-muted-foreground">Đang tải lịch dạy...</p>}
+      {(isError || timetableError) && <p role="alert" className="mb-3 text-sm text-red-600">Chưa tải được đầy đủ lịch. <button className="underline" onClick={() => { if (isError) void refetch(); if (timetableError) void refetchTimetable(); }}>Thử lại</button></p>}
       <WeekCalendarGrid
         events={events}
-        // Tắt kéo-thả đổi giờ/tạo nhanh: đổi giờ đi qua form (có kiểm tra giờ và báo lỗi từ backend)
-        // thay vì thả chuột rồi mới biết bị từ chối.
-        editable={false}
+        selectable
+        editable
+        onSelectMore={(start, end) => {
+          setEditingEvent(null);
+          setDefaultDate(start);
+          setDefaultHour(start.getHours());
+          setDefaultEndTime(format(end, "HH:mm"));
+          setDialogOpen(true);
+        }}
+        onEventChange={async (id, start, end) => {
+          await updateLiveSession.mutateAsync({ id, dto: { scheduled_at: vnWallClockToIso(new Date(start)), scheduled_end_at: vnWallClockToIso(new Date(end)) } });
+        }}
         onEventClick={handleEventClick}
         onRangeChange={handleRangeChange}
         renderEventTooltip={(event) =>
@@ -191,8 +187,12 @@ export default function TeacherSchedulePage() {
           <Button
             onClick={() => {
               setEditingEvent(null);
-              setDefaultDate(new Date());
-              setDefaultHour(8);
+              const next = new Date();
+              next.setHours(next.getHours() + 1, 0, 0, 0);
+              if (next.getHours() >= 23) { next.setDate(next.getDate() + 1); next.setHours(9, 0, 0, 0); }
+              setDefaultDate(next);
+              setDefaultHour(next.getHours());
+              setDefaultEndTime(undefined);
               setDialogOpen(true);
             }}
             size="sm"
@@ -205,14 +205,20 @@ export default function TeacherSchedulePage() {
         stats={stats}
       />
 
+      <ScheduleEventDetailDialog event={detail} open={!!detail} onOpenChange={open => { if (!open) setDetail(null); }} />
       <ScheduleEventFormDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         event={editingEvent}
         defaultDate={defaultDate}
         defaultHour={defaultHour}
+        defaultEndTime={defaultEndTime}
         onSave={handleSave}
         onDelete={handleDelete}
+        sessionActions={editingEvent && (() => {
+          const session = sessionsData?.sessions.find(item => item.id === editingEvent.id);
+          return session ? <LiveSessionLaunch key={session.id} id={session.id} status={session.status} /> : null;
+        })()}
       />
     </div>
   );

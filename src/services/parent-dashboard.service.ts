@@ -155,6 +155,8 @@ export interface ChildAssignmentsResponse {
 }
 
 export interface TimetableEntry {
+  effective_from?: string;
+  effective_until?: string;
   schedule_id?: string;
   session_id?: string;
   class_id: string;

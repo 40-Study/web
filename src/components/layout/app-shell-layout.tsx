@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 import { Footer } from "./footer";
@@ -14,6 +15,8 @@ interface AppShellLayoutProps {
 }
 
 export function AppShellLayout({ children }: AppShellLayoutProps) {
+  const pathname = usePathname();
+  const contestFocus = /^\/contests\/[^/]+\/(play|result)$/.test(pathname);
   const { isCollapsed } = useSidebarStore();
   const isExpanded = !isCollapsed; // sidebar.store.ts dùng chung 1 API isCollapsed (mục 14)
   const { activeRole, isAuthenticated } = useAuthStore();
@@ -37,15 +40,29 @@ export function AppShellLayout({ children }: AppShellLayoutProps) {
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
       <div className="flex flex-1 pt-16 min-h-0">
-        <Sidebar />
-        <div className={cn(
-          "flex-1 w-full flex flex-col overflow-x-hidden min-h-[calc(100vh-4rem)] transition-all duration-200",
-          isExpanded ? "lg:pl-48" : "lg:pl-[60px]",
-        )}>
+        {!contestFocus && <Sidebar />}
+        <div
+          className={cn(
+            "flex-1 w-full flex flex-col overflow-x-hidden min-h-[calc(100vh-4rem)] transition-all duration-200",
+            !contestFocus && (isExpanded ? "lg:pl-48" : "lg:pl-[60px]")
+          )}
+        >
           {/* id="main-content": đích của skip link trong layout.tsx (H-04) */}
-          <main id="main-content" className="flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</main>
-          <Footer />
-          <BottomNav role={bottomNavRole} />
+          <main
+            id="main-content"
+            className={cn(
+              "flex-1",
+              !contestFocus && "pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-0"
+            )}
+          >
+            {children}
+          </main>
+          {!contestFocus && (
+            <>
+              <Footer />
+              <BottomNav role={bottomNavRole} />
+            </>
+          )}
         </div>
       </div>
     </div>

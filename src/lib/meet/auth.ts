@@ -1,6 +1,8 @@
+import { api as sharedApi } from "@/lib/api-client";
+import { useAuthStore } from "@/stores/auth.store";
 import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_BASE_URL;
+const API_URL = typeof window !== "undefined" ? "/api" : process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_BASE_URL;
 
 export interface User {
   id: string;
@@ -108,10 +110,11 @@ export async function logout(): Promise<void> {
 }
 
 export async function getMe(): Promise<User> {
-  const res = await fetch(`${API_URL}/auth/me`, {
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Not authenticated');
-  const data = await res.json();
-  return data.data;
+  const state = useAuthStore.getState();
+  if (state.sessionStatus === "authenticated" && state.user) {
+    const user = state.user;
+    return { id: user.id, email: user.email, username: user.name, avatar_url: user.avatar, is_active: true };
+  }
+  const response = await sharedApi.get<{ data: User }>("/auth/me");
+  return response.data.data;
 }

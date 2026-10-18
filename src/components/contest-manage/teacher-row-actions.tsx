@@ -54,7 +54,7 @@ export function ContestRowActions({ contest, hideEditLink, redirectAfterDelete }
         description={
           <>
             Gửi <strong>{contest.title}</strong> cho quản trị viên duyệt? Sau khi gửi, bạn không sửa được cuộc thi
-            và bài trắc nghiệm cho tới khi bị từ chối.
+            và đề thi cho tới khi bị từ chối.
           </>
         }
         confirmLabel="Gửi duyệt"

@@ -1,0 +1,10 @@
+{
+  "scope": "One student room reload, then opening Chat; teacher tab stays connected",
+  "source": "Next proxy log, not DevTools Network",
+  "requests": {
+    "GET /rooms/26c09eaa-f686-40ea-b710-2ba11575a3ed 200": 1,
+    "GET /api/livestream/26c09eaa-f686-40ea-b710-2ba11575a3ed 200": 1,
+    "GET /api/assignments?session_id=26c09eaa-f686-40ea-b710-2ba11575a3ed 200": 1,
+    "GET /api/chat/26c09eaa-f686-40ea-b710-2ba11575a3ed/messages 200": 1
+  }
+}

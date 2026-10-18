@@ -10,6 +10,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { getWsUrl } from "@/lib/ws-url";
 import { getNotificationHref, isFriendNotification } from "@/lib/notification-route";
 import { friendKeys } from "./queries/use-friends";
+import { liveSessionKeys } from "./queries/use-live-sessions";
 import { notificationKeys } from "./queries/use-notifications";
 
 interface WebSocketMessage {
@@ -46,7 +47,7 @@ export function useNotificationSocket() {
         duration: 5000,
         action: payload.reference_type || href
           ? {
-              label: "Xem",
+              label: payload.reference_type === "livestream" ? "Vào lớp" : payload.notification_type === "lesson_reminder" ? "Xem lịch" : "Xem",
               onClick: () => {
                 if (href) {
                   window.location.href = href;
@@ -64,6 +65,9 @@ export function useNotificationSocket() {
 
       // Invalidate notification queries to refresh the list and count
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+      if (payload.notification_type === "lesson_reminder" && payload.reference_type === "livestream") {
+        queryClient.invalidateQueries({ queryKey: liveSessionKeys.all });
+      }
       // Lời mời mới / vừa được chấp nhận: làm mới badge lời mời và danh sách bạn.
       if (isFriendNotification(payload.notification_type)) {
         queryClient.invalidateQueries({ queryKey: friendKeys.all });

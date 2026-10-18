@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { format, setHours, setMinutes } from "date-fns";
-import { MapPin, Trash2 } from "lucide-react";
+import { Bell, Loader2, MapPin, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -57,8 +57,9 @@ interface ScheduleEventFormDialogProps {
   defaultHour?: number;
   /** Pre-filled end time string "HH:mm" from drag selection */
   defaultEndTime?: string;
-  onSave: (data: EventFormData, eventId?: string) => void;
-  onDelete?: (eventId: string) => void;
+  onSave: (data: EventFormData, eventId?: string) => Promise<void> | void;
+  onDelete?: (eventId: string) => Promise<void> | void;
+  sessionActions?: ReactNode;
 }
 
 /**
@@ -83,8 +84,12 @@ export default function ScheduleEventFormDialog({
   defaultEndTime,
   onSave,
   onDelete,
+  sessionActions,
 }: ScheduleEventFormDialogProps) {
   const isEditing = !!event;
+  const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   // Chỉ buổi chưa bắt đầu mới đổi lịch được (backend trả 409 với buổi đang live/đã kết thúc).
   const canEditTime = !isEditing || event?.status === "upcoming";
 
@@ -99,14 +104,15 @@ export default function ScheduleEventFormDialog({
   const [error, setError] = useState<string | null>(null);
 
   // P1 QA 260927 teacher: khoá/lớp thật của giáo viên — bắt buộc khi tạo mới.
-  const { data: apiCourses = [], isLoading: coursesLoading } = useMyCourses();
+  const { data: apiCourses = [], isLoading: coursesLoading } = useMyCourses(undefined, { enabled: open && !isEditing });
   const { data: classes = [], isLoading: classesLoading } = useClasses(courseId, {
-    enabled: !isEditing && !!courseId,
+    enabled: open && !isEditing && !!courseId,
   });
 
   // Populate form when event or defaults change
   useEffect(() => {
     setError(null);
+    setConfirmDelete(false);
     if (event) {
       setTitle(event.title);
       const startDate = new Date(event.startTime);
@@ -127,9 +133,9 @@ export default function ScheduleEventFormDialog({
         setDateStr(format(defaultDate, "yyyy-MM-dd"));
       }
       if (defaultHour !== undefined) {
-        setStartTime(`${String(defaultHour).padStart(2, "0")}:00`);
+        setStartTime(`${String(defaultHour).padStart(2, "0")}:${String(defaultDate?.getMinutes() ?? 0).padStart(2, "0")}`);
         // Use drag-selected end time when available, otherwise default +1.5h
-        setEndTime(defaultEndTime ?? `${String(defaultHour + 1).padStart(2, "0")}:30`);
+        setEndTime(defaultEndTime ?? (defaultHour >= 22 ? "23:59" : `${String(defaultHour + 1).padStart(2, "0")}:30`));
       }
     }
   }, [event, defaultDate, defaultHour, defaultEndTime, open]);
@@ -139,8 +145,9 @@ export default function ScheduleEventFormDialog({
     setClassId("");
   }, [courseId]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busyRef.current) return;
     if (!isEditing && !classId) return;
     const [startH, startM] = startTime.split(":").map(Number);
     const [endH, endM] = endTime.split(":").map(Number);
@@ -158,7 +165,11 @@ export default function ScheduleEventFormDialog({
       }
     }
 
-    onSave(
+    busyRef.current = true;
+    setBusy(true);
+    setError(null);
+    try {
+    await onSave(
       {
         title,
         // Mọi buổi ở trang này là livestream thật (POST /livestream); các lựa chọn loại buổi, liên kết
@@ -175,11 +186,23 @@ export default function ScheduleEventFormDialog({
       event?.id
     );
     onOpenChange(false);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Chưa lưu được buổi học. Vui lòng thử lại."); }
+    finally { busyRef.current = false; setBusy(false); }
+  };
+  const handleDelete = async () => {
+    if (!event || !onDelete || busyRef.current) return;
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    busyRef.current = true;
+    setBusy(true);
+    setError(null);
+    try { await onDelete(event.id); onOpenChange(false); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : "Chưa huỷ được buổi học."); }
+    finally { busyRef.current = false; setBusy(false); }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+    <Dialog open={open} onOpenChange={value => { if (!busyRef.current) onOpenChange(value); }}>
+      <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Chỉnh sửa lịch dạy" : "Tạo lịch dạy mới"}
@@ -191,7 +214,9 @@ export default function ScheduleEventFormDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {sessionActions}
         <form onSubmit={handleSubmit} className="space-y-4">
+          <fieldset disabled={busy} className="space-y-4 min-w-0">
           {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="event-title">Tiêu đề *</Label>
@@ -316,6 +341,8 @@ export default function ScheduleEventFormDialog({
             </div>
           </div>
 
+          <div className="rounded-lg bg-blue-50 p-3 text-xs text-blue-900 flex gap-2"><Bell className="w-4 h-4 shrink-0" /><span>Tự động nhắc trước 15 phút và khi đến giờ cho giáo viên, học sinh của lớp và phụ huynh đã liên kết.</span></div>
+          {confirmDelete && <p role="alert" className="text-xs text-red-600">Huỷ buổi học này? Lịch nhắc học của buổi cũng sẽ ngừng.</p>}
           {/* Footer Actions */}
           <DialogFooter className="gap-2">
             {isEditing && onDelete && (
@@ -323,13 +350,10 @@ export default function ScheduleEventFormDialog({
                 type="button"
                 variant="outline"
                 className="mr-auto text-red-500 hover:text-red-600 hover:bg-red-50"
-                onClick={() => {
-                  onDelete(event!.id);
-                  onOpenChange(false);
-                }}
+                onClick={() => void handleDelete()}
               >
                 <Trash2 className="w-4 h-4 mr-1" />
-                Xoá
+                {confirmDelete ? "Xác nhận huỷ buổi" : "Huỷ buổi học"}
               </Button>
             )}
             <Button
@@ -340,9 +364,10 @@ export default function ScheduleEventFormDialog({
               Huỷ
             </Button>
             <Button type="submit" disabled={!title || !dateStr || (!isEditing && !classId)}>
-              {isEditing ? "Cập nhật" : "Tạo buổi học"}
+              {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{isEditing ? "Lưu thay đổi" : "Tạo buổi học"}
             </Button>
           </DialogFooter>
+          </fieldset>
         </form>
       </DialogContent>
     </Dialog>

@@ -50,3 +50,10 @@ describe("isFriendNotification", () => {
     expect(isFriendNotification("system")).toBe(false);
   });
 });
+
+it("nhắc học mở đúng lịch và không cho phụ huynh link vào phòng", () => {
+ expect(getNotificationHref({ notification_type: "lesson_reminder", reference_type: "child_schedule", reference_id: "child-1" })).toBe("/parent/children/child-1?tab=schedule");
+ expect(getNotificationHref({ notification_type: "lesson_reminder", reference_type: "teacher_schedule" })).toBe("/teacher/schedule");
+ expect(getNotificationHref({ notification_type: "lesson_reminder", reference_type: "student_schedule" })).toBe("/schedule");
+ expect(getNotificationHref({ notification_type: "lesson_reminder", reference_type: "livestream", reference_id: "session-1" })).toBe("/rooms/session-1");
+});

@@ -30,6 +30,7 @@ async function openQuizForm(onSubmit = vi.fn().mockResolvedValue(true)) {
   await click(screen.getByText("Trắc nghiệm"));
   await type(screen.getByLabelText("Tiêu đề bài kiểm tra"), "Kiểm tra Go");
   await type(screen.getByPlaceholderText("Nhập câu hỏi..."), "1 + 1 = ?");
+  for(const [i,el] of screen.getAllByPlaceholderText("Phương án...").entries()) await type(el, String(i+1));
   await click(screen.getAllByRole("button", { name: /đáp án đúng của câu 1/i })[0]);
   return onSubmit;
 }

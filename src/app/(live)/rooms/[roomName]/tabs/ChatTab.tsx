@@ -131,7 +131,7 @@ export default function ChatTab({ sessionId, onClose, broadcast, onChatMessage }
         message: messageText,
       });
 
-      const savedMsg = res.data || { ...optimisticMsg, id: `saved-${Date.now()}` };
+      const savedMsg = res.data ? { ...res.data, user_name: res.data.user_name || userName } : { ...optimisticMsg, id: `saved-${Date.now()}` };
 
       // Replace optimistic message with saved one
       setMessages(prev => prev.map(m => m.id === tempId ? savedMsg : m));
@@ -189,7 +189,7 @@ export default function ChatTab({ sessionId, onClose, broadcast, onChatMessage }
       display: 'flex',
       flexDirection: 'column',
       background: COLORS.bg,
-      fontFamily: "var(--font-plus-jakarta), 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+      fontFamily: "var(--font-ui)",
     }}>
       {/* Header */}
       <div style={{
