@@ -42,6 +42,7 @@ import {
   Users,
   X,
   Code,
+  ClipboardList,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,6 +96,13 @@ import { QuizSettingsEditor, type QuizSettingsEditState } from "@/components/tea
 import { quizKeys } from "@/hooks/queries/use-quiz";
 import { getClassStatusLabel } from "@/lib/class-status";
 import { DEFAULT_QUIZ_MAX_ATTEMPTS, DEFAULT_QUIZ_PASS_PERCENTAGE } from "@/lib/quiz-settings";
+import { ExerciseSubmissionsPanel } from "@/components/teacher/exercise-submissions-panel";
+import {
+  ExerciseSettingsEditor,
+  exerciseEditKeys,
+  type ExerciseSettingsEditState,
+} from "@/components/teacher/exercise-settings-editor";
+import { applyExerciseEditPlan } from "@/components/teacher/exercise-edit-plan";
 
 // ─── Content type config ────────────────────────────────────────────────────
 
@@ -388,6 +396,8 @@ function LessonContentsPanel({
   const { data: contentsRaw, isLoading } = useLessonContents(lessonId);
   const contents: LessonContent[] = Array.isArray(contentsRaw) ? contentsRaw : [];
   const deleteContent = useDeleteLessonContent(lessonId);
+  // Bài code đang mở danh sách bài nộp của học viên (null = đóng).
+  const [submissionsFor, setSubmissionsFor] = useState<LessonContent | null>(null);
 
   return (
     <div className="ml-10 mr-2 mb-2 border-l-2 border-gray-100 pl-4">
@@ -433,7 +443,8 @@ function LessonContentsPanel({
                       window.open(livestreamHref, "_blank");
                     }
                   } else if (c.type === "exercise" && c.exercise_id) {
-                    window.open(`/exercises/${c.exercise_id}`, "_blank");
+                    // Web không có trang /exercises/:id (mở tab mới ra 404); giảng viên xem bài nộp của học viên.
+                    setSubmissionsFor(c);
                   }
                 };
                 return (
@@ -469,6 +480,16 @@ function LessonContentsPanel({
                           title="Xem video"
                         >
                           <Eye className="w-3 h-3" />
+                        </button>
+                      )}
+                      {c.type === "exercise" && c.exercise_id && (
+                        <button
+                          onClick={() => setSubmissionsFor(c)}
+                          className="p-0.5 text-gray-400 hover:text-primary-600"
+                          title="Bài nộp của học viên"
+                          aria-label={`Bài nộp của học viên: ${c.title}`}
+                        >
+                          <ClipboardList className="w-3 h-3" />
                         </button>
                       )}
                       {!readOnly && (
@@ -513,6 +534,14 @@ function LessonContentsPanel({
             </button>
           )}
         </>
+      )}
+      {submissionsFor?.exercise_id && (
+        <ExerciseSubmissionsPanel
+          exerciseId={submissionsFor.exercise_id}
+          exerciseTitle={submissionsFor.title}
+          open
+          onOpenChange={(open) => !open && setSubmissionsFor(null)}
+        />
       )}
     </div>
   );
@@ -919,6 +948,7 @@ export default function CourseDetailPage() {
             difficulty: "medium",
             language: [data.language || "python"],
             starter_code: data.starterCode,
+            ...data.codeLimits,
           });
           undoStack.push(() => exerciseService.delete(exercise.id));
           await exerciseService.importTestCases(exercise.id, (data.testCases ?? []).map((test, index) => ({
@@ -1526,6 +1556,8 @@ function EditContentModal({
   const [isSaving, setIsSaving] = useState(false);
   /** Q2-04: phần điểm đạt / số lần làm tối đa của quiz đã đổi (do QuizSettingsEditor báo lên). */
   const [quizSettings, setQuizSettings] = useState<QuizSettingsEditState>({ payload: null, blocked: false });
+  /** Bộ test + giới hạn chấm của bài code đã đổi (do ExerciseSettingsEditor báo lên). */
+  const [exerciseSettings, setExerciseSettings] = useState<ExerciseSettingsEditState>({ plan: null, blocked: false });
   const queryClient = useQueryClient();
 
   // Sync state when content changes
@@ -1542,9 +1574,11 @@ function EditContentModal({
   const durationInvalid =
     content?.type === "video" && parseLessonDuration(durationText).kind === "invalid";
   const quizSettingsId = content?.type === "quiz" ? content.quiz_id : undefined;
+  const exerciseId = content?.type === "exercise" ? content.exercise_id : undefined;
+  const saveBlocked = durationInvalid || quizSettings.blocked || exerciseSettings.blocked;
 
   const handleSave = async () => {
-    if (!content || !title.trim() || durationInvalid || quizSettings.blocked) return;
+    if (!content || !title.trim() || saveBlocked) return;
     setIsSaving(true);
     try {
       const { lessonContentService } = await import("@/services/lesson-content.service");
@@ -1558,6 +1592,19 @@ function EditContentModal({
         } catch (err) {
           toast.error(getErrorMessage(err, "Không thể lưu cài đặt bài trắc nghiệm"));
           return;
+        }
+      }
+
+      // Bộ test / giới hạn chấm của bài code: lưu TRƯỚC tiêu đề, lỗi thì dừng và báo đúng lý do backend.
+      if (exerciseId && exerciseSettings.plan) {
+        try {
+          await applyExerciseEditPlan(exerciseId, exerciseSettings.plan);
+        } catch (err) {
+          toast.error(getErrorMessage(err, "Không thể lưu bộ test của bài tập"));
+          return;
+        } finally {
+          // Lỗi giữa chừng vẫn có thể đã lưu một phần — nạp lại để form khớp backend.
+          queryClient.invalidateQueries({ queryKey: exerciseEditKeys.detail(exerciseId) });
         }
       }
 
@@ -1591,7 +1638,7 @@ function EditContentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className={cn(exerciseId ? "max-w-2xl max-h-[90vh] overflow-y-auto" : "max-w-md")}>
         <DialogHeader>
           <DialogTitle>Chỉnh sửa nội dung</DialogTitle>
           <DialogDescription>
@@ -1642,11 +1689,14 @@ function EditContentModal({
 
           {/* Q2-04: điểm đạt (%) và số lần làm tối đa của bài trắc nghiệm đã tạo. */}
           {quizSettingsId && <QuizSettingsEditor quizId={quizSettingsId} onChange={setQuizSettings} />}
+
+          {/* Bộ test (kể cả test ẩn) và giới hạn thời gian / bộ nhớ / điểm đạt của bài code đã tạo. */}
+          {exerciseId && <ExerciseSettingsEditor exerciseId={exerciseId} onChange={setExerciseSettings} />}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Huỷ</Button>
-          <Button onClick={handleSave} disabled={!title.trim() || isSaving || durationInvalid || quizSettings.blocked}>
+          <Button onClick={handleSave} disabled={!title.trim() || isSaving || saveBlocked}>
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Lưu thay đổi
           </Button>
