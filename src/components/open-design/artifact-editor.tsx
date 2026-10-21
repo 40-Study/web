@@ -58,7 +58,7 @@ export function ArtifactEditor({
                     onSlideIndexChange(Math.max(0, slideIndex - 1));
                   }}
                 >
-                  Xóa slide
+                  Xoá slide
                 </Button>
               </div>
               <label className="block text-sm">
@@ -117,7 +117,7 @@ export function ArtifactEditor({
                       type="button"
                       size="icon"
                       variant="ghost"
-                      aria-label={`Xóa ý ${i + 1}`}
+                      aria-label={`Xoá ý ${i + 1}`}
                       onClick={() =>
                         updateSlide({ bullets: slide.bullets.filter((_, j) => j !== i) })
                       }
@@ -184,7 +184,7 @@ export function ArtifactEditor({
                   type="button"
                   variant="destructiveGhost"
                   size="sm"
-                  aria-label={`Xóa câu ${index + 1}`}
+                  aria-label={`Xoá câu ${index + 1}`}
                   disabled={artifact.questions.length === 1}
                   onClick={() =>
                     onChange({
@@ -193,7 +193,7 @@ export function ArtifactEditor({
                     })
                   }
                 >
-                  Xóa câu
+                  Xoá câu
                 </Button>
               </div>
               <label className="block text-sm">

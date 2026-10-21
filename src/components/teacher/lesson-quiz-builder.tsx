@@ -334,7 +334,7 @@ export function LessonQuizBuilder({
                     type="button"
                     size="sm"
                     variant="ghost"
-                    aria-label={`Xóa câu hỏi ${i + 1}`}
+                    aria-label={`Xoá câu hỏi ${i + 1}`}
                     onClick={() => onChange(questions.filter((item) => item.id !== q.id))}
                   >
                     <Trash2 className="h-4 w-4" />
