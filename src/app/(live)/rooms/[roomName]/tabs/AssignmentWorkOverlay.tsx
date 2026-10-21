@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { api } from '@/lib/meet/api';
+import { api, MeetApiError } from '@/lib/meet/api';
 import { meetErrorMessage } from '@/lib/meet/error-message';
 import type { Assignment, TestCase, SandboxResponse, SubmissionResult } from '@/lib/meet/types-assignment';
 import RichTextEditor, { RichTextViewer } from '@/components/meet/RichTextEditor';
@@ -24,6 +24,16 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   medium: '#ffb020',
   hard: '#ff6352',
 };
+
+const JUDGE_UNAVAILABLE_MESSAGE = 'Máy chấm đang không sẵn sàng. Bài nộp chưa được tính, hãy thử lại.';
+
+/** Lỗi khi chạy/nộp code: 503 máy chấm (JUDGE_UNAVAILABLE) hiện câu tiếng Việt thay vì "HTTP 503". */
+function codeJudgeErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof MeetApiError && (err.status === 503 || err.bodyCode === 'JUDGE_UNAVAILABLE')) {
+    return err.code || JUDGE_UNAVAILABLE_MESSAGE;
+  }
+  return meetErrorMessage(err, fallback);
+}
 
 interface Props {
   assignmentId: string;
@@ -225,7 +235,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
       });
       setResults(res as any);
     } catch (err: any) {
-      setResults({ error: err.message ?? 'Lỗi khi chạy code' } as any);
+      setResults({ error: codeJudgeErrorMessage(err, 'Lỗi khi chạy code') } as any);
     } finally {
       setRunning(false);
     }
@@ -245,7 +255,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
       setMySubmission(res);
       setActiveResultTab('tests');
     } catch (err: any) {
-      setResults({ error: meetErrorMessage(err, 'Lỗi khi nộp bài') } as any);
+      setResults({ error: codeJudgeErrorMessage(err, 'Lỗi khi nộp bài') } as any);
     } finally {
       setSubmitting(false);
     }

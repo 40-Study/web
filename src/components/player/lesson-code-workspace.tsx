@@ -9,12 +9,22 @@ import {
   CodeJudgeResult,
   CODE_VERDICT_LABELS,
 } from "@/components/code-workspace/code-judge-result";
-import { lessonCodeService, type LessonCodeDetail } from "@/services/lesson-code.service";
+import {
+  lessonCodeService,
+  type LessonCodeDetail,
+  type LessonCodeHistoryItem,
+} from "@/services/lesson-code.service";
 import type { ContestCodeResult } from "@/types/contest";
 import type { LessonProgressResponse } from "@/services/enrollment.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { getErrorMessage } from "@/lib/error-messages";
 import { NonVideoLessonContent, useMarkLessonCompleted } from "./non-video-lesson-content";
+import { LessonCodeHistory } from "./lesson-code-history";
+import {
+  readLessonCodeDraft,
+  writeLessonCodeDraft,
+  type LessonCodeDraft,
+} from "./lesson-code-draft-storage";
 
 const LANGUAGES = [
   { id: "python", label: "Python 3" },
@@ -58,28 +68,39 @@ export function LessonCodeWorkspace({
   const [stdin, setStdin] = useState("");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  // Lỗi của lần chạy/nộp gần nhất: bảng kết quả hiện lỗi này thay vì verdict cũ.
+  const [judgeError, setJudgeError] = useState("");
   const [result, setResult] = useState<ContestCodeResult | null>(null);
   const active = useRef(false);
   const retry = useRef<{ fingerprint: string; id: string } | null>(null);
-  const drafts = useRef<Record<string, string>>({});
+  const drafts = useRef<LessonCodeDraft>({ drafts: {} });
   const exercise = detail.data?.exercise;
+  const isCodeExercise = !!exercise?.language?.length;
+  const historyKey = ["lesson-code-history", exerciseId, userID];
+  const history = useQuery({
+    queryKey: historyKey,
+    queryFn: () => lessonCodeService.history(exerciseId),
+    enabled: isCodeExercise,
+    staleTime: Infinity,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
   const languages = LANGUAGES.filter(
     (l) => !exercise?.language?.length || exercise.language.map(normalize).includes(l.id)
   );
-  const selected = language || languages[0]?.id || "python";
+  // Ngôn ngữ đã lưu nhưng bài tập không còn cho phép -> quay về ngôn ngữ đầu tiên.
+  const selected = languages.some((l) => l.id === language)
+    ? language
+    : languages[0]?.id || "python";
   const storageKey = `fortex:lesson-code:${userID}:${lessonId}:${exerciseId}`;
   const mark = useMarkLessonCompleted({ lessonId, courseId, onProgress });
   useEffect(() => {
-    try {
-      drafts.current = JSON.parse(localStorage.getItem(storageKey) || "{}");
-    } catch {
-      drafts.current = {};
-    }
-    if (!drafts.current || typeof drafts.current !== "object") drafts.current = {};
+    drafts.current = readLessonCodeDraft(storageKey);
+    setLanguage(drafts.current.language ?? "");
   }, [storageKey]);
   useEffect(() => {
     if (!exercise) return;
-    const saved = drafts.current[selected];
+    const saved = drafts.current.drafts[selected];
     setCode(
       typeof saved === "string"
         ? saved
@@ -89,15 +110,43 @@ export function LessonCodeWorkspace({
     );
     setStdin(exercise.test_cases?.[0]?.input ?? "");
     setResult(null);
+    setJudgeError("");
   }, [exercise, selected]);
-  function save(value: string) {
-    setCode(value);
-    drafts.current[selected] = value;
+  function persist(nextLanguage: string) {
+    drafts.current.language = nextLanguage;
     try {
-      localStorage.setItem(storageKey, JSON.stringify(drafts.current));
+      writeLessonCodeDraft(storageKey, drafts.current);
     } catch {
       setError("Không lưu được nháp. Hãy sao chép mã trước khi rời trang.");
     }
+  }
+  function save(value: string) {
+    setCode(value);
+    drafts.current.drafts[selected] = value;
+    persist(selected);
+  }
+  function chooseLanguage(next: string) {
+    setLanguage(next);
+    persist(next);
+  }
+  function openSubmission(item: LessonCodeHistoryItem) {
+    const lang = normalize(item.language);
+    if (!languages.some((l) => l.id === lang)) {
+      setError("Bài tập không còn cho phép ngôn ngữ của bài nộp này.");
+      return;
+    }
+    const draft = drafts.current.drafts[lang];
+    if (
+      draft?.trim() &&
+      draft !== item.code &&
+      !window.confirm("Thay mã đang viết bằng mã của bài nộp này?")
+    )
+      return;
+    drafts.current.drafts[lang] = item.code;
+    persist(lang);
+    // Đổi ngôn ngữ thì effect phía trên nạp mã từ bản nháp vừa ghi.
+    if (lang === selected) setCode(item.code);
+    else setLanguage(lang);
   }
   async function judge(submit: boolean) {
     if (active.current || !code.trim()) return;
@@ -105,6 +154,7 @@ export function LessonCodeWorkspace({
     setBusy(submit ? "submit" : "run");
     setConsoleTab("result");
     setError("");
+    setJudgeError("");
     try {
       const fingerprint = JSON.stringify([selected, code]);
       if (!retry.current || retry.current.fingerprint !== fingerprint)
@@ -127,9 +177,13 @@ export function LessonCodeWorkspace({
         qc.setQueryData<LessonCodeDetail>(key, (old) =>
           old ? { ...old, last_submission: value } : old
         );
+        void qc.invalidateQueries({ queryKey: historyKey });
       }
     } catch (e) {
-      setError(getErrorMessage(e));
+      const message = getErrorMessage(e);
+      setError(message);
+      setJudgeError(message);
+      setResult(null);
     } finally {
       active.current = false;
       setBusy("");
@@ -226,6 +280,13 @@ export function LessonCodeWorkspace({
               </p>
             </div>
           )}
+          <LessonCodeHistory
+            items={history.data ?? []}
+            loading={history.isLoading}
+            failed={history.isError}
+            disabled={!!busy}
+            onOpen={openSubmission}
+          />
         </section>
         <section aria-label="Làm bài" className="code-editor-panel">
           <div className="code-editor-toolbar">
@@ -236,7 +297,7 @@ export function LessonCodeWorkspace({
                 className="ml-2 rounded-lg border bg-background p-2"
                 value={selected}
                 disabled={!!busy}
-                onChange={(e) => setLanguage(e.target.value)}
+                onChange={(e) => chooseLanguage(e.target.value)}
               >
                 {languages.map((l) => (
                   <option key={l.id} value={l.id}>
@@ -291,7 +352,7 @@ export function LessonCodeWorkspace({
               onClick={() => setConsoleTab("input")}
             >
               <Terminal className="h-3.5 w-3.5" />
-              Đầu vào tùy chỉnh
+              Đầu vào tuỳ chỉnh
             </button>
             <button
               role="tab"
@@ -317,8 +378,13 @@ export function LessonCodeWorkspace({
               </p>
             ) : result ? (
               <CodeJudgeResult key={result.id ?? result.status} result={result} />
+            ) : judgeError ? (
+              <p className="code-panel-empty text-red-700">{judgeError}</p>
             ) : last ? (
-              <CodeJudgeResult result={last} />
+              <div>
+                <p className="mb-2 text-xs text-muted-foreground">Bài nộp gần nhất</p>
+                <CodeJudgeResult result={last} />
+              </div>
             ) : (
               <p className="code-panel-empty">Chạy thử hoặc nộp lời giải để xem kết quả.</p>
             )}

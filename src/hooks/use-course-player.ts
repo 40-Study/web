@@ -314,34 +314,6 @@ export function useExercise(exerciseId: string) {
   });
 }
 
-/** Submit exercise code */
-export function useSubmitExercise() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      exerciseId,
-      code,
-      language,
-    }: {
-      exerciseId: string;
-      code: string;
-      language: string;
-    }) => exerciseService.submit(exerciseId, { code, language }),
-    onSuccess: (result, { exerciseId }) => {
-      qc.invalidateQueries({ queryKey: playerKeys.exercise(exerciseId) });
-      if (result.status === "accepted") {
-        toast.success("Đã được chấp nhận! Bài làm của bạn đã đúng");
-      } else {
-        toast.error("Sai đáp án. Hãy kiểm tra lại code!");
-      }
-    },
-    onError: () => {
-      toast.error("Không thể nộp bài");
-    },
-  });
-}
-
 // ─── Progress Hooks ────────────────────────────────────────────────────────
 //
 // Phase 0: `useVideo` cũ gọi `GET /videos/:id` từ `video.service.ts` — contract
