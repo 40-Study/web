@@ -119,7 +119,7 @@ describe("ScheduleEventFormDialog — lưu bất đồng bộ", () => {
     fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
   });
-  it("hủy buổi cần xác nhận, cancel form không mutation", async () => {
+  it("huỷ buổi cần xác nhận, cancel form không mutation", async () => {
     const onDelete = vi.fn(async () => {});
     const onSave = vi.fn();
     const onOpenChange = vi.fn();

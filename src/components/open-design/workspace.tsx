@@ -177,7 +177,7 @@ export function OpenDesignWorkspace() {
   function create(kind: OutputKind) {
     if (locked) return;
     if (projectsRef.current.length >= 8) {
-      setError("Đã có 8 bản lưu. Hãy xuất rồi xóa một bản lưu trước khi tạo thêm.");
+      setError("Đã có 8 bản lưu. Hãy xuất rồi xoá một bản lưu trước khi tạo thêm.");
       return;
     }
     const next = newProject(kind);
@@ -215,7 +215,7 @@ export function OpenDesignWorkspace() {
       setCustomSkills(next);
       if (selectedSkillID === id) setSelectedSkillID(kind);
     } catch {
-      setError("Không xóa được skill trên trình duyệt.");
+      setError("Không xoá được skill trên trình duyệt.");
     }
   }
   function saveVersion(artifact: TeachingArtifact, label: string, reply?: string) {
@@ -423,16 +423,16 @@ export function OpenDesignWorkspace() {
     if (!run || run.cancelled) return;
     run.cancelled = true;
     run.controller.abort();
-    setNotice("Đang hủy yêu cầu…");
+    setNotice("Đang huỷ yêu cầu…");
     try {
       const result = await openDesignService.cancel(run.id);
       setNotice(
         result.cancelled
-          ? "Đã hủy. Bản nháp trước được giữ nguyên."
+          ? "Đã huỷ. Bản nháp trước được giữ nguyên."
           : "Đã dừng chờ kết quả. Yêu cầu chưa bắt đầu hoặc đã kết thúc trên máy chủ."
       );
     } catch {
-      setError("Đã dừng chờ nhưng chưa xác nhận hủy trên máy chủ. Vui lòng đợi trước khi thử lại.");
+      setError("Đã dừng chờ nhưng chưa xác nhận huỷ trên máy chủ. Vui lòng đợi trước khi thử lại.");
     } finally {
       if (runRef.current === run) {
         runRef.current = null;
@@ -453,7 +453,7 @@ export function OpenDesignWorkspace() {
       const next = remaining.length ? remaining : [newProject(kind)];
       persist(next);
       selectProject(next[0]);
-      setNotice("Đã xóa bản lưu trên trình duyệt.");
+      setNotice("Đã xoá bản lưu trên trình duyệt.");
     } else {
       const restored = project.versions.find((v) => v.id === action.id)?.artifact;
       const next = { ...project, activeVersion: action.id, kind: restored?.kind ?? project.kind };
@@ -573,7 +573,7 @@ export function OpenDesignWorkspace() {
                   <button
                     className="od-delete-chat"
                     disabled={locked}
-                    aria-label="Xóa hội thoại"
+                    aria-label="Xoá hội thoại"
                     onClick={() => setConfirmation({ type: "delete" })}
                   >
                     <Trash2 className="h-3 w-3" />
@@ -915,26 +915,26 @@ export function OpenDesignWorkspace() {
         <DialogContent className="max-w-md">
           <DialogTitle>
             {confirmation?.type === "delete"
-              ? "Xóa hội thoại?"
+              ? "Xoá hội thoại?"
               : confirmation?.type === "restore"
                 ? "Khôi phục phiên bản?"
                 : "Rời bản đang chỉnh sửa?"}
           </DialogTitle>
           <DialogDescription>
             {confirmation?.type === "delete"
-              ? "Hội thoại và kết quả đã lưu sẽ bị xóa trên trình duyệt này. Hãy tải kết quả trước nếu bạn cần giữ lại."
+              ? "Hội thoại và kết quả đã lưu sẽ bị xoá trên trình duyệt này. Hãy tải kết quả trước nếu bạn cần giữ lại."
               : "Chỉnh sửa chưa lưu sẽ bị bỏ. Các phiên bản đã lưu vẫn được giữ để quay lại."}
           </DialogDescription>
           <div className="mt-5 flex justify-end gap-2">
             <Button variant="outline" onClick={() => setConfirmation(null)}>
-              Hủy
+              Huỷ
             </Button>
             <Button
               variant={confirmation?.type === "delete" ? "destructive" : "default"}
               onClick={confirm}
             >
               {confirmation?.type === "delete"
-                ? "Xóa hội thoại"
+                ? "Xoá hội thoại"
                 : confirmation?.type === "restore"
                   ? "Khôi phục"
                   : "Tiếp tục"}

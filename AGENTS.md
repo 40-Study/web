@@ -119,7 +119,7 @@ TECHNICAL DEBT (TODOs in code):
 ## COMMANDS
 
 ```bash
-npm run dev       # Start dev server (Next.js)
+npm run dev       # Start dev server (Next.js); predev syncs Monaco into public/monaco/. Never `npx next dev` without `npm run monaco:sync` first
 npm run build     # Production build
 npm run start     # Start production server
 npm run lint      # ESLint (next lint)

@@ -166,7 +166,7 @@ export function SkillsDialog({
                 </button>
                 {!BUILTIN_SKILLS.some((s) => s.id === skill.id) && (
                   <button
-                    aria-label={`Xóa skill ${skill.name}`}
+                    aria-label={`Xoá skill ${skill.name}`}
                     className="mr-3 rounded-lg p-2 text-muted-foreground hover:text-red-600"
                     onClick={() => onDelete(skill.id)}
                   >

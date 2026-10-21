@@ -591,7 +591,7 @@ export function ContestCodePlayer({
                   onClick={() => setConsoleTab("input")}
                 >
                   <Terminal className="h-3.5 w-3.5" />
-                  Đầu vào tùy chỉnh
+                  Đầu vào tuỳ chỉnh
                 </button>
                 <button
                   role="tab"

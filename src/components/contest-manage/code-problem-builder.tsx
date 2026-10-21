@@ -34,7 +34,7 @@ export function CodeProblemBuilder({
                 variant="ghost"
                 onClick={() => onChange(value.filter((_, n) => n !== i))}
               >
-                Xóa bài {i + 1}
+                Xoá bài {i + 1}
               </Button>
             )}
           </div>
@@ -117,7 +117,7 @@ export function CodeProblemBuilder({
                     type="button"
                     onClick={() => update(i, { tests: p.tests.filter((_, n) => n !== j) })}
                   >
-                    Xóa test
+                    Xoá test
                   </button>
                 )}
               </div>
