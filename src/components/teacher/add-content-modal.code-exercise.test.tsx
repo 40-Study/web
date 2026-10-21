@@ -63,7 +63,17 @@ describe("AddContentModal — bài thực hành code: giới hạn chấm", () =
     await click(save());
 
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByText("Nhập số nguyên từ 16 đến 1024.")).toBeTruthy();
+    expect(screen.getByText("Nhập số nguyên từ 16 đến 1500.")).toBeTruthy();
+  });
+
+  it("test có đầu vào trống -> chặn gửi (backend trả 400 cho input rỗng)", async () => {
+    const onSubmit = await openCodeForm();
+    await type(screen.getByLabelText("Đầu vào test 1"), "");
+
+    await click(save());
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByTestId("add-content-submit-error").textContent).toContain("đầu vào");
   });
 
   it("chỉ có test ẩn -> chặn gửi như trước (luật bộ test dùng chung)", async () => {

@@ -90,6 +90,13 @@ describe("ExerciseSubmissionsPanel", () => {
     expect(screen.getByText("100/100")).toBeTruthy();
   });
 
+  it("học viên đã xoá (full_name/email rỗng) -> dùng mã học viên, không hiện email trống", async () => {
+    mockList({ data: [{ ...SUBMISSION, student: { id: SUBMISSION.user_id, full_name: "", email: "" } }], total: 1, page: 1, page_size: 20 });
+    renderPanel();
+    expect(await screen.findByText("Học viên 11111111")).toBeTruthy();
+    expect(screen.queryByText("a@demo.com")).toBeNull();
+  });
+
   it("lỗi tải -> báo lỗi và thử lại được", async () => {
     mockApi.get.mockRejectedValueOnce(new Error("403"));
     renderPanel();

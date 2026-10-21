@@ -29,13 +29,13 @@ export const DEFAULT_EXERCISE_LIMITS: ExerciseLimitsDraft = {
 };
 
 /**
- * Khoảng cho phép. Thời gian: Judge0 nhận tối đa 20 giây CPU mỗi test (`MAX_CPU_TIME_LIMIT`, backend bỏ qua
- * giá trị lớn hơn). Bộ nhớ: 16 MB..1 GB, dưới trần `MAX_MEMORY_LIMIT` của Judge0. Điểm đạt: 1..100
- * (backend coi 0 là "không nhập" và dùng mặc định 100).
+ * Khoảng cho phép — phản chiếu đúng validate của backend (`internal/dto/exerciseDTO.go`, Create/UpdateExerciseDTO;
+ * ngoài khoảng = 400 "Validation failed"): thời gian 1..20 giây CPU mỗi test (Judge0 `MAX_CPU_TIME_LIMIT`),
+ * bộ nhớ 16..1500 MB (Judge0 `MAX_MEMORY_LIMIT` = 1536000 KB), điểm đạt 1..100.
  */
 export const EXERCISE_LIMIT_BOUNDS: Record<ExerciseLimitsField, { min: number; max: number; label: string }> = {
   timeLimit: { min: 1, max: 20, label: "Giới hạn thời gian (giây/test)" },
-  memoryLimit: { min: 16, max: 1024, label: "Giới hạn bộ nhớ (MB)" },
+  memoryLimit: { min: 16, max: 1500, label: "Giới hạn bộ nhớ (MB)" },
   passPercentage: { min: 1, max: 100, label: "Điểm đạt (%)" },
 };
 

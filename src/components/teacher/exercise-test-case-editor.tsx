@@ -29,20 +29,21 @@ export const newTestCaseDraft = (): ExerciseTestCaseDraft => ({
 });
 
 /**
- * Luật tối thiểu của một bộ test hợp lệ: 1..20 test, mỗi test có kết quả mong đợi, và ít nhất một test
- * công khai (học viên cần một test mẫu để hiểu đề). Trả `true` khi hợp lệ.
+ * Luật tối thiểu của một bộ test hợp lệ: 1..20 test, mỗi test có đầu vào và kết quả mong đợi (backend trả
+ * 400 cho `input`/`expected_output` rỗng, cả lúc tạo lẫn lúc sửa), và ít nhất một test công khai (học viên
+ * cần một test mẫu để hiểu đề). Trả `true` khi hợp lệ.
  */
 export function isValidTestCaseSet(testCases: readonly ExerciseTestCaseDraft[]): boolean {
   return (
     testCases.length > 0 &&
     testCases.length <= MAX_EXERCISE_TEST_CASES &&
     testCases.some((test) => !test.hidden) &&
-    testCases.every((test) => test.output.trim() !== "")
+    testCases.every((test) => test.input.trim() !== "" && test.output.trim() !== "")
   );
 }
 
 export const TEST_CASE_SET_RULE_MESSAGE =
-  "Cần từ 1 đến 20 test có kết quả mong đợi, gồm ít nhất một test mẫu công khai.";
+  "Cần từ 1 đến 20 test, mỗi test có đầu vào và kết quả mong đợi, gồm ít nhất một test mẫu công khai.";
 
 interface ExerciseTestCaseEditorProps {
   testCases: ExerciseTestCaseDraft[];

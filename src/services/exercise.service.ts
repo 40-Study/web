@@ -36,10 +36,11 @@ export interface UpdateExerciseDTO {
   title?: string;
   description?: string;
   difficulty?: string;
-  /** Giây cho mỗi test (backend `time_limit`, mặc định 2). */
+  /** Giây cho mỗi test, 1..20 (backend `time_limit`, mặc định 2). */
   time_limit?: number;
-  /** MB (backend `memory_limit`, mặc định 256). */
+  /** MB, 16..1500 (backend `memory_limit`, mặc định 256). */
   memory_limit?: number;
+  /** 1..100; ngoài khoảng nào trong ba trường = 400 "Validation failed". */
   pass_percentage?: number;
 }
 
@@ -61,6 +62,7 @@ export interface CreateTestCaseDTO {
 
 /**
  * Body của `PUT /exercises/:id/testcases/:testCaseId` — cùng khoá với lúc tạo; khoá vắng mặt = giữ nguyên.
+ * `input`/`expected_output` nếu gửi thì không được rỗng (400). 404 = test không thuộc bài, 403 = không quản lý bài.
  */
 export type UpdateTestCaseDTO = Partial<CreateTestCaseDTO>;
 
@@ -80,7 +82,10 @@ export interface ExerciseSubmission {
   created_at?: string;
 }
 
-/** Học viên gắn kèm mỗi bài nộp trong danh sách của giảng viên (`GET /exercises/:id/submissions`). */
+/**
+ * Học viên gắn kèm mỗi bài nộp trong danh sách của giảng viên (`GET /exercises/:id/submissions`).
+ * `full_name`/`email` là chuỗi rỗng khi tài khoản đã bị xoá.
+ */
 export interface ExerciseSubmissionStudent {
   id: string;
   full_name: string;

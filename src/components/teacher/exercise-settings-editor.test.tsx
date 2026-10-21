@@ -89,6 +89,22 @@ describe("ExerciseSettingsEditor", () => {
     expect(screen.getByTestId("exercise-test-cases-error").textContent).toContain("ít nhất một test mẫu công khai");
   });
 
+  it("xoá trắng đầu vào của test (backend trả 400 cho input rỗng) -> chặn lưu", async () => {
+    const onChange = await renderEditor();
+    fireEvent.change(screen.getByLabelText("Đầu vào test 1"), { target: { value: "" } });
+    expect(lastState(onChange)).toEqual({ plan: null, blocked: true });
+    expect(screen.getByTestId("exercise-test-cases-error").textContent).toContain("đầu vào");
+  });
+
+  it("bộ nhớ 1500 MB (trần backend) hợp lệ, 1501 thì chặn", async () => {
+    const onChange = await renderEditor();
+    fireEvent.change(screen.getByLabelText("Giới hạn bộ nhớ (MB)"), { target: { value: "1500" } });
+    expect(lastState(onChange)).toMatchObject({ blocked: false, plan: { exerciseUpdate: { memory_limit: 1500 } } });
+    fireEvent.change(screen.getByLabelText("Giới hạn bộ nhớ (MB)"), { target: { value: "1501" } });
+    expect(lastState(onChange)).toEqual({ plan: null, blocked: true });
+    expect(screen.getByText("Nhập số nguyên từ 16 đến 1500.")).toBeTruthy();
+  });
+
   it("giới hạn ngoài khoảng -> chặn lưu, báo lỗi ngay dưới ô", async () => {
     const onChange = await renderEditor();
     fireEvent.change(screen.getByLabelText("Giới hạn thời gian (giây/test)"), { target: { value: "60" } });

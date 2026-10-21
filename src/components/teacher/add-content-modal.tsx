@@ -464,7 +464,7 @@ export function AddContentModal({
 
     if (data.type === "exercise" && data.exerciseType === "code" &&
       (!data.description.trim() || !isValidTestCaseSet(data.testCases ?? []))) {
-      setSubmitError("Nhập đề bài và từ 1 đến 20 test có kết quả mong đợi, gồm ít nhất một test mẫu công khai.");
+      setSubmitError("Nhập đề bài và từ 1 đến 20 test, mỗi test có đầu vào và kết quả mong đợi, gồm ít nhất một test mẫu công khai.");
       return;
     }
 
