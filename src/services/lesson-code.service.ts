@@ -54,13 +54,18 @@ const toHistoryItem = (row: MySubmissionRow): LessonCodeHistoryItem => ({
 export const lessonCodeService = {
   get: (lessonID: string, exerciseID: string) =>
     api.get<{ data: LessonCodeDetail }>(path(lessonID, exerciseID)).then((r) => r.data.data),
-  /** Lịch sử nộp bài của chính người học, mới nhất trước. */
+  /** Lịch sử nộp bài của chính người học, mới nhất trước (trang đầu); `total` là tổng số bài nộp. */
   history: (exerciseID: string) =>
     api
       .get<{
         data: { data: MySubmissionRow[] | null; total: number };
-      }>(`/exercises/${exerciseID}/my-submissions`, { params: { page: 1, page_size: LESSON_CODE_HISTORY_PAGE_SIZE } })
-      .then((r) => (r.data.data?.data ?? []).map(toHistoryItem)),
+      }>(`/exercises/${exerciseID}/my-submissions`, {
+        params: { page: 1, page_size: LESSON_CODE_HISTORY_PAGE_SIZE },
+      })
+      .then((r) => {
+        const items = (r.data.data?.data ?? []).map(toHistoryItem);
+        return { items, total: Math.max(r.data.data?.total ?? 0, items.length) };
+      }),
   judge: (lessonID: string, exerciseID: string, input: LessonCodeInput, submit: boolean) =>
     api
       .post<{

@@ -56,11 +56,12 @@ describe("lessonCodeService.history", () => {
       },
     });
 
-    const items = await lessonCodeService.history("e1");
+    const { items, total } = await lessonCodeService.history("e1");
 
     expect(get).toHaveBeenCalledWith("/exercises/e1/my-submissions", {
       params: { page: 1, page_size: 20 },
     });
+    expect(total).toBe(2);
     expect(items).toEqual([
       {
         id: "s2",
@@ -89,7 +90,7 @@ describe("lessonCodeService.history", () => {
 
   it("danh sách null (chưa nộp lần nào) -> mảng rỗng", async () => {
     get.mockResolvedValue({ data: { message: "ok", data: { data: null, total: 0 } } });
-    await expect(lessonCodeService.history("e1")).resolves.toEqual([]);
+    await expect(lessonCodeService.history("e1")).resolves.toEqual({ items: [], total: 0 });
   });
 });
 

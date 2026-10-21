@@ -142,6 +142,10 @@ export function LessonCodeWorkspace({
       !window.confirm("Thay mã đang viết bằng mã của bài nộp này?")
     )
       return;
+    // Kết quả/lỗi đang hiện thuộc về mã cũ, không phải mã vừa mở.
+    setResult(null);
+    setJudgeError("");
+    setError("");
     drafts.current.drafts[lang] = item.code;
     persist(lang);
     // Đổi ngôn ngữ thì effect phía trên nạp mã từ bản nháp vừa ghi.
@@ -281,7 +285,8 @@ export function LessonCodeWorkspace({
             </div>
           )}
           <LessonCodeHistory
-            items={history.data ?? []}
+            items={history.data?.items ?? []}
+            total={history.data?.total ?? 0}
             loading={history.isLoading}
             failed={history.isError}
             disabled={!!busy}

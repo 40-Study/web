@@ -110,7 +110,7 @@ beforeEach(() => {
   localStorage.clear();
   get.mockReset().mockResolvedValue(detail());
   judge.mockReset();
-  history.mockReset().mockResolvedValue([]);
+  history.mockReset().mockResolvedValue({ items: [], total: 0 });
 });
 afterEach(() => {
   vi.restoreAllMocks();
@@ -129,6 +129,17 @@ describe("LessonCodeWorkspace — bản nháp", () => {
     await waitFor(() => expect(languageSelect().value).toBe("javascript"));
     expect(editor().value).toBe("console.log(42)");
     expect(editor().dataset.language).toBe("javascript");
+  });
+
+  it("đổi ngôn ngữ mà chưa gõ gì, tải lại trang -> vẫn mở ngôn ngữ đó", async () => {
+    const first = renderWorkspace();
+    await screen.findByLabelText("Mã nguồn bài tập");
+    fireEvent.change(languageSelect(), { target: { value: "javascript" } });
+    first.unmount();
+
+    renderWorkspace();
+    await screen.findByLabelText("Mã nguồn bài tập");
+    await waitFor(() => expect(languageSelect().value).toBe("javascript"));
   });
 
   it("đọc được bản nháp kiểu cũ (chỉ map ngôn ngữ -> mã) đã lưu trước bản sửa", async () => {
@@ -182,7 +193,7 @@ describe("LessonCodeWorkspace — lịch sử nộp bài", () => {
   ];
 
   it("liệt kê các bài nộp (kết quả, điểm, thời gian chạy) và mở lại mã của bài được chọn", async () => {
-    history.mockResolvedValue(rows);
+    history.mockResolvedValue({ items: rows, total: rows.length });
     renderWorkspace();
     const list = await screen.findByRole("region", { name: "Lịch sử nộp bài" });
     await within(list).findByText("Sai kết quả");
@@ -197,7 +208,7 @@ describe("LessonCodeWorkspace — lịch sử nộp bài", () => {
   });
 
   it("mở lại mã sẽ đè một bản nháp khác -> hỏi trước, huỷ thì giữ nguyên bản nháp", async () => {
-    history.mockResolvedValue(rows);
+    history.mockResolvedValue({ items: rows, total: rows.length });
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     renderWorkspace();
     const list = await screen.findByRole("region", { name: "Lịch sử nộp bài" });
@@ -206,6 +217,70 @@ describe("LessonCodeWorkspace — lịch sử nộp bài", () => {
     fireEvent.click((await within(list).findAllByRole("button", { name: /Mở lại mã/ }))[1]);
     expect(confirm).toHaveBeenCalledTimes(1);
     expect(editor().value).toBe("print('đang viết')");
+  });
+
+  it("mở lại bài nộp cùng ngôn ngữ đang chọn -> trình soạn thảo hiện mã đó", async () => {
+    history.mockResolvedValue({ items: rows, total: rows.length });
+    renderWorkspace();
+    const list = await screen.findByRole("region", { name: "Lịch sử nộp bài" });
+    expect(languageSelect().value).toBe("python");
+
+    fireEvent.click((await within(list).findAllByRole("button", { name: /Mở lại mã/ }))[1]);
+    expect(languageSelect().value).toBe("python");
+    expect(editor().value).toBe("print(3)");
+  });
+
+  it("mở lại mã xoá lỗi chấm bài cũ khỏi bảng kết quả", async () => {
+    history.mockResolvedValue({ items: rows, total: rows.length });
+    judge.mockRejectedValue(new Error("Máy chấm Judge0 đang không sẵn sàng."));
+    const { container } = renderWorkspace();
+    const list = await screen.findByRole("region", { name: "Lịch sử nộp bài" });
+    fireEvent.click(screen.getByRole("button", { name: /Chạy thử/ }));
+    const panel = container.querySelector(".code-panel-body") as HTMLElement;
+    await within(panel).findByText(/Máy chấm Judge0 đang không sẵn sàng/);
+
+    fireEvent.click((await within(list).findAllByRole("button", { name: /Mở lại mã/ }))[1]);
+    expect(within(panel).queryByText(/Máy chấm Judge0 đang không sẵn sàng/)).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("bài nộp chưa có kết quả (đang chấm) không hiện điểm 0/100 và không tô màu lỗi", async () => {
+    history.mockResolvedValue({
+      items: [
+        {
+          id: "p",
+          language: "python",
+          code: "x",
+          status: "PENDING",
+          passed: 0,
+          total: 0,
+          score: 0,
+          created_at: "2026-10-21T08:00:00Z",
+        },
+      ],
+      total: 1,
+    });
+    renderWorkspace();
+    const list = await screen.findByRole("region", { name: "Lịch sử nộp bài" });
+    const verdict = await within(list).findByText("Đang chấm");
+    expect(verdict.className).not.toMatch(/red/);
+    expect(within(list).queryByText("0/100")).toBeNull();
+    expect(within(list).getByRole("columnheader", { name: "Thao tác" })).toBeTruthy();
+  });
+
+  it("có nhiều bài nộp hơn số dòng hiện -> báo đang hiện bao nhiêu trên tổng", async () => {
+    history.mockResolvedValue({ items: rows, total: 25 });
+    renderWorkspace();
+    const list = await screen.findByRole("region", { name: "Lịch sử nộp bài" });
+    expect(await within(list).findByText(/2\/25/)).toBeTruthy();
+  });
+
+  it("đủ hết bài nộp -> không có dòng báo", async () => {
+    history.mockResolvedValue({ items: rows, total: rows.length });
+    renderWorkspace();
+    const list = await screen.findByRole("region", { name: "Lịch sử nộp bài" });
+    await within(list).findByText("Sai kết quả");
+    expect(within(list).queryByText(/2\/2\b/)).toBeNull();
   });
 
   it("nộp bài xong thì tải lại lịch sử", async () => {

@@ -10,6 +10,9 @@ const HISTORY_VERDICT_LABELS: Record<string, string> = {
   SYSTEM_ERROR: "Lỗi hệ thống",
 };
 
+// Chỉ verdict của một lần chấm xong mới có điểm; "đang chấm"/"lỗi hệ thống" không phải 0 điểm.
+const isJudged = (status: string) => status in CODE_VERDICT_LABELS;
+
 const submittedAt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
   month: "2-digit",
@@ -20,12 +23,14 @@ const submittedAt = new Intl.DateTimeFormat("vi-VN", {
 /** Lịch sử nộp bài của người học cho một bài tập code; mỗi dòng mở lại được mã đã nộp. */
 export function LessonCodeHistory({
   items,
+  total,
   loading,
   failed,
   disabled,
   onOpen,
 }: {
   items: LessonCodeHistoryItem[];
+  total: number;
   loading: boolean;
   failed: boolean;
   disabled: boolean;
@@ -49,16 +54,28 @@ export function LessonCodeHistory({
                 <th>ĐIỂM</th>
                 <th>THỜI GIAN</th>
                 <th>NỘP LÚC</th>
-                <th />
+                <th>
+                  <span className="sr-only">Thao tác</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
                 <tr key={item.id}>
-                  <td className={item.status === "ACCEPTED" ? "text-emerald-600" : "text-red-500"}>
+                  <td
+                    className={
+                      item.status === "ACCEPTED"
+                        ? "text-emerald-600"
+                        : isJudged(item.status)
+                          ? "text-red-500"
+                          : "text-muted-foreground"
+                    }
+                  >
                     {HISTORY_VERDICT_LABELS[item.status] ?? item.status}
                   </td>
-                  <td className="font-semibold">{item.score}/100</td>
+                  <td className="font-semibold">
+                    {isJudged(item.status) ? `${item.score}/100` : "–"}
+                  </td>
                   <td>{item.execution_time_ms == null ? "–" : `${item.execution_time_ms} ms`}</td>
                   <td>
                     <time dateTime={item.created_at}>
@@ -80,6 +97,11 @@ export function LessonCodeHistory({
               ))}
             </tbody>
           </table>
+          {total > items.length && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Đang hiện {items.length}/{total} bài nộp gần nhất.
+            </p>
+          )}
         </div>
       )}
     </section>
