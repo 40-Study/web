@@ -952,7 +952,7 @@ export default function CourseDetailPage() {
           });
           undoStack.push(() => exerciseService.delete(exercise.id));
           await exerciseService.importTestCases(exercise.id, (data.testCases ?? []).map((test, index) => ({
-            input: test.input, expected_output: test.output, is_hidden: test.hidden, display_order: index,
+            input: test.input, expected_output: test.output, is_hidden: test.hidden, display_order: index + 1,
           })));
           const content = await lessonContentService.createContent(currentLessonId || "", {
             type: "exercise",

@@ -17,8 +17,8 @@ import { renderWithProviders } from "@/test/utils";
 
 const EXERCISE = { id: "ex-1", title: "Tổng", time_limit: 2, memory_limit: 256, pass_percentage: 100 };
 const TESTS = [
-  { id: "t1", exercise_id: "ex-1", input: "1 2", expected_output: "3", is_hidden: false, display_order: 0 },
-  { id: "t2", exercise_id: "ex-1", input: "5 5", expected_output: "10", is_hidden: true, display_order: 1 },
+  { id: "t1", exercise_id: "ex-1", input: "1 2", expected_output: "3", is_hidden: false, display_order: 1 },
+  { id: "t2", exercise_id: "ex-1", input: "5 5", expected_output: "10", is_hidden: true, display_order: 2 },
 ];
 
 function lastState(onChange: ReturnType<typeof vi.fn>): ExerciseSettingsEditState {
@@ -63,7 +63,7 @@ describe("ExerciseSettingsEditor", () => {
       blocked: false,
       plan: {
         exerciseUpdate: { time_limit: 4 },
-        updates: [{ id: "t2", body: { input: "5 5", expected_output: "11", is_hidden: true, display_order: 1 } }],
+        updates: [{ id: "t2", body: { input: "5 5", expected_output: "11", is_hidden: true, display_order: 2 } }],
         creates: [],
         deletes: [],
       },
@@ -79,7 +79,7 @@ describe("ExerciseSettingsEditor", () => {
 
     const { plan } = lastState(onChange);
     expect(plan?.deletes).toEqual(["t2"]);
-    expect(plan?.creates).toEqual([{ input: "0 0", expected_output: "0", is_hidden: false, display_order: 1 }]);
+    expect(plan?.creates).toEqual([{ input: "0 0", expected_output: "0", is_hidden: false, display_order: 2 }]);
   });
 
   it("ẩn hết test công khai -> chặn lưu và nói rõ luật", async () => {

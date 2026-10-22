@@ -107,7 +107,7 @@ beforeEach(() => {
   vi.mocked(toast.error).mockClear();
   vi.mocked(toast.success).mockClear();
   holdTestCases = null;
-  serverTests = [{ id: "t1", exercise_id: "ex-7", input: "1 2", expected_output: "3", is_hidden: false, display_order: 0 }];
+  serverTests = [{ id: "t1", exercise_id: "ex-7", input: "1 2", expected_output: "3", is_hidden: false, display_order: 1 }];
   mockApi.get.mockImplementation(async (url: string) => {
     if (url === "/exercises/ex-7/testcases") {
       if (holdTestCases) await holdTestCases;

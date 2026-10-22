@@ -298,7 +298,7 @@ describe("LessonCodeWorkspace — chấm bài", () => {
     get.mockResolvedValue(detail(accepted));
     judge.mockRejectedValue(
       new Error(
-        "Máy chấm Judge0 đang không sẵn sàng. Mã nguồn và kết quả trước vẫn được giữ; hãy thử nộp lại."
+        "Máy chấm Judge0 đang không sẵn sàng. Mã nguồn vẫn được giữ; hãy thử nộp lại."
       )
     );
     const { container } = renderWorkspace();

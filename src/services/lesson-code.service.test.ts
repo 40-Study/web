@@ -99,9 +99,11 @@ describe("lessonCodeService.judge", () => {
 
   it("503 của máy chấm -> câu tiếng Việt giữ mã nguồn, không phải lỗi chung", async () => {
     post.mockRejectedValue(new ApiError(503, "JUDGE_UNAVAILABLE", "Service unavailable"));
-    await expect(lessonCodeService.judge("l1", "e1", input, true)).rejects.toThrow(
-      /Máy chấm Judge0 đang không sẵn sàng/
-    );
+    const failure = lessonCodeService.judge("l1", "e1", input, true);
+    await expect(failure).rejects.toThrow(/Máy chấm Judge0 đang không sẵn sàng/);
+    // Kết quả trước đã bị xoá khi lỗi, nên câu chỉ được hứa giữ mã nguồn.
+    await expect(failure).rejects.toThrow(/Mã nguồn vẫn được giữ/);
+    await expect(failure).rejects.not.toThrow(/kết quả trước/);
     expect(post.mock.calls[0][0]).toBe("/lessons/l1/exercises/e1/submit");
   });
 
