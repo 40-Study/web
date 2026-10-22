@@ -6,6 +6,10 @@ import { api, MeetApiError } from '@/lib/meet/api';
 import { meetErrorMessage } from '@/lib/meet/error-message';
 import type { Assignment, TestCase, SandboxResponse, SubmissionResult } from '@/lib/meet/types-assignment';
 import RichTextEditor, { RichTextViewer } from '@/components/meet/RichTextEditor';
+import { isJudgeUnavailableVerdict } from '@/lib/live-submission-verdict';
+import type { SubmissionResponseDTO } from '@/services/submission.service';
+import { useLiveSubmissionVerdictPoll } from './use-live-submission-verdict-poll';
+import LiveSubmissionVerdictBanner from './live-submission-verdict-banner';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
@@ -62,6 +66,10 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
   const [customInput, setCustomInput] = useState(''); // Input để test thử
   const [timeStatus, setTimeStatus] = useState<'waiting' | 'active'>('active');
   const [countdown, setCountdown] = useState('');
+  // Bài nộp code chấm nền: hỏi lại tới khi có verdict (cả khi mở lại màn và bài mới nhất còn `pending`).
+  const { timedOut: verdictPollTimedOut } = useLiveSubmissionVerdictPoll(mySubmission, setMySubmission);
+  // `system_error` = máy chấm không chấm được, bài KHÔNG được tính: không coi là "Đã nộp".
+  const submissionCounted = !!mySubmission && !isJudgeUnavailableVerdict(mySubmission.verdict);
 
   // Check time status (waiting for start_time, active)
   // Note: We don't auto-expire assignments - schedule time is just for opening
@@ -104,12 +112,12 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
   }, [assignment, isHost]);
 
   const handleRequestClose = useCallback(() => {
-    if (mySubmission) {
+    if (submissionCounted) {
       onClose(true);
     } else {
       setShowExitConfirm(true);
     }
-  }, [mySubmission, onClose]);
+  }, [submissionCounted, onClose]);
 
   // Detect assignment type from starter_code or code state
   const assignmentType = useMemo((): 'code' | 'essay' | 'multiple_choice' => {
@@ -245,15 +253,14 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
     setSubmitting(true);
     setResults(null);
     try {
-      const res = await api.post<SubmissionResult>('/submissions', {
+      // 201 + dòng `pending`: verdict đến sau, do useLiveSubmissionVerdictPoll hỏi lại.
+      const res = await api.post<{ data: SubmissionResponseDTO }>('/submissions', {
         assignment_id: assignmentId,
         user_id: userId,
         language,
         code,
       });
-      setResults(res as any);
-      setMySubmission(res);
-      setActiveResultTab('tests');
+      setMySubmission(res.data);
     } catch (err: any) {
       setResults({ error: codeJudgeErrorMessage(err, 'Lỗi khi nộp bài') } as any);
     } finally {
@@ -472,7 +479,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
           )}
         </div>
 
-        {mySubmission && (
+        {submissionCounted && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -963,6 +970,8 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
               }}
             />
           </div>
+
+          <LiveSubmissionVerdictBanner submission={mySubmission} timedOut={verdictPollTimedOut} />
 
           {/* Results panel */}
           {results && (

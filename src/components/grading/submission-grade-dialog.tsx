@@ -23,18 +23,7 @@ import {
   submissionText,
   type GradingRow,
 } from "@/lib/submission-grading";
-import type { SubmissionVerdict } from "@/services/submission.service";
-
-const VERDICT_LABELS: Record<SubmissionVerdict, string> = {
-  pending: "Đang chờ chấm tự động",
-  running: "Đang chạy",
-  accepted: "Đạt toàn bộ test",
-  wrong_answer: "Sai kết quả",
-  time_limit_exceeded: "Quá thời gian",
-  memory_limit_exceeded: "Quá bộ nhớ",
-  runtime_error: "Lỗi khi chạy",
-  compilation_error: "Lỗi biên dịch",
-};
+import { submissionVerdictLabel } from "@/lib/live-submission-verdict";
 
 export function formatDateTime(iso: string | undefined): string {
   if (!iso) return "-";
@@ -108,7 +97,7 @@ export function SubmissionGradeDialog({ row, canGrade, isSaving, onClose, onSave
           </div>
 
           <p className="text-sm text-muted-foreground">
-            Kết quả chạy tự động: <span className="font-medium text-foreground">{VERDICT_LABELS[submission.verdict] ?? submission.verdict}</span>
+            Kết quả chạy tự động: <span className="font-medium text-foreground">{submissionVerdictLabel(submission.verdict)}</span>
             {submission.total_test_cases > 0
               ? ` · ${submission.test_cases_passed}/${submission.total_test_cases} test`
               : ""}

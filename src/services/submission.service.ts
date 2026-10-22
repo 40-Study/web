@@ -15,7 +15,9 @@ export type SubmissionVerdict =
   | "time_limit_exceeded"
   | "memory_limit_exceeded"
   | "runtime_error"
-  | "compilation_error";
+  | "compilation_error"
+  /** Máy chấm không chấm được (sập/quá tải): không phải kết quả về code, học viên nộp lại. */
+  | "system_error";
 
 export interface SubmissionUserDTO {
   id: string;

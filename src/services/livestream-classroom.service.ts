@@ -67,7 +67,7 @@ export interface Submission {
   user_name: string;
   code: string;
   language: string;
-  verdict: "pending" | "accepted" | "wrong_answer" | "time_limit" | "runtime_error" | "compile_error";
+  verdict: "pending" | "accepted" | "wrong_answer" | "time_limit" | "runtime_error" | "compile_error" | "system_error";
   passed_tests: number;
   total_tests: number;
   execution_time?: number;
