@@ -121,6 +121,39 @@ describe("same-origin API proxy", () => {
     expect(JSON.stringify(body)).not.toContain("internal-backend");
   });
 
+  describe("timeout tới backend", () => {
+    async function timeoutFor(method: string, path: string): Promise<unknown> {
+      requestMock.mockResolvedValue({ data: bytes("{}"), status: 200, statusText: "OK", headers: {} });
+      const init = method === "POST" ? { method, body: "{}" } : { method };
+      await proxyRequest(new NextRequest(`http://localhost/api/${path}`, init), path.split("/"));
+      return requestMock.mock.calls[requestMock.mock.calls.length - 1][0].timeout;
+    }
+
+    // Backend giới hạn Chạy thử bài tập live ở 90 s: proxy 15 s cắt ngang thành 502 trước khi máy chấm trả lời.
+    it.each(["submissions/run", "submissions/run-custom"])("POST %s đợi 100 s", async (path) => {
+      expect(await timeoutFor("POST", path)).toBe(100_000);
+    });
+
+    it.each([
+      ["POST", "contests/c1/code/run"],
+      ["POST", "lessons/l1/exercises/e1/submit"],
+      ["POST", "submissions/execute"],
+      ["POST", "open-design/generate"],
+    ])("%s %s vẫn đợi 100 s", async (method, path) => {
+      expect(await timeoutFor(method, path)).toBe(100_000);
+    });
+
+    it.each([
+      // Nộp bài live chấm nền (backend#138): trả 201 ngay, giữ 15 s.
+      ["POST", "submissions"],
+      ["GET", "submissions/run"],
+      ["POST", "submissions/run/extra"],
+      ["POST", "auth/login"],
+    ])("%s %s giữ 15 s", async (method, path) => {
+      expect(await timeoutFor(method, path)).toBe(15_000);
+    });
+  });
+
   it("has no competing Next rewrite for /api", () => {
     const config = readFileSync("next.config.mjs", "utf8");
     expect(config).not.toMatch(/async\s+rewrites\s*\(/);

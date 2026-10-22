@@ -12,6 +12,22 @@ import axios, { AxiosRequestHeaders } from "axios";
 import { DEFAULT_BACKEND_ORIGIN } from "@/lib/default-backend-url";
 
 const BACKEND_TIMEOUT_MS = 15_000;
+/** Route chờ máy chấm/AI trả lời đồng bộ: backend tự giới hạn ~90 s, proxy phải đợi lâu hơn thế, nếu không trả 502 sớm. */
+const LONG_BACKEND_TIMEOUT_MS = 100_000;
+const LONG_RUNNING_POST_PATHS: readonly RegExp[] = [
+  /^open-design\/generate$/,
+  /^contests\/[^/]+\/code\/(run|submit)$/,
+  /^lessons\/[^/]+\/exercises\/[^/]+\/(run|submit)$/,
+  /^submissions\/execute$/,
+  // Chạy thử bài tập live (POST /submissions thì chấm nền, trả ngay nên giữ 15 s).
+  /^submissions\/(run|run-custom)$/,
+];
+
+function backendTimeoutMs(method: string, encodedPath: string): number {
+  const long = method === "POST" && LONG_RUNNING_POST_PATHS.some((pattern) => pattern.test(encodedPath));
+  return long ? LONG_BACKEND_TIMEOUT_MS : BACKEND_TIMEOUT_MS;
+}
+
 const HOP_BY_HOP_HEADERS = new Set([
   "connection",
   "keep-alive",
@@ -141,7 +157,7 @@ export async function proxyRequest(request: NextRequest, path: string[]) {
       headers: Object.fromEntries(requestHeaders.entries()) as AxiosRequestHeaders,
       data: requestBody,
       responseType: "arraybuffer",
-      timeout: request.method === "POST" && (encodedPath === "open-design/generate" || /^contests\/[^/]+\/code\/(run|submit)$/.test(encodedPath) || /^lessons\/[^/]+\/exercises\/[^/]+\/(run|submit)$/.test(encodedPath) || encodedPath === "submissions/execute") ? 100_000 : BACKEND_TIMEOUT_MS,
+      timeout: backendTimeoutMs(request.method, encodedPath),
       signal: request.signal,
       maxRedirects: 0,
       validateStatus: () => true,
