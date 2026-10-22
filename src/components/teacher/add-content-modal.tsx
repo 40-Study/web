@@ -8,7 +8,6 @@ import {
   Plus,
   Upload,
   Sparkles,
-  Trash2,
   File,
   Image,
   X,
@@ -62,6 +61,20 @@ import { ArticleContentForm, type ArticleFormValue, type ArticleSubmitResult } f
 import type { Class } from "@/services/class.service";
 
 import { LessonQuizBuilder, newLessonQuestion, type LessonQuizQuestion } from "@/components/teacher/lesson-quiz-builder";
+import {
+  ExerciseTestCaseEditor,
+  isValidTestCaseSet,
+  newTestCaseDraft,
+  type ExerciseTestCaseDraft,
+} from "@/components/teacher/exercise-test-case-editor";
+import {
+  DEFAULT_EXERCISE_LIMITS,
+  ExerciseLimitsFields,
+  parseExerciseLimits,
+  validateExerciseLimits,
+  type ExerciseLimitsDraft,
+  type ExerciseLimitsPayload,
+} from "@/components/teacher/exercise-limits-fields";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -78,12 +91,7 @@ interface UploadedFile {
 
 type QuizQuestion = LessonQuizQuestion;
 
-interface TestCase {
-  id: string;
-  input: string;
-  output: string;
-  hidden: boolean;
-}
+type TestCase = ExerciseTestCaseDraft;
 
 // Final data structures
 export interface VideoContentData {
@@ -139,6 +147,8 @@ export interface ExerciseContentData {
   language?: string;
   testCases?: TestCase[];
   starterCode?: string;
+  /** Giới hạn chấm (giây/test, MB, % test đạt); chỉ có khi `exerciseType === "code"`. */
+  codeLimits?: ExerciseLimitsPayload;
   // Essay specific
   minWords?: number;
   maxWords?: number;
@@ -208,11 +218,9 @@ const LANGUAGES = [
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
-const genId = () => Math.random().toString(36).slice(2, 9);
-
 const emptyQuestion = newLessonQuestion;
 
-const emptyTestCase = (): TestCase => ({ id: genId(), input: "", output: "", hidden: false });
+const emptyTestCase = newTestCaseDraft;
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return bytes + " B";
@@ -306,6 +314,7 @@ export function AddContentModal({
   const [exLanguage, setExLanguage] = useState("javascript");
   const [exTestCases, setExTestCases] = useState<TestCase[]>([emptyTestCase()]);
   const [exSolution, setExSolution] = useState("");
+  const [exLimits, setExLimits] = useState<ExerciseLimitsDraft>(DEFAULT_EXERCISE_LIMITS);
   const [exMinWords, setExMinWords] = useState(50);
   const [exMaxWords, setExMaxWords] = useState(500);
 
@@ -331,6 +340,7 @@ export function AddContentModal({
     setExQuiz([emptyQuestion()]); setExTimeLimit(300);
     setExPassPct(String(DEFAULT_QUIZ_PASS_PERCENTAGE)); setExMaxAttempts(String(DEFAULT_QUIZ_MAX_ATTEMPTS));
     setExLanguage("javascript"); setExTestCases([emptyTestCase()]); setExSolution("");
+    setExLimits(DEFAULT_EXERCISE_LIMITS);
     setExMinWords(50); setExMaxWords(500);
   }, []);
 
@@ -370,6 +380,12 @@ export function AddContentModal({
     [isQuizExercise, exPassPct, exMaxAttempts],
   );
   const visibleSettingsErrors = submitAttempted ? quizSettingsErrors : {};
+  const isCodeExercise = contentType === "exercise" && exerciseType === "code";
+  const codeLimitErrors = useMemo(
+    () => (isCodeExercise ? validateExerciseLimits(exLimits) : {}),
+    [isCodeExercise, exLimits],
+  );
+  const visibleLimitErrors = submitAttempted ? codeLimitErrors : {};
 
   // Submit
   const handleSubmit = useCallback(async () => {
@@ -377,6 +393,7 @@ export function AddContentModal({
     setSubmitAttempted(true);
     setSubmitError(null);
     if (Object.keys(quizSettingsErrors).length > 0) return;
+    if (Object.keys(codeLimitErrors).length > 0) return;
     if (hasContentFormErrors(formErrors)) {
       // Tiêu đề nằm ở tab "content", quiz ở tab "quiz" — nhảy tới tab có lỗi đầu tiên.
       if (contentType === "video" || contentType === "livestream") {
@@ -437,6 +454,7 @@ export function AddContentModal({
         language: exerciseType === "code" ? exLanguage : undefined,
         testCases: exerciseType === "code" ? exTestCases : undefined,
         starterCode: exerciseType === "code" ? exSolution : undefined,
+        codeLimits: exerciseType === "code" ? parseExerciseLimits(exLimits) : undefined,
         minWords: exerciseType === "essay" ? exMinWords : undefined,
         maxWords: exerciseType === "essay" ? exMaxWords : undefined,
       };
@@ -445,9 +463,8 @@ export function AddContentModal({
     }
 
     if (data.type === "exercise" && data.exerciseType === "code" &&
-      (!data.description.trim() || !data.testCases?.length || data.testCases.length > 20 ||
-        !data.testCases.some(test => !test.hidden) || data.testCases.some(test => !test.output.trim()))) {
-      setSubmitError("Nhập đề bài và từ 1 đến 20 test có kết quả mong đợi, gồm ít nhất một test mẫu công khai.");
+      (!data.description.trim() || !isValidTestCaseSet(data.testCases ?? []))) {
+      setSubmitError("Nhập đề bài và từ 1 đến 20 test, mỗi test có đầu vào và kết quả mong đợi, gồm ít nhất một test mẫu công khai.");
       return;
     }
 
@@ -467,7 +484,7 @@ export function AddContentModal({
     } finally {
       setSubmitting(false);
     }
-  }, [submitting, formErrors, quizSettingsErrors, exPassPct, exMaxAttempts, contentType, exerciseType, videoTitle, videoDesc, videoUrl, videoDuration, uploadedVideoUrl, videoDocs, videoQuiz, liveTitle, liveDesc, liveDate, liveTime, effectiveClassId, liveRecording, liveDocs, liveQuiz, exTitle, exDesc, exQuiz, exTimeLimit, exLanguage, exTestCases, exSolution, exMinWords, exMaxWords, onSubmit, handleClose]);
+  }, [submitting, formErrors, quizSettingsErrors, codeLimitErrors, exLimits, exPassPct, exMaxAttempts, contentType, exerciseType, videoTitle, videoDesc, videoUrl, videoDuration, uploadedVideoUrl, videoDocs, videoQuiz, liveTitle, liveDesc, liveDate, liveTime, effectiveClassId, liveRecording, liveDocs, liveQuiz, exTitle, exDesc, exQuiz, exTimeLimit, exLanguage, exTestCases, exSolution, exMinWords, exMaxWords, onSubmit, handleClose]);
 
   // Bài viết: form tự giữ tiêu đề/nội dung; ở đây chỉ chuyển kết quả của cha về cho form (lỗi -> form
   // hiện và giữ nguyên nội dung, thành công -> đóng modal).
@@ -492,14 +509,6 @@ export function AddContentModal({
     if (target === "video") setVideoDocs((p) => p.filter((_, i) => i !== idx));
     else setLiveDocs((p) => p.filter((_, i) => i !== idx));
   }, []);
-
-  // Test case handlers
-  const updateTestCase = useCallback((id: string, field: keyof TestCase, value: string | boolean) => {
-    setExTestCases((p) => p.map((tc) => (tc.id === id ? { ...tc, [field]: value } : tc)));
-  }, []);
-
-  const addTestCase = useCallback(() => setExTestCases((p) => [...p, emptyTestCase()]), []);
-  const removeTestCase = useCallback((id: string) => setExTestCases((p) => p.filter((tc) => tc.id !== id)), []);
 
   // ─── Render ──────────────────────────────────────────────────────────────
 
@@ -1000,43 +1009,9 @@ export function AddContentModal({
                 rows={4}
               />
 
-              {/* Test Cases */}
-              <div className="space-y-3">
-                <label className="text-sm font-medium">Bộ kiểm thử</label>
-                {exTestCases.map((tc, idx) => (
-                  <div key={tc.id} className="border rounded-xl p-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-primary-600">Test #{idx + 1}</span>
-                      {exTestCases.length > 1 && (
-                        <Button variant="ghost" size="sm" onClick={() => removeTestCase(tc.id)}>
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      )}
-                    </div>
-                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <input type="checkbox" checked={tc.hidden} onChange={(e) => updateTestCase(tc.id, "hidden", e.target.checked)} />
-                      Test ẩn {idx + 1}
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Textarea
-                        placeholder="Đầu vào"
-                        value={tc.input}
-                        onChange={(e) => updateTestCase(tc.id, "input", e.target.value)}
-                        rows={2}
-                      />
-                      <Textarea
-                        placeholder="Đầu ra mong đợi"
-                        value={tc.output}
-                        onChange={(e) => updateTestCase(tc.id, "output", e.target.value)}
-                        rows={2}
-                      />
-                    </div>
-                  </div>
-                ))}
-                <Button variant="outline" onClick={addTestCase} className="w-full">
-                  <Plus className="w-4 h-4 mr-1" /> Thêm test case
-                </Button>
-              </div>
+              <ExerciseLimitsFields value={exLimits} onChange={setExLimits} errors={visibleLimitErrors} />
+
+              <ExerciseTestCaseEditor testCases={exTestCases} onChange={setExTestCases} />
 
               <Textarea
                 label="Mã khởi đầu (tuỳ chọn)"

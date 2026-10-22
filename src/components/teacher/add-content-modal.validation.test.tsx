@@ -171,6 +171,12 @@ describe("AddContentModal — câu trắc nghiệm phải có đáp án đúng (
     await click(screen.getAllByRole("button", { name: /đáp án đúng của câu 1/i })[2]);
     expect(screen.queryByText("Chọn đáp án đúng cho câu hỏi này.")).toBeNull();
 
+    // LessonQuizBuilder (lesson-quiz-builder.tsx) còn đòi nội dung câu hỏi và đủ 4 phương án khác nhau.
+    await type(screen.getByLabelText("Nội dung câu hỏi 1"), "1 + 1 = ?");
+    for (const [letter, text] of [["A", "0"], ["B", "1"], ["C", "2"], ["D", "3"]]) {
+      await type(screen.getByLabelText(`Phương án ${letter} câu 1`), text);
+    }
+
     await click(saveExercise());
     expect(onSubmit).toHaveBeenCalledTimes(1);
     const [data] = onSubmit.mock.calls[0] as [{ quizQuestions: { correctId: string; options: { id: string }[] }[] }];
