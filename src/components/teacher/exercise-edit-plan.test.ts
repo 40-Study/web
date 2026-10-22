@@ -20,9 +20,57 @@ const saved: TestCase[] = [
   { id: "t1", exercise_id: "ex", input: "2", expected_output: "4", is_hidden: false, display_order: 3 },
 ];
 
+const normalized: TestCase[] = ["a", "b", "c", "d"].map((id, i) => ({
+  id,
+  exercise_id: "ex",
+  input: id,
+  expected_output: id.toUpperCase(),
+  is_hidden: i === 3,
+  display_order: i + 1,
+}));
+
 describe("buildExerciseEditPlan", () => {
-  it("không đổi gì (kể cả display_order cũ không đánh số 0..n-1) -> null", () => {
-    expect(buildExerciseEditPlan({ exercise, testCases: saved }, draftsFromTestCases(saved), null)).toBeNull();
+  it("không đổi gì và display_order đã là 1..n -> null", () => {
+    expect(buildExerciseEditPlan({ exercise, testCases: normalized }, draftsFromTestCases(normalized), null)).toBeNull();
+  });
+
+  it("display_order lưu không phải 1..n (số cũ rời rạc) -> đánh số lại 1..n", () => {
+    const plan = buildExerciseEditPlan({ exercise, testCases: saved }, draftsFromTestCases(saved), null);
+    expect(plan?.updates.map((u) => [u.id, u.body.display_order])).toEqual([
+      ["t1", 1],
+      ["t2", 2],
+    ]);
+  });
+
+  it("dữ liệu 0-based (do bản web cũ ghi) -> đánh số lại 1..n", () => {
+    const zeroBased = normalized.map((tc, i) => ({ ...tc, display_order: i }));
+    const plan = buildExerciseEditPlan({ exercise, testCases: zeroBased }, draftsFromTestCases(zeroBased), null);
+    expect(plan?.updates.map((u) => [u.id, u.body.display_order])).toEqual([
+      ["a", 1],
+      ["b", 2],
+      ["c", 3],
+      ["d", 4],
+    ]);
+  });
+
+  it("sửa test 2 và 3 của bài seed 1..4 -> thứ tự cuối cùng vẫn là 1,2,3,4, không trùng (QA ce-main-261022 P2)", () => {
+    const drafts = draftsFromTestCases(normalized).map((d, i) => (i === 1 || i === 2 ? { ...d, output: `${d.output}!` } : d));
+    const plan = buildExerciseEditPlan({ exercise, testCases: normalized }, drafts, null);
+    const finalOrders = new Map(normalized.map((tc) => [tc.id, tc.display_order]));
+    for (const { id, body } of plan?.updates ?? []) finalOrders.set(id, body.display_order);
+    for (const body of plan?.creates ?? []) finalOrders.set(`new-${body.input}`, body.display_order);
+    expect([...finalOrders.entries()].sort((x, y) => x[1] - y[1])).toEqual([["a", 1], ["b", 2], ["c", 3], ["d", 4]]);
+    expect(plan?.updates.map((u) => u.id)).toEqual(["b", "c"]);
+  });
+
+  it("xoá giữa dãy -> các test còn lại được đánh số liền mạch, không để lỗ hổng/trùng", () => {
+    const drafts = draftsFromTestCases(normalized).filter((d) => d.serverId !== "b");
+    const plan = buildExerciseEditPlan({ exercise, testCases: normalized }, drafts, null);
+    expect(plan?.updates.map((u) => [u.id, u.body.display_order])).toEqual([
+      ["c", 2],
+      ["d", 3],
+    ]);
+    expect(plan?.deletes).toEqual(["b"]);
   });
 
   it("nạp theo display_order và giữ test ẩn kèm kết quả mong đợi", () => {
@@ -46,8 +94,8 @@ describe("buildExerciseEditPlan", () => {
     });
     expect(plan).toEqual({
       exerciseUpdate: { time_limit: 5, pass_percentage: 80 },
-      updates: [{ id: "t1", body: { input: "2", expected_output: "4\n", is_hidden: true, display_order: 0 } }],
-      creates: [{ input: "5", expected_output: "25", is_hidden: false, display_order: 1 }],
+      updates: [{ id: "t1", body: { input: "2", expected_output: "4\n", is_hidden: true, display_order: 1 } }],
+      creates: [{ input: "5", expected_output: "25", is_hidden: false, display_order: 2 }],
       deletes: ["t2"],
     });
   });
@@ -56,8 +104,8 @@ describe("buildExerciseEditPlan", () => {
     const drafts = draftsFromTestCases(saved).reverse();
     const plan = buildExerciseEditPlan({ exercise, testCases: saved }, drafts, null);
     expect(plan?.updates.map((u) => [u.id, u.body.display_order])).toEqual([
-      ["t2", 0],
-      ["t1", 1],
+      ["t2", 1],
+      ["t1", 2],
     ]);
   });
 });

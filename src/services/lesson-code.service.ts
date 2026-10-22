@@ -75,7 +75,7 @@ export const lessonCodeService = {
       .catch((error: unknown) => {
         if (error instanceof ApiError && error.status >= 500)
           throw new Error(
-            "Máy chấm Judge0 đang không sẵn sàng. Mã nguồn và kết quả trước vẫn được giữ; hãy thử nộp lại."
+            "Máy chấm Judge0 đang không sẵn sàng. Mã nguồn vẫn được giữ; hãy thử nộp lại."
           );
         throw error;
       }),

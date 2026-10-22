@@ -37,11 +37,14 @@ export function draftsFromTestCases(testCases: readonly TestCase[]): ExerciseTes
   return sortByOrder(testCases).map((tc) => ({ id: tc.id, serverId: tc.id, input: tc.input, output: tc.expected_output ?? "", hidden: tc.is_hidden }));
 }
 
+/** `display_order` của test ở vị trí `index` (0-based): đánh số 1..n như seed, postman và các form khác. */
+const testCaseDisplayOrder = (index: number): number => index + 1;
+
 const toBody = (draft: ExerciseTestCaseDraft, index: number): Required<CreateTestCaseDTO> => ({
   input: draft.input,
   expected_output: draft.output,
   is_hidden: draft.hidden,
-  display_order: index,
+  display_order: testCaseDisplayOrder(index),
 });
 
 export function hasTestCaseChanges(plan: ExerciseEditPlan): boolean {
@@ -67,9 +70,6 @@ export function buildExerciseEditPlan(
   }
 
   const byId = new Map(original.testCases.map((tc) => [tc.id, tc]));
-  // Thứ tự so theo VỊ TRÍ, không theo giá trị `display_order` đã lưu: dữ liệu cũ có thể không đánh số 0..n-1,
-  // mở ra rồi lưu mà không đổi gì thì không được sinh PUT.
-  const savedPosition = new Map(sortByOrder(original.testCases).map((tc, i) => [tc.id, i]));
   const kept = new Set<string>();
   const plan: ExerciseEditPlan = {
     exerciseUpdate: Object.keys(exerciseUpdate).length > 0 ? exerciseUpdate : null,
@@ -86,11 +86,13 @@ export function buildExerciseEditPlan(
       return;
     }
     kept.add(saved.id);
+    // So với `display_order` ĐÃ LƯU (không phải vị trí): mỗi test có một số đích duy nhất, test nào lệch thì
+    // được ghi lại. So theo vị trí để lại số cũ của test không đụng tới và sinh số trùng (1,1,2,4).
     const changed =
       saved.input !== body.input ||
       (saved.expected_output ?? "") !== body.expected_output ||
       saved.is_hidden !== body.is_hidden ||
-      savedPosition.get(saved.id) !== index;
+      saved.display_order !== body.display_order;
     if (changed) plan.updates.push({ id: saved.id, body });
   });
   plan.deletes = original.testCases.filter((tc) => !kept.has(tc.id)).map((tc) => tc.id);
