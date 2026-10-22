@@ -1,3 +1,4 @@
+import { StrictMode } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -133,6 +134,63 @@ describe("AssignmentWorkOverlay — verdict bài nộp code (chấm nền)", () 
     unmount();
     await flush(30_000);
     expect(pollCalls()).toBe(1);
+  });
+
+  it("nộp lại khi GET bài cũ đang bay: kết quả cũ về muộn bị bỏ qua, chuyển sang hỏi bài mới", async () => {
+    let resolveStale: (value: unknown) => void = () => {};
+    get.mockImplementation(async (path: string) => {
+      if (path.includes("/sandbox")) return SANDBOX;
+      if (path.startsWith("/submissions/my/")) return { data: [] };
+      if (path === "/submissions/s1") return new Promise((resolve) => { resolveStale = resolve; });
+      if (path === "/submissions/s2") return { data: sub("pending", { id: "s2" }) };
+      throw new Error(`unexpected GET ${path}`);
+    });
+    await renderAndSubmit();
+    await flush(1_500);
+    expect(pollCalls()).toBe(1); // GET s1 đang bay
+
+    post.mockResolvedValue({ message: "Submission created, processing...", data: sub("pending", { id: "s2" }) });
+    fireEvent.click(screen.getByRole("button", { name: "Nộp bài" }));
+    await flush();
+
+    await act(async () => {
+      resolveStale({ data: sub("accepted", { test_cases_passed: 3, total_test_cases: 3 }) });
+    });
+    await flush();
+    expect(verdictText()).toBe("Đang chấm bài...");
+
+    await flush(1_500);
+    expect(get.mock.calls.filter(([p]) => p === "/submissions/s2").length).toBe(1);
+    expect(verdictText()).toBe("Đang chấm bài...");
+  });
+
+  it("system_error: bấm Thoát hiện hộp xác nhận, không báo đã nộp (onClose(true))", async () => {
+    mockBackend({ mine: [sub("system_error")] });
+    const onClose = vi.fn();
+    render(<AssignmentWorkOverlay assignmentId="a1" title="T" userId="u1" onClose={onClose} />);
+    await flush();
+
+    fireEvent.click(screen.getByRole("button", { name: "Thoát" }));
+
+    expect(screen.getByText(/Bạn chưa nộp bài/)).toBeTruthy();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("StrictMode (effect chạy hai lần): mỗi nhịp chỉ một lần hỏi", async () => {
+    mockBackend({ byId: [sub("pending")] });
+    render(
+      <StrictMode>
+        <AssignmentWorkOverlay assignmentId="a1" title="T" userId="u1" onClose={() => {}} />
+      </StrictMode>,
+    );
+    await flush();
+    fireEvent.click(screen.getByRole("button", { name: "Nộp bài" }));
+    await flush();
+
+    await flush(1_500);
+    expect(pollCalls()).toBe(1);
+    await flush(1_500);
+    expect(pollCalls()).toBe(2);
   });
 
   it("quá ~2 phút vẫn pending: dừng hỏi, hiện trạng thái trung tính (không phải lỗi)", async () => {
