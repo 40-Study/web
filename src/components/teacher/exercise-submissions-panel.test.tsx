@@ -76,6 +76,33 @@ describe("ExerciseSubmissionsPanel", () => {
     expect(screen.getByText("Nguyễn Văn A")).toBeTruthy();
   });
 
+  it("nhãn đọc màn hình của dòng nêu kết quả, điểm và số test đạt", async () => {
+    mockList({ data: [SUBMISSION], total: 1, page: 1, page_size: 20 });
+    renderPanel();
+    const row = await screen.findByRole("button", { name: /xem bài nộp của nguyễn văn a/i });
+    expect(row.getAttribute("aria-label")).toContain("Sai kết quả, 66/100 điểm, 2/3 test đạt");
+  });
+
+  it("bộ test đang tải -> báo đang tải, không hiện '(0)'", async () => {
+    let release: (v: unknown) => void = () => undefined;
+    mockApi.get.mockImplementation((url: string) =>
+      url.endsWith("/testcases")
+        ? new Promise((resolve) => {
+            release = resolve;
+          })
+        : Promise.resolve(envelope({ data: [SUBMISSION], total: 1, page: 1, page_size: 20 })),
+    );
+    renderPanel();
+    fireEvent.click(await screen.findByRole("button", { name: /xem bài nộp của nguyễn văn a/i }));
+
+    expect(screen.getByTestId("submission-tests-loading")).toBeTruthy();
+    expect(screen.queryByText("Bộ test của bài (0)")).toBeNull();
+
+    release(envelope(TESTS));
+    expect(await screen.findByText("Bộ test của bài (2)")).toBeTruthy();
+    expect(screen.queryByTestId("submission-tests-loading")).toBeNull();
+  });
+
   it("chưa có bài nộp (backend trả data: null) -> thông báo trống, không vỡ", async () => {
     mockList({ data: null, total: 0, page: 1, page_size: 20 });
     renderPanel();

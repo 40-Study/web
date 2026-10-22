@@ -49,18 +49,21 @@ export function hasTestCaseChanges(plan: ExerciseEditPlan): boolean {
 }
 
 /**
- * `limits` = giá trị đã kiểm hợp lệ, hoặc `null` khi không có giới hạn nào đổi. Trả `null` khi không có gì để lưu.
+ * `limits` = các giới hạn GIẢNG VIÊN ĐÃ ĐỔI và đã kiểm hợp lệ (trường vắng mặt = không đụng tới), hoặc `null`.
+ * Trả `null` khi không có gì để lưu.
  */
 export function buildExerciseEditPlan(
   original: { exercise: Pick<Exercise, "time_limit" | "memory_limit" | "pass_percentage">; testCases: readonly TestCase[] },
   drafts: readonly ExerciseTestCaseDraft[],
-  limits: ExerciseLimitsPayload | null,
+  limits: Partial<ExerciseLimitsPayload> | null,
 ): ExerciseEditPlan | null {
   const exerciseUpdate: UpdateExerciseDTO = {};
   if (limits) {
-    if (limits.time_limit !== original.exercise.time_limit) exerciseUpdate.time_limit = limits.time_limit;
-    if (limits.memory_limit !== original.exercise.memory_limit) exerciseUpdate.memory_limit = limits.memory_limit;
-    if (limits.pass_percentage !== original.exercise.pass_percentage) exerciseUpdate.pass_percentage = limits.pass_percentage;
+    const { time_limit, memory_limit, pass_percentage } = limits;
+    if (time_limit !== undefined && time_limit !== original.exercise.time_limit) exerciseUpdate.time_limit = time_limit;
+    if (memory_limit !== undefined && memory_limit !== original.exercise.memory_limit) exerciseUpdate.memory_limit = memory_limit;
+    if (pass_percentage !== undefined && pass_percentage !== original.exercise.pass_percentage)
+      exerciseUpdate.pass_percentage = pass_percentage;
   }
 
   const byId = new Map(original.testCases.map((tc) => [tc.id, tc]));

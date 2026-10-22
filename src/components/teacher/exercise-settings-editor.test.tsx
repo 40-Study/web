@@ -105,6 +105,23 @@ describe("ExerciseSettingsEditor", () => {
     expect(screen.getByText("Nhập số nguyên từ 16 đến 1500.")).toBeTruthy();
   });
 
+  it("giá trị CŨ lệch khoảng (bộ nhớ 2048) không chặn sửa ô khác và không bị gửi lại", async () => {
+    mockApi.get.mockImplementation(async (url: string) =>
+      envelope(url.endsWith("/testcases") ? TESTS : { ...EXERCISE, memory_limit: 2048 }),
+    );
+    const onChange = vi.fn();
+    renderWithProviders(<ExerciseSettingsEditor exerciseId="ex-1" onChange={onChange} />);
+    await screen.findByDisplayValue("2048");
+
+    fireEvent.change(screen.getByLabelText("Giới hạn thời gian (giây/test)"), { target: { value: "3" } });
+
+    expect(lastState(onChange)).toEqual({
+      blocked: false,
+      plan: { exerciseUpdate: { time_limit: 3 }, updates: [], creates: [], deletes: [] },
+    });
+    expect(screen.queryByText("Nhập số nguyên từ 16 đến 1500.")).toBeNull();
+  });
+
   it("giới hạn ngoài khoảng -> chặn lưu, báo lỗi ngay dưới ô", async () => {
     const onChange = await renderEditor();
     fireEvent.change(screen.getByLabelText("Giới hạn thời gian (giây/test)"), { target: { value: "60" } });

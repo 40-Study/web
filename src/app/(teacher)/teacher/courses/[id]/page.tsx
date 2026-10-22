@@ -1558,6 +1558,10 @@ function EditContentModal({
   const [quizSettings, setQuizSettings] = useState<QuizSettingsEditState>({ payload: null, blocked: false });
   /** Bộ test + giới hạn chấm của bài code đã đổi (do ExerciseSettingsEditor báo lên). */
   const [exerciseSettings, setExerciseSettings] = useState<ExerciseSettingsEditState>({ plan: null, blocked: false });
+  /** Tăng sau một lần lưu bộ test lỗi giữa chừng: dựng lại editor từ dữ liệu ĐÃ LƯU vừa nạp lại. */
+  const [exerciseEditorKey, setExerciseEditorKey] = useState(0);
+  /** Chặn bấm lưu lần hai trong lúc đang lưu (state `isSaving` chỉ có hiệu lực sau lần render kế tiếp). */
+  const savingRef = useRef(false);
   const queryClient = useQueryClient();
 
   // Sync state when content changes
@@ -1578,7 +1582,8 @@ function EditContentModal({
   const saveBlocked = durationInvalid || quizSettings.blocked || exerciseSettings.blocked;
 
   const handleSave = async () => {
-    if (!content || !title.trim() || saveBlocked) return;
+    if (!content || !title.trim() || saveBlocked || savingRef.current) return;
+    savingRef.current = true;
     setIsSaving(true);
     try {
       const { lessonContentService } = await import("@/services/lesson-content.service");
@@ -1600,12 +1605,19 @@ function EditContentModal({
         try {
           await applyExerciseEditPlan(exerciseId, exerciseSettings.plan);
         } catch (err) {
-          toast.error(getErrorMessage(err, "Không thể lưu bộ test của bài tập"));
+          /*
+            Kế hoạch gồm nhiều request tuần tự: lỗi ở request thứ N thì N-1 request trước ĐÃ lưu. Chờ nạp lại
+            xong (nút lưu vẫn khoá, không gửi trùng) rồi dựng lại editor từ dữ liệu đã lưu, và nói rõ cho giảng
+            viên — không để form giữ bản nháp lệch backend rồi lần lưu sau báo thành công giả.
+          */
+          await queryClient.invalidateQueries({ queryKey: exerciseEditKeys.detail(exerciseId) });
+          setExerciseEditorKey((k) => k + 1);
+          toast.error(
+            `Lưu bộ test chưa xong: ${getErrorMessage(err, "lỗi không xác định")}. Phần đã lưu được giữ lại; bộ test đã được nạp lại theo dữ liệu đã lưu, kiểm tra và nhập lại phần còn thiếu.`,
+          );
           return;
-        } finally {
-          // Lỗi giữa chừng vẫn có thể đã lưu một phần — nạp lại để form khớp backend.
-          queryClient.invalidateQueries({ queryKey: exerciseEditKeys.detail(exerciseId) });
         }
+        await queryClient.invalidateQueries({ queryKey: exerciseEditKeys.detail(exerciseId) });
       }
 
       /*
@@ -1630,6 +1642,7 @@ function EditContentModal({
     } catch {
       toast.error("Không thể cập nhật nội dung");
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   };
@@ -1691,7 +1704,13 @@ function EditContentModal({
           {quizSettingsId && <QuizSettingsEditor quizId={quizSettingsId} onChange={setQuizSettings} />}
 
           {/* Bộ test (kể cả test ẩn) và giới hạn thời gian / bộ nhớ / điểm đạt của bài code đã tạo. */}
-          {exerciseId && <ExerciseSettingsEditor exerciseId={exerciseId} onChange={setExerciseSettings} />}
+          {exerciseId && (
+            <ExerciseSettingsEditor
+              key={`${exerciseId}:${exerciseEditorKey}`}
+              exerciseId={exerciseId}
+              onChange={setExerciseSettings}
+            />
+          )}
         </div>
 
         <DialogFooter>

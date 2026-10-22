@@ -16,7 +16,15 @@ import {
   validateExerciseLimits,
   type ExerciseLimitsDraft,
   type ExerciseLimitsErrors,
+  type ExerciseLimitsField,
+  type ExerciseLimitsPayload,
 } from "./exercise-limits-fields";
+
+const LIMIT_KEYS: Record<ExerciseLimitsField, keyof ExerciseLimitsPayload> = {
+  timeLimit: "time_limit",
+  memoryLimit: "memory_limit",
+  passPercentage: "pass_percentage",
+};
 import {
   buildExerciseEditPlan,
   draftsFromTestCases,
@@ -73,12 +81,17 @@ export function ExerciseSettingsEditor({ exerciseId, onChange }: ExerciseSetting
     const none = { plan: null, blocked: false, limitErrors: {}, testsInvalid: false };
     if (!data) return none;
     const initialLimits = limitsDraftFromExercise(data.exercise);
-    const limitsDirty = (Object.keys(limits) as (keyof ExerciseLimitsDraft)[]).some(
-      (k) => limits[k].trim() !== initialLimits[k],
+    // Chỉ kiểm và chỉ gửi ô giảng viên ĐÃ đổi: giá trị cũ lệch khoảng (bài tạo trước khi backend kiểm) không
+    // được chặn việc sửa ô khác, và cũng không bị gửi lại.
+    const dirty = (Object.keys(limits) as ExerciseLimitsField[]).filter((k) => limits[k].trim() !== initialLimits[k]);
+    const allErrors = validateExerciseLimits(limits);
+    const limitErrors: ExerciseLimitsErrors = Object.fromEntries(
+      dirty.filter((k) => allErrors[k]).map((k) => [k, allErrors[k]]),
     );
-    const limitErrors = limitsDirty ? validateExerciseLimits(limits) : {};
     const limitsValid = Object.keys(limitErrors).length === 0;
-    const plan = buildExerciseEditPlan(data, drafts, limitsDirty && limitsValid ? parseExerciseLimits(limits) : null);
+    const parsed = parseExerciseLimits(limits);
+    const changedLimits = Object.fromEntries(dirty.map((k) => [LIMIT_KEYS[k], parsed[LIMIT_KEYS[k]]]));
+    const plan = buildExerciseEditPlan(data, drafts, dirty.length > 0 && limitsValid ? changedLimits : null);
     // Bộ test chỉ chặn lưu khi giảng viên ĐÃ sửa nó: bài cũ lệch luật vẫn đổi được tiêu đề.
     const testsInvalid = !!plan && hasTestCaseChanges(plan) && !isValidTestCaseSet(drafts);
     const blocked = !limitsValid || testsInvalid;

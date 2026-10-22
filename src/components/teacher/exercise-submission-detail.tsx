@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, EyeOff } from "lucide-react";
+import { ChevronLeft, EyeOff, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ExerciseSubmissionRecord, TestCase } from "@/services/exercise.service";
@@ -16,6 +16,8 @@ interface ExerciseSubmissionDetailProps {
   submission: ExerciseSubmissionRecord;
   /** Bộ test hiện tại của bài, gồm test ẩn (giảng viên quản lý bài mới nhận được). */
   testCases: TestCase[];
+  /** Bộ test đang tải: không hiện "(0)" như thể bài không có test. */
+  testCasesLoading?: boolean;
   onBack: () => void;
 }
 
@@ -24,7 +26,7 @@ interface ExerciseSubmissionDetailProps {
  * Backend chỉ lưu tổng số test đạt cho mỗi bài nộp, không lưu kết quả từng test, nên phần test là
  * bộ test HIỆN TẠI của bài — có ghi rõ để giảng viên không hiểu nhầm là kết quả từng test.
  */
-export function ExerciseSubmissionDetail({ submission, testCases, onBack }: ExerciseSubmissionDetailProps) {
+export function ExerciseSubmissionDetail({ submission, testCases, testCasesLoading = false, onBack }: ExerciseSubmissionDetailProps) {
   const sorted = [...testCases].sort((a, b) => a.display_order - b.display_order);
   return (
     <div className="space-y-4" data-testid="exercise-submission-detail">
@@ -72,11 +74,16 @@ export function ExerciseSubmissionDetail({ submission, testCases, onBack }: Exer
       </div>
 
       <div className="space-y-2">
-        <p className="text-sm font-medium">Bộ test của bài ({sorted.length})</p>
+        <p className="text-sm font-medium">Bộ test của bài{testCasesLoading ? "" : ` (${sorted.length})`}</p>
         <p className="text-xs text-muted-foreground">
           Hệ thống chỉ lưu số test đạt của mỗi bài nộp, chưa lưu kết quả từng test. Đây là bộ test hiện tại của
           bài, gồm cả test ẩn.
         </p>
+        {testCasesLoading && (
+          <p className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="submission-tests-loading">
+            <Loader2 className="h-3 w-3 animate-spin" /> Đang tải bộ test…
+          </p>
+        )}
         {sorted.map((tc, idx) => (
           <div key={tc.id} className="rounded-lg border p-2 text-xs space-y-1" data-testid={`submission-test-${idx}`}>
             <div className="flex items-center gap-2 font-medium">

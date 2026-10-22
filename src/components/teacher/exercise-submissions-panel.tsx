@@ -68,7 +68,12 @@ export function ExerciseSubmissionsPanel({ exerciseId, exerciseTitle, open, onOp
           testCases.isError ? (
             <p role="alert" className="text-sm text-red-600">Không tải được bộ test của bài.</p>
           ) : (
-            <ExerciseSubmissionDetail submission={selected} testCases={testCases.data ?? []} onBack={() => setSelected(null)} />
+            <ExerciseSubmissionDetail
+              submission={selected}
+              testCases={testCases.data ?? []}
+              testCasesLoading={testCases.isLoading}
+              onBack={() => setSelected(null)}
+            />
           )
         ) : list.isLoading ? (
           <p className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
@@ -92,7 +97,7 @@ export function ExerciseSubmissionsPanel({ exerciseId, exerciseTitle, open, onOp
                   <button
                     type="button"
                     onClick={() => setSelected(sub)}
-                    aria-label={`Xem bài nộp của ${studentName(sub)} lúc ${formatSubmittedAt(sub.created_at)}`}
+                    aria-label={`Xem bài nộp của ${studentName(sub)} lúc ${formatSubmittedAt(sub.created_at)}: ${verdictLabel(sub.verdict)}, ${submissionScore(sub)}/100 điểm, ${sub.test_cases_passed}/${sub.total_test_cases} test đạt`}
                     className="grid w-full grid-cols-2 gap-2 rounded-lg border px-2 py-2 text-left text-xs hover:bg-gray-50 sm:grid-cols-[minmax(0,2fr)_8rem_4rem_4rem_5rem_8rem] sm:items-center"
                   >
                     <span className="col-span-2 min-w-0 sm:col-span-1">
