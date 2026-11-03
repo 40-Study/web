@@ -10,6 +10,7 @@ import type { TimetableEntry } from "@/types/class-schedule";
 import {
   liveSessionToEvent,
   timetableEntriesToEvents,
+  timetableSourceLabel,
   toVnWallClock,
   visibleDateRange,
   vnWallClockToIso,
@@ -210,5 +211,32 @@ describe("giờ Việt Nam bất kể múi giờ trình duyệt", () => {
 describe("visibleDateRange", () => {
   it("end loại trừ của FullCalendar thành ngày cuối gồm cả hai đầu", () => {
     expect(visibleDateRange(new Date(2026, 9, 5), new Date(2026, 9, 12))).toEqual({ from: "2026-10-05", to: "2026-10-11" });
+  });
+});
+
+describe("nhãn nguồn lớp (cá nhân / tổ chức)", () => {
+  it("lớp không có organization_id được ghi Cá nhân, lớp tổ chức ghi tên tổ chức", () => {
+    expect(timetableSourceLabel({})).toBe("Cá nhân");
+    expect(timetableSourceLabel({ organization_id: null })).toBe("Cá nhân");
+    expect(timetableSourceLabel({ organization_id: "o1", organization_name: "Trung tâm A" })).toBe("Trung tâm A");
+  });
+
+  it("tổ chức đã xoá (còn id, mất tên) vẫn không bị ghi là Cá nhân", () => {
+    expect(timetableSourceLabel({ organization_id: "o1" })).toBe("Tổ chức");
+  });
+
+  it("gắn nhãn cho lịch lặp, buổi trải theo khoảng ngày và buổi cụ thể", () => {
+    const org = { organization_id: "o1", organization_name: "Trung tâm A" };
+    const weekly = timetableEntriesToEvents([entry({ schedule_id: "s1", ...org })]);
+    expect(weekly.map((e) => e.tag)).toEqual(["Trung tâm A"]);
+
+    const expanded = timetableEntriesToEvents([entry({ schedule_id: "s1", effective_from: "2026-10-01" })], {
+      range: { from: "2026-10-05", to: "2026-10-11" },
+    });
+    expect(expanded.length).toBeGreaterThan(0);
+    expect(expanded.every((e) => e.tag === "Cá nhân")).toBe(true);
+
+    const session = timetableEntriesToEvents([entry({ session_id: "x1", date: "2026-10-06", ...org })]);
+    expect(session.map((e) => e.tag)).toEqual(["Trung tâm A"]);
   });
 });

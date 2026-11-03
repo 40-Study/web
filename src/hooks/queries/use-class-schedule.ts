@@ -8,6 +8,7 @@ import { classScheduleService } from "@/services/class-schedule.service";
 import type {
   ClassScheduleFilters,
   CreateClassScheduleDTO,
+  TimetableSourceFilter,
   UpdateClassScheduleDTO,
 } from "@/types/class-schedule";
 
@@ -44,12 +45,13 @@ export function useMySchedules() {
 
 /**
  * Lịch lớp của giảng viên/học viên kèm buổi học cụ thể trong `range` (B-08). `range` undefined = chưa biết
- * khoảng đang xem nên chưa gọi API (tránh một request thừa trước khi lịch báo khoảng ngày).
+ * khoảng đang xem nên chưa gọi API (tránh một request thừa trước khi lịch báo khoảng ngày). `source` lọc theo
+ * nguồn lớp (cá nhân / một tổ chức); undefined = mọi lớp.
  */
-export function useMyTimetableEntries(range?: { from: string; to: string }) {
+export function useMyTimetableEntries(range?: { from: string; to: string }, source?: TimetableSourceFilter) {
   return useQuery({
-    queryKey: [...classScheduleKeys.all, "timetable", range] as const,
-    queryFn: () => classScheduleService.getMyTimetableEntries(range),
+    queryKey: [...classScheduleKeys.all, "timetable", range, source ?? "all"] as const,
+    queryFn: () => classScheduleService.getMyTimetableEntries(range, source),
     enabled: !!range,
   });
 }

@@ -61,7 +61,17 @@ export interface TimetableEntry {
   /** Khoảng ngày hiệu lực của lịch lặp tuần (YYYY-MM-DD); chỉ có ở mục lịch lặp (schedule_id). */
   effective_from?: string;
   effective_until?: string;
+  /** Tổ chức sở hữu lớp; vắng hoặc null = lớp cá nhân (dạy tự do) của giảng viên. */
+  organization_id?: string | null;
+  /** Tên tổ chức; vắng khi lớp cá nhân hoặc tổ chức đã bị xoá (vẫn còn organization_id). */
+  organization_name?: string | null;
 }
+
+/**
+ * Lọc `GET /me/timetable` theo nguồn lớp: "personal" = chỉ lớp cá nhân, chuỗi khác = id tổ chức.
+ * Không truyền = mọi lớp. Kiểm tra trùng giờ ở backend vẫn tính trên toàn bộ lịch của giảng viên.
+ */
+export type TimetableSourceFilter = "personal" | (string & {});
 
 /**
  * Buổi sinh từ lịch lặp tuần đã bị huỷ (khớp dto.TimetableOccurrenceDTO). Backend không trả buổi huỷ ở `entries`,
