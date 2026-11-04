@@ -26,8 +26,12 @@ function formatDateString(date: Date): string {
   return date.toISOString().split("T")[0];
 }
 
-function getDayOfWeek(date: Date): number {
-  return date.getDay();
+/** Nhãn thứ theo cách gọi Việt Nam, thứ Hai đứng đầu cột (QA3 Q12: trước đây "Sun/Mon/..." tiếng Anh). */
+export const WEEKDAY_LABELS_VI = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"] as const;
+
+/** Chỉ số hàng trong lưới: 0 = thứ Hai … 6 = Chủ nhật (Date.getDay(): 0 = Chủ nhật). */
+export function getDayOfWeek(date: Date): number {
+  return (date.getDay() + 6) % 7;
 }
 
 export function ActivityHeatmap({
@@ -41,7 +45,7 @@ export function ActivityHeatmap({
     const end = new Date();
     const start = startDate || new Date(end.getTime() - weeks * 7 * 24 * 60 * 60 * 1000);
 
-    // Adjust start to the beginning of the week (Sunday)
+    // Adjust start to the beginning of the week (Monday)
     const adjustedStart = new Date(start);
     adjustedStart.setDate(adjustedStart.getDate() - getDayOfWeek(adjustedStart));
 
@@ -68,7 +72,7 @@ export function ActivityHeatmap({
 
       currentWeek.push({ date: dateStr, count, dayOfWeek });
 
-      if (dayOfWeek === 6) {
+      if (dayOfWeek === 6) { // Chủ nhật kết thúc tuần
         weeksArray.push(currentWeek);
         currentWeek = [];
         weekIndex++;
@@ -85,7 +89,7 @@ export function ActivityHeatmap({
     return { weeksData: weeksArray, monthLabels: months };
   }, [data, startDate, weeks]);
 
-  const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayLabels = WEEKDAY_LABELS_VI;
 
   return (
     <div className={cn("overflow-x-auto", className)}>
