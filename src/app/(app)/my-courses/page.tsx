@@ -19,6 +19,7 @@ import { OtherCoursesSidebar } from "@/components/student/other-courses-sidebar"
 import { EnrolledCourseCard } from "@/components/student/enrolled-course-card";
 import { AchievementSidebar } from "@/components/student/achievement-sidebar";
 import { SupportCard } from "@/components/student/support-card";
+import { compareByRecentAccess, pickContinueCourse } from "@/lib/continue-course";
 
 function LoadingSkeleton() {
   return (
@@ -74,18 +75,13 @@ export default function MyCoursesPage() {
   const { data: certificatesData } = useMyCertificates({ page_size: 5 });
 
   // Sort courses by last accessed, most recent first
-  const sortedCourses = useMemo(() => {
-    return [...enrolledCourses].sort((a, b) => {
-      const dateA = a.lastAccessedAt ? new Date(a.lastAccessedAt).getTime() : 0;
-      const dateB = b.lastAccessedAt ? new Date(b.lastAccessedAt).getTime() : 0;
-      return dateB - dateA;
-    });
-  }, [enrolledCourses]);
+  const sortedCourses = useMemo(
+    () => [...enrolledCourses].sort(compareByRecentAccess),
+    [enrolledCourses]
+  );
 
-  // Most recent course being studied (with progress > 0)
-  const currentCourse = useMemo(() => {
-    return sortedCourses.find((c) => c.progress > 0 && c.progress < 100);
-  }, [sortedCourses]);
+  // Khoá "Tiếp tục học": cùng bộ chọn với /home (lib/continue-course) để hai trang không lệch nhau.
+  const currentCourse = useMemo(() => pickContinueCourse(enrolledCourses), [enrolledCourses]);
 
   // Other courses being studied
   const otherCourses = useMemo(() => {
