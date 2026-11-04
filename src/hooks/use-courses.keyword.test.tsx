@@ -25,12 +25,12 @@ describe("useCourses — keyword (F-07)", () => {
   it("gửi keyword lên backend để tìm không phân biệt dấu", async () => {
     const { result } = renderHook(() => useCourses({ keyword: "dai so" }), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(getCoursesMock).toHaveBeenCalledWith({ keyword: "dai so" });
+    expect(getCoursesMock).toHaveBeenCalledWith({ keyword: "dai so", page: 1, page_size: 100 });
   });
 
   it("không có keyword thì gọi như cũ, không gửi tham số", async () => {
     const { result } = renderHook(() => useCourses({}), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(getCoursesMock).toHaveBeenCalledWith(undefined);
+    expect(getCoursesMock).toHaveBeenCalledWith({ page: 1, page_size: 100 });
   });
 });
