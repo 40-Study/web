@@ -32,6 +32,8 @@ function serve(cls: Record<string, unknown>) {
     // Ô chọn giảng viên đọc /classes/:id/assignable-teachers (backend lọc theo thành viên tổ chức), không phải /teachers công khai.
     if (url === `/classes/${CLASS_ID}/assignable-teachers`)
       return Promise.resolve(envelope({ teachers: [{ id: "t2", user_name: "gv2", full_name: "Thầy Nam" }] }));
+    if (url === `/classes/${CLASS_ID}/schedules`) return Promise.resolve(envelope([]));
+    if (url === `/classes/${CLASS_ID}/sessions`) return Promise.resolve(envelope({ data: [], total: 0, page: 1, page_size: 20 }));
     return Promise.reject(new Error(`unexpected GET ${url}`));
   });
   mockApi.put.mockResolvedValue(envelope({}));
@@ -152,5 +154,37 @@ describe("ClassManagePanel", () => {
     renderWithProviders(<ClassManagePanel classId={CLASS_ID} />);
     expect(await screen.findByText("Không tìm thấy lớp")).toBeTruthy();
     expect(screen.queryByText("Không thể tải dữ liệu")).toBeNull();
+  });
+
+  it("Q3-04: tab 'Lịch học' hiện lịch hằng tuần và buổi học; mở thẳng bằng initialTab", async () => {
+    serve({ status: "active", can_manage: true });
+    renderWithProviders(<ClassManagePanel classId={CLASS_ID} />);
+
+    await screen.findByText("Bé Minh");
+    expect(mockApi.get).not.toHaveBeenCalledWith(`/classes/${CLASS_ID}/schedules`);
+    await userEvent.click(screen.getByRole("tab", { name: "Lịch học" }));
+    expect(await screen.findByText("Chưa có lịch học hằng tuần")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Thêm lịch học/ })).toBeTruthy();
+    expect(screen.queryByText("Bé Minh")).toBeNull();
+  });
+
+  it("Q3-04: initialTab='schedule' mở thẳng tab Lịch học; lớp lưu trữ thì không có nút thêm", async () => {
+    serve({ status: "archived", can_manage: true });
+    renderWithProviders(<ClassManagePanel classId={CLASS_ID} initialTab="schedule" />);
+
+    expect(await screen.findByText("Chưa có lịch học hằng tuần")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Thêm lịch học/ })).toBeNull();
+  });
+
+  it("Q3-15: header lớp có nhãn nguồn 'Cá nhân' / 'Tổ chức'", async () => {
+    serve({ status: "active" });
+    const { unmount } = renderWithProviders(<ClassManagePanel classId={CLASS_ID} />);
+    expect(await screen.findByText("Cá nhân")).toBeTruthy();
+    unmount();
+
+    serve({ status: "active", organization_id: "org-1" });
+    renderWithProviders(<ClassManagePanel classId={CLASS_ID} />);
+    expect(await screen.findByText("Tổ chức")).toBeTruthy();
+    expect(screen.queryByText("Cá nhân")).toBeNull();
   });
 });

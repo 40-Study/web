@@ -85,4 +85,14 @@ describe("ClassCreateForm", () => {
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
     expect(create.mock.calls[0][1].organization_id).toBeUndefined();
   });
+
+  it("Q3-15: nói rõ lớp sẽ được tạo là Cá nhân hay thuộc tổ chức nào, đổi theo ô chọn", () => {
+    renderForm();
+    expect(screen.getByText("Cá nhân")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("Tổ chức"), { target: { value: "org-a" } });
+    expect(screen.queryByText("Cá nhân")).toBeNull();
+    // Trong ô chọn cũng có <option> cùng tên, nên chỉ tính phần tử không phải <option>.
+    expect(screen.getAllByText("Trung tâm A").some((el) => el.tagName !== "OPTION")).toBe(true);
+  });
 });

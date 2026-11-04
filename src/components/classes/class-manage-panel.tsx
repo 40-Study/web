@@ -7,6 +7,7 @@ import { NotFoundError } from "@/lib/errors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ClassScheduleSection } from "@/components/classes/class-schedule-section";
+import { ClassSourceBadge } from "@/components/classes/class-source-badge";
 import { PersonPicker } from "@/components/classes/person-picker";
 import {
   useClassById,
@@ -26,21 +29,24 @@ import { getClassStatusLabel, getClassStatusVariant, isClassArchived } from "@/l
 import { classService } from "@/services/class.service";
 
 type PendingRemoval = { kind: "teacher" | "student"; id: string; name: string };
+export type ClassPanelTab = "members" | "schedule";
 
 /**
  * Quản lý một lớp: kích hoạt (draft → active), gán/gỡ giảng viên, ghi danh/gỡ học viên.
  *
  * Quyền do backend quyết (can_manage / can_assign_teachers trong chi tiết lớp, tính bằng chính hàm kiểm của
  * các thao tác ghi), nên nút chỉ hiện khi API sẽ cho làm. Dùng chung cho giảng viên (/teacher/classes/:id)
- * và chủ/quản trị tổ chức (/org/classes/:id).
+ * và chủ/quản trị tổ chức (/org/classes/:id). Tab "Lịch học": lịch lặp hằng tuần, sinh buổi học, buổi học lẻ;
+ * `initialTab` cho phép dẫn thẳng vào tab đó (vd. từ trang điểm danh khi lớp chưa có buổi học).
  */
-export function ClassManagePanel({ classId }: { classId: string }) {
+export function ClassManagePanel({ classId, initialTab = "members" }: { classId: string; initialTab?: ClassPanelTab }) {
   const classQuery = useClassById(classId);
   const teachersQuery = useClassTeachersById(classId);
   const studentsQuery = useClassStudentsById(classId);
   const actions = useClassManageActions(classId);
   const [pending, setPending] = useState<PendingRemoval | null>(null);
   const [confirmingArchive, setConfirmingArchive] = useState(false);
+  const [tab, setTab] = useState<ClassPanelTab>(initialTab);
 
   const cls = classQuery.data;
   const archived = isClassArchived(cls?.status);
@@ -82,6 +88,7 @@ export function ClassManagePanel({ classId }: { classId: string }) {
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant={getClassStatusVariant(cls.status)}>{getClassStatusLabel(cls.status)}</Badge>
+                <ClassSourceBadge organizationId={cls.organization_id} />
                 {canManage && cls.status === "draft" && (
                   <Button onClick={() => actions.update.mutate({ status: "active" })} disabled={actions.update.isPending}>
                     {actions.update.isPending ? (
@@ -124,103 +131,114 @@ export function ClassManagePanel({ classId }: { classId: string }) {
             )}
           </Card>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Giảng viên ({teachers.length})</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <QueryState
-                  isLoading={teachersQuery.isLoading}
-                  isError={teachersQuery.isError}
-                  error={teachersQuery.error}
-                  onRetry={() => teachersQuery.refetch()}
-                  isEmpty={teachers.length === 0}
-                  emptyTitle="Chưa có giảng viên"
-                  emptyDescription="Lớp này chưa được gán giảng viên nào."
-                >
-                  <ul className="divide-y divide-border">
-                    {teachers.map((t) => (
-                      <li key={t.teacher_id} className="flex items-center justify-between gap-2 py-2">
-                        <span className="truncate text-sm font-medium">{t.name}</span>
-                        <span className="flex items-center gap-2">
-                          <Badge variant="outline">{t.role === "assistant" ? "Trợ giảng" : "Giảng viên chính"}</Badge>
-                          {canAssignTeachers && (
+          <Tabs value={tab} onValueChange={(v) => setTab(v as ClassPanelTab)}>
+            <TabsList>
+              <TabsTrigger value="members">Thành viên</TabsTrigger>
+              <TabsTrigger value="schedule">Lịch học</TabsTrigger>
+            </TabsList>
+            <TabsContent value="members" className="mt-4">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Giảng viên ({teachers.length})</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <QueryState
+                    isLoading={teachersQuery.isLoading}
+                    isError={teachersQuery.isError}
+                    error={teachersQuery.error}
+                    onRetry={() => teachersQuery.refetch()}
+                    isEmpty={teachers.length === 0}
+                    emptyTitle="Chưa có giảng viên"
+                    emptyDescription="Lớp này chưa được gán giảng viên nào."
+                  >
+                    <ul className="divide-y divide-border">
+                      {teachers.map((t) => (
+                        <li key={t.teacher_id} className="flex items-center justify-between gap-2 py-2">
+                          <span className="truncate text-sm font-medium">{t.name}</span>
+                          <span className="flex items-center gap-2">
+                            <Badge variant="outline">{t.role === "assistant" ? "Trợ giảng" : "Giảng viên chính"}</Badge>
+                            {canAssignTeachers && (
+                              <Button
+                                variant="destructiveGhost"
+                                size="sm"
+                                aria-label={`Gỡ giảng viên ${t.name}`}
+                                onClick={() => setPending({ kind: "teacher", id: t.teacher_id, name: t.name })}
+                              >
+                                <UserMinus className="h-4 w-4" aria-hidden="true" />
+                              </Button>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </QueryState>
+                  {canAssignTeachers && (
+                    <PersonPicker
+                      queryKey={["class-manage", "teacher-candidates", classId]}
+                      search={(keyword) => classService.searchAssignableTeachers(classId, keyword)}
+                      onPick={(id) => actions.assignTeacher.mutate(id)}
+                      isPicking={actions.assignTeacher.isPending}
+                      placeholder="Tìm giảng viên theo tên"
+                      addLabel="Gán"
+                      emptyText="Không có giảng viên phù hợp."
+                      excludeIds={teachers.map((t) => t.teacher_id)}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Học viên ({studentsQuery.data?.total ?? students.length})</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <QueryState
+                    isLoading={studentsQuery.isLoading}
+                    isError={studentsQuery.isError}
+                    error={studentsQuery.error}
+                    onRetry={() => studentsQuery.refetch()}
+                    isEmpty={students.length === 0}
+                    emptyTitle="Chưa có học viên"
+                    emptyDescription="Lớp này chưa có học viên nào."
+                  >
+                    <ul className="divide-y divide-border">
+                      {students.map((s) => (
+                        <li key={s.student_id} className="flex items-center justify-between gap-2 py-2">
+                          <span className="truncate text-sm font-medium">{s.name}</span>
+                          {canWrite && (
                             <Button
                               variant="destructiveGhost"
                               size="sm"
-                              aria-label={`Gỡ giảng viên ${t.name}`}
-                              onClick={() => setPending({ kind: "teacher", id: t.teacher_id, name: t.name })}
+                              aria-label={`Gỡ học viên ${s.name}`}
+                              onClick={() => setPending({ kind: "student", id: s.student_id, name: s.name })}
                             >
                               <UserMinus className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           )}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </QueryState>
-                {canAssignTeachers && (
-                  <PersonPicker
-                    queryKey={["class-manage", "teacher-candidates", classId]}
-                    search={(keyword) => classService.searchAssignableTeachers(classId, keyword)}
-                    onPick={(id) => actions.assignTeacher.mutate(id)}
-                    isPicking={actions.assignTeacher.isPending}
-                    placeholder="Tìm giảng viên theo tên"
-                    addLabel="Gán"
-                    emptyText="Không có giảng viên phù hợp."
-                    excludeIds={teachers.map((t) => t.teacher_id)}
-                  />
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Học viên ({studentsQuery.data?.total ?? students.length})</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <QueryState
-                  isLoading={studentsQuery.isLoading}
-                  isError={studentsQuery.isError}
-                  error={studentsQuery.error}
-                  onRetry={() => studentsQuery.refetch()}
-                  isEmpty={students.length === 0}
-                  emptyTitle="Chưa có học viên"
-                  emptyDescription="Lớp này chưa có học viên nào."
-                >
-                  <ul className="divide-y divide-border">
-                    {students.map((s) => (
-                      <li key={s.student_id} className="flex items-center justify-between gap-2 py-2">
-                        <span className="truncate text-sm font-medium">{s.name}</span>
-                        {canWrite && (
-                          <Button
-                            variant="destructiveGhost"
-                            size="sm"
-                            aria-label={`Gỡ học viên ${s.name}`}
-                            onClick={() => setPending({ kind: "student", id: s.student_id, name: s.name })}
-                          >
-                            <UserMinus className="h-4 w-4" aria-hidden="true" />
-                          </Button>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </QueryState>
-                {canWrite && (
-                  <PersonPicker
-                    queryKey={["class-manage", "student-candidates", classId]}
-                    search={(keyword) => classService.searchEnrollableStudents(classId, keyword)}
-                    onPick={(id) => actions.enrollStudent.mutate(id)}
-                    isPicking={actions.enrollStudent.isPending}
-                    placeholder="Tìm học viên để ghi danh"
-                    addLabel="Ghi danh"
-                    emptyText="Không có học viên phù hợp."
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </QueryState>
+                  {canWrite && (
+                    <PersonPicker
+                      queryKey={["class-manage", "student-candidates", classId]}
+                      search={(keyword) => classService.searchEnrollableStudents(classId, keyword)}
+                      onPick={(id) => actions.enrollStudent.mutate(id)}
+                      isPicking={actions.enrollStudent.isPending}
+                      placeholder="Tìm học viên để ghi danh"
+                      addLabel="Ghi danh"
+                      emptyText="Không có học viên phù hợp."
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+            </TabsContent>
+            <TabsContent value="schedule" className="mt-4">
+              <ClassScheduleSection classId={classId} canWrite={canWrite} />
+            </TabsContent>
+          </Tabs>
 
           {!canManage && !archived && (
             <p className="text-sm text-muted-foreground">Bạn chỉ có quyền xem lớp này.</p>

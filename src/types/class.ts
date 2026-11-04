@@ -16,7 +16,8 @@ export interface ClassEntity {
   name: string;
   code: string;
   description?: string;
-  organization_id: string;
+  /** Vắng hoặc null = lớp cá nhân của giảng viên (không thuộc tổ chức). */
+  organization_id?: string | null;
   teacher_ids: string[];
   student_count: number;
   created_at: string;
@@ -27,7 +28,8 @@ export interface CreateClassDTO {
   name: string;
   code: string;
   description?: string;
-  organization_id: string;
+  /** Bỏ trống hoặc null = tạo lớp cá nhân. */
+  organization_id?: string | null;
 }
 
 export interface UpdateClassDTO extends Partial<CreateClassDTO> {}

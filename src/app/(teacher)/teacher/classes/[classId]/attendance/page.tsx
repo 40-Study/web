@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
+import { AttendanceCardList } from "@/components/attendance/attendance-card-list";
 import { AttendanceTable } from "@/components/attendance/attendance-table";
 import { useAttendanceDraft } from "@/components/attendance/use-attendance-draft";
 import { useClassStudentsByClassId } from "@/hooks/queries/use-classes";
@@ -85,13 +87,16 @@ export default function ClassAttendancePage() {
   const selectedSession = sessions.find((s) => s.id === sessionId);
   // B-18: lớp không tồn tại hoặc của giảng viên khác (API 404/403) trước đây hiện trang điểm danh rỗng như lớp chưa có buổi.
   if (sessionsError && isResourceUnavailableError(sessionsErrorValue)) {
-    return (<ResourceUnavailable status={unavailableStatus(sessionsErrorValue)} resourceLabel="lớp học" backHref="/teacher/courses" backLabel="Về Khoá học của tôi" />);
+    return (<ResourceUnavailable status={unavailableStatus(sessionsErrorValue)} resourceLabel="lớp học" backHref="/teacher/classes" backLabel="Về Lớp học của tôi" />);
   }
   const loading = sessionsLoading || studentsLoading || attendancesLoading;
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-6">
       <header className="mb-6">
+        <Link href={`/teacher/classes/${classId}`} className="mb-2 inline-block text-sm text-gray-500 hover:text-gray-900">
+          ← Quản lý lớp
+        </Link>
         <h1 className="text-2xl font-semibold text-gray-900">Điểm danh</h1>
         <p className="mt-1 text-sm text-gray-500">
           Chọn buổi học rồi đánh dấu trạng thái cho từng học sinh.
@@ -101,6 +106,11 @@ export default function ClassAttendancePage() {
       {!sessionsLoading && sessions.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
           Lớp này chưa có buổi học nào. Hãy tạo lịch học trước khi điểm danh.
+          <div className="mt-3">
+            <Link href={`/teacher/classes/${classId}?tab=schedule`} className="font-medium text-primary-600 hover:underline">
+              Tạo lịch học cho lớp
+            </Link>
+          </div>
         </div>
       ) : (
         <>
@@ -165,12 +175,15 @@ export default function ClassAttendancePage() {
               Đang tải…
             </div>
           ) : (
-            <AttendanceTable
-              rows={rows}
-              onStatusChange={setStatus}
-              onNoteChange={setNote}
-              disabled={archived || saving}
-            />
+            <>
+              {/* Dưới md bảng 720px cắt nút trạng thái (Q3-21): dùng thẻ xếp dọc. */}
+              <div className="md:hidden">
+                <AttendanceCardList rows={rows} onStatusChange={setStatus} onNoteChange={setNote} disabled={archived || saving} />
+              </div>
+              <div className="hidden md:block">
+                <AttendanceTable rows={rows} onStatusChange={setStatus} onNoteChange={setNote} disabled={archived || saving} />
+              </div>
+            </>
           )}
         </>
       )}

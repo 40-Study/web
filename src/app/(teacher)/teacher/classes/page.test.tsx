@@ -59,4 +59,22 @@ describe("TeacherClassesPage", () => {
     fireEvent.click(retry);
     await waitFor(() => expect(screen.getByText("Lớp hồi phục")).toBeTruthy());
   });
+
+  it("Q3-15: mỗi lớp có nhãn nguồn: 'Cá nhân' khi không có organization_id, nhãn tổ chức khi có", async () => {
+    mockApi.get.mockResolvedValue(
+      envelope({
+        classes: [
+          { id: "cls-1", name: "Lớp cá nhân", status: "active" },
+          { id: "cls-2", name: "Lớp tổ chức", status: "active", organization_id: "org-1" },
+        ],
+      }),
+    );
+    renderWithProviders(<TeacherClassesPage />);
+
+    await screen.findByText("Lớp cá nhân");
+    expect(screen.getAllByText("Cá nhân")).toHaveLength(1);
+    // Chưa tra được tên tổ chức (chưa đăng nhập trong test): nhãn chung "Tổ chức", không bao giờ là UUID.
+    expect(screen.getAllByText("Tổ chức")).toHaveLength(1);
+    expect(screen.queryByText("org-1")).toBeNull();
+  });
 });

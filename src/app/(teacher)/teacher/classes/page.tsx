@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ClassSourceBadge } from "@/components/classes/class-source-badge";
 import { useMyClasses } from "@/hooks/queries/use-classes";
 import { getClassStatusLabel, getClassStatusVariant } from "@/lib/class-status";
 
@@ -58,6 +59,7 @@ export default function TeacherClassesPage() {
                     {cls.name}
                   </Link>
                   <Badge variant={getClassStatusVariant(cls.status)}>{getClassStatusLabel(cls.status)}</Badge>
+                  <ClassSourceBadge organizationId={cls.organization_id} />
                 </div>
                 <p className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Users className="h-3.5 w-3.5" aria-hidden="true" />
