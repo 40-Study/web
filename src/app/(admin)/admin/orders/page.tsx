@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { lateRefundSummaryText } from "@/lib/late-refund";
+import { STICKY_ACTION_CELL, STICKY_ACTION_HEAD } from "@/app/(admin)/admin/_lib/sticky-action-column";
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
@@ -69,12 +70,13 @@ function AdminOrdersContent() {
   const page = parsePage(searchParams.get("page"));
   const urlQuery = searchParams.get("q") ?? "";
   const [search, setSearch] = useState(urlQuery);
-  const debouncedSearch = useDebouncedValue(search, 300);
+  // QA3-14: từ khoá luôn được trim — "  " không được thành ?q=++ và gõ dấu cách cuối không ghi đè ô.
+  const keyword = useDebouncedValue(search, 300).trim();
 
   // Back/Forward đổi ?q= thì ô tìm kiếm phải theo URL (review #34 MINOR). Bỏ qua khi URL vừa được
-  // CHÍNH ô này ghi (urlQuery === debouncedSearch), nếu không phím gõ sau lúc debounce sẽ bị ghi đè.
+  // CHÍNH ô này ghi (urlQuery === keyword), nếu không phím gõ sau lúc debounce sẽ bị ghi đè.
   useEffect(() => {
-    if (urlQuery !== debouncedSearch) setSearch(urlQuery);
+    if (urlQuery !== keyword) setSearch(urlQuery);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlQuery]);
   const limit = 20;
@@ -91,27 +93,21 @@ function AdminOrdersContent() {
   const setStatus = (value: StatusFilter) => updateQuery({ status: value, page: null });
   const setPage = (updater: (p: number) => number) => updateQuery({ page: updater(page) });
 
-  // Ô tìm kiếm ghi lên URL sau debounce (không đẩy URL mỗi phím gõ).
+  // Ô tìm kiếm ghi lên URL sau debounce (không đẩy URL mỗi phím gõ); đổi từ khoá thì về trang 1.
   useEffect(() => {
-    if ((searchParams.get("q") ?? "") !== debouncedSearch) updateQuery({ q: debouncedSearch });
+    if (urlQuery !== keyword) updateQuery({ q: keyword, page: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch]);
+  }, [keyword]);
 
+  // QA3-01: từ khoá gửi lên server (?q= → mã đơn, email/tên người mua) để tìm trên TOÀN BỘ đơn,
+  // không chỉ 20 dòng của trang đang tải. Bỏ trống thì không gửi tham số.
   const { data, isLoading, isError, error, refetch } = useAdminOrders({
     status: status || undefined,
+    q: urlQuery.trim() || undefined,
     page,
     limit,
   });
-
-  // Lọc theo mã đơn/email PHÍA CLIENT trên trang hiện tại — filter server-side (status/user_id/
-  // from/to) đã đủ cho khối lượng V1; tìm-nhanh-trong-trang không cần round-trip riêng.
-  const filteredItems = (data?.items ?? []).filter((o) => {
-    if (!debouncedSearch) return true;
-    const q = debouncedSearch.toLowerCase();
-    return (
-      o.order_number.toLowerCase().includes(q) || o.user_email.toLowerCase().includes(q)
-    );
-  });
+  const items = data?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -128,7 +124,7 @@ function AdminOrdersContent() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo mã đơn hoặc email học viên..."
+            placeholder="Tìm theo mã đơn, email hoặc tên người mua..."
             className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
           />
           <select
@@ -151,7 +147,7 @@ function AdminOrdersContent() {
         isError={isError}
         error={error}
         onRetry={() => refetch()}
-        isEmpty={!isLoading && !isError && filteredItems.length === 0}
+        isEmpty={!isLoading && !isError && items.length === 0}
         emptyTitle="Không có đơn hàng nào"
         emptyDescription="Chưa có đơn khớp bộ lọc hiện tại."
       >
@@ -166,11 +162,11 @@ function AdminOrdersContent() {
                   <th className="px-4 py-3 text-left">Tổng tiền</th>
                   <th className="px-4 py-3 text-left">Trạng thái</th>
                   <th className="px-4 py-3 text-left">Ngày tạo</th>
-                  <th className="px-4 py-3 text-left" />
+                  <th className={`px-4 py-3 text-left ${STICKY_ACTION_HEAD}`} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {filteredItems.map((order) => (
+                {items.map((order) => (
                   <tr key={order.id}>
                     <td className="px-4 py-3 font-medium">{order.order_number}</td>
                     <td className="px-4 py-3">{order.user_email}</td>
@@ -197,7 +193,7 @@ function AdminOrdersContent() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-500">{formatDate(order.created_at)}</td>
-                    <td className="px-4 py-3">
+                    <td className={`px-4 py-3 ${STICKY_ACTION_CELL}`}>
                       <Link
                         href={`/admin/orders/${order.id}`}
                         className="rounded bg-gray-100 px-2 py-1 text-xs font-medium hover:bg-gray-200 dark:bg-gray-800"
