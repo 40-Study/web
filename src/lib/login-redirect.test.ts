@@ -3,7 +3,7 @@
  * đường dẫn). Test gọi thẳng hàm dựng URL với đường dẫn chưa chuẩn hoá chứa `//`.
  */
 import { describe, expect, it } from "vitest";
-import { buildLoginRedirectUrl } from "./login-redirect";
+import { buildLoginRedirectUrl, loginHref } from "./login-redirect";
 
 const BASE = "http://localhost:3000/anything";
 
@@ -23,4 +23,14 @@ describe("buildLoginRedirectUrl", () => {
       expect(url.searchParams.has("redirect")).toBe(false);
     }
   );
+});
+
+describe("loginHref", () => {
+  it("nội bộ -> /login?redirect= đã encode", () => {
+    expect(loginHref("/discussions/bai-viet?x=1")).toBe("/login?redirect=%2Fdiscussions%2Fbai-viet%3Fx%3D1");
+  });
+
+  it.each(["//evil.com", "/\\evil.com", "https://evil.com"])("%s -> /login trơn", (path) => {
+    expect(loginHref(path)).toBe("/login");
+  });
 });

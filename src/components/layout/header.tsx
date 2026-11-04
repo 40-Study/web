@@ -190,97 +190,100 @@ export function Header() {
             </div>
           )}
 
-          <div className="relative" ref={notificationRef}>
-            <button
-              className="relative p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              onClick={() => {
-                setIsDropdownOpen(false);
-                setIsNotificationOpen((v) => !v);
-              }}
-              aria-label={unreadCount > 0 ? `Thông báo (${unreadCount} chưa đọc)` : "Thông báo"}
-              aria-expanded={isNotificationOpen}
-              aria-haspopup="dialog"
-            >
-              <Bell className="w-5 h-5" aria-hidden="true" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 min-w-[16px] h-4 px-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              )}
-            </button>
+          {/* Khách không có hộp thư: chuông chỉ cho người đã đăng nhập (G-07, QA3 261104) */}
+          {isAuthenticated && (
+            <div className="relative" ref={notificationRef}>
+              <button
+                className="relative p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  setIsNotificationOpen((v) => !v);
+                }}
+                aria-label={unreadCount > 0 ? `Thông báo (${unreadCount} chưa đọc)` : "Thông báo"}
+                aria-expanded={isNotificationOpen}
+                aria-haspopup="dialog"
+              >
+                <Bell className="w-5 h-5" aria-hidden="true" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 px-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
 
-            {isNotificationOpen && (
-              <div role="dialog" aria-label="Danh sách thông báo" className="absolute right-0 top-12 w-96 max-w-[90vw] bg-popover rounded-2xl overflow-hidden z-50 shadow-raised border border-border">
-                <div className="px-5 py-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-5 h-5 text-foreground" />
-                    <p className="font-medium text-foreground">Thông báo</p>
+              {isNotificationOpen && (
+                <div role="dialog" aria-label="Danh sách thông báo" className="absolute right-0 top-12 w-96 max-w-[90vw] bg-popover rounded-2xl overflow-hidden z-50 shadow-raised border border-border">
+                  <div className="px-5 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Bell className="w-5 h-5 text-foreground" />
+                      <p className="font-medium text-foreground">Thông báo</p>
+                      {unreadCount > 0 && (
+                        <span className="px-2 py-0.5 bg-muted text-foreground text-xs font-medium rounded-full">
+                          {unreadCount} mới
+                        </span>
+                      )}
+                    </div>
                     {unreadCount > 0 && (
-                      <span className="px-2 py-0.5 bg-muted text-foreground text-xs font-medium rounded-full">
-                        {unreadCount} mới
-                      </span>
+                      <button
+                        className="text-xs text-foreground hover:text-muted-foreground font-medium disabled:opacity-50"
+                        onClick={() => markAllReadMutation.mutate()}
+                        disabled={markAllReadMutation.isPending}
+                      >
+                        Đọc tất cả
+                      </button>
                     )}
                   </div>
-                  {unreadCount > 0 && (
-                    <button
-                      className="text-xs text-foreground hover:text-muted-foreground font-medium disabled:opacity-50"
-                      onClick={() => markAllReadMutation.mutate()}
-                      disabled={markAllReadMutation.isPending}
-                    >
-                      Đọc tất cả
-                    </button>
-                  )}
-                </div>
-                <div className="max-h-96 overflow-y-auto">
-                  {notifications.length === 0 ? (
-                    <div className="py-12 text-center">
-                      <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
-                        <Bell className="w-8 h-8 text-muted-foreground" />
-                      </div>
-                      <p className="text-sm text-muted-foreground">Không có thông báo nào</p>
-                    </div>
-                  ) : (
-                    notifications.map((item) => (
-                      <button
-                        key={item.id}
-                        className={`w-full text-left px-5 py-4 hover:bg-muted transition-colors border-b border-border last:border-0 ${!item.is_read ? "bg-primary-50/50 dark:bg-primary-900/20" : ""}`}
-                        onClick={() => {
-                          if (!item.is_read) markReadMutation.mutate(item.id);
-                          setIsNotificationOpen(false);
-                          const href = getNotificationHref(item);
-                          if (href) router.push(href);
-                        }}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${!item.is_read ? "bg-primary-500" : "bg-transparent"}`} />
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm leading-snug ${!item.is_read ? "text-foreground font-medium" : "text-foreground"}`}>
-                              {item.title}
-                            </p>
-                            {item.content && (
-                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.content}</p>
-                            )}
-                            <p className="text-xs text-muted-foreground mt-1.5">{timeAgo(item.created_at)}</p>
-                          </div>
+                  <div className="max-h-96 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="py-12 text-center">
+                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
+                          <Bell className="w-8 h-8 text-muted-foreground" />
                         </div>
-                      </button>
-                    ))
+                        <p className="text-sm text-muted-foreground">Không có thông báo nào</p>
+                      </div>
+                    ) : (
+                      notifications.map((item) => (
+                        <button
+                          key={item.id}
+                          className={`w-full text-left px-5 py-4 hover:bg-muted transition-colors border-b border-border last:border-0 ${!item.is_read ? "bg-primary-50/50 dark:bg-primary-900/20" : ""}`}
+                          onClick={() => {
+                            if (!item.is_read) markReadMutation.mutate(item.id);
+                            setIsNotificationOpen(false);
+                            const href = getNotificationHref(item);
+                            if (href) router.push(href);
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${!item.is_read ? "bg-primary-500" : "bg-transparent"}`} />
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm leading-snug ${!item.is_read ? "text-foreground font-medium" : "text-foreground"}`}>
+                                {item.title}
+                              </p>
+                              {item.content && (
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.content}</p>
+                              )}
+                              <p className="text-xs text-muted-foreground mt-1.5">{timeAgo(item.created_at)}</p>
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                  {notifications.length > 0 && (
+                    <div className="px-5 py-3 border-t border-border bg-muted">
+                      <Link
+                        href="/notifications"
+                        className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                        onClick={() => setIsNotificationOpen(false)}
+                      >
+                        Xem tất cả thông báo
+                      </Link>
+                    </div>
                   )}
                 </div>
-                {notifications.length > 0 && (
-                  <div className="px-5 py-3 border-t border-border bg-muted">
-                    <Link
-                      href="/notifications"
-                      className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-                      onClick={() => setIsNotificationOpen(false)}
-                    >
-                      Xem tất cả thông báo
-                    </Link>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           <div className="hidden sm:flex items-center gap-2" ref={dropdownRef}>
             {isAuthenticated ? (

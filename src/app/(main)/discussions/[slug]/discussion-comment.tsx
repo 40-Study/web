@@ -17,6 +17,8 @@ interface DiscussionCommentProps {
   onVote: (id: string, hasVoted: boolean) => void;
   onReply: (parentId: string, content: string) => void;
   isReplying?: boolean;
+  /** Khách (chưa đăng nhập) không trả lời được (API 401) nên ẩn nút "Trả lời" (G-03). */
+  canReply?: boolean;
 }
 
 function timeAgo(dateStr: string): string {
@@ -36,6 +38,7 @@ export function DiscussionComment({
   onVote,
   onReply,
   isReplying = false,
+  canReply = true,
 }: DiscussionCommentProps) {
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [replyContent, setReplyContent] = useState("");
@@ -54,6 +57,7 @@ export function DiscussionComment({
       <div className="flex gap-3 py-3">
         {/* Avatar */}
         {comment.avatar_url ? (
+          // eslint-disable-next-line @next/next/no-img-element -- avatar từ URL ngoài, chưa cấu hình next/image
           <img src={comment.avatar_url} alt={comment.author_name} className="w-8 h-8 rounded-full object-cover shrink-0" />
         ) : (
           <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-xs shrink-0">
@@ -87,7 +91,7 @@ export function DiscussionComment({
               <span>{comment.upvote_count}</span>
             </button>
 
-            {depth < 2 && (
+            {canReply && depth < 2 && (
               <button
                 onClick={() => setShowReplyBox(!showReplyBox)}
                 className="flex items-center gap-1 text-xs text-slate-400 hover:text-primary-500 transition-colors"
@@ -136,6 +140,7 @@ export function DiscussionComment({
           onVote={onVote}
           onReply={onReply}
           isReplying={isReplying}
+          canReply={canReply}
         />
       ))}
     </div>

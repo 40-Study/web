@@ -74,6 +74,14 @@ const PROBE_RULES: readonly ProbeRule[] = [
     requiresSession: false,
     missingStatuses: [400, 404],
   },
+  {
+    // Bài thảo luận công khai (G-06, QA3 261104): slug sai trả 200 kèm chữ "Bài viết không tồn tại" (soft 404).
+    // Backend: GET /discussions/:slug công khai, 404 "post not found" cho slug không có.
+    pattern: /^\/discussions\/([^/]+)\/?$/,
+    endpoint: (slug) => `/discussions/${slug}`,
+    requiresSession: false,
+    missingStatuses: [404],
+  },
 ];
 
 interface ProbeOptions {

@@ -208,3 +208,27 @@ describe("Header — hamburger mobile có lối vào giỏ hàng, thông báo, t
     expect(menu.textContent).not.toContain("Tin nhắn");
   });
 });
+
+// G-07 (QA3 261104): chuông thông báo trên header desktop hiện "Không có thông báo nào" cho khách như thể họ có hộp thư trống.
+describe("Header — chuông thông báo desktop", () => {
+  const bell = () => screen.queryByRole("button", { name: /^Thông báo/ });
+
+  it("khách: không có chuông", () => {
+    authState = { isAuthenticated: false, user: null, activeRole: null, activeUnifiedRole: null, roles: [] };
+    render(<Header />);
+    expect(bell()).toBeNull();
+  });
+
+  it("đã đăng nhập: có chuông", () => {
+    authState = {
+      isAuthenticated: true,
+      user: { name: "Học Viên", email: "hv@demo.com" },
+      activeRole: "STUDENT",
+      activeUnifiedRole: null,
+      roles: [],
+    };
+    render(<Header />);
+    expect(bell()).not.toBeNull();
+  });
+});
+
