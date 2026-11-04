@@ -33,6 +33,19 @@ beforeEach(() => {
   resetMockApi();
   mockApi.get.mockImplementation(async (url: string) => {
     if (url === "/organizations") return envelope({ organizations: [ORG] });
+    if (url === "/organizations/org-1/members") {
+      return envelope({
+        user_organization_roles: [
+          {
+            id: "a1", user_id: "u1", role_id: "r1", status: "active",
+            user: { id: "u1", user_name: "gv2", full_name: "Giáo viên Hai", email: "teacher2@demo.com" },
+            role: { id: "r1", name: "QA3_TEACHER" },
+          },
+        ],
+        total: 1,
+      });
+    }
+    if (url === "/org-roles") return envelope({ roles: [{ id: "r1", name: "QA3_TEACHER", organization_id: "org-1", status: "active" }] });
     throw new Error(`GET không mong đợi trong test: ${url}`);
   });
   mockApi.post.mockImplementation(async (url: string, data: unknown) => {
@@ -109,5 +122,24 @@ describe("/admin/organizations — QA3-10/17: giữ tên khi lỗi, nút xoá b�
     await screen.findByText("ForteX");
     expect(screen.getByRole("button", { name: "Xoá nội dung đã nhập" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Reset" })).toBeNull();
+  });
+});
+
+describe("/admin/organizations — QA3-04: thành viên của tổ chức", () => {
+  it("chọn tổ chức hiện danh sách thành viên kèm nút 'Thêm thành viên'; chưa chọn thì không có", async () => {
+    renderWithProviders(<OrganizationsPage />);
+    fireEvent.click(await screen.findByText("ForteX"));
+
+    expect(await screen.findByText("Giáo viên Hai")).toBeTruthy();
+    expect(screen.getByText("Qa3 Teacher")).toBeTruthy();
+    await waitFor(() => expect((screen.getByRole("button", { name: /Thêm thành viên/ }) as HTMLButtonElement).disabled).toBe(false));
+    expect(mockApi.get).toHaveBeenCalledWith("/organizations/org-1/members", expect.anything());
+  });
+
+  it("chưa chọn tổ chức: không gọi API thành viên", async () => {
+    renderWithProviders(<OrganizationsPage />);
+    await screen.findByText("ForteX");
+    expect(screen.queryByRole("button", { name: /Thêm thành viên/ })).toBeNull();
+    expect(mockApi.get).not.toHaveBeenCalledWith("/organizations/org-1/members", expect.anything());
   });
 });

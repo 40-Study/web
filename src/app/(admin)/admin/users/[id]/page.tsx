@@ -11,11 +11,13 @@ import {
   useUpdateUserStatus,
 } from "@/hooks/queries/use-admin-users";
 import { useSystemRoles } from "@/hooks/queries/use-admin";
+import { useUserOrgMemberships } from "@/hooks/queries/use-org-member-roles";
 import { Can } from "@/components/guards";
 import { PERMISSIONS, SYSTEM_ROLES } from "@/lib/permissions";
-import { getSystemRoleLabel } from "@/lib/role-labels";
+import { getOrgRoleLabel, getSystemRoleLabel } from "@/lib/role-labels";
 import { useAuthStore } from "@/stores/auth.store";
 import { ApiError } from "@/lib/errors";
+import { getErrorMessage } from "@/lib/error-messages";
 import { getUserActiveLabel } from "../../_lib/user-status-label";
 import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
@@ -44,6 +46,7 @@ export default function AdminUserDetailPage() {
 
   const { data: user, isLoading, isError, error, refetch } = useAdminUserDetail(userId);
   const { data: systemRoles = [] } = useSystemRoles();
+  const memberships = useUserOrgMemberships(userId);
 
   const updateStatus = useUpdateUserStatus();
   const assignRole = useAssignUserSystemRole();
@@ -249,6 +252,38 @@ export default function AdminUserDetailPage() {
                     </div>
                   )}
                 </Can>
+              </div>
+
+              <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Tổ chức</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Thêm, đổi hoặc gỡ vai trò trong tổ chức ở trang Quản lý tổ chức.
+                </p>
+                <div className="mt-3 space-y-2">
+                  {memberships.isLoading ? (
+                    <p className="text-sm text-muted-foreground">Đang tải…</p>
+                  ) : memberships.isError ? (
+                    <p role="alert" className="text-sm text-red-600">
+                      {getErrorMessage(memberships.error, "Không tải được danh sách tổ chức của người dùng.")}
+                    </p>
+                  ) : (memberships.data ?? []).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Chưa thuộc tổ chức nào.</p>
+                  ) : (
+                    (memberships.data ?? []).map((m) => (
+                      <div
+                        key={m.id}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-800"
+                      >
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {m.organization?.name ?? "Tổ chức không rõ"}
+                        </p>
+                        <Badge variant="secondary" title={m.role?.name}>
+                          {m.role ? getOrgRoleLabel(m.role.name) : "—"}
+                        </Badge>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>

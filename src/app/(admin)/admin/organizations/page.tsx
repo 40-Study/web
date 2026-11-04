@@ -12,6 +12,8 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import { OrgMembersPanel } from "@/components/org-members/org-members-panel";
+import { useAuthStore } from "@/stores/auth.store";
 import { formatVnDateTime } from "../_lib/format-vn-datetime";
 
 type OrgFormState = {
@@ -30,6 +32,7 @@ export default function OrganizationsPage() {
   const updateOrg = useUpdateOrganization();
   const deleteOrg = useDeleteOrganization();
 
+  const currentUserId = useAuthStore((s) => s.user?.id);
   const [form, setForm] = useState<OrgFormState>(emptyForm);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Xác nhận trước khi xoá tổ chức (đồng nhất với H-09 ở admin/roles)
@@ -75,7 +78,7 @@ export default function OrganizationsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Quản lý tổ chức</h1>
-        <p className="mt-1 text-sm text-gray-500">Tạo, sửa, xoá tổ chức và xem thông tin chi tiết từng tổ chức.</p>
+        <p className="mt-1 text-sm text-gray-500">Tạo, sửa, xoá tổ chức; chọn một tổ chức để xem chi tiết và quản lý thành viên.</p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
@@ -171,6 +174,15 @@ export default function OrganizationsPage() {
           </div>
         </div>
       </div>
+
+      {selected && (
+        <section aria-label={`Thành viên của ${selected.name}`} className="rounded-xl bg-white p-4 shadow-sm">
+          <p className="mb-3 text-sm text-gray-500">
+            Thành viên của <span className="font-medium text-gray-900">{selected.name}</span>
+          </p>
+          <OrgMembersPanel key={selected.id} orgId={selected.id} canAddMember currentUserId={currentUserId} />
+        </section>
+      )}
 
       <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
         <DialogContent>

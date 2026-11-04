@@ -211,3 +211,31 @@ describe("getErrorMessage — khoá đã ngừng bán (409 COURSE_NOT_FOR_SALE)"
     expect(message).not.toMatch(/xung đột/);
   });
 });
+
+// QA3-04: thành viên tổ chức. Backend song song thêm 409 ORG_ROLE_ALREADY_ASSIGNED / ROLE_NAME_TAKEN kèm câu tiếng Việt.
+describe("getErrorMessage — thành viên tổ chức (QA3-04)", () => {
+  it("409 ORG_ROLE_ALREADY_ASSIGNED: ưu tiên câu tiếng Việt của backend", () => {
+    const error = new ApiError(409, "ORG_ROLE_ALREADY_ASSIGNED", "Người dùng đã có vai trò Giảng viên trong tổ chức này");
+    expect(getErrorMessage(error)).toBe("Người dùng đã có vai trò Giảng viên trong tổ chức này");
+  });
+
+  it("409 ROLE_NAME_TAKEN: backend gửi message tiếng Anh thì rơi về câu mặc định theo mã", () => {
+    expect(getErrorMessage(new ApiError(409, "ROLE_NAME_TAKEN", "role name taken"))).toBe(
+      "Tên vai trò đã tồn tại trong tổ chức."
+    );
+  });
+
+  it("409 cũ chưa có mã: 'roles already assigned to user: [X]' ra tiếng Việt, không lộ mã vai trò thô", () => {
+    const message = getErrorMessage(new ApiError(409, "", "roles already assigned to user: [QA3_TEACHER]"));
+    expect(message).toBe("Người này đã giữ vai trò đó trong tổ chức");
+  });
+
+  it("gỡ vai trò đã gỡ (400) và vai trò không thuộc tổ chức (404) có câu rõ nghĩa", () => {
+    expect(getErrorMessage(new ApiError(400, "", "organization role already inactive for this user"))).toBe(
+      "Vai trò này đã được gỡ khỏi người dùng trước đó"
+    );
+    expect(getErrorMessage(new ApiError(404, "", "role does not belong to this organization: X"))).toBe(
+      "Vai trò này không thuộc tổ chức đang chọn"
+    );
+  });
+});

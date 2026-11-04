@@ -51,6 +51,13 @@ export interface OrgMemberRow {
   role?: { id: string; name: string };
 }
 
+/** Một lần gán vai trò đang hiệu lực: `id` là mã dòng gán (dùng để gỡ), `role_id` là mã vai trò (dùng để gán). */
+export interface OrgMemberAssignment {
+  id: string;
+  role_id: string;
+  name: string;
+}
+
 /** Thành viên đã gộp theo người, để hiện tên/email và tất cả vai trò đang giữ. */
 export interface OrgMember {
   user_id: string;
@@ -58,6 +65,8 @@ export interface OrgMember {
   email: string;
   avatar_url?: string;
   roles: string[];
+  /** Cùng thứ tự với `roles`; cần `id` để gỡ từng vai trò (DELETE /users/:userId/org-roles/:id). */
+  assignments: OrgMemberAssignment[];
   granted_at?: string;
 }
 
@@ -68,8 +77,12 @@ export function groupOrgMembers(rows: OrgMemberRow[]): OrgMember[] {
     if (row.status !== "active") continue;
     const existing = byUser.get(row.user_id);
     const roleName = row.role?.name;
+    const assignment = { id: row.id, role_id: row.role_id, name: roleName ?? "" };
     if (existing) {
-      if (roleName && !existing.roles.includes(roleName)) existing.roles.push(roleName);
+      if (roleName && !existing.roles.includes(roleName)) {
+        existing.roles.push(roleName);
+        existing.assignments.push(assignment);
+      }
       continue;
     }
     byUser.set(row.user_id, {
@@ -78,6 +91,7 @@ export function groupOrgMembers(rows: OrgMemberRow[]): OrgMember[] {
       email: row.user?.email ?? "",
       avatar_url: row.user?.avatar_url,
       roles: roleName ? [roleName] : [],
+      assignments: roleName ? [assignment] : [],
       granted_at: row.granted_at,
     });
   }
