@@ -47,6 +47,9 @@ export function CourseSearch({
     setQuery(urlQuery);
   }, [urlQuery]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  // Gợi ý chỉ mở khi người dùng tương tác (gõ/focus). Từ khoá điền sẵn từ `?q=` không được tự mở dropdown
+  // đè lên hero khi tải trang (QA3 Q18). Gửi form / chọn gợi ý / xoá từ khoá đóng và khoá lại tới lần gõ tiếp.
+  const [suggestionsArmed, setSuggestionsArmed] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState<CourseSearchResult[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -57,12 +60,12 @@ export function CourseSearch({
     if (query.length >= 2) {
       const isStale = suggestionsQuery !== undefined && suggestionsQuery !== query;
       setFilteredSuggestions(isStale ? [] : suggestions.slice(0, 5));
-      setShowSuggestions(true);
+      setShowSuggestions(suggestionsArmed);
     } else {
       setFilteredSuggestions([]);
       setShowSuggestions(false);
     }
-  }, [query, suggestions, suggestionsQuery]);
+  }, [query, suggestions, suggestionsQuery, suggestionsArmed]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -94,6 +97,7 @@ export function CourseSearch({
 
   const handleSelect = (course: CourseSearchResult) => {
     setQuery("");
+    setSuggestionsArmed(false);
     setShowSuggestions(false);
     router.push(`/courses/${course.slug}`);
   };
@@ -101,6 +105,7 @@ export function CourseSearch({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
+      setSuggestionsArmed(false);
       setShowSuggestions(false);
       router.push(`/courses?q=${encodeURIComponent(query.trim())}`);
     }
@@ -110,6 +115,7 @@ export function CourseSearch({
     setQuery("");
     // Bỏ luôn `q` trên URL, nếu không tải lại trang sẽ điền lại từ khoá cũ.
     if (urlQuery) router.replace("/courses");
+    setSuggestionsArmed(false);
     setShowSuggestions(false);
     inputRef.current?.focus();
   };
@@ -130,8 +136,14 @@ export function CourseSearch({
             placeholder={placeholder}
             className="h-11 pl-10 pr-11 text-base rounded-lg border-slate-300 bg-white hover:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => query.length >= 2 && setShowSuggestions(true)}
+            onChange={(e) => {
+              setSuggestionsArmed(true);
+              setQuery(e.target.value);
+            }}
+            onFocus={() => {
+              setSuggestionsArmed(true);
+              if (query.length >= 2) setShowSuggestions(true);
+            }}
           />
           {query && (
             <button
