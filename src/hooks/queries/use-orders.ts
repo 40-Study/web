@@ -45,6 +45,38 @@ export function isPaymentVerifyingError(error: unknown): error is ApiError {
   return error instanceof ApiError && error.status === 409 && error.code === PAYMENT_VERIFYING_CODE;
 }
 
+/**
+ * 503 ERR_PAYMENT_PROVIDER_UNAVAILABLE khi huỷ đơn: ngân hàng không trả lời VÀ chủ đơn đã bấm "Tôi đã chuyển
+ * khoản" (backend#143 Q8). Ngân hàng không trả lời mà chủ đơn chưa từng báo chuyển khoản thì huỷ được (200).
+ */
+export const PAYMENT_PROVIDER_UNAVAILABLE_CODE = "ERR_PAYMENT_PROVIDER_UNAVAILABLE";
+
+export function isPaymentProviderUnavailableError(error: unknown): error is ApiError {
+  return (
+    error instanceof ApiError &&
+    error.status === 503 &&
+    error.code === PAYMENT_PROVIDER_UNAVAILABLE_CODE
+  );
+}
+
+/**
+ * Câu cho 3 kết quả lỗi của POST /orders/:id/cancel (kết quả thứ 4, huỷ được, là toast thành công). Mỗi câu nêu
+ * đúng điều đã xảy ra: KHÔNG nói "đang đối chiếu" với người chưa từng báo chuyển khoản.
+ */
+export const CANCEL_ALREADY_PAID_MESSAGE =
+  "Ngân hàng đã ghi nhận khoản chuyển khoản của bạn nên không thể huỷ đơn. Đơn đã được thanh toán và khoá học đã có trong tài khoản của bạn.";
+export const CANCEL_PROVIDER_UNAVAILABLE_MESSAGE =
+  "Ngân hàng đang gặp sự cố nên chưa kiểm tra được khoản chuyển khoản bạn đã báo. Để không huỷ nhầm đơn đã trả tiền, đơn được giữ nguyên. Vui lòng thử huỷ lại sau ít phút.";
+export const CANCEL_VERIFYING_MESSAGE =
+  "Ngân hàng đang có giao dịch liên quan đến đơn này (đang trong thời gian ân hạn hoặc số tiền chưa khớp) nên chưa thể huỷ lúc này. Vui lòng thử lại sau ít phút; nếu đã chuyển khoản, đừng chuyển lại.";
+
+export function cancelOrderErrorMessage(error: unknown, fallback: string): string {
+  if (isOrderAlreadyPaidError(error)) return CANCEL_ALREADY_PAID_MESSAGE;
+  if (isPaymentProviderUnavailableError(error)) return CANCEL_PROVIDER_UNAVAILABLE_MESSAGE;
+  if (isPaymentVerifyingError(error)) return CANCEL_VERIFYING_MESSAGE;
+  return orderErrorMessage(error, fallback);
+}
+
 /** Câu hiện khi đơn còn đang đối chiếu mà hộp thanh toán đã hết cửa sổ chờ. */
 export const PAYMENT_RECONCILING_NOTICE =
   "Đơn đang được đối chiếu, bạn có thể đóng cửa sổ và xem lại tại Đơn hàng của tôi.";
@@ -186,7 +218,12 @@ export function useCancelOrder() {
         qc.invalidateQueries({ queryKey: orderKeys.mine() });
         qc.invalidateQueries({ queryKey: orderKeys.detail(id) });
       }
-      toast.error(orderErrorMessage(error, "Không thể huỷ đơn hàng"));
+      // Đơn vừa được hoàn tất là tin tốt, không phải lỗi: toast thông tin thay vì toast đỏ.
+      if (isOrderAlreadyPaidError(error)) {
+        toast.info(CANCEL_ALREADY_PAID_MESSAGE);
+        return;
+      }
+      toast.error(cancelOrderErrorMessage(error, "Không thể huỷ đơn hàng"));
     },
   });
 }

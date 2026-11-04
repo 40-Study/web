@@ -136,6 +136,8 @@ export function BankTransferDialog({
   const isExpired = countdownOver && !awaitServerAfterExpiry;
   const isFinalChecking = countdownOver && awaitServerAfterExpiry;
   const effectiveStatus: BankTransferDialogStatus = isExpired ? "expired" : status;
+  // Cùng điều kiện với dòng cảnh báo bên dưới: chưa có tài khoản nhận tiền thì chưa có gì để "đã chuyển khoản".
+  const bankConfigured = Boolean(bankName && accountNumber);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -231,7 +233,7 @@ export function BankTransferDialog({
               <CopyRow label="Nội dung chuyển khoản (bắt buộc)" value={paymentContent} />
             </div>
 
-            {(!bankName || !accountNumber) && (
+            {!bankConfigured && (
               <p className="text-xs text-amber-600">
                 Chưa cấu hình đầy đủ tài khoản nhận tiền. Vui lòng quay lại sau hoặc liên hệ hỗ trợ;
                 bạn chưa cần chuyển khoản.
@@ -269,7 +271,9 @@ export function BankTransferDialog({
                 Để sau
               </Button>
               {onCheckNow && (
-                <Button className="flex-1" onClick={onCheckNow} disabled={isCheckingNow}>
+                // Bấm nút này ghi nhận "đã báo chuyển khoản" ở backend (chặn huỷ đơn lúc ngân hàng lỗi), nên
+                // không cho bấm khi chưa có tài khoản nhận tiền: học viên chưa thể chuyển khoản.
+                <Button className="flex-1" onClick={onCheckNow} disabled={isCheckingNow || !bankConfigured}>
                   {isCheckingNow ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Tôi đã chuyển khoản
                 </Button>
