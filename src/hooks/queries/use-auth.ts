@@ -274,8 +274,16 @@ export function useRegister() {
  * POST /auth/select-role - Select role during login flow (uses session_token)
  * Completes login: returns tokens, sets auth state, navigates to home.
  */
+/** Không còn session_token của bước đăng nhập (làm mới trang giữa chừng, tab khác, token đã xoá). */
+class MissingRoleSelectionSessionError extends Error {
+  constructor() {
+    super("No session token");
+    this.name = "MissingRoleSelectionSessionError";
+  }
+}
+
 export function useSelectRole() {
-  const { sessionToken, setSessionToken, setActiveRole, setActiveUnifiedRole } = useAuthStore();
+  const { sessionToken, setSessionToken, setActiveRole, setActiveUnifiedRole, restoreSessionToken } = useAuthStore();
   const qc = useQueryClient();
   const router = useRouter();
 
@@ -285,9 +293,11 @@ export function useSelectRole() {
       roleType: "system" | "organization";
       organizationId?: string;
     }) => {
-      if (!sessionToken) throw new Error("No session token");
+      // Token của bước chọn vai trò sống trong sessionStorage: thử đọc lại trước khi coi là mất phiên.
+      const token = sessionToken ?? restoreSessionToken();
+      if (!token) throw new MissingRoleSelectionSessionError();
       return authService.selectRole({
-        session_token: sessionToken,
+        session_token: token,
         role_id: params.roleId,
         role_type: params.roleType,
         organization_id: params.organizationId,
@@ -316,6 +326,13 @@ export function useSelectRole() {
       }
     },
     onError: (error: unknown) => {
+      // QA3-19: mất phiên đăng nhập giữa chừng (vd F5 ở /login/role) không phải lỗi "chọn vai trò thất bại"
+      // để người dùng bấm lại vô ích: báo rõ và đưa về trang đăng nhập.
+      if (error instanceof MissingRoleSelectionSessionError) {
+        toast.error("Phiên đăng nhập đã hết hạn", { description: "Vui lòng đăng nhập lại để chọn vai trò." });
+        router.replace("/login");
+        return;
+      }
       console.error("Select role error:", error);
       toast.error("Chọn vai trò thất bại", {
         description: "Vui lòng thử lại hoặc đăng nhập lại",
