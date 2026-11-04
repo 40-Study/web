@@ -3,14 +3,15 @@
  * nhãn dựng từ user_agent, dòng gộp nhiều phiên hiện "N phiên", thiết bị hiện tại được đánh dấu.
  * Hai nơi cùng vẽ danh sách thiết bị (trang /settings/devices và tab trong /settings) nên test cả hai.
  */
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DeviceSessionDto } from "@/services/auth.service";
 
 const useDevices = vi.fn();
+const logoutAllMutate = vi.fn();
 vi.mock("@/hooks/queries/use-auth", () => ({
   useDevices: () => useDevices(),
-  useLogoutAll: () => ({ mutate: vi.fn(), isPending: false }),
+  useLogoutAll: () => ({ mutate: logoutAllMutate, isPending: false }),
 }));
 
 import DevicesPage from "@/app/(app)/settings/devices/page";
@@ -43,6 +44,7 @@ const devices: DeviceSessionDto[] = [
 ];
 
 beforeEach(() => {
+  logoutAllMutate.mockReset();
   useDevices.mockReturnValue({ data: { devices }, isLoading: false });
 });
 
@@ -68,4 +70,29 @@ describe.each([
     expect(screen.getByText(/3 phiên/)).toBeTruthy();
     expect(screen.getAllByText("Thiết bị này")).toHaveLength(1);
   });
+
+  // P-07 (QA3 261104): "Hoạt động 11:22" thực ra là giờ ĐĂNG NHẬP (logged_in_at).
+  it("dòng thời gian ghi 'Đăng nhập lúc', không ghi 'Hoạt động'", () => {
+    render(view());
+    expect(screen.getAllByText(/Đăng nhập lúc/)).toHaveLength(2);
+    expect(screen.queryByText(/Hoạt động/)).toBeNull();
+  });
+
+  it("'Đăng xuất tất cả' phải qua hộp xác nhận, chỉ gọi API khi xác nhận", () => {
+    render(view());
+    fireEvent.click(screen.getByRole("button", { name: "Đăng xuất tất cả" }));
+    expect(logoutAllMutate).not.toHaveBeenCalled();
+
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(screen.getByRole("button", { name: "Giữ nguyên" }));
+    expect(logoutAllMutate).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Đăng xuất tất cả" }));
+    expect(dialog).toBeTruthy();
+    const confirmButtons = screen.getAllByRole("button", { name: "Đăng xuất tất cả" });
+    fireEvent.click(confirmButtons[confirmButtons.length - 1]);
+    expect(logoutAllMutate).toHaveBeenCalledTimes(1);
+  });
 });
+

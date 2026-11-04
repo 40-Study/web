@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/stores/auth.store";
 import { useMe, useUpdateProfile } from "@/hooks/queries/use-auth";
 import { USER_NAME_RULE_MESSAGE, validateUserName } from "@/lib/user-name";
+import { PHONE_FORMAT_MESSAGE, normalizePhone } from "@/lib/phone";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -25,7 +26,11 @@ const profileSchema = z.object({
   // Cùng luật với backend và với trang đăng ký (lib/user-name.ts): cho '_', không cho '@'/email.
   username: z.string().refine((v) => validateUserName(v) === null, USER_NAME_RULE_MESSAGE),
   bio: z.string().max(160, "Tiểu sử tối đa 160 ký tự").optional(),
-  phone: z.string().optional(),
+  // Để trống được; có nhập thì phải chuẩn hoá được sang E.164 như backend yêu cầu (P-03).
+  phone: z
+    .string()
+    .optional()
+    .refine((v) => !v?.trim() || normalizePhone(v) !== null, PHONE_FORMAT_MESSAGE),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -100,7 +105,7 @@ export function ProfileSettings() {
       // Backend phân biệt 3 trạng thái: vắng mặt = giữ nguyên, null = XOÁ, chuỗi = đặt số mới.
       // Xoá trắng ô khi đang có SĐT -> gửi null. Tài khoản vốn chưa có SĐT mà ô trống thì không
       // gửi gì (không có gì để xoá, và "" không phải số hợp lệ).
-      phone: data.phone ? data.phone : profileData?.phone ? null : undefined,
+      phone: data.phone?.trim() ? normalizePhone(data.phone) : profileData?.phone ? null : undefined,
     });
   };
 
@@ -209,7 +214,7 @@ export function ProfileSettings() {
             <Input
               id="phone"
               {...register("phone")}
-              placeholder="+84912345678"
+              placeholder="0912345678 hoặc +84912345678"
               className="rounded-xl"
               error={errors.phone?.message}
             />

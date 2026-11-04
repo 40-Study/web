@@ -280,3 +280,31 @@ describe("MISSING_RESOURCE_REWRITE_PATH", () => {
     expect(MISSING_RESOURCE_REWRITE_PATH).not.toMatch(/^\/(courses|learn|quizzes|home)/);
   });
 });
+
+describe("isMissingResource — bài thảo luận công khai (/discussions/<slug>) (G-06)", () => {
+  it("backend 404 -> thiếu, dò đúng endpoint", async () => {
+    const fetchImpl = fakeFetch(404);
+    const missing = await isMissingResource(documentRequest("/discussions/khong-ton-tai"), { fetchImpl, apiBaseUrl: API });
+    expect(missing).toBe(true);
+    expect(String(fetchImpl.mock.calls[0]?.[0])).toBe(`${API}/discussions/khong-ton-tai`);
+  });
+
+  it("backend 200 -> có thật; 5xx không bị coi là thiếu", async () => {
+    for (const [status, expected] of [
+      [200, false],
+      [500, false],
+    ] as const) {
+      const missing = await isMissingResource(documentRequest("/discussions/bai-viet"), {
+        fetchImpl: fakeFetch(status),
+        apiBaseUrl: API,
+      });
+      expect(missing, `status ${status}`).toBe(expected);
+    }
+  });
+
+  it("danh sách /discussions (không có slug) không bị dò", async () => {
+    const fetchImpl = fakeFetch(404);
+    expect(await isMissingResource(documentRequest("/discussions"), { fetchImpl, apiBaseUrl: API })).toBe(false);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});

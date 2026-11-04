@@ -15,9 +15,16 @@ import {
   authErrorMessage,
   translateOtpErrorMessage,
 } from "@/hooks/queries/use-auth";
+import { useFlowGuard } from "@/hooks/use-flow-guard";
 
 export default function OtpPage() {
   const router = useRouter();
+  // G-05: mở thẳng /otp khi chưa có yêu cầu đăng ký -> về /register ngay, không đợi tới lúc nhập đủ 6 số.
+  const hasPendingRegistration = useFlowGuard(
+    [STORAGE_KEYS.REGISTER_EMAIL],
+    AUTH_ROUTES.REGISTER,
+    "Chưa có yêu cầu đăng ký nào cần xác thực. Vui lòng đăng ký trước.",
+  );
   const register = useRegister();
   const registerRequest = useRegisterRequest();
   const [otp, setOtp] = useState("");
@@ -80,6 +87,8 @@ export default function OtpPage() {
       toast.error("Không thể gửi lại mã, vui lòng thử lại sau");
     }
   };
+
+  if (!hasPendingRegistration) return null;
 
   return (
     <AuthCard>

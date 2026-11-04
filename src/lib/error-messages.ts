@@ -21,6 +21,8 @@ import { ApiError, NetworkError, RateLimitError } from "./errors";
 export const GENERIC_ERROR_MESSAGE = "Có lỗi xảy ra, vui lòng thử lại";
 export const NETWORK_ERROR_MESSAGE = "Mất kết nối tới máy chủ. Vui lòng kiểm tra mạng và thử lại.";
 export const SESSION_EXPIRED_MESSAGE = "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại";
+/** Cùng lỗi 401 nhưng người dùng CHƯA từng đăng nhập: "hết hạn" sai sự thật (G-03, QA3 261104). */
+export const LOGIN_REQUIRED_MESSAGE = "Vui lòng đăng nhập để thực hiện thao tác này";
 const FORBIDDEN_MESSAGE = "Bạn không có quyền thực hiện thao tác này";
 const NOT_FOUND_MESSAGE = "Không tìm thấy dữ liệu, có thể đã bị xoá";
 const INVALID_INPUT_MESSAGE = "Dữ liệu gửi lên không hợp lệ, vui lòng kiểm tra lại";
@@ -285,6 +287,16 @@ export function translateApiErrorMessage(
   // character varying(255)"...) — chủ dự án chốt UI luôn tiếng Việt (re-review PR #33). Lỗi nghiệp
   // vụ người dùng cần biết phải có entry trong EXACT_MESSAGES.
   return fallback ?? STATUS_MESSAGES[status] ?? GENERIC_ERROR_MESSAGE;
+}
+
+/**
+ * Khách (không có phiên) gặp 401 thì câu "phiên đã hết hạn" nói sai: họ chưa có phiên nào. Chỉ thay đúng câu
+ * hết-hạn đó; mọi câu khác (vd. "Email hoặc mật khẩu không đúng" của form đăng nhập) và người dùng có phiên
+ * (hết hạn thật) giữ nguyên. `hasSession` lấy từ store ở nơi gọi: lúc toast hiện, store của phiên vừa hết hạn
+ * vẫn ở "authenticated" vì bootstrap xác thực lại bất đồng bộ.
+ */
+export function describeAuthFailure(message: string, hasSession: boolean): string {
+  return !hasSession && message === SESSION_EXPIRED_MESSAGE ? LOGIN_REQUIRED_MESSAGE : message;
 }
 
 /** Câu tiếng Việt để hiển thị cho MỌI loại lỗi (toast, dòng lỗi dưới form, trang lỗi). */

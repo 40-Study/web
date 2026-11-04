@@ -7,9 +7,13 @@ import { AuthFooterLink } from "@/components/auth/auth-footer-link";
 import { AUTH_ROUTES } from "@/lib/routes";
 import { showComingSoon } from "@/lib/toast-helpers";
 import { startOAuthFlow } from "@/services/auth.service";
+import { useRedirectIfAuthenticated } from "@/hooks/use-redirect-if-authenticated";
 
 export default function RegisterPage() {
   const router = useRouter();
+  // A-01: đã đăng nhập thì về trang chủ vai trò thay vì hiện form đăng ký.
+  const redirecting = useRedirectIfAuthenticated();
+  if (redirecting) return null;
 
   return (
     <AuthCard>

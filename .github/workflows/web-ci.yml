@@ -46,5 +46,8 @@ jobs:
         run: npm test
 
       # Build không cần biến môi trường: .env.production đã commit sẵn (NEXT_PUBLIC_API_URL=/api)
+      # NEXT_PUBLIC_SITE_URL bắt buộc ở bản build production (src/lib/seo.ts); CI chỉ kiểm build nên dùng URL giả, không deploy.
       - name: Build
         run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: https://ci.invalid

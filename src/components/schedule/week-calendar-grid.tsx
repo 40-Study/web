@@ -24,6 +24,7 @@ import { Bell, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { addDays, addMonths, format, isSameDay, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
 import { vi } from "date-fns/locale";
 import { toVnWallClock } from "@/lib/teacher-schedule-events";
+import { defaultCalendarView } from "@/lib/calendar-view";
 import "./calendar.css";
 import CalendarEventCard, { getEventColor } from "./calendar-event-card";
 import ScheduleQuickCreatePopover, {
@@ -180,6 +181,15 @@ export default function WeekCalendarGrid({
   const [month, setMonth] = useState(() => startOfMonth(toVnWallClock(new Date())));
   const [hiddenKinds, setHiddenKinds] = useState<string[]>([]);
   const changingRef = useRef(false);
+
+  // P-06 / Q20: màn hình hẹp mở ở chế độ Ngày thay vì lưới tuần 7 cột không đọc được. Chỉ chạy một lần khi
+  // mount (đọc bề rộng thật sau hydrate); sau đó người dùng tự đổi bằng ô "Chế độ xem lịch".
+  useEffect(() => {
+    const initial = defaultCalendarView(window.innerWidth);
+    if (initial === "timeGridWeek") return;
+    calendarRef.current?.getApi().changeView(initial);
+    setView(initial);
+  }, []);
   const fcEvents = useMemo(() => toFcEvents(events.filter(event => !hiddenKinds.includes(event.kind ?? "livestream"))).map(event => ({
     ...event,
     editable: editable && (!event.extendedProps.scheduleEvent.kind || event.extendedProps.scheduleEvent.kind === "livestream") && event.extendedProps.scheduleEvent.status === "upcoming",

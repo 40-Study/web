@@ -17,6 +17,8 @@ import { TiptapEditor } from "@/components/editor/tiptap-editor";
 import { DiscussionComment } from "./discussion-comment";
 import { useState } from "react";
 import { sanitizeHtml } from "@/lib/sanitize-html";
+import { useAuthStore } from "@/stores/auth.store";
+import { LoginRequiredPrompt } from "@/components/auth/login-required-prompt";
 
 interface PageProps {
   params: { slug: string };
@@ -55,6 +57,9 @@ export default function DiscussionDetailPage({ params }: PageProps) {
   const removeVote = useRemoveVoteDiscussion();
 
   const [commentContent, setCommentContent] = useState("");
+  // Khách không bình luận được (API 401): thay ô soạn bằng lời mời đăng nhập (G-03, QA3 261104).
+  // "checking" (đang khôi phục phiên) không hiện gì để người đã đăng nhập không thấy CTA chớp nháy.
+  const sessionStatus = useAuthStore((s) => s.sessionStatus);
 
   const hasVoted = post?.user_vote === "upvote";
   const categoryColor = CATEGORY_COLORS[post?.category ?? ""] ?? "bg-slate-100 text-slate-600";
@@ -135,6 +140,7 @@ export default function DiscussionDetailPage({ params }: PageProps) {
         {/* Author */}
         <div className="flex items-center gap-3 mb-5">
           {post.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element -- avatar từ URL ngoài, chưa cấu hình next/image
             <img src={post.avatar_url} alt={post.author_name} className="w-9 h-9 rounded-full object-cover" />
           ) : (
             <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-sm">
@@ -170,24 +176,31 @@ export default function DiscussionDetailPage({ params }: PageProps) {
       </div>
 
       {/* Comment composer */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
-        <p className="text-sm font-medium text-slate-700 mb-3">Viết bình luận</p>
-        <TiptapEditor
-          value={commentContent}
-          onChange={setCommentContent}
-          placeholder="Chia sẻ suy nghĩ của bạn..."
-          minHeight={100}
-        />
-        <div className="flex justify-end mt-3">
-          <button
-            onClick={handleCommentSubmit}
-            disabled={!commentContent.trim() || addComment.isPending}
-            className="text-sm font-medium px-4 py-2 rounded-xl bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-50 transition-colors"
-          >
-            {addComment.isPending ? "Đang gửi..." : "Gửi bình luận"}
-          </button>
+      {sessionStatus === "authenticated" && (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
+          <p className="text-sm font-medium text-slate-700 mb-3">Viết bình luận</p>
+          <TiptapEditor
+            value={commentContent}
+            onChange={setCommentContent}
+            placeholder="Chia sẻ suy nghĩ của bạn..."
+            minHeight={100}
+          />
+          <div className="flex justify-end mt-3">
+            <button
+              onClick={handleCommentSubmit}
+              disabled={!commentContent.trim() || addComment.isPending}
+              className="text-sm font-medium px-4 py-2 rounded-xl bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-50 transition-colors"
+            >
+              {addComment.isPending ? "Đang gửi..." : "Gửi bình luận"}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+      {sessionStatus === "anonymous" && (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6" data-testid="discussion-login-cta">
+          <LoginRequiredPrompt message="Đăng nhập để tham gia bình luận." returnTo={`/discussions/${slug}`} />
+        </div>
+      )}
 
       {/* Comments thread */}
       {post.comments?.length > 0 && (
@@ -198,6 +211,7 @@ export default function DiscussionDetailPage({ params }: PageProps) {
               comment={comment}
               onVote={handleCommentVote}
               onReply={handleReply}
+              canReply={sessionStatus === "authenticated"}
               isReplying={addComment.isPending}
             />
           ))}

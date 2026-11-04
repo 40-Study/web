@@ -5,7 +5,8 @@
 import { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ApiError, AuthError, isAccountLockedError, NetworkError, ValidationError } from "./errors";
-import { getErrorMessage } from "./error-messages";
+import { describeAuthFailure, getErrorMessage } from "./error-messages";
+import { useAuthStore } from "@/stores/auth.store";
 
 /**
  * Lỗi 4xx là kết quả xác định của chính request (sai slug, thiếu quyền, dữ liệu sai): gửi lại
@@ -37,7 +38,9 @@ export function handleMutationError(error: unknown): void {
     return;
   }
 
-  toast.error("Không thể thực hiện thao tác", { description: getErrorMessage(error) });
+  // Khách bấm thao tác cần đăng nhập (API 401) không được đọc "phiên đã hết hạn" (G-03, QA3 261104).
+  const hasSession = useAuthStore.getState().isAuthenticated;
+  toast.error("Không thể thực hiện thao tác", { description: describeAuthFailure(getErrorMessage(error), hasSession) });
 }
 
 export const queryClient = new QueryClient({

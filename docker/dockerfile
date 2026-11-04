@@ -10,6 +10,11 @@ RUN npm ci
 # Copy toàn bộ source
 COPY . .
 
+# Domain thật của site: sitemap.xml, robots.txt, canonical, og:url (src/lib/seo.ts). Thiếu thì `npm run build`
+# thất bại có chủ đích. Truyền bằng `docker build --build-arg NEXT_PUBLIC_SITE_URL=https://<domain>`.
+ARG NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+
 RUN npm run build
 
 FROM node:20-alpine AS runner

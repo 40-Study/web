@@ -35,6 +35,11 @@ interface ProfileHeaderProps {
   stats: UserStats;
   onEditProfile?: () => void;
   onAvatarUpload?: () => void;
+  /**
+   * false: ẩn level/XP/streak và dải thống kê học tập. Phụ huynh không học nên các số 0 này vô nghĩa
+   * (P-05, QA3 261104).
+   */
+  showLearningStats?: boolean;
   className?: string;
 }
 
@@ -54,6 +59,7 @@ export function ProfileHeader({
   stats,
   onEditProfile,
   onAvatarUpload,
+  showLearningStats = true,
   className,
 }: ProfileHeaderProps) {
   return (
@@ -73,7 +79,7 @@ export function ProfileHeader({
               fallback={user.fullName}
               className="w-28 h-28 border-4 border-white shadow-xl"
             />
-            {user.streak > 0 && (
+            {showLearningStats && user.streak > 0 && (
               <div className="absolute -bottom-2 -right-2 bg-orange-500 rounded-full p-2 shadow-lg">
                 <span className="text-xl">🔥</span>
               </div>
@@ -93,13 +99,17 @@ export function ProfileHeader({
           <div className="flex-1 text-center md:text-left">
             <div className="flex items-center justify-center md:justify-start gap-3 mb-1 flex-wrap">
               <h1 className="text-2xl font-bold">{user.fullName}</h1>
-              <Badge variant="level">Cấp {user.level}</Badge>
+              {showLearningStats && <Badge variant="level">Cấp {user.level}</Badge>}
             </div>
             <p className="opacity-80 mb-2">@{user.username}</p>
             {user.bio && <p className="mb-3 max-w-lg">{user.bio}</p>}
             <div className="flex items-center justify-center md:justify-start gap-4 text-sm opacity-80">
-              <span>{formatNumber(user.totalXP)} XP</span>
-              <span>•</span>
+              {showLearningStats && (
+                <>
+                  <span>{formatNumber(user.totalXP)} XP</span>
+                  <span>•</span>
+                </>
+              )}
               <span>Tham gia {formatDate(user.createdAt)}</span>
             </div>
           </div>
@@ -122,24 +132,26 @@ export function ProfileHeader({
         </div>
 
         {/* Stats */}
-        <div className="flex justify-center md:justify-start gap-8 mt-8">
-          <div className="text-center">
-            <p className="text-3xl font-bold">{stats.streak}</p>
-            <p className="text-sm opacity-80">Ngày streak</p>
+        {showLearningStats && (
+          <div className="flex justify-center md:justify-start gap-8 mt-8">
+            <div className="text-center">
+              <p className="text-3xl font-bold">{stats.streak}</p>
+              <p className="text-sm opacity-80">Ngày streak</p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl font-bold">{stats.coursesCompleted}</p>
+              <p className="text-sm opacity-80">Khoá học</p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl font-bold">{stats.achievements}</p>
+              <p className="text-sm opacity-80">Thành tích</p>
+            </div>
+            <div className="text-center hidden sm:block">
+              <p className="text-3xl font-bold">{stats.lessonsCompleted}</p>
+              <p className="text-sm opacity-80">Bài học</p>
+            </div>
           </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold">{stats.coursesCompleted}</p>
-            <p className="text-sm opacity-80">Khoá học</p>
-          </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold">{stats.achievements}</p>
-            <p className="text-sm opacity-80">Thành tích</p>
-          </div>
-          <div className="text-center hidden sm:block">
-            <p className="text-3xl font-bold">{stats.lessonsCompleted}</p>
-            <p className="text-sm opacity-80">Bài học</p>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

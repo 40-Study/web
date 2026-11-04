@@ -14,3 +14,9 @@ export function buildLoginRedirectUrl(pathname: string, search: string, base: st
   if (redirectTo) loginUrl.searchParams.set("redirect", redirectTo);
   return loginUrl;
 }
+
+/** Href tương đối `/login?redirect=<path>` cho nút/link "Đăng nhập" của khách; path lạ -> `/login` trơn. */
+export function loginHref(path: string): string {
+  const redirectTo = sanitizeRedirect(path);
+  return redirectTo ? `/login?redirect=${encodeURIComponent(redirectTo)}` : "/login";
+}

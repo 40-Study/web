@@ -14,6 +14,7 @@ import type { User, UserStats, FeaturedAchievement } from "@/components/profile"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { usePublicProfile } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth.store";
+import { normalizeRole } from "@/lib/routes";
 
 interface CompletedCourse {
   id: string;
@@ -73,7 +74,7 @@ export default function PublicProfilePage() {
   const params = useParams();
   const rawUserId = params.userId as string;
   const [activeTab, setActiveTab] = useState("overview");
-  const { user: authUser, hasHydrated } = useAuthStore();
+  const { user: authUser, hasHydrated, activeRole } = useAuthStore();
   // QA 260927 S-P2: `/profile/me` gọi API public-profile với đúng chuỗi "me"
   // làm userId (400 "Hồ sơ không tồn tại") thay vì map sang id thật của người
   // đang đăng nhập. `usePublicProfile("")` tự vô hiệu hoá (enabled: Boolean),
@@ -175,6 +176,16 @@ export default function PublicProfilePage() {
           <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{user.fullName}</h1>
           <p className="mt-2 text-muted-foreground">Người dùng này đã đặt hồ sơ ở chế độ riêng tư.</p>
         </Card>
+      </div>
+    );
+  }
+
+  // P-05 (QA3 261104): phụ huynh không học nên hồ sơ của chính họ chỉ có phần danh tính, không có
+  // level/XP/streak, thống kê, thành tích hay lịch sử hoạt động.
+  if (isOwnProfile && normalizeRole(activeRole) === "PARENT") {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <ProfileHeader user={user} isOwnProfile stats={stats} showLearningStats={false} />
       </div>
     );
   }

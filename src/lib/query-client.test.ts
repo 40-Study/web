@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import { describe, expect, it, vi } from "vitest";
 import { ApiError, AuthError, NetworkError, NotFoundError } from "./errors";
+import { useAuthStore } from "@/stores/auth.store";
 import { queryClient, shouldRetryQuery } from "./query-client";
 
 function runDefaultMutationOnError(error: unknown) {
@@ -40,6 +41,45 @@ describe("query-client — toast lỗi mutation mặc định", () => {
 
     expect(toastError).toHaveBeenCalledWith("Không thể thực hiện thao tác", {
       description: "Có lỗi xảy ra, vui lòng thử lại",
+    });
+  });
+});
+
+// G-03 (QA3 261104): khách bấm "Gửi bình luận" nhận toast "Phiên đăng nhập đã hết hạn" dù chưa từng có phiên.
+describe("query-client — 401 của khách không nói 'phiên đã hết hạn'", () => {
+  const sessionExpiredBody = () => new AuthError("Authentication required", "ERR_UNAUTHORIZED");
+
+  it("khách (không có phiên) -> 'Vui lòng đăng nhập để thực hiện thao tác này'", () => {
+    useAuthStore.setState({ isAuthenticated: false });
+    const toastError = vi.spyOn(toast, "error").mockImplementation(() => "" as never);
+
+    runDefaultMutationOnError(sessionExpiredBody());
+
+    expect(toastError).toHaveBeenCalledWith("Không thể thực hiện thao tác", {
+      description: "Vui lòng đăng nhập để thực hiện thao tác này",
+    });
+  });
+
+  it("phiên hết hạn thật (store còn authenticated) -> vẫn 'Phiên đăng nhập đã hết hạn'", () => {
+    useAuthStore.setState({ isAuthenticated: true });
+    const toastError = vi.spyOn(toast, "error").mockImplementation(() => "" as never);
+
+    runDefaultMutationOnError(sessionExpiredBody());
+
+    expect(toastError).toHaveBeenCalledWith("Không thể thực hiện thao tác", {
+      description: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại",
+    });
+    useAuthStore.setState({ isAuthenticated: false });
+  });
+
+  it("khách nhưng lỗi KHÁC hết-hạn (sai mật khẩu 401) -> giữ nguyên câu cụ thể", () => {
+    useAuthStore.setState({ isAuthenticated: false });
+    const toastError = vi.spyOn(toast, "error").mockImplementation(() => "" as never);
+
+    runDefaultMutationOnError(new AuthError("invalid email or password", "UNKNOWN"));
+
+    expect(toastError).toHaveBeenCalledWith("Không thể thực hiện thao tác", {
+      description: "Email hoặc mật khẩu không đúng",
     });
   });
 });

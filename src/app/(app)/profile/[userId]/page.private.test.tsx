@@ -9,8 +9,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("next/navigation", () => ({ useParams: () => ({ userId: "u-2" }) }));
 
 let mockAuthUserId = "viewer";
+let mockActiveRole: string | null = null;
 vi.mock("@/stores/auth.store", () => ({
-  useAuthStore: () => ({ user: { id: mockAuthUserId }, hasHydrated: true }),
+  useAuthStore: () => ({ user: { id: mockAuthUserId }, hasHydrated: true, activeRole: mockActiveRole }),
 }));
 
 let mockData: Record<string, unknown> | undefined;
@@ -34,6 +35,7 @@ const baseProfile = {
 describe("PublicProfilePage riêng tư", () => {
   beforeEach(() => {
     mockAuthUserId = "viewer";
+    mockActiveRole = null;
   });
 
   it("hồ sơ riêng tư của người khác: chỉ tên và thông báo, không có số liệu", () => {
@@ -58,4 +60,36 @@ describe("PublicProfilePage riêng tư", () => {
     render(<PublicProfilePage />);
     expect(screen.queryByText(/chế độ riêng tư/)).toBeNull();
   });
+
+  // P-05 (QA3 261104): phụ huynh không học nên hồ sơ của chính họ không được hiện Level/XP/streak/thành tích.
+  it("phụ huynh tự xem hồ sơ của mình: không có Level, XP, thống kê, tab Thành tích", () => {
+    mockAuthUserId = "u-2";
+    mockActiveRole = "PARENT";
+    mockData = { ...baseProfile, is_private: false };
+    render(<PublicProfilePage />);
+    expect(screen.getByText("Học Viên Hai")).toBeTruthy();
+    expect(screen.queryByText(/Cấp \d/)).toBeNull();
+    expect(screen.queryByText(/XP/)).toBeNull();
+    expect(screen.queryByText("Ngày streak")).toBeNull();
+    expect(screen.queryByText("Thống kê")).toBeNull();
+    expect(screen.queryByRole("tab", { name: "Thành tích" })).toBeNull();
+  });
+
+  it("học viên tự xem hồ sơ của mình: vẫn đủ Level/XP và tab Thành tích", () => {
+    mockAuthUserId = "u-2";
+    mockActiveRole = "STUDENT";
+    mockData = { ...baseProfile, is_private: false };
+    render(<PublicProfilePage />);
+    expect(screen.getAllByText(/Cấp 3/).length).toBeGreaterThan(0);
+    expect(screen.getByRole("tab", { name: "Thành tích" })).toBeTruthy();
+  });
+
+  it("phụ huynh xem hồ sơ của học viên khác: vẫn thấy số liệu của học viên đó", () => {
+    mockAuthUserId = "parent-1";
+    mockActiveRole = "PARENT";
+    mockData = { ...baseProfile, is_private: false };
+    render(<PublicProfilePage />);
+    expect(screen.getAllByText(/Cấp 3/).length).toBeGreaterThan(0);
+  });
 });
+
