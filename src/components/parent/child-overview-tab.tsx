@@ -1,6 +1,7 @@
 "use client";
 
 import { BookOpen, CalendarCheck, ClipboardList } from "lucide-react";
+import { splitAssignmentsByDeadline } from "./child-assignments";
 import type {
   ChildAssignment,
   ChildAttendance,
@@ -25,10 +26,9 @@ export function ChildOverviewTab({
   attendance: ChildAttendance[];
 }) {
   const inProgress = courses.filter((c) => !c.completed_at).slice(0, 4);
-  const upcoming = assignments
-    .filter((a) => a.status !== "completed" && a.due_date)
-    .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
-    .slice(0, 3);
+  const { upcoming: upcomingAll, overdue: overdueAll } = splitAssignmentsByDeadline(assignments);
+  const upcoming = upcomingAll.slice(0, 3);
+  const overdue = overdueAll.slice(0, 3);
   const recentAttendance = attendance.slice(0, 3);
 
   return (
@@ -56,6 +56,19 @@ export function ChildOverviewTab({
           </li>
         ))}
       </Section>
+
+      {overdue.length > 0 && (
+        <Section icon={ClipboardList} title={`Quá hạn (${overdueAll.length})`} empty={null}>
+          {overdue.map((a) => (
+            <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
+              <span className="truncate text-gray-700">{a.title}</span>
+              <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-red-600">
+                Quá hạn {new Date(a.due_date!).toLocaleDateString("vi-VN")}
+              </span>
+            </li>
+          ))}
+        </Section>
+      )}
 
       <Section icon={CalendarCheck} title="Điểm danh gần đây" empty={recentAttendance.length === 0 ? "Chưa có dữ liệu điểm danh." : null}>
         {recentAttendance.map((r) => (

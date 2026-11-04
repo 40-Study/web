@@ -24,6 +24,7 @@ import {
 } from "@/hooks/queries/use-parent-dashboard";
 import type { Child } from "@/services/auth.service";
 import { inProgressCourseCount } from "./child-stats";
+import { splitAssignmentsByDeadline } from "./child-assignments";
 import { formatStudyMinutes } from "@/lib/format-study-time";
 
 function StatPill({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | number }) {
@@ -45,11 +46,10 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
   const { data: assignmentsData, isLoading: loadingAssignments } = useChildAssignments(child.id, 1, 20);
   const { data: attendanceData, isLoading: loadingAttendance } = useChildAttendance(child.id, 1, 3);
 
-  // Bài tập sắp hạn: chưa hoàn thành, có hạn nộp, sắp xếp gần nhất trước (P1 mục 5).
-  const upcomingAssignments = (assignmentsData?.assignments ?? [])
-    .filter((a) => a.status !== "completed" && a.due_date)
-    .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
-    .slice(0, 3);
+  // Bài tập sắp hạn (hạn >= hiện tại, gần nhất trước) tách khỏi bài đã quá hạn (P-02, QA3 261104).
+  const { upcoming, overdue } = splitAssignmentsByDeadline(assignmentsData?.assignments ?? []);
+  const upcomingAssignments = upcoming.slice(0, 3);
+  const overdueAssignments = overdue.slice(0, 3);
 
   const recentAttendance = attendanceData?.records ?? [];
 
@@ -111,6 +111,21 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
                 </li>
               ))}
             </ul>
+          )}
+          {!loadingAssignments && overdueAssignments.length > 0 && (
+            <div className="mt-3" data-testid="overdue-assignments">
+              <p className="text-xs font-semibold text-red-600 mb-1.5">Quá hạn ({overdue.length})</p>
+              <ul className="space-y-1.5">
+                {overdueAssignments.map((a) => (
+                  <li key={a.id} className="text-xs text-gray-600 flex items-center justify-between gap-2">
+                    <span className="truncate">{a.title}</span>
+                    <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-red-600">
+                      Quá hạn {new Date(a.due_date!).toLocaleDateString("vi-VN")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
 
