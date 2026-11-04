@@ -22,6 +22,9 @@ export interface CartItem {
     discount_price?: number | string | null;
     thumbnail?: string;
     instructor?: { id: string; name: string };
+    /** Tên trường THẬT của backend (CartCourseInfoDTO); `normalizeCartItem` đổ sang `thumbnail`/`instructor`. */
+    thumbnail_url?: string;
+    instructor_name?: string;
   };
   added_at?: string;
 }
@@ -39,16 +42,36 @@ export interface Cart {
 
 type R<T> = { message: string; data: T };
 
+/**
+ * Backend gửi `thumbnail_url` + `instructor_name` (dto/cartDTO.go), còn UI đọc `course.thumbnail` +
+ * `course.instructor.name` nên thumbnail luôn là ảnh giữ chỗ và mất tên giảng viên (QA3 Q10). Chuẩn hoá một lần
+ * ở service để giỏ, checkout và dropdown header cùng đúng.
+ */
+export function normalizeCartItem(item: CartItem): CartItem {
+  const course = item.course;
+  if (!course) return item;
+  return {
+    ...item,
+    course: {
+      ...course,
+      thumbnail: course.thumbnail || course.thumbnail_url || undefined,
+      instructor: course.instructor ?? (course.instructor_name ? { id: "", name: course.instructor_name } : undefined),
+    },
+  };
+}
+
+const normalizeCart = (cart: Cart): Cart => ({ ...cart, items: (cart.items ?? []).map(normalizeCartItem) });
+
 // ─── Service ────────────────────────────────────────────────────────────────
 
 export const cartService = {
   /** GET /cart */
   getCart: () =>
-    api.get<R<Cart>>("/cart").then((r) => r.data.data),
+    api.get<R<Cart>>("/cart").then((r) => normalizeCart(r.data.data)),
 
   /** POST /cart { course_id } */
   addToCart: (courseId: string) =>
-    api.post<R<CartItem>>("/cart", { course_id: courseId }).then((r) => r.data.data),
+    api.post<R<CartItem>>("/cart", { course_id: courseId }).then((r) => normalizeCartItem(r.data.data)),
 
   /** GET /cart/check/:courseId */
   isInCart: (courseId: string) =>
