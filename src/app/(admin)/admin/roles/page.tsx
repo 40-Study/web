@@ -38,6 +38,11 @@ type RoleFormState = {
 
 const emptyRoleForm: RoleFormState = { name: "", description: "", permissions: [] };
 
+// QA3-03: backend DTO yêu cầu tên ≥ 2 ký tự (dto.CreateSystemRoleRequest min=2). Web chặn trước để
+// "   " hay "a" không được gửi đi và ô trống không còn "bấm mà không có phản hồi".
+const ROLE_NAME_MIN_LENGTH = 2;
+const ROLE_NAME_ERROR = `Tên vai trò phải có ít nhất ${ROLE_NAME_MIN_LENGTH} ký tự (không tính khoảng trắng).`;
+
 const USER_STATUS_LABEL: Record<UserSystemRoleItem["status"], string> = {
   active: "Đang hoạt động",
   suspended: "Tạm ngưng",
@@ -54,6 +59,7 @@ export default function RolesPage() {
   const setRolePermissions = useSetSystemRolePermissions();
 
   const [roleForm, setRoleForm] = useState<RoleFormState>(emptyRoleForm);
+  const [nameError, setNameError] = useState<string | null>(null);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   // Xác nhận trước khi xoá (H-09) — xoá role/gỡ user không còn kích hoạt mutation ngay khi click.
   const [confirmDeleteRole, setConfirmDeleteRole] = useState<SystemRole | null>(null);
@@ -91,11 +97,17 @@ export default function RolesPage() {
 
   const submitRole = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!roleForm.name) return;
+    const name = roleForm.name.trim();
+    if (name.length < ROLE_NAME_MIN_LENGTH) {
+      setNameError(ROLE_NAME_ERROR);
+      return;
+    }
+    setNameError(null);
 
+    const description = roleForm.description.trim();
     const payload = {
-      name: roleForm.name,
-      description: roleForm.description || undefined,
+      name,
+      description: description || undefined,
     };
     const permissionIds = permsData
       .filter((perm) => roleForm.permissions.includes(perm.name))
@@ -116,6 +128,11 @@ export default function RolesPage() {
     setRoleForm(emptyRoleForm);
   };
 
+  const resetRoleForm = () => {
+    setRoleForm(emptyRoleForm);
+    setNameError(null);
+  };
+
   const togglePermission = (perm: string) => {
     setRoleForm((prev) => ({
       ...prev,
@@ -129,11 +146,14 @@ export default function RolesPage() {
     // permissions để [] tạm thời — useEffect ở trên sẽ nạp lại quyền THẬT của role này khi
     // useSystemRolePermissions(role.id) trả dữ liệu.
     setRoleForm({ id: role.id, name: role.name, description: role.description || "", permissions: [] });
+    setNameError(null);
   };
 
   const removeRole = (roleId: string) => {
     deleteRole.mutate(roleId);
     if (selectedRoleId === roleId) setSelectedRoleId(null);
+    // Đang sửa chính role vừa xoá: bỏ form để không tải quyền của id không còn tồn tại.
+    if (roleForm.id === roleId) resetRoleForm();
   };
 
   // A4: tên/email người giữ vai trò nếu backend trả (RoleMemberDTO); không có thì rơi về user_id
@@ -218,7 +238,22 @@ export default function RolesPage() {
             <form onSubmit={submitRole} className="rounded-lg bg-white p-4 shadow-sm">
               <h2 className="text-base font-semibold text-gray-900">{roleForm.id ? "Cập nhật vai trò" : "Tạo vai trò mới"}</h2>
               <div className="mt-3 space-y-2">
-                <input placeholder="Tên vai trò" value={roleForm.name} onChange={(e) => setRoleForm((prev) => ({ ...prev, name: e.target.value }))} className="h-10 w-full rounded border border-gray-200 px-3 text-sm" />
+                <input
+                  placeholder="Tên vai trò"
+                  aria-label="Tên vai trò"
+                  aria-invalid={nameError ? true : undefined}
+                  value={roleForm.name}
+                  onChange={(e) => {
+                    setRoleForm((prev) => ({ ...prev, name: e.target.value }));
+                    if (nameError) setNameError(null);
+                  }}
+                  className="h-10 w-full rounded border border-gray-200 px-3 text-sm"
+                />
+                {nameError && (
+                  <p role="alert" className="text-xs text-red-600">
+                    {nameError}
+                  </p>
+                )}
                 <input placeholder="Mô tả" value={roleForm.description} onChange={(e) => setRoleForm((prev) => ({ ...prev, description: e.target.value }))} className="h-10 w-full rounded border border-gray-200 px-3 text-sm" />
                 <div className="max-h-32 space-y-1 overflow-auto rounded border border-gray-200 p-2">
                   {permsData.map((perm) => (
@@ -236,7 +271,7 @@ export default function RolesPage() {
                   >
                     {roleForm.id ? "Lưu role" : "Tạo role"}
                   </button>
-                  <button type="button" onClick={() => setRoleForm(emptyRoleForm)} className="rounded bg-gray-100 px-3 py-2 text-sm font-medium">
+                  <button type="button" onClick={resetRoleForm} className="rounded bg-gray-100 px-3 py-2 text-sm font-medium">
                     {roleForm.id ? "Huỷ sửa" : "Xoá nội dung đã nhập"}
                   </button>
                 </div>

@@ -130,3 +130,72 @@ describe("/admin/roles — review PR #24 (MINOR): phân biệt lỗi/không có 
     expect(screen.queryByText(/2 user/)).toBeNull();
   });
 });
+
+describe("/admin/roles — QA3-03: tên vai trò rỗng/ngắn bị chặn có phản hồi", () => {
+  it.each(["", "   ", " a "])("tên %j: hiện lỗi tiếng Việt, KHÔNG gọi POST /system-roles", async (value) => {
+    renderWithProviders(<RolesPage />);
+    await screen.findByText("2 user");
+
+    fireEvent.change(screen.getByPlaceholderText("Tên vai trò"), { target: { value } });
+    fireEvent.click(screen.getByRole("button", { name: "Tạo role" }));
+
+    expect(await screen.findByText(/ít nhất 2 ký tự/)).toBeTruthy();
+    expect(mockApi.post).not.toHaveBeenCalled();
+  });
+
+  it("gõ lại thì lỗi biến mất; tên hợp lệ được trim trước khi gửi", async () => {
+    renderWithProviders(<RolesPage />);
+    await screen.findByText("2 user");
+    const input = screen.getByPlaceholderText("Tên vai trò");
+
+    fireEvent.change(input, { target: { value: " " } });
+    fireEvent.click(screen.getByRole("button", { name: "Tạo role" }));
+    expect(await screen.findByText(/ít nhất 2 ký tự/)).toBeTruthy();
+    fireEvent.change(input, { target: { value: "  QA-role  " } });
+    expect(screen.queryByText(/ít nhất 2 ký tự/)).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Tạo role" }));
+    await waitFor(() => expect(mockApi.post).toHaveBeenCalledWith("/system-roles", expect.objectContaining({ name: "QA-role" })));
+  });
+});
+
+describe("/admin/roles — QA3-18: xoá role không bắn GET users của id đã xoá", () => {
+  it("sau khi xoá role đang chọn, không có GET /system-roles/<id đã xoá>/users", async () => {
+    const JUNK = { id: "role-junk", name: "QA3-JUNK", description: "" };
+    let roles = [ROLE, JUNK];
+    mockApi.get.mockImplementation(async (url: string) => {
+      if (url === "/system-roles") {
+        // Có độ trễ như server thật: danh sách mới về SAU khi UI đã render lại một lượt.
+        await new Promise((r) => setTimeout(r, 30));
+        return envelope({ roles });
+      }
+      if (url === "/permissions") return envelope({ permissions: [PERMISSION], total: 1 });
+      const m = /^\/system-roles\/([^/]+)\/users$/.exec(url);
+      if (m) {
+        if (!roles.some((r) => r.id === m[1])) throw new Error(`404 ${url}`);
+        return envelope({ user_system_roles: [], total: 0, page: 1, page_size: 100 });
+      }
+      throw new Error(`GET không mong đợi trong test: ${url}`);
+    });
+    mockApi.delete.mockImplementation(async () => {
+      roles = [ROLE];
+      return envelope(null);
+    });
+
+    renderWithProviders(<RolesPage />);
+    fireEvent.click(await screen.findByText("QA3-JUNK", { selector: "span" }));
+    const deleteButtons = await screen.findAllByRole("button", { name: "Xoá role" });
+    fireEvent.click(deleteButtons[1]);
+    fireEvent.click(await screen.findByRole("button", { name: "Xoá vai trò" }));
+
+    await waitFor(() => expect(mockApi.delete).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText("QA3-JUNK", { selector: "span" })).toBeNull());
+    await new Promise((r) => setTimeout(r, 50));
+
+    const deleteOrder = mockApi.delete.mock.invocationCallOrder[0];
+    const lateJunkGets = mockApi.get.mock.calls
+      .map((c, i) => ({ url: c[0] as string, order: mockApi.get.mock.invocationCallOrder[i] }))
+      .filter((c) => c.url === "/system-roles/role-junk/users" && c.order > deleteOrder);
+    expect(lateJunkGets).toEqual([]);
+  });
+});
