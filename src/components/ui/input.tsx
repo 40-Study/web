@@ -36,7 +36,12 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                         {label}
                     </label>
                 )}
-                <div className="relative">
+                {/*
+                  * Wrapper `relative` CHỈ dành cho ô mật khẩu (định vị nút con mắt). Với ô thường, một
+                  * wrapper `relative` mới sẽ vẽ ĐÈ LÊN icon `absolute` đứng trước <Input> ở nơi gọi
+                  * (search, "@"...) và nền ô che mất icon (QA3 Q6 / G-01).
+                  */}
+                <div className={isPassword ? "relative" : undefined}>
                     <input
                         type={isPassword && isPasswordVisible ? "text" : type}
                         id={inputId}
