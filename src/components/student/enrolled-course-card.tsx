@@ -25,7 +25,7 @@ export function EnrolledCourseCard({ course, priority = false }: EnrolledCourseC
               alt={course.title}
               fill
               priority={priority}
-              sizes="(min-width: 1024px) 22vw, (min-width: 640px) 50vw, 100vw"
+              sizes="(min-width: 1024px) 22vw, (min-width: 768px) 30vw, (min-width: 640px) 50vw, 100vw"
               className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
