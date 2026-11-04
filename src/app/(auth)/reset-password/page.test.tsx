@@ -57,8 +57,43 @@ describe("/reset-password — form hợp lệ phiên", () => {
 
   it("thiếu xác nhận mật khẩu: báo ở ô xác nhận", () => {
     render(<ResetPasswordPage />);
-    fireEvent.change(screen.getByLabelText("Mật khẩu mới"), { target: { value: "Abcdef12" } });
+    fireEvent.change(screen.getByLabelText("Mật khẩu mới"), { target: { value: "Abcdef1!" } });
     fireEvent.click(screen.getByRole("button", { name: "Đặt lại mật khẩu" }));
     expect(screen.getByText("Vui lòng nhập lại mật khẩu mới")).toBeTruthy();
+  });
+
+  // P-04: chính sách mới được ÁP DỤNG, không chỉ hiển thị.
+  it.each(["abcdefgh", "Abcdefg1", "abcdef1!", "Abcdefg!"])("mật khẩu yếu %s: báo câu chính sách, không gọi API", (weak) => {
+    render(<ResetPasswordPage />);
+    fireEvent.change(screen.getByLabelText("Mật khẩu mới"), { target: { value: weak } });
+    fireEvent.change(screen.getByLabelText("Xác nhận mật khẩu"), { target: { value: weak } });
+    fireEvent.click(screen.getByRole("button", { name: "Đặt lại mật khẩu" }));
+    expect(
+      screen.getByText("Mật khẩu phải có ít nhất 8 ký tự, gồm ít nhất 1 chữ in hoa, 1 chữ số và 1 ký tự đặc biệt")
+    ).toBeTruthy();
+    expect(resetPassword.mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("mật khẩu đạt cả 4 luật: gọi API với đúng mật khẩu", async () => {
+    resetPassword.mutateAsync.mockResolvedValue({});
+    render(<ResetPasswordPage />);
+    fireEvent.change(screen.getByLabelText("Mật khẩu mới"), { target: { value: "Abcdef1!" } });
+    fireEvent.change(screen.getByLabelText("Xác nhận mật khẩu"), { target: { value: "Abcdef1!" } });
+    fireEvent.click(screen.getByRole("button", { name: "Đặt lại mật khẩu" }));
+    await waitFor(() =>
+      expect(resetPassword.mutateAsync).toHaveBeenCalledWith({
+        email: "a@b.vn",
+        otp: "123456",
+        new_password: "Abcdef1!",
+        confirm_password: "Abcdef1!",
+      })
+    );
+  });
+
+  it("checklist hiện đúng 4 luật", () => {
+    render(<ResetPasswordPage />);
+    expect(screen.getByText("Có ít nhất 1 chữ in hoa")).toBeTruthy();
+    expect(screen.getByText("Có ít nhất 1 chữ số")).toBeTruthy();
+    expect(screen.queryByText("Chứa chữ thường (a-z)")).toBeNull();
   });
 });

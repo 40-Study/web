@@ -6,6 +6,7 @@
  * message có dấu tiếng Việt, còn lại dùng fallback của nơi gọi.
  */
 
+import { CONTRACT_CODE_MESSAGES } from "@/lib/contract-error-codes";
 import { ApiError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 
 export const COURSE_LESSON_NO_CONTENT_CODE = "COURSE_LESSON_NO_CONTENT";
@@ -56,10 +57,44 @@ const CODE_MESSAGES: Record<string, string> = {
 
 const HAS_VIETNAMESE_DIACRITICS = /[à-ỹÀ-Ỹ]/;
 
+export const COURSE_INCOMPLETE_CODE = "COURSE_INCOMPLETE";
+export const PAID_COURSE_PRICE_INVALID_CODE = "PAID_COURSE_PRICE_INVALID";
+
+/** Tên gọi tiếng Việt của các mục `missing[]` trong 422 COURSE_INCOMPLETE (backend gửi tên field). */
+const COURSE_MISSING_FIELD_LABEL: Record<string, string> = {
+  thumbnail_url: "ảnh bìa",
+  description: "mô tả",
+  price: "giá bán",
+};
+
+/** Mục còn thiếu của 422 COURSE_INCOMPLETE (đã dịch, bỏ mục lạ); `null` nếu lỗi không phải loại này. */
+export function missingCourseFields(error: unknown): string[] | null {
+  if (!(error instanceof ApiError) || error.code !== COURSE_INCOMPLETE_CODE) return null;
+  const raw = error instanceof ValidationError ? error.payload?.missing : undefined;
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((item) => {
+    const label = typeof item === "string" ? COURSE_MISSING_FIELD_LABEL[item] : undefined;
+    return label ? [label] : [];
+  });
+}
+
+function courseIncompleteMessage(error: unknown): string {
+  const missing = missingCourseFields(error) ?? [];
+  const base = "Khoá học chưa đủ thông tin để gửi duyệt.";
+  return missing.length > 0 ? `${base} Còn thiếu: ${missing.join(", ")}.` : base;
+}
+
 export function approvalErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof ForbiddenError) return "Bạn không có quyền thực hiện thao tác này.";
   if (error instanceof NotFoundError) return "Không tìm thấy dữ liệu — có thể đã bị xoá.";
   if (error instanceof ApiError) {
+    if (error.code === COURSE_INCOMPLETE_CODE) return courseIncompleteMessage(error);
+    // Giá khoá có phí: câu của backend đã nói đúng lỗi, câu dưới đây chỉ là dự phòng.
+    if (error.code === PAID_COURSE_PRICE_INVALID_CODE) {
+      return HAS_VIETNAMESE_DIACRITICS.test(error.message)
+        ? error.message
+        : CONTRACT_CODE_MESSAGES[PAID_COURSE_PRICE_INVALID_CODE];
+    }
     const mapped = CODE_MESSAGES[error.code];
     if (mapped) return mapped;
     if (error.message && HAS_VIETNAMESE_DIACRITICS.test(error.message)) return error.message;

@@ -1,7 +1,6 @@
 // ─── Auth Config ─────────────────────────────────────────────────────────────
 
 export const AUTH_CONFIG = {
-  PASSWORD_MIN_LENGTH: 8,
   OTP_LENGTH: 6,
   OTP_COUNTDOWN_SECONDS: 90,
 } as const;

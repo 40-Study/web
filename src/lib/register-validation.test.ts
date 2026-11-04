@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PASSWORD_POLICY_MESSAGE } from "./password-policy";
 import { validateRegisterForm, type RegisterFormData } from "./register-validation";
 
 const valid: RegisterFormData = {
@@ -6,8 +7,8 @@ const valid: RegisterFormData = {
   firstName: "A",
   lastName: "Nguyễn",
   email: "a@example.com",
-  password: "abcdefgh",
-  confirmPassword: "abcdefgh",
+  password: "Abcdef1!",
+  confirmPassword: "Abcdef1!",
 };
 
 describe("validateRegisterForm", () => {
@@ -21,8 +22,14 @@ describe("validateRegisterForm", () => {
     expect(errors.lastName).toBe("Vui lòng nhập họ");
     expect(errors.firstName).toBe("Vui lòng nhập tên");
     expect(errors.email).toBe("Vui lòng nhập email");
-    expect(errors.password).toMatch(/ít nhất 8 ký tự/);
+    expect(errors.password).toBe(PASSWORD_POLICY_MESSAGE);
     expect(errors.confirmPassword).toBe("Mật khẩu không khớp");
+  });
+
+  // P-04: luật cũ chỉ kiểm độ dài nên "abcdefgh" lọt qua form rồi mới bị backend từ chối.
+  it.each(["abcdefgh", "Abcdefg1", "abcdef1!", "Abcdefg!", "Ab1!"])("rejects weak password %s before calling the API", (password) => {
+    const errors = validateRegisterForm({ ...valid, password, confirmPassword: password });
+    expect(errors.password).toBe(PASSWORD_POLICY_MESSAGE);
   });
 
   it("rejects a malformed email and a mismatched confirmation", () => {

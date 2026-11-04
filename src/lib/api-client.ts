@@ -16,6 +16,7 @@ import {
   RateLimitError,
   NotFoundError,
 } from "./errors";
+import { isUserFacingServerErrorCode } from "./contract-error-codes";
 import { AUTH_ROLE_CHANGED_EVENT, type AuthRoleChangedDetail } from "./auth-events";
 import { useAuthStore } from "@/stores/auth.store";
 import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
@@ -253,7 +254,7 @@ api.interceptors.response.use(
         throw new ApiError(
           status,
           data?.code ?? "UNKNOWN",
-          isClientError
+          isClientError || isUserFacingServerErrorCode(data?.code)
             ? extractErrorMessage(data, "Something went wrong")
             : GENERIC_SERVER_ERROR_MESSAGE
         );

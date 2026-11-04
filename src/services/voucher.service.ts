@@ -125,6 +125,13 @@ export interface UserSavedVoucher {
   // — route đó yêu cầu quyền admin SYSTEM_SETTINGS_MANAGE, luôn 403 với user
   // thường). null khi voucher gốc đã bị xoá.
   voucher?: Voucher | null;
+  /**
+   * Q7 (backend#143): người gọi dùng được mã ngay bây giờ, theo đúng luật của đường áp mã. Không xét giỏ hàng nên
+   * mức mua tối thiểu / phương thức thanh toán không nằm trong đây. Thiếu (backend cũ) => suy ra từ trạng thái voucher.
+   */
+  eligible?: boolean;
+  /** Lý do tiếng Việt khi `eligible = false`; chuỗi rỗng khi dùng được. */
+  ineligible_reason?: string;
 }
 
 export interface VoucherListResponse {

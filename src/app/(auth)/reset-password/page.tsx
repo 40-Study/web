@@ -13,6 +13,7 @@ import { AUTH_ROUTES } from "@/lib/routes";
 import { useResetPassword } from "@/hooks/queries/use-auth";
 import { useFlowGuard } from "@/hooks/use-flow-guard";
 import { STORAGE_KEYS } from "@/lib/constants";
+import { validateNewPassword } from "@/lib/password-policy";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -33,6 +34,12 @@ export default function ResetPasswordPage() {
     // noValidate trên <form>: lỗi hiện bằng tiếng Việt thay vì tooltip tiếng Anh của trình duyệt (G-05).
     if (!password) {
       setPasswordError("Vui lòng nhập mật khẩu mới");
+      return;
+    }
+    // Cùng luật và câu với backend (strong_password): chặn ngay thay vì để server trả 400.
+    const policyError = validateNewPassword(password);
+    if (policyError) {
+      setPasswordError(policyError);
       return;
     }
     if (!confirmPassword) {

@@ -10,7 +10,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/errors";
 
-vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn(), info: vi.fn() } }));
 vi.mock("@/services/order.service", () => ({
   orderService: { createOrder: vi.fn(), createPaymentIntent: vi.fn(), cancelOrder: vi.fn(), checkPayment: vi.fn() },
 }));
@@ -19,6 +19,8 @@ import { toast } from "sonner";
 import { orderService } from "@/services/order.service";
 import {
   BANK_UNAVAILABLE_NOTICE,
+  CANCEL_ALREADY_PAID_MESSAGE,
+  CANCEL_VERIFYING_MESSAGE,
   PAYMENT_FINAL_CHECK_WINDOW_MS,
   nextPaymentPollDelay,
   orderKeys,
@@ -158,20 +160,36 @@ describe("useCreatePaymentIntent — 409 ERR_ORDER_EXPIRED", () => {
 describe("useCancelOrder — 409 do đối chiếu", () => {
   beforeEach(() => {
     vi.mocked(toast.error).mockReset();
+    vi.mocked(toast.info).mockReset();
     vi.mocked(orderService.cancelOrder).mockReset();
   });
 
-  it.each([
-    ["ERR_PAYMENT_VERIFYING", "Đơn hàng đang được đối chiếu thanh toán với ngân hàng. Vui lòng không chuyển khoản lại và thử lại sau ít phút."],
-    ["ERR_ORDER_ALREADY_PAID", "Đơn hàng đã được thanh toán, khoá học đã được thêm vào tài khoản của bạn."],
-  ])("%s: toast câu của backend và làm mới đơn", async (code, msg) => {
-    vi.mocked(orderService.cancelOrder).mockRejectedValue(new ApiError(409, code, msg));
+  // QA3 Q8 (backend#143): câu của web theo từng kết quả huỷ, không dùng câu "đang đối chiếu" của backend cho người
+  // có thể chưa từng chuyển khoản. Chi tiết 4 kết quả: use-orders.cancel-outcomes.test.tsx.
+  it("ERR_PAYMENT_VERIFYING: toast câu huỷ đơn và làm mới đơn", async () => {
+    vi.mocked(orderService.cancelOrder).mockRejectedValue(
+      new ApiError(409, "ERR_PAYMENT_VERIFYING", "Đơn hàng đang được đối chiếu thanh toán với ngân hàng.")
+    );
     const { wrapper, invalidate } = setup();
     const { result } = renderHook(() => useCancelOrder(), { wrapper });
 
     act(() => result.current.mutate("o1"));
     await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
-    expect(vi.mocked(toast.error).mock.calls[0]).toEqual([msg]);
+    expect(vi.mocked(toast.error).mock.calls[0]).toEqual([CANCEL_VERIFYING_MESSAGE]);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: orderKeys.mine() });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: orderKeys.detail("o1") });
+  });
+
+  it("ERR_ORDER_ALREADY_PAID: toast thông tin (không phải lỗi) và làm mới đơn", async () => {
+    vi.mocked(orderService.cancelOrder).mockRejectedValue(
+      new ApiError(409, "ERR_ORDER_ALREADY_PAID", "Đơn hàng đã được thanh toán.")
+    );
+    const { wrapper, invalidate } = setup();
+    const { result } = renderHook(() => useCancelOrder(), { wrapper });
+
+    act(() => result.current.mutate("o1"));
+    await waitFor(() => expect(toast.info).toHaveBeenCalledWith(CANCEL_ALREADY_PAID_MESSAGE));
+    expect(toast.error).not.toHaveBeenCalled();
     expect(invalidate).toHaveBeenCalledWith({ queryKey: orderKeys.mine() });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: orderKeys.detail("o1") });
   });
