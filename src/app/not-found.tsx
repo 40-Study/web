@@ -1,5 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+
+// G-09 (QA3 261104): tab từng hiện "ForteX" trơn.
+export const metadata: Metadata = { title: "Không tìm thấy trang" };
 
 export default function NotFound() {
     return (

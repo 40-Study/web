@@ -1,4 +1,8 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+// G-09 (QA3 261104): tab từng hiện "ForteX" trơn.
+export const metadata: Metadata = { title: "Không có quyền truy cập" };
 
 export default function ForbiddenPage() {
   return (
