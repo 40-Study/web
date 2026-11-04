@@ -341,7 +341,9 @@ export default function TeacherWalletPage() {
                           {formatCurrency(tx.amount)}
                         </td>
                         <td className="p-3">
-                          <Badge variant={cfg.variant}>{cfg.label}</Badge>
+                          <Badge variant={cfg.variant} className="whitespace-nowrap">
+                            {cfg.label}
+                          </Badge>
                         </td>
                       </tr>
                     );

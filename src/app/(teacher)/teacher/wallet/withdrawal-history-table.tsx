@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCancelWithdrawal } from "@/hooks/queries/use-wallet";
+import { formatVnDateThenTime } from "@/lib/vn-datetime";
 import {
   formatWithdrawalAmount,
   getWithdrawalStatusLabel,
@@ -25,9 +26,8 @@ import {
 } from "@/lib/withdrawal-format";
 import type { WithdrawalItem } from "@/services/wallet.service";
 
-function formatDate(iso: string | null): string {
-  return iso ? new Date(iso).toLocaleString("vi-VN") : "—";
-}
+/** Bỏ giây (Q3-22): "28/09/2026 08:00", cùng múi giờ VN với các trang khác. */
+const formatDate = formatVnDateThenTime;
 
 /** Mã rút gọn — 8 ký tự đầu của uuid, đủ để phân biệt trong 1 trang lịch sử. */
 function shortId(id: string): string {
@@ -53,8 +53,44 @@ export function WithdrawalHistoryTable({ items }: { items: WithdrawalItem[] }) {
 
   return (
     <>
+      {/* Q3-21: dưới md bảng 7 cột bị cắt cột trạng thái/thao tác -> hiện dạng thẻ; từ md trở lên giữ bảng. */}
+      <ul className="space-y-3 md:hidden" data-testid="withdrawal-cards">
+        {items.map((w) => (
+          <li key={w.id} className="rounded-lg border p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-sm font-medium">{shortId(w.id)}</p>
+                <p className="text-base font-semibold">{formatWithdrawalAmount(w.amount)}</p>
+              </div>
+              <Badge variant={getWithdrawalStatusVariant(w.status)} className="whitespace-nowrap">
+                {getWithdrawalStatusLabel(w.status)}
+              </Badge>
+            </div>
+            <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm text-muted-foreground">
+              <dt>Ngày tạo</dt>
+              <dd>{formatDate(w.created_at)}</dd>
+              <dt>Ngày xử lý</dt>
+              <dd>{formatDate(w.processed_at)}</dd>
+              <dt>Ghi chú</dt>
+              <dd>{noteFor(w)}</dd>
+            </dl>
+            {w.status === "pending" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() => setConfirming(w)}
+                data-testid={`cancel-withdrawal-card-${w.id}`}
+              >
+                Huỷ yêu cầu
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
+
       {/* relative: nhãn sr-only (position:absolute) ở cột thao tác phải bị khung cuộn chứa, nếu không nó kéo giãn cả trang ở 390px. */}
-      <div className="relative overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="relative hidden overflow-x-auto md:block" data-testid="withdrawal-table">
         <table className="w-full min-w-[720px]">
           <thead>
             <tr className="border-b text-left">
@@ -75,7 +111,9 @@ export function WithdrawalHistoryTable({ items }: { items: WithdrawalItem[] }) {
                 <td className="p-3 text-sm font-medium">{shortId(w.id)}</td>
                 <td className="p-3 text-sm text-right font-medium">{formatWithdrawalAmount(w.amount)}</td>
                 <td className="p-3">
-                  <Badge variant={getWithdrawalStatusVariant(w.status)}>{getWithdrawalStatusLabel(w.status)}</Badge>
+                  <Badge variant={getWithdrawalStatusVariant(w.status)} className="whitespace-nowrap">
+                    {getWithdrawalStatusLabel(w.status)}
+                  </Badge>
                 </td>
                 <td className="p-3 text-sm text-muted-foreground">{formatDate(w.created_at)}</td>
                 <td className="p-3 text-sm text-muted-foreground">{formatDate(w.processed_at)}</td>

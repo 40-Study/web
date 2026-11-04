@@ -3,7 +3,7 @@
  * trạng thái lỗi của lịch sử. Hook dữ liệu được mock (không gọi API thật).
  */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TeacherWalletResponse, WithdrawalItem } from "@/services/wallet.service";
 
@@ -169,10 +169,11 @@ describe("WithdrawalSection", () => {
       { id: "bbbbbbbb-2", amount: 200000, currency: "VND", status: "completed", rejection_reason: null, transaction_id: "FT123", bank_name: null, bank_account_number: null, bank_account_name: null, created_at: "2026-09-28T01:00:00Z", processed_at: "2026-09-28T03:00:00Z" },
     ];
     render(<WithdrawalSection />);
-    expect(screen.getByText("Lý do từ chối: Sai tên chủ TK")).toBeTruthy();
-    expect(screen.getByText("Mã GD: FT123")).toBeTruthy();
-    expect(screen.getByText("Bị từ chối")).toBeTruthy();
-    expect(screen.getByText("Đã chuyển khoản")).toBeTruthy();
+    const table = within(screen.getByTestId("withdrawal-table"));
+    expect(table.getByText("Lý do từ chối: Sai tên chủ TK")).toBeTruthy();
+    expect(table.getByText("Mã GD: FT123")).toBeTruthy();
+    expect(table.getByText("Bị từ chối")).toBeTruthy();
+    expect(table.getByText("Đã chuyển khoản")).toBeTruthy();
   });
 
   it("lỗi tải lịch sử -> hiện lỗi, KHÔNG hiện 'chưa có yêu cầu nào'", () => {
@@ -194,7 +195,8 @@ describe("WithdrawalSection", () => {
         { ...base, id: "approved-2", amount: 200000, status: "approved", processed_at: "2026-09-28T02:00:00Z" },
       ];
       render(<WithdrawalSection />);
-      expect(screen.getAllByRole("button", { name: "Huỷ yêu cầu" })).toHaveLength(1);
+      const table = within(screen.getByTestId("withdrawal-table"));
+      expect(table.getAllByRole("button", { name: "Huỷ yêu cầu" })).toHaveLength(1);
       expect(screen.queryByTestId("cancel-withdrawal-approved-2")).toBeNull();
 
       fireEvent.click(screen.getByTestId("cancel-withdrawal-pending-1"));
@@ -218,9 +220,24 @@ describe("WithdrawalSection", () => {
       mockWallet = walletFixture({});
       mockHistoryItems = [{ ...base, id: "cancelled-1", amount: 150000, status: "cancelled", processed_at: "2026-09-28T02:00:00Z" }];
       render(<WithdrawalSection />);
-      expect(screen.getByText("Đã huỷ")).toBeTruthy();
-      expect(screen.getByText("Bạn đã huỷ yêu cầu này")).toBeTruthy();
+      const table = within(screen.getByTestId("withdrawal-table"));
+      expect(table.getByText("Đã huỷ")).toBeTruthy();
+      expect(table.getByText("Bạn đã huỷ yêu cầu này")).toBeTruthy();
       expect(screen.queryByRole("button", { name: "Huỷ yêu cầu" })).toBeNull();
+    });
+
+    // Q3-21: dưới md bảng bị cắt cột trạng thái/thao tác -> danh sách thẻ phải có đủ dữ liệu và nút huỷ.
+    it("danh sách thẻ (mobile) có trạng thái không xuống dòng, ngày không có giây và nút huỷ hoạt động", () => {
+      mockWallet = walletFixture({ has_open_withdrawal: true });
+      mockHistoryItems = [{ ...base, id: "pending-1", amount: 150000, status: "pending", processed_at: null }];
+      render(<WithdrawalSection />);
+      const cards = within(screen.getByTestId("withdrawal-cards"));
+      expect(cards.getByText("Chờ duyệt").className).toContain("whitespace-nowrap");
+      expect(cards.getByText("150.000đ")).toBeTruthy();
+      expect(cards.getByText(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/)).toBeTruthy();
+      fireEvent.click(screen.getByTestId("cancel-withdrawal-card-pending-1"));
+      fireEvent.click(screen.getByRole("button", { name: "Xác nhận huỷ" }));
+      expect(mockCancel.mock.calls[0][0]).toBe("pending-1");
     });
   });
 });

@@ -2,6 +2,7 @@
 
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import { sessionStatusLabel } from "@/lib/session-status";
+import { formatVnDateThenTime } from "@/lib/vn-datetime";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -32,6 +33,7 @@ import {
   useUnpublishAssignment,
   useDeleteAssignment,
 } from "@/hooks/queries/use-assignments";
+import { AssignmentListItem } from "./assignment-list-item";
 import type { ApiCourse } from "@/services/course.service";
 import type { AssignmentResponseDTO, AssignmentType, DifficultyLevel } from "@/services/assignment.service";
 
@@ -56,12 +58,6 @@ const DIFFICULTY_OPTIONS: { value: DifficultyLevel; label: string }[] = [
   { value: "medium", label: "Trung bình" },
   { value: "hard", label: "Khó" },
 ];
-
-const TYPE_BADGE_CLASS: Record<AssignmentType, string> = {
-  live_coding: "bg-purple-100 text-purple-700 border-purple-200",
-  homework: "bg-amber-100 text-amber-700 border-amber-200",
-  project: "bg-emerald-100 text-emerald-700 border-emerald-200",
-};
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
@@ -195,9 +191,11 @@ export default function TeacherAssignmentsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[320px_360px_1fr]">
+      {/* Q3-20: 3 cột ở 1280px chỉ chừa ~270px cho form (nhãn/ô ngày bị cắt). Khoá học + buổi học xếp 2 cột
+            phía trên, phần quản lý bài tập chiếm cả hàng bên dưới. */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Column 1: Course list */}
-        <Card className="h-[calc(100vh-15rem)] overflow-hidden">
+        <Card className="flex h-[22rem] flex-col overflow-hidden">
           <CardHeader className="border-b pb-3">
             <CardTitle className="text-base">1) Tất cả khoá học ({courses.length})</CardTitle>
             <Input
@@ -206,7 +204,7 @@ export default function TeacherAssignmentsPage() {
               onChange={(e) => setCourseSearch(e.target.value)}
             />
           </CardHeader>
-          <CardContent className="space-y-2 overflow-auto p-3">
+          <CardContent className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
             {coursesLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -241,14 +239,14 @@ export default function TeacherAssignmentsPage() {
         </Card>
 
         {/* Column 2: Livestream session list for the course */}
-        <Card className="h-[calc(100vh-15rem)] overflow-hidden">
+        <Card className="flex h-[22rem] flex-col overflow-hidden">
           <CardHeader className="border-b pb-3">
             <CardTitle className="text-base">2) Buổi học trực tiếp</CardTitle>
             <p className="text-xs text-muted-foreground">
               Bài tập gắn theo buổi học trực tiếp cụ thể của khoá học này.
             </p>
           </CardHeader>
-          <CardContent className="space-y-2 overflow-auto p-3">
+          <CardContent className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
             {!selectedCourseId ? (
               <p className="text-sm text-muted-foreground">Chọn khoá học để xem buổi học.</p>
             ) : sessionsLoading ? (
@@ -278,7 +276,7 @@ export default function TeacherAssignmentsPage() {
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {sessionStatusLabel(session.status)}
-                    {session.scheduled_at ? ` · ${new Date(session.scheduled_at).toLocaleString("vi-VN")}` : ""}
+                    {session.scheduled_at ? ` · ${formatVnDateThenTime(session.scheduled_at)}` : ""}
                   </p>
                 </button>
               ))
@@ -288,7 +286,7 @@ export default function TeacherAssignmentsPage() {
 
         {/* Column 3: Assignment management. `min-w-0`: cột lưới `1fr` mặc định không co nhỏ hơn nội dung (nút
             whitespace-nowrap) nên ở 1280px (breakpoint xl) cả trang tràn ngang 8px (Q2-07). */}
-        <div className="min-w-0 space-y-4">
+        <div className="min-w-0 space-y-4 lg:col-span-2">
           <Card>
             <CardContent className="p-4">
               <div className="grid gap-3 md:grid-cols-2">
@@ -449,63 +447,17 @@ export default function TeacherAssignmentsPage() {
               {selectedSessionId &&
                 !assignmentsLoading &&
                 assignments.map((assignment) => (
-                  <div
+                  <AssignmentListItem
                     key={assignment.id}
-                    className={`rounded-lg border p-3 transition-colors ${
-                      assignment.id === selectedAssignmentId ? "border-primary-500 bg-primary-50" : "hover:bg-gray-50"
-                    }`}
-                    onClick={() => setSelectedAssignmentId(assignment.id)}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-medium">{assignment.title}</p>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={TYPE_BADGE_CLASS[assignment.type]}>
-                          {TYPE_LABEL[assignment.type] ?? assignment.type}
-                        </Badge>
-                        <Badge
-                          variant="outline"
-                          className={
-                            assignment.is_published
-                              ? "bg-green-100 text-green-700 border-green-200"
-                              : "bg-gray-100 text-gray-700 border-gray-200"
-                          }
-                        >
-                          {assignment.is_published ? "Đã công bố" : "Bản nháp"}
-                        </Badge>
-                      </div>
-                    </div>
-                    {assignment.end_time && (
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        Hạn nộp: {new Date(assignment.end_time).toLocaleString("vi-VN")}
-                      </p>
-                    )}
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        variant={assignment.is_published ? "outline" : "default"}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleTogglePublish(assignment);
-                        }}
-                        disabled={publishMutation.isPending || unpublishMutation.isPending}
-                      >
-                        {assignment.is_published ? "Huỷ công bố" : "Công bố"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 hover:bg-red-50"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(assignment.id);
-                        }}
-                        disabled={deleteMutation.isPending}
-                      >
-                        Xoá
-                      </Button>
-                    </div>
-                  </div>
+                    assignment={assignment}
+                    typeLabel={TYPE_LABEL[assignment.type] ?? assignment.type}
+                    selected={assignment.id === selectedAssignmentId}
+                    onSelect={() => setSelectedAssignmentId(assignment.id)}
+                    onTogglePublish={() => handleTogglePublish(assignment)}
+                    onDelete={() => handleDelete(assignment.id)}
+                    togglePending={publishMutation.isPending || unpublishMutation.isPending}
+                    deletePending={deleteMutation.isPending}
+                  />
                 ))}
 
               {selectedSessionId && !assignmentsLoading && !assignmentsError && assignments.length === 0 && (
