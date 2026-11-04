@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import TeacherNotificationDialog from "@/components/teacher/teacher-notification-dialog";
 import { useMyStudents } from "@/hooks/queries/use-classes";
+import { buildStudentProfile } from "./student-profile-aggregate";
 
 export default function TeacherStudentProfilePage() {
   const params = useParams<{ id: string }>();
@@ -25,21 +26,13 @@ export default function TeacherStudentProfilePage() {
     );
   }
 
-  const student = students.find((s) => s.id === params.id);
+  const student = buildStudentProfile(students, params.id);
 
   if (!student) {
     notFound();
   }
 
-  // Classmates: same class, different id.
-  //
-  // Review đối kháng backend PR #70 (MAJOR): `class_id` giờ optional (`omitempty` khi học viên
-  // ghi danh thẳng vào khoá, không qua lớp) — so `s.class_id === student.class_id` một mình sẽ
-  // khớp `undefined === undefined` khi CẢ HAI chưa có lớp, gộp nhầm TOÀN BỘ học viên "chưa có
-  // lớp" thành bạn cùng lớp của nhau. Đòi `student.class_id` phải có giá trị thật trước khi so.
-  const classmates = student.class_id
-    ? students.filter((s) => s.class_id === student.class_id && s.id !== student.id)
-    : [];
+  const { classmates } = student;
 
   return (
     <div className="space-y-6">
@@ -66,11 +59,11 @@ export default function TeacherStudentProfilePage() {
               <div>
                 <p className="text-xl font-semibold">{student.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  Mã học viên: {student.student_id ?? "—"}
+                  Mã học viên: {student.studentId ?? "—"}
                 </p>
               </div>
             </div>
-            <Badge variant={student.status === "active" ? "success" : "secondary"}>
+            <Badge variant={student.status === "active" ? "success" : "secondary"} className="whitespace-nowrap">
               {student.status === "active"
                 ? "Đang học"
                 : student.status === "graduated"
@@ -85,24 +78,32 @@ export default function TeacherStudentProfilePage() {
                 <UserRound className="h-4 w-4" />
                 Phụ huynh liên hệ
               </div>
-              <p className="font-medium">{student.parent_name ?? "—"}</p>
+              <p className="font-medium">{student.parentName ?? "—"}</p>
               <a
-                href={student.parent_phone ? `tel:${student.parent_phone}` : undefined}
+                href={student.parentPhone ? `tel:${student.parentPhone}` : undefined}
                 className="inline-flex items-center gap-2 text-sm text-primary-600 hover:underline"
               >
                 <Phone className="h-4 w-4" />
-                {student.parent_phone ?? "Chưa cập nhật"}
+                {student.parentPhone ?? "Chưa cập nhật"}
               </a>
             </div>
 
             <div className="rounded-lg border p-4">
               <div className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
                 <BookOpen className="h-4 w-4" />
-                Lớp học hiện tại
+                Lớp học
               </div>
-              <p className="font-medium">{student.class_name ?? "Chưa có lớp"}</p>
-              {student.course_name && (
-                <p className="text-sm text-muted-foreground">{student.course_name}</p>
+              {student.courses.length === 0 ? (
+                <p className="font-medium">Chưa có lớp</p>
+              ) : (
+                <ul className="space-y-2">
+                  {student.courses.map((c) => (
+                    <li key={`${c.courseId ?? c.courseName}-${c.className ?? ""}`}>
+                      <p className="font-medium">{c.className ?? "Chưa có lớp"}</p>
+                      <p className="text-sm text-muted-foreground">{c.courseName}</p>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           </div>
@@ -120,7 +121,7 @@ export default function TeacherStudentProfilePage() {
                 <div key={mate.id} className="flex items-center justify-between rounded-lg border p-3">
                   <div>
                     <p className="font-medium">{mate.name}</p>
-                    <p className="text-sm text-muted-foreground">{mate.student_id ?? "—"}</p>
+                    <p className="text-sm text-muted-foreground">{mate.studentId ?? "—"}</p>
                   </div>
                   <Link href={`/teacher/students/${mate.id}`} className="text-sm text-primary-600 hover:underline">
                     Xem hồ sơ
@@ -136,8 +137,8 @@ export default function TeacherStudentProfilePage() {
         open={isNotifyDialogOpen}
         onOpenChange={setIsNotifyDialogOpen}
         recipients={[
-          { id: student.id, name: student.name, phone: student.parent_phone },
-          ...classmates.map((mate) => ({ id: mate.id, name: mate.name, phone: mate.parent_phone })),
+          { id: student.id, name: student.name, phone: student.parentPhone },
+          ...classmates.map((mate) => ({ id: mate.id, name: mate.name, phone: mate.parentPhone })),
         ]}
         contextLabel={`Hồ sơ học viên: ${student.name}`}
       />

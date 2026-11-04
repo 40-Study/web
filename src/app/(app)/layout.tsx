@@ -8,12 +8,14 @@ import { RoleGuard } from "@/components/guards/role-guard";
 import { canUseFriends } from "@/components/friends/friends-access";
 import { useAuthStore } from "@/stores/auth.store";
 import { getSystemRoleLabel } from "@/lib/role-labels";
+import { useSystemRoleRemap } from "@/hooks/use-system-role-remap";
 import {
   normalizeRole,
   AUTH_ROUTES,
   resolveNavRole,
   isRouteAllowedForRole,
   getRoleRestrictedRedirect,
+  getRoleRestrictedNotice,
   getRoleHomeRoute,
   CONTEST_PARTICIPANT_ROUTE_PATTERN,
   canAccessStudentOnlyRoute,
@@ -27,7 +29,11 @@ export default function AppLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated, hasHydrated, activeRole, sessionStatus, sessionEndedByUser } = useAuthStore();
-  const normalizedRole = normalizeRole(activeRole);
+  // Q3-05: chỉ có 3 giao diện. Vai tuỳ biến của tổ chức (vd QA3_TEACHER) dùng giao diện của VAI HỆ THỐNG người
+  // dùng đang có; trước đây mã lạ làm RoleGuard đá sang /403 (ngõ cụt). Không quy được thì giữ nguyên mã -> /403
+  // (trang 403 nay có lối về trang chủ thật, chuyển vai trò, đăng xuất).
+  const { systemRole, needsRemap: needsRoleRemap } = useSystemRoleRemap();
+  const normalizedRole = systemRole ?? normalizeRole(activeRole);
   const isAdminRole = normalizedRole === "SYSTEM_ADMIN" || normalizedRole === "ORG_OWNER";
 
   const isContestRoute = pathname === "/contests" || pathname.startsWith("/contests/");
@@ -124,10 +130,8 @@ export default function AppLayout({
     if (isRoleRestrictedRoute) {
       // P4: trước đây chuyển hướng IM LẶNG — người dùng tưởng trang trắng/lỗi. Báo một toast
       // nêu đúng vai trò và vì sao (route chỉ dành cho học viên).
-      toast.warning(
-        `Trang này không dành cho ${getSystemRoleLabel(normalizedRole ?? "")}.`,
-        { description: "Bạn đã được đưa về trang chủ phù hợp với vai trò của mình." }
-      );
+      const notice = getRoleRestrictedNotice(pathname, normalizedRole, getSystemRoleLabel(normalizedRole ?? ""));
+      toast.warning(notice.title, { description: notice.description });
       router.replace(getRoleRestrictedRedirect(pathname, normalizedRole));
       return;
     }
@@ -149,6 +153,9 @@ export default function AppLayout({
     pathname,
     router,
   ]);
+
+  // Chờ useSystemRoleRemap ghi vai hệ thống vào store: không dựng RoleGuard với mã vai lạ (sẽ đá sang /403 trước khi kịp quy đổi).
+  if (needsRoleRemap) return null;
 
   // Show nothing while redirecting to admin
   if (hasHydrated && isAuthenticated && isAdminRole && !isAdminAllowedRoute) return null;

@@ -28,13 +28,8 @@ import TeacherNotificationDialog from "@/components/teacher/teacher-notification
 import { useMyStudents } from "@/hooks/queries/use-classes";
 import { buildCsv, downloadCsv } from "@/lib/csv-export";
 import { withClassPrefix } from "@/lib/class-label";
-import { courseFilterOptions, groupStudents, type GroupedStudent } from "./group-students";
-
-const STATUS_LABEL: Record<GroupedStudent["status"], string> = {
-  active: "ĐANG HỌC",
-  graduated: "HOÀN THÀNH",
-  inactive: "KHÔNG HOẠT ĐỘNG",
-};
+import { StudentMobileCard } from "./student-mobile-card";
+import { courseFilterOptions, groupStudents, STUDENT_STATUS_LABEL } from "./group-students";
 
 export default function TeacherStudentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -89,7 +84,7 @@ export default function TeacherStudentsPage() {
         s.parentName ?? "",
         s.parentPhone ?? "",
         s.courses.map((c) => c.courseName).join("; "),
-        STATUS_LABEL[s.status],
+        STUDENT_STATUS_LABEL[s.status],
       ]),
     ];
     downloadCsv("teacher-students.csv", buildCsv(rowsCsv));
@@ -180,7 +175,25 @@ export default function TeacherStudentsPage() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Q3-21: dưới md bảng 6 cột bị cắt cột trạng thái/thao tác -> hiện dạng thẻ. */}
+          <ul className="divide-y md:hidden" data-testid="student-cards">
+            {pagedStudents.length === 0 ? (
+              <li className="py-10 text-center text-sm text-muted-foreground">
+                {students.length === 0 ? "Chưa có học viên nào ghi danh khoá học của bạn." : "Không tìm thấy học viên phù hợp."}
+              </li>
+            ) : (
+              pagedStudents.map((student) => (
+                <StudentMobileCard
+                  key={student.id}
+                  student={student}
+                  selected={selectedIds.includes(student.id)}
+                  onToggle={() => toggleSelect(student.id)}
+                />
+              ))
+            )}
+          </ul>
+          <div className="hidden overflow-x-auto md:block">
             <Table className="min-w-[760px]">
               <TableHeader>
                 <TableRow>
@@ -249,8 +262,8 @@ export default function TeacherStudentsPage() {
                         </ul>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={student.status === "active" ? "success" : "secondary"} className="text-xs">
-                          {STATUS_LABEL[student.status]}
+                        <Badge variant={student.status === "active" ? "success" : "secondary"} className="whitespace-nowrap text-xs">
+                          {STUDENT_STATUS_LABEL[student.status]}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -264,6 +277,7 @@ export default function TeacherStudentsPage() {
               </TableBody>
             </Table>
           </div>
+          </>
         )}
       </Card>
 

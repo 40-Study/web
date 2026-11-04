@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -15,12 +16,14 @@ import {
   UserCheck,
   Radio,
   MessageSquare,
+  MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
 import { FriendsNavBadge } from "@/components/friends/friends-nav-badge";
 import { canUseFriends } from "@/components/friends/friends-access";
 import { normalizeRole } from "@/lib/routes";
+import { TeacherMoreSheet, getTeacherOverflowItems } from "@/components/layout/teacher-more-sheet";
 
 type UserRole = "student" | "teacher" | "parent" | "guest" | "admin";
 
@@ -84,6 +87,7 @@ interface BottomNavProps {
 
 export function BottomNav({ role = "student", className }: BottomNavProps) {
   const pathname = usePathname();
+  const [moreOpen, setMoreOpen] = useState(false);
   const { user, activeRole } = useAuthStore();
   const profileHref = user?.id ? `/profile/${user.id}` : "/login";
   const tabs = navConfigs[role]
@@ -91,8 +95,13 @@ export function BottomNav({ role = "student", className }: BottomNavProps) {
     // Cùng nguyên tắc với Bạn bè: tab Live chỉ cho vai học viên THẬT (teacher rơi vào bộ tab student ở B-11).
     .filter((tab) => tab.href !== "/livestream" || normalizeRole(activeRole) === "STUDENT")
     .map((tab) => (tab.href === "/profile" ? { ...tab, href: profileHref } : tab));
+  // Q3-11: 390px chỉ đủ ~7 tab nên các trang giảng viên còn lại (Lớp học, Bài tập, Cuộc thi, AI Studio...) nằm trong
+  // tab "Khác", suy ra từ chính menu sidebar thay vì liệt kê lại.
+  const overflowItems = role === "teacher" ? getTeacherOverflowItems(tabs.map((tab) => tab.href)) : [];
+  const isMoreActive = overflowItems.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
 
   return (
+    <>
     <nav
       className={cn(
         "fixed bottom-4 left-2 right-2 sm:left-4 sm:right-4 bg-card/95 backdrop-blur-md border border-border rounded-2xl shadow-raised lg:hidden z-50",
@@ -129,7 +138,29 @@ export function BottomNav({ role = "student", className }: BottomNavProps) {
             </Link>
           );
         })}
+        {overflowItems.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setMoreOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={moreOpen}
+            className={cn(
+              "flex flex-1 min-w-0 flex-col items-center gap-1 px-1 py-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+              isMoreActive
+                ? "text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <MoreHorizontal className="w-5 h-5" />
+            <span className="whitespace-nowrap text-[10px] font-medium leading-none sm:text-[11px]">Khác</span>
+          </button>
+        )}
       </div>
     </nav>
+    {/* Ngoài <nav>: backdrop-blur của nav tạo containing block làm hộp thoại fixed bị kẹt trong thanh nav. */}
+    {overflowItems.length > 0 && (
+      <TeacherMoreSheet open={moreOpen} onOpenChange={setMoreOpen} items={overflowItems} />
+    )}
+    </>
   );
 }

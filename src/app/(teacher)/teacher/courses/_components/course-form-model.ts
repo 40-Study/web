@@ -74,6 +74,22 @@ export type UpdateCourseFormField = <K extends keyof CourseFormData>(
 // form dùng "all" cho nhãn "Tất cả trình độ".
 const API_ALL_LEVELS = "all_levels";
 
+/** Giá trị `level` gửi backend từ lựa chọn của form ("all" -> "all_levels"); dùng chung trang tạo và trang sửa. */
+export function toApiLevel(formLevel: string): string {
+  return formLevel === "all" ? API_ALL_LEVELS : formLevel;
+}
+
+/** Câu báo lỗi khi khoá "Có phí" chưa có giá bán hợp lệ. */
+export const PRICE_REQUIRED_ERROR = "Vui lòng nhập giá bán lớn hơn 0 hoặc chọn Miễn phí.";
+
+/** Khoá "Có phí" phải có giá bán > 0 (khoá miễn phí luôn hợp lệ). Trả câu lỗi hoặc null. */
+export function validatePrice(form: Pick<CourseFormData, "is_free" | "price">): string | null {
+  if (form.is_free) return null;
+  const text = form.price.trim();
+  const price = Number(text);
+  return text === "" || !Number.isFinite(price) || price <= 0 ? PRICE_REQUIRED_ERROR : null;
+}
+
 /** Câu báo lỗi giá khuyến mãi — khớp quy tắc backend: 0 < discount_price < price (DISCOUNT_PRICE_INVALID). */
 export const DISCOUNT_PRICE_ERROR = "Giá khuyến mãi phải lớn hơn 0 và thấp hơn giá bán.";
 
@@ -154,10 +170,9 @@ export function buildCourseUpdatePayload(form: CourseFormData, original: ApiCour
   const title = form.title.trim();
   if (title.length < 2) return { error: "Tên khoá học tối thiểu 2 ký tự." };
 
+  const priceError = validatePrice(form);
+  if (priceError) return { error: priceError };
   const price = form.is_free ? 0 : Number(form.price);
-  if (!form.is_free && (!form.price.trim() || !Number.isFinite(price) || price <= 0)) {
-    return { error: "Vui lòng nhập giá bán lớn hơn 0 hoặc chọn Miễn phí." };
-  }
 
   const hadDiscount = numberText(original.discount_price) !== "";
   const discountText = form.is_free ? "" : form.discount_price.trim();
@@ -172,7 +187,7 @@ export function buildCourseUpdatePayload(form: CourseFormData, original: ApiCour
     description: form.description,
     thumbnail_url: form.thumbnail_url,
     preview_video_url: form.preview_video_url,
-    level: form.level === "all" ? API_ALL_LEVELS : form.level,
+    level: toApiLevel(form.level),
     language: form.language,
     is_free: form.is_free,
     price,

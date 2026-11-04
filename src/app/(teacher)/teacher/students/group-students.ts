@@ -26,6 +26,12 @@ export interface GroupedStudent {
   status: "active" | "graduated" | "inactive";
 }
 
+export const STUDENT_STATUS_LABEL: Record<GroupedStudent["status"], string> = {
+  active: "ĐANG HỌC",
+  graduated: "HOÀN THÀNH",
+  inactive: "KHÔNG HOẠT ĐỘNG",
+};
+
 function overallStatus(courses: StudentCourse[]): GroupedStudent["status"] {
   if (courses.some((c) => c.status === "active")) return "active";
   if (courses.length > 0 && courses.every((c) => c.status === "graduated")) return "graduated";

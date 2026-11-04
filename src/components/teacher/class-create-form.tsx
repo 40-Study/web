@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ClassSourceBadge } from "@/components/classes/class-source-badge";
 import { ClassOrganizationField } from "@/components/teacher/class-organization-field";
 import { classService, type Class } from "@/services/class.service";
 
@@ -68,6 +69,9 @@ export function ClassCreateForm({
         <Input type="number" value={maxStudents} onChange={(e) => setMaxStudents(e.target.value)} placeholder="30" className="w-32" />
       </div>
       <ClassOrganizationField value={organizationId} onChange={setOrganizationId} />
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        Lớp sẽ được tạo là <ClassSourceBadge organizationId={organizationId || null} />
+      </p>
       <div className="flex gap-2 pt-2">
         {onCancel && (
           <Button variant="outline" onClick={onCancel}>Huỷ</Button>

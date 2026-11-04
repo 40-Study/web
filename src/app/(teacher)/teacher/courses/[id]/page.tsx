@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/safe-image";
 import { useParams, useRouter } from "next/navigation";
 import {
   DndContext,
@@ -1074,7 +1074,7 @@ export default function CourseDetailPage() {
         {/* Course thumbnail */}
         {course.thumbnail_url && (
           <div className="hidden sm:block w-20 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-            <Image src={course.thumbnail_url} alt="" width={80} height={48} className="object-cover w-full h-full" />
+            <SafeImage src={course.thumbnail_url} alt="" width={80} height={48} className="object-cover w-full h-full" />
           </div>
         )}
       </div>
@@ -1087,6 +1087,8 @@ export default function CourseDetailPage() {
           status={course.status}
           rejectionReason={course.rejection_reason}
           lessonCount={lessonCount}
+          thumbnailUrl={course.thumbnail_url}
+          description={course.description}
         />
         {!isLocked && (
           <Button variant="outline" size="sm" asChild>
@@ -1156,8 +1158,8 @@ export default function CourseDetailPage() {
         </DndContext>
       )}
 
-      {/* Add section — big button at bottom */}
-      {!isLocked && (
+      {/* Add section — big button at bottom. Khoá chưa có chương đã có nút "Thêm chương đầu tiên" ở thẻ trống: không lặp CTA. */}
+      {!isLocked && sections.length > 0 && (
         <button
           onClick={() => setSectionDialog(true)}
           className="w-full py-4 border-2 border-dashed rounded-xl text-muted-foreground hover:text-primary-600 hover:border-primary-300 hover:bg-primary-50/30 transition-all flex items-center justify-center gap-2 text-sm font-medium"
@@ -1651,7 +1653,7 @@ function EditContentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(exerciseId ? "max-w-2xl max-h-[90vh] overflow-y-auto" : "max-w-md")}>
+      <DialogContent className={cn(exerciseId || quizSettingsId ? "max-w-2xl max-h-[90vh] overflow-y-auto" : "max-w-md")}>
         <DialogHeader>
           <DialogTitle>Chỉnh sửa nội dung</DialogTitle>
           <DialogDescription>

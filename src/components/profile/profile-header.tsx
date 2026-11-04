@@ -118,7 +118,7 @@ export function ProfileHeader({
           {isOwnProfile ? (
             <Button
               variant="outline"
-              className="text-white border-white hover:bg-white/20"
+              className="bg-transparent text-white border-white hover:bg-white/20 hover:text-white dark:bg-transparent dark:text-white dark:hover:bg-white/20"
               onClick={onEditProfile}
             >
               <Pencil className="h-4 w-4 mr-2" />

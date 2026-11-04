@@ -23,6 +23,33 @@ export interface ContentFormErrors {
   questions: Record<string, string>;
 }
 
+/** Số phương án tối thiểu của một câu trắc nghiệm (backend không đòi đủ 4; 2 là đủ cho Đúng/Sai). */
+export const MIN_QUESTION_OPTIONS = 2;
+
+/**
+ * Lỗi đầu tiên của MỘT câu trắc nghiệm ("" = hợp lệ). Dùng chung cho form tạo nội dung và trình soạn câu hỏi
+ * để cả hai báo cùng một lý do. Ô phương án để trống được bỏ qua (xem `pruneBlankOptions`), miễn còn >= 2
+ * phương án có chữ và đáp án đúng không phải ô trống.
+ */
+export function choiceQuestionError(q: ChoiceQuestionLike): string {
+  // `correctId` phải trỏ tới một phương án CÒN TỒN TẠI; chuỗi rỗng là trạng thái ban đầu.
+  const correct = q.options.find((o) => o.id === q.correctId);
+  if (!correct) return CORRECT_ANSWER_REQUIRED_MESSAGE;
+  if (q.question !== undefined && !q.question.trim()) return "Nhập nội dung câu hỏi.";
+  // Dữ liệu không mang chữ phương án (chỉ kiểm khoá đáp án): không kết luận gì thêm.
+  if (q.options.every((o) => o.text === undefined)) return "";
+  const texts = q.options.map((o) => (o.text ?? "").trim().toLocaleLowerCase()).filter(Boolean);
+  if (texts.length < MIN_QUESTION_OPTIONS) return `Điền ít nhất ${MIN_QUESTION_OPTIONS} phương án trả lời.`;
+  if (!(correct.text ?? "").trim()) return "Đáp án đúng không được để trống.";
+  if (new Set(texts).size !== texts.length) return "Các phương án trả lời không được trùng nhau.";
+  return "";
+}
+
+/** Bỏ các ô phương án trống trước khi gửi (đáp án đúng đã được kiểm không phải ô trống). */
+export function pruneBlankOptions<Q extends { options: { text: string }[] }>(questions: readonly Q[]): Q[] {
+  return questions.map((q) => ({ ...q, options: q.options.filter((o) => o.text.trim()) }));
+}
+
 export function validateContentForm(
   title: string,
   questions: readonly ChoiceQuestionLike[]
@@ -30,18 +57,16 @@ export function validateContentForm(
   const errors: ContentFormErrors = { questions: {} };
   if (!title.trim()) errors.title = TITLE_REQUIRED_MESSAGE;
   for (const q of questions) {
-    // `correctId` phải trỏ tới một phương án CÒN TỒN TẠI; chuỗi rỗng là trạng thái ban đầu.
-    if (!q.correctId || !q.options.some((o) => o.id === q.correctId)) {
-      errors.questions[q.id] = CORRECT_ANSWER_REQUIRED_MESSAGE;
-    } else if (q.question !== undefined && !q.question.trim()) {
-      errors.questions[q.id] = "Nhập nội dung câu hỏi.";
-    } else if (q.options.some((o) => o.text !== undefined && !o.text.trim())) {
-      errors.questions[q.id] = "Điền đầy đủ các phương án trả lời.";
-    } else if (q.options.every((o) => o.text !== undefined) && new Set(q.options.map((o) => o.text!.trim().toLocaleLowerCase())).size !== q.options.length) {
-      errors.questions[q.id] = "Các phương án trả lời không được trùng nhau.";
-    }
+    const message = choiceQuestionError(q);
+    if (message) errors.questions[q.id] = message;
   }
   return errors;
+}
+
+/** Câu lỗi tóm tắt cạnh nút lưu: lỗi THẬT của tiêu đề, rồi của câu hỏi đầu tiên sai (không câu cố định). */
+export function contentFormErrorSummary(errors: ContentFormErrors): string {
+  const firstQuestionError = Object.values(errors.questions)[0];
+  return [errors.title, firstQuestionError].filter(Boolean).join(" ");
 }
 
 export function hasContentFormErrors(errors: ContentFormErrors): boolean {

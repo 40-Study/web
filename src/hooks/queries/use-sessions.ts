@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/error-messages";
+import { describeScheduleError } from "@/lib/class-schedule-errors";
 import {
   sessionService,
   CreateClassScheduleDTO,
@@ -47,7 +48,7 @@ export function useCreateSchedule(classId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.schedules(classId) });
       toast.success("Đã tạo lịch học");
     },
-    onError: (err) => toast.error("Không thể tạo lịch học", { description: getErrorMessage(err) }),
+    onError: (err) => toast.error("Không thể tạo lịch học", { description: describeScheduleError(err, "schedule") }),
   });
 }
 
@@ -60,7 +61,7 @@ export function useUpdateSchedule(classId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.schedules(classId) });
       toast.success("Đã cập nhật lịch học");
     },
-    onError: (err) => toast.error("Không thể cập nhật lịch học", { description: getErrorMessage(err) }),
+    onError: (err) => toast.error("Không thể cập nhật lịch học", { description: describeScheduleError(err, "schedule") }),
   });
 }
 
@@ -72,7 +73,7 @@ export function useDeleteSchedule(classId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.schedules(classId) });
       toast.success("Đã xoá lịch học");
     },
-    onError: (err) => toast.error("Không thể xoá lịch học", { description: getErrorMessage(err) }),
+    onError: (err) => toast.error("Không thể xoá lịch học", { description: describeScheduleError(err, "schedule") }),
   });
 }
 
@@ -110,7 +111,7 @@ export function useCreateSession(classId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.sessions(classId) });
       toast.success("Đã tạo buổi học");
     },
-    onError: (err) => toast.error("Không thể tạo buổi học", { description: getErrorMessage(err) }),
+    onError: (err) => toast.error("Không thể tạo buổi học", { description: describeScheduleError(err, "session") }),
   });
 }
 
@@ -122,7 +123,7 @@ export function useGenerateSessions(classId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.sessions(classId) });
       toast.success(`Đã tạo ${sessions.length} buổi học`);
     },
-    onError: (err) => toast.error("Không thể tạo buổi học", { description: getErrorMessage(err) }),
+    onError: (err) => toast.error("Không thể sinh buổi học", { description: describeScheduleError(err, "generate") }),
   });
 }
 
@@ -135,7 +136,7 @@ export function useUpdateSession(classId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.sessions(classId) });
       toast.success("Đã cập nhật buổi học");
     },
-    onError: (err) => toast.error("Không thể cập nhật buổi học", { description: getErrorMessage(err) }),
+    onError: (err) => toast.error("Không thể cập nhật buổi học", { description: describeScheduleError(err, "session") }),
   });
 }
 
@@ -148,7 +149,7 @@ export function useCancelSession(classId: string) {
       queryClient.invalidateQueries({ queryKey: sessionKeys.sessions(classId) });
       toast.success("Đã huỷ buổi học");
     },
-    onError: (err) => toast.error("Không thể huỷ buổi học", { description: getErrorMessage(err) }),
+    onError: (err) => toast.error("Không thể huỷ buổi học", { description: describeScheduleError(err, "session") }),
   });
 }
 

@@ -9,6 +9,7 @@ import { QuizPreview } from "@/components/open-design/quiz-preview";
 import { openDesignService } from "@/services/open-design.service";
 import { BUILTIN_SKILLS } from "@/lib/open-design/skills";
 import { cn } from "@/lib/utils";
+import { choiceQuestionError, pruneBlankOptions } from "@/lib/add-content-validation";
 
 export interface LessonQuizQuestion {
   id: string;
@@ -26,13 +27,7 @@ export const newLessonQuestion = (): LessonQuizQuestion => ({
 });
 
 export function lessonQuestionError(q: LessonQuizQuestion) {
-  if (!q.correctId || !q.options.some((o) => o.id === q.correctId))
-    return "Chọn đáp án đúng cho câu hỏi này.";
-  if (!q.question.trim()) return "Nhập nội dung câu hỏi.";
-  const texts = q.options.map((o) => o.text.trim().toLocaleLowerCase());
-  if (texts.length < 2 || texts.some((t) => !t)) return "Điền đầy đủ các phương án trả lời.";
-  if (new Set(texts).size !== texts.length) return "Các phương án trả lời không được trùng nhau.";
-  return "";
+  return choiceQuestionError(q);
 }
 
 export function LessonQuizBuilder({
@@ -148,7 +143,7 @@ export function LessonQuizBuilder({
         <div>
           <p className="text-sm font-semibold">Câu hỏi trắc nghiệm</p>
           <p className="text-xs text-muted-foreground">
-            {questions.length} câu · Mỗi câu một đáp án đúng
+            {questions.length} câu · Mỗi câu một đáp án đúng · 2 đến 4 phương án
           </p>
         </div>
         <div className="flex gap-2">
@@ -309,7 +304,7 @@ export function LessonQuizBuilder({
       {preview && valid ? (
         <QuizPreview
           title={title || "Trắc nghiệm bài học"}
-          questions={questions.map((q) => ({
+          questions={pruneBlankOptions(questions).map((q) => ({
             question: q.question,
             options: q.options.map((o) => o.text) as [string, string, string, string],
             correct_answer: q.options.findIndex((o) => o.id === q.correctId),
@@ -376,7 +371,7 @@ export function LessonQuizBuilder({
                     </button>
                     <Input
                       aria-label={`Phương án ${String.fromCharCode(65 + j)} câu ${i + 1}`}
-                      placeholder="Phương án..."
+                      placeholder={j < 2 ? "Phương án..." : "Phương án (không bắt buộc)"}
                       value={o.text}
                       onChange={(e) =>
                         update(q.id, {

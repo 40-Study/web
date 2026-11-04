@@ -64,10 +64,16 @@ describe("/teacher/courses/[id]/lessons/[lessonId] (T8/T9)", () => {
     mockUpdateContent.mockReset().mockResolvedValue({ id: "c-art" });
   });
 
-  it("T8: 'Vị trí:' hiện display_order của bài (không để trống)", () => {
+  it("T8/Q3-17: 'Vị trí:' đếm từ 1 trong chương (display_order 3 là bài đầu tiên -> 1, không phải 0 hay 3)", () => {
     render(<TeacherLessonDetailPage />);
     const row = screen.getByText("Vị trí:").parentElement as HTMLElement;
-    expect(row.textContent).toBe("Vị trí: 3");
+    expect(row.textContent).toBe("Vị trí: 1");
+  });
+
+  it("Q3-17: không còn huy hiệu 'Draft' cho bài không phải xem trước", () => {
+    render(<TeacherLessonDetailPage />);
+    expect(screen.queryByText("Draft")).toBeNull();
+    expect(screen.queryByText("Preview")).toBeNull();
   });
 
   it("T9: bài chưa có nội dung -> không bịa huy hiệu 'ARTICLE'", () => {

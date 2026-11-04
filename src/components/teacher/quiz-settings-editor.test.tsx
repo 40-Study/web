@@ -92,4 +92,41 @@ describe("QuizSettingsEditor", () => {
     await waitFor(() => expect(screen.getByText(/Không tải được cài đặt bài trắc nghiệm/)).toBeTruthy());
     expect(lastState(onChange)).toEqual({ payload: null, blocked: false });
   });
+
+  // QA3 Q3-16: thời gian làm bài không sửa được sau khi tạo.
+  it("Q3-16: nạp thời gian làm bài đang lưu; đổi thì vào payload time_limit_minutes", async () => {
+    mockApi.get.mockResolvedValue(envelope({ id: "q1", title: "Git", pass_percentage: 70, max_attempts: 3, time_limit_minutes: 15 }));
+    const onChange = vi.fn();
+    renderWithProviders(<QuizSettingsEditor quizId="q1" onChange={onChange} />);
+    await screen.findByDisplayValue("15");
+    expect(lastState(onChange)).toEqual({ payload: null, blocked: false });
+
+    fireEvent.change(screen.getByLabelText("Thời gian làm bài (phút)"), { target: { value: "30" } });
+    expect(lastState(onChange)).toEqual({ payload: { time_limit_minutes: 30 }, blocked: false });
+  });
+
+  it("Q3-16: thời gian ngoài khoảng hoặc xoá giới hạn đã đặt -> báo lỗi và chặn lưu", async () => {
+    mockApi.get.mockResolvedValue(envelope({ id: "q1", title: "Git", pass_percentage: 70, max_attempts: 3, time_limit_minutes: 15 }));
+    const onChange = vi.fn();
+    renderWithProviders(<QuizSettingsEditor quizId="q1" onChange={onChange} />);
+    await screen.findByDisplayValue("15");
+    const field = screen.getByLabelText("Thời gian làm bài (phút)");
+
+    fireEvent.change(field, { target: { value: "0" } });
+    expect(screen.getByText(/phải là số nguyên phút từ 1 đến/)).toBeTruthy();
+    expect(lastState(onChange).blocked).toBe(true);
+
+    fireEvent.change(field, { target: { value: "" } });
+    expect(screen.getByText(/Chưa hỗ trợ bỏ giới hạn thời gian/)).toBeTruthy();
+    expect(lastState(onChange).blocked).toBe(true);
+  });
+
+  it("Q3-16: quiz chưa có giới hạn thời gian: để trống là hợp lệ, không vào payload", async () => {
+    mockApi.get.mockResolvedValue(envelope({ id: "q1", title: "Git", pass_percentage: 70, max_attempts: 3 }));
+    const onChange = vi.fn();
+    renderWithProviders(<QuizSettingsEditor quizId="q1" onChange={onChange} />);
+    await screen.findByDisplayValue("70");
+    expect((screen.getByLabelText("Thời gian làm bài (phút)") as HTMLInputElement).value).toBe("");
+    expect(lastState(onChange)).toEqual({ payload: null, blocked: false });
+  });
 });

@@ -196,6 +196,28 @@ export function canUseCoinWallet(activeRole?: string | null): boolean {
   return isRouteAllowedForRole("/coins", resolveNavRole(true, normalizeRole(activeRole)));
 }
 
+/**
+ * Lời nhắn hiện kèm khi route bị chặn theo vai trò và người dùng được đưa về home. Mặc định: "không dành cho <vai>".
+ * Giảng viên mở /livestream (danh sách buổi của HỌC VIÊN): đích về /teacher/schedule là đúng nơi giảng viên quản
+ * lý buổi livestream của mình, nên nói thẳng thay vì chuyển hướng như bị lỗi (Q3-24).
+ */
+export function getRoleRestrictedNotice(
+  pathname: string,
+  role: string | null | undefined,
+  roleLabel: string
+): { title: string; description: string } {
+  if (normalizeRole(role) === "TEACHER" && (pathname === "/livestream" || pathname.startsWith("/livestream/"))) {
+    return {
+      title: "Buổi livestream của bạn nằm trong Lịch giảng dạy.",
+      description: "Trang /livestream là danh sách buổi học dành cho học viên nên bạn được đưa về Lịch giảng dạy.",
+    };
+  }
+  return {
+    title: `Trang này không dành cho ${roleLabel}.`,
+    description: "Bạn đã được đưa về trang chủ phù hợp với vai trò của mình.",
+  };
+}
+
 /** Đích chuyển hướng khi route bị chặn theo vai trò: pattern có đích riêng, còn lại về home. */
 export function getRoleRestrictedRedirect(pathname: string, role?: string | null): string {
   const scopedPattern = ROLE_SCOPED_PATTERNS.find((p) => p.pattern.test(pathname));

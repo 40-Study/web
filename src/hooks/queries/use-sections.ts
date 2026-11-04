@@ -31,9 +31,9 @@ export function useCreateSection(courseId: string) {
     mutationFn: (data: CreateSectionDTO) => sectionService.createSection(courseId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: sectionKeys.byCourse(courseId) });
-      toast.success("Đã tạo phần học");
+      toast.success("Đã tạo chương");
     },
-    onError: () => toast.error("Không thể tạo phần học"),
+    onError: () => toast.error("Không thể tạo chương"),
   });
 }
 
@@ -45,9 +45,9 @@ export function useUpdateSection(courseId: string) {
       sectionService.updateSection(courseId, id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: sectionKeys.byCourse(courseId) });
-      toast.success("Đã cập nhật phần học");
+      toast.success("Đã cập nhật chương");
     },
-    onError: () => toast.error("Không thể cập nhật phần học"),
+    onError: () => toast.error("Không thể cập nhật chương"),
   });
 }
 
@@ -58,9 +58,9 @@ export function useDeleteSection(courseId: string) {
     mutationFn: (id: string) => sectionService.deleteSection(courseId, id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: sectionKeys.byCourse(courseId) });
-      toast.success("Đã xoá phần học");
+      toast.success("Đã xoá chương");
     },
-    onError: () => toast.error("Không thể xoá phần học"),
+    onError: () => toast.error("Không thể xoá chương"),
   });
 }
 
@@ -73,6 +73,6 @@ export function useReorderSections(courseId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: sectionKeys.byCourse(courseId) });
     },
-    onError: () => toast.error("Không thể sắp xếp lại phần học"),
+    onError: () => toast.error("Không thể sắp xếp lại chương"),
   });
 }

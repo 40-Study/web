@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/safe-image";
 import { Film, ImageIcon, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -11,16 +11,25 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
+import { approvalErrorMessage } from "@/lib/approval-errors";
 import { useVideoUpload } from "@/hooks/use-video-upload";
 import type { CourseFormData, UpdateCourseFormField } from "./course-form-model";
 
 /** Bước "Hình ảnh & Mô tả" — dùng chung trang tạo và trang sửa khoá. */
+export const PREVIEW_VIDEO_NEEDS_COURSE_NOTE =
+  "Lưu khoá học trước, sau đó tải video giới thiệu";
+export const PREVIEW_VIDEO_UPLOAD_ERROR =
+  "Không thể tải video giới thiệu lên. Vui lòng kiểm tra tệp rồi thử lại.";
+
 export function CourseMediaStep({
   formData,
   update,
+  courseId,
 }: {
   formData: CourseFormData;
   update: UpdateCourseFormField;
+  /** Id khoá học đã tạo. Chưa có (trang tạo) thì chưa thể tải video lên: backend cần UUID của khoá làm resource_id. */
+  courseId?: string;
 }) {
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -86,7 +95,7 @@ export function CourseMediaStep({
 
   const handleVideoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !courseId) return;
 
     if (!file.type.startsWith("video/")) {
       toast.error("Vui lòng chọn file video");
@@ -95,7 +104,7 @@ export function CourseMediaStep({
 
     update("preview_video_file", file);
 
-    const uploadId = await videoUpload.upload(file, "course_preview", "preview_video");
+    const uploadId = await videoUpload.upload(file, courseId, "preview_video");
     if (uploadId) {
       update("video_upload_id", uploadId);
       update("preview_video_url", `/videos/${uploadId}`);
@@ -155,7 +164,7 @@ export function CourseMediaStep({
 
         {formData.thumbnail_preview ? (
           <div className="relative rounded-xl overflow-hidden border bg-gray-100 aspect-video max-w-md">
-            <Image
+            <SafeImage
               src={formData.thumbnail_preview}
               alt="Xem trước ảnh bìa"
               fill
@@ -240,7 +249,9 @@ export function CourseMediaStep({
                 ) : videoUpload.uploadId ? (
                   <p className="text-xs text-green-600 mt-0.5">Tải lên thành công</p>
                 ) : videoUpload.error ? (
-                  <p className="text-xs text-red-500 mt-0.5">Lỗi: {videoUpload.error.message}</p>
+                  <p className="text-xs text-red-500 mt-0.5" role="alert">
+                    {approvalErrorMessage(videoUpload.error, PREVIEW_VIDEO_UPLOAD_ERROR)}
+                  </p>
                 ) : null}
               </div>
               <button
@@ -256,12 +267,15 @@ export function CourseMediaStep({
           <div className="flex flex-col gap-3 max-w-md sm:flex-row">
             <button
               type="button"
+              disabled={!courseId}
               onClick={() => videoInputRef.current?.click()}
-              className="flex-1 border-2 border-dashed rounded-xl p-4 flex flex-col items-center gap-2 hover:border-primary-400 hover:bg-primary-50/50 transition-colors cursor-pointer"
+              className="flex-1 border-2 border-dashed rounded-xl p-4 flex flex-col items-center gap-2 hover:border-primary-400 hover:bg-primary-50/50 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border disabled:hover:bg-transparent"
             >
               <Upload className="w-6 h-6 text-muted-foreground" />
               <p className="text-sm font-medium">Tải video lên</p>
-              <p className="text-xs text-muted-foreground">MP4, WebM. Tối đa 500MB</p>
+              <p className="text-xs text-muted-foreground">
+                {courseId ? "MP4, WebM. Tối đa 500MB" : PREVIEW_VIDEO_NEEDS_COURSE_NOTE}
+              </p>
             </button>
             <div className="flex items-center justify-center text-xs text-muted-foreground">hoặc</div>
             <div className="flex-1 space-y-2">

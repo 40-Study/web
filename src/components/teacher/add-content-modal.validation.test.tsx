@@ -196,8 +196,56 @@ describe("AddContentModal — câu trắc nghiệm phải có đáp án đúng (
     await click(saveVideo());
 
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByTestId("add-content-validation-error").textContent).toContain("chưa chọn đáp án đúng");
+    expect(screen.getByTestId("add-content-validation-error").textContent).toContain("Chọn đáp án đúng cho câu hỏi này.");
     expect(screen.getByTestId("quiz-question-0")).toBeTruthy(); // đã chuyển sang tab Quiz
+  });
+
+  // Q3-22: dòng tóm tắt từng cố định "chưa chọn đáp án đúng" dù lỗi thật là ô khác.
+  it("đã chọn đáp án đúng nhưng thiếu nội dung câu hỏi: dòng tóm tắt nêu lỗi THẬT, không còn 'chưa chọn đáp án đúng'", async () => {
+    renderModal(vi.fn());
+    await openVideoForm();
+    await type(screen.getByLabelText("Tiêu đề video"), "Bài 1");
+    await click(screen.getByRole("tab", { name: "Quiz" }));
+    await click(screen.getByRole("button", { name: /thêm câu hỏi/i }));
+    await click(screen.getAllByRole("button", { name: /đáp án đúng của câu 1/i })[0]);
+    await click(screen.getByRole("tab", { name: "Nội dung" }));
+
+    await click(saveVideo());
+
+    const summary = screen.getByTestId("add-content-validation-error").textContent ?? "";
+    expect(summary).toContain("Nhập nội dung câu hỏi.");
+    expect(summary).not.toContain("chưa chọn đáp án đúng");
+  });
+
+  it("chỉ điền 2 phương án (A, B) và chọn đáp án đúng: gửi được, ô trống bị bỏ khỏi dữ liệu gửi đi", async () => {
+    const onSubmit = vi.fn().mockResolvedValue(true);
+    renderModal(onSubmit);
+    await openQuizExercise();
+    await type(screen.getByLabelText("Nội dung câu hỏi 1"), "Trái đất tròn?");
+    await type(screen.getByLabelText("Phương án A câu 1"), "Đúng");
+    await type(screen.getByLabelText("Phương án B câu 1"), "Sai");
+    await click(screen.getAllByRole("button", { name: /đáp án đúng của câu 1/i })[0]);
+
+    await click(saveExercise());
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    const [data] = onSubmit.mock.calls[0] as [{ quizQuestions: { correctId: string; options: { id: string; text: string }[] }[] }];
+    expect(data.quizQuestions[0].options.map((o) => o.text)).toEqual(["Đúng", "Sai"]);
+    expect(data.quizQuestions[0].correctId).toBe(data.quizQuestions[0].options[0].id);
+  });
+
+  it("chỉ 1 phương án có chữ: chặn gửi và nói cần ít nhất 2 phương án", async () => {
+    const onSubmit = vi.fn();
+    renderModal(onSubmit);
+    await openQuizExercise();
+    await type(screen.getByLabelText("Nội dung câu hỏi 1"), "Trái đất tròn?");
+    await type(screen.getByLabelText("Phương án A câu 1"), "Đúng");
+    await click(screen.getAllByRole("button", { name: /đáp án đúng của câu 1/i })[0]);
+
+    await click(saveExercise());
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByTestId("quiz-question-0").textContent).toContain("Điền ít nhất 2 phương án trả lời.");
   });
 });
 

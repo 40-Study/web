@@ -64,7 +64,7 @@ export function CourseEditForm({ course }: { course: ApiCourse }) {
       </Card>
       <Card>
         <CardContent className="p-4 sm:p-6">
-          <CourseMediaStep formData={formData} update={update} />
+          <CourseMediaStep formData={formData} update={update} courseId={course.id} />
         </CardContent>
       </Card>
       <CoursePricingStep formData={formData} update={update} showFeatured={false} />

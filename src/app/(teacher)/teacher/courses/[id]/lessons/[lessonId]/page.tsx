@@ -132,6 +132,9 @@ function LessonDetailContent({
   }
 
   const { section, lesson } = found;
+  // Vị trí 1-based trong chương: display_order của API có thể bắt đầu từ 0 hoặc có khoảng trống.
+  const siblings = [...(lessonsMap.get(section.id) ?? [])].sort((a, b) => a.display_order - b.display_order);
+  const position = Math.max(siblings.findIndex((l) => l.id === lesson.id), 0) + 1;
 
   return (
     <div className="space-y-6">
@@ -161,9 +164,8 @@ function LessonDetailContent({
             {contentTypeLabels(contents).map((label) => (
               <Badge key={label}>{label}</Badge>
             ))}
-            <Badge variant={lesson.is_preview ? "success" : "secondary"}>
-              {lesson.is_preview ? "Preview" : "Draft"}
-            </Badge>
+            {/* API không có trạng thái nháp/xuất bản cho bài học; chỉ có cờ xem trước miễn phí. */}
+            {lesson.is_preview && <Badge variant="success">Xem trước miễn phí</Badge>}
             {lesson.duration && (
               <Badge variant="outline">{Math.floor(lesson.duration / 60)}:{String(lesson.duration % 60).padStart(2, "0")}</Badge>
             )}
@@ -175,7 +177,7 @@ function LessonDetailContent({
             </div>
           )}
           <div className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Vị trí:</span> {lesson.display_order}
+            <span className="font-medium text-foreground">Vị trí:</span> {position}
           </div>
         </CardContent>
       </Card>

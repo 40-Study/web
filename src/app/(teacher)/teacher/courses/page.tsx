@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/safe-image";
 import { Search, Plus, Users, Star, Play, Radio, Layers, FileEdit, Loader2, Trash2 } from "lucide-react";
 import { useMyCourses, useDeleteCourse } from "@/hooks/queries/use-courses";
 import { toast } from "sonner";
@@ -138,7 +138,7 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: strin
       {/* Thumbnail */}
       <div className="relative aspect-video bg-gray-100">
         {course.thumbnail ? (
-          <Image src={course.thumbnail} alt={course.title} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
+          <SafeImage src={course.thumbnail} alt={course.title} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
             <FileEdit className="w-8 h-8 text-gray-200" />
@@ -311,7 +311,7 @@ export default function TeacherCoursesPage() {
 
           <div className="flex gap-2">
             <Select value={formatFilter} onValueChange={setFormatFilter}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[180px] whitespace-nowrap">
                 {formatFilter === "all" ? "Tất cả định dạng" : <SelectValue />}
               </SelectTrigger>
               <SelectContent>
@@ -323,7 +323,7 @@ export default function TeacherCoursesPage() {
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[140px] whitespace-nowrap">
                 {sortBy === "newest" ? "Mới nhất" : <SelectValue />}
               </SelectTrigger>
               <SelectContent>

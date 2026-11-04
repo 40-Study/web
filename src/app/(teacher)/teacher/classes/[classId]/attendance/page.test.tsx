@@ -112,3 +112,26 @@ describe("ClassAttendancePage — lớp đã lưu trữ (chỉ đọc)", () => {
     expect(screen.getByTestId("table").getAttribute("data-disabled")).toBe("false");
   });
 });
+
+describe("ClassAttendancePage — Q3-21 / Q3-04", () => {
+  it("lớp chưa có buổi học: thông báo kèm liên kết tới tab 'Lịch học' của lớp", () => {
+    state.sessions = { data: { sessions: [] }, isLoading: false };
+    render(<ClassAttendancePage />);
+
+    expect(screen.getByText(/chưa có buổi học nào/)).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Tạo lịch học cho lớp" }).getAttribute("href")).toBe("/teacher/classes/class-1?tab=schedule");
+  });
+
+  it("có học viên: render cả bố cục thẻ (mobile, md:hidden) lẫn bảng (hidden md:block)", () => {
+    state.rows = [{ studentId: "u1", name: "Bé Minh" }];
+    state.sessions = {
+      data: { sessions: [{ id: "s1", date: "2026-10-01", start_time: "19:00", end_time: "20:30", status: "completed" }] },
+      isLoading: false,
+    };
+    const { container } = render(<ClassAttendancePage />);
+
+    expect(container.querySelector("ul.space-y-3")?.parentElement?.className).toContain("md:hidden");
+    expect(screen.getByTestId("table").parentElement?.className).toContain("hidden md:block");
+    expect(screen.getByRole("group", { name: "Trạng thái của Bé Minh" })).toBeTruthy();
+  });
+});

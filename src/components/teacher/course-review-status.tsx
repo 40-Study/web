@@ -11,11 +11,14 @@
  * bị khoá sửa, giáo viên "Rút yêu cầu duyệt" để về nháp (Q5, POST /courses/:id/withdraw-review).
  */
 
+import { useState } from "react";
 import { AlertTriangle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSubmitCourseReview, useWithdrawCourseReview } from "@/hooks/queries/use-course-approval";
 import { approvalErrorMessage, lessonsWithoutContent } from "@/lib/approval-errors";
+import { buildSubmitChecklist } from "@/lib/course-submit-checklist";
+import { SubmitReviewDialog } from "./submit-review-dialog";
 import { COURSE_STATUS_LABEL, isCourseStatus, type CourseStatus } from "@/types/approval";
 
 const BADGE_CLASS: Record<CourseStatus, string> = {
@@ -47,6 +50,9 @@ interface CourseReviewPanelProps {
    * truyền (chưa biết) -> để backend quyết định (422 COURSE_EMPTY được dịch sang tiếng Việt).
    */
   lessonCount?: number;
+  /** Cho checklist trước khi gửi duyệt (ảnh bìa, mô tả): vắng = coi như chưa có. */
+  thumbnailUrl?: string | null;
+  description?: string | null;
 }
 
 const EMPTY_COURSE_HINT = "Thêm ít nhất 1 bài học trước khi gửi duyệt.";
@@ -80,18 +86,41 @@ function SubmitReviewBlockedAlert({ error }: { error: unknown }) {
 }
 
 /** Banner theo trạng thái + nút gửi duyệt/rút yêu cầu. Khoá đã xuất bản/lưu trữ không hiển thị gì. */
-export function CourseReviewPanel({ courseId, status, rejectionReason, lessonCount }: CourseReviewPanelProps) {
+export function CourseReviewPanel({
+  courseId,
+  status,
+  rejectionReason,
+  lessonCount,
+  thumbnailUrl,
+  description,
+}: CourseReviewPanelProps) {
   const submitReview = useSubmitCourseReview();
   const withdrawReview = useWithdrawCourseReview();
-  const submit = () => submitReview.mutate(courseId);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  // Bấm "Gửi duyệt" chỉ mở hộp xác nhận kèm checklist; gửi thật khi xác nhận (Q3-09).
+  const requestSubmit = () => setConfirmOpen(true);
+  const confirmSubmit = () => {
+    setConfirmOpen(false);
+    submitReview.mutate(courseId);
+  };
   const isEmpty = lessonCount === 0;
+  const confirmDialog = (
+    <SubmitReviewDialog
+      open={confirmOpen}
+      onOpenChange={setConfirmOpen}
+      items={buildSubmitChecklist({ thumbnailUrl, description, lessonCount })}
+      actionLabel={status === "rejected" ? "Gửi duyệt lại" : "Gửi duyệt"}
+      isPending={submitReview.isPending}
+      onConfirm={confirmSubmit}
+    />
+  );
 
   if (status === "draft") {
     return (
       <div className="flex flex-wrap items-center gap-2">
         <Button
           size="sm"
-          onClick={submit}
+          onClick={requestSubmit}
           isLoading={submitReview.isPending}
           disabled={isEmpty || submitReview.isPending}
           data-testid="submit-review"
@@ -104,6 +133,7 @@ export function CourseReviewPanel({ courseId, status, rejectionReason, lessonCou
           </span>
         )}
         <SubmitReviewBlockedAlert error={submitReview.error} />
+        {confirmDialog}
       </div>
     );
   }
@@ -158,7 +188,7 @@ export function CourseReviewPanel({ courseId, status, rejectionReason, lessonCou
           <Button
             size="sm"
             variant="destructive"
-            onClick={submit}
+            onClick={requestSubmit}
             isLoading={submitReview.isPending}
             disabled={isEmpty || submitReview.isPending}
             data-testid="resubmit-review"
@@ -168,6 +198,7 @@ export function CourseReviewPanel({ courseId, status, rejectionReason, lessonCou
           {isEmpty && <span className="text-xs text-red-700">{EMPTY_COURSE_HINT}</span>}
         </div>
         <SubmitReviewBlockedAlert error={submitReview.error} />
+        {confirmDialog}
       </div>
     );
   }
