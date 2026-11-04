@@ -367,3 +367,27 @@ describe("AdminUsersPage — QA vòng 2 G6 (N-04): nhãn trạng thái tiếng V
     expect(screen.getAllByText("Đã khoá").length).toBeGreaterThan(0);
   });
 });
+
+describe("AdminUsersPage — QA3-15: ?page vượt trang cuối", () => {
+  it("?page=999 khi chỉ có 11 trang: kéo về trang 11 và cập nhật URL, không kẹt ở danh sách rỗng", async () => {
+    const replace = vi.fn();
+    mockUseRouter.mockReturnValue({ push: vi.fn(), replace, refresh: vi.fn(), back: vi.fn(), forward: vi.fn(), prefetch: vi.fn() });
+    mockUseSearchParams.mockReturnValue(new URLSearchParams("page=999"));
+    mockUseAdminUsers.mockImplementation((params: { page: number }) => ({
+      data:
+        params.page > 11
+          ? { items: [], total_count: 201, page: params.page, limit: 20, total_pages: 11 }
+          : { items: [buildUser()], total_count: 201, page: params.page, limit: 20, total_pages: 11 },
+      isLoading: false,
+      isError: false,
+      error: undefined,
+      refetch: vi.fn(),
+    }));
+
+    render(<AdminUsersPage />);
+
+    await waitFor(() => expect(mockUseAdminUsers).toHaveBeenLastCalledWith(expect.objectContaining({ page: 11 })));
+    await waitFor(() => expect(replace).toHaveBeenLastCalledWith("/admin/users?page=11", { scroll: false }));
+    expect(screen.getByText("student1@fortex.vn")).toBeTruthy();
+  });
+});

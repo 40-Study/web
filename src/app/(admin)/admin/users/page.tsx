@@ -117,6 +117,13 @@ export default function AdminUsersPage() {
   const items = useMemo(() => sortAdminUsers(data?.items ?? [], sort.key, sort.direction), [data, sort]);
   const totalPages = data?.total_pages ?? 1;
 
+  // QA3-15: ?page=999 vượt trang cuối cho danh sách rỗng và không có đường quay lại. Khi server báo số
+  // trang thật (>= 1) mà page đang xin lớn hơn thì kéo về trang cuối; URL tự cập nhật theo qua effect trên.
+  useEffect(() => {
+    const lastPage = data?.total_pages;
+    if (lastPage && lastPage >= 1 && page > lastPage) setPage(lastPage);
+  }, [data?.total_pages, page]);
+
   const [lockTarget, setLockTarget] = useState<AdminUserListItem | null>(null);
   const [lockReason, setLockReason] = useState("");
   const [unlockTarget, setUnlockTarget] = useState<AdminUserListItem | null>(null);
