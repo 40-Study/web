@@ -10,7 +10,7 @@ const future = new Date(Date.now() + 5 * 24 * 3600 * 1000).toISOString();
 const past = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
 
 const ASSIGNMENTS = [
-  { id: "a-open", title: "Bài đang mở", description: "", language: ["python"], is_published: true, end_time: future, allow_late_submission: false, max_late_days: 0, grace_period_minutes: 0 },
+  { id: "a-open", title: "Bài đang mở", description: "", language: ["python"], time_limit: 2, is_published: true, end_time: future, allow_late_submission: false, max_late_days: 0, grace_period_minutes: 0 },
   { id: "a-closed", title: "Bài đã đóng", description: "", language: ["python"], is_published: true, end_time: past, allow_late_submission: false, max_late_days: 0, grace_period_minutes: 0 },
 ];
 
@@ -78,5 +78,12 @@ describe("/my-assignments — làm bài và điểm", () => {
   it("có lối vào 'Điểm của tôi'", () => {
     render(<MyAssignmentsPage />);
     expect(screen.getByRole("link", { name: /Điểm của tôi/ }).getAttribute("href")).toBe("/my-grades");
+  });
+
+  // QA3 Q19: "2s" cạnh đồng hồ trông như đếm ngược; thật ra là thời gian chạy tối đa mỗi test.
+  it("giới hạn thời gian ghi rõ 'Giới hạn 2s/test', không để '2s' trần", () => {
+    render(<MyAssignmentsPage />);
+    expect(screen.getByText("Giới hạn 2s/test")).toBeTruthy();
+    expect(screen.queryByText("2s")).toBeNull();
   });
 });
