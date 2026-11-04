@@ -52,7 +52,9 @@ export function useCreateLinkRequest() {
       toast.success("Đã gửi yêu cầu liên kết. Con cần đăng nhập và xác nhận.");
       qc.invalidateQueries({ queryKey: parentLinkKeys.sent() });
     },
-    // Lỗi hiển thị ngay trong form (xem LinkChildForm) nên không toast thêm ở đây.
+    // Lỗi hiển thị ngay trong form (xem LinkChildForm): vô hiệu toast mặc định của query-client,
+    // nếu không 404 "không tìm thấy học sinh" hiện hai lần (G-08, QA3 261104).
+    onError: () => {},
   });
 }
 

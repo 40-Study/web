@@ -10,11 +10,12 @@ vi.mock("@/lib/api-client", async () => {
   const { mockApi } = await import("@/test/mock-api");
   return { api: mockApi };
 });
-vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 
 const push = vi.fn();
+const replace = vi.fn();
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push, replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  useRouter: () => ({ push, replace, back: vi.fn(), prefetch: vi.fn() }),
 }));
 
 import OtpPage from "./page";
@@ -32,6 +33,7 @@ function typeOtp(code: string) {
 beforeEach(() => {
   resetMockApi();
   push.mockReset();
+  replace.mockReset();
   sessionStorage.clear();
 });
 
@@ -62,12 +64,13 @@ describe("/otp — hoàn tất đăng ký", () => {
     expect(push).not.toHaveBeenCalledWith("/register/success");
   });
 
-  it("thiếu email trong sessionStorage (mở thẳng /otp): quay về /register", async () => {
+  // G-05 (QA3 261104): trước đây /otp mở thẳng vẫn hiện "gửi đến email của bạn" + đồng hồ đếm ngược, tới khi
+  // gõ đủ 6 số mới bị đẩy đi. Giờ chặn ngay khi mở.
+  it("thiếu email trong sessionStorage (mở thẳng /otp): chuyển về /register ngay, không vẽ form OTP", async () => {
     renderWithProviders(<OtpPage />);
 
-    typeOtp("123456");
-
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/register"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/register"));
+    expect(screen.queryByLabelText("Chữ số OTP 1")).toBeNull();
     expect(mockApi.post).not.toHaveBeenCalled();
   });
 });

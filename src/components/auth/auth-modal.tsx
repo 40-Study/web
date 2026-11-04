@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { X, ArrowLeft, Mail, UserCheck, FileText, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AUTH_CONFIG, STORAGE_KEYS } from "@/lib/constants";
+import { STORAGE_KEYS } from "@/lib/constants";
+import { validateEmail } from "@/lib/email-validation";
+import { validateRegisterForm, type RegisterFieldErrors } from "@/lib/register-validation";
+import { useModalA11y } from "@/hooks/use-modal-a11y";
 import { showComingSoon } from "@/lib/toast-helpers";
 import { startOAuthFlow } from "@/services/auth.service";
 import { Button } from "@/components/ui/button";
@@ -19,7 +22,14 @@ import { OtpInput } from "@/components/auth/otp-input";
 import { AuthIconHeader } from "@/components/auth/auth-icon-header";
 import { MailIcon } from "@/components/icons";
 import type { RoleType } from "@/components/auth/role-card";
-import { useLogin, useRegisterRequest, useRegister, useSelectRole } from "@/hooks/queries/use-auth";
+import {
+    authErrorMessage,
+    translateOtpErrorMessage,
+    useLogin,
+    useRegisterRequest,
+    useRegister,
+    useSelectRole,
+} from "@/hooks/queries/use-auth";
 import { authService, getDeviceInfo } from "@/services/auth.service";
 import type { UnifiedRole, SystemRoleOption } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
@@ -111,6 +121,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
     const [view, setView] = useState<ModalView>(initialMode);
     const [mounted, setMounted] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+    const rootRef = useRef<HTMLDivElement>(null);
 
     // Register state
     const [registerEmail, setRegisterEmail] = useState("");
@@ -153,6 +164,14 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
         onClose();
     }, [onClose]);
 
+    // G-02: Esc đóng modal (hoặc đóng hộp xác nhận nếu đang mở), Tab xoay vòng trong modal, trả focus khi đóng.
+    useModalA11y(
+        mounted && isOpen,
+        rootRef,
+        () => (showConfirm ? setShowConfirm(false) : handleRequestClose()),
+        showConfirm,
+    );
+
     if (!mounted || !isOpen) return null;
 
     // Back button logic
@@ -173,13 +192,20 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
     const isRegisterFlow = view in registerStepMap;
 
     const modalContent = (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div
+            ref={rootRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={isRegisterFlow || view === "register-success" ? "Đăng ký tài khoản" : "Đăng nhập"}
+            tabIndex={-1}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 outline-none"
+        >
             {/* Backdrop - no close on click */}
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
             {/* Confirm dialog */}
             {showConfirm && (
-                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+                <div role="alertdialog" aria-modal="true" aria-label="Thoát đăng ký?" className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/30" />
                     <div className="relative bg-card rounded-2xl border border-border shadow-overlay p-6 max-w-sm w-full text-center">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Thoát đăng ký?</h3>
@@ -331,11 +357,21 @@ function LoginView({
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
+    const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        // noValidate trên <form>: lỗi hiện bằng tiếng Việt như trang /login, không dùng tooltip tiếng Anh của trình duyệt (G-02).
+        const nextErrors = {
+            email: validateEmail(email),
+            password: password ? undefined : "Vui lòng nhập mật khẩu",
+        };
+        if (nextErrors.email || nextErrors.password) {
+            setErrors(nextErrors);
+            return;
+        }
         loginMutation.mutate(
-            { email, password, device_info: getDeviceInfo() },
+            { email: email.trim(), password, device_info: getDeviceInfo() },
             {
                 onSuccess: (response) => {
                     const data = response.data;
@@ -370,13 +406,17 @@ function LoginView({
             <h2 className="mb-1 text-center text-xl font-semibold text-foreground">Đăng nhập</h2>
             <p className="mb-6 text-center text-sm text-muted-foreground">Chào mừng bạn quay trở lại</p>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                 <Input
                     type="email"
                     label="Email"
                     placeholder="Nhập email của bạn"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                        setEmail(e.target.value);
+                        setErrors((prev) => ({ ...prev, email: undefined }));
+                    }}
+                    error={errors.email}
                     className="h-12"
                     required
                 />
@@ -385,7 +425,11 @@ function LoginView({
                     label="Mật khẩu"
                     placeholder="Nhập mật khẩu"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                        setPassword(e.target.value);
+                        setErrors((prev) => ({ ...prev, password: undefined }));
+                    }}
+                    error={errors.password}
                     className="h-12"
                     required
                 />
@@ -641,22 +685,21 @@ function RegisterFormView({
         confirmPassword: "",
     });
     const [error, setError] = useState("");
+    const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({});
 
-    const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+        setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
         setError("");
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (formData.password !== formData.confirmPassword) {
-            setError("Mật khẩu không khớp");
-            return;
-        }
-
-        if (formData.password.length < AUTH_CONFIG.PASSWORD_MIN_LENGTH) {
-            setError(`Mật khẩu phải có ít nhất ${AUTH_CONFIG.PASSWORD_MIN_LENGTH} ký tự`);
+        // Cùng luật và câu lỗi tiếng Việt với trang /register/form (G-02).
+        const errors = validateRegisterForm(formData);
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
             return;
         }
 
@@ -672,7 +715,8 @@ function RegisterFormView({
             onNext(formData.email);
         } catch (err) {
             console.error("Failed to request OTP:", err);
-            setError("Đăng ký thất bại. Vui lòng thử lại.");
+            // Lý do thật (email trùng, rate-limit...) như trang /register/form; toast mặc định đã tắt ở hook (G-08).
+            setError(authErrorMessage(err, "Đăng ký thất bại. Vui lòng thử lại."));
         }
     };
 
@@ -683,12 +727,13 @@ function RegisterFormView({
             </h2>
             <p className="mb-6 text-center text-sm text-muted-foreground">Điền thông tin của bạn</p>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                 <Input
                     label="Tên đăng nhập"
                     placeholder="username"
                     value={formData.username}
                     onChange={handleChange("username")}
+                    error={fieldErrors.username}
                     className="h-12"
                     required
                 />
@@ -698,6 +743,7 @@ function RegisterFormView({
                         placeholder="Nguyễn"
                         value={formData.lastName}
                         onChange={handleChange("lastName")}
+                    error={fieldErrors.lastName}
                         className="h-12"
                         required
                     />
@@ -706,6 +752,7 @@ function RegisterFormView({
                         placeholder="Văn A"
                         value={formData.firstName}
                         onChange={handleChange("firstName")}
+                    error={fieldErrors.firstName}
                         className="h-12"
                         required
                     />
@@ -716,6 +763,7 @@ function RegisterFormView({
                     placeholder="example@email.com"
                     value={formData.email}
                     onChange={handleChange("email")}
+                    error={fieldErrors.email}
                     className="h-12"
                     required
                 />
@@ -725,6 +773,7 @@ function RegisterFormView({
                     placeholder="Tạo mật khẩu (ít nhất 8 ký tự)"
                     value={formData.password}
                     onChange={handleChange("password")}
+                    error={fieldErrors.password}
                     className="h-12"
                     required
                 />
@@ -734,6 +783,7 @@ function RegisterFormView({
                     placeholder="Nhập lại mật khẩu"
                     value={formData.confirmPassword}
                     onChange={handleChange("confirmPassword")}
+                    error={fieldErrors.confirmPassword}
                     className="h-12"
                     required
                 />
@@ -759,8 +809,12 @@ function RegisterFormView({
 
 function RegisterOtpView({ email, onSuccess }: { email: string; onSuccess: () => void }) {
     const register = useRegister();
+    const [errorMessage, setErrorMessage] = useState("");
+    // Đổi key để remount OtpInput, xoá 6 ô cũ sau khi OTP sai (như trang /otp).
+    const [otpResetKey, setOtpResetKey] = useState(0);
 
     const handleComplete = async (otpCode: string) => {
+        setErrorMessage("");
         const storedEmail = email || sessionStorage.getItem(STORAGE_KEYS.REGISTER_EMAIL);
         if (!storedEmail) return;
 
@@ -769,7 +823,13 @@ function RegisterOtpView({ email, onSuccess }: { email: string; onSuccess: () =>
             sessionStorage.removeItem(STORAGE_KEYS.REGISTER_EMAIL);
             onSuccess();
         } catch (error) {
-            console.error("Registration failed:", error);
+            // Hiện lỗi cụ thể ngay dưới ô OTP; toast mặc định đã tắt ở useRegister (G-08).
+            setErrorMessage(
+                translateOtpErrorMessage(
+                    authErrorMessage(error, "Mã OTP không đúng hoặc đã hết hạn, vui lòng thử lại"),
+                ),
+            );
+            setOtpResetKey((k) => k + 1);
         }
     };
 
@@ -781,7 +841,12 @@ function RegisterOtpView({ email, onSuccess }: { email: string; onSuccess: () =>
                 description={`Nhập mã 6 chữ số đã được gửi đến ${email}`}
                 className="mb-8"
             />
-            <OtpInput onComplete={handleComplete} countdown={90} />
+            <OtpInput key={otpResetKey} onComplete={handleComplete} countdown={90} />
+            {errorMessage && (
+                <p className="mt-4 text-sm font-medium text-red-500" role="alert">
+                    {errorMessage}
+                </p>
+            )}
             {register.isPending && (
                 <p className="mt-4 text-sm text-muted-foreground">Đang xử lý...</p>
             )}

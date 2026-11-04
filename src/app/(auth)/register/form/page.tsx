@@ -7,24 +7,16 @@ import { AuthFooterLink } from "@/components/auth/auth-footer-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AUTH_ROUTES } from "@/lib/routes";
-import { AUTH_CONFIG, STORAGE_KEYS } from "@/lib/constants";
+import { STORAGE_KEYS } from "@/lib/constants";
 import { authErrorMessage, useRegisterRequest } from "@/hooks/queries/use-auth";
-import { validateUserName } from "@/lib/user-name";
-
-interface FormData {
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
-
-type FieldErrors = Partial<Record<keyof FormData, string>>;
+import { useRedirectIfAuthenticated } from "@/hooks/use-redirect-if-authenticated";
+import { validateRegisterForm, type RegisterFieldErrors, type RegisterFormData as FormData } from "@/lib/register-validation";
 
 export default function RegisterFormPage() {
   const router = useRouter();
   const registerRequest = useRegisterRequest();
+  // A-01: đã đăng nhập thì về trang chủ vai trò thay vì hiện form đăng ký.
+  const redirecting = useRedirectIfAuthenticated();
   const [formData, setFormData] = useState<FormData>({
     username: "",
     firstName: "",
@@ -35,7 +27,7 @@ export default function RegisterFormPage() {
   });
   // Lỗi theo TỪNG field thay vì gộp thành 1 chuỗi chung (mục 14) — form
   // không dùng react-hook-form/zod nên validate bằng object errors thủ công.
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({});
   const [formError, setFormError] = useState("");
 
   const handleChange = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,43 +36,10 @@ export default function RegisterFormPage() {
     setFormError("");
   };
 
-  // Regex email đơn giản, đủ để chặn lỗi gõ nhầm phổ biến — validate thật sự
-  // (email đã tồn tại?) vẫn do backend quyết định khi gọi registerRequest.
-  const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  const validate = (): FieldErrors => {
-    const errors: FieldErrors = {};
-    // Cùng luật với backend và trang sửa hồ sơ (lib/user-name.ts): cho '_', không cho '@'/email/dấu cách.
-    if (!formData.username.trim()) errors.username = "Vui lòng nhập tên đăng nhập";
-    else {
-      // Chỉ gán key khi CÓ lỗi: handleSubmit đếm Object.keys(errors), nên gán `undefined` cũng
-      // tính là lỗi và chặn mọi lần gửi (QA vòng 2 PG-C1).
-      const usernameError = validateUserName(formData.username);
-      if (usernameError) errors.username = usernameError;
-    }
-    if (!formData.lastName.trim()) errors.lastName = "Vui lòng nhập họ";
-    if (!formData.firstName.trim()) errors.firstName = "Vui lòng nhập tên";
-    if (!formData.email.trim()) {
-      errors.email = "Vui lòng nhập email";
-    } else if (!EMAIL_PATTERN.test(formData.email.trim())) {
-      // Trước đây chỉ check rỗng — trình duyệt tự hiện tooltip validate mặc
-      // định tiếng Anh cho input type="email", lệch với phần còn lại của UI
-      // (QA khách P3, 260927).
-      errors.email = "Email không đúng định dạng (vd: ten@vidu.com)";
-    }
-    if (formData.password.length < AUTH_CONFIG.PASSWORD_MIN_LENGTH) {
-      errors.password = `Mật khẩu phải có ít nhất ${AUTH_CONFIG.PASSWORD_MIN_LENGTH} ký tự`;
-    }
-    if (formData.confirmPassword !== formData.password) {
-      errors.confirmPassword = "Mật khẩu không khớp";
-    }
-    return errors;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const errors = validate();
+    const errors = validateRegisterForm(formData);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
@@ -104,6 +63,8 @@ export default function RegisterFormPage() {
       setFormError(authErrorMessage(err, "Đăng ký thất bại. Vui lòng thử lại."));
     }
   };
+
+  if (redirecting) return null;
 
   return (
     <AuthCard>

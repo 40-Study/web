@@ -257,6 +257,9 @@ export function useRegisterRequest() {
     onSuccess: () => {
       toast.success("Mã OTP đã được gửi");
     },
+    // G-08 (QA3 261104): mọi nơi gọi đều hiện lỗi cụ thể ngay trên form; không để toast mặc định
+    // ("Không thể thực hiện thao tác") hiện thêm kênh thứ hai.
+    onError: () => {},
   });
 }
 
@@ -267,6 +270,8 @@ export function useRegister() {
     onSuccess: () => {
       toast.success("Đăng ký thành công!");
     },
+    // G-08: OTP sai đã hiện inline (otp/page.tsx, modal đăng ký) nên không toast thêm.
+    onError: () => {},
   });
 }
 
@@ -404,6 +409,12 @@ export function useLogoutAll() {
       qc.clear();
       toast.success("Đã đăng xuất tất cả thiết bị");
       router.push("/");
+    },
+    // P-07: trước đây lỗi chỉ rơi vào toast mặc định chung chung.
+    onError: (error: unknown) => {
+      toast.error("Không thể đăng xuất tất cả thiết bị", {
+        description: getErrorMessage(error, "Vui lòng thử lại sau"),
+      });
     },
   });
 }

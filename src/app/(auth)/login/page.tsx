@@ -15,6 +15,7 @@ import { validateEmail } from "@/lib/email-validation";
 import { sanitizeRedirect } from "@/lib/safe-redirect";
 import { showComingSoon } from "@/lib/toast-helpers";
 import { useLogin } from "@/hooks/queries/use-auth";
+import { useRedirectIfAuthenticated } from "@/hooks/use-redirect-if-authenticated";
 import { getDeviceInfo, startOAuthFlow } from "@/services/auth.service";
 
 export default function LoginPage() {
@@ -25,6 +26,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  // A-01: đã đăng nhập thì về trang chủ vai trò thay vì hiện form.
+  const redirecting = useRedirectIfAuthenticated();
 
   // Lưu redirect URL vào sessionStorage (accept-invitation, mất phiên giữa chừng). Chỉ nhận đường
   // dẫn nội bộ (chống open redirect). Vào /login KHÔNG kèm redirect hợp lệ thì xoá giá trị cũ, để
@@ -88,6 +91,8 @@ export default function LoginPage() {
       }
     );
   };
+
+  if (redirecting) return null;
 
   return (
     <AuthCard>
