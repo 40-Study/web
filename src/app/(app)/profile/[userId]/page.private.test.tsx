@@ -68,7 +68,7 @@ describe("PublicProfilePage riêng tư", () => {
     mockData = { ...baseProfile, is_private: false };
     render(<PublicProfilePage />);
     expect(screen.getByText("Học Viên Hai")).toBeTruthy();
-    expect(screen.queryByText(/Level/)).toBeNull();
+    expect(screen.queryByText(/Cấp \d/)).toBeNull();
     expect(screen.queryByText(/XP/)).toBeNull();
     expect(screen.queryByText("Ngày streak")).toBeNull();
     expect(screen.queryByText("Thống kê")).toBeNull();
@@ -80,7 +80,7 @@ describe("PublicProfilePage riêng tư", () => {
     mockActiveRole = "STUDENT";
     mockData = { ...baseProfile, is_private: false };
     render(<PublicProfilePage />);
-    expect(screen.getByText(/Level 3/)).toBeTruthy();
+    expect(screen.getAllByText(/Cấp 3/).length).toBeGreaterThan(0);
     expect(screen.getByRole("tab", { name: "Thành tích" })).toBeTruthy();
   });
 
@@ -89,7 +89,7 @@ describe("PublicProfilePage riêng tư", () => {
     mockActiveRole = "PARENT";
     mockData = { ...baseProfile, is_private: false };
     render(<PublicProfilePage />);
-    expect(screen.getByText(/Level 3/)).toBeTruthy();
+    expect(screen.getAllByText(/Cấp 3/).length).toBeGreaterThan(0);
   });
 });
 
