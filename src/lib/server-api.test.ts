@@ -8,6 +8,33 @@ vi.mock("next/headers", () => ({
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
+
+describe("serverFetch base URL (Q1: 'Tiếp tục học' sập vì NEXT_PUBLIC_API_URL=/api)", () => {
+  it("không đưa URL tương đối '/api' cho Node fetch", async () => {
+    vi.stubEnv("BACKEND_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "/api");
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { ok: 1 } }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { serverFetch } = await import("./server-api");
+    await serverFetch("/courses/slug/abc");
+
+    expect(fetchMock.mock.calls[0][0]).toBe("http://localhost:5001/api/courses/slug/abc");
+  });
+
+  it("ưu tiên BACKEND_URL đặt lúc chạy, không đóng băng lúc nạp module", async () => {
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "/api");
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: {} }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { serverFetch } = await import("./server-api");
+    vi.stubEnv("BACKEND_URL", "http://127.0.0.1:5001");
+    await serverFetch("/courses/slug/abc");
+
+    expect(fetchMock.mock.calls[0][0]).toBe("http://127.0.0.1:5001/api/courses/slug/abc");
+  });
 });
 
 describe("serverFetch / HttpError.body (I4, review vòng 2 web PR #18)", () => {
