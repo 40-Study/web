@@ -3,8 +3,8 @@
  * (G-02, QA3 261104: modal từng không validate, trình duyệt hiện tooltip tiếng Anh). Chỉ chặn lỗi gõ nhầm;
  * email/tên đăng nhập đã tồn tại do backend quyết định.
  */
-import { AUTH_CONFIG } from "@/lib/constants";
 import { validateEmail } from "@/lib/email-validation";
+import { validateNewPassword } from "@/lib/password-policy";
 import { validateUserName } from "@/lib/user-name";
 
 export interface RegisterFormData {
@@ -30,9 +30,8 @@ export function validateRegisterForm(data: RegisterFormData): RegisterFieldError
   if (!data.firstName.trim()) errors.firstName = "Vui lòng nhập tên";
   const emailError = validateEmail(data.email);
   if (emailError) errors.email = emailError;
-  if (data.password.length < AUTH_CONFIG.PASSWORD_MIN_LENGTH) {
-    errors.password = `Mật khẩu phải có ít nhất ${AUTH_CONFIG.PASSWORD_MIN_LENGTH} ký tự`;
-  }
+  const passwordError = validateNewPassword(data.password);
+  if (passwordError) errors.password = passwordError;
   if (data.confirmPassword !== data.password) {
     errors.confirmPassword = "Mật khẩu không khớp";
   }

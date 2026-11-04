@@ -15,13 +15,19 @@ import { useAuthStore, type UnifiedRole } from "@/stores/auth.store";
 import { ApplyTeacherButton } from "@/components/teacher-application/apply-teacher-button";
 import { ApiError } from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-messages";
+import { validateNewPassword } from "@/lib/password-policy";
+import { PasswordChecklist } from "@/components/auth/password-checklist";
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
 
 const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, "Vui lòng nhập mật khẩu hiện tại"),
-    newPassword: z.string().min(8, "Mật khẩu mới tối thiểu 8 ký tự"),
+    newPassword: z.string().superRefine((value, ctx) => {
+      // Cùng luật và câu với backend (strong_password), dùng chung với đăng ký và đặt lại mật khẩu.
+      const message = value ? validateNewPassword(value) : "Vui lòng nhập mật khẩu mới";
+      if (message) ctx.addIssue({ code: "custom", message });
+    }),
     confirmPassword: z.string(),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
@@ -226,6 +232,7 @@ export function AccountSettings({
           <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
             <Input label="Mật khẩu hiện tại" type="password" {...passwordForm.register("currentPassword")} error={passwordForm.formState.errors.currentPassword?.message} />
             <Input label="Mật khẩu mới" type="password" {...passwordForm.register("newPassword")} error={passwordForm.formState.errors.newPassword?.message} />
+            <PasswordChecklist password={passwordForm.watch("newPassword")} />
             <Input label="Xác nhận mật khẩu mới" type="password" {...passwordForm.register("confirmPassword")} error={passwordForm.formState.errors.confirmPassword?.message} />
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="outline" className="rounded-xl" onClick={() => setPasswordDialogOpen(false)}>Huỷ</Button>
