@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Minus } from "lucide-react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -19,8 +19,13 @@ interface LeaderboardCardProps {
   entry: LeaderboardEntry;
   rank: number;
   isCurrentUser?: boolean;
+  /** Nhãn dưới số XP, theo kỳ đang xem ("XP tuần này", "XP tháng này", "XP tích luỹ"). */
+  xpLabel?: string;
   className?: string;
 }
+
+/** Mặc định giữ nguyên hành vi cũ cho nơi gọi chưa truyền kỳ. */
+export const DEFAULT_XP_LABEL = "XP tuần này";
 
 /**
  * Format number with K/M suffix for large values
@@ -50,15 +55,11 @@ export function LeaderboardCard({
   entry,
   rank,
   isCurrentUser = false,
+  xpLabel = DEFAULT_XP_LABEL,
   className,
 }: LeaderboardCardProps) {
-  const TrendIcon = entry.trend > 0 ? ArrowUp : entry.trend < 0 ? ArrowDown : Minus;
-  const trendLabel =
-    entry.trend > 0
-      ? `Tăng ${entry.trend} hạng`
-      : entry.trend < 0
-        ? `Giảm ${Math.abs(entry.trend)} hạng`
-        : "Giữ nguyên hạng";
+  const TrendIcon = entry.trend > 0 ? ArrowUp : ArrowDown;
+  const trendLabel = entry.trend > 0 ? `Tăng ${entry.trend} hạng` : `Giảm ${Math.abs(entry.trend)} hạng`;
 
   return (
     <div
@@ -103,30 +104,29 @@ export function LeaderboardCard({
         {entry.level ? <p className="text-xs text-slate-600 dark:text-slate-400">Cấp {entry.level}</p> : null}
       </div>
 
-      {/* XP this week */}
+      {/* XP trong kỳ đang xem */}
       <div className="shrink-0 text-right">
         <p className="font-bold tabular-nums text-xp dark:text-xp-light">
           +{formatNumber(entry.weeklyXP)}
         </p>
-        <p className="text-xs text-slate-600 dark:text-slate-400">XP tuần này</p>
+        <p className="text-xs text-slate-600 dark:text-slate-400">{xpLabel}</p>
       </div>
 
-      {/* Trend indicator */}
-      <div
-        className={cn(
-          "flex w-10 shrink-0 items-center justify-center gap-0.5 text-xs font-medium tabular-nums",
-          entry.trend > 0
-            ? "text-green-700 dark:text-green-400"
-            : entry.trend < 0
-              ? "text-red-700 dark:text-red-400"
-              : "text-slate-600 dark:text-slate-400"
-        )}
-        title={trendLabel}
-      >
-        <TrendIcon className="h-4 w-4" aria-hidden="true" />
-        <span className="sr-only">{trendLabel}</span>
-        {entry.trend !== 0 && <span aria-hidden="true">{Math.abs(entry.trend)}</span>}
-      </div>
+      {/* Xu hướng hạng: backend chưa trả dữ liệu nên trend = 0 ở mọi dòng; chỉ hiện khi thật sự có thay đổi,
+          không in "Giữ nguyên hạng" cho cả bảng (QA3 Q11). */}
+      {entry.trend !== 0 && (
+        <div
+          className={cn(
+            "flex w-10 shrink-0 items-center justify-center gap-0.5 text-xs font-medium tabular-nums",
+            entry.trend > 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"
+          )}
+          title={trendLabel}
+        >
+          <TrendIcon className="h-4 w-4" aria-hidden="true" />
+          <span className="sr-only">{trendLabel}</span>
+          <span aria-hidden="true">{Math.abs(entry.trend)}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -135,6 +135,8 @@ interface LeaderboardListProps {
   entries: LeaderboardEntry[];
   currentUserId?: string;
   currentUserEntry?: LeaderboardEntry & { rank: number };
+  /** Nhãn XP theo kỳ, chuyển tiếp cho từng dòng. */
+  xpLabel?: string;
   className?: string;
 }
 
@@ -146,6 +148,7 @@ export function LeaderboardList({
   entries,
   currentUserId,
   currentUserEntry,
+  xpLabel,
   className,
 }: LeaderboardListProps) {
   const isCurrentUserInTop = entries.some((e) => e.userId === currentUserId);
@@ -158,6 +161,7 @@ export function LeaderboardList({
           entry={entry}
           rank={idx + 1}
           isCurrentUser={entry.userId === currentUserId}
+          xpLabel={xpLabel}
         />
       ))}
 
@@ -171,6 +175,7 @@ export function LeaderboardList({
             entry={currentUserEntry}
             rank={currentUserEntry.rank}
             isCurrentUser={true}
+            xpLabel={xpLabel}
             className="border-t-2 border-primary-200 dark:border-primary-800"
           />
         </>

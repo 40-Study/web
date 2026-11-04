@@ -136,3 +136,33 @@ describe("LeaderboardPage — chọn lớp", () => {
     expect(leaderboardCalls().every((p) => p?.class_id === undefined)).toBe(true);
   });
 });
+
+// QA3 Q11: nhãn cứng "XP tuần này" ở mọi tab, "Giữ nguyên hạng" cho cả bảng, banner/đồng hồ lặp hai lần.
+describe("LeaderboardPage — nhãn theo kỳ, không lặp banner (Q11)", () => {
+  it("tab Tuần: 'XP tuần này', có đúng một đồng hồ đếm ngược và một dòng 'Top 10 sẽ lên giải'", async () => {
+    mockLeaderboard();
+    renderWithProviders(<LeaderboardPage />);
+    expect(await screen.findByText("Bình Công Khai")).toBeTruthy();
+    expect(screen.getAllByText("XP tuần này").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Làm mới/)).toHaveLength(1);
+    expect(screen.getAllByText(/Top 10 sẽ lên giải/)).toHaveLength(1);
+  });
+
+  it("tab Toàn thời gian: nhãn 'XP tích luỹ', không còn 'XP tuần này' hay đồng hồ reset", async () => {
+    mockLeaderboard();
+    renderWithProviders(<LeaderboardPage />);
+    await screen.findByText("Bình Công Khai");
+    fireEvent.click(screen.getByRole("button", { name: "Toàn thời gian" }));
+    await waitFor(() => expect(screen.getAllByText("XP tích luỹ").length).toBeGreaterThan(0));
+    expect(screen.queryByText("XP tuần này")).toBeNull();
+    expect(screen.queryByText(/Làm mới/)).toBeNull();
+    expect(screen.queryByText(/Top 10 sẽ lên giải/)).toBeNull();
+  });
+
+  it("không in 'Giữ nguyên hạng' cho mọi dòng khi backend không có xu hướng", async () => {
+    mockLeaderboard();
+    renderWithProviders(<LeaderboardPage />);
+    await screen.findByText("Bình Công Khai");
+    expect(screen.queryByText("Giữ nguyên hạng")).toBeNull();
+  });
+});

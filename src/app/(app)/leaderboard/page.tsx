@@ -21,6 +21,13 @@ import { leaderboardEntryKey, leaderboardEntryName } from "@/lib/leaderboard-dis
 /**
  * Map period của backend sang lựa chọn hiển thị trên UI
  */
+/** Nhãn XP dưới mỗi dòng theo kỳ — trước đây cứng "XP tuần này" kể cả ở tab Toàn thời gian (QA3 Q11). */
+const XP_LABEL_BY_PERIOD: Record<PeriodType, string> = {
+  weekly: "XP tuần này",
+  monthly: "XP tháng này",
+  all_time: "XP tích luỹ",
+};
+
 const PERIOD_OPTIONS: { label: string; value: PeriodType }[] = [
   { label: "Tuần", value: "weekly" },
   { label: "Tháng", value: "monthly" },
@@ -196,11 +203,7 @@ export default function LeaderboardPage() {
                 <p className="font-semibold text-gray-900 dark:text-white">
                   Giải {currentLeague.name}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  {nextLeague
-                    ? `Top 10 sẽ lên giải ${nextLeague.name}`
-                    : "Bạn đang ở giải cao nhất!"}
-                </p>
+                <p className="text-sm text-muted-foreground">Chọn giải để xem</p>
               </div>
             </div>
             <ChevronDown
@@ -235,16 +238,18 @@ export default function LeaderboardPage() {
           )}
         </div>
 
-        {/* Timer */}
-        <Card className="p-4 flex items-center gap-3 sm:w-auto">
-          <Clock className="h-5 w-5 text-muted-foreground" />
-          <div>
-            <p className="text-sm text-muted-foreground">Làm mới sau</p>
-            <p className="font-mono font-bold text-lg text-gray-900 dark:text-white">
-              {formatTimeRemaining(timeRemaining)}
-            </p>
-          </div>
-        </Card>
+        {/* Timer: chỉ có nghĩa với bảng tuần; đồng hồ duy nhất của trang (banner không lặp lại) */}
+        {periodType === "weekly" && (
+          <Card className="p-4 flex items-center gap-3 sm:w-auto">
+            <Clock className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">Làm mới sau</p>
+              <p className="font-mono font-bold text-lg text-gray-900 dark:text-white">
+                {formatTimeRemaining(timeRemaining)}
+              </p>
+            </div>
+          </Card>
+        )}
       </div>
 
       {/* League header banner */}
@@ -257,14 +262,12 @@ export default function LeaderboardPage() {
                 <h2 className="text-2xl font-bold">Giải {currentLeague.name}</h2>
                 <p className="opacity-90">
                   {nextLeague
-                    ? `Top 10 sẽ lên giải ${nextLeague.name}`
+                    ? periodType === "weekly"
+                      ? `Top 10 sẽ lên giải ${nextLeague.name}`
+                      : `Giải kế tiếp: ${nextLeague.name}`
                     : "Đã đạt giải cao nhất!"}
                 </p>
               </div>
-            </div>
-            <div className="hidden sm:block text-right">
-              <p className="text-sm opacity-80">Làm mới hàng tuần</p>
-              <p className="font-mono text-xl">{formatTimeRemaining(timeRemaining)}</p>
             </div>
           </div>
         </div>
@@ -320,6 +323,7 @@ export default function LeaderboardPage() {
           entries={entries}
           currentUserId={myUserId}
           currentUserEntry={myEntry ?? undefined}
+          xpLabel={XP_LABEL_BY_PERIOD[periodType]}
         />
       </QueryState>
 
