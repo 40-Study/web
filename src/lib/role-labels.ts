@@ -19,3 +19,16 @@ export const SYSTEM_ROLE_LABELS: Record<string, string> = {
 export function getSystemRoleLabel(roleCode: string): string {
   return SYSTEM_ROLE_LABELS[roleCode] ?? roleCode;
 }
+
+/**
+ * Nhãn cho vai trò TRONG TỔ CHỨC (QA3-16). Vai trò tổ chức do admin tự đặt tên nên không có bảng dịch và API
+ * không có trường tên hiển thị: mã hệ thống đã biết dùng nhãn tiếng Việt, mã tuỳ biến (vd `QA3_TEACHER`)
+ * được viết lại cho dễ đọc ("Qa3 Teacher") thay vì lộ nguyên mã enum. Nơi hiển thị nên giữ mã gốc ở `title`.
+ */
+export function getOrgRoleLabel(roleCode: string): string {
+  const known = SYSTEM_ROLE_LABELS[roleCode];
+  if (known) return known;
+  const words = roleCode.split(/[_\-\s]+/).filter(Boolean);
+  if (words.length === 0) return roleCode;
+  return words.map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+}
