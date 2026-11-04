@@ -8,10 +8,11 @@ import type { ContestPhase, ContestStatus } from "@/types/contest";
 
 import { getAdminContestActions, getFinalizeState, getTeacherContestActions } from "./actions";
 
+const START = "2026-10-01T09:00:00Z";
 const END = "2026-10-01T10:00:00Z";
 
 function contest(status: ContestStatus, phase: ContestPhase, extra: { finalized_at?: string | null; created_by?: string } = {}) {
-  return { status, phase, end_time: END, finalized_at: extra.finalized_at ?? null, created_by: extra.created_by ?? "teacher-1" };
+  return { status, phase, start_time: START, end_time: END, finalized_at: extra.finalized_at ?? null, created_by: extra.created_by ?? "teacher-1" };
 }
 
 describe("getTeacherContestActions", () => {
@@ -92,5 +93,29 @@ describe("getAdminContestActions", () => {
   it("bản nháp/bị từ chối: chỉ duyệt được khi CHÍNH admin tạo", () => {
     expect(getAdminContestActions(contest("REJECTED", "REJECTED", { created_by: "teacher-1" }), "admin-1", now).canApprove).toBe(false);
     expect(getAdminContestActions(contest("DRAFT", "DRAFT", { created_by: "admin-1" }), "admin-1", now).canApprove).toBe(true);
+  });
+});
+
+describe("getAdminContestActions — approveBlockedReason (QA3-07)", () => {
+  const pending = contest("PENDING_REVIEW", "PENDING_REVIEW");
+
+  it("còn trước start_time: không bị chặn", () => {
+    const a = getAdminContestActions(pending, "admin-1", new Date("2026-10-01T08:59:59Z"));
+    expect(a.canApprove).toBe(true);
+    expect(a.approveBlockedReason).toBeNull();
+  });
+
+  it("đúng start_time hoặc sau đó: nút Duyệt vẫn hiện nhưng có lý do chặn (backend: !StartTime.After(now) → 409)", () => {
+    for (const at of ["2026-10-01T09:00:00Z", "2026-10-28T00:00:00Z"]) {
+      const a = getAdminContestActions(pending, "admin-1", new Date(at));
+      expect(a.canApprove).toBe(true);
+      expect(a.approveBlockedReason).toMatch(/Đã qua giờ bắt đầu/);
+    }
+  });
+
+  it("không có nút Duyệt thì không có lý do chặn", () => {
+    const a = getAdminContestActions(contest("PUBLISHED", "ACTIVE"), "admin-1", new Date("2026-10-28T00:00:00Z"));
+    expect(a.canApprove).toBe(false);
+    expect(a.approveBlockedReason).toBeNull();
   });
 });

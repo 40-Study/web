@@ -126,9 +126,20 @@ function AdminContestActionsPanel({ contest }: { contest: ContestManage }) {
 
       <div className="flex flex-wrap gap-2" data-testid="admin-actions">
         {actions.canApprove && (
-          <Button onClick={() => checkPrizes() && setDialog("approve")} data-testid="approve-contest">
-            Duyệt và công bố
-          </Button>
+          <div className="flex max-w-md flex-col gap-1">
+            <Button
+              disabled={!!actions.approveBlockedReason}
+              onClick={() => checkPrizes() && setDialog("approve")}
+              data-testid="approve-contest"
+            >
+              Duyệt và công bố
+            </Button>
+            {actions.approveBlockedReason && (
+              <span className="text-xs text-red-600" data-testid="approve-blocked">
+                {actions.approveBlockedReason}
+              </span>
+            )}
+          </div>
         )}
         {actions.canReject && (
           <Button variant="destructive" onClick={() => setDialog("reject")} data-testid="reject-contest">
