@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithQuery } from "@/test-utils/query-wrapper";
+import { useAuthStore } from "@/stores/auth.store";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
@@ -91,5 +92,31 @@ describe("PrivacySettings: bảng xếp hạng dùng field leaderboard_display c
     // "Tải lại": cây React và cache React Query mới, dữ liệu chỉ còn ở backend.
     renderWithQuery(<PrivacySettingsView />);
     await waitFor(async () => expect((await leaderboardSelect()).value).toBe("anonymous"));
+  });
+});
+
+// P-05 (QA3 261104): phụ huynh không có bảng xếp hạng và không "đang học", nên hai hàng đó không có nghĩa với họ.
+describe("PrivacySettings: hàng chỉ dành cho người học", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("phụ huynh: chỉ còn 'Hiển thị hồ sơ'", async () => {
+    installFakeBackend();
+    useAuthStore.setState({ activeRole: "PARENT" });
+    renderWithQuery(<PrivacySettingsView />);
+    await screen.findByText("Hiển thị hồ sơ");
+    expect(screen.queryByText("Bảng xếp hạng")).toBeNull();
+    expect(screen.queryByText("Trạng thái hoạt động")).toBeNull();
+    expect(screen.getAllByRole("combobox")).toHaveLength(1);
+    useAuthStore.setState({ activeRole: null });
+  });
+
+  it("học viên: đủ ba hàng", async () => {
+    installFakeBackend();
+    useAuthStore.setState({ activeRole: "STUDENT" });
+    renderWithQuery(<PrivacySettingsView />);
+    expect(await screen.findByText("Bảng xếp hạng")).toBeTruthy();
+    expect(screen.getByText("Trạng thái hoạt động")).toBeTruthy();
+    expect(screen.getAllByRole("combobox")).toHaveLength(3);
+    useAuthStore.setState({ activeRole: null });
   });
 });

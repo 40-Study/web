@@ -82,6 +82,25 @@ describe("ProfileSettings", () => {
     fireEvent.change(screen.getByLabelText("Tiểu sử"), { target: { value: "QA-bio mới" } });
     fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
-    expect(mockMutate.mock.calls[0][0]).toMatchObject({ bio: "QA-bio mới", phone: "0900000000" });
+    expect(mockMutate.mock.calls[0][0]).toMatchObject({ bio: "QA-bio mới", phone: "+84900000000" });
+  });
+
+  // P-03 (QA3 261104): backend chỉ nhận E.164; số kiểu Việt Nam bị 400 và người dùng chỉ thấy toast chung.
+  it("nhập số kiểu Việt Nam 0912345678 -> gửi +84912345678", async () => {
+    render(<ProfileSettings />);
+    await waitFor(() => expect((screen.getByLabelText("Tiểu sử") as HTMLTextAreaElement).value).toBe("Tiểu sử cũ"));
+    fireEvent.change(screen.getByLabelText("Số điện thoại"), { target: { value: "0912 345 678" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
+    expect(mockMutate.mock.calls[0][0]).toHaveProperty("phone", "+84912345678");
+  });
+
+  it("số không hợp lệ -> lỗi tiếng Việt ngay dưới ô nhập, không gọi API", async () => {
+    render(<ProfileSettings />);
+    await waitFor(() => expect((screen.getByLabelText("Tiểu sử") as HTMLTextAreaElement).value).toBe("Tiểu sử cũ"));
+    fireEvent.change(screen.getByLabelText("Số điện thoại"), { target: { value: "abc123" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    expect(await screen.findByText(/Số điện thoại không hợp lệ/)).toBeTruthy();
+    expect(mockMutate).not.toHaveBeenCalled();
   });
 });

@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/select";
 import { usePrivacySettings, useUpdatePrivacySettings } from "@/hooks/queries/use-user-preferences";
 import type { PrivacySettingKey } from "@/services/user-preference.service";
+import { useAuthStore } from "@/stores/auth.store";
+import { normalizeRole } from "@/lib/routes";
 
 // ─── Static config ───────────────────────────────────────────────────────────
 
@@ -23,6 +25,8 @@ interface PrivacyOption {
   iconColor: string;
   options: { value: string; label: string }[];
   defaultValue: string;
+  /** Hàng chỉ có nghĩa với người học: phụ huynh không có bảng xếp hạng, không "đang học" (P-05, QA3 261104). */
+  hideForParent?: boolean;
 }
 
 const privacyOptions: PrivacyOption[] = [
@@ -53,6 +57,7 @@ const privacyOptions: PrivacyOption[] = [
       { value: "none", label: "Không ai" },
     ],
     defaultValue: "everyone",
+    hideForParent: true,
   },
   {
     id: "leaderboard_display",
@@ -67,6 +72,7 @@ const privacyOptions: PrivacyOption[] = [
       { value: "anonymous", label: "Ẩn danh" },
     ],
     defaultValue: "name",
+    hideForParent: true,
   },
 ];
 
@@ -75,6 +81,8 @@ const privacyOptions: PrivacyOption[] = [
 export function PrivacySettings() {
   const { data: settings, isLoading } = usePrivacySettings();
   const { mutate: updateSetting } = useUpdatePrivacySettings();
+  const isParent = normalizeRole(useAuthStore((s) => s.activeRole)) === "PARENT";
+  const visibleOptions = privacyOptions.filter((o) => !(isParent && o.hideForParent));
 
   const getValue = (id: PrivacySettingKey): string => {
     if (!settings) return privacyOptions.find((o) => o.id === id)?.defaultValue ?? "";
@@ -93,7 +101,7 @@ export function PrivacySettings() {
       </div>
 
       <div className={`space-y-3 ${isLoading ? "pointer-events-none opacity-60" : ""}`}>
-        {privacyOptions.map((option) => {
+        {visibleOptions.map((option) => {
           const Icon = option.icon;
           return (
             <div

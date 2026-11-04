@@ -1,8 +1,8 @@
 "use client";
 
-import { Monitor, Smartphone, Tablet, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useDevices, useLogoutAll } from "@/hooks/queries/use-auth";
+import { Monitor, Smartphone, Tablet } from "lucide-react";
+import { useDevices } from "@/hooks/queries/use-auth";
+import { LogoutAllButton } from "./logout-all-button";
 import { describeDevice, type DeviceKind } from "@/lib/device-label";
 import { formatVnDateTime } from "@/lib/vn-datetime";
 
@@ -15,7 +15,6 @@ function DeviceIcon({ kind, className }: { kind: DeviceKind; className?: string 
 
 export function DevicesSettings() {
   const { data, isLoading } = useDevices();
-  const logoutAll = useLogoutAll();
   const devices = data?.devices || [];
 
   if (isLoading) {
@@ -46,16 +45,7 @@ export function DevicesSettings() {
           </p>
         </div>
         {devices.length > 1 && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-xl text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
-            onClick={() => logoutAll.mutate()}
-            disabled={logoutAll.isPending}
-          >
-            <LogOut className="h-4 w-4 mr-1.5" />
-            {logoutAll.isPending ? "Đang xử lý..." : "Đăng xuất tất cả"}
-          </Button>
+          <LogoutAllButton className="rounded-xl text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600" />
         )}
       </div>
 
@@ -80,7 +70,7 @@ export function DevicesSettings() {
                   )}
                 </div>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {sessionLabel && `${sessionLabel} \u00b7 `}Hoạt động{" "}
+                  {sessionLabel && `${sessionLabel} \u00b7 `}Đăng nhập lúc{" "}
                   {formatVnDateTime(device.logged_in_at)}
                 </p>
               </div>

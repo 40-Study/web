@@ -1,17 +1,16 @@
 "use client";
 
-import { useDevices, useLogoutAll } from "@/hooks/queries/use-auth";
-import { Button } from "@/components/ui/button";
+import { useDevices } from "@/hooks/queries/use-auth";
+import { LogoutAllButton } from "@/components/settings/logout-all-button";
 import { describeDevice } from "@/lib/device-label";
 import { formatVnDateTime } from "@/lib/vn-datetime";
 
 export default function DevicesPage() {
   const { data, isLoading } = useDevices();
-  const logoutAll = useLogoutAll();
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-2xl px-4 py-8">
         <h1 className="mb-6 text-2xl font-bold text-gray-900">Thiết bị đăng nhập</h1>
         <div className="animate-pulse space-y-4">
           {[1, 2, 3].map((i) => (
@@ -25,17 +24,11 @@ export default function DevicesPage() {
   const devices = data?.devices || [];
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Thiết bị đăng nhập</h1>
         {devices.length > 1 && (
-          <Button
-            variant="outline"
-            onClick={() => logoutAll.mutate()}
-            disabled={logoutAll.isPending}
-          >
-            Đăng xuất tất cả
-          </Button>
+          <LogoutAllButton />
         )}
       </div>
 
@@ -57,7 +50,7 @@ export default function DevicesPage() {
                   )}
                 </div>
                 <p className="mt-1 text-sm text-gray-500">
-                  {sessionLabel && `${sessionLabel} • `}Hoạt động{" "}
+                  {sessionLabel && `${sessionLabel} • `}Đăng nhập lúc{" "}
                   {formatVnDateTime(device.logged_in_at)}
                 </p>
               </div>

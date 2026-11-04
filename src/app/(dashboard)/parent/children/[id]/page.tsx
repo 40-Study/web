@@ -220,30 +220,26 @@ export default function ChildDetailPage() {
               ) : gradesData?.grades.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">Chưa có điểm nào</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left font-medium text-gray-600">Lớp</th>
-                        <th className="px-4 py-2 text-left font-medium text-gray-600">Loại</th>
-                        <th className="px-4 py-2 text-left font-medium text-gray-600">Tiêu đề</th>
-                        <th className="px-4 py-2 text-right font-medium text-gray-600">Điểm</th>
-                        <th className="px-4 py-2 text-right font-medium text-gray-600">%</th>
-                        <th className="px-4 py-2 text-left font-medium text-gray-600">Chấm bởi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {gradesData?.grades.map((grade) => (
-                        <tr key={grade.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-2">{grade.class_name}</td>
-                          <td className="px-4 py-2">{gradeTypeLabel(grade.grade_type)}</td>
-                          <td className="px-4 py-2">{grade.title}</td>
-                          <td className="px-4 py-2 text-right">
-                            {grade.score}/{grade.max_score}
-                          </td>
-                          <td className="px-4 py-2 text-right font-medium">
-                            <span
+                <>
+                  {/* P-06 (QA3 261104): dưới 640px bảng 6 cột bị cắt "Điểm / % / Chấm bởi" sau thanh cuộn ngang
+                      không có dấu hiệu; dùng danh sách thẻ, mỗi điểm một thẻ đọc hết. */}
+                  <ul className="space-y-2 sm:hidden" data-testid="grades-cards">
+                    {gradesData?.grades.map((grade) => (
+                      <li key={grade.id} className="rounded-xl border border-gray-100 bg-white p-3 text-sm">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900">{grade.title}</p>
+                            <p className="text-xs text-gray-500">
+                              {grade.class_name} · {gradeTypeLabel(grade.grade_type)}
+                            </p>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <p className="font-medium text-gray-900">
+                              {grade.score}/{grade.max_score}
+                            </p>
+                            <p
                               className={cn(
+                                "text-xs font-medium",
                                 grade.percentage >= 80
                                   ? "text-green-600"
                                   : grade.percentage >= 50
@@ -252,14 +248,54 @@ export default function ChildDetailPage() {
                               )}
                             >
                               {grade.percentage.toFixed(1)}%
-                            </span>
-                          </td>
-                          <td className="px-4 py-2 text-gray-600">{grade.graded_by_name || "—"}</td>
+                            </p>
+                          </div>
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">Chấm bởi: {grade.graded_by_name || "—"}</p>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="hidden overflow-x-auto sm:block">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left font-medium text-gray-600">Lớp</th>
+                          <th className="px-4 py-2 text-left font-medium text-gray-600">Loại</th>
+                          <th className="px-4 py-2 text-left font-medium text-gray-600">Tiêu đề</th>
+                          <th className="px-4 py-2 text-right font-medium text-gray-600">Điểm</th>
+                          <th className="px-4 py-2 text-right font-medium text-gray-600">%</th>
+                          <th className="px-4 py-2 text-left font-medium text-gray-600">Chấm bởi</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y">
+                        {gradesData?.grades.map((grade) => (
+                          <tr key={grade.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-2">{grade.class_name}</td>
+                            <td className="px-4 py-2">{gradeTypeLabel(grade.grade_type)}</td>
+                            <td className="px-4 py-2">{grade.title}</td>
+                            <td className="px-4 py-2 text-right">
+                              {grade.score}/{grade.max_score}
+                            </td>
+                            <td className="px-4 py-2 text-right font-medium">
+                              <span
+                                className={cn(
+                                  grade.percentage >= 80
+                                    ? "text-green-600"
+                                    : grade.percentage >= 50
+                                      ? "text-yellow-600"
+                                      : "text-red-600"
+                                )}
+                              >
+                                {grade.percentage.toFixed(1)}%
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-gray-600">{grade.graded_by_name || "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
           )}
