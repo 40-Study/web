@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   ARTICLE_BODY_REQUIRED_MESSAGE,
+  choiceQuestionError,
+  contentFormErrorSummary,
+  pruneBlankOptions,
   ARTICLE_BODY_TOO_LONG_MESSAGE,
   CORRECT_ANSWER_REQUIRED_MESSAGE,
   MAX_ARTICLE_BODY_CHARS,
@@ -96,5 +99,46 @@ describe("validateArticleForm (T1)", () => {
     expect(atLimit.length).toBe(MAX_ARTICLE_BODY_CHARS);
     expect(validateArticleForm("Bài đọc", atLimit)).toEqual({});
     expect(validateArticleForm("Bài đọc", atLimit + "x").body).toBe(ARTICLE_BODY_TOO_LONG_MESSAGE);
+  });
+});
+
+// QA3 Q3-22: 2 đến 4 phương án; dòng tóm tắt nêu lỗi thật.
+describe("choiceQuestionError (2..4 phương án)", () => {
+  const q = (texts: string[], correctIdx: number, question = "Câu?") => ({
+    id: "q",
+    question,
+    correctId: `o${correctIdx}`,
+    options: texts.map((text, i) => ({ id: `o${i}`, text })),
+  });
+
+  it("2 phương án có chữ + đáp án đúng -> hợp lệ dù 2 ô còn lại trống", () => {
+    expect(choiceQuestionError(q(["Đúng", "Sai", "", ""], 0))).toBe("");
+  });
+
+  it("chỉ 1 phương án có chữ -> cần ít nhất 2", () => {
+    expect(choiceQuestionError(q(["Đúng", "", "", ""], 0))).toBe("Điền ít nhất 2 phương án trả lời.");
+  });
+
+  it("đáp án đúng nằm ở ô trống -> báo đúng lỗi đó", () => {
+    expect(choiceQuestionError(q(["A", "B", "", ""], 2))).toBe("Đáp án đúng không được để trống.");
+  });
+
+  it("trùng phương án (không phân biệt hoa thường) và thiếu nội dung câu hỏi", () => {
+    expect(choiceQuestionError(q(["Có", "có", "", ""], 0))).toBe("Các phương án trả lời không được trùng nhau.");
+    expect(choiceQuestionError(q(["A", "B", "", ""], 0, "  "))).toBe("Nhập nội dung câu hỏi.");
+  });
+});
+
+describe("pruneBlankOptions / contentFormErrorSummary", () => {
+  it("bỏ ô trống, giữ thứ tự và id các ô còn lại", () => {
+    const [pruned] = pruneBlankOptions([{ options: [{ id: "a", text: "A" }, { id: "b", text: "  " }, { id: "c", text: "C" }] }]);
+    expect(pruned.options.map((o) => o.id)).toEqual(["a", "c"]);
+  });
+
+  it("tóm tắt = lỗi tiêu đề + lỗi THẬT của câu sai đầu tiên, không câu cố định", () => {
+    expect(contentFormErrorSummary({ title: "Vui lòng nhập tiêu đề.", questions: { q1: "Nhập nội dung câu hỏi." } })).toBe(
+      "Vui lòng nhập tiêu đề. Nhập nội dung câu hỏi."
+    );
+    expect(contentFormErrorSummary({ questions: { q1: "Điền ít nhất 2 phương án trả lời." } })).not.toMatch(/chưa chọn/);
   });
 });

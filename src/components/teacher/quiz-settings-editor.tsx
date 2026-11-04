@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useQuiz } from "@/hooks/queries/use-quiz";
 import { validateQuizSettings } from "@/lib/quiz-settings";
+import { validateTimeLimit } from "@/lib/quiz-time-limit";
+import { QuizQuestionsEditor } from "./quiz-questions-editor";
 import type { UpdateQuizDTO } from "@/services/quiz.service";
 
 /**
@@ -12,7 +14,7 @@ import type { UpdateQuizDTO } from "@/services/quiz.service";
  * `null` = không có gì để lưu. `blocked` = có trường đã đổi nhưng không hợp lệ -> hộp thoại không được lưu.
  */
 export interface QuizSettingsEditState {
-  payload: Pick<UpdateQuizDTO, "pass_percentage" | "max_attempts"> | null;
+  payload: Pick<UpdateQuizDTO, "pass_percentage" | "max_attempts" | "time_limit_minutes"> | null;
   blocked: boolean;
 }
 
@@ -38,32 +40,39 @@ export function QuizSettingsEditor({ quizId, onChange }: QuizSettingsEditorProps
   const { data: quiz, isLoading, isError } = useQuiz(quizId);
   const [passPercentage, setPassPercentage] = useState("");
   const [maxAttempts, setMaxAttempts] = useState("");
+  const [timeLimit, setTimeLimit] = useState("");
 
   const initialPass = toFieldText(quiz?.pass_percentage);
   const initialAttempts = toFieldText(quiz?.max_attempts);
+  const initialTimeLimit = toFieldText(quiz?.time_limit_minutes);
   useEffect(() => {
     if (!quiz) return;
     setPassPercentage(initialPass);
     setMaxAttempts(initialAttempts);
+    setTimeLimit(initialTimeLimit);
     // Nạp lại khi đổi sang quiz khác; không ghi đè khi refetch cùng giá trị.
-  }, [quiz?.id, initialPass, initialAttempts]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [quiz?.id, initialPass, initialAttempts, initialTimeLimit]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const state = useMemo<QuizSettingsEditState & { errors: ReturnType<typeof validateQuizSettings> }>(() => {
+  const state = useMemo<QuizSettingsEditState & { errors: ReturnType<typeof validateQuizSettings> & { timeLimit?: string } }>(() => {
     const errors = validateQuizSettings({ passPercentage, maxAttempts });
     if (!quiz) return { payload: null, blocked: false, errors: {} };
     const passDirty = passPercentage.trim() !== initialPass;
     const attemptsDirty = maxAttempts.trim() !== initialAttempts;
+    const timeDirty = timeLimit.trim() !== initialTimeLimit;
+    const timeError = timeDirty ? validateTimeLimit(timeLimit, initialTimeLimit !== "") : undefined;
     const visible = {
       ...(passDirty && errors.passPercentage ? { passPercentage: errors.passPercentage } : {}),
       ...(attemptsDirty && errors.maxAttempts ? { maxAttempts: errors.maxAttempts } : {}),
+      ...(timeError ? { timeLimit: timeError } : {}),
     };
     if (Object.keys(visible).length > 0) return { payload: null, blocked: true, errors: visible };
     // Mỗi trường đã đổi và hợp lệ mới vào payload; trường chưa đổi (kể cả max_attempts rỗng của quiz cũ) bị bỏ.
     const payload: QuizSettingsEditState["payload"] = {};
     if (passDirty) payload.pass_percentage = Number(passPercentage.trim());
     if (attemptsDirty) payload.max_attempts = Number(maxAttempts.trim());
+    if (timeDirty) payload.time_limit_minutes = Number(timeLimit.trim());
     return { payload: Object.keys(payload).length > 0 ? payload : null, blocked: false, errors: {} };
-  }, [quiz, passPercentage, maxAttempts, initialPass, initialAttempts]);
+  }, [quiz, passPercentage, maxAttempts, timeLimit, initialPass, initialAttempts, initialTimeLimit]);
 
   const payloadKey = JSON.stringify(state.payload);
   useEffect(() => {
@@ -83,6 +92,7 @@ export function QuizSettingsEditor({ quizId, onChange }: QuizSettingsEditorProps
   }
 
   return (
+    <div className="space-y-4">
     <div className="grid gap-4 sm:grid-cols-2">
       <Input
         type="number"
@@ -109,6 +119,21 @@ export function QuizSettingsEditor({ quizId, onChange }: QuizSettingsEditorProps
         error={state.errors.maxAttempts}
         helperText="Chỉ tính các lượt làm bài chính thức."
       />
+      <Input
+        type="number"
+        inputMode="numeric"
+        min={1}
+        step={1}
+        label="Thời gian làm bài (phút)"
+        value={timeLimit}
+        onChange={(e) => setTimeLimit(e.target.value)}
+        disabled={isLoading}
+        error={state.errors.timeLimit}
+        helperText="Để trống nếu không giới hạn. Đã đặt giới hạn thì chỉ đổi được sang số phút khác."
+      />
+    </div>
+    {/* Câu hỏi và đáp án của quiz đã tạo: mỗi câu có nút lưu riêng (PUT /quizzes/:id/questions/:id). */}
+    <QuizQuestionsEditor quizId={quizId} />
     </div>
   );
 }

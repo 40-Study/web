@@ -15,6 +15,7 @@ import { useTeacherPublicProfile } from "@/hooks/queries/use-teacher-public-prof
 import { mapApiCourse } from "@/hooks/use-courses";
 import { getErrorMessage } from "@/lib/error-messages";
 import { formatDate } from "@/lib/utils";
+import type { ApiCategory } from "@/services/course.service";
 import type { PublicTeacherProfile } from "@/services/teacher.service";
 
 function Stat({ icon: Icon, label, value }: { icon: typeof Users; label: string; value: string }) {
@@ -50,8 +51,11 @@ function ProfileBody({ profile }: { profile: PublicTeacherProfile }) {
     profile.department
   );
   // Khoá học hiển thị bằng CourseCard chung; thẻ cần tên giảng viên nên gắn chính hồ sơ này.
-  const courses = (profile.courses ?? []).map((c) =>
-    mapApiCourse({
+  const courses = (profile.courses ?? []).map((c) => {
+    // Hợp đồng public-profile hiện KHÔNG trả danh mục của khoá (PublicTeacherCourseDTO). Không có danh mục thì
+    // đừng để mapApiCourse bịa "Chưa phân loại" (sai với khoá có danh mục): để tên rỗng, thẻ khoá ẩn nhãn đó.
+    const category = (c as { category?: ApiCategory | null }).category ?? undefined;
+    const course = mapApiCourse({
       ...c,
       short_description: c.short_description ?? undefined,
       thumbnail_url: c.thumbnail_url ?? undefined,
@@ -59,8 +63,10 @@ function ProfileBody({ profile }: { profile: PublicTeacherProfile }) {
       published_at: c.published_at ?? undefined,
       instructor_id: profile.id,
       instructor: { id: profile.id, name },
-    })
-  );
+      category,
+    });
+    return category ? course : { ...course, category: { ...course.category, name: "" } };
+  });
 
   return (
     <div className="page-container space-y-8 py-8">

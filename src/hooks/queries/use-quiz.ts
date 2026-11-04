@@ -11,6 +11,8 @@ import {
   type QuizMode,
   type QuizAttemptDetail,
 } from "@/services/quiz.service";
+import { quizQuestionUpdateService } from "@/services/quiz-question-update.service";
+import type { UpdateQuestionBody } from "@/lib/quiz-question-edit";
 import { courseKeys } from "@/hooks/queries/use-courses";
 import { sectionKeys } from "@/hooks/queries/use-sections";
 import { enrollmentKeys } from "@/hooks/queries/use-enrollments";
@@ -54,6 +56,16 @@ export function useQuizQuestions(quizId: string | undefined) {
     queryKey: quizKeys.questions(quizId!),
     queryFn: () => quizService.getQuestions(quizId!),
     enabled: !!quizId,
+  });
+}
+
+/** Sửa một câu hỏi của quiz đã tạo (Q3-16): làm mới danh sách câu hỏi sau khi lưu. */
+export function useUpdateQuizQuestion(quizId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ questionId, data }: { questionId: string; data: UpdateQuestionBody }) =>
+      quizQuestionUpdateService.update(quizId, questionId, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: quizKeys.questions(quizId) }),
   });
 }
 

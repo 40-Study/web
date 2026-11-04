@@ -89,6 +89,9 @@ function setCourse(overrides: Record<string, unknown>) {
     title: "Khoá test",
     instructor_id: OWNER_ID,
     status: "draft",
+    // Đủ ảnh bìa + mô tả để qua checklist trước khi gửi duyệt (Q3-09).
+    thumbnail_url: "https://cdn.example.com/cover.png",
+    description: "Mô tả chi tiết khoá học",
     ...overrides,
   };
 }
@@ -107,10 +110,38 @@ describe("/teacher/courses/[id] — gửi duyệt thay cho tự xuất bản (Ph
 
     expect(screen.queryByRole("button", { name: "Xuất bản" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Gửi duyệt" }));
+    // Q3-09: bấm chỉ mở hộp xác nhận, chưa gửi.
+    expect(mockSubmitReview).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId("confirm-submit-review"));
 
     expect(mockSubmitReview).toHaveBeenCalledTimes(1);
     expect(mockSubmitReview).toHaveBeenCalledWith("course-1");
     expect(mockUpdateCourse).not.toHaveBeenCalled();
+  });
+
+  it("Q3-09: thiếu ảnh bìa và mô tả -> hộp xác nhận liệt kê mục thiếu, nút gửi bị khoá, không gọi API", () => {
+    setCourse({ status: "draft", thumbnail_url: "", description: "  " });
+    render(<TeacherCourseDetailPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Gửi duyệt" }));
+
+    expect(screen.getByTestId("submit-check-cover").getAttribute("data-done")).toBe("false");
+    expect(screen.getByTestId("submit-check-description").getAttribute("data-done")).toBe("false");
+    expect(screen.getByTestId("submit-check-lesson").getAttribute("data-done")).toBe("true");
+    expect(screen.getByTestId("submit-review-missing").textContent).toMatch(/ảnh bìa khoá học, mô tả chi tiết/);
+    const confirm = screen.getByTestId("confirm-submit-review") as HTMLButtonElement;
+    expect(confirm.disabled).toBe(true);
+    fireEvent.click(confirm);
+    expect(mockSubmitReview).not.toHaveBeenCalled();
+  });
+
+  it("Q3-09: 'Để sau' đóng hộp xác nhận mà không gửi duyệt", () => {
+    setCourse({ status: "draft" });
+    render(<TeacherCourseDetailPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Gửi duyệt" }));
+    fireEvent.click(screen.getByRole("button", { name: "Để sau" }));
+    expect(screen.queryByTestId("submit-review-dialog")).toBeNull();
+    expect(mockSubmitReview).not.toHaveBeenCalled();
   });
 
   it("khoá bị từ chối: banner đỏ hiện lý do + 'Gửi duyệt lại' gọi submit-review", () => {
@@ -122,6 +153,7 @@ describe("/teacher/courses/[id] — gửi duyệt thay cho tự xuất bản (Ph
     expect(screen.getByText("Bị từ chối")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Gửi duyệt lại" }));
+    fireEvent.click(screen.getByTestId("confirm-submit-review"));
     expect(mockSubmitReview).toHaveBeenCalledWith("course-1");
     expect(mockUpdateCourse).not.toHaveBeenCalled();
   });
@@ -175,6 +207,13 @@ describe("/teacher/courses/[id] — gửi duyệt thay cho tự xuất bản (Ph
     expect(screen.getByTestId("submit-review-empty-hint")).toBeTruthy();
     fireEvent.click(btn);
     expect(mockSubmitReview).not.toHaveBeenCalled();
+  });
+
+  it("Q3-22: khoá chưa có chương chỉ có MỘT nút thêm chương (không lặp CTA)", () => {
+    mockSections = [];
+    setCourse({ status: "draft" });
+    render(<TeacherCourseDetailPage />);
+    expect(screen.getAllByRole("button", { name: /Thêm chương/ })).toHaveLength(1);
   });
 
   it("khoá nháp: có nút \"Sửa thông tin\" dẫn tới trang /edit (P1)", () => {

@@ -191,4 +191,15 @@ describe("/teachers/[id] — hồ sơ giảng viên công khai (PG-M2)", () => {
     fireEvent.click(retry);
     expect(await screen.findByRole("heading", { level: 1, name: "Trần Thị Giảng Viên" })).toBeTruthy();
   });
+
+  // QA3 Q3-23: hợp đồng public-profile không trả danh mục -> thẻ khoá không được bịa "Chưa phân loại".
+  it("Q3-23: khoá không có danh mục trong API thì không hiện 'Chưa phân loại'; có danh mục thì hiện tên", async () => {
+    const withCategory = { ...PROFILE.courses[0], category: { id: "cat1", name: "Lập trình Web", slug: "lap-trinh-web" } };
+    mockApi.get.mockResolvedValue(envelope({ ...PROFILE, courses: [withCategory, PROFILE.courses[1]] }));
+    renderPage();
+    await screen.findByText("Next.js từ cơ bản");
+
+    expect(screen.queryByText(/Chưa phân loại/)).toBeNull();
+    expect(screen.getByText(/Lập trình Web/, { selector: "p, span, div" })).toBeTruthy();
+  });
 });

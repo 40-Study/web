@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { ApiCourse } from "@/services/course.service";
 import {
   DISCOUNT_PRICE_ERROR,
+  PRICE_REQUIRED_ERROR,
   buildCourseUpdatePayload,
   courseToFormData,
+  toApiLevel,
   validateDiscountPrice,
+  validatePrice,
 } from "./course-form-model";
 
 const course = (over: Partial<ApiCourse> = {}): ApiCourse =>
@@ -97,5 +100,27 @@ describe("validateDiscountPrice (L1: 0 < giá khuyến mãi < giá bán, khớp 
     const original = course();
     const res = buildCourseUpdatePayload({ ...courseToFormData(original), discount_price: "0" }, original);
     expect(res.error).toBe(DISCOUNT_PRICE_ERROR);
+  });
+});
+// QA3 Q3-09 / Q3-23
+describe("validatePrice (Q3-09)", () => {
+  const form = (over: Partial<Parameters<typeof validatePrice>[0]>) => ({ is_free: false, price: "", ...over });
+
+  it("'Có phí' mà giá trống / 0 / âm / không phải số -> lỗi", () => {
+    for (const price of ["", "  ", "0", "-5", "abc"]) {
+      expect(validatePrice(form({ price }))).toBe(PRICE_REQUIRED_ERROR);
+    }
+  });
+
+  it("'Có phí' với giá > 0 -> hợp lệ; Miễn phí luôn hợp lệ dù giá trống", () => {
+    expect(validatePrice(form({ price: "250000" }))).toBeNull();
+    expect(validatePrice(form({ is_free: true, price: "" }))).toBeNull();
+  });
+});
+
+describe("toApiLevel (Q3-23)", () => {
+  it("'Tất cả trình độ' (all) gửi all_levels, không bị đổi thành beginner", () => {
+    expect(toApiLevel("all")).toBe("all_levels");
+    expect(toApiLevel("advanced")).toBe("advanced");
   });
 });

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { validateDiscountPrice, type CourseFormData, type UpdateCourseFormField } from "./course-form-model";
+import { validateDiscountPrice, validatePrice, type CourseFormData, type UpdateCourseFormField } from "./course-form-model";
 
 /** Bước "Cài đặt giá" — dùng chung trang tạo và trang sửa khoá. */
 export function CoursePricingStep({
@@ -27,6 +27,7 @@ export function CoursePricingStep({
   // Báo ngay khi gõ (không chờ bấm lưu): backend từ chối 400 DISCOUNT_PRICE_INVALID với giá khuyến mãi
   // <= 0 hoặc >= giá bán, nên để người dùng thấy lý do tại đúng ô nhập.
   const discountError = validateDiscountPrice(formData);
+  const priceError = validatePrice(formData);
 
   return (
     <div className="space-y-6">
@@ -85,8 +86,15 @@ export function CoursePricingStep({
                   placeholder="1200000"
                   value={formData.price}
                   onChange={(e) => update("price", e.target.value)}
-                  className="h-11"
+                  className={cn("h-11", priceError && "border-red-500 focus-visible:ring-red-500")}
+                  aria-invalid={priceError ? true : undefined}
+                  aria-describedby={priceError ? "price-error" : undefined}
                 />
+                {priceError && (
+                  <p id="price-error" role="alert" className="text-xs text-red-600">
+                    {priceError}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Giá khuyến mãi (VNĐ)</Label>

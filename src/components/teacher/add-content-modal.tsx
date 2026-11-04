@@ -49,7 +49,12 @@ import { cn } from "@/lib/utils";
 import { requiresClassSelection } from "@/lib/livestream";
 import { parseLessonDuration } from "@/lib/lesson-duration";
 import { getErrorMessage } from "@/lib/error-messages";
-import { hasContentFormErrors, validateContentForm } from "@/lib/add-content-validation";
+import {
+  contentFormErrorSummary,
+  hasContentFormErrors,
+  pruneBlankOptions,
+  validateContentForm,
+} from "@/lib/add-content-validation";
 import {
   DEFAULT_QUIZ_MAX_ATTEMPTS,
   DEFAULT_QUIZ_PASS_PERCENTAGE,
@@ -423,7 +428,7 @@ export function AddContentModal({
         videoUrl: finalVideoUrl,
         ...(parsedDuration.kind === "valid" ? { duration: parsedDuration.seconds } : {}),
         documents: videoDocs,
-        quizQuestions: videoQuiz,
+        quizQuestions: pruneBlankOptions(videoQuiz),
       };
     } else if (contentType === "livestream") {
       if (!effectiveClassId) return; // chưa xác định được lớp — nút gửi đã bị vô hiệu hoá kèm lý do
@@ -436,7 +441,7 @@ export function AddContentModal({
         classId: effectiveClassId,
         enableRecording: liveRecording,
         documents: liveDocs,
-        quizQuestions: liveQuiz,
+        quizQuestions: pruneBlankOptions(liveQuiz),
       };
     } else if (contentType === "exercise" && exerciseType) {
       // Đã qua kiểm tra ở trên nên hai ô hợp lệ.
@@ -447,7 +452,7 @@ export function AddContentModal({
         exerciseType,
         title: exTitle,
         description: exDesc,
-        quizQuestions: exerciseType === "quiz" ? exQuiz : undefined,
+        quizQuestions: exerciseType === "quiz" ? pruneBlankOptions(exQuiz) : undefined,
         timeLimit: exerciseType === "quiz" ? exTimeLimit : undefined,
         passPercentage: quizSettings?.pass_percentage,
         maxAttempts: quizSettings?.max_attempts,
@@ -1080,9 +1085,7 @@ export function AddContentModal({
             {/* T3/T4: lý do không lưu được nằm ngay cạnh nút, kể cả khi lỗi ở tab đang ẩn. */}
             {submitAttempted && hasContentFormErrors(formErrors) && (
               <p role="alert" data-testid="add-content-validation-error" className="text-xs text-destructive sm:mr-auto sm:text-left">
-                {[formErrors.title, Object.keys(formErrors.questions).length > 0 && "Có câu trắc nghiệm chưa chọn đáp án đúng."]
-                  .filter(Boolean)
-                  .join(" ")}
+                {contentFormErrorSummary(formErrors)}
               </p>
             )}
             {submitError && (

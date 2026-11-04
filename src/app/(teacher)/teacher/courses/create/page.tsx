@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/safe-image";
 import { ChevronLeft, ChevronRight, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +12,9 @@ import { toast } from "sonner";
 import {
   LEVELS,
   initialCourseFormData as initialFormData,
+  toApiLevel,
   validateDiscountPrice,
+  validatePrice,
   type CourseFormData,
 } from "../_components/course-form-model";
 import { CourseBasicInfoStep, FORMATS } from "../_components/course-basic-info-step";
@@ -44,14 +46,14 @@ export default function CreateCoursePage() {
 
   const canGoNext = () => {
     if (currentStep === 1) return formData.title.trim().length > 0;
-    // Bước "Cài đặt giá": không cho đi tiếp với giá khuyến mãi sai (lý do hiện ngay dưới ô nhập).
-    if (currentStep === 3) return validateDiscountPrice(formData) === null;
+    // Bước "Cài đặt giá": khoá "Có phí" phải có giá > 0 và giá khuyến mãi hợp lệ (lý do hiện ngay dưới ô nhập).
+    if (currentStep === 3) return validatePrice(formData) === null && validateDiscountPrice(formData) === null;
     return true;
   };
 
-  /** Lưu/tạo khoá chỉ khi giá khuyến mãi hợp lệ; sai thì quay lại bước giá và báo lý do. */
+  /** Lưu/tạo khoá chỉ khi giá bán và giá khuyến mãi hợp lệ; sai thì quay lại bước giá và báo lý do. */
   const discountPriceOk = () => {
-    const discountError = validateDiscountPrice(formData);
+    const discountError = validatePrice(formData) ?? validateDiscountPrice(formData);
     if (discountError === null) return true;
     toast.error(discountError);
     setCurrentStep(3);
@@ -65,9 +67,9 @@ export default function CreateCoursePage() {
     thumbnail_url: formData.thumbnail_url || null,
     preview_video_url: formData.preview_video_url || null,
     category_id: formData.category_id || null,
-    level: formData.level === "all" ? "beginner" : formData.level,
+    level: toApiLevel(formData.level),
     language: formData.language,
-    price: formData.is_free ? 0 : parseFloat(formData.price) || 0,
+    price: formData.is_free ? 0 : Number(formData.price),
     discount_price: formData.is_free ? null : parseFloat(formData.discount_price) || null,
     discount_expires_at: formData.discount_expires_at ? new Date(formData.discount_expires_at).toISOString() : null,
     is_free: formData.is_free,
@@ -308,7 +310,7 @@ function Step4Review({ formData }: { formData: CourseFormData }) {
             <div>
               <span className="text-sm text-muted-foreground">Ảnh bìa:</span>
               <div className="mt-2 relative rounded-lg overflow-hidden aspect-video max-w-xs bg-gray-100">
-                <Image src={formData.thumbnail_preview} alt="Ảnh bìa khoá học" fill sizes="320px" className="object-cover" />
+                <SafeImage src={formData.thumbnail_preview} alt="Ảnh bìa khoá học" fill sizes="320px" className="object-cover" />
               </div>
             </div>
           )}
@@ -339,7 +341,7 @@ function Step4Review({ formData }: { formData: CourseFormData }) {
               <ChecklistItem done={!!formData.title} label="Tên khoá học" />
               <ChecklistItem done={!!formData.thumbnail_url} label="Ảnh bìa" />
               <ChecklistItem done={!!formData.description} label="Mô tả chi tiết" />
-              <ChecklistItem done={formData.is_free || !!formData.price} label="Thiết lập giá" />
+              <ChecklistItem done={validatePrice(formData) === null} label="Thiết lập giá" />
               <ChecklistItem done={formData.objectives.some(Boolean)} label="Mục tiêu học tập" />
             </div>
 
