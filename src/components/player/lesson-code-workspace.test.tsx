@@ -326,3 +326,39 @@ describe("LessonCodeWorkspace — chấm bài", () => {
     await act(async () => resolve({ ...accepted, id: "n" }));
   });
 });
+
+// QA3 Q15: Accepted 100/100 rồi nộp thử lại sai thì mất nút "Đánh dấu hoàn thành"; đề hiện nguyên backtick.
+describe("LessonCodeWorkspace — hoàn thành theo bài nộp tốt nhất, đề có mã inline (Q15)", () => {
+  const failed = { ...accepted, id: "bad", status: "WRONG_ANSWER", score: 25, passed: 1, total: 4 };
+  const histItem = (id: string, score: number, status: string) => ({
+    id, language: "python", code: "x", status, passed: score / 25, total: 4, score,
+    created_at: "2026-10-20T08:00:00Z",
+  });
+
+  it("lượt gần nhất trượt nhưng lịch sử có lượt đạt → vẫn có nút Đánh dấu hoàn thành", async () => {
+    get.mockResolvedValue(detail(failed));
+    history.mockResolvedValue({ items: [histItem("bad", 25, "WRONG_ANSWER"), histItem("good", 100, "ACCEPTED")], total: 2 });
+    renderWorkspace();
+    expect(await screen.findByRole("button", { name: "Đánh dấu hoàn thành" })).toBeTruthy();
+  });
+
+  it("không lượt nào đạt → không có nút", async () => {
+    get.mockResolvedValue(detail(failed));
+    history.mockResolvedValue({ items: [histItem("bad", 25, "WRONG_ANSWER")], total: 1 });
+    renderWorkspace();
+    await screen.findByLabelText("Mã nguồn bài tập");
+    await waitFor(() => expect(history).toHaveBeenCalled());
+    expect(screen.queryByRole("button", { name: "Đánh dấu hoàn thành" })).toBeNull();
+  });
+
+  it("đề bài render `mã inline` thành <code>, không in backtick", async () => {
+    const d = detail();
+    d.exercise.description = "Dùng `<cờ> <tên>` hoặc `EMPTY`";
+    get.mockResolvedValue(d);
+    const { container } = renderWorkspace();
+    await screen.findByLabelText("Mã nguồn bài tập");
+    const statement = container.querySelector(".code-statement") as HTMLElement;
+    expect([...statement.querySelectorAll("code")].map((c) => c.textContent)).toEqual(["<cờ> <tên>", "EMPTY"]);
+    expect(statement.textContent).not.toContain("`");
+  });
+});
