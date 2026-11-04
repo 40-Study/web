@@ -5,6 +5,8 @@ import {
   buildUpdateVoucherPayload,
   emptyVoucherForm,
   voucherToForm,
+  voucherValidityText,
+  VOUCHER_CODE_FORMAT_ERROR,
   type VoucherFormState,
 } from "./voucher-form-model";
 
@@ -124,3 +126,29 @@ describe("voucher-form-model (F-02: first_order_only)", () => {
   });
 });
 
+describe("QA3-11: định dạng mã voucher và dòng hiệu lực", () => {
+  it.each(["qa3 test!", "GIAM 50K", "giảm50k", "A.B", "ab/cd"])("tạo với mã %j bị chặn bằng câu tiếng Việt", (code) => {
+    const res = buildCreateVoucherPayload(base({ code }));
+    expect(res.payload).toBeUndefined();
+    expect(res.error).toBe(VOUCHER_CODE_FORMAT_ERROR);
+  });
+
+  it.each(["giam50k", "GIAM-50K", "VIP_2026", "qa3test261104"])("mã %j hợp lệ, gửi lên đã viết hoa", (code) => {
+    const res = buildCreateVoucherPayload(base({ code }));
+    expect(res.error).toBeUndefined();
+    expect(res.payload?.code).toBe(code.toUpperCase());
+  });
+
+  it("sửa voucher cũ có mã lạ vẫn lưu được (mã không đổi được nên không kiểm lại)", () => {
+    expect(buildUpdateVoucherPayload(base({ code: "QA3 TEST!" })).error).toBeUndefined();
+  });
+
+  it("voucherValidityText nêu ngày bắt đầu/kết thúc theo giờ VN hoặc 'không giới hạn'", () => {
+    expect(voucherValidityText({ start_date: "2026-10-01T03:00:00Z", end_date: "2026-12-31T03:00:00Z" })).toBe(
+      "Hiệu lực: 10:00 01/10/2026 – 10:00 31/12/2026",
+    );
+    expect(voucherValidityText({ start_date: "2026-10-01T03:00:00Z", end_date: null })).toMatch(/^Hiệu lực: từ 10:00 01\/10\/2026/);
+    expect(voucherValidityText({ start_date: null, end_date: "2026-12-31T03:00:00Z" })).toBe("Hiệu lực: đến 10:00 31/12/2026");
+    expect(voucherValidityText({})).toBe("Hiệu lực: không giới hạn thời gian");
+  });
+});

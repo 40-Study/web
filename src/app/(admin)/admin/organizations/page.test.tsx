@@ -77,3 +77,37 @@ describe("/admin/organizations — G1: giờ tạo hiển thị theo giờ Việ
     expect(await screen.findByText("10:00 28/09/2026")).toBeTruthy();
   });
 });
+
+describe("/admin/organizations — QA3-10/17: giữ tên khi lỗi, nút xoá bằng tiếng Việt", () => {
+  it("tạo trùng tên bị server từ chối: tên đã gõ KHÔNG bị xoá", async () => {
+    mockApi.post.mockRejectedValueOnce(new Error("Tên tổ chức đã tồn tại"));
+    renderWithProviders(<OrganizationsPage />);
+    await screen.findByText("ForteX");
+    const input = screen.getByLabelText("Tên tổ chức") as HTMLInputElement;
+
+    fireEvent.change(input, { target: { value: "ForteX" } });
+    fireEvent.click(screen.getByRole("button", { name: "Tạo" }));
+
+    await waitFor(() => expect(mockApi.post).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 50));
+    expect(input.value).toBe("ForteX");
+  });
+
+  it("tạo thành công: form được xoá", async () => {
+    renderWithProviders(<OrganizationsPage />);
+    await screen.findByText("ForteX");
+    const input = screen.getByLabelText("Tên tổ chức") as HTMLInputElement;
+
+    fireEvent.change(input, { target: { value: "Trường ABC" } });
+    fireEvent.click(screen.getByRole("button", { name: "Tạo" }));
+
+    await waitFor(() => expect(input.value).toBe(""));
+  });
+
+  it("nút làm sạch form là tiếng Việt, không còn chữ 'Reset'", async () => {
+    renderWithProviders(<OrganizationsPage />);
+    await screen.findByText("ForteX");
+    expect(screen.getByRole("button", { name: "Xoá nội dung đã nhập" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Reset" })).toBeNull();
+  });
+});

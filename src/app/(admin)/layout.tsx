@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, Banknote, Bell, Building2, Flag, FolderTree, LayoutDashboard, LogOut, Receipt, ScrollText, Settings, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
+import { BarChart3, Banknote, Bell, Building2, Check, ChevronDown, Flag, FolderTree, LayoutDashboard, LogOut, Receipt, ScrollText, Settings, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
 import { BookCheck, Ticket, Trophy, UserCheck } from "lucide-react";
 
 import { RoleGuard } from "@/components/guards";
 import { Avatar } from "@/components/ui/avatar";
-import { useLogout } from "@/hooks/queries/use-auth";
+import { useLogout, useMyRoles, useSwitchRole } from "@/hooks/queries/use-auth";
 import { cn } from "@/lib/utils";
 import { findActiveAdminNavItem, isAdminNavActive } from "@/lib/admin-nav";
 import { PERMISSIONS, type Permission } from "@/lib/permissions";
+import { getSystemRoleLabel } from "@/lib/role-labels";
 import { useAuthStore } from "@/stores/auth.store";
 
 interface AdminMenuItem {
@@ -55,12 +56,18 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user } = useAuthStore();
+  const { user, activeUnifiedRole, roles } = useAuthStore();
   const permissions = useAuthStore((s) => s.permissions);
   const visibleMenu = adminMenu.filter((item) => !item.permission || permissions.includes(item.permission));
   const pageSubtitle = findActiveAdminNavItem(pathname, adminMenu)?.description ?? "Quản trị nền tảng ForteX";
   const logoutMutation = useLogout();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  // QA3-20: admin có thêm vai trò khác (vd chủ tổ chức) phải đổi vai trò được ngay trong app, như menu
+  // tài khoản của header chính. Dùng chung cơ chế `useSwitchRole`; chỉ hiện khi có từ 2 vai trò trở lên.
+  const switchRoleMutation = useSwitchRole();
+  const { data: myRolesData } = useMyRoles();
+  const availableRoles = myRolesData?.roles ?? roles ?? [];
+  const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -147,6 +154,55 @@ export default function AdminLayout({
                       trang cài đặt tài khoản thật, cần một lane khác thêm điều kiện ngoại lệ cho
                       "/settings"/"/notifications" vào đoạn redirect ở (app)/layout.tsx.
                     */}
+                    {availableRoles.length > 1 && (
+                      <div className="mb-1 border-b border-border pb-1">
+                        <button
+                          type="button"
+                          aria-expanded={showRoleSwitcher}
+                          onClick={() => setShowRoleSwitcher((v) => !v)}
+                          className="flex w-full items-center justify-between px-4 py-2 text-sm text-foreground hover:bg-muted"
+                        >
+                          Chuyển vai trò
+                          <ChevronDown className={cn("h-4 w-4 transition-transform", showRoleSwitcher && "rotate-180")} aria-hidden="true" />
+                        </button>
+                        {showRoleSwitcher && (
+                          <ul className="space-y-1 px-2 pb-1" aria-label="Vai trò của bạn">
+                            {availableRoles.map((role) => {
+                              const isActive = activeUnifiedRole?.id === role.id;
+                              return (
+                                <li key={role.id}>
+                                  <button
+                                    type="button"
+                                    disabled={isActive || switchRoleMutation.isPending}
+                                    onClick={() => {
+                                      setIsProfileOpen(false);
+                                      setShowRoleSwitcher(false);
+                                      switchRoleMutation.mutate({
+                                        role_id: role.id,
+                                        role_type: role.type,
+                                        organization_id: role.organization_id || undefined,
+                                      });
+                                    }}
+                                    className={cn(
+                                      "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm disabled:opacity-60",
+                                      isActive ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300" : "hover:bg-muted"
+                                    )}
+                                  >
+                                    <span className="min-w-0 flex-1">
+                                      <span className="block truncate font-medium">{getSystemRoleLabel(role.role_name)}</span>
+                                      {role.organization_name?.trim() && (
+                                        <span className="block truncate text-xs text-muted-foreground">{role.organization_name.trim()}</span>
+                                      )}
+                                    </span>
+                                    {isActive && <Check className="h-4 w-4 shrink-0" aria-label="Đang dùng" />}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </div>
+                    )}
                     <button
                       onClick={() => {
                         setIsProfileOpen(false);

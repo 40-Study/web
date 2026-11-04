@@ -225,3 +225,29 @@ describe("/admin/vouchers — voucher dành riêng (holders_only)", () => {
     expect(screen.queryByTestId("voucher-pagination")).toBeNull();
   });
 });
+
+describe("/admin/vouchers — QA3-11", () => {
+  it("danh sách hiện ngày hiệu lực theo giờ VN, hoặc 'không giới hạn' khi không đặt ngày", async () => {
+    renderWithProviders(<AdminVouchersPage />);
+    const rows = await screen.findAllByTestId("admin-voucher-row");
+    expect(rows[0].querySelector("[data-testid=voucher-validity]")?.textContent).toBe("Hiệu lực: không giới hạn thời gian");
+    expect(rows[1].querySelector("[data-testid=voucher-validity]")?.textContent).toBe(
+      "Hiệu lực: 10:00 01/10/2026 – 10:00 31/12/2026",
+    );
+  });
+
+  it("tạo với mã có khoảng trắng/ký tự đặc biệt: báo lỗi tiếng Việt, KHÔNG gọi POST", async () => {
+    renderWithProviders(<AdminVouchersPage />);
+    await screen.findAllByTestId("admin-voucher-row");
+    fireEvent.change(screen.getByPlaceholderText("VD: GIAM50K"), { target: { value: "qa3 test!" } });
+    const form = screen.getByTestId("voucher-form");
+    fireEvent.change(form.querySelectorAll("input")[1], { target: { value: "Voucher thử" } });
+    fireEvent.change(screen.getByLabelText(/Số tiền giảm/), { target: { value: "20000" } });
+    fireEvent.click(screen.getByRole("button", { name: "Tạo voucher" }));
+
+    expect((await screen.findByText(/chỉ gồm chữ cái không dấu, số/)).textContent).toContain("gạch dưới");
+    expect(mockApi.post).not.toHaveBeenCalled();
+    // Ô mã tự viết hoa khi gõ.
+    expect((screen.getByPlaceholderText("VD: GIAM50K") as HTMLInputElement).value).toBe("QA3 TEST!");
+  });
+});

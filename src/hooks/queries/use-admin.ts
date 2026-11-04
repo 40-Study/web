@@ -6,7 +6,7 @@ import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/rea
 import { toast } from "sonner";
 import { organizationService } from "@/services/organization.service";
 import { permissionService } from "@/services/permission.service";
-import { roleService } from "@/services/role.service";
+import { roleService, type SystemRole } from "@/services/role.service";
 import { getErrorMessage } from "@/lib/error-messages";
 
 // Query Keys
@@ -199,8 +199,13 @@ export function useDeleteSystemRole() {
   return useMutation({
     mutationFn: roleService.deleteSystemRole,
     onSuccess: (_, roleId) => {
-      // Bỏ role khỏi danh sách đang chọn để bảng user bên cạnh không còn trỏ vào role vừa xoá.
+      // QA3-18: useSystemRolesWithUserCounts gọi GET /system-roles/:id/users cho TỪNG role còn trong
+      // danh sách. Chỉ removeQueries thì lần render kế tiếp (danh sách chưa refetch) dựng lại truy vấn
+      // của role vừa xoá và bắn GET → 404. Gỡ role khỏi danh sách trong cache TRƯỚC để không còn
+      // observer nào trỏ vào id đó, rồi mới xoá cache và refetch để đồng bộ với server.
+      qc.setQueryData<SystemRole[]>(adminKeys.systemRoles(), (roles) => roles?.filter((r) => r.id !== roleId));
       qc.removeQueries({ queryKey: adminKeys.systemRoleUsers(roleId) });
+      qc.removeQueries({ queryKey: adminKeys.systemRolePermissions(roleId) });
       qc.invalidateQueries({ queryKey: adminKeys.systemRoles() });
       toast.success("Xoá vai trò hệ thống thành công");
     },

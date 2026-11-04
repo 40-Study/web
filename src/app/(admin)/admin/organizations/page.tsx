@@ -57,13 +57,14 @@ export default function OrganizationsPage() {
     }
     setNameError(null);
 
+    // QA3-10: chỉ xoá form khi server nhận (onSuccess). Reset ngay sau mutate làm mất tên vừa gõ khi
+    // gặp lỗi như "Tên tổ chức đã tồn tại", người dùng phải gõ lại từ đầu.
+    const onSuccess = () => setForm(emptyForm);
     if (form.id) {
-      updateOrg.mutate({ id: form.id, data: { name } });
+      updateOrg.mutate({ id: form.id, data: { name } }, { onSuccess });
     } else {
-      createOrg.mutate({ name });
+      createOrg.mutate({ name }, { onSuccess });
     }
-
-    setForm(emptyForm);
   };
 
   const startEdit = (org: (typeof data)[number]) => {
@@ -148,7 +149,7 @@ export default function OrganizationsPage() {
                     onClick={() => setForm(emptyForm)}
                     className="rounded bg-gray-100 px-3 py-2 text-sm font-medium"
                   >
-                    Reset
+                    Xoá nội dung đã nhập
                   </button>
                 </div>
               </div>

@@ -58,3 +58,10 @@ describe("AdminCategoriesPage — kiểm tên danh mục", () => {
     expect(container.textContent).not.toMatch(/API|POST|PUT|DELETE/);
   });
 });
+describe("AdminCategoriesPage — QA3-17", () => {
+  it("nút làm sạch form là tiếng Việt, không còn chữ 'Reset'", () => {
+    render(<AdminCategoriesPage />);
+    expect(screen.getByRole("button", { name: "Xoá nội dung đã nhập" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Reset" })).toBeNull();
+  });
+});

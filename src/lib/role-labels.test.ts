@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getSystemRoleLabel, SYSTEM_ROLE_LABELS } from "./role-labels";
+import { getOrgRoleLabel, getSystemRoleLabel, SYSTEM_ROLE_LABELS } from "./role-labels";
 
 describe("getSystemRoleLabel", () => {
   it("trả về nhãn tiếng Việt cho các mã vai trò đã biết", () => {
@@ -20,5 +20,22 @@ describe("getSystemRoleLabel", () => {
     for (const [code, label] of Object.entries(SYSTEM_ROLE_LABELS)) {
       expect(label).not.toBe(code);
     }
+  });
+});
+
+describe("getOrgRoleLabel (QA3-16)", () => {
+  it("mã hệ thống đã biết dùng nhãn tiếng Việt", () => {
+    expect(getOrgRoleLabel("ORG_OWNER")).toBe("Chủ tổ chức");
+    expect(getOrgRoleLabel("TEACHER")).toBe("Giảng viên");
+  });
+
+  it("mã tuỳ biến không lộ dạng enum viết hoa có gạch dưới", () => {
+    expect(getOrgRoleLabel("QA3_TEACHER")).toBe("Qa3 Teacher");
+    expect(getOrgRoleLabel("class-assistant")).toBe("Class Assistant");
+  });
+
+  it("chuỗi rỗng/chỉ ký tự phân cách thì trả lại nguyên văn, không trả chuỗi rỗng khó hiểu", () => {
+    expect(getOrgRoleLabel("")).toBe("");
+    expect(getOrgRoleLabel("__")).toBe("__");
   });
 });

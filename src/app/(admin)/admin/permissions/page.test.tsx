@@ -65,3 +65,30 @@ describe("/admin/permissions — A-P1-3/A-P2-3", () => {
     });
   });
 });
+
+describe("/admin/permissions — QA3-12: không hứa nhóm khi API không có danh mục", () => {
+  const NO_CATEGORY = [
+    { id: "perm-1", name: "COURSES_CREATE", description: "Tạo khoá" },
+    { id: "perm-2", name: "USERS_BAN", description: "Khoá user" },
+  ];
+
+  it("không có category: một danh sách phẳng, không có nhóm 'Khác', không nói 'theo nhóm chức năng', không có dòng Danh mục trống", async () => {
+    mockApi.get.mockImplementation(async () => envelope({ permissions: NO_CATEGORY, total: 2 }));
+    renderWithProviders(<AdminPermissionsPage />);
+
+    await screen.findByText("USERS_BAN");
+    expect(screen.queryByText("Khác")).toBeNull();
+    expect(screen.queryByText(/theo nhóm chức năng/)).toBeNull();
+    expect(screen.queryByText("Danh mục:")).toBeNull();
+    expect(screen.getByText("Tất cả quyền")).toBeTruthy();
+  });
+
+  it("có category thật: vẫn nhóm theo danh mục và hiện dòng Danh mục", async () => {
+    renderWithProviders(<AdminPermissionsPage />);
+
+    await screen.findByText(PERMISSION.name);
+    expect(screen.getAllByText("Khoá học").length).toBeGreaterThan(0);
+    expect(screen.getByText(/theo nhóm chức năng/)).toBeTruthy();
+    expect(screen.getByText("Danh mục:")).toBeTruthy();
+  });
+});

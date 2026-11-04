@@ -4,10 +4,11 @@
  * rồi mới nhận 409; backend vẫn kiểm lại (điều kiện ở đây KHÔNG thay thế kiểm quyền server).
  */
 
+import { formatVnDateTime } from "@/lib/contest-manage/format";
 import { CONTEST_FINALIZE_DELAY_MS } from "@/lib/contest-manage/form";
 import type { ContestManage } from "@/types/contest";
 
-type ContestLike = Pick<ContestManage, "status" | "phase" | "end_time" | "finalized_at" | "created_by">;
+type ContestLike = Pick<ContestManage, "status" | "phase" | "start_time" | "end_time" | "finalized_at" | "created_by">;
 
 const EDITABLE = new Set(["DRAFT", "REJECTED"]);
 
@@ -55,10 +56,22 @@ export function getFinalizeState(contest: ContestLike, now: Date): FinalizeState
 
 export interface AdminContestActions {
   canApprove: boolean;
+  /**
+   * QA3-07: khác null khi nút Duyệt hiện ra nhưng backend sẽ từ chối (409): đã tới/qua `start_time`
+   * (contest_lifecycle_service.go checkReadyForReview: `!StartTime.After(now)` → ErrContestStartPassed).
+   * Web khoá nút và hiện lý do này thay vì để admin xác nhận rồi mới nhận lỗi.
+   */
+  approveBlockedReason: string | null;
   canReject: boolean;
   canCancel: boolean;
   canEditPrizes: boolean;
   finalize: FinalizeState;
+}
+
+/** Cùng quy tắc backend: chỉ duyệt/gửi duyệt khi `start_time` còn ở tương lai (`now < start_time`). */
+export function getApproveBlockedReason(contest: Pick<ContestManage, "start_time">, now: Date): string | null {
+  if (now.getTime() < new Date(contest.start_time).getTime()) return null;
+  return `Đã qua giờ bắt đầu (${formatVnDateTime(contest.start_time)}) nên không thể công bố. Hãy từ chối để giảng viên đổi lịch, hoặc huỷ cuộc thi.`;
 }
 
 /**
@@ -74,8 +87,10 @@ export function getAdminContestActions(
   const isOwner = !!viewerId && viewerId === contest.created_by;
   const pending = contest.status === "PENDING_REVIEW";
   const published = contest.status === "PUBLISHED";
+  const canApprove = pending || (isOwner && EDITABLE.has(contest.status));
   return {
-    canApprove: pending || (isOwner && EDITABLE.has(contest.status)),
+    canApprove,
+    approveBlockedReason: canApprove ? getApproveBlockedReason(contest, now) : null,
     canReject: pending,
     canCancel: pending || (published && notFinalized),
     canEditPrizes: (pending || published) && notFinalized,

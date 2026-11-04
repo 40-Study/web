@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useActiveOrgId, useOrgMembers } from "@/hooks/queries/use-org-area";
-import { getSystemRoleLabel } from "@/lib/role-labels";
+import { getOrgRoleLabel } from "@/lib/role-labels";
 
 /** Thành viên tổ chức: tên, email và các vai trò đang giữ (không còn chỉ user_id). */
 export default function OrgMembersPage() {
@@ -51,8 +51,8 @@ export default function OrgMembersPage() {
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {m.roles.map((role) => (
-                  <Badge key={role} variant="secondary">
-                    {getSystemRoleLabel(role)}
+                  <Badge key={role} variant="secondary" title={role}>
+                    {getOrgRoleLabel(role)}
                   </Badge>
                 ))}
               </div>

@@ -7,7 +7,7 @@ import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
 import { QueryState } from "@/components/common/query-state";
 import { formatCurrency } from "@/lib/utils";
-import { successRateHint } from "@/lib/revenue-report";
+import { successRateHint, successRateValue } from "@/lib/revenue-report";
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
@@ -113,7 +113,7 @@ export default function AdminReportsPage() {
               />
               <MetricCard
                 label="Tỷ lệ thành công"
-                value={`${report.success_rate.toFixed(1)}%`}
+                value={successRateValue(report)}
                 hint={successRateHint(report)}
               />
             </section>

@@ -52,6 +52,8 @@ export interface AdminOrderListParams {
   user_id?: string;
   from?: string; // RFC3339
   to?: string; // RFC3339
+  /** Từ khoá server-side: mã đơn + email/tên người mua. Bỏ trống thì không gửi. */
+  q?: string;
   page?: number;
   limit?: number;
 }

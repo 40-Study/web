@@ -22,6 +22,7 @@ import {
   type AdminCourseItem,
   type CourseStatus,
 } from "@/types/approval";
+import { ACTION_BUTTON_GROUP, STICKY_ACTION_CELL, STICKY_ACTION_HEAD } from "@/app/(admin)/admin/_lib/sticky-action-column";
 
 const PAGE_SIZE = 20;
 
@@ -130,7 +131,7 @@ export default function AdminCoursesPage() {
                   <th className="px-4 py-3 text-left">Giáo viên</th>
                   <th className="px-4 py-3 text-left">Ngày nộp</th>
                   <th className="px-4 py-3 text-left">Trạng thái</th>
-                  <th className="px-4 py-3 text-left" />
+                  <th className={`px-4 py-3 text-left ${STICKY_ACTION_HEAD}`} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -158,8 +159,8 @@ export default function AdminCoursesPage() {
                         <Badge variant="outline">{course.status ?? "—"}</Badge>
                       )}
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2">
+                    <td className={`px-4 py-3 ${STICKY_ACTION_CELL}`}>
+                      <div className={ACTION_BUTTON_GROUP}>
                         <button
                           onClick={() => setDetailId(course.id)}
                           className={`${ACTION_BTN} bg-gray-100 hover:bg-gray-200 dark:bg-gray-800`}

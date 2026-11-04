@@ -42,6 +42,7 @@ import {
   WITHDRAWAL_STATUS_LABELS,
 } from "@/lib/withdrawal-format";
 import type { AdminWithdrawalItem, WithdrawalStatus } from "@/services/wallet.service";
+import { ACTION_BUTTON_GROUP, STICKY_ACTION_CELL, STICKY_ACTION_HEAD } from "@/app/(admin)/admin/_lib/sticky-action-column";
 
 const LIMIT = 20;
 // Lấy từ bảng nhãn (Record<WithdrawalStatus, …> bắt buộc đủ mọi trạng thái): danh sách cứng cũ thiếu
@@ -252,7 +253,7 @@ function AdminWithdrawalsContent() {
                   <th className="px-4 py-3 text-left">Trạng thái</th>
                   <th className="px-4 py-3 text-left">Ngày tạo</th>
                   <th className="px-4 py-3 text-left">Số dư hiện tại</th>
-                  <th className="px-4 py-3 text-left">Hành động</th>
+                  <th className={`px-4 py-3 text-left ${STICKY_ACTION_HEAD}`}>Hành động</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -303,9 +304,9 @@ function AdminWithdrawalsContent() {
                           {formatWithdrawalAmount(w.teacher_available_balance)}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className={`px-4 py-3 ${STICKY_ACTION_CELL}`}>
                         <Can permission={PERMISSIONS.WALLET_WITHDRAWALS_MANAGE}>
-                          <div className="flex flex-wrap gap-2">
+                          <div className={ACTION_BUTTON_GROUP}>
                             {w.status === "pending" && (
                               <>
                                 <Button size="sm" onClick={() => setApproveTarget(w)}>

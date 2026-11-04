@@ -226,4 +226,18 @@ describe("/admin/contests/[id]", () => {
     fireEvent.click(submit);
     expect(mockReject).toHaveBeenCalledWith({ id: "c-1", reason: "Đề trùng" }, expect.anything());
   });
+
+  it("QA3-07: giờ bắt đầu đã qua → nút Duyệt bị khoá kèm lý do, không mở hộp thoại, không gọi duyệt", () => {
+    vi.setSystemTime(new Date("2026-10-28T00:00:00Z"));
+    withContest(buildContest({ status: "PENDING_REVIEW", phase: "PENDING_REVIEW" }));
+    render(<AdminContestDetailPage />);
+    const btn = screen.getByTestId("approve-contest") as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+    expect(screen.getByTestId("approve-blocked").textContent).toMatch(/Đã qua giờ bắt đầu/);
+    fireEvent.click(btn);
+    expect(screen.queryByTestId("approve-confirm")).toBeNull();
+    expect(mockApprove).not.toHaveBeenCalled();
+    // Từ chối/huỷ vẫn dùng được để dọn hàng đợi.
+    expect((screen.getByTestId("reject-contest") as HTMLButtonElement).disabled).toBe(false);
+  });
 });
