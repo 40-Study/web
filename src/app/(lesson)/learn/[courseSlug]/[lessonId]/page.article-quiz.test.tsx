@@ -10,6 +10,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const headerState = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));
+
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(mockExerciseID ? `exercise=${mockExerciseID}` : ""),
   useParams: () => ({ courseSlug: "git-co-ban", lessonId: "les-1" }),
@@ -87,7 +89,10 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 // Barrel của player: giữ stub mỏng; PlayerTabs liệt kê tiêu đề quiz để kiểm tra việc khử trùng.
 vi.mock("@/components/player", () => ({
-  PlayerHeader: () => null,
+  PlayerHeader: (props: Record<string, unknown>) => {
+    headerState.props = props;
+    return null;
+  },
   PlayerLessonSidebar: ({ chapters }: { chapters: { lessons: { id: string; type: string }[] }[] }) => (
     <ul data-testid="sidebar">
       {chapters.flatMap((c) => c.lessons).map((l) => (
@@ -137,6 +142,16 @@ describe("/learn/[courseSlug]/[lessonId] — bài viết và trắc nghiệm", (
     mockUseQuiz.mockReset().mockReturnValue({ data: undefined, isError: false });
     mockStartQuiz.mockReset();
     mockSubmitQuiz.mockReset();
+  });
+
+  // QA3 Q16: huy hiệu "Bài tập" ở header đếm bài trên các chương đã tải nên lệch trang /exercises;
+  // không có số cấp khoá học thì không truyền exerciseCount (header ẩn huy hiệu).
+  it("không truyền exerciseCount cho header (không hiện số sai)", () => {
+    mockContents = [
+      { id: "e1", type: "exercise", title: "Bài 1", display_order: 0, exercise_id: "ex-1" },
+    ];
+    renderPage();
+    expect(headerState.props.exerciseCount).toBeUndefined();
   });
 
   it("mở bài tập đã chọn bằng link khoá học dù lesson có video", () => {
