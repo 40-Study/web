@@ -17,6 +17,11 @@
  */
 
 import { ApiError, NetworkError, RateLimitError } from "./errors";
+import {
+  CONTRACT_CODE_MESSAGES,
+  CONTRACT_MESSAGE_FIRST_CODES,
+  isUserFacingServerErrorCode,
+} from "./contract-error-codes";
 
 export const GENERIC_ERROR_MESSAGE = "Có lỗi xảy ra, vui lòng thử lại";
 export const NETWORK_ERROR_MESSAGE = "Mất kết nối tới máy chủ. Vui lòng kiểm tra mạng và thử lại.";
@@ -34,6 +39,7 @@ const CONFLICT_MESSAGE = "Thao tác xung đột với dữ liệu hiện có";
 export const HAS_VIETNAMESE_DIACRITICS = /[à-ỹÀ-Ỹ]/;
 
 const CODE_MESSAGES: Record<string, string> = {
+  ...CONTRACT_CODE_MESSAGES,
   ACCOUNT_LOCKED: "Tài khoản đã bị khoá. Vui lòng liên hệ quản trị viên.",
   ROLE_IN_USE: "Vai trò này vẫn đang được gán cho thành viên. Hãy gỡ vai trò khỏi các thành viên trước khi xoá.",
   // A1 (QA 261008): DELETE built-in system role trả 409 `SYSTEM_ROLE_PROTECTED` — vai trò nền tảng,
@@ -92,6 +98,7 @@ const CODE_MESSAGES: Record<string, string> = {
 // Code chỉ nói LOẠI lỗi, message mới nói lý do (vd. ERR_NOT_FOUND + "Voucher not found",
 // ERR_VALIDATION + "bank_name, ... are required"). Với các code này xét message trước.
 const GENERIC_CODES = new Set([
+  ...CONTRACT_MESSAGE_FIRST_CODES,
   "ERR_UNAUTHORIZED",
   "ERR_FORBIDDEN",
   "ERR_NOT_FOUND",
@@ -321,8 +328,9 @@ export function getErrorMessage(error: unknown, fallback?: string): string {
   // RateLimitError tự dựng câu tiếng Việt kèm số giây (lib/errors.ts).
   if (error instanceof RateLimitError) return error.message;
   if (error instanceof ApiError) {
-    // 5xx: api-client đã thay message bằng câu chung; không đọc thêm gì từ backend.
-    if (error.status >= 500) return fallback ?? GENERIC_ERROR_MESSAGE;
+    // 5xx: api-client đã thay message bằng câu chung; không đọc thêm gì từ backend. Ngoại lệ: mã 503 mà message
+    // là câu tiếng Việt viết cho người dùng (api-client giữ nguyên message cho đúng các mã đó).
+    if (error.status >= 500 && !isUserFacingServerErrorCode(error.code)) return fallback ?? GENERIC_ERROR_MESSAGE;
     // Cooldown lời mời: nếu backend cho biết phải chờ bao lâu thì nói luôn, vẫn không lộ lý do (từ chối hay huỷ).
     const wait = (error as { retryAfter?: number }).retryAfter;
     if (error.code === "FRIEND_REQUEST_COOLDOWN" && typeof wait === "number" && wait > 0) {
