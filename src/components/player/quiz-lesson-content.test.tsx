@@ -115,3 +115,32 @@ describe("QuizLessonContent — retry after failure",()=>{
   const answer=screen.getByRole('button',{name:/A\s*2/});fireEvent.click(answer);fireEvent.click(answer);expect(save).toHaveBeenCalledTimes(1);
  });
 });
+
+// QA3 Q3: ở 390px cột `w-72` cố định ép cột câu hỏi còn ~10px. jsdom không tính layout, nên test khoá
+// hợp đồng lớp CSS: xếp dọc dưới `lg`, cột phải chỉ cố định `w-72` từ `lg`, có thanh thời gian gọn cho mobile.
+describe("QuizLessonContent — bố cục mobile (Q3)", () => {
+  it("xếp dọc dưới lg, cột bản đồ không cố định w-72 ở mobile, có thanh thời gian/tiến độ gọn", () => {
+    const { container } = render(<QuizLessonContent quiz={QUIZ} onSubmit={vi.fn()} />);
+
+    const root = container.firstElementChild as HTMLElement;
+    const rootClasses = root.className.split(/\s+/);
+    expect(rootClasses).toContain("flex-col");
+    expect(rootClasses).toContain("lg:flex-row");
+
+    const aside = screen.getByText("Bản đồ câu hỏi").closest("div.flex-col.gap-4") as HTMLElement;
+    const asideClasses = aside.className.split(/\s+/);
+    expect(asideClasses).toContain("lg:w-72");
+    expect(asideClasses).not.toContain("w-72");
+
+    const bar = screen.getByTestId("quiz-compact-bar");
+    expect(bar.className).toContain("sticky");
+    expect(bar.className).toContain("lg:hidden");
+    expect(bar.textContent).toContain("1/1");
+  });
+
+  it("nút Câu trước / Tiếp theo vẫn có mặt", () => {
+    render(<QuizLessonContent quiz={QUIZ} onSubmit={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /Câu trước/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Tiếp theo/ })).toBeTruthy();
+  });
+});

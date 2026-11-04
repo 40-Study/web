@@ -8,8 +8,9 @@
  * không có dữ liệu này và cũng không được bịa ra.
  *
  * Response kết quả không kèm chữ của đáp án, chỉ có id. Nếu màn gọi có sẵn bảng
- * id → chữ (lấy từ `/quizzes/:id/questions`) thì hiện chữ; thiếu thì hiện id rút
- * gọn — thà thấy id còn hơn thấy khoảng trắng không giải thích được.
+ * id → chữ (lấy từ `/quizzes/:id/questions`) thì hiện chữ; thiếu thì hiện nhãn
+ * trung tính — KHÔNG BAO GIỜ lộ id thô ("Đáp án c1000000" khiến mọi lựa chọn
+ * trông giống nhau, QA3 Q4).
  */
 
 import { CheckCircle, XCircle, MinusCircle, Lightbulb } from "lucide-react";
@@ -27,14 +28,16 @@ export interface QuizReviewAnswer {
 
 interface QuizAttemptReviewProps {
   answers: QuizReviewAnswer[];
-  /** id đáp án → chữ của đáp án; thiếu thì hiển thị id rút gọn. */
+  /** id đáp án → chữ của đáp án; thiếu thì hiển thị nhãn trung tính. */
   answerText?: Map<string, string>;
   className?: string;
 }
 
-/** Không có chữ thì hiện id rút gọn — 8 ký tự đầu là đủ để đối chiếu. */
+/** Nhãn khi không tra được chữ của đáp án: trung tính, không chứa id. */
+export const UNKNOWN_ANSWER_LABEL = "Đáp án không còn hiển thị";
+
 function labelFor(id: string, answerText?: Map<string, string>): string {
-  return answerText?.get(id) ?? `Đáp án ${id.slice(0, 8)}`;
+  return answerText?.get(id) ?? UNKNOWN_ANSWER_LABEL;
 }
 
 export function QuizAttemptReview({ answers, answerText, className }: QuizAttemptReviewProps) {

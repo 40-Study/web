@@ -12,6 +12,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { NotFoundError } from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-messages";
 import { resolveEffectivePrice } from "@/lib/course-pricing";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { slugifyName } from "@/lib/slug";
 import {
   Course,
@@ -186,8 +187,17 @@ export function useCourses(filters: CourseFilters = {}) {
   return useQuery({
     queryKey: courseKeys.list(filters),
     queryFn: async (): Promise<Course[]> => {
-      const raw = await courseService.getCourses(filters.keyword ? { keyword: filters.keyword } : undefined);
-      const mapped = raw.courses.map(mapApiCourse);
+      // Lấy ĐỦ mọi trang (backend mặc định chỉ 20/lượt): lọc/sắp xếp bên dưới chạy ở client nên thiếu
+      // dữ liệu là thiếu khoá học ở chip danh mục lẫn nhãn đếm (QA3 Q2).
+      const { items } = await fetchAllPages(async (page, pageSize) => {
+        const raw = await courseService.getCourses({
+          ...(filters.keyword ? { keyword: filters.keyword } : {}),
+          page,
+          page_size: pageSize,
+        });
+        return { items: raw.courses, total: raw.total };
+      });
+      const mapped = items.map(mapApiCourse);
       return applyFilters(mapped, filters);
     },
     staleTime: 5 * 60 * 1000,

@@ -47,6 +47,8 @@ export interface Quiz {
  * nộp bài.
  */
 export interface QuizAnswer {
+  /** id đáp án — backend luôn trả (kể cả cho học viên); dùng để map id → chữ ở màn xem lại bài. */
+  id?: string;
   answer_text: string;
   is_correct?: boolean;
   display_order: number;

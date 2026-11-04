@@ -29,7 +29,9 @@ export function CurrentCourseHero({
             src={course.thumbnail}
             alt=""
             fill
-            sizes="100vw"
+            // Hero nằm ở cột chính (≈2/3 từ lg), không phủ cả viewport; và là ảnh LCP của trang nên `priority` (QA3 Q21).
+            sizes="(min-width: 1024px) 66vw, 100vw"
+            priority
             className="object-cover opacity-30"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/70 to-transparent" />

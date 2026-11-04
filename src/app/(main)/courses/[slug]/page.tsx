@@ -9,7 +9,6 @@
 import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
-import { toast } from "sonner";
 import { CourseDetailHeader } from "@/components/course/course-detail-header";
 import { CourseDetailContent } from "@/components/course/course-detail-content";
 import { CourseDetailSidebar } from "@/components/course/course-detail-sidebar";
@@ -111,7 +110,7 @@ export default function CourseDetailPage() {
     try {
       await enrollMutation.mutateAsync(String(course.id));
       setJustEnrolled(true);
-      toast.success("Đăng ký thành công! Sẵn sàng vào học.");
+      // Toast thành công do `useEnrollCourse` phát — không phát thêm ở đây kẻo hiện hai toast chồng nhau (QA3 Q17).
     } catch {
       // Error toast handled inside mutation hook
     }

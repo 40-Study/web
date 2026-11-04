@@ -7,9 +7,11 @@ import type { EnrolledCourse } from "@/types/course";
 
 interface EnrolledCourseCardProps {
   course: EnrolledCourse;
+  /** Ảnh LCP của trang (thẻ đầu tiên khi không có hero) cần `priority` để tải sớm. */
+  priority?: boolean;
 }
 
-export function EnrolledCourseCard({ course }: EnrolledCourseCardProps) {
+export function EnrolledCourseCard({ course, priority = false }: EnrolledCourseCardProps) {
   const isEnrolled = course.progress === 0;
 
   return (
@@ -22,7 +24,8 @@ export function EnrolledCourseCard({ course }: EnrolledCourseCardProps) {
               src={course.thumbnail}
               alt={course.title}
               fill
-              sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+              priority={priority}
+              sizes="(min-width: 1024px) 22vw, (min-width: 768px) 30vw, (min-width: 640px) 50vw, 100vw"
               className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (

@@ -4,9 +4,7 @@
  */
 
 import { cookies } from "next/headers";
-import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE_URL;
+import { getPublicApiBaseUrl } from "@/lib/server-fetchers/base-url";
 
 interface FetchOptions {
   method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -54,7 +52,10 @@ export async function serverFetch<T>(
 
   const { method = "GET", body, cache, next } = options;
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  // Node `fetch` không nhận URL tương đối ("/api" trong .env.production), nên base URL phải
+  // đi qua `getPublicApiBaseUrl()` (BACKEND_URL trước, bỏ qua giá trị không phải http(s)).
+  // Đọc mỗi lần gọi để BACKEND_URL runtime có hiệu lực, không bị đóng băng lúc nạp module.
+  const response = await fetch(`${getPublicApiBaseUrl()}${endpoint}`, {
     method,
     headers: {
       "Content-Type": "application/json",

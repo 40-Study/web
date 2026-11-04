@@ -281,11 +281,38 @@ export function QuizLessonContent({
   const selectedAnswer = answers[currentQuestion.id];
 
   return (
-    <div className="flex-1 flex gap-5 p-5 overflow-hidden">
+    // Dưới `lg` xếp DỌC (câu hỏi rồi bản đồ câu hỏi); cột `w-72` cố định ở 390px làm cột câu hỏi co còn
+    // ~10px và nút Tiếp theo/Nộp bài không bấm được (QA3 Q3).
+    <div className="flex-1 flex flex-col gap-4 p-3 sm:p-5 lg:flex-row lg:gap-5 lg:overflow-hidden">
+      {/* Mobile: thanh thời gian + tiến độ gọn, dính đầu vùng nội dung. Desktop dùng thẻ Thời gian ở cột phải. */}
+      <div
+        data-testid="quiz-compact-bar"
+        className="sticky top-0 z-20 -mx-3 -mt-3 flex items-center gap-3 border-b border-gray-100 bg-white/95 px-4 py-2 backdrop-blur sm:-mx-5 sm:-mt-5 sm:px-5 lg:hidden"
+      >
+        <span
+          className={cn(
+            "flex items-center gap-1.5 text-base font-bold tabular-nums",
+            timeLeft <= 60 ? "text-red-500" : "text-gray-900"
+          )}
+        >
+          <Clock className="h-4 w-4 text-orange-500" aria-hidden="true" />
+          {formatTime(timeLeft)}
+        </span>
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+          <div
+            className="h-full rounded-full bg-blue-500 transition-all duration-300"
+            style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }}
+          />
+        </div>
+        <span className="text-xs font-medium text-blue-600">
+          {currentIndex + 1}/{totalQuestions}
+        </span>
+      </div>
+
       {/* Left: Question Area */}
-      <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col bg-white rounded-2xl shadow-sm overflow-hidden">
         {/* Quiz Header */}
-        <div className="px-6 pt-5 pb-4 border-b border-gray-100">
+        <div className="px-4 pt-4 pb-3 sm:px-6 sm:pt-5 sm:pb-4 border-b border-gray-100">
           <h1 className="text-xl font-bold text-gray-900">{title}</h1>
           <div className="flex items-center justify-between mt-2">
             <span className="text-sm text-blue-600 font-medium">
@@ -305,7 +332,7 @@ export function QuizLessonContent({
         </div>
 
         {/* Question */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
           <p className="text-lg text-gray-800 leading-relaxed mb-6">
             {renderQuestionText(currentQuestion.text, currentQuestion.codeSnippets)}
           </p>
@@ -347,7 +374,7 @@ export function QuizLessonContent({
         </div>
 
         {/* Navigation Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+        <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrev}
@@ -385,10 +412,10 @@ export function QuizLessonContent({
         </div>
       </div>
 
-      {/* Right: Timer & Question Map */}
-      <div className="w-72 flex flex-col gap-4">
-        {/* Timer Card */}
-        <div className="bg-white rounded-2xl shadow-sm p-5">
+      {/* Right (desktop) / dưới câu hỏi (mobile): Timer & Question Map */}
+      <div className="w-full lg:w-72 flex flex-col gap-4">
+        {/* Timer Card — mobile đã có thanh gọn ở trên */}
+        <div className="hidden lg:block bg-white rounded-2xl shadow-sm p-5">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center">
               <Clock className="w-6 h-6 text-orange-500" />

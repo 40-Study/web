@@ -120,9 +120,12 @@ function AssignmentCard({
 
         {/* Time limit */}
         {item.time_limit && item.time_limit > 0 && (
-          <span className="text-xs text-gray-400 flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            {item.time_limit}s
+          <span
+            className="text-xs text-gray-400 flex items-center gap-1"
+            title="Thời gian chạy tối đa cho mỗi test (không phải đồng hồ đếm ngược)"
+          >
+            <Clock className="w-3 h-3" aria-hidden="true" />
+            Giới hạn {item.time_limit}s/test
           </span>
         )}
 

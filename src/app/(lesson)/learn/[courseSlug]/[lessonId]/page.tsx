@@ -570,9 +570,9 @@ export default function CourseLessonPage() {
   // Show loading state while HLS info is loading for video lessons
   const isVideoLoading = !!(lessonVideo && videoId && (hlsLoading || videoSource.state === "checking"));
 
-  const exerciseCount = course.chapters
-    .flatMap((ch) => ch.lessons)
-    .filter((l) => (l.type === "exercise" || l.type === "quiz") && !l.completed).length;
+  // Không có số "bài tập" cấp khoá học từ API: đếm trên `course.chapters` chỉ thấy loại của những bài đã tải
+  // nội dung nên số nhảy theo bài đang mở và lệch trang /exercises (QA3 Q16). Không truyền `exerciseCount`
+  // cho header → ẩn huy hiệu thay vì hiện số sai.
 
   // Start quiz attempt
   const handleStartQuiz = async () => {
@@ -841,7 +841,6 @@ export default function CourseLessonPage() {
       <PlayerHeader
         courseTitle={course.title}
         courseSlug={courseSlug}
-        exerciseCount={exerciseCount}
       />
 
       <div className="flex-1 flex overflow-hidden">

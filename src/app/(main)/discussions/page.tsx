@@ -5,21 +5,30 @@
  */
 
 import { useState } from "react";
+import { useMemo } from "react";
 import { MessageSquare } from "lucide-react";
-import { useDiscussionPosts, useCreateDiscussionPost, useVoteDiscussion, useRemoveVoteDiscussion } from "@/hooks/queries/use-discussions";
+import { Button } from "@/components/ui/button";
+import { useDiscussionPosts, useDiscussionCategoryTotals, useCreateDiscussionPost, useVoteDiscussion, useRemoveVoteDiscussion } from "@/hooks/queries/use-discussions";
 import { DiscussionPostCard } from "./discussion-post-card";
 import { DiscussionComposer } from "./discussion-composer";
 import { DiscussionSidebar } from "./discussion-sidebar";
+import { DISCUSSION_CATEGORIES } from "./discussion-categories";
+
+// "" = toàn diễn đàn, để "Tất cả" luôn là tổng thật kể cả khi đang lọc một danh mục.
+const TOTAL_KEYS = ["", ...DISCUSSION_CATEGORIES.map((c) => c.value)];
 
 export default function DiscussionsPage() {
   const [category, setCategory] = useState<string | undefined>(undefined);
 
-  const { data, isLoading } = useDiscussionPosts(category);
+  const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = useDiscussionPosts(category);
+  const categoryTotals = useDiscussionCategoryTotals(TOTAL_KEYS);
   const createPost = useCreateDiscussionPost();
   const votePost = useVoteDiscussion();
   const removeVote = useRemoveVoteDiscussion();
 
-  const posts = data?.posts ?? [];
+  const posts = useMemo(() => data?.pages.flatMap((p) => p.posts) ?? [], [data]);
+  const feedTotal = data?.pages[0]?.total ?? posts.length;
+  const allTotal = categoryTotals[""] ?? (category ? undefined : feedTotal);
 
   const handleVote = (id: string, hasVoted: boolean) => {
     if (hasVoted) {
@@ -74,9 +83,24 @@ export default function DiscussionsPage() {
                   key={post.id}
                   post={post}
                   onVote={handleVote}
-                  delay={i * 50}
+                  delay={(i % 20) * 50}
                 />
               ))}
+              <div className="flex flex-col items-center gap-2 pt-2">
+                <p className="text-sm text-slate-500" aria-live="polite">
+                  Đang hiển thị {posts.length} / {feedTotal} bài viết
+                </p>
+                {hasNextPage && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                  >
+                    {isFetchingNextPage ? "Đang tải..." : "Tải thêm bài viết"}
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -84,7 +108,8 @@ export default function DiscussionsPage() {
         {/* Sidebar */}
         <aside className="w-64 shrink-0 hidden lg:block">
           <DiscussionSidebar
-            posts={posts}
+            total={allTotal}
+            categoryCounts={categoryTotals}
             activeCategory={category}
             onCategoryChange={setCategory}
           />

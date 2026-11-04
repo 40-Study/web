@@ -20,6 +20,8 @@ import { useAuthStore } from "@/stores/auth.store";
 import { getErrorMessage } from "@/lib/error-messages";
 import { NonVideoLessonContent, useMarkLessonCompleted } from "./non-video-lesson-content";
 import { LessonCodeHistory } from "./lesson-code-history";
+import { InlineCodeText } from "./inline-code-text";
+import { hasPassingSubmission } from "./lesson-code-best-submission";
 import {
   readLessonCodeDraft,
   writeLessonCodeDraft,
@@ -220,7 +222,8 @@ export function LessonCodeWorkspace({
       />
     );
   const last = detail.data?.last_submission;
-  const passed = !!last && last.total > 0 && last.score >= (exercise.pass_percentage ?? 100);
+  // Đạt nếu BẤT KỲ lượt nộp nào đạt (không chỉ lượt gần nhất): nộp thử lại sai sau Accepted không làm mất nút.
+  const passed = hasPassingSubmission(last, history.data?.items, exercise.pass_percentage ?? 100);
   const isDone = completed || mark.data?.status === "completed";
   return (
     <section aria-label="Bài tập lập trình" className="lesson-code-workbench">
@@ -261,7 +264,9 @@ export function LessonCodeWorkspace({
             {exercise.difficulty} · {exercise.time_limit}s · {exercise.memory_limit} MB · Đạt{" "}
             {exercise.pass_percentage}% test
           </p>
-          <p className="code-statement">{exercise.description}</p>
+          <p className="code-statement">
+            <InlineCodeText text={exercise.description ?? ""} />
+          </p>
           {(exercise.test_cases ?? []).map((test, i) => (
             <div key={test.id} className="space-y-2 text-sm">
               <h2 className="font-semibold">Ví dụ {i + 1}</h2>

@@ -93,7 +93,7 @@ export function ProfileHeader({
           <div className="flex-1 text-center md:text-left">
             <div className="flex items-center justify-center md:justify-start gap-3 mb-1 flex-wrap">
               <h1 className="text-2xl font-bold">{user.fullName}</h1>
-              <Badge variant="level">Level {user.level}</Badge>
+              <Badge variant="level">Cấp {user.level}</Badge>
             </div>
             <p className="opacity-80 mb-2">@{user.username}</p>
             {user.bio && <p className="mb-3 max-w-lg">{user.bio}</p>}

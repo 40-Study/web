@@ -3,13 +3,7 @@
 import { useState } from "react";
 import { Monitor, Moon, Sun, Check } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 type Theme = "light" | "dark" | "system";
@@ -42,6 +36,12 @@ const themes: Array<{
   },
 ];
 
+/** Thang cỡ chữ: nhãn "Bình thường" phải nằm đúng vị trí 100% trên thanh trượt, không phải giữa thanh (QA3 Q13). */
+const FONT_MIN = 80;
+const FONT_MAX = 150;
+const FONT_NORMAL = 100;
+const FONT_NORMAL_PCT = ((FONT_NORMAL - FONT_MIN) / (FONT_MAX - FONT_MIN)) * 100;
+
 const languages = [
   { id: "vi", label: "Tiếng Việt", flag: "🇻🇳" },
   { id: "en", label: "English", flag: "🇬🇧" },
@@ -58,6 +58,7 @@ export function AppearanceSettings({
   const [currentTheme, setCurrentTheme] = useState<Theme>(initialTheme);
   const [fontSize, setFontSize] = useState(initialFontSize);
   const [language, setLanguage] = useState<Language>(initialLanguage);
+  const selectedLanguage = languages.find((l) => l.id === language);
 
   const handleThemeChange = (theme: Theme) => {
     setCurrentTheme(theme);
@@ -124,11 +125,17 @@ export function AppearanceSettings({
             {fontSize}%
           </span>
         </div>
-        <Slider value={[fontSize]} onValueChange={handleFontSizeChange} min={80} max={150} step={10} />
-        <div className="flex justify-between text-xs text-gray-400 mt-2 px-1">
-          <span>Nhỏ</span>
-          <span>Bình thường</span>
-          <span>Lớn</span>
+        <Slider value={[fontSize]} onValueChange={handleFontSizeChange} min={FONT_MIN} max={FONT_MAX} step={10} />
+        <div className="relative mt-2 h-4 px-1 text-xs text-gray-400" data-testid="font-scale-labels">
+          <span className="absolute left-1">Nhỏ</span>
+          <span
+            data-testid="font-scale-normal"
+            className="absolute -translate-x-1/2"
+            style={{ left: `${FONT_NORMAL_PCT}%` }}
+          >
+            Bình thường
+          </span>
+          <span className="absolute right-1">Lớn</span>
         </div>
       </div>
 
@@ -140,8 +147,9 @@ export function AppearanceSettings({
             <p className="text-sm text-gray-500">Chọn ngôn ngữ hiển thị</p>
           </div>
           <Select value={language} onValueChange={handleLanguageChange}>
-            <SelectTrigger className="w-44 rounded-xl">
-              <SelectValue />
+            <SelectTrigger className="w-44 rounded-xl" aria-label="Ngôn ngữ hiển thị">
+              {/* SelectItem chứa <span> nên Select không tự tra được nhãn: hiện nhãn tường minh thay vì mã "vi" */}
+              <span>{selectedLanguage ? `${selectedLanguage.flag} ${selectedLanguage.label}` : language}</span>
             </SelectTrigger>
             <SelectContent>
               {languages.map((lang) => (

@@ -39,7 +39,7 @@ describe("DiscussionSidebar — thành viên tích cực", () => {
   it("hiện nhãn ẩn danh cho dòng không có danh tính, giữ tên người công khai, không lỗi khoá trùng", async () => {
     const errors = vi.spyOn(console, "error").mockImplementation(() => {});
     mockMembers();
-    renderWithProviders(<DiscussionSidebar posts={[]} onCategoryChange={() => {}} />);
+    renderWithProviders(<DiscussionSidebar total={0} onCategoryChange={() => {}} />);
 
     expect(await screen.findByText("Bình Công Khai")).toBeTruthy();
     expect(screen.getAllByText("Học viên ẩn danh")).toHaveLength(2);
@@ -52,5 +52,19 @@ describe("DiscussionSidebar — thành viên tích cực", () => {
     // React cảnh báo khoá trùng bằng console.error: không được có
     const duplicateKey = errors.mock.calls.some((c) => String(c[0]).includes("same key"));
     expect(duplicateKey).toBe(false);
+  });
+
+  // QA3 Q5: số đếm là tổng theo API, không phải số bài đã tải (trước đây "Tất cả 20" trong khi có 77 bài).
+  it("hiện tổng theo API cho 'Tất cả' và từng danh mục", async () => {
+    mockMembers();
+    renderWithProviders(
+      <DiscussionSidebar total={77} categoryCounts={{ programming: 30, design: 12 }} onCategoryChange={() => {}} />,
+    );
+    expect(screen.getByText("77")).toBeTruthy();
+    expect(screen.getByText("30")).toBeTruthy();
+    expect(screen.getByText("12")).toBeTruthy();
+    // danh mục chưa có số liệu hiện "–", không phải số 0 giả
+    expect(screen.getAllByText("–")).toHaveLength(2);
+    await screen.findByText("Bình Công Khai");
   });
 });

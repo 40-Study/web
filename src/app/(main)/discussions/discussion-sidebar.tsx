@@ -8,30 +8,20 @@ import { TrendingUp, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLeaderboard } from "@/hooks/queries/use-leaderboard";
 import { leaderboardEntryKey, leaderboardEntryName } from "@/lib/leaderboard-display";
-import type { ForumPost } from "@/types/discussion";
-
-const CATEGORIES = [
-  { value: "programming", label: "Lập trình", emoji: "💻" },
-  { value: "design", label: "Thiết kế", emoji: "🎨" },
-  { value: "learning-tips", label: "Mẹo học", emoji: "💡" },
-  { value: "project", label: "Dự án", emoji: "🚀" },
-];
+import { DISCUSSION_CATEGORIES } from "./discussion-categories";
 
 interface DiscussionSidebarProps {
-  posts: ForumPost[];
+  /** Tổng số bài theo API (không phải số bài đã tải). */
+  total?: number;
+  /** Tổng số bài theo từng danh mục theo API; thiếu khoá = chưa biết, hiện "–". */
+  categoryCounts?: Record<string, number>;
   activeCategory?: string;
   onCategoryChange: (cat: string | undefined) => void;
 }
 
-export function DiscussionSidebar({ posts, activeCategory, onCategoryChange }: DiscussionSidebarProps) {
+export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, onCategoryChange }: DiscussionSidebarProps) {
   const { data: leaderboard } = useLeaderboard({ limit: 5 });
   const members = leaderboard?.entries ?? [];
-
-  // Count posts per category
-  const categoryCounts = posts.reduce<Record<string, number>>((acc, p) => {
-    acc[p.category] = (acc[p.category] ?? 0) + 1;
-    return acc;
-  }, {});
 
   return (
     <div className="space-y-5">
@@ -52,9 +42,9 @@ export function DiscussionSidebar({ posts, activeCategory, onCategoryChange }: D
             )}
           >
             <span>Tất cả</span>
-            <span className="text-xs text-slate-400">{posts.length}</span>
+            <span className="text-xs text-slate-400">{total ?? "–"}</span>
           </button>
-          {CATEGORIES.map((cat) => (
+          {DISCUSSION_CATEGORIES.map((cat) => (
             <button
               key={cat.value}
               onClick={() => onCategoryChange(cat.value === activeCategory ? undefined : cat.value)}
@@ -68,7 +58,7 @@ export function DiscussionSidebar({ posts, activeCategory, onCategoryChange }: D
               <span>
                 {cat.emoji} {cat.label}
               </span>
-              <span className="text-xs text-slate-400">{categoryCounts[cat.value] ?? 0}</span>
+              <span className="text-xs text-slate-400">{categoryCounts[cat.value] ?? "–"}</span>
             </button>
           ))}
         </div>

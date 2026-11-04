@@ -38,6 +38,7 @@ import { cn } from "@/lib/utils";
 import { buildTodaySchedule } from "./today-schedule";
 import { StreakCard } from "./streak-card";
 import { XPProgressCard } from "./xp-progress-card";
+import { compareByRecentAccess, pickContinueCourse } from "@/lib/continue-course";
 import { formatToday, getGreeting } from "./greeting";
 import {
   DEFAULT_HOME_LAYOUT,
@@ -183,13 +184,11 @@ export function HomeDashboard() {
 
   const courses = useMemo(
     () =>
-      [...(enrolled.data || [])].sort(
-        (a, b) =>
-          (Date.parse(b.lastAccessedAt || "") || 0) - (Date.parse(a.lastAccessedAt || "") || 0)
-      ),
+      [...(enrolled.data || [])].sort(compareByRecentAccess),
     [enrolled.data]
   );
-  const current = courses.find((course) => course.progress < 100) || courses[0];
+  // Cùng bộ chọn với /my-courses để hai trang không "Tiếp tục học" hai khoá khác nhau (QA3 Q9).
+  const current = pickContinueCourse(courses) ?? courses[0];
   const recommendations = (featured.data || [])
     .filter((course) => !courses.some((enrollment) => String(enrollment.id) === String(course.id)))
     .slice(0, 3);

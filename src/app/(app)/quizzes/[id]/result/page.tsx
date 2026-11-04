@@ -13,7 +13,8 @@ import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, XCircle, Clock, Target, Loader2 } from "lucide-react";
 import { QuizAttemptReview } from "@/components/quiz";
-import { useQuiz, useQuizAttemptDetail } from "@/hooks/queries/use-quiz";
+import { useQuiz, useQuizAttemptDetail, useQuizQuestions } from "@/hooks/queries/use-quiz";
+import { buildAnswerTextMap } from "@/lib/quiz-answer-text";
 import { cn } from "@/lib/utils";
 
 function formatTime(seconds: number): string {
@@ -56,6 +57,9 @@ export default function QuizResultPage() {
 
   const { data: quiz } = useQuiz(quizId);
   const { data: attempt, isLoading, isError } = useQuizAttemptDetail(quizId, attemptId);
+  // Kết quả chỉ có id đáp án; chữ lấy từ đề (backend trả id + chữ, giấu is_correct với học viên).
+  const { data: questions } = useQuizQuestions(quizId);
+  const answerText = useMemo(() => buildAnswerTextMap(questions), [questions]);
 
   const correctCount = useMemo(
     () => attempt?.answers.filter((a) => a.is_correct === true).length ?? 0,
@@ -131,7 +135,7 @@ export default function QuizResultPage() {
 
       <div>
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Chi tiết từng câu</h2>
-        <QuizAttemptReview answers={attempt.answers} />
+        <QuizAttemptReview answers={attempt.answers} answerText={answerText} />
       </div>
     </div>
   );

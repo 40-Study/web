@@ -139,4 +139,25 @@ describe("CourseSearch — gợi ý từ backend", () => {
     fireEvent.change(input(), { target: { value: "d" } });
     expect(screen.queryByText("Đại số 10")).toBeNull();
   });
+
+  // QA3 Q18: vào /courses?q=... dropdown không được tự mở đè lên hero; chỉ mở khi focus/gõ.
+  it("tải trang với ?q= đã có gợi ý: dropdown KHÔNG tự mở, mở khi focus", () => {
+    currentParams = new URLSearchParams("q=dai so");
+    render(<CourseSearch suggestions={suggestions} />);
+    expect(screen.queryByText("Đại số 10")).toBeNull();
+
+    fireEvent.focus(input());
+    expect(screen.getByText("Đại số 10")).toBeTruthy();
+  });
+
+  it("gửi form (Enter) đóng dropdown và không tự mở lại khi URL đổi theo", () => {
+    const { rerender } = render(<CourseSearch suggestions={suggestions} />);
+    fireEvent.change(input(), { target: { value: "dai so" } });
+    expect(screen.getByText("Đại số 10")).toBeTruthy();
+
+    fireEvent.submit(input().closest("form") as HTMLFormElement);
+    currentParams = new URLSearchParams("q=dai%20so");
+    rerender(<CourseSearch suggestions={suggestions} />);
+    expect(screen.queryByText("Đại số 10")).toBeNull();
+  });
 });
