@@ -211,8 +211,8 @@ export default function MyCoursesPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {allCourses.slice(0, 6).map((course) => (
-                    <EnrolledCourseCard key={course.id} course={course} />
+                  {allCourses.slice(0, 6).map((course, index) => (
+                    <EnrolledCourseCard key={course.id} course={course} priority={index === 0 && !currentCourse} />
                   ))}
                 </div>
               </section>
