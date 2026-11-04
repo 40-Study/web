@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } f
 import { ReportActionDialog } from "./_components/report-action-dialog";
 import { ReportTargetLabel } from "./_components/report-target-label";
 import { REPORT_ACTION_SPECS, isKnownReportAction } from "./_lib/report-actions";
+import { STICKY_ACTION_CELL, STICKY_ACTION_HEAD } from "@/app/(admin)/admin/_lib/sticky-action-column";
 
 // A-P2-5: trước đây có API nghiệp vụ report (POST/GET/PUT/DELETE /api/reports) nhưng KHÔNG có
 // trang admin nào để xử lý — chủ trường không có cách nào nhìn thấy report của học viên. Trang
@@ -129,7 +130,7 @@ export default function AdminModerationPage() {
                     <th className="px-4 py-3 text-left">Lý do</th>
                     <th className="px-4 py-3 text-left">Trạng thái</th>
                     <th className="px-4 py-3 text-left">Gửi lúc</th>
-                    <th className="px-4 py-3 text-left">Thao tác</th>
+                    <th className={`px-4 py-3 text-left ${STICKY_ACTION_HEAD}`}>Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -142,7 +143,7 @@ export default function AdminModerationPage() {
                       <td className="px-4 py-3">{REASON_LABEL[r.reason] ?? r.reason}</td>
                       <td className="px-4 py-3">{STATUS_LABEL[r.status] ?? r.status}</td>
                       <td className="px-4 py-3">{formatDate(r.created_at)}</td>
-                      <td className="px-4 py-3">
+                      <td className={`px-4 py-3 ${STICKY_ACTION_CELL}`}>
                         <button
                           onClick={() => openReport(r)}
                           className="rounded bg-gray-100 px-2 py-1 text-xs hover:bg-gray-200 dark:bg-gray-800"
