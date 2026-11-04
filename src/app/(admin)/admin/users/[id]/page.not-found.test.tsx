@@ -19,6 +19,9 @@ vi.mock("@/hooks/queries/use-admin-users", () => ({
   useUpdateUserStatus: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 vi.mock("@/hooks/queries/use-admin", () => ({ useSystemRoles: () => ({ data: [] }) }));
+vi.mock("@/hooks/queries/use-org-member-roles", () => ({
+  useUserOrgMemberships: () => ({ data: [], isLoading: false, isError: false, error: null }),
+}));
 
 import AdminUserDetailPage from "./page";
 

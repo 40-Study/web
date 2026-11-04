@@ -20,7 +20,7 @@ export const roleKeys = {
 export function useRoles(organizationId?: string) {
   return useQuery({
     queryKey: roleKeys.list(organizationId),
-    queryFn: () => roleService.listOrgRoles(),
+    queryFn: () => roleService.listOrgRoles(organizationId),
   });
 }
 

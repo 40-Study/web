@@ -41,6 +41,9 @@ const CODE_MESSAGES: Record<string, string> = {
   CLASS_ARCHIVED: "Lớp đã lưu trữ nên chỉ xem được. Hãy mở lại lớp để chỉnh sửa.",
   // Khoá đã lưu trữ (archived) ngừng bán: giỏ hàng, mua và ghi danh mới trả 409 này; người đã ghi danh vẫn học được.
   COURSE_NOT_FOR_SALE: "Khoá học này đã ngừng bán nên không thể thêm vào giỏ hàng, mua hoặc ghi danh mới.",
+  // Thành viên tổ chức (backend song song thêm 2 mã 409 này kèm câu tiếng Việt; GENERIC_CODES để câu của backend được ưu tiên).
+  ORG_ROLE_ALREADY_ASSIGNED: "Người này đã giữ vai trò đó trong tổ chức.",
+  ROLE_NAME_TAKEN: "Tên vai trò đã tồn tại trong tổ chức.",
   TEACHER_NOT_ORG_MEMBER: "Giảng viên này chưa là thành viên của tổ chức. Hãy thêm họ vào tổ chức trước khi gán vào lớp.",
   ERR_UNAUTHORIZED: SESSION_EXPIRED_MESSAGE,
   ERR_FORBIDDEN: FORBIDDEN_MESSAGE,
@@ -95,6 +98,8 @@ const GENERIC_CODES = new Set([
   "ERR_INVALID_BODY",
   "ERR_VALIDATION",
   "CLASS_ARCHIVED",
+  "ORG_ROLE_ALREADY_ASSIGNED",
+  "ROLE_NAME_TAKEN",
 ]);
 
 // Khoá là message backend viết thường (so khớp không phân biệt hoa thường).
@@ -182,6 +187,9 @@ const EXACT_MESSAGES: Record<string, string> = {
   "you have already reported this content": "Bạn đã báo cáo nội dung này rồi",
   "category with this name already exists": "Tên danh mục đã tồn tại",
   "cannot delete category with children": "Không thể xoá danh mục đang có danh mục con",
+  // user_organization_role_handler.go: gỡ vai trò đã bị gỡ (400).
+  "organization role already inactive for this user": "Vai trò này đã được gỡ khỏi người dùng trước đó",
+  "organization role assignment not found": "Không tìm thấy vai trò cần gỡ, có thể đã được gỡ trước đó",
   "organization with this name already exists": "Tên tổ chức đã tồn tại",
   "tag with this name already exists": "Tên thẻ đã tồn tại",
   "voucher code already exists": "Mã voucher đã tồn tại",
@@ -217,6 +225,10 @@ const PATTERN_MESSAGES: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
     /question must have (?:exactly|at least) 1 correct answer/i,
     () => "Mỗi câu hỏi trắc nghiệm cần có đáp án đúng trước khi lưu",
   ],
+  // user_organization_role_service.go (gán vai trò tổ chức): các lý do nghiệp vụ người dùng cần đọc được.
+  [/roles already assigned to user/i, () => "Người này đã giữ vai trò đó trong tổ chức"],
+  [/role does not belong to this organization/i, () => "Vai trò này không thuộc tổ chức đang chọn"],
+  [/role is not active/i, () => "Vai trò này đã ngừng hoạt động nên không thể gán"],
   [/please login again|session expired|invalid or expired refresh token/i, () => SESSION_EXPIRED_MESSAGE],
   [/^forbidden|not the (owner|teacher)|insufficient permissions|does not belong to you/i, () => FORBIDDEN_MESSAGE],
   [/not found/i, () => NOT_FOUND_MESSAGE],

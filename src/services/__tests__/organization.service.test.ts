@@ -34,6 +34,18 @@ describe("groupOrgMembers (B-16)", () => {
     expect(members[1]).toMatchObject({ name: "binh", roles: ["THANH_VIEN"] });
   });
 
+  it("giữ mã dòng gán + mã vai trò theo từng vai trò (để gỡ/gán), không trùng khi lặp vai trò", () => {
+    const members = groupOrgMembers([
+      row({ id: "a1" }) as never,
+      row({ id: "a2", role_id: "role2", role: { id: "role2", name: "GIANG_VIEN" } }) as never,
+      row({ id: "a3" }) as never,
+    ]);
+    expect(members[0].assignments).toEqual([
+      { id: "a1", role_id: "role1", name: "ORG_OWNER" },
+      { id: "a2", role_id: "role2", name: "GIANG_VIEN" },
+    ]);
+  });
+
   it("bỏ vai trò đã bị gỡ; thiếu thông tin người dùng thì không in user_id trần", () => {
     const members = groupOrgMembers([
       row({ status: "inactive" }) as never,

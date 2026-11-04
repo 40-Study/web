@@ -17,6 +17,11 @@ export interface OrgRole {
   deleted_at?: string;
 }
 
+/** Dòng trong danh sách vai trò tổ chức; `status` là "active" cho vai trò còn dùng được. */
+export interface OrgRoleListItem extends OrgRole {
+  status?: string;
+}
+
 export interface SystemRole {
   id: string;
   name: string;
@@ -78,6 +83,18 @@ export interface UserSystemRoleListResponse {
   page_size: number;
 }
 
+/** Một dòng thành viên-trong-tổ chức của một người (GET /users/:userId/org-roles, UserOrgRoleResponseDTO). */
+export interface UserOrgRoleItem {
+  id: string;
+  user_id: string;
+  role_id: string;
+  organization_id: string;
+  role?: { id: string; name: string; status?: string };
+  organization?: { id: string; name: string };
+  status: string;
+  granted_at?: string;
+}
+
 type R<T> = { message: string; data: T };
 
 // ─── Service ────────────────────────────────────────────────────────────────
@@ -89,9 +106,16 @@ export const roleService = {
   createOrgRole: (data: CreateOrgRoleDTO) =>
     api.post<R<OrgRole>>("/org-roles", data).then((r) => r.data.data),
 
-  /** GET /org-roles */
-  listOrgRoles: () =>
-    api.get<R<OrgRole[]>>("/org-roles").then((r) => r.data.data),
+  /**
+   * GET /org-roles?organization_id= — backend trả `{ roles, total, page, page_size }` (RoleListResponseDTO), KHÔNG phải mảng
+   * trần. Chủ tổ chức luôn bị ép về tổ chức đang dùng; quản trị hệ thống xem được tổ chức bất kỳ qua `organization_id`.
+   */
+  listOrgRoles: (organizationId?: string) =>
+    api
+      .get<R<{ roles: OrgRoleListItem[] }>>("/org-roles", {
+        params: { page: 1, page_size: 100, ...(organizationId ? { organization_id: organizationId } : {}) },
+      })
+      .then((r) => r.data.data.roles ?? []),
 
   /** GET /org-roles/:roleId */
   getOrgRole: (roleId: string) =>
@@ -202,9 +226,11 @@ export const roleService = {
 
   // ═══ User Org Roles ═══════════════════════════════════════════════════════
 
-  /** GET /users/:userId/org-roles */
-  getUserOrgRoles: (userId: string) =>
-    api.get<R<OrgRole[]>>(`/users/${userId}/org-roles`).then((r) => r.data.data),
+  /** GET /users/:userId/org-roles — quản trị hệ thống thấy mọi tổ chức; chủ tổ chức chỉ thấy tổ chức đang dùng. */
+  getUserOrgRoles: (userId: string, status?: string) =>
+    api
+      .get<R<UserOrgRoleItem[]>>(`/users/${userId}/org-roles`, { params: status ? { status } : undefined })
+      .then((r) => r.data.data ?? []),
 
   /** POST /users/:userId/org-roles */
   assignOrgRoles: (userId: string, data: { role_ids: string[]; organization_id: string; notes?: string }) =>

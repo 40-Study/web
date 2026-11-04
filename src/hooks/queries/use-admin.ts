@@ -84,7 +84,7 @@ export function useOrgMembers(orgId: string) {
 export function useOrgRoles(orgId: string) {
   return useQuery({
     queryKey: adminKeys.orgRoles(orgId),
-    queryFn: () => roleService.listOrgRoles(),
+    queryFn: () => roleService.listOrgRoles(orgId),
     enabled: !!orgId,
   });
 }
@@ -271,18 +271,6 @@ export function useSetSystemRolePermissions() {
       roleService.setSystemRolePermissions(roleId, permissionIds),
     onSuccess: (_, { roleId }) => {
       qc.invalidateQueries({ queryKey: adminKeys.systemRolePermissions(roleId) });
-    },
-  });
-}
-
-export function useAssignOrgRole() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ userId, orgId, roleId }: { userId: string; orgId: string; roleId: string }) =>
-      roleService.assignOrgRoles(userId, { role_ids: [roleId], organization_id: orgId }),
-    onSuccess: (_, { orgId }) => {
-      qc.invalidateQueries({ queryKey: adminKeys.orgMembers(orgId) });
-      toast.success("Gán vai trò thành công");
     },
   });
 }
