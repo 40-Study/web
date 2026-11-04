@@ -425,7 +425,7 @@ export function PlayerLessonSidebar({
                             )}
                           >
                             {isCurrent && <span className="inline-block w-2 h-2 rounded-full bg-green-400 mr-1.5 align-middle" />}
-                            Bài {chIdx + 1}.{lIdx}: {lesson.title}
+                            Bài {chIdx + 1}.{lIdx + 1}: {lesson.title}
                           </p>
                           <div className="flex items-center gap-1 mt-0.5 text-xs text-gray-400">
                             <Clock className="w-3 h-3" />

@@ -57,3 +57,15 @@ describe("PlayerLessonSidebar — nguồn tiến độ (S-P0-4)", () => {
     expect(screen.getByText("Tiến độ: 0%")).toBeTruthy();
   });
 });
+
+// QA3 Q14: bài đầu tiên của chương 1 hiện "Bài 1.0" vì dùng chỉ số 0-based.
+describe("PlayerLessonSidebar — đánh số bài (Q14)", () => {
+  it("đánh số 1-based: bài đầu là 1.1, bài cuối của 9 bài là 1.9, không có 1.0", () => {
+    render(
+      <PlayerLessonSidebar chapters={CHAPTERS} currentLessonId="lesson-4" courseSlug="demo-course" />
+    );
+    expect(screen.getByText(/^Bài 1\.1: Bài 1$/)).toBeTruthy();
+    expect(screen.getByText(/^Bài 1\.9: Bài 9$/)).toBeTruthy();
+    expect(screen.queryByText(/Bài 1\.0:/)).toBeNull();
+  });
+});
