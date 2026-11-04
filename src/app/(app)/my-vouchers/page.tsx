@@ -57,7 +57,7 @@ function getVoucherStatus(v: Voucher): VoucherStatus {
  * Dùng được ngay hay không: `eligible` của backend là nguồn đúng (cùng luật với đường áp mã). Backend cũ chưa trả
  * field này thì suy ra từ trạng thái voucher như trước.
  */
-export function isVoucherEligible(entry: MyVoucherWithDetails): boolean {
+function isVoucherEligible(entry: MyVoucherWithDetails): boolean {
   if (!entry.voucher) return false;
   if (typeof entry.eligible === "boolean") return entry.eligible;
   return getVoucherStatus(entry.voucher) === "active";
