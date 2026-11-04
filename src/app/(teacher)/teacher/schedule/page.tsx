@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { differenceInMinutes, format } from "date-fns";
 import { CalendarCheck, Clock, Plus } from "lucide-react";
 import { LiveSessionLaunch } from "@/components/teacher/live-session-launch";
+import { TeacherScheduleSourceFilter } from "@/components/teacher/teacher-schedule-source-filter";
 import { Button } from "@/components/ui/button";
 import WeekCalendarGrid from "@/components/schedule/week-calendar-grid";
 import ScheduleEventDetailDialog from "@/components/schedule/schedule-event-detail-dialog";
@@ -26,6 +27,7 @@ import {
   vnWallClockToIso,
 } from "@/lib/teacher-schedule-events";
 import type { UpdateLiveSessionDTO } from "@/services/live-session.service";
+import type { TimetableSourceFilter } from "@/types/class-schedule";
 
 /** Shared calendar: persisted class livestreams plus the current teaching timetable. */
 export default function TeacherSchedulePage() {
@@ -37,11 +39,12 @@ export default function TeacherSchedulePage() {
   const [defaultHour, setDefaultHour] = useState<number | undefined>();
   const [defaultEndTime, setDefaultEndTime] = useState<string>();
   const [range, setRange] = useState<{ from: string; to: string } | undefined>();
+  const [source, setSource] = useState<TimetableSourceFilter | undefined>();
 
   const { data: sessionsData, isLoading, isError, refetch } = useLiveSessions(
     user?.id ? { host_id: user.id, page_size: 100 } : undefined
   );
-  const { data: timetableEntries, isError: timetableError, refetch: refetchTimetable } = useMyTimetableEntries(range);
+  const { data: timetableEntries, isError: timetableError, refetch: refetchTimetable } = useMyTimetableEntries(range, source);
   const createLiveSession = useCreateLiveSession();
   const updateLiveSession = useUpdateLiveSession();
   const deleteLiveSession = useDeleteLiveSession();
@@ -184,6 +187,8 @@ export default function TeacherSchedulePage() {
           )
         }
         headerActions={
+          <div className="flex items-center gap-2">
+          <TeacherScheduleSourceFilter value={source} onChange={setSource} />
           <Button
             onClick={() => {
               setEditingEvent(null);
@@ -201,6 +206,7 @@ export default function TeacherSchedulePage() {
             <Plus className="w-4 h-4" />
             Tạo buổi học
           </Button>
+          </div>
         }
         stats={stats}
       />

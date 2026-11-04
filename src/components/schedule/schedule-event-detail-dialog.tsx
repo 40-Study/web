@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Clock, User, MapPin, FileText, Users, Video, Radio, Layers } from "lucide-react";
+import { Clock, User, MapPin, Building2, FileText, Users, Video, Radio, Layers } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -70,6 +70,13 @@ export default function ScheduleEventDetailDialog({
           {event.teacher && (
             <DetailRow icon={User}>
               <span>{event.teacher}</span>
+            </DetailRow>
+          )}
+
+          {/* Nguồn lớp: cá nhân hay tổ chức */}
+          {event.kind && event.kind !== "livestream" && event.tag && (
+            <DetailRow icon={Building2}>
+              <span>{event.tag}</span>
             </DetailRow>
           )}
 

@@ -1,5 +1,5 @@
 import { format, parseISO } from "date-fns";
-import { Clock, User, MapPin, ExternalLink, PlayCircle, Pencil } from "lucide-react";
+import { Clock, User, MapPin, Building2, ExternalLink, PlayCircle, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -67,6 +67,12 @@ export default function ScheduleEventTooltip({
           <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
             <User className="w-3.5 h-3.5 text-gray-400" />
             <span>{event.teacher}</span>
+          </div>
+        )}
+        {event.kind && event.kind !== "livestream" && event.tag && (
+          <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+            <Building2 className="w-3.5 h-3.5 text-gray-400" />
+            <span>{event.tag}</span>
           </div>
         )}
         {event.location && (

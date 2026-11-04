@@ -20,6 +20,7 @@ import type {
   ClassScheduleFilters,
   TimetableEntry,
   TimetableOccurrence,
+  TimetableSourceFilter,
 } from "@/types/class-schedule";
 
 type ApiResponse<T> = { message: string; data: T };
@@ -29,6 +30,14 @@ interface TimetableResponse {
   week?: string;
   /** Chỉ có khi gọi kèm khoảng ngày: buổi sinh từ lịch lặp đã huỷ trong khoảng đó. */
   cancelled_occurrences?: TimetableOccurrence[];
+}
+
+function timetableParams(range?: { from: string; to: string }, source?: TimetableSourceFilter) {
+  const params: Record<string, string> = {};
+  if (range) Object.assign(params, { sessions_from: range.from, sessions_to: range.to });
+  if (source === "personal") params.scope = "personal";
+  else if (source) params.organization_id = source;
+  return Object.keys(params).length > 0 ? params : undefined;
 }
 
 function timetableEntryToClassSchedule(entry: TimetableEntry): ClassSchedule {
@@ -88,12 +97,13 @@ export const classScheduleService = {
    * GET /me/timetable — mục thô của lịch cá nhân. Truyền `range` (YYYY-MM-DD, gồm cả hai đầu, tối đa 120
    * ngày) thì backend kèm thêm các buổi học cụ thể chưa huỷ của lớp trong khoảng đó (mục có `session_id`
    * + `date`); không truyền thì chỉ có lịch lặp tuần như `getMySchedules` (B-08). `cancelled` là các buổi sinh từ
-   * lịch lặp đã huỷ trong khoảng (để không vẽ lại chúng theo giờ lặp gốc).
+   * lịch lặp đã huỷ trong khoảng (để không vẽ lại chúng theo giờ lặp gốc). `source` lọc theo nguồn lớp
+   * (`scope=personal` hoặc `organization_id`).
    */
-  getMyTimetableEntries: (range?: { from: string; to: string }) =>
+  getMyTimetableEntries: (range?: { from: string; to: string }, source?: TimetableSourceFilter) =>
     api
       .get<ApiResponse<TimetableResponse>>("/me/timetable", {
-        params: range ? { sessions_from: range.from, sessions_to: range.to } : undefined,
+        params: timetableParams(range, source),
       })
       .then((r) => ({
         entries: r.data.data.entries ?? [],

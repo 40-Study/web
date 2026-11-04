@@ -94,6 +94,15 @@ interface TimetableEventOptions {
 const dayKey = (date: Date) => format(date, "yyyy-MM-dd");
 
 /**
+ * Nhãn nguồn của lớp trên lịch: "Cá nhân" cho lớp dạy tự do, tên tổ chức cho lớp của tổ chức. Tổ chức đã bị xoá
+ * (còn id, mất tên) thì ghi chung "Tổ chức" thay vì để trống, vì lớp đó vẫn không phải lớp cá nhân.
+ */
+export function timetableSourceLabel(e: Pick<TimetableEntry, "organization_id" | "organization_name">): string {
+  if (!e.organization_id) return "Cá nhân";
+  return e.organization_name || "Tổ chức";
+}
+
+/**
  * Mục thời khoá biểu → sự kiện chỉ xem:
  * - lịch lặp tuần (`schedule_id`, không `session_id`) → theo thứ trong tuần, giới hạn bởi
  *   `effective_from`/`effective_until`;
@@ -154,6 +163,7 @@ export function timetableEntriesToEvents(entries: TimetableEntry[], options: Tim
         status: "upcoming",
         location: e.room || undefined,
         teacher: "Bạn",
+        tag: timetableSourceLabel(e),
         kind: "class-schedule",
         weekly: {
           daysOfWeek: [e.day_of_week],
@@ -177,6 +187,7 @@ export function timetableEntriesToEvents(entries: TimetableEntry[], options: Tim
         status: e.status === "completed" ? "completed" : e.status === "in_progress" ? "ongoing" : "upcoming",
         location: e.room || undefined,
         teacher: "Bạn",
+        tag: timetableSourceLabel(e),
         kind: "class-session",
       });
     }
@@ -216,6 +227,7 @@ function expandWeekly(
       status: "upcoming",
       location: e.room || undefined,
       teacher: "Bạn",
+      tag: timetableSourceLabel(e),
       kind: "class-schedule",
     });
   }
