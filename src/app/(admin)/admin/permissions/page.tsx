@@ -6,6 +6,8 @@ import { QueryState } from "@/components/common/query-state";
 import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
 
+const FLAT_LIST_TITLE = "Tất cả quyền";
+
 type PermissionState = {
   id: string;
   name: string;
@@ -34,14 +36,19 @@ export default function AdminPermissionsPage() {
     }
   }, [permissions, selectedId]);
 
+  // QA3-12: API quyền hiện không trả `category` (model.Permission không có trường này), nên trước đây cả 28
+  // quyền rơi vào một nhóm "Khác" trong khi tiêu đề hứa "theo nhóm chức năng". Chỉ nhóm khi dữ liệu có
+  // danh mục thật; không thì hiện một danh sách phẳng và bỏ lời hứa nhóm. Không tự bịa danh mục từ tên quyền.
+  const hasCategories = useMemo(() => permissions.some((perm) => !!perm.category), [permissions]);
+
   const grouped = useMemo(() => {
     return permissions.reduce<Record<string, PermissionState[]>>((acc, perm) => {
-      const key = perm.category || "Khác";
+      const key = hasCategories ? perm.category || "Khác" : FLAT_LIST_TITLE;
       if (!acc[key]) acc[key] = [];
       acc[key].push(perm);
       return acc;
     }, {});
-  }, [permissions]);
+  }, [permissions, hasCategories]);
 
   const selected = useMemo(
     () => permissions.find((item) => item.id === selectedId) || null,
@@ -66,7 +73,8 @@ export default function AdminPermissionsPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Phân quyền hệ thống</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Danh sách quyền theo nhóm chức năng. Bạn có thể xem và chỉnh sửa mô tả của từng quyền.
+          {hasCategories ? "Danh sách quyền theo nhóm chức năng." : "Danh sách quyền của hệ thống."} Bạn có thể xem và
+          chỉnh sửa mô tả của từng quyền.
         </p>
       </div>
 
@@ -150,7 +158,7 @@ export default function AdminPermissionsPage() {
                 <p><span className="text-gray-500">ID:</span> {selected.id}</p>
                 <p><span className="text-gray-500">Tên:</span> {selected.name}</p>
                 <p><span className="text-gray-500">Mô tả:</span> {selected.description || "-"}</p>
-                <p><span className="text-gray-500">Danh mục:</span> {selected.category}</p>
+                {selected.category && <p><span className="text-gray-500">Danh mục:</span> {selected.category}</p>}
               </div>
             ) : (
               <p className="mt-2 text-sm text-gray-500">Chọn một quyền để xem chi tiết.</p>
