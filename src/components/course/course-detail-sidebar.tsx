@@ -317,7 +317,8 @@ export function CourseDetailSidebar({
                     size="lg"
                     onClick={onStartLearning}
                   >
-                    Tiếp tục học
+                    {/* Vừa đăng ký (0%) là "Bắt đầu học", chỉ khi đã có tiến độ mới là "Tiếp tục học" (QA3 Q17) */}
+                    {progress > 0 ? "Tiếp tục học" : "Bắt đầu học"}
                   </Button>
                 </div>
               ) : isFree ? (
