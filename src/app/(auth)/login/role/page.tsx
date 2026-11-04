@@ -8,6 +8,7 @@ import { useAuthStore } from "@/stores";
 import { useSelectRole } from "@/hooks/queries/use-auth";
 import { authService } from "@/services/auth.service";
 import { getSystemRoleLabel } from "@/lib/role-labels";
+import { filterAddableSystemRoles, isSelectableRole } from "@/lib/role-resolution";
 import type { UnifiedRole, SystemRoleOption } from "@/services/auth.service";
 
 export default function LoginRolePage() {
@@ -21,7 +22,10 @@ export default function LoginRolePage() {
   const [hasLoadedSystemRoles, setHasLoadedSystemRoles] = useState(false);
   const [roleLoadError, setRoleLoadError] = useState<string | null>(null);
 
-  const hasRoles = roles.length > 0;
+  // Q3-05: chỉ có 3 giao diện (học viên, giảng viên, quản trị) — vai tuỳ biến của tổ chức (vd QA3_TEACHER) không
+  // phải đích riêng nên không đưa ra ở đây. Người chỉ có vai tuỳ biến được coi như chưa có vai để chọn vai hệ thống.
+  const selectableRoles = roles.filter(isSelectableRole);
+  const hasRoles = selectableRoles.length > 0;
 
   // Tự fetch system roles khi user chưa có role
   useEffect(() => {
@@ -54,11 +58,8 @@ export default function LoginRolePage() {
     if (allSystemRoles.length === 0) fetchAllSystemRoles();
   };
 
-  // Roles chưa có (để hiện trong add mode)
-  const existingRoleNames = roles.map((r) => r.role_name.toUpperCase());
-  const availableNewRoles = allSystemRoles.filter(
-    (r) => !existingRoleNames.includes(r.name.toUpperCase())
-  );
+  // Roles chưa có (để hiện trong add mode); Q3-14: đã là giảng viên thì không mời đăng ký làm giảng viên nữa.
+  const availableNewRoles = filterAddableSystemRoles(allSystemRoles, roles);
 
   const handleContinue = async () => {
     if (!selectedRole && !selectedSystemRole) return;
@@ -131,7 +132,7 @@ export default function LoginRolePage() {
           )
         ) : (
           // Mode chọn unified role đã có
-          roles.map((role) => (
+          selectableRoles.map((role) => (
             <RoleCard
               key={role.id}
               role={toRoleType(role.role_name)}
@@ -174,7 +175,7 @@ export default function LoginRolePage() {
             onClick={() => {
               setShowAddRole(false);
               setSelectedSystemRole(null);
-              setSelectedRole(roles[0] || null);
+              setSelectedRole(selectableRoles[0] || null);
             }}
             className="h-12 w-full"
           >

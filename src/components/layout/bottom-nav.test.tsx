@@ -9,11 +9,18 @@
  * nên đọc thẳng `.getAttribute("href")` thay vì matcher `toHaveAttribute()`.
  */
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { BottomNav } from "./bottom-nav";
 import { useAuthStore } from "@/stores/auth.store";
 import { isRouteAllowedForRole, type NavRole } from "@/lib/routes";
+import { TEACHER_MENU_ITEMS } from "./teacher-menu";
+
+// Hộp "Khác" của giảng viên dựng RoleSwitchList (đọc vai trò + đổi vai) — test này không dựng QueryClientProvider.
+vi.mock("@/hooks/queries/use-auth", () => ({
+  useMyRoles: () => ({ data: undefined }),
+  useSwitchRole: () => ({ mutate: vi.fn(), isPending: false }),
+}));
 
 // Badge lời mời đọc /friends/summary qua React Query; test này không dựng QueryClientProvider.
 vi.mock("@/hooks/queries/use-friends", () => ({
@@ -160,5 +167,47 @@ describe("BottomNav — nhãn không dính nhau ở 390px", () => {
     expect(label.className).toContain("text-[10px]");
     expect(label.className).toContain("sm:text-[11px]");
     useAuthStore.setState({ activeRole: null });
+  });
+});
+
+// Q3-11: ở 390px bottom-nav chỉ có 6 tab nên Lớp học / Bài tập / Cuộc thi không với tới được bằng chạm.
+describe("BottomNav — giảng viên với tới MỌI trang của sidebar (Q3-11)", () => {
+  const openMore = () => {
+    useAuthStore.setState({ activeRole: "TEACHER" });
+    render(<BottomNav role="teacher" />);
+    fireEvent.click(screen.getByRole("button", { name: /Khác/ }));
+    return screen.getByRole("dialog");
+  };
+
+  it("mọi href trong TEACHER_MENU_ITEMS xuất hiện ở tab hoặc trong hộp 'Khác'", () => {
+    const dialog = openMore();
+    const reachable = new Set([
+      ...screen.getAllByRole("link").map((l) => l.getAttribute("href")),
+      ...within(dialog).getAllByRole("link").map((l) => l.getAttribute("href")),
+    ]);
+    for (const item of TEACHER_MENU_ITEMS) {
+      expect(reachable.has(item.href), `thiếu ${item.href}`).toBe(true);
+    }
+    // Ba trang bị báo mất nằm trong hộp Khác
+    for (const name of ["Lớp học", "Quản lý bài tập", "Cuộc thi"]) {
+      expect(within(dialog).getByRole("link", { name })).toBeTruthy();
+    }
+    useAuthStore.setState({ activeRole: null });
+  });
+
+  it("hộp 'Khác' không lặp lại mục đã có tab và đóng lại khi chọn một trang", () => {
+    const dialog = openMore();
+    expect(within(dialog).queryByRole("link", { name: "Tin nhắn" })).toBeNull();
+    fireEvent.click(within(dialog).getByRole("link", { name: "Lớp học" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    useAuthStore.setState({ activeRole: null });
+  });
+
+  it("chỉ giảng viên có tab 'Khác'", () => {
+    for (const role of ["student", "parent", "guest", "admin"] as const) {
+      const { unmount } = render(<BottomNav role={role} />);
+      expect(screen.queryByRole("button", { name: /Khác/ })).toBeNull();
+      unmount();
+    }
   });
 });

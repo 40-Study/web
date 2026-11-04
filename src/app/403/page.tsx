@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { ForbiddenActions } from "@/components/errors/forbidden-actions";
 
 // G-09 (QA3 261104): tab từng hiện "ForteX" trơn.
 export const metadata: Metadata = { title: "Không có quyền truy cập" };
@@ -14,12 +14,7 @@ export default function ForbiddenPage() {
       <p className="mt-2 text-gray-500">
         Bạn không có quyền truy cập trang này.
       </p>
-      <Link
-        href="/"
-        className="mt-6 rounded-lg bg-primary-600 px-6 py-2 text-white hover:bg-primary-700"
-      >
-        Về trang chủ
-      </Link>
+      <ForbiddenActions />
     </div>
   );
 }

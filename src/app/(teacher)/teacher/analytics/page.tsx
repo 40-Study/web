@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Users,
   TrendingUp,
@@ -11,12 +11,14 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   useLivestreamAnalytics,
   useParticipantAnalytics,
 } from "@/hooks/queries/use-analytics";
+import { useLiveSessions } from "@/hooks/queries/use-live-sessions";
+import { useAuthStore } from "@/stores/auth.store";
+import { toAnalyticsSessionOptions } from "@/lib/analytics-session-options";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -37,8 +39,15 @@ const ROLE_LABELS: Record<string, string> = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TeacherAnalyticsPage() {
+  const { user } = useAuthStore();
   const [sessionId, setSessionId] = useState("");
-  const [inputValue, setInputValue] = useState("");
+
+  // Q3-24: chọn buổi của chính mình thay vì gõ Session ID (cùng nguồn dữ liệu với trang Lịch giảng dạy).
+  const { data: sessionsData, isLoading: isSessionListLoading, isError: isSessionListError } = useLiveSessions(
+    user?.id ? { host_id: user.id, page_size: 100 } : undefined
+  );
+  const sessionOptions = useMemo(() => toAnalyticsSessionOptions(sessionsData?.sessions ?? []), [sessionsData]);
+  const selectedLabel = sessionOptions.find((o) => o.value === sessionId)?.label ?? sessionId;
 
   const {
     data: sessionAnalytics,
@@ -58,10 +67,6 @@ export default function TeacherAnalyticsPage() {
     a.localeCompare(b)
   );
 
-  const handleSearch = () => {
-    setSessionId(inputValue.trim());
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -69,24 +74,40 @@ export default function TeacherAnalyticsPage() {
         <div>
           <h1 className="text-2xl font-bold">Thống kê phiên học</h1>
           <p className="text-sm text-muted-foreground">
-            Nhập Session ID để xem phân tích chi tiết cho một buổi học trực tiếp.
+            Chọn một buổi học trực tiếp của bạn để xem phân tích chi tiết.
           </p>
         </div>
         {/* B-07: đã gỡ nút "Tải báo cáo PDF" — backend không có API/thư viện sinh PDF (xem certificate.service.ts),
             nút không làm gì là nút chết. Thêm lại khi có báo cáo thật. */}
       </div>
 
-      {/* Session ID input */}
-      <div className="flex gap-3 max-w-md">
-        <Input
-          placeholder="Nhập Session ID..."
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-        />
-        <Button onClick={handleSearch} disabled={!inputValue.trim()}>
-          Xem thống kê
-        </Button>
+      {/* Chọn buổi học */}
+      <div className="max-w-md space-y-2">
+        <Select value={sessionId} onValueChange={setSessionId}>
+          <SelectTrigger aria-label="Chọn buổi học" disabled={sessionOptions.length === 0}>
+            <SelectValue
+              placeholder={
+                isSessionListLoading
+                  ? "Đang tải danh sách buổi học..."
+                  : sessionOptions.length === 0
+                    ? "Chưa có buổi học nào để xem thống kê"
+                    : "Chọn buổi học..."
+              }
+            />
+          </SelectTrigger>
+          <SelectContent className="max-h-64 overflow-y-auto">
+            {sessionOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {isSessionListError && (
+          <p role="alert" className="text-sm text-destructive">
+            Không tải được danh sách buổi học. Hãy tải lại trang.
+          </p>
+        )}
       </div>
 
       {/* Empty state */}
@@ -95,7 +116,7 @@ export default function TeacherAnalyticsPage() {
           <EmptyState
             icon={BarChart3}
             title="Chưa có dữ liệu thống kê"
-            description="Nhập Session ID ở trên để tải thống kê buổi học."
+            description="Chọn một buổi học ở trên để tải thống kê."
           />
         </Card>
       )}
@@ -203,8 +224,7 @@ export default function TeacherAnalyticsPage() {
             title={isSessionError ? "Không thể tải thống kê" : "Không tìm thấy dữ liệu"}
             description={
               <>
-                Không có dữ liệu cho session <strong>{sessionId}</strong>. Kiểm tra lại Session ID và
-                chắc chắn đây là buổi học của bạn.
+                Không có dữ liệu cho buổi <strong>{selectedLabel}</strong>. Thử chọn lại hoặc chọn buổi học khác.
               </>
             }
           />

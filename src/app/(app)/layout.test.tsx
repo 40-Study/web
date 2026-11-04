@@ -12,6 +12,7 @@ import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { usePathname } from "next/navigation";
 import AppLayout from "./layout";
+import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth.store";
 
 vi.mock("@/components/layout/app-shell-layout", () => ({
@@ -218,5 +219,68 @@ describe("(app)/layout — Cuộc thi (contract §7): ai xem được gì", () =
     );
     expect(screen.queryByTestId("child")).toBeNull();
     expect(screen.getByRole("status").textContent).toContain("đăng nhập");
+  });
+});
+
+describe("(app)/layout — Q3-05: vai tuỳ biến của tổ chức dùng giao diện của vai hệ thống", () => {
+  afterEach(() => {
+    useAuthStore.setState({
+      isAuthenticated: false,
+      activeRole: null,
+      roles: [],
+      hasHydrated: false,
+      sessionStatus: "checking",
+    });
+  });
+
+  it("QA3_TEACHER có vai hệ thống TEACHER -> render trang, store được ghi TEACHER (không bị đá sang /403)", () => {
+    setPath("/messages");
+    useAuthStore.setState({
+      roles: [
+        { id: "sr-t", type: "system", role_name: "TEACHER", display_name: "TEACHER" },
+        { id: "r-qa3", type: "organization", role_name: "QA3_TEACHER", display_name: "QA3_TEACHER" },
+      ],
+    });
+    setAuth("QA3_TEACHER", true);
+    render(
+      <AppLayout>
+        <div data-testid="child">CHILD</div>
+      </AppLayout>
+    );
+    expect(useAuthStore.getState().activeRole).toBe("TEACHER");
+    expect(screen.queryByTestId("child")).not.toBeNull();
+  });
+});
+
+describe("(app)/layout — Q3-24: giảng viên mở /livestream được báo lý do và đích", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    useAuthStore.setState({ isAuthenticated: false, activeRole: null, hasHydrated: false, sessionStatus: "checking" });
+  });
+
+  it("TEACHER trên /livestream -> toast nói buổi livestream nằm trong Lịch giảng dạy, không render trang", () => {
+    const warning = vi.spyOn(toast, "warning").mockImplementation(() => "");
+    setPath("/livestream");
+    setAuth("TEACHER", true);
+    render(
+      <AppLayout>
+        <div data-testid="child">CHILD</div>
+      </AppLayout>
+    );
+    expect(screen.queryByTestId("child")).toBeNull();
+    expect(warning).toHaveBeenCalledTimes(1);
+    expect(String(warning.mock.calls[0][0])).toContain("Lịch giảng dạy");
+  });
+
+  it("phụ huynh trên /achievements vẫn nhận thông báo 'không dành cho'", () => {
+    const warning = vi.spyOn(toast, "warning").mockImplementation(() => "");
+    setPath("/achievements");
+    setAuth("PARENT", true);
+    render(
+      <AppLayout>
+        <div data-testid="child">CHILD</div>
+      </AppLayout>
+    );
+    expect(String(warning.mock.calls[0][0])).toMatch(/không dành cho/);
   });
 });

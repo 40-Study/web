@@ -9,20 +9,24 @@ import { FeaturedCourses } from "@/components/landing/featured-courses";
 import { StatsStrip } from "@/components/landing/stats-strip";
 import { FinalCta } from "@/components/landing/final-cta";
 import { useAuthStore } from "@/stores/auth.store";
-import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
+import { normalizeRole } from "@/lib/routes";
+import { resolveHomeRoute } from "@/lib/role-resolution";
+import { useSystemRoleRemap } from "@/hooks/use-system-role-remap";
 
 export default function LandingPage() {
   const router = useRouter();
-  const { isAuthenticated, hasHydrated, activeRole } = useAuthStore();
+  const { isAuthenticated, hasHydrated, activeRole, roles } = useAuthStore();
   const normalizedRole = normalizeRole(activeRole);
+  const { needsRemap } = useSystemRoleRemap();
 
   // Người đã đăng nhập chuyển thẳng về trang chủ theo vai trò
   useEffect(() => {
     if (!hasHydrated) return;
-    if (isAuthenticated && normalizedRole) {
-      router.push(getRoleHomeRoute(normalizedRole));
+    if (isAuthenticated && normalizedRole && !needsRemap) {
+      // Vai tuỳ biến của tổ chức quy về vai hệ thống; không quy được thì về chọn vai trò, không bao giờ vào /403 (Q3-05).
+      router.push(resolveHomeRoute(normalizedRole, roles));
     }
-  }, [hasHydrated, isAuthenticated, normalizedRole, router]);
+  }, [hasHydrated, isAuthenticated, normalizedRole, needsRemap, roles, router]);
 
   // Không render gì khi đang chuyển hướng (tránh nháy nội dung)
   if (hasHydrated && isAuthenticated && normalizedRole) {

@@ -15,6 +15,7 @@ import { CategoryMenu } from "@/components/layout/category-menu";
 import { CartDropdown } from "@/components/layout/cart-dropdown";
 import { HeaderQuickLinks } from "@/components/layout/header-quick-links";
 import { useLogout, useSwitchRole, useMyRoles } from "@/hooks/queries/use-auth";
+import { isSelectableRole } from "@/lib/role-resolution";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCoinWallet } from "@/hooks/queries/use-coins";
 import { canUseCoinWallet, getRoleHomeRoute, normalizeRole } from "@/lib/routes";
@@ -86,7 +87,8 @@ export function Header() {
   const switchRoleMutation = useSwitchRole();
   const { data: myRolesData } = useMyRoles();
   const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
-  const availableRoles = myRolesData?.roles ?? roles ?? [];
+  // Q3-05: vai tuỳ biến của tổ chức không phải giao diện riêng -> không đưa vào danh sách chuyển vai trò.
+  const availableRoles = (myRolesData?.roles ?? roles ?? []).filter(isSelectableRole);
 
   // Notification hooks — only fetch when authenticated
   const { data: unreadData } = useUnreadCount();
