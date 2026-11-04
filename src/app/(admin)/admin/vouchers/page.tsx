@@ -16,6 +16,7 @@ import {
   buildUpdateVoucherPayload,
   emptyVoucherForm,
   voucherToForm,
+  voucherValidityText,
   type VoucherFormState,
 } from "./voucher-form-model";
 
@@ -125,6 +126,9 @@ export default function AdminVouchersPage() {
                 </div>
                 <p className="mt-1 text-sm text-gray-700">{v.name}</p>
                 <p className="text-sm font-medium text-primary-600">{formatVoucherDiscountLabel(v)}</p>
+                <p className="mt-1 text-xs text-gray-500" data-testid="voucher-validity">
+                  {voucherValidityText(v)}
+                </p>
                 <p className="mt-1 text-xs text-gray-400">
                   Đã dùng {v.used_count ?? 0}
                   {v.usage_limit ? `/${v.usage_limit}` : ""} lượt

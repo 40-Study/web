@@ -7,6 +7,7 @@
  * dùng được; người khác nhập mã nhận lỗi như mã không tồn tại. Mặc định TẮT = công khai như trước.
  */
 
+import { formatVnDateTime } from "@/lib/vn-datetime";
 import type {
   CreateVoucherDTO,
   UpdateVoucherDTO,
@@ -92,6 +93,19 @@ function toDateTimeLocal(iso: string | null | undefined): string {
 }
 
 /** Điền sẵn form sửa từ voucher hiện có. */
+/** QA3-11: mã chỉ gồm chữ in hoa, số, gạch ngang, gạch dưới (form tự viết hoa khi gõ). Backend chưa chặn nên web chặn trước. */
+const VOUCHER_CODE_PATTERN = /^[A-Z0-9_-]+$/;
+export const VOUCHER_CODE_FORMAT_ERROR =
+  "Mã voucher chỉ gồm chữ cái không dấu, số, dấu gạch ngang (-) và gạch dưới (_), không có khoảng trắng hay ký tự đặc biệt.";
+
+/** Dòng "Hiệu lực" cho danh sách voucher: luôn nói rõ cả khi không giới hạn, để admin không phải mở form sửa. */
+export function voucherValidityText(v: Pick<Voucher, "start_date" | "end_date">): string {
+  if (v.start_date && v.end_date) return `Hiệu lực: ${formatVnDateTime(v.start_date)} – ${formatVnDateTime(v.end_date)}`;
+  if (v.start_date) return `Hiệu lực: từ ${formatVnDateTime(v.start_date)}, không giới hạn ngày kết thúc`;
+  if (v.end_date) return `Hiệu lực: đến ${formatVnDateTime(v.end_date)}`;
+  return "Hiệu lực: không giới hạn thời gian";
+}
+
 export function voucherToForm(v: Voucher): VoucherFormState {
   const isMoney = v.discount_unit === "MONEY";
   const isPercent = v.discount_method === "PERCENT";
@@ -126,6 +140,7 @@ export type VoucherBuildResult<T> = { payload: T; error?: undefined } | { payloa
 /** Kiểm các trường dùng chung cho tạo và sửa; trả câu lỗi đầu tiên hoặc null. */
 function validateShared(f: VoucherFormState, isCreate: boolean): string | null {
   if (isCreate && (f.code.trim().length < 3 || f.code.trim().length > 50)) return "Mã voucher dài 3-50 ký tự.";
+  if (isCreate && !VOUCHER_CODE_PATTERN.test(f.code.trim().toUpperCase())) return VOUCHER_CODE_FORMAT_ERROR;
   if (f.name.trim().length < 3) return "Tên voucher tối thiểu 3 ký tự.";
 
   if (f.discount_method === "PERCENT") {
