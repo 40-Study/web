@@ -97,7 +97,14 @@ interface WeekCalendarGridProps {
    * cứng nhãn góc học sinh ("THỜI GIAN HỌC", "NHIỆM VỤ", "HIỆU SUẤT") ngay cả ở lịch giảng dạy.
    */
   stats?: ScheduleStat[];
+  /**
+   * Dòng hướng dẫn chọn giờ ở cột trái khi `selectable`. Mặc định là câu của giáo viên (tạo buổi học);
+   * lịch học viên chỉ tạo được ghi chú cá nhân nên truyền câu riêng (QA-A-15).
+   */
+  selectionHelp?: string;
 }
+
+const DEFAULT_SELECTION_HELP = "Bấm hoặc kéo trên lịch để chọn giờ cho buổi học mới.";
 
 export interface ScheduleStat {
   key: string;
@@ -170,6 +177,7 @@ export default function WeekCalendarGrid({
   onRangeChange,
   headerActions,
   stats,
+  selectionHelp = DEFAULT_SELECTION_HELP,
 }: WeekCalendarGridProps) {
   const calendarRef = useRef<FullCalendar>(null);
   const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
@@ -349,7 +357,7 @@ export default function WeekCalendarGrid({
             <label className="calendar-filter" key={item.key}><input type="checkbox" style={{ accentColor: item.color }} checked={!hiddenKinds.includes(item.key)} onChange={() => setHiddenKinds(current => current.includes(item.key) ? current.filter(key => key !== item.key) : [...current, item.key])} />{item.label}</label>
           ))}
           <div className="calendar-reminder-note"><Bell className="h-4 w-4 shrink-0" /><p>Nhắc trước 15 phút và khi đến giờ.<br /><span>Giáo viên · Học sinh · Phụ huynh</span></p></div>
-          {selectable && <p className="calendar-rail-help">Bấm hoặc kéo trên lịch để chọn giờ cho buổi học mới.</p>}
+          {selectable && <p className="calendar-rail-help">{selectionHelp}</p>}
         </aside>
         <div className="fc-custom-wrap calendar-surface">
         <FullCalendar

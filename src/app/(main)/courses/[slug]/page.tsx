@@ -14,6 +14,7 @@ import { CourseDetailContent } from "@/components/course/course-detail-content";
 import { CourseDetailSidebar } from "@/components/course/course-detail-sidebar";
 import { useCourseBySlug, useEnrolledCourses, useEnrollCourse } from "@/hooks/use-courses";
 import { useCourseReviews } from "@/hooks/queries/use-reviews";
+import { resolveCourseRatingSummary } from "@/components/course/course-rating-summary";
 import { useAuthStore } from "@/stores/auth.store";
 import { getErrorMessage } from "@/lib/error-messages";
 
@@ -51,7 +52,17 @@ export default function CourseDetailPage() {
   // trước đây header hiện "4.8 (318 đánh giá)" lấy từ cột lưu sẵn trên
   // courses, không đồng bộ với reviews thật (0 review) (QA khách+học sinh P2,
   // 260927; verify-260927 xác nhận root cause là cột dẫn xuất không đồng bộ).
-  const { data: reviewsData } = useCourseReviews(course?.id ? String(course.id) : "");
+  const {
+    data: reviewsData,
+    isError: reviewsError,
+    refetch: refetchReviews,
+  } = useCourseReviews(course?.id ? String(course.id) : "");
+  // QA-A-02: phân biệt "đang tải" với "không có đánh giá" — xem course-rating-summary.ts.
+  const ratingSummary = resolveCourseRatingSummary({
+    reviews: reviewsData,
+    isError: reviewsError,
+    fallback: { rating: course?.rating, reviewCount: course?.reviewCount },
+  });
 
   const enrolledCourse = useMemo(() => {
     return enrolledCourses.find(
@@ -125,11 +136,7 @@ export default function CourseDetailPage() {
       <CourseDetailHeader
         course={course}
         isEnrolled={isEnrolled}
-        reviewsSummary={
-          reviewsData
-            ? { average: Number(reviewsData.average_rating ?? 0), total: reviewsData.total }
-            : undefined
-        }
+        ratingSummary={ratingSummary}
       />
 
       <div className="page-container py-8">
@@ -140,6 +147,8 @@ export default function CourseDetailPage() {
               isEnrolled={isEnrolled}
               courseSlug={courseSlug}
               reviewsData={reviewsData}
+              reviewsState={reviewsData ? "ready" : reviewsError ? "error" : "loading"}
+              onRetryReviews={() => void refetchReviews()}
             />
           </div>
 

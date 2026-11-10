@@ -25,6 +25,7 @@ import {
 } from "@/components/player/lesson-progress-sync";
 import { pickCompanionArticle, pickPrimaryContent, quizzesForTab, resolveLessonKind, toPlayerLessonType } from "@/components/player/lesson-kind";
 import { ArticleContentView } from "@/components/lesson/article-content-view";
+import { lessonDurationLabel } from "@/components/player/lesson-duration-label";
 import { resolveLivestreamRoomHref } from "@/lib/lesson-content-link";
 import type { LessonProgressResponse } from "@/services/enrollment.service";
 import type { LessonContent } from "@/services/lesson-content.service";
@@ -74,7 +75,7 @@ import type { ApiCourse } from "@/services/course.service";
  */
 function mapSectionsToChapters(
   sections: Section[],
-  currentLessonType?: { lessonId: string; type: PlayerLesson["type"] }
+  currentLessonType?: { lessonId: string; type: PlayerLesson["type"]; actualSeconds?: number | null }
 ): PlayerChapter[] {
   return sections.map((section) => ({
     id: section.id,
@@ -87,9 +88,11 @@ function mapSectionsToChapters(
       // chia nó cho 60 để lấy phút, tức coi nhầm phút thành giây. Nguồn đúng
       // là `duration_minutes` (phút, chỉ dùng hiển thị); giây thật lấy từ
       // lesson content (`lessonVideo.duration`, xem `durationSeconds` dưới).
-      duration: lesson.duration_minutes
-        ? `${lesson.duration_minutes}:00`
-        : "00:00",
+      // QA-A-17: bài đang xem dùng số giây THẬT (xem lesson-duration-label.ts), bài khác giữ ước lượng theo phút.
+      duration: lessonDurationLabel(
+        lesson.duration_minutes,
+        currentLessonType?.lessonId === lesson.id ? currentLessonType.actualSeconds : undefined
+      ),
       type: currentLessonType?.lessonId === lesson.id ? currentLessonType.type : "video",
       completed: lesson.progress?.status === "completed",
       locked: lesson.locked ?? false,
@@ -124,7 +127,7 @@ const LANGUAGE_LABELS_VI: Record<string, string> = {
 function mapApiCourseToPlayerCourse(
   course: ApiCourse,
   sections: Section[],
-  currentLessonType?: { lessonId: string; type: PlayerLesson["type"] }
+  currentLessonType?: { lessonId: string; type: PlayerLesson["type"]; actualSeconds?: number | null }
 ): PlayerCourse {
   return {
     id: course.id,
@@ -203,6 +206,7 @@ function VideoLessonContent({
   isLoading,
   subtitleUrl,
   durationSeconds,
+  onMediaDuration,
   studentCount,
   lessonQuizzes,
   onProgress,
@@ -220,6 +224,8 @@ function VideoLessonContent({
   isLoading?: boolean;
   /** Giây thật từ lesson content (Q3) — ưu tiên hơn ước lượng từ `duration_minutes`. */
   durationSeconds?: number;
+  /** Báo độ dài media thật khi video nạp metadata (QA-A-17 — mục lục hiện đúng thời lượng). */
+  onMediaDuration?: (seconds: number) => void;
   /** Contract §4 — nguồn authoritative là lesson content (quyết định Q1). */
   subtitleUrl?: string | null;
   /** Số học viên của KHOÁ (`course.total_students`), không phải của giảng viên (A8). */
@@ -300,6 +306,7 @@ function VideoLessonContent({
             controlRef={playerControl}
             onProgressChange={onProgress}
             onClockTick={setCurrentTime}
+            onDurationChange={onMediaDuration}
             onToggleShortcutsHelp={() => setShortcutsOpen(true)}
             onSourceExpired={onSourceExpired}
           />
@@ -502,6 +509,13 @@ export default function CourseLessonPage() {
     void refreshVideoSource().catch(() => {});
   }, [infoAuthFailed, refreshVideoSource]);
 
+  // QA-A-17: độ dài thật của video (đo khi trình phát nạp metadata), gắn với bài để đổi bài không dùng nhầm số cũ.
+  const [mediaDuration, setMediaDuration] = useState<{ lessonId: string; seconds: number } | null>(null);
+  const handleMediaDuration = useCallback(
+    (seconds: number) => setMediaDuration({ lessonId, seconds }),
+    [lessonId]
+  );
+
   const isLoading = courseLoading || sectionsLoading;
 
   if (isLoading) {
@@ -528,6 +542,9 @@ export default function CourseLessonPage() {
   const course = mapApiCourseToPlayerCourse(apiCourse, sections, {
     lessonId,
     type: toPlayerLessonType(lessonKind),
+    // Độ dài media đo được (đúng nhất) > `duration` của lesson content > ước lượng phút của curriculum.
+    actualSeconds:
+      (mediaDuration?.lessonId === lessonId ? mediaDuration.seconds : undefined) ?? lessonVideo?.duration,
   });
   const currentLesson = getLessonById(course, lessonId);
 
@@ -828,6 +845,7 @@ export default function CourseLessonPage() {
         onSourceExpired={refreshVideoSource}
         subtitleUrl={lessonVideo?.subtitle_url}
         durationSeconds={lessonVideo?.duration}
+        onMediaDuration={handleMediaDuration}
         studentCount={apiCourse.total_students ?? 0}
         lessonQuizzes={tabQuizzes}
         onProgress={handleLessonProgress}

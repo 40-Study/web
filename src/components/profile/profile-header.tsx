@@ -140,7 +140,8 @@ export function ProfileHeader({
             </div>
             <div className="text-center">
               <p className="text-3xl font-bold">{stats.coursesCompleted}</p>
-              <p className="text-sm opacity-80">Khoá học</p>
+              {/* QA-A-04: số này là khoá ĐÃ HOÀN THÀNH; nhãn "Khoá học" đọc thành "0 khoá" khi đang học 2 khoá. */}
+              <p className="text-sm opacity-80">Khoá hoàn thành</p>
             </div>
             <div className="text-center">
               <p className="text-3xl font-bold">{stats.achievements}</p>

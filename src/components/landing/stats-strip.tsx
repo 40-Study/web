@@ -1,12 +1,14 @@
 import { AnimatedCounterOnScroll } from "@/components/landing/animated-counter-on-scroll";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 
-// Số liệu marketing lấy nguyên từ nội dung landing cũ; chưa có API thống kê.
-// `target` là số đếm tới; "24/7" không phải số lượng nên giữ nguyên chữ.
+// QA-A-05: trước đây có "10.000+ học viên" và "98% đánh giá 5 sao" chép từ landing cũ, trong khi site chỉ có
+// vài khoá, mỗi khoá 0-2 học viên. Backend chưa có API thống kê công khai nên chỉ giữ những điều ĐÚNG về sản
+// phẩm (tính năng có thật: livestream, tra cứu chứng chỉ, web + di động), không có con số về người dùng.
+// `target` là số đếm tới; mục `text` không phải số lượng nên giữ nguyên chữ.
 const STATS: { label: string; target?: number; suffix?: string; text?: string }[] = [
-  { target: 10000, suffix: "+", label: "Học viên đang học" },
   { text: "24/7", label: "Học bất cứ lúc nào, trên mọi thiết bị" },
-  { target: 98, suffix: "%", label: "Đánh giá 5 sao" },
+  { text: "Trực tiếp", label: "Buổi học livestream cùng giảng viên" },
+  { text: "Chứng chỉ", label: "Tra cứu công khai bằng mã số" },
   { target: 2, label: "Nền tảng: web và di động" },
 ];
 

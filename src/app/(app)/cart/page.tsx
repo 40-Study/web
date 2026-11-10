@@ -17,6 +17,8 @@ import { sumCartItemPrices } from "@/lib/cart-pricing";
 import { CartItemPrice } from "@/components/cart/cart-item-price";
 import "@/components/commerce/commerce.css";
 import { CourseThumbnailPlaceholder } from "@/components/course/course-thumbnail-placeholder";
+import { useAuthStore } from "@/stores/auth.store";
+import { readCartVoucher, saveCartVoucher } from "@/lib/cart-voucher-storage";
 
 function formatPrice(price: number | string | null | undefined): string {
   // Phòng thủ: backend decimal có thể serialize thành number hoặc chuỗi tuỳ phiên bản.
@@ -29,6 +31,14 @@ function formatPrice(price: number | string | null | undefined): string {
 export default function CartPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [voucherResult, setVoucherResult] = useState<VoucherValidateResponse | null>(null);
+  const userId = useAuthStore((s) => s.user?.id);
+  // QA-A-10: mã đã áp trước khi tải lại trang. Chỉ đọc một lần lúc mount; VoucherInput tự tra lại mã.
+  const [restoredVoucherCode] = useState(() => readCartVoucher(userId));
+
+  const handleVoucherApplied = (result: VoucherValidateResponse | null) => {
+    setVoucherResult(result);
+    saveCartVoucher(userId, result?.voucher?.code ?? null);
+  };
 
   const { data: cartData, isLoading, isError, error, refetch } = useCart();
   const removeFromCart = useRemoveFromCart();
@@ -257,7 +267,8 @@ export default function CartPage() {
                   <VoucherInput
                     courseIds={selectedIds.length > 0 ? selectedIds : items.map((i) => i.course_id)}
                     subtotal={effectiveSubtotal}
-                    onApplied={setVoucherResult}
+                    onApplied={handleVoucherApplied}
+                    initialCode={restoredVoucherCode ?? undefined}
                   />
                 </div>
 

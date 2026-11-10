@@ -11,6 +11,8 @@ export const metadata: Metadata = buildPageMetadata({
   description:
     "Nhập mã chứng chỉ để kiểm tra tính hợp lệ và xem thông tin người được cấp trên ForteX.",
   path: "/certificates/verify",
+  // Trang kết quả `[number]` là route con: cần giữ template " | ForteX" (QA-A-08).
+  hasChildRoutes: true,
 });
 
 export default function CertificateVerifyLayout({ children }: { children: React.ReactNode }) {

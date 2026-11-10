@@ -171,9 +171,8 @@ export function EditProfileForm({ user, onSubmit, onCancel }: EditProfileFormPro
             className="pl-8"
           />
         </div>
-        <p className="text-xs text-muted-foreground">
-          40study.com/@{username || "username"}
-        </p>
+        {/* QA-A-13: từng ghi "40study.com/@username" — sai thương hiệu (ForteX) và không có trang hồ sơ theo @username. */}
+        <p className="text-xs text-muted-foreground">Hiển thị là @{username || "username"}</p>
       </div>
 
       {/* Bio */}
