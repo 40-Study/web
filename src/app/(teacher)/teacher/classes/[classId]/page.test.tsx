@@ -17,6 +17,13 @@ vi.mock("@/hooks/queries/use-class-manage", () => ({
 vi.mock("@/components/classes/class-manage-panel", () => ({
   ClassManagePanel: ({ initialTab }: { initialTab?: string }) => <div data-testid="panel" data-tab={initialTab} />,
 }));
+vi.mock("@/components/classes/class-assignments-list", () => ({
+  ClassAssignmentsList: ({ hrefFor, emptyTitle }: { hrefFor: (id: string) => string; emptyTitle?: string }) => (
+    <a data-testid="assignments" href={hrefFor("a-1")} data-empty={emptyTitle}>
+      bài tập
+    </a>
+  ),
+}));
 
 import TeacherClassManagePage from "./page";
 
@@ -45,6 +52,14 @@ describe("TeacherClassManagePage", () => {
     state.courseId = undefined;
     render(<TeacherClassManagePage />);
     expect(screen.getByRole("link", { name: /Lớp học của tôi/ }).getAttribute("href")).toBe("/teacher/classes");
+  });
+
+  // QA-B-08: trang lớp từng không có lối vào bài tập/bài nộp của lớp.
+  it("có danh sách bài tập của lớp, mỗi bài dẫn tới trang bài nộp", () => {
+    render(<TeacherClassManagePage />);
+    expect(screen.getByTestId("assignments").getAttribute("href")).toBe("/teacher/assignments/a-1/submissions");
+    // Câu báo rỗng viết cho giảng viên, không dùng câu mặc định của khu tổ chức.
+    expect(screen.getByTestId("assignments").getAttribute("data-empty")).toBe("Chưa có bài tập nào cho lớp này.");
   });
 
   it("?tab=schedule mở thẳng tab Lịch học", () => {

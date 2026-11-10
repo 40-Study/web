@@ -24,14 +24,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { formatCurrency } from "@/lib/utils";
+import { formatWithdrawalAmount } from "@/lib/withdrawal-format";
+import { formatVnDateThenTime } from "@/lib/vn-datetime";
 import { buildCsv, downloadCsv, type CsvCell } from "@/lib/csv-export";
 import { useTeacherWallet, useTeacherTransactions } from "@/hooks/queries/use-wallet";
 import { walletService, type TeacherTransaction } from "@/services/wallet.service";
 import { BankInfoDialog } from "./bank-info-dialog";
 import { WithdrawalSection } from "./withdrawal-section";
 
-// ─── Status display config ───────��───────────────────────────────────────────
+// ─── Status display config ──────────────────────────────────────────────────
 
 type BadgeVariant = "success" | "warning" | "secondary" | "destructive";
 
@@ -39,7 +40,7 @@ const STATUS_CONFIG: Record<string, { label: string; variant: BadgeVariant }> = 
   completed: { label: "Hoàn thành", variant: "success" },
   pending: { label: "Chờ xử lý", variant: "warning" },
   cancelled: { label: "Đã huỷ", variant: "secondary" },
-  failed: { label: "Thất b��i", variant: "destructive" },
+  failed: { label: "Thất bại", variant: "destructive" },
   refunded: { label: "Hoàn tiền", variant: "destructive" },
 };
 
@@ -50,9 +51,10 @@ function getStatusConfig(status: string): { label: string; variant: BadgeVariant
 /** Backend chấp nhận limit 1..100; ngoài khoảng đó nó âm thầm đổi về 20. */
 const EXPORT_PAGE_SIZE = 100;
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("vi-VN");
-}
+// QA-B-14: trang ví từng trộn "22/9/2026" (giao dịch) với "29/09/2026 23:23" (rút tiền) và "438.200 ₫" với
+// "250.000đ". Cả trang dùng chung một định dạng: ngày giờ VN "dd/MM/yyyy HH:mm", tiền "438.200đ" như khối rút tiền.
+const formatDate = formatVnDateThenTime;
+const formatMoney = formatWithdrawalAmount;
 
 export default function TeacherWalletPage() {
   const [activeTab, setActiveTab] = useState("all");
@@ -78,7 +80,7 @@ export default function TeacherWalletPage() {
   const totalPages = txResponse?.total_pages ?? 1;
 
   // Client-side search filter on top of server-side type filter
-  const filteredTransactions = searchQuery
+  const searchedTransactions = searchQuery
     ? transactions.filter(
         (tx) =>
           tx.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -86,6 +88,13 @@ export default function TeacherWalletPage() {
           tx.buyer_name?.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : transactions;
+  // QA-B-14: đơn đã huỷ không đem lại tiền nhưng chiếm chỗ trong bảng, làm giảng viên cộng bảng không ra tổng.
+  // Mặc định ẩn (trong trang đang xem, vì backend chưa lọc theo trạng thái) và nói rõ đã ẩn bao nhiêu.
+  const [showCancelled, setShowCancelled] = useState(false);
+  const hiddenCancelled = showCancelled ? 0 : searchedTransactions.filter((tx) => tx.status === "cancelled").length;
+  const filteredTransactions = showCancelled
+    ? searchedTransactions
+    : searchedTransactions.filter((tx) => tx.status !== "cancelled");
 
   // Bank info display
   const hasBankInfo = wallet?.bank_name && wallet?.bank_account_number;
@@ -174,14 +183,14 @@ export default function TeacherWalletPage() {
                   Number(wallet?.available_balance ?? 0) < 0 ? "text-red-600" : "text-green-600"
                 }`}
               >
-                {formatCurrency(wallet?.available_balance ?? 0)}
+                {formatMoney(wallet?.available_balance ?? 0)}
               </p>
               {/* Tổng thu nhập = Đã rút + Đang chờ rút + Khả dụng: thiếu dòng "Đang chờ rút" thì
                   3 con số không cộng lại được (review Phase 4, W-1). */}
               <p className="text-xs text-muted-foreground mb-4" data-testid="wallet-breakdown">
-                Tổng thu nhập: {formatCurrency(wallet?.total_earnings ?? 0)} · Đã rút:{" "}
-                {formatCurrency(wallet?.total_paid_out ?? 0)} · Đang chờ rút:{" "}
-                {formatCurrency(wallet?.pending_withdrawal ?? 0)}
+                Tổng thu nhập: {formatMoney(wallet?.total_earnings ?? 0)} · Đã rút:{" "}
+                {formatMoney(wallet?.total_paid_out ?? 0)} · Đang chờ rút:{" "}
+                {formatMoney(wallet?.pending_withdrawal ?? 0)}
               </p>
             </CardContent>
           </Card>
@@ -269,7 +278,7 @@ export default function TeacherWalletPage() {
         </CardHeader>
         <CardContent>
           {/* Search */}
-          <div className="flex gap-4 my-4">
+          <div className="flex flex-col gap-3 my-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -279,7 +288,22 @@ export default function TeacherWalletPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300"
+                checked={showCancelled}
+                onChange={(e) => setShowCancelled(e.target.checked)}
+              />
+              Hiện đơn đã huỷ
+            </label>
           </div>
+          {/* Số tiền trong bảng là giá bán của đơn; "Tổng thu nhập" ở trên là phần giảng viên nhận sau phí nền tảng.
+              Backend chưa trả số thực nhận từng đơn nên không tự tính ở đây (tránh đoán sai tỉ lệ phí). */}
+          <p className="mb-2 text-xs text-muted-foreground">
+            Cột &quot;Giá bán&quot; là số tiền học viên trả cho đơn. Tổng thu nhập ở trên đã trừ phí nền tảng.
+            {hiddenCancelled > 0 && ` Đã ẩn ${hiddenCancelled} đơn đã huỷ trong trang này.`}
+          </p>
 
           {/* Table */}
           {isTxLoading ? (
@@ -300,7 +324,7 @@ export default function TeacherWalletPage() {
                   <th className="p-3 text-xs font-medium text-muted-foreground">KHOÁ HỌC</th>
                   <th className="p-3 text-xs font-medium text-muted-foreground">NGƯỜI MUA</th>
                   <th className="p-3 text-xs font-medium text-muted-foreground text-right">
-                    SỐ TIỀN
+                    GIÁ BÁN
                   </th>
                   <th className="p-3 text-xs font-medium text-muted-foreground">TRẠNG THÁI</th>
                 </tr>
@@ -338,7 +362,7 @@ export default function TeacherWalletPage() {
                         <td className="p-3 text-sm text-muted-foreground">{tx.buyer_name}</td>
                         <td className={`p-3 text-sm text-right font-medium ${amountClassName}`}>
                           {amountSign}
-                          {formatCurrency(tx.amount)}
+                          {formatMoney(tx.amount)}
                         </td>
                         <td className="p-3">
                           <Badge variant={cfg.variant} className="whitespace-nowrap">

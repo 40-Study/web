@@ -33,6 +33,7 @@ import {
   conversationSubtitle,
 } from "@/lib/conversation-display";
 import { NewConversationDialog } from "./new-conversation-dialog";
+import { conversationPreviewText, conversationTimeLabel } from "./conversation-preview";
 
 /** Query `?conversation=<id>` — nút "Nhắn giảng viên" ở trang chi tiết con mở thẳng hội thoại vừa tạo. */
 const CONVERSATION_PARAM = "conversation";
@@ -53,6 +54,7 @@ function ConversationItem({
   );
   const displayName = conversationDisplayName(conversation, currentUserId);
   const isOnline = otherParticipant?.is_online ?? false;
+  const timeLabel = conversationTimeLabel(conversation.last_message_at);
 
   return (
     <button
@@ -74,19 +76,10 @@ function ConversationItem({
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
           <span className="font-medium text-sm truncate">{displayName}</span>
-          {conversation.last_message_at && (
-            <span className="text-xs text-muted-foreground shrink-0">
-              {new Date(conversation.last_message_at).toLocaleTimeString("vi-VN", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-          )}
+          {timeLabel && <span className="text-xs text-muted-foreground shrink-0">{timeLabel}</span>}
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground truncate">
-            {conversation.last_message?.content ?? "Chưa có tin nhắn"}
-          </p>
+          <p className="text-xs text-muted-foreground truncate">{conversationPreviewText(conversation)}</p>
           {conversation.unread_count > 0 && (
             <Badge className="ml-1 h-5 min-w-[20px] px-1.5 text-[10px] bg-primary text-primary-foreground">
               {conversation.unread_count}

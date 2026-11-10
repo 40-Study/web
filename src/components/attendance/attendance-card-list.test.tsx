@@ -38,6 +38,6 @@ describe("AttendanceCardList", () => {
     expect(screen.getAllByRole("button").every((b) => (b as HTMLButtonElement).disabled)).toBe(true);
 
     rerender(<AttendanceCardList rows={[]} onStatusChange={vi.fn()} onNoteChange={vi.fn()} />);
-    expect(screen.getByText("Lớp này chưa có học sinh nào.")).toBeTruthy();
+    expect(screen.getByText("Lớp này chưa có học viên nào.")).toBeTruthy();
   });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { differenceInMinutes, format } from "date-fns";
+import { format } from "date-fns";
 import { CalendarCheck, Clock, Plus } from "lucide-react";
 import { LiveSessionLaunch } from "@/components/teacher/live-session-launch";
 import { TeacherScheduleSourceFilter } from "@/components/teacher/teacher-schedule-source-filter";
@@ -28,6 +28,7 @@ import {
 } from "@/lib/teacher-schedule-events";
 import type { UpdateLiveSessionDTO } from "@/services/live-session.service";
 import type { TimetableSourceFilter } from "@/types/class-schedule";
+import { summarizeVisibleTeaching } from "./schedule-stats";
 
 /** Shared calendar: persisted class livestreams plus the current teaching timetable. */
 export default function TeacherSchedulePage() {
@@ -63,22 +64,8 @@ export default function TeacherSchedulePage() {
   );
   const events = useMemo(() => [...liveEvents, ...classEvents], [liveEvents, classEvents]);
 
-  // Số giờ dạy thật trong các buổi cụ thể đã lấy về (livestream + buổi lớp ngoài lịch) — lịch lặp tuần
-  // không cộng vì mỗi dòng đại diện cho nhiều tuần. Cộng trên MỌI buổi đã tải (không lọc theo tuần).
-  const concreteEvents = useMemo(
-    () => events.filter((e) => e.kind !== "class-schedule"),
-    [events]
-  );
-  const studyHours = useMemo(
-    () =>
-      Math.round(
-        concreteEvents.reduce(
-          (sum, e) => sum + differenceInMinutes(new Date(e.endTime), new Date(e.startTime)) / 60,
-          0
-        )
-      ),
-    [concreteEvents]
-  );
+  // QA-B-13: chỉ tính buổi nằm trong khoảng lịch đang xem, nhãn nói rõ phạm vi.
+  const visibleSummary = useMemo(() => summarizeVisibleTeaching(events, range), [events, range]);
 
   // QA vòng 2 (D8): lịch giảng dạy từng hiện nhãn góc học sinh ("THỜI GIAN HỌC", "NHIỆM VỤ HOÀN
   // THÀNH", "HIỆU SUẤT TẬP TRUNG") với 2 số luôn bằng 0. Chỉ giữ số liệu có nguồn thật.
@@ -86,18 +73,18 @@ export default function TeacherSchedulePage() {
     () => [
       {
         key: "teaching-hours",
-        label: "TỔNG GIỜ DẠY ĐÃ LÊN LỊCH",
-        value: `${studyHours} giờ`,
+        label: "GIỜ DẠY TRONG KHOẢNG ĐANG XEM",
+        value: `${visibleSummary.hours.toLocaleString("vi-VN")} giờ`,
         icon: <Clock className="h-5 w-5 text-primary-500" />,
       },
       {
         key: "sessions",
-        label: "SỐ BUỔI HỌC",
-        value: `${concreteEvents.length} buổi`,
+        label: "SỐ BUỔI TRONG KHOẢNG ĐANG XEM",
+        value: `${visibleSummary.sessions} buổi`,
         icon: <CalendarCheck className="h-5 w-5 text-green-500" />,
       },
     ],
-    [studyHours, concreteEvents.length]
+    [visibleSummary]
   );
 
   const handleRangeChange = useCallback((start: Date, end: Date) => {

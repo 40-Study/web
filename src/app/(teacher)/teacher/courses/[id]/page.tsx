@@ -110,6 +110,7 @@ import {
   type ExerciseSettingsEditState,
 } from "@/components/teacher/exercise-settings-editor";
 import { applyExerciseEditPlan } from "@/components/teacher/exercise-edit-plan";
+import { DeleteDraftCourseButton } from "../_components/delete-draft-course-button";
 
 // ─── Content type config ────────────────────────────────────────────────────
 
@@ -1165,6 +1166,7 @@ export default function CourseDetailPage() {
         <Button variant="outline" size="sm" onClick={() => router.push(`/teacher/courses/${courseId}/members`)}>
           <Eye className="w-4 h-4 mr-1" /> Thành viên
         </Button>
+        <DeleteDraftCourseButton courseId={courseId} title={course.title} status={course.status} />
       </div>
 
       {/* Sections & Lessons */}

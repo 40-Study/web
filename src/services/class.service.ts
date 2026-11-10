@@ -18,6 +18,11 @@ export interface Class {
   start_date?: string;
   end_date?: string;
   status?: string;
+  /**
+   * Lớp đã qua `end_date` (backend tính, QA-B-12). Tuỳ chọn: backend cũ chưa trả trường này thì coi như chưa biết,
+   * KHÔNG tự suy ra từ `end_date` ở web.
+   */
+  is_ended?: boolean;
   student_count?: number;
   teacher_count?: number;
   /**

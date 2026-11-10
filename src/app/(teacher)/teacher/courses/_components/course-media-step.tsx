@@ -25,15 +25,28 @@ export function CourseMediaStep({
   formData,
   update,
   courseId,
+  onThumbnailUploadingChange,
 }: {
   formData: CourseFormData;
   update: UpdateCourseFormField;
   /** Id khoá học đã tạo. Chưa có (trang tạo) thì chưa thể tải video lên: backend cần UUID của khoá làm resource_id. */
   courseId?: string;
+  /**
+   * QA-B-04: báo trạng thái đang tải ảnh bìa lên cho trang cha. Bước này bị unmount khi chuyển bước, nên trang
+   * cha phải tự giữ cờ để khoá nút "Tạo khoá"/"Lưu" (trước đây bấm tạo lúc đang tải thì gửi thumbnail_url null).
+   */
+  onThumbnailUploadingChange?: (uploading: boolean) => void;
 }) {
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
-  const [thumbnailUploading, setThumbnailUploading] = useState(false);
+  const [thumbnailUploading, setThumbnailUploadingLocal] = useState(false);
+  const setThumbnailUploading = useCallback(
+    (uploading: boolean) => {
+      setThumbnailUploadingLocal(uploading);
+      onThumbnailUploadingChange?.(uploading);
+    },
+    [onThumbnailUploadingChange],
+  );
   const [isDragging, setIsDragging] = useState(false);
   const videoUpload = useVideoUpload();
 
@@ -67,7 +80,7 @@ export function CourseMediaStep({
     } finally {
       setThumbnailUploading(false);
     }
-  }, [update]);
+  }, [update, setThumbnailUploading]);
 
   const handleThumbnailSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -263,13 +276,14 @@ export function CourseMediaStep({
             </div>
           </div>
         ) : (
-          // D7 (QA vòng 2): xếp dọc trên mobile — hàng ngang 3 khối tràn màn 390px.
-          <div className="flex flex-col gap-3 max-w-md sm:flex-row">
+          // D7 (QA vòng 2): xếp dọc trên mobile. QA-B-22: ô URL từng đặt cạnh nút tải lên, cao như nút nên
+          // dễ tưởng là nút; nay là một ô nhập có nhãn riêng nằm dưới, rộng hết khối.
+          <div className="space-y-3 max-w-md">
             <button
               type="button"
               disabled={!courseId}
               onClick={() => videoInputRef.current?.click()}
-              className="flex-1 border-2 border-dashed rounded-xl p-4 flex flex-col items-center gap-2 hover:border-primary-400 hover:bg-primary-50/50 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border disabled:hover:bg-transparent"
+              className="w-full border-2 border-dashed rounded-xl p-4 flex flex-col items-center gap-2 hover:border-primary-400 hover:bg-primary-50/50 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border disabled:hover:bg-transparent"
             >
               <Upload className="w-6 h-6 text-muted-foreground" />
               <p className="text-sm font-medium">Tải video lên</p>
@@ -277,15 +291,18 @@ export function CourseMediaStep({
                 {courseId ? "MP4, WebM. Tối đa 500MB" : PREVIEW_VIDEO_NEEDS_COURSE_NOTE}
               </p>
             </button>
-            <div className="flex items-center justify-center text-xs text-muted-foreground">hoặc</div>
-            <div className="flex-1 space-y-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="preview-video-url" className="text-xs font-normal text-muted-foreground">
+                Hoặc dán đường dẫn video YouTube, Vimeo
+              </Label>
               <Input
-                placeholder="Dán URL video YouTube..."
+                id="preview-video-url"
+                type="url"
+                inputMode="url"
+                placeholder="https://www.youtube.com/watch?v=..."
                 value={formData.preview_video_url}
                 onChange={(e) => update("preview_video_url", e.target.value)}
-                className="h-11"
               />
-              <p className="text-xs text-muted-foreground">YouTube, Vimeo</p>
             </div>
           </div>
         )}

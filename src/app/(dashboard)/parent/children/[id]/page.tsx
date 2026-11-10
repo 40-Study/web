@@ -32,6 +32,8 @@ import {
 import type { TimetableEntry } from "@/services/parent-dashboard.service";
 import { ChildCoursesTab } from "@/components/parent/child-courses-tab";
 import { ChildOverviewTab } from "@/components/parent/child-overview-tab";
+import { ChildAssignmentsTab } from "@/components/parent/child-assignments-tab";
+import { ChildAttendanceStatus } from "@/components/parent/child-attendance-status";
 import { assignmentTypeLabel, difficultyLabel, gradeTypeLabel, roomLabel } from "@/lib/display-labels";
 import { formatStudyMinutes } from "@/lib/format-study-time";
 
@@ -45,6 +47,17 @@ const TABS: { id: TabType; label: string; icon: React.ElementType }[] = [
   { id: "attendance", label: "Điểm danh", icon: CheckCircle },
   { id: "assignments", label: "Bài tập", icon: Trophy },
 ];
+
+/** QA-B-26: "90.0%" thừa ".0", và dùng dấu phẩy thập phân kiểu Việt ("87,5%"). */
+function formatPercent(value: number): string {
+  return `${value.toLocaleString("vi-VN", { maximumFractionDigits: 1 })}%`;
+}
+
+function formatGradedAt(value: string | undefined): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("vi-VN");
+}
 
 function ScheduleGrid({ entries }: { entries: TimetableEntry[] }) {
   const [detail, setDetail] = useState<ScheduleEvent | null>(null);
@@ -60,9 +73,19 @@ export default function ChildDetailPage() {
   const router = useRouter();
   const childId = params.id as string;
   const [activeTab, setActiveTab] = useState<TabType>("overview");
+  // QA-B-24: trước đây chỉ `?tab=schedule` được đọc, tải lại trang ở tab khác là về Tổng quan. Mọi tab đều
+  // đọc/ghi `?tab=`; ghi bằng history.replaceState để không thêm một mục lịch sử cho mỗi lần đổi tab.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("tab") === "schedule") setActiveTab("schedule");
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    if (TABS.some((t) => t.id === tab)) setActiveTab(tab as TabType);
   }, []);
+  const selectTab = (tab: TabType) => {
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    if (tab === "overview") url.searchParams.delete("tab");
+    else url.searchParams.set("tab", tab);
+    window.history.replaceState(window.history.state, "", url.toString());
+  };
 
   const { data: overview, isLoading: loadingOverview } = useChildOverview(childId);
   // PG-L2: chỉ chạy các query còn lại SAU khi overview xác nhận đây là con của phụ huynh. Id lạ thì overview
@@ -149,7 +172,8 @@ export default function ChildDetailPage() {
             <Trophy className="w-5 h-5" />
             <span className="text-sm font-medium">Tổng XP</span>
           </div>
-          <p className="text-2xl font-bold">{overview.total_xp.toLocaleString()}</p>
+          {/* QA-B-26: toLocaleString() không truyền locale ra "1,850" trên máy tiếng Anh; app dùng dấu chấm. */}
+          <p className="text-2xl font-bold">{overview.total_xp.toLocaleString("vi-VN")}</p>
         </div>
         <div className="bg-white rounded-xl p-4 shadow-sm border">
           <div className="flex items-center gap-2 text-blue-500 mb-2">
@@ -180,7 +204,7 @@ export default function ChildDetailPage() {
               key={tab.id}
               role="tab"
               aria-selected={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => selectTab(tab.id)}
               className={cn(
                 "flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors",
                 activeTab === tab.id
@@ -247,11 +271,13 @@ export default function ChildDetailPage() {
                                     : "text-red-600"
                               )}
                             >
-                              {grade.percentage.toFixed(1)}%
+                              {formatPercent(grade.percentage)}
                             </p>
                           </div>
                         </div>
-                        <p className="mt-1 text-xs text-gray-500">Chấm bởi: {grade.graded_by_name || "—"}</p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Chấm bởi: {grade.graded_by_name || "—"} · Ngày chấm {formatGradedAt(grade.graded_at)}
+                        </p>
                       </li>
                     ))}
                   </ul>
@@ -265,6 +291,7 @@ export default function ChildDetailPage() {
                           <th className="px-4 py-2 text-right font-medium text-gray-600">Điểm</th>
                           <th className="px-4 py-2 text-right font-medium text-gray-600">%</th>
                           <th className="px-4 py-2 text-left font-medium text-gray-600">Chấm bởi</th>
+                          <th className="px-4 py-2 text-left font-medium text-gray-600">Ngày chấm</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y">
@@ -286,10 +313,11 @@ export default function ChildDetailPage() {
                                       : "text-red-600"
                                 )}
                               >
-                                {grade.percentage.toFixed(1)}%
+                                {formatPercent(grade.percentage)}
                               </span>
                             </td>
                             <td className="px-4 py-2 text-gray-600">{grade.graded_by_name || "—"}</td>
+                            <td className="px-4 py-2 text-gray-600">{formatGradedAt(grade.graded_at)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -381,26 +409,12 @@ export default function ChildDetailPage() {
                               {new Date(record.date).toLocaleDateString("vi-VN")}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {record.status === "present" && (
-                              <span className="flex items-center gap-1 text-green-600 text-sm">
-                                <CheckCircle className="w-4 h-4" /> Có mặt
-                              </span>
-                            )}
-                            {record.status === "late" && (
-                              <span className="flex items-center gap-1 text-yellow-600 text-sm">
-                                <Clock className="w-4 h-4" /> Trễ {record.late_minutes}p
-                              </span>
-                            )}
-                            {record.status === "absent" && (
-                              <span className="flex items-center gap-1 text-red-600 text-sm">
-                                <XCircle className="w-4 h-4" /> Vắng
-                              </span>
-                            )}
-                            {record.status === "excused" && (
-                              <span className="text-gray-600 text-sm">Có phép</span>
-                            )}
-                          </div>
+                          <ChildAttendanceStatus
+                            status={record.status}
+                            lateMinutes={record.late_minutes}
+                            withIcon
+                            className="text-sm"
+                          />
                         </div>
                       ))}
                     </div>
@@ -412,81 +426,7 @@ export default function ChildDetailPage() {
 
           {/* Assignments Tab */}
           {activeTab === "assignments" && (
-            <div>
-              {loadingAssignments ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                </div>
-              ) : (
-                <>
-                  {/* Stats */}
-                  {assignmentsData?.stats && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                      <div className="text-center p-3 rounded-lg bg-gray-50">
-                        <p className="text-2xl font-bold">
-                          {assignmentsData.stats.total_assignments}
-                        </p>
-                        <p className="text-xs text-gray-500">Tổng bài</p>
-                      </div>
-                      <div className="text-center p-3 rounded-lg bg-green-50">
-                        <p className="text-2xl font-bold text-green-600">
-                          {assignmentsData.stats.completed}
-                        </p>
-                        <p className="text-xs text-gray-500">Hoàn thành</p>
-                      </div>
-                      <div className="text-center p-3 rounded-lg bg-yellow-50">
-                        <p className="text-2xl font-bold text-yellow-600">
-                          {assignmentsData.stats.in_progress}
-                        </p>
-                        <p className="text-xs text-gray-500">Đang làm</p>
-                      </div>
-                      <div className="text-center p-3 rounded-lg bg-red-50">
-                        <p className="text-2xl font-bold text-red-600">
-                          {assignmentsData.stats.overdue}
-                        </p>
-                        <p className="text-xs text-gray-500">Quá hạn</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Assignments List */}
-                  {assignmentsData?.assignments.length === 0 ? (
-                    <p className="text-center text-gray-500 py-4">Chưa có bài tập nào</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {assignmentsData?.assignments.map((assignment) => (
-                        <div key={assignment.id} className="p-3 rounded-lg border">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">{assignment.title}</p>
-                              <p className="text-sm text-gray-500">
-                                {/* /parent/children/:id/assignments không trả class_name — chỉ hiện khi có */}
-                                {assignment.class_name && <>{assignment.class_name} | </>}
-                                {[assignmentTypeLabel(assignment.type), difficultyLabel(assignment.difficulty)]
-                                  .filter(Boolean)
-                                  .join(" | ")}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              {assignment.status === "completed" ? (
-                                <span className="text-green-600 text-sm font-medium">
-                                  {assignment.test_cases_passed}/{assignment.total_test_cases} TC
-                                </span>
-                              ) : (
-                                <span className="text-yellow-600 text-sm">Đang làm</span>
-                              )}
-                              <p className="text-xs text-gray-400">
-                                {assignment.submission_count} lần nộp
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+            <ChildAssignmentsTab data={assignmentsData} isLoading={loadingAssignments} />
           )}
         </div>
       </div>

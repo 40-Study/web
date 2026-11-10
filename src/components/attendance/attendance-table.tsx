@@ -31,7 +31,7 @@ export function AttendanceTable({
   if (rows.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
-        Lớp này chưa có học sinh nào.
+        Lớp này chưa có học viên nào.
       </div>
     );
   }
@@ -41,7 +41,7 @@ export function AttendanceTable({
       <table className="w-full min-w-[720px] text-sm">
         <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
           <tr>
-            <th className="px-4 py-3 font-medium">Học sinh</th>
+            <th className="px-4 py-3 font-medium">Học viên</th>
             <th className="px-4 py-3 font-medium">Trạng thái</th>
             <th className="px-4 py-3 font-medium">Check-in</th>
             <th className="px-4 py-3 font-medium">Ghi chú</th>

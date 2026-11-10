@@ -25,14 +25,16 @@ export interface TeacherMenuItem {
  * "Tin nhắn" trỏ route `(app)/messages`: giảng viên trả lời học viên ở đó, trước đây chỉ vào được bằng gõ URL.
  */
 export const TEACHER_MENU_ITEMS: TeacherMenuItem[] = [
-  { label: "AI Studio", href: "/teacher/ai", icon: Sparkles },
   { label: "Lịch giảng dạy", href: "/teacher/schedule", icon: Calendar },
   { label: "Quản lý khoá học", href: "/teacher/courses", icon: BookOpen },
   { label: "Lớp học", href: "/teacher/classes", icon: GraduationCap },
-  { label: "Quản lý học sinh", href: "/teacher/students", icon: Users },
+  // QA-B-16: menu ghi "học sinh" trong khi tiêu đề trang và các nơi khác ghi "học viên".
+  { label: "Quản lý học viên", href: "/teacher/students", icon: Users },
   { label: "Quản lý bài tập", href: "/teacher/assignments", icon: ClipboardList },
   { label: "Cuộc thi", href: "/teacher/contests", icon: Trophy },
   { label: "Tin nhắn", href: "/messages", icon: MessageSquare },
   { label: "Thống kê", href: "/teacher/analytics", icon: BarChart3 },
   { label: "Ví", href: "/teacher/wallet", icon: Wallet },
+  // QA-B-06: AI Studio chưa dùng được khi backend chưa bật AI (trang tự nói "sắp có"), nên không đứng đầu menu.
+  { label: "AI Studio", href: "/teacher/ai", icon: Sparkles },
 ];

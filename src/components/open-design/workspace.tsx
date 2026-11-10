@@ -544,7 +544,7 @@ export function OpenDesignWorkspace() {
         </button>
         <button className="od-side-link" disabled={locked} onClick={() => setSkillsOpen(true)}>
           <Sparkles className="h-4 w-4" />
-          Skills
+          Mẫu nội dung
         </button>
         <div className="od-recents">
           <p className="od-recents-label">Hội thoại gần đây</p>
@@ -614,7 +614,7 @@ export function OpenDesignWorkspace() {
             disabled={locked}
             onClick={() => setSkillsOpen(true)}
           >
-            <Sparkles className="h-3.5 w-3.5" /> Skills
+            <Sparkles className="h-3.5 w-3.5" /> Mẫu nội dung
           </button>
           <span className="od-status">
             <span
@@ -623,7 +623,7 @@ export function OpenDesignWorkspace() {
                 status.data?.configured ? "bg-green-500" : "bg-amber-500"
               )}
             />
-            {status.data?.configured ? "Viettel AI" : "Chưa cấu hình AI"}
+            {status.data?.configured ? "Viettel AI" : "Sắp có"}
           </span>
           {hasChat && (
             <div className="od-mobile-tabs">
@@ -666,16 +666,20 @@ export function OpenDesignWorkspace() {
                 Đưa tài liệu vào, nói điều bạn cần. Cùng AI tạo slide và bài kiểm tra cho lớp học.
               </p>
               {composer}
+              {/* QA-B-06: trước đây hiện hướng dẫn cho dev ("cấu hình ... trong env backend"), giảng viên không
+                  làm gì được. Chưa bật thì nói thật là "sắp có" và chỉ lối soạn bài hiện có. */}
               {!status.data?.configured && (
-                <p className="od-config-warning">
+                <p className="od-config-warning" role="status">
                   {status.isPending
-                    ? "Đang kiểm tra kết nối…"
+                    ? "Đang kiểm tra AI Studio…"
                     : status.isError
-                      ? "Chưa kết nối được máy chủ AI."
-                      : "Cấu hình API key, base URL và model Viettel AI trong env backend để bắt đầu."}
-                  <button disabled={status.isFetching} onClick={() => void status.refetch()}>
-                    Kiểm tra lại
-                  </button>
+                      ? "Không kết nối được AI Studio lúc này. Vui lòng thử lại sau."
+                      : "AI Studio sắp có, hiện chưa mở cho giảng viên. Bạn vẫn soạn bài giảng và bài kiểm tra trong Quản lý khoá học."}
+                  {status.isError && (
+                    <button disabled={status.isFetching} onClick={() => void status.refetch()}>
+                      Thử lại
+                    </button>
+                  )}
                 </p>
               )}
               <div className="od-output-pills">
@@ -696,7 +700,7 @@ export function OpenDesignWorkspace() {
                 ))}
                 <button disabled={locked} onClick={() => setSkillsOpen(true)}>
                   <Sparkles className="h-4 w-4" />
-                  Skills
+                  Mẫu nội dung
                 </button>
               </div>
               <div className="od-starter-grid">
@@ -771,7 +775,7 @@ export function OpenDesignWorkspace() {
                     <span className="od-demo-skill">
                       <Sparkles className="h-6 w-6" />
                       <b>Phong cách của bạn.</b>
-                      <small>SKILL.md</small>
+                      <small>Mẫu riêng</small>
                       <i />
                       <i />
                     </span>

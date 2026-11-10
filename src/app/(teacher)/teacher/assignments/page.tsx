@@ -34,6 +34,8 @@ import {
   useDeleteAssignment,
 } from "@/hooks/queries/use-assignments";
 import { AssignmentListItem } from "./assignment-list-item";
+import { orderAssignmentCourses } from "./assignment-course-order";
+import { COURSE_STATUS_LABEL, isCourseStatus } from "@/types/approval";
 import type { ApiCourse } from "@/services/course.service";
 import type { AssignmentResponseDTO, AssignmentType, DifficultyLevel } from "@/services/assignment.service";
 
@@ -67,17 +69,12 @@ export default function TeacherAssignmentsPage() {
 
   const { data: apiCourses = [], isLoading: coursesLoading } = useMyCourses();
 
-  const courses = useMemo(
-    () =>
-      apiCourses.map((c: ApiCourse) => ({
-        id: c.id,
-        title: c.title,
-        status: (c.status === "published" ? "published" : "draft") as "published" | "draft",
-      })),
-    [apiCourses]
-  );
+  const ordered = useMemo(() => orderAssignmentCourses(apiCourses as ApiCourse[]), [apiCourses]);
+  const courses = useMemo(() => [...ordered.published, ...ordered.others], [ordered]);
 
   const [courseSearch, setCourseSearch] = useState("");
+  // Khoá chưa xuất bản gom xuống cuối và thu gọn mặc định (QA-B-08).
+  const [showUnpublished, setShowUnpublished] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [selectedSessionId, setSelectedSessionId] = useState<string>("");
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>("");
@@ -94,14 +91,37 @@ export default function TeacherAssignmentsPage() {
     if (courses.length === 0) return;
     const requestedCourseId = searchParams.get("courseId");
     const validCourse = requestedCourseId && courses.some((c) => c.id === requestedCourseId);
-    setSelectedCourseId(validCourse ? requestedCourseId! : courses[0]?.id ?? "");
-  }, [courses, searchParams]);
+    setSelectedCourseId(validCourse ? requestedCourseId! : ordered.defaultId);
+    if (validCourse && ordered.others.some((c) => c.id === requestedCourseId)) setShowUnpublished(true);
+  }, [courses, ordered, searchParams]);
 
   const filteredCourses = useMemo(() => {
     const query = courseSearch.trim().toLowerCase();
-    if (!query) return courses;
-    return courses.filter((c) => c.title.toLowerCase().includes(query));
-  }, [courseSearch, courses]);
+    const match = (c: { title: string }) => !query || c.title.toLowerCase().includes(query);
+    return { published: ordered.published.filter(match), others: ordered.others.filter(match) };
+  }, [courseSearch, ordered]);
+  // Đang tìm kiếm thì không giấu kết quả trong nhóm thu gọn.
+  const othersVisible = showUnpublished || courseSearch.trim() !== "";
+
+  const renderCourseButton = (course: (typeof courses)[number]) => (
+    <button
+      key={course.id}
+      type="button"
+      onClick={() => {
+        setSelectedCourseId(course.id);
+        setSelectedSessionId("");
+        setSelectedAssignmentId("");
+      }}
+      className={`w-full rounded-lg border p-3 text-left transition-colors ${
+        selectedCourseId === course.id ? "border-primary-500 bg-primary-50" : "hover:bg-gray-50"
+      }`}
+    >
+      <p className="text-sm font-medium">{course.title}</p>
+      <Badge variant="outline" className={course.isPublished ? "mt-2 border-green-200 text-green-700" : "mt-2"}>
+        {isCourseStatus(course.status) ? COURSE_STATUS_LABEL[course.status] : "Chưa xuất bản"}
+      </Badge>
+    </button>
+  );
 
   const selectedCourse = useMemo(() => courses.find((c) => c.id === selectedCourseId), [courses, selectedCourseId]);
 
@@ -209,31 +229,28 @@ export default function TeacherAssignmentsPage() {
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
-            ) : filteredCourses.length === 0 ? (
+            ) : filteredCourses.published.length + filteredCourses.others.length === 0 ? (
               <p className="text-sm text-muted-foreground">Không có khoá học phù hợp.</p>
             ) : (
-              filteredCourses.map((course) => (
-                <button
-                  key={course.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedCourseId(course.id);
-                    setSelectedSessionId("");
-                    setSelectedAssignmentId("");
-                  }}
-                  className={`w-full rounded-lg border p-3 text-left transition-colors ${
-                    selectedCourseId === course.id ? "border-primary-500 bg-primary-50" : "hover:bg-gray-50"
-                  }`}
-                >
-                  <p className="text-sm font-medium">{course.title}</p>
-                  <Badge
-                    variant="outline"
-                    className={course.status === "published" ? "mt-2 border-green-200 text-green-700" : "mt-2"}
-                  >
-                    {course.status === "published" ? "Đã xuất bản" : "Chưa xuất bản"}
-                  </Badge>
-                </button>
-              ))
+              <>
+                {filteredCourses.published.map(renderCourseButton)}
+                {filteredCourses.published.length === 0 && !othersVisible && (
+                  <p className="text-sm text-muted-foreground">Chưa có khoá học nào đã xuất bản.</p>
+                )}
+                {filteredCourses.others.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      aria-expanded={othersVisible}
+                      onClick={() => setShowUnpublished((v) => !v)}
+                      className="w-full pt-2 text-left text-xs font-medium text-muted-foreground hover:text-gray-900"
+                    >
+                      {othersVisible ? "Ẩn" : "Hiện"} khoá chưa xuất bản ({filteredCourses.others.length})
+                    </button>
+                    {othersVisible && filteredCourses.others.map(renderCourseButton)}
+                  </>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -255,7 +272,7 @@ export default function TeacherAssignmentsPage() {
               </div>
             ) : sessions.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Khoá học này chưa có buổi học trực tiếp nào do bạn host.
+                Khoá học này chưa có buổi học trực tiếp nào do bạn phụ trách.
               </p>
             ) : (
               sessions.map((session) => (

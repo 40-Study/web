@@ -2,6 +2,7 @@
 
 import { BookOpen, CalendarCheck, ClipboardList } from "lucide-react";
 import { splitAssignmentsByDeadline } from "./child-assignments";
+import { ChildAttendanceStatus } from "./child-attendance-status";
 import type {
   ChildAssignment,
   ChildAttendance,
@@ -63,7 +64,7 @@ export function ChildOverviewTab({
             <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
               <span className="truncate text-gray-700">{a.title}</span>
               <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-red-600">
-                Quá hạn {new Date(a.due_date!).toLocaleDateString("vi-VN")}
+                Chưa nộp, hạn {new Date(a.due_date!).toLocaleDateString("vi-VN")}
               </span>
             </li>
           ))}
@@ -74,20 +75,13 @@ export function ChildOverviewTab({
         {recentAttendance.map((r) => (
           <li key={r.id} className="flex items-center justify-between gap-3 text-sm">
             <span className="truncate text-gray-700">{r.class_name} — buổi {r.session_number}</span>
-            <span className="shrink-0 text-gray-500">{ATTENDANCE_LABEL[r.status] ?? r.status}</span>
+            <ChildAttendanceStatus status={r.status} className="shrink-0" />
           </li>
         ))}
       </Section>
     </div>
   );
 }
-
-const ATTENDANCE_LABEL: Record<string, string> = {
-  present: "Có mặt",
-  late: "Trễ",
-  absent: "Vắng",
-  excused: "Có phép",
-};
 
 function Notice({ children }: { children: React.ReactNode }) {
   return <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">{children}</div>;

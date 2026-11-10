@@ -230,7 +230,7 @@ export function StudioComposer({
       </div>
       {!configured && (
         <p role="status" className="border-t px-4 py-2 text-xs text-muted-foreground">
-          Chưa kết nối Viettel AI. Cần hoàn tất cấu hình để tạo nội dung.
+          AI Studio sắp có, hiện chưa tạo được nội dung.
         </p>
       )}
       {error && (

@@ -129,6 +129,13 @@ describe("Header — vai phụ huynh", () => {
     expect(document.querySelector('a[href="/coins"]')).toBeNull();
   });
 
+  // QA-B-20: giảng viên từng thấy chip xu "0" của học viên trên mọi trang.
+  it("giảng viên không hiện số dư xu", () => {
+    authState.activeRole = "TEACHER";
+    render(<Header />);
+    expect(document.querySelector('a[href="/coins"]')).toBeNull();
+  });
+
   it("học viên vẫn thấy xu và 'Khoá học của tôi'", () => {
     authState.activeRole = "STUDENT";
     render(<Header />);
