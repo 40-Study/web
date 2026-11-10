@@ -43,7 +43,7 @@ beforeEach(() => {
   AUDIT_PAGE = { items: [], total: 0, page: 1, page_size: 5 };
   resetMockApi();
   mockApi.get.mockImplementation(async (url: string) => {
-    if (url === "/organizations") return envelope({ organizations: [{ id: "org-1", name: "ForteX", code: "FX" }] });
+    if (url === "/organizations") return envelope({ organizations: [{ id: "org-1", name: "ForteX", code: "FX" }], total: 1 });
     if (url === "/system-roles") return envelope({ roles: ROLES });
     if (url === "/permissions") return envelope({ permissions: [{ id: "p1", name: "PERM_1", category: "X" }], total: 1 });
     const usersMatch = url.match(/^\/system-roles\/([^/]+)\/users$/);
@@ -67,7 +67,7 @@ describe("/admin dashboard — A-P2-2", () => {
   it("Top vai trò sắp xếp GIẢM DẦN theo số user — TEACHER (7) đứng trước STUDENT (2)", async () => {
     renderWithProviders(<AdminIndexPage />);
 
-    const heading = await screen.findByText("Top vai trò theo số lượng user");
+    const heading = await screen.findByText("Vai trò có nhiều người dùng nhất");
     const panel = heading.closest("div");
     if (!panel) throw new Error("Không tìm thấy panel Top vai trò");
 
@@ -84,7 +84,7 @@ describe("/admin dashboard — A-P2-2", () => {
   it("Top vai trò hiển thị nhãn tiếng Việt, không hiện mã enum thô (ADM-L4)", async () => {
     renderWithProviders(<AdminIndexPage />);
 
-    const heading = await screen.findByText("Top vai trò theo số lượng user");
+    const heading = await screen.findByText("Vai trò có nhiều người dùng nhất");
     const panel = heading.closest("div");
     if (!panel) throw new Error("Không tìm thấy panel Top vai trò");
 
@@ -123,7 +123,7 @@ describe("/admin dashboard — A-P2-2", () => {
 
     await screen.findByText("9");
     expect(await screen.findByText(/Bạn không có quyền xem nhật ký hoạt động\./)).toBeTruthy();
-    expect(screen.getByText("Tổng lượt gán role")).toBeTruthy();
+    expect(screen.getByText("Tổng lượt gán vai trò")).toBeTruthy();
   });
   // L6 (QA 261009): API nhật ký cần SYSTEM_SETTINGS_MANAGE — admin kém quyền không được thấy thẻ báo lỗi, và không bắn request 403.
   it("L6: admin KHÔNG có SYSTEM_SETTINGS_MANAGE -> ẩn cả khối Hoạt động gần đây và không gọi /admin/audit-logs", async () => {
@@ -135,6 +135,6 @@ describe("/admin dashboard — A-P2-2", () => {
     expect(screen.queryByRole("link", { name: "Xem tất cả" })).toBeNull();
     expect(mockApi.get.mock.calls.some((c) => c[0] === "/admin/audit-logs")).toBe(false);
     // Các số liệu khác của dashboard vẫn hiện.
-    expect(screen.getByText("Top vai trò theo số lượng user")).toBeTruthy();
+    expect(screen.getByText("Vai trò có nhiều người dùng nhất")).toBeTruthy();
   });
 });

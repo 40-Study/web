@@ -22,6 +22,8 @@ import type { SystemRole, UserSystemRoleItem } from "@/services/role.service";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { formatVnDateTime } from "../_lib/format-vn-datetime";
+import { ORG_SCOPED_ROLE_HINT, isOrgScopedSystemRole, roleUserCountLabel } from "../_lib/org-scoped-role";
+import Link from "next/link";
 
 // A1: vai trò hệ thống dựng sẵn (seed từ data/roles.json) không xoá được — backend trả 409
 // SYSTEM_ROLE_PROTECTED. Danh sách lấy từ SYSTEM_ROLES (SSOT dùng chung) thay vì hardcode.
@@ -175,7 +177,7 @@ export default function RolesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý vai trò &amp; user</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Quản lý vai trò &amp; người dùng</h1>
         <p className="mt-1 text-sm text-gray-500">
           Xem danh sách vai trò, số người dùng theo vai trò, và gán hoặc gỡ vai trò khỏi người dùng.
         </p>
@@ -202,18 +204,25 @@ export default function RolesPage() {
                         className={`shrink-0 rounded-full px-2 py-1 text-xs ${
                           role.userCountError ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"
                         }`}
-                        title={role.userCountError ? "Không tải được số user (thiếu quyền hoặc lỗi API)" : undefined}
+                        title={
+                          isOrgScopedSystemRole(role.name)
+                            ? ORG_SCOPED_ROLE_HINT
+                            : role.userCountError
+                              ? "Không tải được số người dùng (thiếu quyền hoặc lỗi API)"
+                              : undefined
+                        }
                       >
-                        {role.userCountError ? "lỗi" : role.userCount === null ? "…" : `${role.userCount} user`}
+                        {roleUserCountLabel(role)}
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-gray-500">{role.description || "Không có mô tả"}</p>
+                    {isOrgScopedSystemRole(role.name) && <p className="mt-1 text-xs text-amber-700">{ORG_SCOPED_ROLE_HINT}</p>}
                   </button>
 
                   <Can permission={PERMISSIONS.MANAGE_ROLES}>
                     <div className="mt-3 flex gap-2">
                       <Button size="sm" variant="outline" onClick={() => startEditRole(role)}>
-                        Sửa role
+                        Sửa vai trò
                       </Button>
                       <Button
                         size="sm"
@@ -223,7 +232,7 @@ export default function RolesPage() {
                         title={protectedRole ? BUILT_IN_ROLE_HINT : undefined}
                         onClick={() => setConfirmDeleteRole(role)}
                       >
-                        Xoá role
+                        Xoá vai trò
                       </Button>
                     </div>
                   </Can>
@@ -269,7 +278,7 @@ export default function RolesPage() {
                     disabled={updateRole.isPending || createRole.isPending || setRolePermissions.isPending}
                     className="rounded bg-primary-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
                   >
-                    {roleForm.id ? "Lưu role" : "Tạo role"}
+                    {roleForm.id ? "Lưu vai trò" : "Tạo vai trò"}
                   </button>
                   <button type="button" onClick={resetRoleForm} className="rounded bg-gray-100 px-3 py-2 text-sm font-medium">
                     {roleForm.id ? "Huỷ sửa" : "Xoá nội dung đã nhập"}
@@ -281,16 +290,24 @@ export default function RolesPage() {
 
           <div className="rounded-lg bg-white p-4 shadow-sm">
             <h2 className="text-base font-semibold text-gray-900">
-              User theo vai trò{roleUsersPage ? ` — tổng ${roleUsersPage.total}` : ""}
+              Người dùng theo vai trò
+              {roleUsersPage && !isOrgScopedSystemRole(selectedRole?.name) ? ` — tổng ${roleUsersPage.total}` : ""}
             </h2>
-            {selectedRole ? (
+            {selectedRole && isOrgScopedSystemRole(selectedRole.name) ? (
+              <p className="mt-2 text-sm text-gray-600">
+                {ORG_SCOPED_ROLE_HINT}{" "}
+                <Link href="/admin/organizations" className="font-medium text-primary-600 hover:underline">
+                  Mở Quản lý tổ chức
+                </Link>
+              </p>
+            ) : selectedRole ? (
               <div className="mt-3 space-y-3">
                 {usersLoading ? (
                   <p className="text-xs text-gray-500">Đang tải…</p>
                 ) : usersError ? (
-                  <p className="text-xs text-red-600">Không tải được danh sách user.</p>
+                  <p className="text-xs text-red-600">Không tải được danh sách người dùng.</p>
                 ) : roleUsers.length === 0 ? (
-                  <p className="text-xs text-gray-500">Chưa có user nào được gán vai trò này.</p>
+                  <p className="text-xs text-gray-500">Chưa có người dùng nào được gán vai trò này.</p>
                 ) : (
                   <div className="space-y-2">
                     {roleUsers.map((u) => (
@@ -331,7 +348,7 @@ export default function RolesPage() {
                 </Can>
               </div>
             ) : (
-              <p className="mt-2 text-sm text-gray-500">Chọn một vai trò để quản lý user.</p>
+              <p className="mt-2 text-sm text-gray-500">Chọn một vai trò để quản lý người dùng.</p>
             )}
           </div>
         </div>

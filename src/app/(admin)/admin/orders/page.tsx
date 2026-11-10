@@ -6,10 +6,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAdminOrders } from "@/hooks/queries/use-admin-orders";
 import { ORDER_STATUS_LABEL, type OrderStatus } from "@/services/order.service";
 import { QueryState } from "@/components/common/query-state";
-import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatVnd } from "@/lib/vnd-format";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { lateRefundSummaryText } from "@/lib/late-refund";
+import { OrderCardList } from "./_components/order-card-list";
+import { OrderStatusCell } from "./_components/order-status-cell";
 import { STICKY_ACTION_CELL, STICKY_ACTION_HEAD } from "@/app/(admin)/admin/_lib/sticky-action-column";
 
 // ─── Local types ──────────────────────────────────────────────────────────────
@@ -25,20 +26,7 @@ const STATUS_LIST: OrderStatus[] = [
   "expired",
 ];
 
-// Màu badge theo trạng thái — "refunded"/"cancelled" PHẢI khác màu nhau (lỗi đã có
-// ở trang /admin/reports cũ: đánh đồng 2 trạng thái này, xem qa-260927-admin.md).
-const STATUS_VARIANT: Record<OrderStatus, "success" | "warning" | "destructive" | "outline" | "secondary"> = {
-  pending: "outline",
-  processing: "warning",
-  completed: "success",
-  cancelled: "secondary",
-  refunded: "destructive",
-  expired: "outline",
-};
-
 const STATUS_LABEL = ORDER_STATUS_LABEL;
-const REFUND_NEEDED_BADGE = "Cần hoàn tiền";
-const REFUNDED_LATE_BADGE = "Đã hoàn tiền";
 
 function parseStatus(value: string | null): StatusFilter {
   return value && (STATUS_LIST as string[]).includes(value) ? (value as OrderStatus) : "";
@@ -151,7 +139,8 @@ function AdminOrdersContent() {
         emptyTitle="Không có đơn hàng nào"
         emptyDescription="Chưa có đơn khớp bộ lọc hiện tại."
       >
-        <section className="overflow-hidden rounded-xl border bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+        <OrderCardList items={items} />
+        <section className="hidden overflow-hidden rounded-xl border bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950 sm:block">
           <div className="overflow-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-900">
@@ -173,26 +162,11 @@ function AdminOrdersContent() {
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
                       {order.items.map((i) => i.course_title).join(", ") || "-"}
                     </td>
-                    <td className="px-4 py-3 font-medium">{formatCurrency(order.total_amount)}</td>
+                    <td className="px-4 py-3 font-medium">{formatVnd(order.total_amount)}</td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        <Badge variant={STATUS_VARIANT[order.status]}>
-                          {STATUS_LABEL[order.status]}
-                        </Badge>
-                        {/* Tiền về cho đơn đã huỷ/hết hạn: đơn không khôi phục, admin hoàn tiền tay
-                            (quyết định chủ dự án, review #76 final). */}
-                        {order.refund_needed && <Badge variant="destructive">{REFUND_NEEDED_BADGE}</Badge>}
-                        {/* Admin đã ghi nhận chuyển khoản hoàn ở trang chi tiết: cờ tắt, badge đổi tên. */}
-                        {!order.refund_needed && order.late_refunded_at && <Badge variant="success">{REFUNDED_LATE_BADGE}</Badge>}
-                      </div>
-                      {/* L6: bao nhiêu khoản, tổng tiền cần hoàn (chi tiết mã giao dịch ở trang đơn). */}
-                      {order.refund_needed && lateRefundSummaryText(order.late_refunds) && (
-                        <p className="mt-1 text-xs text-red-600 dark:text-red-400" data-testid="late-refund-summary">
-                          {lateRefundSummaryText(order.late_refunds)}
-                        </p>
-                      )}
+                      <OrderStatusCell order={order} />
                     </td>
-                    <td className="px-4 py-3 text-gray-500">{formatDate(order.created_at)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-gray-500">{formatVnDateTime(order.created_at)}</td>
                     <td className={`px-4 py-3 ${STICKY_ACTION_CELL}`}>
                       <Link
                         href={`/admin/orders/${order.id}`}

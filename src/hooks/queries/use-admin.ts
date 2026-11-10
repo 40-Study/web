@@ -30,6 +30,18 @@ export function useOrganizations() {
   });
 }
 
+/**
+ * Một trang danh sách tổ chức có tìm kiếm (QA-C-06). Key nằm dưới `adminKeys.orgs()` nên tạo/sửa/xoá
+ * (invalidate theo tiền tố đó) làm mới luôn trang đang xem.
+ */
+export function useOrganizationsPage(params: { keyword: string; page: number; pageSize: number }) {
+  return useQuery({
+    queryKey: [...adminKeys.orgs(), "page", params] as const,
+    queryFn: () => organizationService.search({ keyword: params.keyword, page: params.page, page_size: params.pageSize }),
+    placeholderData: (previous) => previous,
+  });
+}
+
 export function useOrganization(id: string) {
   return useQuery({
     queryKey: adminKeys.org(id),

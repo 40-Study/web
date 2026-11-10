@@ -1,9 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { Building2 } from "lucide-react";
 import { SmallCheckIcon, GraduationCapIcon, UsersIcon, SettingsIcon } from "@/components/icons";
 
-export type RoleType = "student" | "parent" | "teacher" | "applicant" | "admin";
+export type RoleType = "student" | "parent" | "teacher" | "applicant" | "admin" | "owner";
 
 /**
  * Map role_name backend → loại thẻ hiển thị. Kiểm "applicant" TRƯỚC "teacher":
@@ -17,7 +18,9 @@ export function roleNameToRoleType(roleName: string): RoleType {
   if (name.includes("student")) return "student";
   if (name.includes("teacher")) return "teacher";
   if (name.includes("parent")) return "parent";
-  if (name.includes("admin") || name.includes("owner")) return "admin";
+  // QA-C-10: chủ tổ chức có thẻ riêng; trước dùng chung thẻ "admin" nên hai vai trùng icon bánh răng.
+  if (name.includes("owner")) return "owner";
+  if (name.includes("admin")) return "admin";
   return "student";
 }
 
@@ -54,9 +57,14 @@ const roleConfig: Record<RoleType, { label: string; description: string; icon: R
     icon: <UsersIcon size={28} />,
   },
   admin: {
-    label: "Quản lý",
-    description: "Quản lý hệ thống và tổ chức",
+    label: "Quản trị hệ thống",
+    description: "Quản lý toàn bộ hệ thống",
     icon: <SettingsIcon size={28} />,
+  },
+  owner: {
+    label: "Chủ tổ chức",
+    description: "Quản lý thành viên và lớp học của tổ chức",
+    icon: <Building2 size={28} aria-hidden="true" />,
   },
 };
 
@@ -69,14 +77,16 @@ export function RoleCard({ role, selected, onClick, className, label, subtitle }
     <button
       type="button"
       role="radio"
-      aria-checked={selected}
-      aria-label={`${config.label} - ${config.description}`}
+      aria-checked={!!selected}
+      aria-label={`${displayLabel} - ${displayDesc}`}
       onClick={onClick}
+      // QA-C-10: thẻ CHƯA chọn từng đổi sang viền đậm + nền xám khi rê chuột/focus, trông y như đang chọn. Nay
+      // trạng thái chưa chọn chỉ nhích nhẹ màu viền; "đang chọn" có viền + nền màu chủ đạo + dấu tích.
       className={cn(
-        "flex w-full items-center gap-4 rounded-xl border-2 px-5 py-4 text-left transition-all",
+        "flex w-full items-center gap-4 rounded-xl border-2 px-5 py-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
         selected
           ? "border-primary bg-primary/10 text-primary"
-          : "border-border bg-card text-muted-foreground hover:border-muted-foreground hover:bg-muted",
+          : "border-border bg-card text-muted-foreground hover:border-primary/40",
         className
       )}
     >

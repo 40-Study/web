@@ -7,7 +7,7 @@
  * không thấy mockApi.put được gọi tới endpoint /system-roles/:id/permissions.
  */
 
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/api-client", async () => {
@@ -75,7 +75,7 @@ describe("/admin/roles — A-P1-1: không còn user giả", () => {
     renderWithProviders(<RolesPage />);
 
     // total thật = 2 (mock), tuyệt đối không phải hardcode "3"
-    await screen.findByText("2 user");
+    await screen.findByText("2 người");
 
     expect(screen.queryByText(/3 users?/i)).toBeNull();
     expect(screen.queryByText(/@fortex\.vn/i)).toBeNull();
@@ -86,7 +86,7 @@ describe("/admin/roles — A-P1-2: tạo role phải lưu quyền đã tick", ()
   it("tick 1 quyền rồi Tạo role -> gọi PUT /system-roles/:id/permissions với đúng permission_id", async () => {
     renderWithProviders(<RolesPage />);
 
-    await screen.findByText("2 user"); // đợi load xong
+    await screen.findByText("2 người"); // đợi load xong
 
     fireEvent.change(screen.getByPlaceholderText("Tên vai trò"), {
       target: { value: "QA-role" },
@@ -95,7 +95,7 @@ describe("/admin/roles — A-P1-2: tạo role phải lưu quyền đã tick", ()
     const checkbox = screen.getByRole("checkbox", { name: PERMISSION.name });
     fireEvent.click(checkbox);
 
-    fireEvent.click(screen.getByRole("button", { name: "Tạo role" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tạo vai trò" }));
 
     await waitFor(() => {
       expect(mockApi.post).toHaveBeenCalledWith(
@@ -127,17 +127,17 @@ describe("/admin/roles — review PR #24 (MINOR): phân biệt lỗi/không có 
 
     await screen.findByText("lỗi");
     expect(screen.queryByText("…")).toBeNull();
-    expect(screen.queryByText(/2 user/)).toBeNull();
+    expect(screen.queryByText(/2 người/)).toBeNull();
   });
 });
 
 describe("/admin/roles — QA3-03: tên vai trò rỗng/ngắn bị chặn có phản hồi", () => {
   it.each(["", "   ", " a "])("tên %j: hiện lỗi tiếng Việt, KHÔNG gọi POST /system-roles", async (value) => {
     renderWithProviders(<RolesPage />);
-    await screen.findByText("2 user");
+    await screen.findByText("2 người");
 
     fireEvent.change(screen.getByPlaceholderText("Tên vai trò"), { target: { value } });
-    fireEvent.click(screen.getByRole("button", { name: "Tạo role" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tạo vai trò" }));
 
     expect(await screen.findByText(/ít nhất 2 ký tự/)).toBeTruthy();
     expect(mockApi.post).not.toHaveBeenCalled();
@@ -145,16 +145,16 @@ describe("/admin/roles — QA3-03: tên vai trò rỗng/ngắn bị chặn có p
 
   it("gõ lại thì lỗi biến mất; tên hợp lệ được trim trước khi gửi", async () => {
     renderWithProviders(<RolesPage />);
-    await screen.findByText("2 user");
+    await screen.findByText("2 người");
     const input = screen.getByPlaceholderText("Tên vai trò");
 
     fireEvent.change(input, { target: { value: " " } });
-    fireEvent.click(screen.getByRole("button", { name: "Tạo role" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tạo vai trò" }));
     expect(await screen.findByText(/ít nhất 2 ký tự/)).toBeTruthy();
     fireEvent.change(input, { target: { value: "  QA-role  " } });
     expect(screen.queryByText(/ít nhất 2 ký tự/)).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Tạo role" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tạo vai trò" }));
     await waitFor(() => expect(mockApi.post).toHaveBeenCalledWith("/system-roles", expect.objectContaining({ name: "QA-role" })));
   });
 });
@@ -184,9 +184,10 @@ describe("/admin/roles — QA3-18: xoá role không bắn GET users của id đ�
 
     renderWithProviders(<RolesPage />);
     fireEvent.click(await screen.findByText("QA3-JUNK", { selector: "span" }));
-    const deleteButtons = await screen.findAllByRole("button", { name: "Xoá role" });
+    const deleteButtons = await screen.findAllByRole("button", { name: "Xoá vai trò" });
     fireEvent.click(deleteButtons[1]);
-    fireEvent.click(await screen.findByRole("button", { name: "Xoá vai trò" }));
+    // Nút trên thẻ (QA-C-11) và nút xác nhận trong hộp thoại cùng tên "Xoá vai trò": bấm nút trong hộp thoại.
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Xoá vai trò" }));
 
     await waitFor(() => expect(mockApi.delete).toHaveBeenCalled());
     await waitFor(() => expect(screen.queryByText("QA3-JUNK", { selector: "span" })).toBeNull());

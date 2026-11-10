@@ -11,6 +11,8 @@ export interface Organization {
   id: string;
   name: string;
   description?: string;
+  /** "active" mặc định (model Organization); giá trị khác hiện nguyên văn qua nhãn trạng thái. */
+  status?: string;
   code?: string;
   logo?: string;
   created_at?: string;
@@ -25,6 +27,15 @@ export interface CreateOrgDTO {
 export interface UpdateOrgDTO {
   name?: string;
   description?: string;
+}
+
+/** Kết quả tra người dùng theo email trong phạm vi tổ chức (user-lookup). */
+export interface OrgUserLookup {
+  id: string;
+  user_name: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  email: string;
 }
 
 /** Lớp thuộc tổ chức (một dòng danh sách). */
@@ -111,6 +122,14 @@ export const organizationService = {
   list: () =>
     api.get<R<{ organizations: Organization[] }>>("/organizations").then((r) => r.data.data.organizations),
 
+  /** GET /organizations?keyword=&page=&page_size= — một trang kèm tổng số (backend giới hạn page_size ≤ 100). */
+  search: (params: { keyword?: string; page?: number; page_size?: number }) =>
+    api
+      .get<R<{ organizations: Organization[]; total: number; page: number; page_size: number }>>("/organizations", {
+        params: { ...params, keyword: params.keyword?.trim() || undefined },
+      })
+      .then((r) => r.data.data),
+
   /** GET /organizations/:orgId */
   getById: (orgId: string) =>
     api.get<R<Organization>>(`/organizations/${orgId}`).then((r) => r.data.data),
@@ -122,6 +141,16 @@ export const organizationService = {
   /** DELETE /organizations/:orgId */
   delete: (orgId: string) =>
     api.delete<R<null>>(`/organizations/${orgId}`).then((r) => r.data),
+
+  /**
+   * GET /organizations/:orgId/user-lookup?email= (backend PR #144) — chủ tổ chức tìm ĐÚNG một người theo email
+   * (khớp chính xác, không phân biệt hoa thường) để thêm vào tổ chức. Cần ORG_MEMBERS_MANAGE và active_org_id khớp
+   * tổ chức. 404 USER_NOT_FOUND, 400 INVALID_EMAIL, 403 (không có code) khi thiếu quyền hoặc khác tổ chức.
+   */
+  lookupUserByEmail: (orgId: string, email: string) =>
+    api
+      .get<R<OrgUserLookup>>(`/organizations/${orgId}/user-lookup`, { params: { email: email.trim() } })
+      .then((r) => r.data.data),
 
   /** GET /organizations/:orgId/members */
   getMembers: (orgId: string) =>

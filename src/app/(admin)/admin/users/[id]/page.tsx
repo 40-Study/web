@@ -16,6 +16,7 @@ import { Can } from "@/components/guards";
 import { PERMISSIONS, SYSTEM_ROLES } from "@/lib/permissions";
 import { getOrgRoleLabel, getSystemRoleLabel } from "@/lib/role-labels";
 import { useAuthStore } from "@/stores/auth.store";
+import { formatVnDateOnly, formatVnDateTime } from "@/lib/vn-datetime";
 import { ApiError } from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-messages";
 import { getUserActiveLabel } from "../../_lib/user-status-label";
@@ -25,9 +26,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 
-function formatDate(iso: string | null): string {
-  return iso ? new Date(iso).toLocaleString("vi-VN") : "—";
-}
+// QA-C-12: cùng định dạng ngày giờ VN với các màn admin khác.
+const formatDate = (iso: string | null) => formatVnDateTime(iso);
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -145,7 +145,7 @@ export default function AdminUserDetailPage() {
                 <div className="mt-4">
                   <DetailRow label="Tên đăng nhập" value={user.user_name} />
                   <DetailRow label="Số điện thoại" value={user.phone || "—"} />
-                  <DetailRow label="Ngày sinh" value={user.date_of_birth ? formatDate(user.date_of_birth) : "—"} />
+                  <DetailRow label="Ngày sinh" value={formatVnDateOnly(user.date_of_birth)} />
                   <DetailRow label="Đã xác thực" value={user.is_verified ? "Có" : "Chưa"} />
                   <DetailRow label="Ngày tạo" value={formatDate(user.created_at)} />
                   <DetailRow label="Đăng nhập cuối" value={formatDate(user.last_login_at)} />

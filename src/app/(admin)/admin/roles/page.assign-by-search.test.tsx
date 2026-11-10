@@ -120,7 +120,7 @@ describe("/admin/roles — L12: nút Reset không rõ nghĩa", () => {
 
   it("đang sửa vai trò: nút ghi 'Huỷ sửa' và thoát chế độ sửa", async () => {
     await openPage();
-    fireEvent.click(screen.getByRole("button", { name: "Sửa role" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sửa vai trò" }));
     expect(screen.getByText("Cập nhật vai trò")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Huỷ sửa" }));

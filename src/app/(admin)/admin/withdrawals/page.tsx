@@ -18,6 +18,7 @@ import {
 import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
 import { QueryState } from "@/components/common/query-state";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,9 +66,8 @@ function parsePageParam(raw: string | null): number {
   return Number.isInteger(n) && n >= 1 ? n : 1;
 }
 
-function formatDate(iso: string | null): string {
-  return iso ? new Date(iso).toLocaleString("vi-VN") : "—";
-}
+// QA-C-12: cùng định dạng ngày giờ VN với các màn admin khác (không giây).
+const formatDate = (iso: string | null) => formatVnDateTime(iso);
 
 function shortId(id: string): string {
   return id.slice(0, 8).toUpperCase();
@@ -322,7 +322,8 @@ function AdminWithdrawalsContent() {
                               </>
                             )}
                             {w.status === "approved" && (
-                              <Button size="sm" onClick={() => setCompleteTarget(w)}>
+                              // QA-C-21: ở 390px cột hành động ghim hẹp (~8.5rem); cho chữ xuống dòng thay vì tràn khỏi nút.
+                              <Button size="sm" className="h-auto whitespace-normal py-1.5 leading-tight" onClick={() => setCompleteTarget(w)}>
                                 Đánh dấu đã chuyển
                               </Button>
                             )}

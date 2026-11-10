@@ -17,7 +17,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatCurrency } from "@/lib/utils";
+import { formatVnd } from "@/lib/vnd-format";
 import type { RefundMethod } from "@/services/admin-order.service";
 import { ORDER_STATUS_LABEL, formatOrderDateTime } from "@/services/order.service";
 import { pendingLateRefunds } from "@/lib/late-refund";
@@ -90,13 +90,13 @@ export default function AdminOrderDetailPage() {
                 {order.items.map((item) => (
                   <div key={item.id} className="flex items-center justify-between py-2 text-sm">
                     <span>{item.course_name || "Khoá học không còn tồn tại"}</span>
-                    <span className="font-medium">{formatCurrency(item.final_price)}</span>
+                    <span className="font-medium">{formatVnd(item.final_price)}</span>
                   </div>
                 ))}
               </div>
               <div className="mt-3 flex items-center justify-between border-t pt-3 text-sm font-semibold dark:border-gray-800">
                 <span>Tổng tiền</span>
-                <span>{formatCurrency(order.total_amount)}</span>
+                <span>{formatVnd(order.total_amount)}</span>
               </div>
             </section>
 
@@ -167,7 +167,7 @@ export default function AdminOrderDetailPage() {
           <DialogTitle>Xác nhận hoàn tiền</DialogTitle>
           <DialogDescription>
             Đơn <strong>{order?.order_number}</strong> — số tiền hoàn:{" "}
-            <strong>{order ? formatCurrency(order.total_amount) : ""}</strong>. Hành động này{" "}
+            <strong>{order ? formatVnd(order.total_amount) : ""}</strong>. Hành động này{" "}
             <strong>không thể hoàn tác</strong>. Chỉ bấm xác nhận SAU KHI đã thực sự chuyển
             khoản cho học viên.
           </DialogDescription>

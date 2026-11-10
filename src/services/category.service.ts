@@ -38,6 +38,7 @@ export interface UpdateCategoryDTO {
 export interface Tag {
   id: string;
   name: string;
+  slug?: string;
   created_at?: string;
 }
 
@@ -79,6 +80,14 @@ export const categoryService = {
       const d = r.data.data;
       return Array.isArray(d) ? d : d.tags;
     }),
+
+  /** GET /tags?keyword=&page=&page_size= — một trang kèm tổng số, cho trang quản lý tag (QA-C-19). */
+  searchTags: (params: { page: number; page_size: number; keyword?: string }) =>
+    api
+      .get<R<{ tags: Tag[]; total: number }>>("/tags", {
+        params: { ...params, keyword: params.keyword?.trim() || undefined },
+      })
+      .then((r) => r.data.data),
 
   /** GET /tags/:id (public) */
   getTagById: (id: string) =>

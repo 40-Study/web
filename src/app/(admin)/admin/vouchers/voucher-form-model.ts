@@ -106,6 +106,33 @@ export function voucherValidityText(v: Pick<Voucher, "start_date" | "end_date">)
   return "Hiệu lực: không giới hạn thời gian";
 }
 
+export type VoucherRunState = "disabled" | "expired" | "scheduled" | "running" | "exhausted";
+
+/**
+ * Trạng thái chạy của voucher cho nhãn ở danh sách (QA-C-14): voucher quá end_date từng hiện như đang chạy vì danh
+ * sách chỉ có nhãn "Đang tắt". Thứ tự ưu tiên: tắt tay > hết hạn > chưa tới ngày > hết lượt > đang chạy.
+ */
+export function voucherRunState(
+  v: Pick<Voucher, "is_active" | "start_date" | "end_date" | "used_count" | "usage_limit">,
+  now: number = Date.now()
+): VoucherRunState {
+  if (!v.is_active) return "disabled";
+  const end = v.end_date ? new Date(v.end_date).getTime() : NaN;
+  if (Number.isFinite(end) && end <= now) return "expired";
+  const start = v.start_date ? new Date(v.start_date).getTime() : NaN;
+  if (Number.isFinite(start) && start > now) return "scheduled";
+  if (v.usage_limit && (v.used_count ?? 0) >= v.usage_limit) return "exhausted";
+  return "running";
+}
+
+export const VOUCHER_RUN_STATE_LABEL: Record<VoucherRunState, string> = {
+  disabled: "Đang tắt",
+  expired: "Hết hạn",
+  scheduled: "Chưa tới ngày áp dụng",
+  exhausted: "Hết lượt dùng",
+  running: "Đang chạy",
+};
+
 export function voucherToForm(v: Voucher): VoucherFormState {
   const isMoney = v.discount_unit === "MONEY";
   const isPercent = v.discount_method === "PERCENT";

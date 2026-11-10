@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BarChart3, Banknote, Bell, Building2, Check, ChevronDown, Flag, FolderTree, LayoutDashboard, LogOut, Receipt, ScrollText, Settings, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
-import { BookCheck, Ticket, Trophy, UserCheck } from "lucide-react";
+import { BookCheck, Tags, Ticket, Trophy, UserCheck } from "lucide-react";
 
 import { RoleGuard } from "@/components/guards";
+import { AdminMobileNav } from "@/components/admin/admin-mobile-nav";
 import { Avatar } from "@/components/ui/avatar";
 import { useLogout, useMyRoles, useSwitchRole } from "@/hooks/queries/use-auth";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,9 @@ const adminMenu: AdminMenuItem[] = [
   { label: "Quản lý tổ chức", href: "/admin/organizations", icon: Building2, description: "Quản lý các tổ chức và chủ tổ chức" },
   { label: "Phân quyền", href: "/admin/permissions", icon: Settings, description: "Quyền của từng vai trò hệ thống" },
   { label: "Danh mục khoá học", href: "/admin/categories", icon: FolderTree, description: "Cây danh mục dùng để phân loại khoá học" },
+  // QA-C-19: backend có CRUD /tags nhưng trước đây không có màn quản lý. Gói xu chưa có mục: backend chỉ có
+  // GET /coins/packages trả gói ĐANG BẬT (không có is_active), nên màn admin không thấy được gói đã tắt để bật lại.
+  { label: "Tag khoá học", href: "/admin/tags", icon: Tags, description: "Tạo, đổi tên và xoá tag khoá học" },
   { label: "Báo cáo vi phạm", href: "/admin/moderation", icon: Flag, description: "Xử lý báo cáo vi phạm từ người dùng" },
   { label: "Đơn hàng", href: "/admin/orders", icon: Receipt, description: "Theo dõi, đối soát và hoàn tiền đơn hàng" },
   { label: "Rút tiền giảng viên", href: "/admin/withdrawals", icon: Banknote, description: "Duyệt yêu cầu rút tiền của giảng viên" },
@@ -141,19 +145,7 @@ export default function AdminLayout({
 
                 {isProfileOpen && (
                   <div className="absolute right-0 top-11 w-52 rounded-2xl border border-border bg-popover py-2 shadow-raised">
-                    {/*
-                      A-P2-4: đã BỎ link "/settings" ở đây (trước đó bấm vào bị đá ngầm về /admin,
-                      không có thông báo gì). Root cause thật KHÔNG nằm ở RoleGuard của khu vực
-                      admin mà ở web/src/app/(app)/layout.tsx — layout dùng chung cho mọi route
-                      không phải admin (student/teacher/parent), nơi có đoạn:
-                        if (isAuthenticated && isAdminRole) { router.replace("/admin"); return; }
-                      tức MỌI route (app) (bao gồm /settings, /notifications) đều ép admin quay
-                      lại /admin. File đó nằm ngoài phạm vi sở hữu của lane này ((admin)/** +
-                      role-guard.tsx) và dùng chung cho các role khác — sửa nó có thể ảnh hưởng
-                      luồng của student/teacher/parent nên KHÔNG sửa ở đây. Nếu muốn admin có
-                      trang cài đặt tài khoản thật, cần một lane khác thêm điều kiện ngoại lệ cho
-                      "/settings"/"/notifications" vào đoạn redirect ở (app)/layout.tsx.
-                    */}
+{/* A-P2-4 (cũ): link /settings từng bị (app)/layout.tsx đá về /admin; nay đã mở được (xem mục Tài khoản bên dưới). */}
                     {availableRoles.length > 1 && (
                       <div className="mb-1 border-b border-border pb-1">
                         <button
@@ -203,6 +195,16 @@ export default function AdminLayout({
                         )}
                       </div>
                     )}
+                    {/* QA-C-23: menu avatar từng chỉ có "Đăng xuất". (app)/layout.tsx nay cho admin mở /settings
+                        (đã kiểm sống 10/11/2026), nên thêm lối vào Tài khoản như khu /org. */}
+                    <Link
+                      href="/settings"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-muted"
+                    >
+                      <Settings className="h-4 w-4" aria-hidden="true" />
+                      Tài khoản
+                    </Link>
                     <button
                       onClick={() => {
                         setIsProfileOpen(false);
@@ -218,26 +220,7 @@ export default function AdminLayout({
                 )}
               </div>
             </div>
-            <nav className="flex gap-2 overflow-x-auto border-t border-border px-4 py-2 md:hidden">
-              {visibleMenu.map((item) => {
-                const isActive = isAdminNavActive(pathname, item.href);
-
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium",
-                      isActive
-                        ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
-                        : "bg-muted text-muted-foreground"
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
+            <AdminMobileNav items={visibleMenu} isActive={(href) => isAdminNavActive(pathname, href)} />
           </header>
 
           {/* id="main-content": đích của skip link trong app/layout.tsx (H-04) */}

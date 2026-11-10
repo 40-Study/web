@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { GraduationCap, Users } from "lucide-react";
 import { QueryState } from "@/components/common/query-state";
+import { OrgGettingStarted } from "@/components/org/org-getting-started";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useActiveOrgId, useOrgClasses, useOrgDetail, useOrgMembers } from "@/hooks/queries/use-org-area";
 
@@ -37,10 +38,11 @@ export default function OrgOverviewPage() {
   return (
     <QueryState isLoading={org.isLoading} isError={org.isError} error={org.error} onRetry={() => org.refetch()} isEmpty={!org.data} emptyTitle="Không tìm thấy tổ chức">
       <div className="space-y-6">
-        <div>
-          <h2 className="font-heading text-2xl font-semibold">{org.data?.name}</h2>
-          {org.data?.description && <p className="mt-1 text-sm text-muted-foreground">{org.data.description}</p>}
-        </div>
+        {/* QA-C-18: tên tổ chức đã có ở sidebar (desktop) và header (mobile), không lặp lại lần thứ ba ở đây. */}
+        {org.data?.description && <p className="text-sm text-muted-foreground">{org.data.description}</p>}
+        {members.data && allClasses.data && (
+          <OrgGettingStarted memberCount={members.data.length} classCount={allClasses.data.total} />
+        )}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((s) => (
             <Link key={s.label} href={s.href} className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
