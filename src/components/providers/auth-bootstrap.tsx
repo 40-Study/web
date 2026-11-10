@@ -3,11 +3,17 @@
 import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { AUTH_ROLE_CHANGED_EVENT, type AuthRoleChangedDetail } from "@/lib/auth-events";
+import { useSessionConnectionStore } from "@/lib/session-connection";
 import {
   AUTH_SESSION_EXPIRED_EVENT,
   applyServerRoleChange,
   bootstrapAuthSession,
 } from "./auth-session";
+import { SessionConnectionBanner } from "./session-connection-banner";
+
+const retrySession = () => {
+  void bootstrapAuthSession();
+};
 
 export function AuthBootstrap() {
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
@@ -27,6 +33,15 @@ export function AuthBootstrap() {
     return () => window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, revalidateSession);
   }, []);
 
+  // Hết lượt thử lại tự động mà mạng có lại → tự thử thêm một lần, không bắt người dùng tải lại trang.
+  useEffect(() => {
+    const onOnline = () => {
+      if (useSessionConnectionStore.getState().state === "offline") retrySession();
+    };
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, []);
+
   useEffect(() => {
     const onRoleChanged = (event: Event) => {
       const detail = (event as CustomEvent<AuthRoleChangedDetail>).detail;
@@ -36,5 +51,5 @@ export function AuthBootstrap() {
     return () => window.removeEventListener(AUTH_ROLE_CHANGED_EVENT, onRoleChanged);
   }, []);
 
-  return null;
+  return <SessionConnectionBanner onRetry={retrySession} />;
 }

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { UserPlus } from "lucide-react";
+import { toast } from "sonner";
 import { QueryState } from "@/components/common/query-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -10,11 +11,12 @@ import { useAssignableOrgRoles } from "@/hooks/queries/use-org-member-roles";
 import { useOrgMembers } from "@/hooks/queries/use-org-area";
 import { getErrorMessage } from "@/lib/error-messages";
 import { getOrgRoleLabel } from "@/lib/role-labels";
+import { isUncertainOutcomeError, reconcileUncertainOutcome, uncertainOutcomeDescription } from "@/lib/uncertain-mutation";
 import type { OrgMember, OrgMemberAssignment } from "@/services/organization.service";
 import { AddMemberDialog } from "./add-member-dialog";
 import { MemberRoleDialog } from "./member-role-dialog";
 import { OrgMemberRow } from "./org-member-row";
-import { useOrgMemberActions } from "./use-org-member-actions";
+import { isRemovalApplied, useOrgMemberActions } from "./use-org-member-actions";
 
 interface OrgMembersPanelProps {
   orgId: string;
@@ -39,6 +41,8 @@ export function OrgMembersPanel({ orgId, canAddMember, currentUserId }: OrgMembe
   const [changeFor, setChangeFor] = useState<OrgMember | null>(null);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [reconciling, setReconciling] = useState(false);
+  const confirmBusy = actions.busy || reconciling;
 
   const data = useMemo(() => members.data ?? [], [members.data]);
   const orgRoles = useMemo(() => roles.data ?? [], [roles.data]);
@@ -54,14 +58,31 @@ export function OrgMembersPanel({ orgId, canAddMember, currentUserId }: OrgMembe
   };
 
   const runConfirm = async () => {
-    if (!confirm) return;
+    if (!confirm || confirmBusy) return;
     setConfirmError(null);
     try {
       if (confirm.kind === "role") await actions.removeRole(confirm.member, confirm.assignment);
       else await actions.removeMember(confirm.member);
       closeConfirm();
     } catch (e) {
-      setConfirmError(getErrorMessage(e, "Không thể gỡ, thử lại sau."));
+      if (!isUncertainOutcomeError(e)) {
+        setConfirmError(getErrorMessage(e, "Không thể gỡ, thử lại sau."));
+        return;
+      }
+      // QA-C-16: timeout nhưng server thường đã gỡ xong. Tải lại danh sách và đối chiếu thay vì báo lỗi.
+      setReconciling(true);
+      const result = await reconcileUncertainOutcome(async () => {
+        const fresh = await members.refetch();
+        if (fresh.isError) throw fresh.error;
+        return isRemovalApplied(confirm.kind === "role" ? confirm : { member: confirm.member }, fresh.data ?? []);
+      });
+      setReconciling(false);
+      if (result === "confirmed") {
+        toast.success(confirm.kind === "role" ? "Đã gỡ vai trò" : "Đã gỡ thành viên khỏi tổ chức");
+        closeConfirm();
+        return;
+      }
+      setConfirmError(`Chưa rõ kết quả. ${uncertainOutcomeDescription("gỡ")}`);
     }
   };
 
@@ -153,7 +174,7 @@ export function OrgMembersPanel({ orgId, canAddMember, currentUserId }: OrgMembe
       />
       <ConfirmDialog
         open={!!confirm}
-        onOpenChange={(o) => !o && closeConfirm()}
+        onOpenChange={(o) => !o && !confirmBusy && closeConfirm()}
         title={confirmTitle}
         description={
           <>
@@ -169,7 +190,7 @@ export function OrgMembersPanel({ orgId, canAddMember, currentUserId }: OrgMembe
         }
         confirmLabel="Gỡ"
         destructive
-        pending={actions.busy}
+        pending={confirmBusy}
         onConfirm={runConfirm}
       />
     </div>

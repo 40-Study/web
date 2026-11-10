@@ -65,7 +65,14 @@ import { isUuid } from "@/lib/uuid";
 import { useCourse } from "@/hooks/queries/use-courses";
 import { CourseReviewPanel, CourseStatusBadge } from "@/components/teacher/course-review-status";
 import { useSections, useCreateSection, useReorderSections, useDeleteSection, sectionKeys } from "@/hooks/queries/use-sections";
-import { useLessons, useCreateLesson, useReorderLessons, useDeleteLesson } from "@/hooks/queries/use-lessons";
+import { useCreateLesson, useReorderLessons, useDeleteLesson } from "@/hooks/queries/use-lessons";
+import {
+  countByTitle,
+  isUncertainOutcomeError,
+  reconcileUncertainOutcome,
+  UNCERTAIN_OUTCOME_TITLE,
+  uncertainOutcomeDescription,
+} from "@/lib/uncertain-mutation";
 import { useLessonContents, useCreateLessonContent, useDeleteLessonContent } from "@/hooks/queries/use-lesson-content";
 import { lessonContentService, type LessonContent, type CreateContentDTO } from "@/services/lesson-content.service";
 import { useHlsSource } from "@/hooks/use-hls-source";
@@ -185,7 +192,10 @@ function SortableSectionCard({
     disabled: readOnly,
   });
   const style = { transform: CSS.Transform.toString(transform), transition };
-  const { data: lessons = [], isLoading } = useLessons(courseId, section.id);
+  // QA-B-11: trước đây MỖI chương gọi GET /sections/:id/lessons (N+1, kèm toàn bộ contents) nên trang chỉ có
+  // spinner hơn 30 giây. GET /courses/:id/sections đã trả sẵn `lessons[]` (sắp theo display_order), dùng luôn nó;
+  // nội dung từng bài vẫn tải riêng khi mở bài (SortableLessonRow).
+  const lessons = section.lessons ?? [];
   const reorderLessons = useReorderLessons(courseId, section.id);
   const deleteLesson = useDeleteLesson(courseId, section.id);
   const queryClient = useQueryClient();
@@ -240,11 +250,7 @@ function SortableSectionCard({
 
           {/* Lessons list */}
           <div className="px-4 py-2">
-            {isLoading ? (
-              <div className="flex items-center gap-2 py-4 justify-center text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> Đang tải...
-              </div>
-            ) : lessons.length === 0 ? (
+            {lessons.length === 0 ? (
               <p className="py-4 text-center text-sm text-muted-foreground">
                 {readOnly ? "Chưa có bài học." : "Chưa có bài học. Nhấn nút bên dưới để thêm."}
               </p>
@@ -635,24 +641,80 @@ export default function CourseDetailPage() {
   // Create lesson hook (needs current sectionId)
   const createLessonMutation = useCreateLesson(courseId, lessonDialog ?? "");
 
+  // QA-B-03: đang gửi HOẶC đang đối chiếu sau timeout thì khoá nút và không cho đóng hộp thoại — đóng
+  // rồi mở lại để bấm lần nữa chính là đường tạo ra bản trùng.
+  const [reconcilingCreate, setReconcilingCreate] = useState(false);
+  const sectionBusy = createSection.isPending || reconcilingCreate;
+  const lessonBusy = createLessonMutation.isPending || reconcilingCreate;
+
+  /**
+   * Request tạo bị timeout/mất mạng: server có thể đã tạo xong (QA-B-03, created_at có thật). Tải lại
+   * danh sách từ server, so số mục cùng tiêu đề trước/sau. Thấy thêm → coi là thành công; chưa thấy →
+   * báo "chưa rõ kết quả" (không báo thất bại), giữ hộp thoại để người dùng tự quyết.
+   */
+  const sectionsKey = sectionKeys.byCourse(courseId);
+  /** Số mục cùng tiêu đề trong cache danh sách chương: cả chương (sectionId null) hoặc bài của một chương. */
+  const countCached = (title: string, sectionId: string | null) => {
+    const cached = queryClient.getQueryData(sectionsKey);
+    if (!sectionId) return countByTitle(cached, title);
+    const section = Array.isArray(cached) ? (cached as Section[]).find((s) => s.id === sectionId) : undefined;
+    return countByTitle(section?.lessons, title);
+  };
+
+  const confirmCreatedAfterTimeout = async (title: string, sectionId: string | null, before: number, action: string) => {
+    setReconcilingCreate(true);
+    try {
+      const result = await reconcileUncertainOutcome(async () => {
+        await queryClient.refetchQueries({ queryKey: sectionsKey, exact: true });
+        return countCached(title, sectionId) > before;
+      });
+      if (result === "unconfirmed") {
+        toast.warning(UNCERTAIN_OUTCOME_TITLE, { description: uncertainOutcomeDescription(action), duration: 10_000 });
+      }
+      return result === "confirmed";
+    } finally {
+      setReconcilingCreate(false);
+    }
+  };
+
   // Handlers
   const handleCreateSection = async () => {
-    if (!sectionTitle.trim()) return;
-    await createSection.mutateAsync({ title: sectionTitle.trim(), description: sectionDesc.trim() || undefined });
+    const title = sectionTitle.trim();
+    if (!title || sectionBusy) return;
+    const before = countCached(title, null);
+    try {
+      await createSection.mutateAsync({ title, description: sectionDesc.trim() || undefined });
+    } catch (error) {
+      // Lỗi dứt khoát đã được hook báo; chỉ trường hợp chưa rõ kết quả mới cần đối chiếu.
+      if (!isUncertainOutcomeError(error)) return;
+      if (!(await confirmCreatedAfterTimeout(title, null, before, "tạo chương"))) return;
+      toast.success("Đã tạo chương", { description: "Máy chủ phản hồi chậm nhưng chương đã được lưu." });
+    }
     setSectionTitle("");
     setSectionDesc("");
     setSectionDialog(false);
   };
 
   const handleCreateLesson = async () => {
-    if (!lessonDialog || !lessonTitle.trim()) return;
-    await createLessonMutation.mutateAsync({
-      title: lessonTitle.trim(),
-      description: lessonDesc.trim() || undefined,
-      duration_minutes: lessonDuration ? parseInt(lessonDuration) : undefined,
-      is_preview: lessonPreview,
-      is_mandatory: lessonMandatory,
-    });
+    const title = lessonTitle.trim();
+    if (!lessonDialog || !title || lessonBusy) return;
+    const sectionId = lessonDialog;
+    const before = countCached(title, sectionId);
+    try {
+      await createLessonMutation.mutateAsync({
+        title,
+        description: lessonDesc.trim() || undefined,
+        duration_minutes: lessonDuration ? parseInt(lessonDuration) : undefined,
+        is_preview: lessonPreview,
+        is_mandatory: lessonMandatory,
+      });
+    } catch (error) {
+      // Trước đây lỗi ở đây không được bắt (dev overlay "1 error", QA-B-03). Lỗi dứt khoát đã có
+      // toast của hook; chưa rõ kết quả thì đối chiếu với server.
+      if (!isUncertainOutcomeError(error)) return;
+      if (!(await confirmCreatedAfterTimeout(title, sectionId, before, "tạo bài học"))) return;
+      toast.success("Đã tạo bài học", { description: "Máy chủ phản hồi chậm nhưng bài học đã được lưu." });
+    }
     // D2: số bài của khoá (bật nút "Gửi duyệt") đếm từ danh sách chương — làm mới sau khi thêm bài.
     queryClient.invalidateQueries({ queryKey: sectionKeys.byCourse(courseId) });
     setLessonTitle("");
@@ -1169,7 +1231,7 @@ export default function CourseDetailPage() {
       )}
 
       {/* ═══ Create Section Dialog ═══ */}
-      <Dialog open={sectionDialog} onOpenChange={setSectionDialog}>
+      <Dialog open={sectionDialog} onOpenChange={(open) => (open || !sectionBusy) && setSectionDialog(open)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Thêm chương mới</DialogTitle>
@@ -1185,9 +1247,9 @@ export default function CourseDetailPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSectionDialog(false)}>Huỷ</Button>
-            <Button onClick={handleCreateSection} disabled={!sectionTitle.trim() || createSection.isPending}>
-              {createSection.isPending && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+            <Button variant="outline" onClick={() => setSectionDialog(false)} disabled={sectionBusy}>Huỷ</Button>
+            <Button onClick={handleCreateSection} disabled={!sectionTitle.trim() || sectionBusy}>
+              {sectionBusy && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
               Tạo chương
             </Button>
           </DialogFooter>
@@ -1195,7 +1257,7 @@ export default function CourseDetailPage() {
       </Dialog>
 
       {/* ═══ Create Lesson Dialog ═══ */}
-      <Dialog open={!!lessonDialog} onOpenChange={(open) => !open && setLessonDialog(null)}>
+      <Dialog open={!!lessonDialog} onOpenChange={(open) => !open && !lessonBusy && setLessonDialog(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Thêm bài học mới</DialogTitle>
@@ -1214,8 +1276,10 @@ export default function CourseDetailPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Thời lượng (phút)</Label>
-                <Input type="number" value={lessonDuration} onChange={(e) => setLessonDuration(e.target.value)} placeholder="15" />
+                <Label htmlFor="new-lesson-duration">Thời lượng (phút)</Label>
+                {/* B-18: placeholder "15" trông như giá trị mặc định nhưng để trống thì không gửi gì (lưu 0 phút). */}
+                <Input id="new-lesson-duration" type="number" min={0} value={lessonDuration} onChange={(e) => setLessonDuration(e.target.value)} placeholder="Không bắt buộc" />
+                <p className="text-xs text-muted-foreground">Để trống nếu chưa rõ.</p>
               </div>
               <div className="space-y-3 pt-6">
                 <div className="flex items-center justify-between">
@@ -1230,9 +1294,9 @@ export default function CourseDetailPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLessonDialog(null)}>Huỷ</Button>
-            <Button onClick={handleCreateLesson} disabled={!lessonTitle.trim() || createLessonMutation.isPending}>
-              {createLessonMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+            <Button variant="outline" onClick={() => setLessonDialog(null)} disabled={lessonBusy}>Huỷ</Button>
+            <Button onClick={handleCreateLesson} disabled={!lessonTitle.trim() || lessonBusy}>
+              {lessonBusy && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
               Tạo bài học
             </Button>
           </DialogFooter>

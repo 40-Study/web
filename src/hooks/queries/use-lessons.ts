@@ -5,6 +5,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { lessonService } from "@/services/lesson.service";
+import { isUncertainOutcomeError } from "@/lib/uncertain-mutation";
+import { sectionKeys } from "@/hooks/queries/use-sections";
 import type { CreateLessonDTO, UpdateLessonDTO } from "@/types/lesson";
 
 export const lessonKeys = {
@@ -41,9 +43,14 @@ export function useCreateLesson(courseId: string, sectionId: string) {
       lessonService.createLesson(sectionId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: lessonKeys.bySection(courseId, sectionId) });
+      // Trang chi tiết khoá đọc bài học từ danh sách chương (QA-B-11), nên phải làm mới cả nó.
+      qc.invalidateQueries({ queryKey: sectionKeys.byCourse(courseId) });
       toast.success("Đã tạo bài học");
     },
-    onError: () => toast.error("Không thể tạo bài học"),
+    // Timeout/mất mạng: xem useCreateSection — trang gọi tự đối chiếu với server (QA-B-03).
+    onError: (error) => {
+      if (!isUncertainOutcomeError(error)) toast.error("Không thể tạo bài học");
+    },
   });
 }
 
@@ -55,6 +62,8 @@ export function useUpdateLesson(courseId: string, sectionId: string) {
       lessonService.updateLesson(id, data),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: lessonKeys.bySection(courseId, sectionId) });
+      // Trang chi tiết khoá đọc bài học từ danh sách chương (QA-B-11), nên phải làm mới cả nó.
+      qc.invalidateQueries({ queryKey: sectionKeys.byCourse(courseId) });
       qc.invalidateQueries({ queryKey: lessonKeys.detail(id) });
       toast.success("Đã cập nhật bài học");
     },
@@ -69,6 +78,8 @@ export function useDeleteLesson(courseId: string, sectionId: string) {
     mutationFn: (id: string) => lessonService.deleteLesson(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: lessonKeys.bySection(courseId, sectionId) });
+      // Trang chi tiết khoá đọc bài học từ danh sách chương (QA-B-11), nên phải làm mới cả nó.
+      qc.invalidateQueries({ queryKey: sectionKeys.byCourse(courseId) });
       toast.success("Đã xoá bài học");
     },
     onError: () => toast.error("Không thể xoá bài học"),
@@ -83,6 +94,8 @@ export function useReorderLessons(courseId: string, sectionId: string) {
       lessonService.reorderLessons(sectionId, items),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: lessonKeys.bySection(courseId, sectionId) });
+      // Trang chi tiết khoá đọc bài học từ danh sách chương (QA-B-11), nên phải làm mới cả nó.
+      qc.invalidateQueries({ queryKey: sectionKeys.byCourse(courseId) });
     },
     onError: () => toast.error("Không thể sắp xếp lại bài học"),
   });
