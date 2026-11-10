@@ -1269,8 +1269,10 @@ export default function CourseDetailPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Thời lượng (phút)</Label>
-                <Input type="number" value={lessonDuration} onChange={(e) => setLessonDuration(e.target.value)} placeholder="15" />
+                <Label htmlFor="new-lesson-duration">Thời lượng (phút)</Label>
+                {/* B-18: placeholder "15" trông như giá trị mặc định nhưng để trống thì không gửi gì (lưu 0 phút). */}
+                <Input id="new-lesson-duration" type="number" min={0} value={lessonDuration} onChange={(e) => setLessonDuration(e.target.value)} placeholder="Không bắt buộc" />
+                <p className="text-xs text-muted-foreground">Để trống nếu chưa rõ.</p>
               </div>
               <div className="space-y-3 pt-6">
                 <div className="flex items-center justify-between">
