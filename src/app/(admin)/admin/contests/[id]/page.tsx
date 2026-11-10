@@ -33,6 +33,7 @@ import { contestErrorMessage } from "@/lib/contest-manage/errors";
 import { formatVnDateTime } from "@/lib/contest-manage/format";
 import { prizeDraftsToInput, prizesToDrafts, validatePrizes, type PrizeDraft } from "@/lib/contest-manage/form";
 import { parseVoucherGrantError, type VoucherGrantError } from "@/lib/contest-manage/voucher-grant-error";
+import { buildContestVoucherOptions } from "@/lib/contest-manage/voucher-options";
 import { useAuthStore } from "@/stores/auth.store";
 import type { ContestManage } from "@/types/contest";
 
@@ -62,16 +63,16 @@ function AdminContestActionsPanel({ contest }: { contest: ContestManage }) {
   // (lưu giải làm dữ liệu đổi → panel mount lại theo key `updated_at` → alert tự xoá).
   const [grantError, setGrantError] = useState<VoucherGrantError | null>(null);
   const vouchers = useContestVoucherOptions(actions.canEditPrizes);
-  const voucherOptions = useMemo(() => {
-    const opts = (vouchers.data ?? []).map((v) => ({ id: v.id, label: `${v.name} (${v.code})` }));
-    // Voucher đang gắn có thể đã bị tắt: vẫn hiện để admin thấy và đổi, thay vì ô trống khó hiểu.
-    for (const p of contest.prizes) {
-      if (p.voucher && !opts.some((o) => o.id === p.voucher?.id)) {
-        opts.push({ id: p.voucher.id, label: `${p.voucher.name} (${p.voucher.code}) — không còn hoạt động` });
-      }
-    }
-    return opts;
-  }, [vouchers.data, contest.prizes]);
+  // QA-C-22: voucher hết hạn trước khi cuộc thi kết thúc bị khoá; voucher đang gắn mà đã tắt vẫn hiện để admin đổi.
+  const voucherOptions = useMemo(
+    () =>
+      buildContestVoucherOptions(
+        vouchers.data ?? [],
+        contest.end_time,
+        contest.prizes.flatMap((p) => (p.voucher ? [p.voucher] : []))
+      ),
+    [vouchers.data, contest.end_time, contest.prizes]
+  );
 
   const approve = useApproveContest();
   const reject = useRejectContest();

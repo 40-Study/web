@@ -3,7 +3,7 @@
  * trim, đổi từ khoá thì về trang 1.
  */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AdminOrdersPage from "./page";
 
@@ -64,7 +64,7 @@ describe("AdminOrdersPage — tìm kiếm phía server", () => {
     expect(mockUseAdminOrders).toHaveBeenLastCalledWith(
       expect.objectContaining({ q: "Nguyen Van A", page: 3 }),
     );
-    expect(screen.getByText("FX-000226")).toBeTruthy();
+    expect(within(screen.getByRole("table")).getByText("FX-000226")).toBeTruthy();
   });
 
   it("không gửi q khi URL chỉ có dấu cách", () => {
@@ -92,7 +92,7 @@ describe("AdminOrdersPage — tìm kiếm phía server", () => {
 
   it("QA3-05: nút Chi tiết nằm trong ô được ghim vào mép phải để thấy được ở 390px", () => {
     render(<AdminOrdersPage />);
-    const cell = screen.getByRole("link", { name: "Chi tiết" }).closest("td")!;
+    const cell = within(screen.getByRole("table")).getByRole("link", { name: "Chi tiết" }).closest("td")!;
     expect(cell.className).toContain("sticky");
     expect(cell.className).toContain("right-0");
   });

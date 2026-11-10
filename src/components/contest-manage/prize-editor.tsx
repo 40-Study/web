@@ -14,6 +14,8 @@ import { CONTEST_MAX_PRIZES, type PrizeDraft } from "@/lib/contest-manage/form";
 export interface VoucherOption {
   id: string;
   label: string;
+  /** Hiện nhưng không chọn được (vd voucher hết hạn trước khi cuộc thi kết thúc — QA-C-22). */
+  disabled?: boolean;
 }
 
 interface PrizeEditorProps {
@@ -129,7 +131,7 @@ export function PrizeEditor({
               >
                 <option value="">Không tặng voucher</option>
                 {voucherOptions.map((v) => (
-                  <option key={v.id} value={v.id}>
+                  <option key={v.id} value={v.id} disabled={v.disabled}>
                     {v.label}
                   </option>
                 ))}

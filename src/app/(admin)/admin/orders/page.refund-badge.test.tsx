@@ -61,30 +61,30 @@ vi.mock("@/hooks/queries/use-admin-orders", () => ({
 describe("AdminOrdersPage — badge Cần hoàn tiền", () => {
   it("chỉ đơn có refund_needed hiện badge", () => {
     render(<AdminOrdersPage />);
-    const flaggedRow = screen.getByText("ORD-FLAGGED").closest("tr")!;
-    const plainRow = screen.getByText("ORD-PLAIN").closest("tr")!;
+    const flaggedRow = within(screen.getByRole("table")).getByText("ORD-FLAGGED").closest("tr")!;
+    const plainRow = within(screen.getByRole("table")).getByText("ORD-PLAIN").closest("tr")!;
     expect(within(flaggedRow).getByText("Cần hoàn tiền")).toBeTruthy();
     expect(within(plainRow).queryByText("Cần hoàn tiền")).toBeNull();
   });
 
   it("đơn admin đã ghi nhận hoàn: badge đổi thành Đã hoàn tiền, không còn Cần hoàn tiền", () => {
     render(<AdminOrdersPage />);
-    const doneRow = screen.getByText("ORD-DONE").closest("tr")!;
+    const doneRow = within(screen.getByRole("table")).getByText("ORD-DONE").closest("tr")!;
     expect(within(doneRow).getByText("Đã hoàn tiền")).toBeTruthy();
     expect(within(doneRow).queryByText("Cần hoàn tiền")).toBeNull();
     // Đơn có cờ hoặc chưa từng có tiền về không mang nhãn "Đã hoàn tiền".
-    expect(within(screen.getByText("ORD-FLAGGED").closest("tr")!).queryByText("Đã hoàn tiền")).toBeNull();
-    expect(within(screen.getByText("ORD-PLAIN").closest("tr")!).queryByText("Đã hoàn tiền")).toBeNull();
+    expect(within(within(screen.getByRole("table")).getByText("ORD-FLAGGED").closest("tr")!).queryByText("Đã hoàn tiền")).toBeNull();
+    expect(within(within(screen.getByRole("table")).getByText("ORD-PLAIN").closest("tr")!).queryByText("Đã hoàn tiền")).toBeNull();
   });
 
   // L6 mục 3: admin thấy bao nhiêu khoản và tổng tiền cần hoàn ngay ở danh sách.
   it("đơn có cờ hiện số khoản chờ hoàn và tổng tiền; đơn khác không có dòng này", () => {
     render(<AdminOrdersPage />);
-    const flaggedRow = screen.getByText("ORD-FLAGGED").closest("tr")!;
+    const flaggedRow = within(screen.getByRole("table")).getByText("ORD-FLAGGED").closest("tr")!;
     const summary = within(flaggedRow).getByTestId("late-refund-summary");
     expect(summary.textContent).toContain("2 khoản chờ hoàn");
     expect((summary.textContent ?? "").replace(/\s/g, " ")).toMatch(/749\.000/);
-    expect(within(screen.getByText("ORD-PLAIN").closest("tr")!).queryByTestId("late-refund-summary")).toBeNull();
-    expect(within(screen.getByText("ORD-DONE").closest("tr")!).queryByTestId("late-refund-summary")).toBeNull();
+    expect(within(within(screen.getByRole("table")).getByText("ORD-PLAIN").closest("tr")!).queryByTestId("late-refund-summary")).toBeNull();
+    expect(within(within(screen.getByRole("table")).getByText("ORD-DONE").closest("tr")!).queryByTestId("late-refund-summary")).toBeNull();
   });
 });
