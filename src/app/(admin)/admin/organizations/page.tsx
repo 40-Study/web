@@ -1,114 +1,107 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  useOrganizations,
-  useCreateOrganization,
-  useDeleteOrganization,
-  useUpdateOrganization,
-} from "@/hooks/queries/use-admin";
+import { useOrganizationsPage } from "@/hooks/queries/use-admin";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
 import { QueryState } from "@/components/common/query-state";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import { PaginationControls } from "@/components/common/pagination-controls";
+import { Input } from "@/components/ui/input";
 import { OrgMembersPanel } from "@/components/org-members/org-members-panel";
 import { useAuthStore } from "@/stores/auth.store";
-import { formatVnDateTime } from "../_lib/format-vn-datetime";
+import { cn } from "@/lib/utils";
+import type { Organization } from "@/services/organization.service";
+import { EMPTY_ORG_FORM, OrganizationForm, type OrgFormState } from "./_components/organization-form";
+import { OrganizationDetail, OrgStatusBadge } from "./_components/organization-detail";
+import { DeleteOrganizationDialog } from "./_components/delete-organization-dialog";
 
-type OrgFormState = {
-  id?: string;
-  name: string;
-};
+const PAGE_SIZE = 20;
 
-const emptyForm: OrgFormState = { name: "" };
-
-// Khớp validate backend CreateOrganizationDTO/UpdateOrganizationDTO (min=2 sau khi trim).
-const ORG_NAME_MIN_LENGTH = 2;
-
+/**
+ * Quản lý tổ chức. QA-C-06: có tìm kiếm + phân trang theo `total` của API (trước chỉ đọc trang đầu 20 tổ chức và
+ * cắt im lặng), thẻ có mô tả/trạng thái, và chi tiết + thành viên nằm cùng cột phải để không phải cuộn xuống dưới
+ * cả danh sách mới thấy.
+ */
 export default function OrganizationsPage() {
-  const { data = [], isLoading, isError, refetch } = useOrganizations();
-  const createOrg = useCreateOrganization();
-  const updateOrg = useUpdateOrganization();
-  const deleteOrg = useDeleteOrganization();
+  const [keyword, setKeyword] = useState("");
+  const [page, setPage] = useState(1);
+  const debouncedKeyword = useDebouncedValue(keyword.trim(), 300);
+  const orgs = useOrganizationsPage({ keyword: debouncedKeyword, page, pageSize: PAGE_SIZE });
+  const data = useMemo(() => orgs.data?.organizations ?? [], [orgs.data]);
 
   const currentUserId = useAuthStore((s) => s.user?.id);
-  const [form, setForm] = useState<OrgFormState>(emptyForm);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  // Xác nhận trước khi xoá tổ chức (đồng nhất với H-09 ở admin/roles)
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [nameError, setNameError] = useState<string | null>(null);
-
-  const selected = useMemo(
-    () => data.find((org) => org.id === selectedId) || null,
-    [data, selectedId]
-  );
-  const confirmDeleteOrg = useMemo(
-    () => data.find((org) => org.id === confirmDeleteId) || null,
-    [data, confirmDeleteId]
-  );
-
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // QA vòng 2 (G2/G8): trước đây "   " lọt qua `!form.name` và được gửi lên (backend cũng không
-    // chặn) -> tổ chức tên rỗng; còn ô trống thì bấm "Tạo" không có phản hồi gì. Trim + báo lỗi
-    // ngay trên form; backend vẫn validate lại (required, min=2 sau trim).
-    const name = form.name.trim();
-    if (name.length < ORG_NAME_MIN_LENGTH) {
-      setNameError(`Tên tổ chức phải có ít nhất ${ORG_NAME_MIN_LENGTH} ký tự (không tính khoảng trắng).`);
-      return;
-    }
-    setNameError(null);
-
-    // QA3-10: chỉ xoá form khi server nhận (onSuccess). Reset ngay sau mutate làm mất tên vừa gõ khi
-    // gặp lỗi như "Tên tổ chức đã tồn tại", người dùng phải gõ lại từ đầu.
-    const onSuccess = () => setForm(emptyForm);
-    if (form.id) {
-      updateOrg.mutate({ id: form.id, data: { name } }, { onSuccess });
-    } else {
-      createOrg.mutate({ name }, { onSuccess });
-    }
-  };
-
-  const startEdit = (org: (typeof data)[number]) => {
-    setForm({ id: org.id, name: org.name });
-  };
+  const [form, setForm] = useState<OrgFormState>(EMPTY_ORG_FORM);
+  // Giữ cả object (không chỉ id) để chi tiết vẫn hiện khi đổi trang/tìm kiếm làm tổ chức đang chọn rời khỏi trang.
+  const [selected, setSelected] = useState<Organization | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Organization | null>(null);
+  const selectedFresh = (selected && data.find((o) => o.id === selected.id)) || selected;
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý tổ chức</h1>
-        <p className="mt-1 text-sm text-gray-500">Tạo, sửa, xoá tổ chức; chọn một tổ chức để xem chi tiết và quản lý thành viên.</p>
+        <h1 className="text-2xl font-bold text-foreground">Quản lý tổ chức</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Tạo, sửa, xoá tổ chức; chọn một tổ chức để xem chi tiết và quản lý thành viên.
+        </p>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
         <div className="space-y-3">
+          <Input
+            value={keyword}
+            onChange={(e) => {
+              setKeyword(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Tìm tổ chức theo tên"
+            aria-label="Tìm tổ chức"
+          />
+          {orgs.data && (
+            <p className="text-xs text-muted-foreground" aria-live="polite">
+              {orgs.data.total} tổ chức{debouncedKeyword ? ` khớp "${debouncedKeyword}"` : ""}
+            </p>
+          )}
           <QueryState
-            isLoading={isLoading}
-            isError={isError}
+            isLoading={orgs.isLoading}
+            isError={orgs.isError}
+            error={orgs.error}
             isEmpty={data.length === 0}
-            emptyTitle="Chưa có tổ chức nào"
-            onRetry={() => refetch()}
+            emptyTitle={debouncedKeyword ? "Không có tổ chức phù hợp" : "Chưa có tổ chức nào"}
+            emptyDescription={debouncedKeyword ? "Thử từ khoá khác." : "Tạo tổ chức đầu tiên bằng form bên cạnh."}
+            onRetry={() => orgs.refetch()}
           >
             {data.map((org) => (
               <div
                 key={org.id}
-                className={`rounded-xl bg-white p-4 shadow-sm ${selected?.id === org.id ? "ring-2 ring-primary-200" : ""}`}
+                className={cn(
+                  "rounded-xl border border-border bg-card p-4 shadow-sm",
+                  selectedFresh?.id === org.id && "ring-2 ring-primary-300"
+                )}
               >
-                <button className="w-full text-left" onClick={() => setSelectedId(org.id)}>
-                  <h3 className="font-semibold text-gray-900">{org.name}</h3>
-                  {org.code && <p className="text-sm text-gray-500">{org.code}</p>}
+                <button
+                  className="w-full text-left"
+                  aria-pressed={selectedFresh?.id === org.id}
+                  onClick={() => setSelected(org)}
+                >
+                  <span className="flex items-start justify-between gap-2">
+                    <span className="min-w-0 font-semibold text-foreground">{org.name}</span>
+                    <OrgStatusBadge status={org.status} />
+                  </span>
+                  <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">
+                    {org.description?.trim() || "Chưa có mô tả"}
+                  </span>
                 </button>
                 <Can permission={PERMISSIONS.MANAGE_ORGANIZATIONS}>
                   <div className="mt-3 flex gap-2">
                     <button
-                      onClick={() => startEdit(org)}
+                      onClick={() => setForm({ id: org.id, name: org.name, description: org.description ?? "" })}
                       className="rounded bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700"
                     >
                       Sửa
                     </button>
                     <button
-                      onClick={() => setConfirmDeleteId(org.id)}
+                      onClick={() => setConfirmDelete(org)}
                       className="rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-700"
                     >
                       Xoá
@@ -118,92 +111,43 @@ export default function OrganizationsPage() {
               </div>
             ))}
           </QueryState>
+          <PaginationControls page={page} totalCount={orgs.data?.total ?? 0} pageSize={PAGE_SIZE} onPageChange={setPage} />
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <Can permission={PERMISSIONS.MANAGE_ORGANIZATIONS}>
-            <form onSubmit={onSubmit} className="rounded-xl bg-white p-4 shadow-sm">
-              <h2 className="text-base font-semibold text-gray-900">
-                {form.id ? "Cập nhật tổ chức" : "Tạo tổ chức mới"}
-              </h2>
-              <div className="mt-3 space-y-2">
-                <input
-                  placeholder="Tên tổ chức"
-                  aria-label="Tên tổ chức"
-                  aria-invalid={nameError ? true : undefined}
-                  value={form.name}
-                  onChange={(e) => {
-                    setForm((prev) => ({ ...prev, name: e.target.value }));
-                    if (nameError) setNameError(null);
-                  }}
-                  className="h-10 w-full rounded border border-gray-200 px-3 text-sm"
-                />
-                {nameError && (
-                  <p role="alert" className="text-xs text-red-600">
-                    {nameError}
-                  </p>
-                )}
-                <div className="flex gap-2">
-                  <button type="submit" className="rounded bg-primary-600 px-3 py-2 text-sm font-medium text-white">
-                    {form.id ? "Lưu" : "Tạo"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setForm(emptyForm)}
-                    className="rounded bg-gray-100 px-3 py-2 text-sm font-medium"
-                  >
-                    Xoá nội dung đã nhập
-                  </button>
-                </div>
-              </div>
-            </form>
+            <OrganizationForm form={form} onChange={setForm} />
           </Can>
 
-          <div className="rounded-xl bg-white p-4 shadow-sm">
-            <h2 className="text-base font-semibold text-gray-900">Chi tiết tổ chức</h2>
-            {selected ? (
-              <div className="mt-3 space-y-2 text-sm">
-                <p><span className="text-gray-500">ID:</span> {selected.id}</p>
-                <p><span className="text-gray-500">Tên:</span> {selected.name}</p>
-                {selected.code && <p><span className="text-gray-500">Mã:</span> {selected.code}</p>}
-                {selected.created_at && <p><span className="text-gray-500">Tạo lúc:</span> {formatVnDateTime(selected.created_at)}</p>}
-              </div>
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <h2 className="text-base font-semibold text-foreground">Chi tiết tổ chức</h2>
+            {selectedFresh ? (
+              <OrganizationDetail org={selectedFresh} />
             ) : (
-              <p className="mt-2 text-sm text-gray-500">Chọn một tổ chức để xem chi tiết.</p>
+              <p className="mt-2 text-sm text-muted-foreground">Chọn một tổ chức để xem chi tiết và thành viên.</p>
             )}
           </div>
+
+          {selectedFresh && (
+            <section
+              aria-label={`Thành viên của ${selectedFresh.name}`}
+              className="rounded-xl border border-border bg-card p-4 shadow-sm"
+            >
+              <OrgMembersPanel key={selectedFresh.id} orgId={selectedFresh.id} canAddMember currentUserId={currentUserId} />
+            </section>
+          )}
         </div>
       </div>
 
-      {selected && (
-        <section aria-label={`Thành viên của ${selected.name}`} className="rounded-xl bg-white p-4 shadow-sm">
-          <p className="mb-3 text-sm text-gray-500">
-            Thành viên của <span className="font-medium text-gray-900">{selected.name}</span>
-          </p>
-          <OrgMembersPanel key={selected.id} orgId={selected.id} canAddMember currentUserId={currentUserId} />
-        </section>
-      )}
-
-      <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
-        <DialogContent>
-          <DialogTitle>Xoá tổ chức &quot;{confirmDeleteOrg?.name}&quot;?</DialogTitle>
-          <DialogDescription>Hành động này không thể hoàn tác.</DialogDescription>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>
-              Huỷ
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (confirmDeleteId) deleteOrg.mutate(confirmDeleteId);
-                setConfirmDeleteId(null);
-              }}
-            >
-              Xoá tổ chức
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteOrganizationDialog
+        org={confirmDelete}
+        currentUserId={currentUserId}
+        onClose={() => setConfirmDelete(null)}
+        onDeleted={(id) => {
+          if (selected?.id === id) setSelected(null);
+          if (form.id === id) setForm(EMPTY_ORG_FORM);
+        }}
+      />
     </div>
   );
 }

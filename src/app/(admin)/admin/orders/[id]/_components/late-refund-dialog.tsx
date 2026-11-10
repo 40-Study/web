@@ -10,7 +10,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatCurrency } from "@/lib/utils";
+import { formatVnd } from "@/lib/vnd-format";
 import { formatLateRefundAmount } from "@/lib/late-refund";
 import type { LateRefundItem } from "@/services/order.service";
 
@@ -124,7 +124,7 @@ export function LateRefundDialog({ orderId, orderNumber, totalAmount, pendingIte
               </>
             ) : (
               <>
-                Đơn <strong>{orderNumber}</strong> đã nhận khoản tiền {formatCurrency(totalAmount)} sau khi
+                Đơn <strong>{orderNumber}</strong> đã nhận khoản tiền {formatVnd(totalAmount)} sau khi
                 đơn đóng.
               </>
             )}{" "}

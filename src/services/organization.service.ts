@@ -11,6 +11,8 @@ export interface Organization {
   id: string;
   name: string;
   description?: string;
+  /** "active" mặc định (model Organization); giá trị khác hiện nguyên văn qua nhãn trạng thái. */
+  status?: string;
   code?: string;
   logo?: string;
   created_at?: string;
@@ -110,6 +112,14 @@ export const organizationService = {
   /** GET /organizations */
   list: () =>
     api.get<R<{ organizations: Organization[] }>>("/organizations").then((r) => r.data.data.organizations),
+
+  /** GET /organizations?keyword=&page=&page_size= — một trang kèm tổng số (backend giới hạn page_size ≤ 100). */
+  search: (params: { keyword?: string; page?: number; page_size?: number }) =>
+    api
+      .get<R<{ organizations: Organization[]; total: number; page: number; page_size: number }>>("/organizations", {
+        params: { ...params, keyword: params.keyword?.trim() || undefined },
+      })
+      .then((r) => r.data.data),
 
   /** GET /organizations/:orgId */
   getById: (orgId: string) =>

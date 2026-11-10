@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { Activity } from "lucide-react";
-import { useOrganizations, usePermissions, useSystemRolesWithUserCounts } from "@/hooks/queries/use-admin";
+import { useOrganizationsPage, usePermissions, useSystemRolesWithUserCounts } from "@/hooks/queries/use-admin";
 import { useAuditLogs } from "@/hooks/queries/use-audit-logs";
 import { Can } from "@/components/guards";
 import { QueryState } from "@/components/common/query-state";
@@ -12,6 +12,7 @@ import { formatVnDateTime } from "@/lib/vn-datetime";
 import { getSystemRoleLabel } from "@/lib/role-labels";
 import { PERMISSIONS } from "@/lib/permissions";
 import { auditActionLabel } from "@/services/audit-log.service";
+import { roleUserCountLabel } from "./_lib/org-scoped-role";
 
 const RECENT_ACTIVITY_SIZE = 5;
 
@@ -57,12 +58,13 @@ function RecentActivity() {
 }
 
 export default function AdminIndexPage() {
+  // QA-C-06: đếm theo `total` của API; độ dài danh sách chỉ ra tối đa một trang (20).
   const {
-    data: organizations = [],
+    data: orgPage,
     isLoading: orgLoading,
     isError: orgError,
     refetch: refetchOrgs,
-  } = useOrganizations();
+  } = useOrganizationsPage({ keyword: "", page: 1, pageSize: 1 });
   const {
     roles,
     totalAssignedUsers,
@@ -94,7 +96,7 @@ export default function AdminIndexPage() {
       <section>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Tổng quan vận hành</h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Theo dõi nhanh hiệu suất quản trị hệ thống theo thời gian thực.
+          Số tổ chức, vai trò, quyền và các thao tác quản trị gần đây.
         </p>
       </section>
 
@@ -111,7 +113,7 @@ export default function AdminIndexPage() {
           <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
             <p className="text-sm text-gray-500">Tổng tổ chức</p>
             <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
-              {organizations.length}
+              {orgPage?.total ?? 0}
             </p>
           </div>
           <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
@@ -127,7 +129,7 @@ export default function AdminIndexPage() {
             </p>
           </div>
           <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-            <p className="text-sm text-gray-500">Tổng lượt gán role</p>
+            <p className="text-sm text-gray-500">Tổng lượt gán vai trò</p>
             <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
               {totalAssignedUsersError ? "lỗi" : totalAssignedUsers === null ? "…" : totalAssignedUsers}
             </p>
@@ -141,26 +143,26 @@ export default function AdminIndexPage() {
 
         <section className="mt-6 grid gap-4 lg:grid-cols-2">
           <div className="rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Top vai trò theo số lượng user</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Vai trò có nhiều người dùng nhất</h3>
             <div className="mt-4 space-y-3">
               {topRoles.length === 0 ? (
                 <p className="text-sm text-gray-500">Chưa có dữ liệu vai trò</p>
               ) : (
                 topRoles.map((role) => (
-                  <div key={role.id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900">
-                    <div>
+                  <div key={role.id} className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900">
+                    <div className="min-w-0">
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{getSystemRoleLabel(role.name)}</p>
                       <p className="text-xs text-gray-500">{role.description || "Không có mô tả"}</p>
                     </div>
                     <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                      className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${
                         role.userCountError
                           ? "bg-amber-100 text-amber-700"
                           : "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
                       }`}
                       title={role.userCountError ? "Không tải được số người dùng (có thể thiếu quyền hoặc hệ thống đang lỗi)" : undefined}
                     >
-                      {role.userCountError ? "lỗi" : role.userCount === null ? "…" : `${role.userCount} user`}
+                      {roleUserCountLabel(role)}
                     </span>
                   </div>
                 ))

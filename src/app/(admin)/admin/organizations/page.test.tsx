@@ -125,6 +125,64 @@ describe("/admin/organizations — QA3-10/17: giữ tên khi lỗi, nút xoá b�
   });
 });
 
+describe("/admin/organizations — QA-C-06: tìm kiếm, thẻ có mô tả/trạng thái, không lộ UUID", () => {
+  it("gõ từ khoá thì gọi GET /organizations kèm keyword, trang 1", async () => {
+    renderWithProviders(<OrganizationsPage />);
+    await screen.findByText("ForteX");
+    fireEvent.change(screen.getByLabelText("Tìm tổ chức"), { target: { value: "Forte" } });
+    await waitFor(() =>
+      expect(mockApi.get).toHaveBeenCalledWith(
+        "/organizations",
+        expect.objectContaining({ params: expect.objectContaining({ keyword: "Forte", page: 1 }) })
+      )
+    );
+  });
+
+  it("chi tiết không in UUID thô, có trạng thái và chủ tổ chức", async () => {
+    mockApi.get.mockImplementation(async (url: string) => {
+      if (url === "/organizations") return envelope({ organizations: [{ ...ORG, status: "active", description: "Trung tâm lập trình" }], total: 1 });
+      if (url === "/organizations/org-1/members") {
+        return envelope({
+          user_organization_roles: [
+            { id: "a1", user_id: "u1", role_id: "r0", status: "active", user: { id: "u1", user_name: "owner", full_name: "Chủ Một", email: "o@x.vn" }, role: { id: "r0", name: "ORG_OWNER" } },
+          ],
+          total: 1,
+        });
+      }
+      if (url === "/org-roles") return envelope({ roles: [] });
+      throw new Error(`GET không mong đợi trong test: ${url}`);
+    });
+    renderWithProviders(<OrganizationsPage />);
+    fireEvent.click(await screen.findByText("ForteX"));
+    expect(await screen.findByText("Chủ Một", { selector: "dd" })).toBeTruthy();
+    expect(screen.getAllByText("Đang hoạt động").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Trung tâm lập trình").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/org-1/)).toBeNull();
+  });
+});
+
+describe("/admin/organizations — QA-C-20: cảnh báo bị đăng xuất khi xoá tổ chức mình là thành viên", () => {
+  const openDelete = async () => {
+    renderWithProviders(<OrganizationsPage />);
+    await screen.findByText("ForteX");
+    fireEvent.click(screen.getByRole("button", { name: "Xoá" }));
+  };
+
+  it("người đang đăng nhập là thành viên: hộp thoại báo trước sẽ bị đăng xuất", async () => {
+    useAuthStore.setState({ user: { id: "u1" } as never });
+    await openDelete();
+    expect((await screen.findByRole("note")).textContent).toContain("bạn cũng sẽ bị đăng xuất");
+    expect(screen.getByText(/1 thành viên sẽ mất vai trò/)).toBeTruthy();
+  });
+
+  it("không phải thành viên: không có cảnh báo về bản thân", async () => {
+    useAuthStore.setState({ user: { id: "someone-else" } as never });
+    await openDelete();
+    await screen.findByText(/1 thành viên sẽ mất vai trò/);
+    expect(screen.queryByRole("note")).toBeNull();
+  });
+});
+
 describe("/admin/organizations — QA3-04: thành viên của tổ chức", () => {
   it("chọn tổ chức hiện danh sách thành viên kèm nút 'Thêm thành viên'; chưa chọn thì không có", async () => {
     renderWithProviders(<OrganizationsPage />);

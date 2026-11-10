@@ -15,10 +15,29 @@ import {
   buildCreateVoucherPayload,
   buildUpdateVoucherPayload,
   emptyVoucherForm,
+  VOUCHER_RUN_STATE_LABEL,
+  voucherRunState,
   voucherToForm,
   voucherValidityText,
   type VoucherFormState,
+  type VoucherRunState,
 } from "./voucher-form-model";
+
+const RUN_STATE_CLASS: Record<VoucherRunState, string> = {
+  running: "bg-green-50 text-green-700 ring-1 ring-green-200",
+  scheduled: "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
+  expired: "bg-red-50 text-red-700 ring-1 ring-red-200",
+  exhausted: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+  disabled: "bg-gray-100 text-gray-500",
+};
+
+function VoucherRunBadge({ state }: { state: VoucherRunState }) {
+  return (
+    <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${RUN_STATE_CLASS[state]}`}>
+      {VOUCHER_RUN_STATE_LABEL[state]}
+    </span>
+  );
+}
 
 // Quản lý voucher (L1): backend đã có POST/PUT/GET /vouchers (quyền SYSTEM_SETTINGS_MANAGE) nhưng
 // web chưa có trang nào để admin dùng. Trang này tạo/sửa voucher, gồm công tắc "Dành riêng"
@@ -120,9 +139,7 @@ export default function AdminVouchersPage() {
                       {FIRST_ORDER_ONLY_BADGE_LABEL}
                     </span>
                   )}
-                  {!v.is_active && (
-                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">Đang tắt</span>
-                  )}
+                  <VoucherRunBadge state={voucherRunState(v)} />
                 </div>
                 <p className="mt-1 text-sm text-gray-700">{v.name}</p>
                 <p className="text-sm font-medium text-primary-600">{formatVoucherDiscountLabel(v)}</p>

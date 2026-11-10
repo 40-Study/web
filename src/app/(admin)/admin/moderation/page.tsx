@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAllReports, useUpdateReportStatus } from "@/hooks/queries/use-reports";
 import type { Report, ReportModerationAction, ReportStatus } from "@/services/report.service";
 import { QueryState } from "@/components/common/query-state";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { ReportActionDialog } from "./_components/report-action-dialog";
@@ -49,7 +50,8 @@ const REPORTED_TYPE_LABEL: Record<string, string> = {
 
 type StatusFilter = "ALL" | ReportStatus;
 
-const formatDate = (iso?: string) => (iso ? new Date(iso).toLocaleString("vi-VN") : "-");
+// QA-C-12: cùng định dạng ngày giờ VN với các màn admin khác (không giây).
+const formatDate = (iso?: string) => formatVnDateTime(iso);
 
 export default function AdminModerationPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");

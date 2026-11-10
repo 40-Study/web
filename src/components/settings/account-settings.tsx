@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Mail, Lock, ShieldCheck, Trash2, Users, ChevronRight, Check, Plus, LogOut } from "lucide-react";
+import { Mail, Lock, ShieldCheck, Trash2, Users, ChevronRight, Check, Plus, LogOut, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -17,6 +17,7 @@ import { ApiError } from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-messages";
 import { validateNewPassword } from "@/lib/password-policy";
 import { PasswordChecklist } from "@/components/auth/password-checklist";
+import { getSystemRoleLabel } from "@/lib/role-labels";
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
 
@@ -53,8 +54,11 @@ const ROLE_CONFIG: Record<string, { label: string; color: string; bgColor: strin
   TEACHER_APPLICANT: { label: "Ứng viên giáo viên", color: "text-gray-600", bgColor: "bg-gray-100", icon: "📝" },
 };
 
+// QA-C-09: nhãn lấy từ bảng chung `getSystemRoleLabel` (màn chọn vai lúc login, danh sách thành viên cũng dùng) để
+// cùng một vai không lúc là "Quản lý tổ chức", lúc là "Chủ tổ chức". ROLE_CONFIG chỉ còn giữ màu và icon.
 function getRoleConfig(role: string) {
-  return ROLE_CONFIG[role] || { label: role, color: "text-gray-600", bgColor: "bg-gray-100", icon: "👤" };
+  const base = ROLE_CONFIG[role] || { label: role, color: "text-gray-600", bgColor: "bg-gray-100", icon: "👤" };
+  return { ...base, label: getSystemRoleLabel(role) };
 }
 
 // ─── Props ──────────────────────────────────────────────────────────────────
@@ -84,7 +88,10 @@ export function AccountSettings({
   const [isLoading, setIsLoading] = useState(false);
 
   // Get roles from store
-  const { roles, activeRole, activeUnifiedRole, activeOrg } = useAuthStore();
+  const { roles, activeRole, activeUnifiedRole, activeOrg, user: sessionUser } = useAuthStore();
+  // QA-C-09: trang Cài đặt không truyền name/avatar nên header hộp thoại từng ghi "Người dùng"; lấy từ phiên.
+  const displayName = user.name?.trim() || sessionUser?.name?.trim() || "";
+  const displayAvatar = user.avatar || sessionUser?.avatar;
 
   const passwordForm = useForm<ChangePasswordData>({ resolver: zodResolver(changePasswordSchema), defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" } });
   const deleteForm = useForm<DeleteAccountData>({ resolver: zodResolver(deleteAccountSchema), defaultValues: { password: "" } });
@@ -261,20 +268,30 @@ export function AccountSettings({
 
       {/* Switch Account Dialog */}
       <Dialog open={switchAccountOpen} onOpenChange={setSwitchAccountOpen}>
-        <DialogContent className="rounded-2xl max-w-sm p-0 overflow-hidden">
+        {/* QA-C-09: nút X mặc định (icon xám) chìm trên nền gradient; tự vẽ nút trắng trong header. */}
+        <DialogContent className="rounded-2xl max-w-sm p-0 overflow-hidden" showCloseButton={false}>
+          <DialogTitle className="sr-only">Chuyển tài khoản</DialogTitle>
           {/* Current user header */}
-          <div className="p-5 bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+          <div className="relative p-5 pr-12 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl">
+            <button
+              type="button"
+              onClick={() => setSwitchAccountOpen(false)}
+              aria-label="Đóng hộp thoại"
+              className="absolute right-3 top-3 rounded-full p-1.5 text-white hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
             <div className="flex items-center gap-3">
-              {user.avatar ? (
-                <img src={user.avatar} alt="" className="w-14 h-14 rounded-full border-2 border-white/30" />
+              {displayAvatar ? (
+                <img src={displayAvatar} alt="" className="w-14 h-14 rounded-full border-2 border-white/30" />
               ) : (
                 <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold">
-                  {user.name?.[0] || user.email?.[0]?.toUpperCase() || "?"}
+                  {displayName[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "?"}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate">{user.name || "Người dùng"}</p>
-                <p className="text-sm text-white/80 truncate">{user.email}</p>
+                <p className="font-semibold truncate">{displayName || user.email}</p>
+                {displayName && <p className="text-sm text-white/80 truncate">{user.email}</p>}
               </div>
             </div>
           </div>

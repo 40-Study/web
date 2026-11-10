@@ -11,7 +11,7 @@ import { useSections } from "@/hooks/queries/use-sections";
 import { useLessons } from "@/hooks/queries/use-lessons";
 import { QueryState } from "@/components/common/query-state";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { formatCurrency } from "@/lib/utils";
+import { formatVnd } from "@/lib/vnd-format";
 import { courseLevelLabel } from "@/lib/course-level";
 import type { ApiCourse } from "@/services/course.service";
 
@@ -35,9 +35,9 @@ function priceLabel(course: ApiCourse): string {
   const price = Number(course.price) || 0;
   const discount = course.discount_price != null ? Number(course.discount_price) : 0;
   if (discount > 0 && discount < price) {
-    return `${formatCurrency(discount)} (gốc ${formatCurrency(price)})`;
+    return `${formatVnd(discount)} (gốc ${formatVnd(price)})`;
   }
-  return price > 0 ? formatCurrency(price) : "Chưa đặt giá";
+  return price > 0 ? formatVnd(price) : "Chưa đặt giá";
 }
 
 function CourseDetailBody({ courseId }: { courseId: string }) {

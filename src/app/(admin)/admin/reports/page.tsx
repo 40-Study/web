@@ -6,8 +6,9 @@ import { useAdminRevenueReport, usePlatformFeeSetting } from "@/hooks/queries/us
 import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
 import { QueryState } from "@/components/common/query-state";
-import { formatCurrency } from "@/lib/utils";
+import { formatVnd } from "@/lib/vnd-format";
 import { successRateHint, successRateValue } from "@/lib/revenue-report";
+import { ORDER_STATUS_LABEL } from "@/services/order.service";
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
@@ -15,15 +16,9 @@ type PeriodFilter = "7days" | "30days" | "90days";
 
 const PERIOD_DAYS: Record<PeriodFilter, number> = { "7days": 7, "30days": 30, "90days": 90 };
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Chờ thanh toán",
-  processing: "Đang xử lý",
-  completed: "Hoàn tất",
-  failed: "Thất bại",
-  refunded: "Đã hoàn tiền",
-  cancelled: "Đã huỷ",
-  expired: "Hết hạn",
-};
+// QA-C-08: nhãn trạng thái đơn lấy từ cùng bảng với trang Đơn hàng (ORDER_STATUS_LABEL) để cùng một đơn không
+// lúc "Đang xử lý" lúc "Đang chờ chuyển khoản". Riêng "failed" chỉ có trong báo cáo nên bổ sung ở đây.
+const STATUS_LABEL: Record<string, string> = { ...ORDER_STATUS_LABEL, failed: "Thất bại" };
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
@@ -94,21 +89,21 @@ export default function AdminReportsPage() {
           <>
             {/* Metric cards — gộp / hoàn / ròng / phí nền tảng / phần giảng viên (quyết định #2) */}
             <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              <MetricCard label="Doanh thu gộp" value={formatCurrency(report.gross_revenue)} />
-              <MetricCard label="Đã hoàn tiền" value={formatCurrency(report.refund_amount)} />
+              <MetricCard label="Doanh thu gộp" value={formatVnd(report.gross_revenue)} />
+              <MetricCard label="Đã hoàn tiền" value={formatVnd(report.refund_amount)} />
               <MetricCard
                 label="Doanh thu ròng (sau hoàn tiền)"
-                value={formatCurrency(report.net_revenue)}
+                value={formatVnd(report.net_revenue)}
                 hint="Sau hoàn tiền, trước phí nền tảng."
               />
               <MetricCard
                 label="Phí nền tảng"
-                value={formatCurrency(report.platform_fee_amount)}
+                value={formatVnd(report.platform_fee_amount)}
                 hint="Chốt theo % lúc từng đơn thanh toán — đổi cấu hình không ảnh hưởng đơn cũ."
               />
               <MetricCard
                 label="Phần giảng viên"
-                value={formatCurrency(report.teacher_share_amount)}
+                value={formatVnd(report.teacher_share_amount)}
                 hint="Doanh thu ròng trừ phí nền tảng."
               />
               <MetricCard

@@ -22,12 +22,12 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 const LIMIT = 20;
 
-function formatDate(iso: string | null): string {
-  return iso ? new Date(iso).toLocaleString("vi-VN") : "—";
-}
+// QA-C-12: cùng định dạng ngày giờ VN với các màn admin khác ("10:00 28/09/2026"), không còn giây và ngày không số 0.
+const formatDate = (iso: string | null) => formatVnDateTime(iso);
 
 function parsePageParam(raw: string | null): number {
   const n = Number(raw);
@@ -254,7 +254,7 @@ export default function AdminUsersPage() {
                           <span className="text-xs text-muted-foreground">Chưa có vai trò</span>
                         ) : (
                           user.system_roles.map((role) => (
-                            <Badge key={role} variant="outline">
+                            <Badge key={role} variant="outline" className="whitespace-nowrap">
                               {getSystemRoleLabel(role)}
                             </Badge>
                           ))
@@ -262,12 +262,12 @@ export default function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.is_active ? "success" : "destructive"}>
+                      <Badge variant={user.is_active ? "success" : "destructive"} className="whitespace-nowrap">
                         {getUserActiveLabel(user.is_active)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{formatDate(user.created_at)}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{formatDate(user.last_login_at)}</TableCell>
+                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{formatDate(user.created_at)}</TableCell>
+                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{formatDate(user.last_login_at)}</TableCell>
                     <TableCell className="sticky right-0 z-10 bg-white text-right dark:bg-gray-950">
                       <Can permission={PERMISSIONS.USERS_BAN}>
                         {user.is_active ? (

@@ -7,7 +7,8 @@ import { useAdminOrders } from "@/hooks/queries/use-admin-orders";
 import { ORDER_STATUS_LABEL, type OrderStatus } from "@/services/order.service";
 import { QueryState } from "@/components/common/query-state";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatVnd } from "@/lib/vnd-format";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { lateRefundSummaryText } from "@/lib/late-refund";
 import { STICKY_ACTION_CELL, STICKY_ACTION_HEAD } from "@/app/(admin)/admin/_lib/sticky-action-column";
@@ -173,7 +174,7 @@ function AdminOrdersContent() {
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
                       {order.items.map((i) => i.course_title).join(", ") || "-"}
                     </td>
-                    <td className="px-4 py-3 font-medium">{formatCurrency(order.total_amount)}</td>
+                    <td className="px-4 py-3 font-medium">{formatVnd(order.total_amount)}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
                         <Badge variant={STATUS_VARIANT[order.status]}>
@@ -192,7 +193,7 @@ function AdminOrdersContent() {
                         </p>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-500">{formatDate(order.created_at)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-gray-500">{formatVnDateTime(order.created_at)}</td>
                     <td className={`px-4 py-3 ${STICKY_ACTION_CELL}`}>
                       <Link
                         href={`/admin/orders/${order.id}`}

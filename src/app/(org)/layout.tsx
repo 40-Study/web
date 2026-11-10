@@ -6,8 +6,11 @@ import { useEffect, useRef, useState } from "react";
 import { Building2, GraduationCap, LayoutDashboard, LogOut, Settings, Users } from "lucide-react";
 
 import { RoleGuard } from "@/components/guards";
+import { RoleSwitchList } from "@/components/layout/role-switch-list";
+import { OrgAreaGate } from "@/components/org/org-area-gate";
 import { Avatar } from "@/components/ui/avatar";
 import { useLogout } from "@/hooks/queries/use-auth";
+import { normalizeRole } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
 
@@ -24,7 +27,7 @@ const orgMenu = [
  */
 export default function OrgLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, activeOrg } = useAuthStore();
+  const { user, activeOrg, sessionStatus, activeRole } = useAuthStore();
   const logoutMutation = useLogout();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -39,6 +42,14 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
 
   const isActive = (item: (typeof orgMenu)[number]) =>
     item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
+  const currentSection = orgMenu.find(isActive)?.label ?? "Quản lý tổ chức";
+  const normalizedRole = normalizeRole(activeRole);
+
+  // QA-B-27: đã đăng nhập bằng vai khác (vd Giảng viên) thì hiện lối chuyển sang vai Chủ tổ chức (hoặc lý do không
+  // vào được) thay vì để RoleGuard đẩy sang /403. Chưa đăng nhập / chưa chọn vai vẫn đi qua RoleGuard như cũ.
+  if (sessionStatus === "authenticated" && normalizedRole && normalizedRole !== "ORG_OWNER") {
+    return <OrgAreaGate />;
+  }
 
   return (
     <RoleGuard roles={["ORG_OWNER"]} redirectTo={`/login?redirect=${encodeURIComponent(pathname)}`}>
@@ -74,11 +85,11 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-40 border-b border-border bg-card">
             <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 md:px-6">
+              {/* QA-C-18: tên tổ chức đã ở sidebar; header desktop chỉ ghi mục đang xem. Mobile không có sidebar nên
+                  vẫn ghi tên tổ chức ở dòng phụ. */}
               <div className="min-w-0">
-                <h1 className="truncate font-heading text-base font-semibold text-foreground">
-                  {activeOrg?.name || "Tổ chức của bạn"}
-                </h1>
-                <p className="text-xs text-muted-foreground">Thành viên và lớp học của tổ chức</p>
+                <h1 className="truncate font-heading text-base font-semibold text-foreground">{currentSection}</h1>
+                <p className="truncate text-xs text-muted-foreground md:hidden">{activeOrg?.name || "Tổ chức của bạn"}</p>
               </div>
               <div className="relative" ref={profileMenuRef}>
                 <button
@@ -91,7 +102,10 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
                   <span className="hidden text-sm font-medium md:inline">{user?.name || "Chủ tổ chức"}</span>
                 </button>
                 {isProfileOpen && (
-                  <div className="absolute right-0 top-11 w-52 rounded-2xl border border-border bg-popover py-2 shadow-raised" role="menu">
+                  <div className="absolute right-0 top-11 w-64 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-popover py-2 shadow-raised" role="menu">
+                    {/* QA-C-05: chuyển tổ chức/vai (vd về Quản trị hệ thống, Giảng viên) ngay trong khu /org. Tự ẩn khi
+                        chỉ có một vai. */}
+                    <RoleSwitchList onSwitch={() => setIsProfileOpen(false)} className="mb-1 border-b border-border px-2 pb-2" />
                     <Link
                       href="/settings"
                       onClick={() => setIsProfileOpen(false)}

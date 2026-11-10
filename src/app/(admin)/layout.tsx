@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BarChart3, Banknote, Bell, Building2, Check, ChevronDown, Flag, FolderTree, LayoutDashboard, LogOut, Receipt, ScrollText, Settings, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
-import { BookCheck, Ticket, Trophy, UserCheck } from "lucide-react";
+import { BookCheck, Tags, Ticket, Trophy, UserCheck } from "lucide-react";
 
 import { RoleGuard } from "@/components/guards";
 import { Avatar } from "@/components/ui/avatar";
@@ -32,6 +32,9 @@ const adminMenu: AdminMenuItem[] = [
   { label: "Quản lý tổ chức", href: "/admin/organizations", icon: Building2, description: "Quản lý các tổ chức và chủ tổ chức" },
   { label: "Phân quyền", href: "/admin/permissions", icon: Settings, description: "Quyền của từng vai trò hệ thống" },
   { label: "Danh mục khoá học", href: "/admin/categories", icon: FolderTree, description: "Cây danh mục dùng để phân loại khoá học" },
+  // QA-C-19: backend có CRUD /tags nhưng trước đây không có màn quản lý. Gói xu chưa có mục: backend chỉ có
+  // GET /coins/packages trả gói ĐANG BẬT (không có is_active), nên màn admin không thấy được gói đã tắt để bật lại.
+  { label: "Tag khoá học", href: "/admin/tags", icon: Tags, description: "Tạo, đổi tên và xoá tag khoá học" },
   { label: "Báo cáo vi phạm", href: "/admin/moderation", icon: Flag, description: "Xử lý báo cáo vi phạm từ người dùng" },
   { label: "Đơn hàng", href: "/admin/orders", icon: Receipt, description: "Theo dõi, đối soát và hoàn tiền đơn hàng" },
   { label: "Rút tiền giảng viên", href: "/admin/withdrawals", icon: Banknote, description: "Duyệt yêu cầu rút tiền của giảng viên" },

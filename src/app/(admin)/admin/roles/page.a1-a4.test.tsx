@@ -61,7 +61,7 @@ describe("/admin/roles — A1: chặn xoá vai trò hệ thống dựng sẵn", 
     renderWithProviders(<RolesPage />);
     await screen.findByText("Vai trò tự tạo");
 
-    const deleteButtons = screen.getAllByRole("button", { name: "Xoá role" }) as HTMLButtonElement[];
+    const deleteButtons = screen.getAllByRole("button", { name: "Xoá vai trò" }) as HTMLButtonElement[];
     expect(deleteButtons).toHaveLength(2);
 
     const teacherBtn = deleteButtons.find((b) =>
