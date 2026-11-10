@@ -10,6 +10,7 @@ export const metadata: Metadata = buildPageMetadata({
   description:
     "Cộng đồng học tập ForteX — đặt câu hỏi, chia sẻ kinh nghiệm và trao đổi cùng giảng viên, học viên.",
   path: "/discussions",
+  hasChildRoutes: true,
 });
 
 export default function DiscussionsLayout({ children }: { children: React.ReactNode }) {

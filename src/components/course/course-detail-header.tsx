@@ -2,28 +2,28 @@
 
 /**
  * CourseDetailHeader - blue gradient header for the course detail page
- * Shows breadcrumb, title, description, badges (bestseller, rating, etc.)
+ * Shows breadcrumb, title, description, badges (discount, rating, etc.)
  */
 
 import Link from "next/link";
-import { Star, Award, Globe, RefreshCw } from "lucide-react";
+import { Star, Tag, Globe, RefreshCw } from "lucide-react";
 import { CourseDetail } from "@/types/course";
 import { WishlistButton } from "@/components/course/wishlist-button";
+import type { CourseRatingSummary } from "@/components/course/course-rating-summary";
 
 interface CourseDetailHeaderProps {
   course: CourseDetail;
-  /** Số liệu đánh giá THẬT từ GET /courses/:id/reviews — xem page.tsx. */
-  reviewsSummary?: { average: number; total: number };
+  /**
+   * Số liệu đánh giá — xem course-rating-summary.ts. Không truyền thì coi như đang tải: header KHÔNG được
+   * tự hiện "0.0 (0 đánh giá)" khi chưa biết số liệu (QA-A-02).
+   */
+  ratingSummary?: CourseRatingSummary;
   /** Đã ghi danh khoá này thì không cần nút lưu yêu thích. */
   isEnrolled?: boolean;
 }
 
-export function CourseDetailHeader({ course, reviewsSummary, isEnrolled = false }: CourseDetailHeaderProps) {
-  // course.rating/reviewCount là cột lưu sẵn trên bảng courses, có thể lệch
-  // với reviews thật (QA khách+học sinh P2, 260927) — ưu tiên số liệu thật từ
-  // reviewsSummary khi đã tải xong.
-  const rating = reviewsSummary?.average ?? 0;
-  const reviewCount = reviewsSummary?.total ?? 0;
+export function CourseDetailHeader({ course, ratingSummary, isEnrolled = false }: CourseDetailHeaderProps) {
+  const summary: CourseRatingSummary = ratingSummary ?? { status: "loading" };
   const discountPct =
     course.originalPrice && course.originalPrice > course.price
       ? Math.round((1 - course.price / course.originalPrice) * 100)
@@ -64,20 +64,32 @@ export function CourseDetailHeader({ course, reviewsSummary, isEnrolled = false 
 
         {/* Badges row */}
         <div className="flex flex-wrap items-center gap-3">
+          {/* QA-A-02: nhãn cũ "Bestseller" gắn theo mức giảm giá (khoá 1 học viên vẫn "bán chạy") — nói đúng là giảm giá. */}
           {discountPct >= 20 && (
             <span className="flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
-              <Award className="h-3.5 w-3.5" />
-              Bestseller
+              <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+              Giảm {discountPct}%
             </span>
           )}
 
-          <div className="flex items-center gap-1">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-            <span className="font-medium text-black">{rating.toFixed(1)}</span>
-            <span className="text-neutral-500">
-              ({reviewCount.toLocaleString()} đánh giá)
-            </span>
-          </div>
+          {summary.status === "loading" ? (
+            <span
+              role="status"
+              aria-label="Đang tải đánh giá"
+              data-testid="course-rating-loading"
+              className="h-5 w-32 animate-pulse rounded bg-neutral-200"
+            />
+          ) : summary.total > 0 ? (
+            <div className="flex items-center gap-1">
+              <Star className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden="true" />
+              <span className="font-medium text-black">{summary.average.toFixed(1)}</span>
+              <span className="text-neutral-500">
+                ({summary.total.toLocaleString("vi-VN")} đánh giá)
+              </span>
+            </div>
+          ) : (
+            <span className="text-neutral-500">Chưa có đánh giá</span>
+          )}
 
           <span className="text-neutral-300">•</span>
           <span className="text-neutral-600">

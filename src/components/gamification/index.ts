@@ -17,7 +17,7 @@ export { LeaderboardCard, LeaderboardList } from "./leaderboard-card";
 export type { LeaderboardEntry } from "./leaderboard-card";
 
 // League
-export { LeagueBadge, LeagueProgress, getLeagueByXP, LEAGUES } from "./league-badge";
+export { LeagueBadge, LeagueProgress, getLeagueByXP, nextLeagueRequirement, LEAGUES } from "./league-badge";
 export type { League, LeagueType } from "./league-badge";
 
 // Daily check-in

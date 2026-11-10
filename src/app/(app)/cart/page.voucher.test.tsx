@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import CartPage from "./page";
 import type { Cart } from "@/services/cart.service";
 import { voucherService, type Voucher } from "@/services/voucher.service";
+import { useAuthStore } from "@/stores/auth.store";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() } }));
 
@@ -61,6 +62,37 @@ const checkoutHref = () => (screen.getByRole("link", { name: /Thanh toán/ }) as
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  window.sessionStorage.clear();
+  useAuthStore.setState({ user: { id: "u-student" } as never });
+});
+
+describe("CartPage — tải lại trang vẫn giữ voucher (QA-A-10)", () => {
+  it("mã đã áp được khôi phục và tính lại sau khi trang mount lại", async () => {
+    // Mức tối thiểu 500.000đ: lúc mount giỏ chưa kịp chọn khoá (tạm tính 0đ). Nếu tính theo tạm tính lúc bấm
+    // thì mã khôi phục bị gỡ oan — test bắt cả lỗi đó.
+    const lookup = vi.spyOn(voucherService, "getVoucherByCode").mockResolvedValue(voucher("VIP100", 500000));
+    const first = renderCart();
+    await applyCode("VIP100");
+    first.unmount();
+
+    renderCart();
+    await waitFor(() => expect(screen.getByLabelText("Xoá voucher")).toBeTruthy());
+    expect(lookup).toHaveBeenLastCalledWith("VIP100");
+    expect(screen.getByText("-" + fmt(50000))).toBeTruthy();
+    expect(checkoutHref()).toContain("voucher=VIP100");
+  });
+
+  it("gỡ voucher thì lần mở sau không tự áp lại", async () => {
+    vi.spyOn(voucherService, "getVoucherByCode").mockResolvedValue(voucher("VIP100", 0));
+    const first = renderCart();
+    await applyCode("VIP100");
+    fireEvent.click(screen.getByLabelText("Xoá voucher"));
+    first.unmount();
+
+    renderCart();
+    expect((screen.getByPlaceholderText("Nhập mã voucher") as HTMLInputElement).value).toBe("");
+    expect(checkoutHref()).not.toContain("voucher=");
+  });
 });
 
 describe("CartPage — voucher sống sót khi chọn khoá (A-04)", () => {

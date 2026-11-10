@@ -18,12 +18,19 @@ const TIME = new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", ho
 const DAY = new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", day: "2-digit", month: "2-digit" });
 const DAY_KEY = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
 
-/** Tin trong hôm nay hiện giờ ("12:35"), tin ngày khác hiện ngày ("02/10"): chỉ hiện giờ làm tin cũ trông như mới. */
+const DAY_MS = 86_400_000;
+
+/**
+ * Tin hôm nay hiện giờ ("12:35"), hôm qua hiện "Hôm qua", cũ hơn hiện ngày ("02/10"), tất cả theo giờ VN
+ * (QA-B-21 + QA-A-09): chỉ hiện giờ làm tin cũ trông như mới.
+ */
 export function conversationTimeLabel(iso: string | undefined, now: Date = new Date()): string | null {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  if (DAY_KEY.format(d) === DAY_KEY.format(now)) return TIME.format(d);
+  const key = DAY_KEY.format(d);
+  if (key === DAY_KEY.format(now)) return TIME.format(d);
+  if (key === DAY_KEY.format(new Date(now.getTime() - DAY_MS))) return "Hôm qua";
   // Ghép từ formatToParts: vi-VN của một số bản ICU in "02-10" thay vì "02/10".
   const parts = new Map(DAY.formatToParts(d).map((p) => [p.type, p.value]));
   return `${parts.get("day")}/${parts.get("month")}`;

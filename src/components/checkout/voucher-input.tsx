@@ -54,6 +54,11 @@ export function VoucherInput({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // Giữ voucher gốc để tính lại mức giảm khi `subtotal` đổi mà không phải gọi API lần nữa.
   const appliedVoucherRef = useRef<ServiceVoucher | null>(null);
+  // Tra mã là bất đồng bộ: callback onSuccess phải tính theo `subtotal` LÚC CÓ KẾT QUẢ, không phải lúc bấm.
+  // Khi tự áp mã lúc mount (giỏ khôi phục mã sau khi tải lại, QA-A-10) giỏ còn chưa chọn khoá nên subtotal = 0;
+  // dùng giá trị trong closure thì mã bị gỡ oan với lý do "chưa đủ giá trị tối thiểu".
+  const subtotalRef = useRef(subtotal);
+  subtotalRef.current = subtotal;
 
   const lookupMutation = useVoucherLookup();
   // Chỉ chặn khi ĐÃ biết là khách; "checking" (đang khôi phục phiên) không được coi là khách.
@@ -77,7 +82,7 @@ export function VoucherInput({
           clearApplied(GUEST_FIRST_ORDER_VOUCHER_MESSAGE);
           return;
         }
-        const calc = calculateVoucherDiscount(voucher, subtotal);
+        const calc = calculateVoucherDiscount(voucher, subtotalRef.current);
         if (!calc.ok) {
           clearApplied(calc.errorMessage ?? "Mã voucher không hợp lệ");
           return;

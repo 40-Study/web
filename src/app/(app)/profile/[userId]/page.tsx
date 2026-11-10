@@ -275,7 +275,7 @@ export default function PublicProfilePage() {
                       <Badge variant="streak">{stats.streak} ngày</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Khoá học</span>
+                      <span className="text-muted-foreground">Khoá hoàn thành</span>
                       <span className="text-sm font-medium">{stats.coursesCompleted}</span>
                     </div>
                     <div className="flex items-center justify-between">

@@ -37,7 +37,9 @@ describe.each(publicPages)("trang công khai %s", (path, metadata) => {
     const og = metadata.openGraph as { title?: string; description?: string; url?: string } | undefined;
     expect(og?.title).toBeTruthy();
     expect(og?.title).not.toBe(OG_SITE_DEFAULT_TITLE);
-    expect(og?.title).toBe(metadata.title);
+    // Layout có route con dùng title dạng { default, template } (section-title-template.test.ts).
+    const title = metadata.title as string | { default?: string } | undefined;
+    expect(og?.title).toBe(typeof title === "string" ? title : title?.default);
     expect(og?.description).toBe(metadata.description);
     expect(og?.url).toMatch(new RegExp(`${path}$`));
   });

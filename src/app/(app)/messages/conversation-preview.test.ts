@@ -45,6 +45,11 @@ describe("conversationTimeLabel", () => {
   it("tin hôm nay hiện giờ VN", () => {
     expect(conversationTimeLabel("2026-11-10T05:35:00Z", NOW)).toBe("12:35");
   });
+  it("tin hôm qua (theo giờ VN) hiện 'Hôm qua'", () => {
+    // 16:59Z ngày 09 = 23:59 giờ VN ngày 09; 17:30Z ngày 09 = 00:30 ngày 10 (hôm nay)
+    expect(conversationTimeLabel("2026-11-09T16:59:00Z", NOW)).toBe("Hôm qua");
+    expect(conversationTimeLabel("2026-11-09T17:30:00Z", NOW)).toBe("00:30");
+  });
   it("tin ngày khác hiện ngày", () => {
     expect(conversationTimeLabel("2026-10-02T05:35:00Z", NOW)).toBe("02/10");
   });

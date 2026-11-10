@@ -11,6 +11,8 @@ import {
   LeagueBadge,
   LeagueProgress,
   LEAGUES,
+  getLeagueByXP,
+  nextLeagueRequirement,
 } from "@/components/gamification";
 import type { LeaderboardEntry, LeagueType } from "@/components/gamification";
 import { cn } from "@/lib/utils";
@@ -76,7 +78,8 @@ function secondsUntilWeeklyReset(): number {
 }
 
 export default function LeaderboardPage() {
-  const [selectedLeague, setSelectedLeague] = useState<LeagueType>("gold");
+  // null = giải của chính người dùng (theo XP tích luỹ); chọn trong dropdown thì xem giải khác.
+  const [pickedLeague, setPickedLeague] = useState<LeagueType | null>(null);
   const [isLeagueDropdownOpen, setIsLeagueDropdownOpen] = useState(false);
   const [periodType, setPeriodType] = useState<PeriodType>("weekly");
   // "" = bảng toàn hệ thống; có giá trị = bảng riêng của lớp đó (?class_id=).
@@ -108,7 +111,14 @@ export default function LeaderboardPage() {
     period_type: periodType,
   });
 
-  const currentLeague = LEAGUES.find((l) => l.id === selectedLeague) || LEAGUES[2];
+  // QA-A-16: giải tính theo XP TÍCH LUỸ (getLeagueByXP). Trước đây trang mặc định "Vàng" cho mọi người và đo tiến
+  // độ bằng XP của kỳ đang xem (tuần), nên "Còn ... XP để lên Kim cương" không khớp giải thật của ai cả.
+  const { data: allTimeRank } = useMyRank({ period_type: "all_time" });
+  const totalXP = allTimeRank?.entry?.points ?? 0;
+  const myLeague = getLeagueByXP(totalXP);
+  const selectedLeague: LeagueType = pickedLeague ?? myLeague.id;
+
+  const currentLeague = LEAGUES.find((l) => l.id === selectedLeague) || LEAGUES[0];
   const nextLeagueIndex = LEAGUES.findIndex((l) => l.id === selectedLeague) + 1;
   const nextLeague = LEAGUES[nextLeagueIndex];
 
@@ -220,7 +230,7 @@ export default function LeaderboardPage() {
                 <button
                   key={league.id}
                   onClick={() => {
-                    setSelectedLeague(league.id);
+                    setPickedLeague(league.id);
                     setIsLeagueDropdownOpen(false);
                   }}
                   className={cn(
@@ -260,13 +270,7 @@ export default function LeaderboardPage() {
               <span className="text-5xl">{currentLeague.icon}</span>
               <div>
                 <h2 className="text-2xl font-bold">Giải {currentLeague.name}</h2>
-                <p className="opacity-90">
-                  {nextLeague
-                    ? periodType === "weekly"
-                      ? `Top 10 sẽ lên giải ${nextLeague.name}`
-                      : `Giải kế tiếp: ${nextLeague.name}`
-                    : "Đã đạt giải cao nhất!"}
-                </p>
+                <p className="opacity-90">{nextLeagueRequirement(nextLeague)}</p>
               </div>
             </div>
           </div>
@@ -291,7 +295,7 @@ export default function LeaderboardPage() {
               </div>
             </div>
             <div className="text-right">
-              <LeagueBadge league={selectedLeague} size="sm" />
+              <LeagueBadge league={myLeague.id} size="sm" />
             </div>
           </div>
         </Card>
@@ -300,10 +304,8 @@ export default function LeaderboardPage() {
       {/* League progress */}
       <Card className="p-4 mb-6">
         <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Tiến độ giải đấu</h3>
-        <LeagueProgress
-          currentXP={myEntry?.weeklyXP ?? 0}
-          currentLeague={selectedLeague}
-        />
+        {/* Luôn là giải CỦA MÌNH theo XP tích luỹ, không phụ thuộc giải đang xem hay kỳ đang chọn. */}
+        <LeagueProgress currentXP={totalXP} currentLeague={myLeague.id} />
       </Card>
 
       {/* Leaderboard list */}

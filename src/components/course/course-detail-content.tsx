@@ -9,6 +9,7 @@ import { Check } from "lucide-react";
 import { CourseSyllabus } from "@/components/course/course-syllabus";
 import { InstructorCard } from "@/components/course/instructor-card";
 import { CourseReviews } from "@/components/course/course-reviews";
+import { Button } from "@/components/ui/button";
 import { CourseDetail, Review as DisplayReview } from "@/types/course";
 import type { Review as ApiReview, ReviewListResponse } from "@/services/review.service";
 
@@ -18,6 +19,35 @@ interface CourseDetailContentProps {
   courseSlug: string;
   /** GET /courses/:id/reviews — undefined khi đang tải hoặc chưa có courseId. */
   reviewsData?: ReviewListResponse;
+  /**
+   * QA-A-02: trước đây `reviewsData` chưa có thì khối này hiện "0.0 / Chưa có đánh giá nào" — đọc thành
+   * "khoá không ai đánh giá" trong khi request chỉ đang chạy (hoặc đã lỗi). Mặc định "loading".
+   */
+  reviewsState?: "loading" | "ready" | "error";
+  onRetryReviews?: () => void;
+}
+
+function ReviewsPlaceholder({ state, onRetry }: { state: "loading" | "error"; onRetry?: () => void }) {
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-semibold">Đánh giá từ học viên</h2>
+      {state === "loading" ? (
+        <div role="status" aria-label="Đang tải đánh giá" className="animate-pulse space-y-3">
+          <div className="h-24 rounded-lg bg-muted" />
+          <div className="h-16 rounded-lg bg-muted" />
+        </div>
+      ) : (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span>Chưa tải được đánh giá của khoá học.</span>
+          {onRetry && (
+            <Button variant="outline" size="sm" onClick={onRetry}>
+              Thử lại
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /** API Review (phẳng: user_name/avatar_url) -> shape CourseReviews đang render (user lồng nhau, content, createdAt...). */
@@ -54,6 +84,8 @@ export function CourseDetailContent({
   isEnrolled,
   courseSlug,
   reviewsData,
+  reviewsState = "loading",
+  onRetryReviews,
 }: CourseDetailContentProps) {
   return (
     <div className="space-y-8">
@@ -109,12 +141,16 @@ export function CourseDetailContent({
           Không có đánh giá nào -> CourseReviews tự hiện "Chưa có đánh giá nào"
           (QA khách+học sinh P2, 260927). */}
       <section>
-        <CourseReviews
-          rating={Number(reviewsData?.average_rating ?? 0)}
-          reviewCount={reviewsData?.total ?? 0}
-          reviews={mapApiReviewsToDisplay(reviewsData?.data ?? [])}
-          ratingDistribution={toRatingPercentages(reviewsData?.rating_counts, reviewsData?.total ?? 0)}
-        />
+        {reviewsData && reviewsState === "ready" ? (
+          <CourseReviews
+            rating={Number(reviewsData.average_rating ?? 0)}
+            reviewCount={reviewsData.total ?? 0}
+            reviews={mapApiReviewsToDisplay(reviewsData.data ?? [])}
+            ratingDistribution={toRatingPercentages(reviewsData.rating_counts, reviewsData.total ?? 0)}
+          />
+        ) : (
+          <ReviewsPlaceholder state={reviewsState === "error" ? "error" : "loading"} onRetry={onRetryReviews} />
+        )}
       </section>
     </div>
   );

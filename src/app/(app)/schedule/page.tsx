@@ -327,7 +327,8 @@ export default function SchedulePage() {
   return <div>
     {isLoading && <p role="status" className="mb-2 text-xs text-muted-foreground">Đang tải lịch học…</p>}
     {(isError || liveError) && <p role="alert" className="mb-2 text-sm text-red-600">Chưa tải được đầy đủ lịch học. Vui lòng tải lại trang.</p>}
-    <WeekCalendarGrid events={events} selectable onRangeChange={handleRange}
+    {/* QA-A-15: học viên chỉ tạo được ghi chú cá nhân, không tạo buổi học như giáo viên. */}
+    <WeekCalendarGrid events={events} selectable selectionHelp="Bấm hoặc kéo trên lịch để thêm ghi chú cá nhân." onRangeChange={handleRange}
       onSelectMore={start => setFullDialog({ open: true, date: start, hour: start.getHours(), editingNote: null })}
       onEventClick={event => { const note = notes.find(item => item.id === event.id); if (note) setFullDialog({ open: true, date: new Date(`${note.dateStr}T00:00:00`), hour: note.startH, editingNote: note }); else setDetail(event); }}
       headerActions={<Button size="sm" className="rounded-lg gap-1.5" onClick={() => setFullDialog({ open: true, date: today, hour: today.getHours(), editingNote: null })}><Plus className="h-4 w-4" />Ghi chú</Button>}

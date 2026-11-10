@@ -139,13 +139,13 @@ describe("LeaderboardPage — chọn lớp", () => {
 
 // QA3 Q11: nhãn cứng "XP tuần này" ở mọi tab, "Giữ nguyên hạng" cho cả bảng, banner/đồng hồ lặp hai lần.
 describe("LeaderboardPage — nhãn theo kỳ, không lặp banner (Q11)", () => {
-  it("tab Tuần: 'XP tuần này', có đúng một đồng hồ đếm ngược và một dòng 'Top 10 sẽ lên giải'", async () => {
+  it("tab Tuần: 'XP tuần này', có đúng một đồng hồ đếm ngược và một dòng điều kiện lên giải", async () => {
     mockLeaderboard();
     renderWithProviders(<LeaderboardPage />);
     expect(await screen.findByText("Bình Công Khai")).toBeTruthy();
     expect(screen.getAllByText("XP tuần này").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Làm mới/)).toHaveLength(1);
-    expect(screen.getAllByText(/Top 10 sẽ lên giải/)).toHaveLength(1);
+    expect(screen.getAllByText(/XP tích luỹ để lên giải/)).toHaveLength(1);
   });
 
   it("tab Toàn thời gian: nhãn 'XP tích luỹ', không còn 'XP tuần này' hay đồng hồ reset", async () => {
@@ -156,7 +156,22 @@ describe("LeaderboardPage — nhãn theo kỳ, không lặp banner (Q11)", () =>
     await waitFor(() => expect(screen.getAllByText("XP tích luỹ").length).toBeGreaterThan(0));
     expect(screen.queryByText("XP tuần này")).toBeNull();
     expect(screen.queryByText(/Làm mới/)).toBeNull();
-    expect(screen.queryByText(/Top 10 sẽ lên giải/)).toBeNull();
+  });
+
+  // QA-A-16: "Top 10 sẽ lên giải Kim cương" cạnh "Còn 14.880 XP để lên Kim cương" — hai quy tắc trái nhau, và
+  // giải mặc định "Vàng" cho mọi người. Giải phải tính theo XP tích luỹ của chính mình, banner và tiến độ cùng một quy tắc.
+  it("giải và điều kiện lên giải theo XP tích luỹ, không có quy tắc 'Top 10'", async () => {
+    mockLeaderboard(); // /leaderboard/me trả 70 điểm -> giải Đồng, giải kế tiếp Bạc (1.000 XP)
+    renderWithProviders(<LeaderboardPage />);
+    await screen.findByText("Bình Công Khai");
+    await waitFor(() => expect(screen.getByText("Đạt 1.000 XP tích luỹ để lên giải Bạc")).toBeTruthy());
+    expect(screen.getByText("Còn 930 XP để lên Bạc")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Giải Đồng" })).toBeTruthy();
+    expect(screen.queryByText(/Top 10/)).toBeNull();
+    const myRankParams = mockApi.get.mock.calls
+      .filter((c: unknown[]) => c[0] === "/leaderboard/me")
+      .map((c: unknown[]) => (c[1] as { params?: Record<string, unknown> })?.params?.period_type);
+    expect(myRankParams).toContain("all_time");
   });
 
   it("không in 'Giữ nguyên hạng' cho mọi dòng khi backend không có xu hướng", async () => {
