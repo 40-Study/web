@@ -1,5 +1,6 @@
 import { ApiError, NetworkError } from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-messages";
+import { USER_NOT_FOUND_CODE } from "@/services/organization.service";
 
 /**
  * Câu báo lỗi khi chủ tổ chức tra người dùng theo email (GET /organizations/:id/user-lookup, QA-C-01).
@@ -11,7 +12,11 @@ export function userLookupErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return getErrorMessage(error, "Không tìm được người dùng, thử lại sau.");
   switch (error.status) {
     case 404:
-      return "Không tìm thấy người dùng với email này.";
+      // Chỉ 404 mang code USER_NOT_FOUND mới là "không có người này". 404 khác (vd route chưa deploy) mà cũng báo
+      // "không tìm thấy" thì chủ tổ chức tưởng nhập sai email (review PR #111).
+      return error.code === USER_NOT_FOUND_CODE
+        ? "Không tìm thấy người dùng với email này."
+        : "Không tra cứu được, thử lại sau.";
     case 400:
       return "Email không hợp lệ. Kiểm tra lại địa chỉ email.";
     case 403:

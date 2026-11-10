@@ -145,7 +145,7 @@ export default function AdminLayout({
 
                 {isProfileOpen && (
                   <div className="absolute right-0 top-11 w-52 rounded-2xl border border-border bg-popover py-2 shadow-raised">
-{/* A-P2-4 (cũ): link /settings từng bị (app)/layout.tsx đá về /admin; nay đã mở được (xem mục Tài khoản bên dưới). */}
+                    {/* A-P2-4 (cũ): link /settings từng bị (app)/layout.tsx đá về /admin; nay đã mở được (xem mục Tài khoản bên dưới). */}
                     {availableRoles.length > 1 && (
                       <div className="mb-1 border-b border-border pb-1">
                         <button
