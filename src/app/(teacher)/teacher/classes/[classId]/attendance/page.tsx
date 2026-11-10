@@ -18,6 +18,18 @@ import {
   useSessionAttendances,
   useUpdateAttendance,
 } from "@/hooks/queries/use-sessions";
+import type { ClassSession } from "@/services/session.service";
+import { groupAttendanceSessions } from "./attendance-session-order";
+
+function SessionOption({ session: s }: { session: ClassSession }) {
+  return (
+    <option value={s.id}>
+      {formatVnDateOnly(s.date)} · {s.start_time}–{s.end_time}
+      {s.topic ? ` · ${s.topic}` : ""}
+      {s.status === "cancelled" ? " · Đã huỷ" : ""}
+    </option>
+  );
+}
 
 export default function ClassAttendancePage() {
   const params = useParams();
@@ -30,18 +42,13 @@ export default function ClassAttendancePage() {
     // Backend giới hạn page_size tối đa 50; giá trị lớn hơn bị reset về 20.
     { page: 1, page_size: 50 }
   );
-  const sessions = useMemo(
-    () =>
-      [...(sessionsData?.sessions ?? [])].sort((a, b) =>
-        b.date.localeCompare(a.date)
-      ),
-    [sessionsData]
-  );
+  const groups = useMemo(() => groupAttendanceSessions(sessionsData?.sessions ?? []), [sessionsData]);
+  const sessions = useMemo(() => [...groups.past, ...groups.upcoming], [groups]);
 
-  // Mặc định chọn buổi gần nhất
+  // Mặc định chọn buổi gần nhất đã diễn ra (QA-B-09), không phải buổi xa nhất trong tương lai.
   useEffect(() => {
-    if (!sessionId && sessions.length > 0) setSessionId(sessions[0].id);
-  }, [sessions, sessionId]);
+    if (!sessionId && groups.defaultId) setSessionId(groups.defaultId);
+  }, [groups, sessionId]);
 
   const { data: students, isLoading: studentsLoading } =
     useClassStudentsByClassId(classId);
@@ -99,7 +106,7 @@ export default function ClassAttendancePage() {
         </Link>
         <h1 className="text-2xl font-semibold text-gray-900">Điểm danh</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Chọn buổi học rồi đánh dấu trạng thái cho từng học sinh.
+          Chọn buổi học rồi đánh dấu trạng thái cho từng học viên.
         </p>
       </header>
 
@@ -127,12 +134,20 @@ export default function ClassAttendancePage() {
                 }}
                 className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary-500"
               >
-                {sessions.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {formatVnDateOnly(s.date)} · {s.start_time}–{s.end_time}
-                    {s.topic ? ` · ${s.topic}` : ""}
-                  </option>
-                ))}
+                {groups.past.length > 0 && (
+                  <optgroup label="Hôm nay và đã qua">
+                    {groups.past.map((s) => (
+                      <SessionOption key={s.id} session={s} />
+                    ))}
+                  </optgroup>
+                )}
+                {groups.upcoming.length > 0 && (
+                  <optgroup label="Sắp tới">
+                    {groups.upcoming.map((s) => (
+                      <SessionOption key={s.id} session={s} />
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </label>
 

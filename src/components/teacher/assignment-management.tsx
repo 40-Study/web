@@ -200,7 +200,7 @@ export function AssignmentManagement({
       .map((s) => s.studentId);
     setSelectedStudents(new Set(notSubmittedIds));
     setReminderMessage(
-      `Kính gửi Phụ huynh,\n\nHọc sinh của quý phụ huynh chưa nộp bài tập "${assignment.title}". Vui lòng nhắc nhở em hoàn thành trước hạn.\n\nTrân trọng!`
+      `Kính gửi Phụ huynh,\n\nCon của quý phụ huynh chưa nộp bài tập "${assignment.title}". Vui lòng nhắc nhở em hoàn thành trước hạn.\n\nTrân trọng!`
     );
     setReminderModalOpen(true);
   }, [assignment]);
@@ -245,7 +245,7 @@ export function AssignmentManagement({
       <div className="grid grid-cols-4 gap-4">
         <StatCard
           icon={<Users className="h-5 w-5" />}
-          label="Tổng học sinh"
+          label="Tổng học viên"
           value={assignment.totalStudents}
           color="bg-gray-100 text-gray-700"
         />
@@ -277,7 +277,7 @@ export function AssignmentManagement({
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Tìm kiếm học sinh..."
+            placeholder="Tìm kiếm học viên..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -317,7 +317,7 @@ export function AssignmentManagement({
                   className="rounded border-input"
                 />
               </th>
-              <th className="text-left p-3 text-sm font-medium">Học sinh</th>
+              <th className="text-left p-3 text-sm font-medium">Học viên</th>
               <th className="text-left p-3 text-sm font-medium">Trạng thái</th>
               <th className="text-left p-3 text-sm font-medium">Thời gian nộp</th>
               <th className="text-left p-3 text-sm font-medium">Điểm</th>
@@ -443,7 +443,7 @@ export function AssignmentManagement({
                             {submission.status === "not_submitted" && (
                               <div className="flex items-center gap-2 text-yellow-600">
                                 <AlertTriangle className="h-4 w-4" />
-                                Học sinh chưa nộp bài
+                                Học viên chưa nộp bài
                               </div>
                             )}
                           </div>
@@ -459,7 +459,7 @@ export function AssignmentManagement({
 
         {filteredSubmissions.length === 0 && (
           <div className="p-8 text-center text-muted-foreground">
-            Không tìm thấy học sinh nào
+            Không tìm thấy học viên nào
           </div>
         )}
       </div>
@@ -473,7 +473,7 @@ export function AssignmentManagement({
               Gửi thông báo nhắc nhở
             </DialogTitle>
             <DialogDescription>
-              Thông báo sẽ được gửi đến phụ huynh của {selectedStudents.size} học sinh
+              Thông báo sẽ được gửi đến phụ huynh của {selectedStudents.size} học viên
               đã chọn
             </DialogDescription>
           </DialogHeader>
@@ -482,7 +482,7 @@ export function AssignmentManagement({
             {/* Selected students preview */}
             <div>
               <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Học sinh được chọn ({selectedStudents.size})
+                Học viên được chọn ({selectedStudents.size})
               </label>
               <div className="flex flex-wrap gap-2 mt-2 max-h-24 overflow-y-auto">
                 {Array.from(selectedStudents).map((studentId) => {

@@ -50,7 +50,25 @@ describe("ChildOverviewTab — bài tập theo hạn", () => {
     const overdue = within(section(/Quá hạn \(2\)/));
     expect(overdue.getByText("Top 5 sản phẩm")).toBeTruthy();
     expect(overdue.getByText("Mini project")).toBeTruthy();
-    expect(overdue.getAllByText(/^Quá hạn \d/)).toHaveLength(2);
+    expect(overdue.getAllByText(/^Chưa nộp, hạn \d/)).toHaveLength(2);
+  });
+
+  // QA-B-23: "Mini project" con đã nộp (đang chờ chấm) từng nằm trong "Quá hạn (3)".
+  it("bài đã nộp, quá hạn nộp nhưng đang chờ chấm, không bị tính quá hạn", () => {
+    render(
+      <ChildOverviewTab
+        overview={overview}
+        courses={[]}
+        attendance={[]}
+        assignments={[
+          { ...make("Mini project", "2026-10-07T16:59:00Z"), submission_count: 1, best_verdict: "pending" },
+          make("Top 5 sản phẩm", "2026-10-12T00:00:00Z"),
+        ]}
+      />,
+    );
+    const overdue = within(section(/Quá hạn \(1\)/));
+    expect(overdue.getByText("Top 5 sản phẩm")).toBeTruthy();
+    expect(overdue.queryByText("Mini project")).toBeNull();
   });
 
   it("toàn bài quá hạn: mục sắp hạn báo trống thay vì liệt kê bài cũ", () => {

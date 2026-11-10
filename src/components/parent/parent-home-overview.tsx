@@ -25,6 +25,7 @@ import {
 import type { Child } from "@/services/auth.service";
 import { inProgressCourseCount } from "./child-stats";
 import { splitAssignmentsByDeadline } from "./child-assignments";
+import { ChildAttendanceStatus } from "./child-attendance-status";
 import { formatStudyMinutes } from "@/lib/format-study-time";
 
 function StatPill({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | number }) {
@@ -46,7 +47,8 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
   const { data: assignmentsData, isLoading: loadingAssignments } = useChildAssignments(child.id, 1, 20);
   const { data: attendanceData, isLoading: loadingAttendance } = useChildAttendance(child.id, 1, 3);
 
-  // Bài tập sắp hạn (hạn >= hiện tại, gần nhất trước) tách khỏi bài đã quá hạn (P-02, QA3 261104).
+  // Bài tập sắp hạn (hạn >= hiện tại, gần nhất trước) tách khỏi bài đã quá hạn (P-02, QA3 261104). Bài con đã
+  // nộp không bao giờ tính quá hạn (QA-B-23), cùng quy tắc với tab Tổng quan và tab Bài tập.
   const { upcoming, overdue } = splitAssignmentsByDeadline(assignmentsData?.assignments ?? []);
   const upcomingAssignments = upcoming.slice(0, 3);
   const overdueAssignments = overdue.slice(0, 3);
@@ -120,7 +122,7 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
                   <li key={a.id} className="text-xs text-gray-600 flex items-center justify-between gap-2">
                     <span className="truncate">{a.title}</span>
                     <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-red-600">
-                      Quá hạn {new Date(a.due_date!).toLocaleDateString("vi-VN")}
+                      Chưa nộp, hạn {new Date(a.due_date!).toLocaleDateString("vi-VN")}
                     </span>
                   </li>
                 ))}
@@ -144,14 +146,7 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
               {recentAttendance.map((r) => (
                 <li key={r.id} className="text-xs text-gray-600 flex items-center justify-between gap-2">
                   <span className="truncate">{r.class_name} — buổi {r.session_number}</span>
-                  <span className={
-                    r.status === "present" ? "text-green-600 shrink-0"
-                    : r.status === "late" ? "text-amber-600 shrink-0"
-                    : r.status === "absent" ? "text-red-600 shrink-0"
-                    : "text-gray-400 shrink-0"
-                  }>
-                    {r.status === "present" ? "Có mặt" : r.status === "late" ? "Trễ" : r.status === "absent" ? "Vắng" : "Có phép"}
-                  </span>
+                  <ChildAttendanceStatus status={r.status} className="shrink-0" />
                 </li>
               ))}
             </ul>

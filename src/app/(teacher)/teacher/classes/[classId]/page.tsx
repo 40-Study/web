@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { ArrowLeft, ClipboardCheck } from "lucide-react";
 import { ClassManagePanel } from "@/components/classes/class-manage-panel";
+import { ClassAssignmentsList } from "@/components/classes/class-assignments-list";
 import { useClassById } from "@/hooks/queries/use-class-manage";
 
 /**
@@ -35,6 +36,8 @@ export default function TeacherClassManagePage() {
         </Link>
       </div>
       <ClassManagePanel classId={classId} initialTab={searchParams.get("tab") === "schedule" ? "schedule" : "members"} />
+      {/* QA-B-08: bài tập gắn với lớp đã có trong DB nhưng trang lớp không có lối vào; mỗi bài dẫn tới trang bài nộp. */}
+      <ClassAssignmentsList classId={classId} hrefFor={(id) => `/teacher/assignments/${id}/submissions`} />
     </div>
   );
 }

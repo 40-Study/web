@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { cn, formatCurrency } from "@/lib/utils";
 import { COURSE_STATUS_LABEL, isCourseStatus, type CourseStatus as ApiCourseStatus } from "@/types/approval";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 
 // Phase 3: đủ 5 trạng thái backend + "other" cho giá trị lạ. Trước đây mọi status không phải
 // published/archived bị ép thành "draft" — khoá chờ duyệt/bị từ chối sẽ hiện sai là bản nháp.
@@ -113,7 +114,7 @@ function CourseTypeBadge({ type }: { type: CourseType }) {
   );
 }
 
-function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: string) => void }) {
+function CourseCard({ course, onDelete }: { course: Course; onDelete: (course: Course) => void }) {
   const isDraft = course.status === "draft";
   // Nháp + bị từ chối là 2 trạng thái giáo viên còn phải sửa rồi (gửi) duyệt.
   const needsWork = isDraft || course.status === "rejected";
@@ -128,9 +129,7 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: strin
       toast.error("Không thể xoá khoá học đã có học viên đăng ký");
       return;
     }
-    if (confirm(`Bạn có chắc muốn xoá khoá học "${course.title}"?`)) {
-      onDelete(course.id);
-    }
+    onDelete(course);
   };
 
   return (
@@ -157,14 +156,17 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (id: strin
             BÁN CHẠY
           </Badge>
         )}
-        {/* Delete button */}
+        {/* QA-B-05: nút xoá từng chỉ hiện khi rê chuột (opacity-0 group-hover), không có trên cảm ứng và
+            không có tên cho trình đọc màn hình. Nay luôn hiện, đủ lớn để chạm (32px), có aria-label. */}
         {canDelete && (
           <button
+            type="button"
             onClick={handleDelete}
-            className="absolute bottom-2 right-2 p-1.5 rounded-full bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+            className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-red-600 shadow-sm ring-1 ring-red-200 transition-colors hover:bg-red-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:bg-gray-900/90"
             title="Xoá khoá học"
+            aria-label={`Xoá khoá học ${course.title}`}
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -233,9 +235,12 @@ export default function TeacherCoursesPage() {
   const { data: apiCourses, isLoading } = useMyCourses();
   const deleteCourse = useDeleteCourse();
   const courses = useMemo(() => (apiCourses || []).map(mapApiCourse), [apiCourses]);
+  // Hộp thoại xác nhận của app thay cho `confirm()` của trình duyệt (QA-B-05).
+  const [pendingDelete, setPendingDelete] = useState<Course | null>(null);
 
-  const handleDeleteCourse = (id: string) => {
-    deleteCourse.mutate(id);
+  const confirmDelete = () => {
+    if (!pendingDelete) return;
+    deleteCourse.mutate(pendingDelete.id, { onSettled: () => setPendingDelete(null) });
   };
 
   const filteredCourses = useMemo(() => {
@@ -342,7 +347,7 @@ export default function TeacherCoursesPage() {
             {filteredCourses.length > 0 ? (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredCourses.map((course) => (
-                  <CourseCard key={course.id} course={course} onDelete={handleDeleteCourse} />
+                  <CourseCard key={course.id} course={course} onDelete={setPendingDelete} />
                 ))}
               </div>
             ) : (
@@ -351,6 +356,19 @@ export default function TeacherCoursesPage() {
           </TabsContent>
         ))}
       </Tabs>
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => {
+          if (!open && !deleteCourse.isPending) setPendingDelete(null);
+        }}
+        title="Xoá khoá học?"
+        description={pendingDelete ? `Khoá "${pendingDelete.title}" sẽ bị xoá và không khôi phục được.` : undefined}
+        confirmLabel="Xoá khoá học"
+        destructive
+        pending={deleteCourse.isPending}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useCreateCourse } from "@/hooks/queries/use-courses";
+import { useCategoryList } from "@/hooks/queries/use-categories";
 import { toast } from "sonner";
 import {
   LEVELS,
@@ -30,7 +31,7 @@ const STEPS = [
   { id: 4, title: "Hoàn tất" },
 ];
 
-// ─── Main Page ──────────────────────────────────────────────────────────────
+export const THUMBNAIL_UPLOADING_NOTE = "Đang tải ảnh bìa lên, vui lòng đợi xong rồi tạo khoá.";
 
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
@@ -39,6 +40,9 @@ export default function CreateCoursePage() {
   const createCourse = useCreateCourse();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<CourseFormData>(initialFormData);
+  // QA-B-04: cờ nằm ở trang (không ở bước 2) vì bước 2 unmount khi chuyển bước mà upload vẫn chạy tiếp.
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
+  const submitDisabled = createCourse.isPending || thumbnailUploading;
 
   const update = useCallback(<K extends keyof CourseFormData>(key: K, value: CourseFormData[K]) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -51,8 +55,15 @@ export default function CreateCoursePage() {
     return true;
   };
 
-  /** Lưu/tạo khoá chỉ khi giá bán và giá khuyến mãi hợp lệ; sai thì quay lại bước giá và báo lý do. */
-  const discountPriceOk = () => {
+  /**
+   * Lưu/tạo khoá chỉ khi ảnh bìa đã tải xong và giá bán, giá khuyến mãi hợp lệ; giá sai thì quay lại bước giá
+   * và báo lý do.
+   */
+  const canSubmit = () => {
+    if (thumbnailUploading) {
+      toast.info(THUMBNAIL_UPLOADING_NOTE);
+      return false;
+    }
     const discountError = validatePrice(formData) ?? validateDiscountPrice(formData);
     if (discountError === null) return true;
     toast.error(discountError);
@@ -84,7 +95,7 @@ export default function CreateCoursePage() {
       toast.error("Vui lòng nhập tên khoá học");
       return;
     }
-    if (!discountPriceOk()) return;
+    if (!canSubmit()) return;
     try {
       const course = await createCourse.mutateAsync(buildPayload());
       toast.success("Đã lưu nháp thành công");
@@ -99,7 +110,7 @@ export default function CreateCoursePage() {
       toast.error("Vui lòng nhập tên khoá học");
       return;
     }
-    if (!discountPriceOk()) return;
+    if (!canSubmit()) return;
     try {
       const course = await createCourse.mutateAsync(buildPayload());
       toast.success("Khoá học đã được tạo! Thêm bài học ngay.");
@@ -132,12 +143,12 @@ export default function CreateCoursePage() {
           </div>
         </div>
         <div className="hidden gap-2 sm:flex">
-          <Button variant="outline" size="sm" onClick={handleSaveDraft} disabled={createCourse.isPending}>
+          <Button variant="outline" size="sm" onClick={handleSaveDraft} disabled={submitDisabled}>
             {createCourse.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
             Lưu nháp
           </Button>
           {currentStep === 4 ? (
-            <Button size="sm" onClick={handlePublish} disabled={createCourse.isPending}>
+            <Button size="sm" onClick={handlePublish} disabled={submitDisabled}>
               Tạo khoá & thêm bài học
             </Button>
           ) : (
@@ -213,9 +224,18 @@ export default function CreateCoursePage() {
           </div>
 
           {currentStep === 1 && <CourseBasicInfoStep formData={formData} update={update} />}
-          {currentStep === 2 && <CourseMediaStep formData={formData} update={update} />}
+          {currentStep === 2 && (
+            <CourseMediaStep formData={formData} update={update} onThumbnailUploadingChange={setThumbnailUploading} />
+          )}
           {currentStep === 3 && <CoursePricingStep formData={formData} update={update} />}
           {currentStep === 4 && <Step4Review formData={formData} />}
+
+          {thumbnailUploading && (
+            <p role="status" className="mt-6 flex items-center gap-2 text-sm text-amber-700">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {THUMBNAIL_UPLOADING_NOTE}
+            </p>
+          )}
 
           {/* Bottom Navigation */}
           <div className="flex flex-col-reverse gap-3 mt-8 pt-6 border-t sm:flex-row sm:items-center sm:justify-between">
@@ -230,11 +250,11 @@ export default function CreateCoursePage() {
               </Button>
             )}
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleSaveDraft} disabled={createCourse.isPending}>
+              <Button variant="outline" onClick={handleSaveDraft} disabled={submitDisabled}>
                 Lưu nháp
               </Button>
               {currentStep === 4 ? (
-                <Button onClick={handlePublish} disabled={createCourse.isPending}>
+                <Button onClick={handlePublish} disabled={submitDisabled}>
                   {createCourse.isPending && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
                   Tạo khoá & thêm bài học
                 </Button>
@@ -259,6 +279,12 @@ export default function CreateCoursePage() {
 function Step4Review({ formData }: { formData: CourseFormData }) {
   const formatLabel = FORMATS.find((f) => f.id === formData.format)?.label ?? formData.format;
   const levelLabel = LEVELS.find((l) => l.value === formData.level)?.label ?? formData.level;
+  // QA-B-22: bước 4 từng không hiện danh mục đã chọn. Cùng query với bước 1 nên đọc từ cache, không gọi lại.
+  const { data: categoriesRaw } = useCategoryList();
+  const categories = Array.isArray(categoriesRaw) ? categoriesRaw : [];
+  const categoryLabel = formData.category_id
+    ? (categories.find((c) => c.id === formData.category_id)?.name ?? "Đã chọn")
+    : "Chưa chọn";
 
   return (
     <div className="space-y-6">
@@ -278,6 +304,10 @@ function Step4Review({ formData }: { formData: CourseFormData }) {
             <div>
               <span className="text-muted-foreground">Định dạng:</span>
               <span className="ml-2 font-medium">{formatLabel}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Danh mục:</span>
+              <span className="ml-2 font-medium">{categoryLabel}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Trình độ:</span>
@@ -351,9 +381,10 @@ function Step4Review({ formData }: { formData: CourseFormData }) {
               <div className="relative pl-5">
                 <div className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-gray-200" />
                 {[
-                  { title: "Thêm chương", desc: "Section" },
-                  { title: "Tạo bài học", desc: "Lesson" },
-                  { title: "Upload nội dung", desc: "Video, Quiz, Code" },
+                  // QA-B-16: bỏ chú thích tiếng Anh "Section"/"Lesson".
+                  { title: "Thêm chương", desc: "Chia khoá thành các phần" },
+                  { title: "Tạo bài học", desc: "Trong từng chương" },
+                  { title: "Tải nội dung lên", desc: "Video, bài kiểm tra, bài tập lập trình" },
                   { title: "Mở lớp học", desc: "Mời học viên" },
                 ].map((item, i) => (
                   <div key={i} className="relative pb-3 last:pb-0">

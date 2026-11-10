@@ -193,7 +193,11 @@ export function canAccessStudentOnlyRoute(pathname: string, activeRole?: string 
  * chip số dư ở header và `useCoinWallet` không thể lệch nhau (phụ huynh/admin không có ví).
  */
 export function canUseCoinWallet(activeRole?: string | null): boolean {
-  return isRouteAllowedForRole("/coins", resolveNavRole(true, normalizeRole(activeRole)));
+  const role = normalizeRole(activeRole);
+  // QA-B-20: resolveNavRole quy TEACHER về STUDENT (để dựng menu) nên giảng viên từng thấy chip xu "0" và gọi
+  // /coins/wallet mỗi trang. Xu là tính năng của học viên; khoá theo vai THẬT như canAccessStudentOnlyRoute.
+  if (role === "TEACHER") return false;
+  return isRouteAllowedForRole("/coins", resolveNavRole(true, role));
 }
 
 /**

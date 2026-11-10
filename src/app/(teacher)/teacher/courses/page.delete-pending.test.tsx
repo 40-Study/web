@@ -7,6 +7,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { COURSE_STATUS_LABEL } from "@/types/approval";
 
+const deleteMutate = vi.hoisted(() => vi.fn());
+
 vi.mock("@/hooks/queries/use-courses", () => ({
   useMyCourses: () => ({
     data: [
@@ -15,7 +17,7 @@ vi.mock("@/hooks/queries/use-courses", () => ({
     ],
     isLoading: false,
   }),
-  useDeleteCourse: () => ({ mutate: vi.fn() }),
+  useDeleteCourse: () => ({ mutate: deleteMutate, isPending: false }),
 }));
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -40,5 +42,18 @@ describe("/teacher/courses — nút xoá theo trạng thái", () => {
     openTab("draft");
     expect(screen.getByText("QA-Khoa nhap")).toBeTruthy();
     expect(screen.getByTitle("Xoá khoá học")).toBeTruthy();
+  });
+
+  // QA-B-05: nút xoá chỉ hiện khi rê chuột (không có trên cảm ứng), xác nhận bằng confirm() của trình duyệt.
+  it("khoá nháp: nút xoá luôn hiện, có tên, xác nhận bằng hộp thoại của app rồi mới xoá", () => {
+    deleteMutate.mockClear();
+    render(<TeacherCoursesPage />);
+    openTab("draft");
+    const button = screen.getByRole("button", { name: "Xoá khoá học QA-Khoa nhap" });
+    expect(button.className).not.toContain("opacity-0");
+    fireEvent.click(button);
+    expect(deleteMutate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Xoá khoá học" }));
+    expect(deleteMutate).toHaveBeenCalledWith("c-draft", expect.anything());
   });
 });

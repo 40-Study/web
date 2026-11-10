@@ -7,7 +7,7 @@
  * quên nhánh status, suite hiện tại (không test file nào chạm wallet/page.tsx) vẫn xanh 100%.
  */
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { TeacherTransaction } from "@/services/wallet.service";
 
@@ -96,9 +96,22 @@ describe("/teacher/wallet — các con số số dư cộng lại được (revi
 });
 
 describe("/teacher/wallet — đơn huỷ không hiện như đã nhận tiền (review đối kháng PR #27)", () => {
+  // QA-B-14: đơn đã huỷ mặc định ẩn khỏi bảng (giảng viên cộng bảng không ra tổng), có ghi chú số đơn đã ẩn.
+  it("đơn 'cancelled' mặc định ẩn, ghi rõ đã ẩn bao nhiêu đơn", () => {
+    mockTransactions = [
+      txFixture({ order_id: "cancelled-1", status: "cancelled", type: "income", order_number: "DH-HUY" }),
+      txFixture({ order_id: "completed-1", status: "completed", type: "income", order_number: "DH-OK" }),
+    ];
+    render(<TeacherWalletPage />);
+    expect(screen.queryByText("DH-HUY")).toBeNull();
+    expect(screen.getByText("DH-OK")).toBeTruthy();
+    expect(screen.getByText(/Đã ẩn 1 đơn đã huỷ/)).toBeTruthy();
+  });
+
   it("đơn 'cancelled': KHÔNG dấu '+', KHÔNG màu xanh (text-green-600), badge 'Đã huỷ'", () => {
     mockTransactions = [txFixture({ order_id: "cancelled-1", status: "cancelled", type: "income" })];
     render(<TeacherWalletPage />);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Hiện đơn đã huỷ" }));
 
     expect(screen.getByText("Đã huỷ")).toBeTruthy();
     const amountCell = screen.getByText(/499\.000/);

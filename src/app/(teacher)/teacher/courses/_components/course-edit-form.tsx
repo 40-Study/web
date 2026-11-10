@@ -30,6 +30,8 @@ export function CourseEditForm({ course }: { course: ApiCourse }) {
   // Khởi tạo 1 lần từ khoá đang có — refetch nền không được ghi đè thứ người dùng đang gõ.
   const [formData, setFormData] = useState<CourseFormData>(() => courseToFormData(course));
   const [error, setError] = useState<string | null>(null);
+  // QA-B-04: lưu lúc ảnh bìa đang tải sẽ gửi ảnh cũ/rỗng; khoá nút Lưu tới khi tải xong.
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
 
   const update = useCallback(<K extends keyof CourseFormData>(key: K, value: CourseFormData[K]) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -64,7 +66,12 @@ export function CourseEditForm({ course }: { course: ApiCourse }) {
       </Card>
       <Card>
         <CardContent className="p-4 sm:p-6">
-          <CourseMediaStep formData={formData} update={update} courseId={course.id} />
+          <CourseMediaStep
+            formData={formData}
+            update={update}
+            courseId={course.id}
+            onThumbnailUploadingChange={setThumbnailUploading}
+          />
         </CardContent>
       </Card>
       <CoursePricingStep formData={formData} update={update} showFeatured={false} />
@@ -85,7 +92,12 @@ export function CourseEditForm({ course }: { course: ApiCourse }) {
           <Button variant="outline" onClick={backToCourse} disabled={updateCourse.isPending}>
             Huỷ
           </Button>
-          <Button onClick={handleSave} isLoading={updateCourse.isPending} disabled={updateCourse.isPending}>
+          <Button
+            onClick={handleSave}
+            isLoading={updateCourse.isPending}
+            disabled={updateCourse.isPending || thumbnailUploading}
+            title={thumbnailUploading ? "Đang tải ảnh bìa lên" : undefined}
+          >
             Lưu thay đổi
           </Button>
         </div>

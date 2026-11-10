@@ -1,4 +1,5 @@
 import { RoleGuard } from "@/components/guards/role-guard";
+import { AppShellLayout } from "@/components/layout/app-shell-layout";
 
 /**
  * (dashboard) route group — hiện chỉ có /parent/children/[id]. Trước đây
@@ -11,8 +12,10 @@ import { RoleGuard } from "@/components/guards/role-guard";
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     // Mất phiên giữa chừng: đăng nhập lại xong quay về đúng trang phụ huynh đang xem (C3).
+    // QA-B-24: trang chi tiết con từng không có header, sidebar, chuông, thanh điều hướng dưới trên mobile. Dùng
+    // đúng khung app của /home (AppShellLayout) để phụ huynh mở thông báo/tin nhắn mà không phải quay lại.
     <RoleGuard roles={["PARENT"]} returnToCurrentPath>
-      <div className="min-h-screen bg-background">{children}</div>
+      <AppShellLayout>{children}</AppShellLayout>
     </RoleGuard>
   );
 }

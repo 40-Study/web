@@ -31,7 +31,7 @@ export function AttendanceCardList({
     // Bảng bị ẩn dưới md nên thông báo rỗng phải có ở cả bố cục thẻ.
     return (
       <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
-        Lớp này chưa có học sinh nào.
+        Lớp này chưa có học viên nào.
       </div>
     );
   }
