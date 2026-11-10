@@ -322,7 +322,8 @@ function AdminWithdrawalsContent() {
                               </>
                             )}
                             {w.status === "approved" && (
-                              <Button size="sm" onClick={() => setCompleteTarget(w)}>
+                              // QA-C-21: ở 390px cột hành động ghim hẹp (~8.5rem); cho chữ xuống dòng thay vì tràn khỏi nút.
+                              <Button size="sm" className="h-auto whitespace-normal py-1.5 leading-tight" onClick={() => setCompleteTarget(w)}>
                                 Đánh dấu đã chuyển
                               </Button>
                             )}
