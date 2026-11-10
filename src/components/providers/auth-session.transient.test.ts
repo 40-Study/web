@@ -1,0 +1,100 @@
+import { toast } from "sonner";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiError, AuthError, NetworkError, RateLimitError } from "@/lib/errors";
+import { useSessionConnectionStore } from "@/lib/session-connection";
+import { authService, type UnifiedRole, type UserResponseDto } from "@/services/auth.service";
+import { useAuthStore, type AuthUser } from "@/stores/auth.store";
+import { bootstrapAuthSession } from "./auth-session";
+
+// QA-B-01 / QA-C-02 (261110): request khởi tạo phiên bị timeout/huỷ/5xx thì web xoá phiên và đá về
+// /login dù cookie còn hợp lệ. Chỉ 401/403 thật (sau refresh) mới được xoá phiên.
+
+vi.mock("@/services/auth.service", () => ({
+  authService: { getMe: vi.fn(), getMyRoles: vi.fn(), getMyPermissions: vi.fn() },
+}));
+
+const user: UserResponseDto = {
+  id: "user-1",
+  username: "gv1",
+  email: "teacher1@demo.com",
+  full_name: "Giảng viên 1",
+  is_active: true,
+  created_at: "2026-08-09T00:00:00Z",
+};
+const cachedUser: AuthUser = { id: user.id, email: user.email, name: "Giảng viên 1" };
+const teacherRole: UnifiedRole = { id: "r-teacher", type: "system", role_name: "TEACHER", display_name: "Giảng viên" };
+
+function seedCachedSession() {
+  useAuthStore.setState({ user: cachedUser, activeRole: "TEACHER", activeUnifiedRole: teacherRole, roles: [teacherRole] });
+}
+
+describe("bootstrap phiên khi máy chủ chậm / lỗi mạng", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.mocked(authService.getMe).mockReset();
+    vi.mocked(authService.getMyRoles).mockReset().mockResolvedValue({ roles: [teacherRole] });
+    vi.mocked(authService.getMyPermissions).mockReset().mockResolvedValue([]);
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+    useAuthStore.getState().clearServerSession();
+    useAuthStore.setState({ hasHydrated: true });
+    useSessionConnectionStore.getState().markOk();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it.each([
+    ["timeout / ERR_ABORTED (NetworkError)", () => new NetworkError()],
+    ["502 cổng hết giờ", () => new ApiError(502, "UNKNOWN", "Có lỗi xảy ra, vui lòng thử lại")],
+    ["429 refresh bị giới hạn", () => new RateLimitError(30)],
+  ])("%s ở /auth/me -> giữ phiên, thử lại rồi khôi phục được", async (_label, makeError) => {
+    seedCachedSession();
+    vi.mocked(authService.getMe).mockRejectedValueOnce(makeError()).mockResolvedValue(user);
+
+    const pending = bootstrapAuthSession();
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Trong lúc chờ thử lại: KHÔNG anonymous (guard sẽ không điều hướng /login), cache còn nguyên.
+    expect(useAuthStore.getState().sessionStatus).toBe("checking");
+    expect(useAuthStore.getState().user).toEqual(cachedUser);
+    expect(useSessionConnectionStore.getState()).toMatchObject({ state: "retrying", attempt: 1 });
+
+    await vi.advanceTimersByTimeAsync(2_000);
+    await expect(pending).resolves.toBe("authenticated");
+    expect(authService.getMe).toHaveBeenCalledTimes(2);
+    expect(useAuthStore.getState()).toMatchObject({ sessionStatus: "authenticated", activeRole: "TEACHER" });
+    expect(useSessionConnectionStore.getState().state).toBe("ok");
+  });
+
+  it("lỗi mạng kéo dài -> hết lượt thử lại thì báo offline, VẪN giữ user cache và không anonymous", async () => {
+    seedCachedSession();
+    vi.mocked(authService.getMyRoles).mockRejectedValue(new NetworkError());
+    vi.mocked(authService.getMe).mockResolvedValue(user);
+    const toastInfo = vi.spyOn(toast, "info").mockImplementation(() => "" as never);
+
+    const pending = bootstrapAuthSession();
+    await vi.advanceTimersByTimeAsync(2_000 + 5_000 + 10_000);
+
+    await expect(pending).resolves.toBe("checking");
+    expect(authService.getMyRoles).toHaveBeenCalledTimes(4); // 1 lần đầu + 3 lần thử lại, có giới hạn
+    expect(useAuthStore.getState()).toMatchObject({ sessionStatus: "checking", user: cachedUser, activeRole: "TEACHER" });
+    expect(useSessionConnectionStore.getState().state).toBe("offline");
+    expect(toastInfo).not.toHaveBeenCalled(); // không báo "phiên hết hạn" sai sự thật
+    toastInfo.mockRestore();
+  });
+
+  it("401 thật (sau refresh) -> vẫn xoá phiên ngay, không thử lại", async () => {
+    seedCachedSession();
+    vi.mocked(authService.getMe).mockRejectedValue(new AuthError("Invalid or expired token", "AUTH_ERROR"));
+    const toastInfo = vi.spyOn(toast, "info").mockImplementation(() => "" as never);
+
+    await expect(bootstrapAuthSession()).resolves.toBe("anonymous");
+
+    expect(authService.getMe).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState()).toMatchObject({ sessionStatus: "anonymous", user: null });
+    expect(useSessionConnectionStore.getState().state).toBe("ok");
+    toastInfo.mockRestore();
+  });
+});

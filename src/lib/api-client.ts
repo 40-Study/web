@@ -17,6 +17,7 @@ import {
   NotFoundError,
 } from "./errors";
 import { isUserFacingServerErrorCode } from "./contract-error-codes";
+import { classifyRefreshFailure } from "./session-failure-policy";
 import { AUTH_ROLE_CHANGED_EVENT, type AuthRoleChangedDetail } from "./auth-events";
 import { useAuthStore } from "@/stores/auth.store";
 import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
@@ -205,8 +206,17 @@ api.interceptors.response.use(
 
         // Refresh thành công — retry request gốc (cookies mới đã được set)
         return api(original);
-      } catch {
-        // Refresh thất bại — phát tín hiệu để bootstrap xoá session authority. Không tự
+      } catch (refreshError) {
+        // QA-B-01 / QA-C-02: refresh bị timeout/huỷ/5xx/429 thì server CHƯA nói refresh token hỏng.
+        // Trước đây nhánh này vẫn xoá "auth-storage" + phát session-expired → người dùng bị đá về
+        // /login dù cookie còn hạn. Giờ ném lỗi tạm thời (bootstrap sẽ giữ phiên và thử lại).
+        if (classifyRefreshFailure(refreshError) === "transient") {
+          const refreshStatus = axios.isAxiosError(refreshError) ? refreshError.response?.status : undefined;
+          if (refreshStatus === undefined) throw new NetworkError();
+          if (refreshStatus === 429) throw new RateLimitError();
+          throw new ApiError(refreshStatus, "REFRESH_UNAVAILABLE", GENERIC_SERVER_ERROR_MESSAGE);
+        }
+        // Refresh bị server từ chối — phát tín hiệu để bootstrap xoá session authority. Không tự
         // chuyển public route sang login; RoleGuard sẽ điều hướng khi surface cần bảo vệ.
         if (typeof window !== "undefined") {
           try {

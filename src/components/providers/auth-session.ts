@@ -2,6 +2,8 @@ import { toast } from "sonner";
 import { ACCOUNT_LOCKED_TITLE, AuthError, isAccountLockedError } from "@/lib/errors";
 import { SESSION_EXPIRED_MESSAGE } from "@/lib/error-messages";
 import { PERMISSIONS, type Permission } from "@/lib/permissions";
+import { useSessionConnectionStore } from "@/lib/session-connection";
+import { classifySessionBootstrapError, getBootstrapRetryDelay } from "@/lib/session-failure-policy";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { authService, type UnifiedRole, type UserResponseDto } from "@/services/auth.service";
 import { useAuthStore, type AuthUser, type SessionStatus } from "@/stores/auth.store";
@@ -99,50 +101,86 @@ async function runBootstrap(sessionJustEstablished: boolean): Promise<SessionSta
   const previousRoleName = store.activeRole;
   const hadCachedUser = Boolean(store.user);
   store.setSessionStatus("checking");
+  const connection = useSessionConnectionStore.getState();
+  // Người dùng bấm "Thử lại" (hoặc mạng có lại) sau khi đã báo offline: chuyển banner về "đang thử
+  // lại" ngay, để nút không còn mời bấm tiếp trong lúc request đang chạy.
+  if (connection.state === "offline") connection.markRetrying(0);
 
-  try {
-    const user = await authService.getMe();
-    const { roles } = await authService.getMyRoles();
-    const activeUnifiedRole = resolveActiveRole(roles, previousUnifiedRole, previousRoleName);
-    // Lỗi 2 (fullstack-verify-260922): trước đây lỗi nạp quyền rơi xuống catch bên dưới và xoá
-    // phiên đã xác thực (getMe + getMyRoles đều 200), đẩy người dùng về trang chọn vai trò ngay
-    // sau khi đăng nhập. Quyền chỉ dùng để ẩn/hiện UI (server vẫn tự kiểm), nên nạp hỏng thì giữ
-    // phiên với quyền rỗng và ghi cảnh báo, không đăng xuất.
-    let permissions: Permission[] = [];
+  for (let attempt = 0; ; attempt += 1) {
     try {
-      permissions = await loadPermissionsForRole(activeUnifiedRole);
+      store.applyServerSession(await loadServerSession(previousUnifiedRole, previousRoleName));
+      connection.markOk();
+      return "authenticated";
     } catch (error) {
-      console.warn("[auth] Không nạp được quyền của người dùng, tạm dùng quyền rỗng", error);
-    }
-
-    store.applyServerSession({
-      user: toAuthUser(user),
-      roles,
-      activeRole: activeUnifiedRole ? normalizeRole(activeUnifiedRole.role_name) : null,
-      activeUnifiedRole,
-      permissions,
-    });
-    return "authenticated";
-  } catch (error) {
-    if (useAuthStore.getState().sessionToken) {
-      useAuthStore.getState().setSessionStatus("anonymous");
+      if (useAuthStore.getState().sessionToken) {
+        connection.markOk();
+        useAuthStore.getState().setSessionStatus("anonymous");
+        return "anonymous";
+      }
+      // QA-B-01 / QA-C-02: timeout, mất mạng, 5xx, 429 KHÔNG phải bằng chứng phiên hết hạn (cookie
+      // thường vẫn hợp lệ — QA gọi lại /auth/me ngay sau đó được 200). Giữ nguyên `user` cache và
+      // trạng thái `checking` (guard không điều hướng), thử lại có giới hạn rồi báo mất kết nối.
+      if (classifySessionBootstrapError(error) === "transient") {
+        const delay = getBootstrapRetryDelay(attempt);
+        if (delay === null) {
+          connection.markOffline();
+          return "checking";
+        }
+        connection.markRetrying(attempt + 1);
+        await wait(delay);
+        continue;
+      }
+      connection.markOk();
+      notifySessionRejected(error, hadCachedUser);
+      store.clearServerSession();
       return "anonymous";
     }
-    // Trước đây: bị đá về /login HOÀN TOÀN ÂM THẦM khi tài khoản bị admin khoá giữa phiên —
-    // không có gì phân biệt với việc token hết hạn thông thường. Toast này chạy TRƯỚC khi
-    // clearServerSession() — SPA điều hướng sang /login không unmount Toaster nên vẫn hiển thị.
-    if (isAccountLockedError(error)) {
-      toast.error(ACCOUNT_LOCKED_TITLE, {
-        description: "Tài khoản của bạn đã bị quản trị viên khoá. Vui lòng liên hệ hỗ trợ.",
-      });
-    } else if (hadCachedUser && error instanceof AuthError) {
-      // N-08 / C3: người dùng ĐANG có phiên (còn `user` cache) mà server trả 401 cả sau refresh →
-      // phiên hết hạn/bị thu hồi. Layout sẽ đưa về /login; toast cho biết vì sao. Không báo khi lỗi
-      // mạng (NetworkError) vì khi đó phiên có thể vẫn còn.
-      toast.info(SESSION_EXPIRED_MESSAGE);
-    }
-    store.clearServerSession();
-    return "anonymous";
+  }
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function loadServerSession(
+  previousUnifiedRole: UnifiedRole | null,
+  previousRoleName: string | null
+) {
+  const user = await authService.getMe();
+  const { roles } = await authService.getMyRoles();
+  const activeUnifiedRole = resolveActiveRole(roles, previousUnifiedRole, previousRoleName);
+  // Lỗi 2 (fullstack-verify-260922): trước đây lỗi nạp quyền rơi xuống catch bên dưới và xoá
+  // phiên đã xác thực (getMe + getMyRoles đều 200), đẩy người dùng về trang chọn vai trò ngay
+  // sau khi đăng nhập. Quyền chỉ dùng để ẩn/hiện UI (server vẫn tự kiểm), nên nạp hỏng thì giữ
+  // phiên với quyền rỗng và ghi cảnh báo, không đăng xuất.
+  let permissions: Permission[] = [];
+  try {
+    permissions = await loadPermissionsForRole(activeUnifiedRole);
+  } catch (error) {
+    console.warn("[auth] Không nạp được quyền của người dùng, tạm dùng quyền rỗng", error);
+  }
+
+  return {
+    user: toAuthUser(user),
+    roles,
+    activeRole: activeUnifiedRole ? normalizeRole(activeUnifiedRole.role_name) : null,
+    activeUnifiedRole,
+    permissions,
+  };
+}
+
+function notifySessionRejected(error: unknown, hadCachedUser: boolean): void {
+  // Trước đây: bị đá về /login HOÀN TOÀN ÂM THẦM khi tài khoản bị admin khoá giữa phiên —
+  // không có gì phân biệt với việc token hết hạn thông thường. Toast này chạy TRƯỚC khi
+  // clearServerSession() — SPA điều hướng sang /login không unmount Toaster nên vẫn hiển thị.
+  if (isAccountLockedError(error)) {
+    toast.error(ACCOUNT_LOCKED_TITLE, {
+      description: "Tài khoản của bạn đã bị quản trị viên khoá. Vui lòng liên hệ hỗ trợ.",
+    });
+  } else if (hadCachedUser && error instanceof AuthError) {
+    // N-08 / C3: người dùng ĐANG có phiên (còn `user` cache) mà server trả 401 cả sau refresh →
+    // phiên hết hạn/bị thu hồi. Layout sẽ đưa về /login; toast cho biết vì sao.
+    toast.info(SESSION_EXPIRED_MESSAGE);
   }
 }
 

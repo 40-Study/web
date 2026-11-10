@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { categoryService } from "@/services/category.service";
 import { getErrorMessage } from "@/lib/error-messages";
+import { isUncertainOutcomeError } from "@/lib/uncertain-mutation";
 import type { CreateCategoryDTO, UpdateCategoryDTO } from "@/services/category.service";
 
 export const categoryKeys = {
@@ -72,7 +73,11 @@ export function useDeleteCategory() {
       qc.invalidateQueries({ queryKey: categoryKeys.all });
       toast.success("Đã xoá danh mục");
     },
-    onError: (error) => toast.error(getErrorMessage(error, "Không thể xoá danh mục")),
+    // Timeout/mất mạng: server có thể đã xoá (QA-C-16, audit log ghi 200). Trang admin tự tải lại và
+    // đối chiếu rồi báo kết quả, không báo "không thể xoá" khi chưa biết.
+    onError: (error) => {
+      if (!isUncertainOutcomeError(error)) toast.error(getErrorMessage(error, "Không thể xoá danh mục"));
+    },
   });
 }
 

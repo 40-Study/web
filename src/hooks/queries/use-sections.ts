@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { sectionService } from "@/services/section.service";
+import { isUncertainOutcomeError } from "@/lib/uncertain-mutation";
 import type { CreateSectionDTO, UpdateSectionDTO } from "@/types/section";
 
 export const sectionKeys = {
@@ -33,7 +34,11 @@ export function useCreateSection(courseId: string) {
       qc.invalidateQueries({ queryKey: sectionKeys.byCourse(courseId) });
       toast.success("Đã tạo chương");
     },
-    onError: () => toast.error("Không thể tạo chương"),
+    // Timeout/mất mạng: server có thể đã tạo xong (QA-B-03). Trang gọi tự tải lại và đối chiếu rồi
+    // báo kết quả; ở đây không báo "không thể tạo" vì điều đó có thể sai và dẫn tới tạo trùng.
+    onError: (error) => {
+      if (!isUncertainOutcomeError(error)) toast.error("Không thể tạo chương");
+    },
   });
 }
 

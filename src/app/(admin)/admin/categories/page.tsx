@@ -1,12 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   useCategoryList,
   useCreateCategory,
   useUpdateCategory,
   useDeleteCategory,
 } from "@/hooks/queries/use-categories";
+import {
+  isUncertainOutcomeError,
+  reconcileUncertainOutcome,
+  UNCERTAIN_OUTCOME_TITLE,
+  uncertainOutcomeDescription,
+} from "@/lib/uncertain-mutation";
 import type { Category } from "@/services/category.service";
 import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
@@ -39,6 +47,8 @@ export default function AdminCategoriesPage() {
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
+  const [reconcilingDelete, setReconcilingDelete] = useState(false);
+  const deleteBusy = deleteCategory.isPending || reconcilingDelete;
 
   const [form, setForm] = useState<CategoryFormState>(emptyForm);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -70,6 +80,33 @@ export default function AdminCategoriesPage() {
         { onSuccess: () => setForm(emptyForm) }
       );
     }
+  };
+
+  // QA-C-16: trước đây hộp thoại đóng NGAY khi bấm và không có trạng thái chờ; server chậm thì
+  // danh mục vẫn nằm trên màn mà không một phản hồi nào. Giờ giữ hộp thoại kèm spinner tới khi có
+  // kết quả; timeout thì tải lại danh sách và đối chiếu xem danh mục còn không.
+  const confirmDelete = async () => {
+    const id = confirmDeleteId;
+    if (!id || deleteBusy) return;
+    try {
+      await deleteCategory.mutateAsync(id);
+    } catch (error) {
+      if (!isUncertainOutcomeError(error)) return; // lỗi dứt khoát: hook đã toast, giữ hộp thoại
+      setReconcilingDelete(true);
+      const result = await reconcileUncertainOutcome(async () => {
+        const fresh = await refetch();
+        if (fresh.isError) throw fresh.error; // server vẫn chậm: chưa kết luận được
+        return !(fresh.data ?? []).some((c) => c.id === id);
+      });
+      setReconcilingDelete(false);
+      if (result === "unconfirmed") {
+        toast.warning(UNCERTAIN_OUTCOME_TITLE, { description: uncertainOutcomeDescription("xoá danh mục"), duration: 10_000 });
+        return;
+      }
+      toast.success("Đã xoá danh mục", { description: "Máy chủ phản hồi chậm nhưng danh mục đã được xoá." });
+    }
+    if (selectedId === id) setSelectedId(null);
+    setConfirmDeleteId(null);
   };
 
   const startEdit = (c: Category) => {
@@ -196,24 +233,19 @@ export default function AdminCategoriesPage() {
         </div>
       </div>
 
-      <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
+      <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && !deleteBusy && setConfirmDeleteId(null)}>
         <DialogContent>
           <DialogTitle>Xoá danh mục &quot;{confirmDeleteCategory?.name}&quot;?</DialogTitle>
           <DialogDescription>
             Hành động này không thể hoàn tác. Khoá học đang gắn danh mục này có thể bị ảnh hưởng.
           </DialogDescription>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>
+            <Button variant="outline" onClick={() => setConfirmDeleteId(null)} disabled={deleteBusy}>
               Huỷ
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (confirmDeleteId) deleteCategory.mutate(confirmDeleteId);
-                setConfirmDeleteId(null);
-              }}
-            >
-              Xoá danh mục
+            <Button variant="destructive" onClick={confirmDelete} disabled={deleteBusy}>
+              {deleteBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+              {reconcilingDelete ? "Đang kiểm tra lại…" : "Xoá danh mục"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -5,6 +5,20 @@ import { useAssignOrgMemberRole, useRevokeOrgMemberRole } from "@/hooks/queries/
 import type { OrgMember, OrgMemberAssignment } from "@/services/organization.service";
 
 /**
+ * Đối chiếu sau khi request gỡ bị timeout (QA-C-16): danh sách mới tải từ server cho thấy thao tác đã
+ * có hiệu lực chưa. Gỡ thành viên = người đó không còn trong danh sách; gỡ vai trò = phân công đó mất.
+ */
+export function isRemovalApplied(
+  target: { member: OrgMember; assignment?: OrgMemberAssignment },
+  freshMembers: OrgMember[]
+): boolean {
+  const current = freshMembers.find((m) => m.user_id === target.member.user_id);
+  if (!current) return true;
+  if (!target.assignment) return false;
+  return !current.assignments.some((a) => a.id === target.assignment?.id);
+}
+
+/**
  * Các thao tác trên thành viên, dựng trên 2 endpoint backend có sẵn (gán + gỡ). Không có endpoint "đổi vai trò":
  * đổi = gán vai trò mới TRƯỚC (lỗi 409/403 dừng ở đây, người đó chưa mất gì) rồi mới gỡ các vai trò cũ.
  */

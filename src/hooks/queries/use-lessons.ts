@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { lessonService } from "@/services/lesson.service";
+import { isUncertainOutcomeError } from "@/lib/uncertain-mutation";
 import type { CreateLessonDTO, UpdateLessonDTO } from "@/types/lesson";
 
 export const lessonKeys = {
@@ -43,7 +44,10 @@ export function useCreateLesson(courseId: string, sectionId: string) {
       qc.invalidateQueries({ queryKey: lessonKeys.bySection(courseId, sectionId) });
       toast.success("Đã tạo bài học");
     },
-    onError: () => toast.error("Không thể tạo bài học"),
+    // Timeout/mất mạng: xem useCreateSection — trang gọi tự đối chiếu với server (QA-B-03).
+    onError: (error) => {
+      if (!isUncertainOutcomeError(error)) toast.error("Không thể tạo bài học");
+    },
   });
 }
 

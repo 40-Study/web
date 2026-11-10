@@ -72,6 +72,51 @@ describe("API cookie refresh boundary", () => {
   });
 });
 
+// QA-B-01 / QA-C-02 (261110): refresh-token bị timeout/huỷ/5xx thì server chưa nói refresh token
+// hỏng — không được xoá "auth-storage" hay phát session-expired (đá người dùng về /login).
+describe("API refresh thất bại tạm thời — giữ phiên (QA-B-01)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  async function callProtectedWithRefreshError(refreshError: unknown) {
+    vi.spyOn(axios, "post").mockRejectedValue(refreshError);
+    useAuthStore.setState({ sessionStatus: "checking" });
+    window.localStorage.setItem("auth-storage", '{"state":{"user":{"id":"u1"}}}');
+    const expired = vi.fn();
+    window.addEventListener("fortex:auth-session-expired", expired);
+    const result = api
+      .get("/auth/me", { adapter: async (config) => { throw unauthorized(config); } })
+      .catch((e: unknown) => e);
+    const error = await result;
+    window.removeEventListener("fortex:auth-session-expired", expired);
+    return { error, expired };
+  }
+
+  it("refresh timeout (không có response) -> NetworkError, giữ auth-storage, KHÔNG phát session-expired", async () => {
+    const { error, expired } = await callProtectedWithRefreshError(
+      new AxiosError("timeout of 10000ms exceeded", "ECONNABORTED", { headers: {} } as InternalAxiosRequestConfig)
+    );
+    expect(error).toBeInstanceOf(NetworkError);
+    expect(expired).not.toHaveBeenCalled();
+    expect(window.localStorage.getItem("auth-storage")).not.toBeNull();
+  });
+
+  it("refresh 503 -> ApiError 503 (tạm thời), KHÔNG phát session-expired", async () => {
+    const config = { headers: {} } as InternalAxiosRequestConfig;
+    const { error, expired } = await callProtectedWithRefreshError(errorResponse(config, 503, {}));
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ status: 503 });
+    expect(expired).not.toHaveBeenCalled();
+  });
+
+  it("refresh 401 (refresh token bị từ chối) -> vẫn phát session-expired và xoá auth-storage", async () => {
+    const config = { headers: {} } as InternalAxiosRequestConfig;
+    const { error, expired } = await callProtectedWithRefreshError(errorResponse(config, 401, {}));
+    expect(error).toMatchObject({ status: 401 });
+    expect(expired).toHaveBeenCalledTimes(1);
+    expect(window.localStorage.getItem("auth-storage")).toBeNull();
+  });
+});
+
 // Phase 3 (contract mục C): admin duyệt hồ sơ giảng viên → token cũ 401 ROLE_CHANGED, refresh
 // thành công kèm role_changed + active_role. Interceptor phải phát fortex:auth-role-changed để
 // AuthBootstrap chuyển vai trò — và TUYỆT ĐỐI không phát khi refresh thường (sẽ đá người dùng

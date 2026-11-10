@@ -10,6 +10,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { roleService } from "@/services/role.service";
 import { adminKeys } from "@/hooks/queries/use-admin";
 import { orgAreaKeys } from "@/hooks/queries/use-org-area";
+import { handleMutationError } from "@/lib/query-client";
+import { isUncertainOutcomeError } from "@/lib/uncertain-mutation";
 
 export const orgMemberKeys = {
   roles: (orgId: string) => ["org-member-roles", "roles", orgId] as const,
@@ -59,5 +61,10 @@ export function useRevokeOrgMemberRole(orgId: string) {
     mutationFn: ({ userId, assignmentId }: { userId: string; assignmentId: string }) =>
       roleService.revokeOrgRole(userId, assignmentId),
     onSuccess: (_r, { userId }) => refresh(userId),
+    // Timeout/mất mạng (QA-C-16): hộp thoại tự tải lại danh sách và đối chiếu; toast mặc định "Mất kết
+    // nối" ở đây sẽ mâu thuẫn với kết quả đối chiếu. Lỗi khác giữ toast mặc định như trước.
+    onError: (error) => {
+      if (!isUncertainOutcomeError(error)) handleMutationError(error);
+    },
   });
 }
