@@ -5,7 +5,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/error-messages";
-import { cartService } from "@/services/cart.service";
+import { cartService, type Cart } from "@/services/cart.service";
+import { sumCartItemPrices } from "@/lib/cart-pricing";
 import { useAuthStore } from "@/stores/auth.store";
 
 export const cartKeys = {
@@ -51,18 +52,42 @@ export function useAddToCart() {
   });
 }
 
-/** Remove a course from cart */
+/**
+ * Remove a course from cart.
+ *
+ * QA-A-12: trước đây chỉ invalidate sau khi DELETE trả 200, nên trên mạng/server chậm dòng đã xoá còn nằm đó
+ * vài giây (kèm "Thanh toán (1)") như thể bấm Xoá không ăn. Nay bỏ dòng khỏi cache NGAY (cập nhật lạc quan);
+ * request lỗi thì trả lại đúng giỏ cũ và báo lỗi; xong xuôi vẫn refetch để khớp server.
+ */
 export function useRemoveFromCart() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (courseId: string) => cartService.removeFromCart([courseId]),
-    onSuccess: (_, courseId) => {
-      qc.invalidateQueries({ queryKey: cartKeys.detail() });
-      qc.invalidateQueries({ queryKey: cartKeys.check(courseId) });
+    onMutate: async (courseId: string) => {
+      // Huỷ refetch đang chạy để nó không ghi đè giỏ đã bỏ dòng bằng dữ liệu cũ.
+      await qc.cancelQueries({ queryKey: cartKeys.detail() });
+      const previous = qc.getQueryData<Cart>(cartKeys.detail());
+      if (previous) {
+        const items = previous.items.filter((item) => item.course_id !== courseId);
+        qc.setQueryData<Cart>(cartKeys.detail(), {
+          ...previous,
+          items,
+          total_item: items.length,
+          total: sumCartItemPrices(items),
+        });
+      }
+      return { previous };
+    },
+    onSuccess: () => {
       toast.success("Đã xoá khỏi giỏ hàng");
     },
-    onError: () => {
+    onError: (_error, _courseId, context) => {
+      if (context?.previous) qc.setQueryData(cartKeys.detail(), context.previous);
       toast.error("Không thể xoá khỏi giỏ hàng");
+    },
+    onSettled: (_data, _error, courseId) => {
+      qc.invalidateQueries({ queryKey: cartKeys.detail() });
+      qc.invalidateQueries({ queryKey: cartKeys.check(courseId) });
     },
   });
 }

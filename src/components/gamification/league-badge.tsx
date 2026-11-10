@@ -136,6 +136,16 @@ export function LeagueProgress({
 }
 
 /**
+ * Điều kiện lên giải kế tiếp, nói bằng ĐÚNG quy tắc đang dùng: giải tính theo XP tích luỹ (`minXP`, xem
+ * `getLeagueByXP`). QA-A-16: banner từng ghi "Top 10 sẽ lên giải Kim cương" (backend không có cơ chế thăng
+ * hạng theo top tuần) ngay cạnh "Còn 14.880 XP để lên Kim cương" — hai quy tắc trái nhau.
+ */
+export function nextLeagueRequirement(nextLeague: League | undefined): string {
+  if (!nextLeague) return "Đã đạt giải cao nhất!";
+  return `Đạt ${nextLeague.minXP.toLocaleString("vi-VN")} XP tích luỹ để lên giải ${nextLeague.name}`;
+}
+
+/**
  * Get league by total XP
  */
 export function getLeagueByXP(totalXP: number): League {

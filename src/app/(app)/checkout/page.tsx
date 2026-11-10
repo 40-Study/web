@@ -23,6 +23,8 @@ import { v4 as uuidv4 } from "uuid";
 import { sumCartItemPrices } from "@/lib/cart-pricing";
 import { CartItemPrice } from "@/components/cart/cart-item-price";
 import { CourseThumbnailPlaceholder } from "@/components/course/course-thumbnail-placeholder";
+import { useAuthStore } from "@/stores/auth.store";
+import { saveCartVoucher } from "@/lib/cart-voucher-storage";
 
 function formatPrice(price: number | string | null | undefined): string {
   return new Intl.NumberFormat("vi-VN", {
@@ -48,6 +50,7 @@ export default function CheckoutPage() {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
 
   const { data: cartData, isLoading, isError, error, refetch } = useCart();
+  const userId = useAuthStore((s) => s.user?.id);
   const qc = useQueryClient();
   const submitting = useRef(false);
   const redirecting = useRef(false);
@@ -71,6 +74,8 @@ export default function CheckoutPage() {
   const goToSuccess = async (orderId: string) => {
     if (redirecting.current) return;
     redirecting.current = true;
+    // Mã đã dùng cho đơn này: bỏ mã giỏ hàng đã lưu để lần sau giỏ không tự áp lại (QA-A-10).
+    saveCartVoucher(userId, null);
     // The backend removes exactly the selected items when creating the order.
     void qc.invalidateQueries({ queryKey: cartKeys.all, refetchType: "none" });
     toast.success("Thanh toán thành công!");

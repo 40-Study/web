@@ -41,6 +41,8 @@ interface VideoPlayerProps {
   onToggleShortcutsHelp?: () => void;
   /** Tạm dừng — hook heartbeat gửi ngay thay vì đợi nhịp 10 giây. */
   onPause?: () => void;
+  /** Độ dài media thật (giây) khi nạp metadata — mục lục bài học hiện đúng thời lượng (QA-A-17). */
+  onDurationChange?: (seconds: number) => void;
   /** Đổi tốc độ phát — heartbeat cần biết để không tính đoạn phát nhanh là tua. */
   onRateChange?: (rate: number) => void;
   /**
@@ -84,6 +86,7 @@ export function VideoPlayer({
   onTimeUpdate,
   onPlay,
   onPause,
+  onDurationChange,
   onRateChange,
   onToggleShortcutsHelp,
   controlRef,
@@ -290,11 +293,13 @@ export function VideoPlayer({
     const video = videoRef.current;
     if (video) {
       setDuration(video.duration);
+      // Luồng live/HLS chưa biết độ dài trả Infinity/NaN: không báo số vô nghĩa lên trên.
+      if (Number.isFinite(video.duration) && video.duration > 0) onDurationChange?.(video.duration);
       if (initialTime > 0 && video.currentTime === 0) {
         video.currentTime = initialTime;
       }
     }
-  }, [initialTime]);
+  }, [initialTime, onDurationChange]);
 
   const handleEnded = useCallback(() => {
     setIsPlaying(false);

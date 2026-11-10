@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getCourseBySlugServer } from "@/lib/server-fetchers/course";
 import { LearnRouteGuard } from "./learn-route-guard";
 
 interface CourseLearnLayoutProps {
@@ -14,11 +15,13 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const title = slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  // Tên thật từ API công khai; dựng từ slug thì mất dấu tiếng Việt (QA-A-08).
+  const course = await getCourseBySlugServer(slug);
+  const name = course?.title ?? "Khoá học";
 
   return {
-    title: `${title} - Học`,
-    description: `Đang học khoá học ${title}`,
+    title: `Học · ${name}`,
+    description: `Đang học khoá học ${name}`,
   };
 }
 

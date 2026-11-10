@@ -232,20 +232,23 @@ export function CourseDetailSidebar({
 
       {/* B8 (QA vòng 2, mobile): trên màn hẹp sidebar xếp xuống cuối trang (giá + "Mua ngay" ở
           y≈2358px) nên thêm thanh mua cố định ở đáy; ẩn khi thẻ giá chính đang trong màn hình.
-          bottom-24: nằm TRÊN thanh điều hướng nổi của mobile (layout/bottom-nav.tsx: fixed bottom-4,
-          cao ~72px), đặt bottom-0 thì bị nó đè mất nút mua. */}
+          Nằm TRÊN thanh điều hướng nổi của mobile (layout/bottom-nav.tsx: fixed bottom-4, cao ~68px, tức
+          mép trên cách đáy ~84px), đặt bottom-0 thì bị nó đè mất nút mua.
+          QA-A-18: bản cũ (bottom-24, 2 dòng giá, py-3) cao 72px, cộng thanh điều hướng thành khối ~170px che
+          nội dung ở 390px. Nay một dòng (giá + giá gốc cạnh nhau, nút size sm), sát ngay trên thanh điều hướng
+          và cùng lề với nó để hai thanh đọc như một khối: tổng còn ~140px. */}
       {!isEnrolled && !isFree && !isPurchaseCardVisible && (
         <div
           data-testid="mobile-buy-bar"
-          className="fixed bottom-24 left-4 right-4 z-40 flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-lg lg:hidden"
+          className="fixed bottom-[5.5rem] left-2 right-2 z-40 flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-2 shadow-md sm:left-4 sm:right-4 lg:hidden"
         >
-          <div className="min-w-0">
-            <p className="text-lg font-bold text-gray-900">{formatCurrency(course.price)}</p>
+          <p className="flex min-w-0 items-baseline gap-2">
+            <span className="text-base font-bold text-gray-900">{formatCurrency(course.price)}</span>
             {discountPct > 0 && course.originalPrice && (
-              <p className="text-xs text-gray-400 line-through">{formatCurrency(course.originalPrice)}</p>
+              <span className="truncate text-xs text-gray-400 line-through">{formatCurrency(course.originalPrice)}</span>
             )}
-          </div>
-          <Button className="shrink-0 bg-primary-600 text-white hover:bg-primary-700" onClick={handleBuyNowClick}>
+          </p>
+          <Button size="sm" className="shrink-0 bg-primary-600 text-white hover:bg-primary-700" onClick={handleBuyNowClick}>
             Mua khoá học
           </Button>
         </div>

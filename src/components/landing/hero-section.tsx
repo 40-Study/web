@@ -11,12 +11,6 @@ const HIGHLIGHTS = [
   { icon: Smartphone, label: "Học trên web và di động" },
 ];
 
-const AVATARS = [
-  { initials: "LA", tone: "bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-200" },
-  { initials: "MH", tone: "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-100" },
-  { initials: "TK", tone: "bg-primary-600 text-white dark:bg-primary-400 dark:text-slate-950" },
-];
-
 /** Hero: không dùng ScrollReveal (above-the-fold phải paint ngay). */
 export function HeroSection() {
   return (
@@ -72,26 +66,9 @@ export function HeroSection() {
           </Link>
         </div>
 
-        <div className="mt-8 flex items-center gap-3">
-          <div className="flex -space-x-2" aria-hidden>
-            {AVATARS.map(({ initials, tone }) => (
-              <span
-                key={initials}
-                className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-xs font-semibold dark:border-slate-950",
-                  tone
-                )}
-              >
-                {initials}
-              </span>
-            ))}
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Được 10.000+ học viên tin dùng
-          </p>
-        </div>
-
-        <ul className="mt-6 flex flex-col items-center gap-x-8 gap-y-3 text-sm font-medium text-slate-600 dark:text-slate-300 sm:flex-row">
+        {/* QA-A-05: bỏ dòng "Được 10.000+ học viên tin dùng" kèm avatar giả — chưa có API thống kê công khai
+            nên không có số thật để hiện. */}
+        <ul className="mt-8 flex flex-col items-center gap-x-8 gap-y-3 text-sm font-medium text-slate-600 dark:text-slate-300 sm:flex-row">
           {HIGHLIGHTS.map(({ icon: Icon, label }) => (
             <li key={label} className="flex items-center gap-2">
               <Icon className="h-4 w-4 text-primary-600 dark:text-primary-400" aria-hidden />

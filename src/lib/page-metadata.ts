@@ -12,6 +12,21 @@ export const SITE_NAME = "ForteX";
 export const SITE_LOCALE = "vi_VN";
 export const SITE_OG_IMAGES = [{ url: "/logo.png", width: 512, height: 512, alt: SITE_NAME }];
 
+/** Template tiêu đề tab của root layout (`app/layout.tsx`). */
+export const SITE_TITLE_TEMPLATE = `%s | ${SITE_NAME}`;
+
+/**
+ * Tiêu đề cho layout CÓ ROUTE CON (QA-A-07/A-08, 10/11/2026).
+ *
+ * Vì sao: Next 14 chỉ truyền xuống segment con `title.template` của layout gần nhất
+ * (`resolve-metadata.js`: `titleTemplates.title = resolvedMetadata.title?.template || null`).
+ * Layout đặt `title` là CHUỖI thì template thành null, nên mọi trang con (chi tiết khoá học,
+ * cuộc thi, kết quả tra cứu chứng chỉ...) mất hậu tố " | ForteX". Dạng object giữ template.
+ */
+export function sectionTitle(title: string): { default: string; template: string } {
+  return { default: title, template: SITE_TITLE_TEMPLATE };
+}
+
 type OgImage = { url: string; width?: number; height?: number; alt?: string };
 
 export interface PageMetadataInput {
@@ -23,6 +38,8 @@ export interface PageMetadataInput {
   type?: "website" | "article";
   /** Ảnh riêng của trang; bỏ qua thì dùng logo site. */
   images?: OgImage[];
+  /** Layout có route con: giữ template cho trang con (xem `sectionTitle`). */
+  hasChildRoutes?: boolean;
 }
 
 export function buildPageMetadata({
@@ -31,10 +48,11 @@ export function buildPageMetadata({
   path,
   type = "website",
   images,
+  hasChildRoutes = false,
 }: PageMetadataInput): Metadata {
   const ogImages = images ?? SITE_OG_IMAGES;
   return {
-    title,
+    title: hasChildRoutes ? sectionTitle(title) : title,
     description,
     alternates: { canonical: path },
     openGraph: {

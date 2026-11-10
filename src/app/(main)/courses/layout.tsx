@@ -13,6 +13,8 @@ export const metadata: Metadata = buildPageMetadata({
   description:
     "Khám phá các khoá học lập trình, thiết kế và kỹ năng số trên ForteX — lọc theo danh mục, cấp độ và giảng viên.",
   path: "/courses",
+  // Có route con /courses/[slug]: title chuỗi sẽ làm trang chi tiết mất " | ForteX" (QA-A-08).
+  hasChildRoutes: true,
 });
 
 export default function CoursesLayout({ children }: { children: React.ReactNode }) {

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AppShellLayout } from "@/components/layout/app-shell-layout";
 import { RoleGuard } from "@/components/guards/role-guard";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 import { canUseFriends } from "@/components/friends/friends-access";
 import { useAuthStore } from "@/stores/auth.store";
 import { getSystemRoleLabel } from "@/lib/role-labels";
@@ -154,8 +155,13 @@ export default function AppLayout({
     router,
   ]);
 
+  // QA-A-06: các nhịp CHỜ (chưa hydrate, đang kiểm tra phiên, đang quy đổi vai) trước đây `return null` — HTML
+  // render ở server cũng rỗng nên trên mạng/máy chậm người dùng nhìn màn trắng tinh (không khung, không spinner)
+  // 15-30 giây. Hiện màn tải thay vì null; các nhịp đang CHUYỂN HƯỚNG đi nơi khác vẫn giữ null như cũ.
+  const waitingScreen = <LoadingScreen variant="minimal" text="Đang tải..." />;
+
   // Chờ useSystemRoleRemap ghi vai hệ thống vào store: không dựng RoleGuard với mã vai lạ (sẽ đá sang /403 trước khi kịp quy đổi).
-  if (needsRoleRemap) return null;
+  if (needsRoleRemap) return waitingScreen;
 
   // Show nothing while redirecting to admin
   if (hasHydrated && isAuthenticated && isAdminRole && !isAdminAllowedRoute) return null;
@@ -169,7 +175,7 @@ export default function AppLayout({
   }
 
   // Wait for hydration
-  if (!hasHydrated) return null;
+  if (!hasHydrated) return waitingScreen;
 
   // Đang chuyển về /login (useEffect ở trên): hiện chữ thay vì màn trắng, phòng khi điều hướng chậm.
   if (isSessionLost) {
@@ -180,8 +186,9 @@ export default function AppLayout({
     );
   }
 
-  // Đang kiểm tra phiên, hoặc đã đăng nhập nhưng chưa chọn vai trò (useEffect chuyển sang chọn vai trò).
-  if (!isAuthenticated || !normalizedRole) return null;
+  // Đang kiểm tra phiên: màn tải. Đã đăng nhập nhưng chưa chọn vai trò thì useEffect đang chuyển sang chọn vai trò.
+  if (!isAuthenticated) return waitingScreen;
+  if (!normalizedRole) return null;
 
   // Admin trên trang tài khoản cá nhân: qua được RoleGuard bình thường (Sidebar/
   // BottomNav tự rẽ nhánh role ADMIN sang menu rỗng, không lộ menu học sinh).

@@ -311,10 +311,27 @@ function MessagesContent() {
   );
 }
 
-/** useSearchParams cần Suspense để build tĩnh không báo lỗi; layout (app) đã chặn render tới khi store hydrate nên fallback không hiện. */
+/**
+ * useSearchParams cần Suspense để build tĩnh không báo lỗi. QA-A-06: fallback từng là `null` nên lúc chờ chỉ có
+ * khoảng trắng; nay giữ tiêu đề + spinner trong khung trang.
+ */
+function MessagesFallback() {
+  return (
+    <div className="container max-w-6xl mx-auto px-4 py-6" role="status" aria-label="Đang tải tin nhắn">
+      <h1 className="text-2xl font-bold flex items-center gap-2 mb-4">
+        <MessageSquare className="h-7 w-7 text-primary" />
+        Tin nhắn
+      </h1>
+      <Card className="flex h-[calc(100dvh-250px)] lg:h-[calc(100dvh-200px)] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </Card>
+    </div>
+  );
+}
+
 export default function MessagesPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<MessagesFallback />}>
       <MessagesContent />
     </Suspense>
   );
