@@ -18,8 +18,8 @@ vi.mock("@/components/classes/class-manage-panel", () => ({
   ClassManagePanel: ({ initialTab }: { initialTab?: string }) => <div data-testid="panel" data-tab={initialTab} />,
 }));
 vi.mock("@/components/classes/class-assignments-list", () => ({
-  ClassAssignmentsList: ({ hrefFor }: { hrefFor: (id: string) => string }) => (
-    <a data-testid="assignments" href={hrefFor("a-1")}>
+  ClassAssignmentsList: ({ hrefFor, emptyTitle }: { hrefFor: (id: string) => string; emptyTitle?: string }) => (
+    <a data-testid="assignments" href={hrefFor("a-1")} data-empty={emptyTitle}>
       bài tập
     </a>
   ),
@@ -58,6 +58,8 @@ describe("TeacherClassManagePage", () => {
   it("có danh sách bài tập của lớp, mỗi bài dẫn tới trang bài nộp", () => {
     render(<TeacherClassManagePage />);
     expect(screen.getByTestId("assignments").getAttribute("href")).toBe("/teacher/assignments/a-1/submissions");
+    // Câu báo rỗng viết cho giảng viên, không dùng câu mặc định của khu tổ chức.
+    expect(screen.getByTestId("assignments").getAttribute("data-empty")).toBe("Chưa có bài tập nào cho lớp này.");
   });
 
   it("?tab=schedule mở thẳng tab Lịch học", () => {

@@ -21,6 +21,9 @@ interface ClassAssignmentsListProps {
   classId: string;
   /** Đích khi bấm một bài tập (khu tổ chức dẫn tới trang chấm). */
   hrefFor: (assignmentId: string) => string;
+  /** Câu báo khi lớp chưa có bài; mặc định viết cho khu tổ chức (người xem bài nộp, không phải người giao bài). */
+  emptyTitle?: string;
+  emptyDescription?: React.ReactNode;
 }
 
 /**
@@ -28,7 +31,12 @@ interface ClassAssignmentsListProps {
  * Chỉ ẩn khi chính LỚP là 404 (ClassManagePanel cạnh bên đã hiện "Không tìm thấy lớp", dùng chung query chi tiết
  * lớp). Lớp xem được mà riêng endpoint bài tập lỗi (kể cả 404) thì vẫn hiện lỗi, không để mục biến mất im lặng.
  */
-export function ClassAssignmentsList({ classId, hrefFor }: ClassAssignmentsListProps) {
+export function ClassAssignmentsList({
+  classId,
+  hrefFor,
+  emptyTitle = "Lớp chưa có bài tập",
+  emptyDescription = "Khi giảng viên giao bài tập cho lớp, bài sẽ xuất hiện ở đây để bạn xem bài nộp và chấm điểm.",
+}: ClassAssignmentsListProps) {
   const classQuery = useClassById(classId);
   const query = useAssignmentsByClass(classId);
 
@@ -48,8 +56,8 @@ export function ClassAssignmentsList({ classId, hrefFor }: ClassAssignmentsListP
           error={query.error}
           onRetry={() => query.refetch()}
           isEmpty={items.length === 0}
-          emptyTitle="Lớp chưa có bài tập"
-          emptyDescription="Khi giảng viên giao bài tập cho lớp, bài sẽ xuất hiện ở đây để bạn xem bài nộp và chấm điểm."
+          emptyTitle={emptyTitle}
+          emptyDescription={emptyDescription}
         >
           <ul className="divide-y divide-border">
             {items.map((a) => (

@@ -31,7 +31,8 @@ const STEPS = [
   { id: 4, title: "Hoàn tất" },
 ];
 
-export const THUMBNAIL_UPLOADING_NOTE = "Đang tải ảnh bìa lên, vui lòng đợi xong rồi tạo khoá.";
+// Không export: page.tsx của Next chỉ được export các trường hợp lệ (default, metadata...), export lạ làm hỏng build.
+const THUMBNAIL_UPLOADING_NOTE = "Đang tải ảnh bìa lên, vui lòng đợi xong rồi tạo khoá.";
 
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
