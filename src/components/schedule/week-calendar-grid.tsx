@@ -25,6 +25,7 @@ import { addDays, addMonths, format, isSameDay, isSameMonth, startOfMonth, start
 import { vi } from "date-fns/locale";
 import { toVnWallClock } from "@/lib/teacher-schedule-events";
 import { defaultCalendarView } from "@/lib/calendar-view";
+import { pickCalendarScrollTime } from "./calendar-scroll-time";
 import "./calendar.css";
 import CalendarEventCard, { getEventColor } from "./calendar-event-card";
 import ScheduleQuickCreatePopover, {
@@ -202,6 +203,24 @@ export default function WeekCalendarGrid({
     ...event,
     editable: editable && (!event.extendedProps.scheduleEvent.kind || event.extendedProps.scheduleEvent.kind === "livestream") && event.extendedProps.scheduleEvent.status === "upcoming",
   })), [events, hiddenKinds, editable]);
+  // QA-B-25: cuộn tới buổi sớm nhất trong khoảng đang xem (xem calendar-scroll-time.ts). Chỉ cuộn khi KHOẢNG
+  // hoặc GIỜ ĐÍCH đổi (vd vừa chuyển tuần, hay dữ liệu tuần vừa tải về) để không giật lại khi người dùng tự cuộn.
+  const [visibleRange, setVisibleRange] = useState<{ start: Date; end: Date; isTimeGrid: boolean } | null>(null);
+  const scrollTarget = useMemo(
+    () =>
+      visibleRange?.isTimeGrid
+        ? pickCalendarScrollTime(events.filter(event => !hiddenKinds.includes(event.kind ?? "livestream")), visibleRange)
+        : null,
+    [events, hiddenKinds, visibleRange]
+  );
+  const appliedScrollRef = useRef("");
+  useEffect(() => {
+    if (!scrollTarget || !visibleRange) return;
+    const key = `${visibleRange.start.getTime()}|${scrollTarget}`;
+    if (appliedScrollRef.current === key) return;
+    appliedScrollRef.current = key;
+    calendarRef.current?.getApi().scrollToTime(scrollTarget);
+  }, [scrollTarget, visibleRange]);
   const navigate = (date: Date) => {
     calendarRef.current?.getApi().gotoDate(date);
     setFocusDate(date);
@@ -385,6 +404,11 @@ export default function WeekCalendarGrid({
             setFocusDate(current => current.getTime() === date.getTime() ? current : date);
             setMonth(current => current.getTime() === startOfMonth(date).getTime() ? current : startOfMonth(date));
             onRangeChange?.(arg.start, arg.end);
+            setVisibleRange(current =>
+              current && current.start.getTime() === arg.start.getTime() && current.end.getTime() === arg.end.getTime() && current.isTimeGrid === arg.view.type.startsWith("timeGrid")
+                ? current
+                : { start: arg.start, end: arg.end, isTimeGrid: arg.view.type.startsWith("timeGrid") }
+            );
           }}
           editable={editable}
           droppable={editable}
