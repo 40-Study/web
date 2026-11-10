@@ -544,7 +544,7 @@ export function OpenDesignWorkspace() {
         </button>
         <button className="od-side-link" disabled={locked} onClick={() => setSkillsOpen(true)}>
           <Sparkles className="h-4 w-4" />
-          Skills
+          Mẫu nội dung
         </button>
         <div className="od-recents">
           <p className="od-recents-label">Hội thoại gần đây</p>
@@ -700,7 +700,7 @@ export function OpenDesignWorkspace() {
                 ))}
                 <button disabled={locked} onClick={() => setSkillsOpen(true)}>
                   <Sparkles className="h-4 w-4" />
-                  Skills
+                  Mẫu nội dung
                 </button>
               </div>
               <div className="od-starter-grid">
@@ -775,7 +775,7 @@ export function OpenDesignWorkspace() {
                     <span className="od-demo-skill">
                       <Sparkles className="h-6 w-6" />
                       <b>Phong cách của bạn.</b>
-                      <small>SKILL.md</small>
+                      <small>Mẫu riêng</small>
                       <i />
                       <i />
                     </span>
