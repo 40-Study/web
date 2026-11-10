@@ -29,6 +29,15 @@ export interface UpdateOrgDTO {
   description?: string;
 }
 
+/** Kết quả tra người dùng theo email trong phạm vi tổ chức (user-lookup). */
+export interface OrgUserLookup {
+  id: string;
+  user_name: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  email: string;
+}
+
 /** Lớp thuộc tổ chức (một dòng danh sách). */
 export interface OrgClass {
   id: string;
@@ -132,6 +141,16 @@ export const organizationService = {
   /** DELETE /organizations/:orgId */
   delete: (orgId: string) =>
     api.delete<R<null>>(`/organizations/${orgId}`).then((r) => r.data),
+
+  /**
+   * GET /organizations/:orgId/user-lookup?email= (backend PR #144) — chủ tổ chức tìm ĐÚNG một người theo email
+   * (khớp chính xác, không phân biệt hoa thường) để thêm vào tổ chức. Cần ORG_MEMBERS_MANAGE và active_org_id khớp
+   * tổ chức. 404 USER_NOT_FOUND, 400 INVALID_EMAIL, 403 (không có code) khi thiếu quyền hoặc khác tổ chức.
+   */
+  lookupUserByEmail: (orgId: string, email: string) =>
+    api
+      .get<R<OrgUserLookup>>(`/organizations/${orgId}/user-lookup`, { params: { email: email.trim() } })
+      .then((r) => r.data.data),
 
   /** GET /organizations/:orgId/members */
   getMembers: (orgId: string) =>

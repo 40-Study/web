@@ -12,6 +12,8 @@ import { getErrorMessage } from "@/lib/error-messages";
 import { cn } from "@/lib/utils";
 import type { OrgRoleListItem } from "@/services/role.service";
 import { userService } from "@/services/user.service";
+import type { OrgUserLookup } from "@/services/organization.service";
+import { EmailUserLookup } from "./email-user-lookup";
 import { RoleSelect } from "./role-select";
 
 const MIN_KEYWORD_LENGTH = 2;
@@ -24,13 +26,21 @@ interface AddMemberDialogProps {
   /** Người đã là thành viên: vẫn chọn được (thêm vai trò thứ hai) nhưng được đánh dấu. */
   memberIds: ReadonlySet<string>;
   onSubmit: (userId: string, roleId: string) => Promise<void>;
+  /**
+   * "directory": quản trị hệ thống tìm theo tên/email (GET /users, cần USERS_VIEW_ALL).
+   * "email": chủ tổ chức tra đúng một email qua user-lookup của tổ chức `orgId` (QA-C-01).
+   */
+  lookup?: "directory" | "email";
+  orgId: string;
 }
 
 /**
  * Thêm thành viên: tìm người dùng sẵn có theo tên/email (GET /users?keyword=, chỉ quản trị hệ thống có quyền
  * USERS_VIEW_ALL) rồi chọn vai trò. Lỗi từ backend (409 gán trùng...) hiện ngay trong hộp thoại.
  */
-export function AddMemberDialog({ open, onOpenChange, roles, memberIds, onSubmit }: AddMemberDialogProps) {
+export function AddMemberDialog({ open, onOpenChange, roles, memberIds, onSubmit, lookup = "directory", orgId }: AddMemberDialogProps) {
+  const byEmail = lookup === "email";
+  const [found, setFound] = useState<OrgUserLookup | null>(null);
   const [keyword, setKeyword] = useState("");
   const [userId, setUserId] = useState("");
   const [roleId, setRoleId] = useState("");
@@ -42,7 +52,7 @@ export function AddMemberDialog({ open, onOpenChange, roles, memberIds, onSubmit
   const search = useQuery({
     queryKey: ["org-member-user-search", debounced],
     queryFn: () => userService.list({ keyword: debounced, limit: MAX_RESULTS }),
-    enabled: open && canSearch,
+    enabled: open && canSearch && !byEmail,
   });
   const users = search.data?.items ?? [];
 
@@ -50,6 +60,7 @@ export function AddMemberDialog({ open, onOpenChange, roles, memberIds, onSubmit
     if (!open) {
       setKeyword("");
       setUserId("");
+      setFound(null);
       setRoleId("");
       setError(null);
     }
@@ -59,7 +70,7 @@ export function AddMemberDialog({ open, onOpenChange, roles, memberIds, onSubmit
     setPending(true);
     setError(null);
     try {
-      await onSubmit(userId, roleId);
+      await onSubmit(byEmail ? (found?.id ?? "") : userId, roleId);
       onOpenChange(false);
     } catch (e) {
       setError(getErrorMessage(e, "Không thể thêm thành viên, thử lại sau."));
@@ -72,8 +83,16 @@ export function AddMemberDialog({ open, onOpenChange, roles, memberIds, onSubmit
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogTitle>Thêm thành viên</DialogTitle>
-        <DialogDescription>Tìm người dùng đã có tài khoản theo tên hoặc email, rồi chọn vai trò trong tổ chức.</DialogDescription>
+        <DialogDescription>
+          {byEmail
+            ? "Tìm người đã có tài khoản bằng email, rồi chọn vai trò trong tổ chức."
+            : "Tìm người dùng đã có tài khoản theo tên hoặc email, rồi chọn vai trò trong tổ chức."}
+        </DialogDescription>
         <div className="mt-2 space-y-3">
+          {byEmail ? (
+            <EmailUserLookup orgId={orgId} memberIds={memberIds} selected={found} onSelect={setFound} />
+          ) : (
+          <>
           <Input
             value={keyword}
             onChange={(e) => {
@@ -117,6 +136,8 @@ export function AddMemberDialog({ open, onOpenChange, roles, memberIds, onSubmit
               ))}
             </ul>
           )}
+          </>
+          )}
           <RoleSelect roles={roles} value={roleId} onChange={setRoleId} ariaLabel="Vai trò trong tổ chức" />
           {error && (
             <p role="alert" className="text-sm text-red-600">
@@ -128,7 +149,7 @@ export function AddMemberDialog({ open, onOpenChange, roles, memberIds, onSubmit
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
             Huỷ
           </Button>
-          <Button onClick={submit} disabled={!userId || !roleId || pending} isLoading={pending}>
+          <Button onClick={submit} disabled={!(byEmail ? found : userId) || !roleId || pending} isLoading={pending}>
             Thêm thành viên
           </Button>
         </DialogFooter>

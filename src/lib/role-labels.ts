@@ -25,8 +25,18 @@ export function getSystemRoleLabel(roleCode: string): string {
  * không có trường tên hiển thị: mã hệ thống đã biết dùng nhãn tiếng Việt, mã tuỳ biến (vd `QA3_TEACHER`)
  * được viết lại cho dễ đọc ("Qa3 Teacher") thay vì lộ nguyên mã enum. Nơi hiển thị nên giữ mã gốc ở `title`.
  */
+/**
+ * Vai mặc định của tổ chức (backend PR #144 tạo khi tạo tổ chức và backfill cho tổ chức cũ). Đặt tên khác vai hệ
+ * thống (ORG_TEACHER thay vì TEACHER) để vai trong tổ chức không bị nhầm thành quyền hệ thống.
+ */
+const DEFAULT_ORG_ROLE_LABELS: Record<string, string> = {
+  ORG_OWNER: "Chủ tổ chức",
+  ORG_TEACHER: "Giảng viên",
+  ORG_STUDENT: "Học viên",
+};
+
 export function getOrgRoleLabel(roleCode: string): string {
-  const known = SYSTEM_ROLE_LABELS[roleCode];
+  const known = DEFAULT_ORG_ROLE_LABELS[roleCode] ?? SYSTEM_ROLE_LABELS[roleCode];
   if (known) return known;
   const words = roleCode.split(/[_\-\s]+/).filter(Boolean);
   if (words.length === 0) return roleCode;

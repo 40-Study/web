@@ -29,6 +29,12 @@ describe("getOrgRoleLabel (QA3-16)", () => {
     expect(getOrgRoleLabel("TEACHER")).toBe("Giảng viên");
   });
 
+  it("QA-C-01: vai mặc định của tổ chức ORG_TEACHER/ORG_STUDENT có nhãn tiếng Việt, không thành 'Org Teacher'", () => {
+    expect(getOrgRoleLabel("ORG_TEACHER")).toBe("Giảng viên");
+    expect(getOrgRoleLabel("ORG_STUDENT")).toBe("Học viên");
+    expect(getOrgRoleLabel("ORG_OWNER")).toBe("Chủ tổ chức");
+  });
+
   it("mã tuỳ biến không lộ dạng enum viết hoa có gạch dưới", () => {
     expect(getOrgRoleLabel("QA3_TEACHER")).toBe("Qa3 Teacher");
     expect(getOrgRoleLabel("class-assistant")).toBe("Class Assistant");

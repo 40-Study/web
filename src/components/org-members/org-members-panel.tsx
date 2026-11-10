@@ -20,8 +20,12 @@ import { isRemovalApplied, useOrgMemberActions } from "./use-org-member-actions"
 
 interface OrgMembersPanelProps {
   orgId: string;
-  /** Thêm người mới cần tìm người dùng (GET /users, quyền USERS_VIEW_ALL của quản trị hệ thống). Chủ tổ chức không có. */
   canAddMember: boolean;
+  /**
+   * Cách tìm người khi thêm: "directory" (quản trị hệ thống, GET /users) hoặc "email" (chủ tổ chức, tra đúng email
+   * qua user-lookup của tổ chức — QA-C-01).
+   */
+  memberLookup?: "directory" | "email";
   currentUserId?: string;
 }
 
@@ -30,7 +34,7 @@ type Confirm =
   | { kind: "member"; member: OrgMember };
 
 /** Danh sách + quản lý thành viên của một tổ chức; dùng chung cho /admin/organizations và /org/members. */
-export function OrgMembersPanel({ orgId, canAddMember, currentUserId }: OrgMembersPanelProps) {
+export function OrgMembersPanel({ orgId, canAddMember, memberLookup = "directory", currentUserId }: OrgMembersPanelProps) {
   const members = useOrgMembers(orgId);
   const roles = useAssignableOrgRoles(orgId);
   const actions = useOrgMemberActions(orgId);
@@ -117,6 +121,13 @@ export function OrgMembersPanel({ orgId, canAddMember, currentUserId }: OrgMembe
           Muốn thêm người mới vào tổ chức, hãy liên hệ quản trị viên hệ thống. Bạn vẫn đổi hoặc gỡ vai trò của các thành viên hiện có ở đây.
         </p>
       )}
+      {/* QA-C-01: trước đây nút "Thêm thành viên" bị khoá im lặng khi tổ chức chưa có vai nào. */}
+      {canAddMember && roles.isSuccess && orgRoles.length === 0 && (
+        <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
+          Tổ chức này chưa có vai trò nào để gán nên chưa thêm được thành viên. Tổ chức tạo trước khi có bộ vai mặc định
+          (Chủ tổ chức, Giảng viên, Học viên) cần quản trị hệ thống bổ sung vai trò trước.
+        </p>
+      )}
       {roles.isError && (
         <p role="alert" className="text-sm text-red-600">
           {getErrorMessage(roles.error, "Không tải được danh sách vai trò của tổ chức.")}
@@ -153,6 +164,8 @@ export function OrgMembersPanel({ orgId, canAddMember, currentUserId }: OrgMembe
         roles={orgRoles}
         memberIds={memberIds}
         onSubmit={actions.addMember}
+        lookup={memberLookup}
+        orgId={orgId}
       />
       <MemberRoleDialog
         open={!!addRoleFor}
