@@ -71,7 +71,8 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.f
 // eslint-disable-next-line import/first
 import TeacherCourseDetailPage from "./page";
 
-const LESSON_KEY = JSON.stringify(["lessons", "section", "course-1", "sec-1"]);
+const SECTIONS_KEY = JSON.stringify(["sections", "course-1"]);
+const sectionWith = (lessons: { id: string; title: string }[]) => [{ id: "sec-1", title: "Chương 1", order: 1, lessons }];
 
 async function submitLesson(title: string) {
   render(<TeacherCourseDetailPage />);
@@ -86,7 +87,7 @@ describe("/teacher/courses/[id] — tạo bài học khi request timeout (QA-B-0
   beforeEach(() => {
     cache.data.clear();
     cache.server.clear();
-    cache.data.set(LESSON_KEY, []);
+    cache.data.set(SECTIONS_KEY, sectionWith([]));
     createLesson.mockReset();
     vi.mocked(toast.success).mockClear();
     vi.mocked(toast.error).mockClear();
@@ -95,7 +96,7 @@ describe("/teacher/courses/[id] — tạo bài học khi request timeout (QA-B-0
 
   it("server đã tạo xong dù client timeout -> báo đã lưu, đóng hộp thoại, không báo lỗi", async () => {
     createLesson.mockImplementation(async () => {
-      cache.server.set(LESSON_KEY, [{ id: "les-new", title: "QA-261110-Bai 1" }]);
+      cache.server.set(SECTIONS_KEY, sectionWith([{ id: "les-new", title: "QA-261110-Bai 1" }]));
       throw new NetworkError();
     });
 
@@ -109,7 +110,7 @@ describe("/teacher/courses/[id] — tạo bài học khi request timeout (QA-B-0
 
   it("server chưa có bài -> 'Chưa rõ kết quả', giữ hộp thoại và nội dung đã nhập", async () => {
     createLesson.mockRejectedValue(new NetworkError());
-    cache.server.set(LESSON_KEY, []);
+    cache.server.set(SECTIONS_KEY, sectionWith([]));
 
     const dialog = await submitLesson("QA-261110-Bai 2");
 
