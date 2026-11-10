@@ -17,7 +17,7 @@ vi.mock("@/hooks/queries/use-org-area", async (importOriginal) => ({
 }));
 
 import OrgMembersPage from "./page";
-import { ApiError, ForbiddenError, NotFoundError } from "@/lib/errors";
+import { ApiError, ForbiddenError } from "@/lib/errors";
 import { envelope, mockApi, resetMockApi } from "@/test/mock-api";
 import { renderWithProviders } from "@/test/utils";
 
@@ -79,7 +79,10 @@ describe("/org/members", () => {
     const dialog = await openAddAndSearch(" Student9@demo.com ");
 
     expect(await within(dialog).findByText("student9")).toBeTruthy();
-    expect(mockApi.get).toHaveBeenCalledWith("/organizations/org-1/user-lookup", { params: { email: "Student9@demo.com" } });
+    expect(mockApi.get).toHaveBeenCalledWith(
+      "/organizations/org-1/user-lookup",
+      expect.objectContaining({ params: { email: "Student9@demo.com" } })
+    );
 
     fireEvent.click(within(dialog).getByLabelText("Vai trò trong tổ chức"));
     fireEvent.click(within(dialog).getByText("Giảng viên"));
@@ -89,11 +92,20 @@ describe("/org/members", () => {
     expect(JSON.stringify(mockApi.post.mock.calls[0][1])).toContain("r-teacher");
   });
 
-  it("404 USER_NOT_FOUND: báo không tìm thấy, nút thêm vẫn khoá", async () => {
-    mockGets({ lookup: () => Promise.reject(new NotFoundError("no active user with this email")) });
+  // Body 404 đúng contract backend; service nhận 404 qua validateStatus để đọc được `code`.
+  const notFound = (body: object) => () => Promise.resolve({ status: 404, data: body });
+
+  it("404 có code USER_NOT_FOUND: báo không tìm thấy, nút thêm vẫn khoá", async () => {
+    mockGets({ lookup: notFound({ code: "USER_NOT_FOUND", message: "no active user with this email" }) });
     const dialog = await openAddAndSearch("ai@demo.com");
     expect((await within(dialog).findByRole("alert")).textContent).toBe("Không tìm thấy người dùng với email này.");
     expect((within(dialog).getByRole("button", { name: "Thêm thành viên" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("404 không có code USER_NOT_FOUND (vd route chưa deploy): báo lỗi chung, không nói sai là không có người", async () => {
+    mockGets({ lookup: notFound({ error: "Cannot GET /api/organizations/org-1/user-lookup" }) });
+    const dialog = await openAddAndSearch("ai@demo.com");
+    expect((await within(dialog).findByRole("alert")).textContent).toBe("Không tra cứu được, thử lại sau.");
   });
 
   it("403 khác tổ chức đang dùng: hướng dẫn chuyển tổ chức; 400: email không hợp lệ", async () => {

@@ -4,6 +4,10 @@
  */
 
 import { api } from "@/lib/api-client";
+import { ApiError } from "@/lib/errors";
+
+/** Code backend trả ở 404 của user-lookup khi email không thuộc người dùng nào đang hoạt động. */
+export const USER_NOT_FOUND_CODE = "USER_NOT_FOUND";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -147,10 +151,20 @@ export const organizationService = {
    * (khớp chính xác, không phân biệt hoa thường) để thêm vào tổ chức. Cần ORG_MEMBERS_MANAGE và active_org_id khớp
    * tổ chức. 404 USER_NOT_FOUND, 400 INVALID_EMAIL, 403 (không có code) khi thiếu quyền hoặc khác tổ chức.
    */
-  lookupUserByEmail: (orgId: string, email: string) =>
-    api
-      .get<R<OrgUserLookup>>(`/organizations/${orgId}/user-lookup`, { params: { email: email.trim() } })
-      .then((r) => r.data.data),
+  lookupUserByEmail: async (orgId: string, email: string): Promise<OrgUserLookup> => {
+    // Interceptor chung đổi mọi 404 thành NotFoundError và bỏ mất `code` của body, nên không phân biệt được
+    // "không có người dùng" (USER_NOT_FOUND) với 404 khác (vd route chưa deploy). Nhận 404 về đây để đọc code.
+    const res = await api.get<R<OrgUserLookup> & { code?: string }>(`/organizations/${orgId}/user-lookup`, {
+      params: { email: email.trim() },
+      validateStatus: (status) => (status >= 200 && status < 300) || status === 404,
+    });
+    if (res.status === 404) {
+      throw res.data?.code === USER_NOT_FOUND_CODE
+        ? new ApiError(404, USER_NOT_FOUND_CODE, res.data.message ?? "no active user with this email")
+        : new ApiError(404, "NOT_FOUND", "Resource not found");
+    }
+    return res.data.data;
+  },
 
   /** GET /organizations/:orgId/members */
   getMembers: (orgId: string) =>
