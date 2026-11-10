@@ -56,7 +56,7 @@ interface Course {
   rating: number;
   price: number;
   salePrice?: number;
-  isBestSeller?: boolean;
+  isFeatured?: boolean;
   progress?: number;
   missingItems?: string;
 }
@@ -92,7 +92,7 @@ function mapApiCourse(c: { id: string; title: string; short_description?: string
     rating: Number(c.average_rating) || 0,
     price: Number(c.price) || 0,
     salePrice: c.discount_price ? Number(c.discount_price) : undefined,
-    isBestSeller: c.is_featured,
+    isFeatured: c.is_featured,
     progress,
     missingItems: missing.length > 0 ? `Thiếu: ${missing.join(", ")}` : undefined,
   };
@@ -151,9 +151,11 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (course: C
             {statusBadge.label}
           </Badge>
         )}
-        {course.isBestSeller && !statusBadge && (
+        {/* QA-B-17: nhãn từng ghi "BÁN CHẠY" theo `is_featured` (khoá do admin đánh dấu nổi bật), cả khi khoá chỉ có
+            1 học viên. Backend không có cờ bán chạy nên ghi đúng nghĩa của cờ là "Nổi bật". */}
+        {course.isFeatured && !statusBadge && (
           <Badge className="absolute top-2 right-2 bg-orange-500 text-white text-[10px]">
-            BÁN CHẠY
+            NỔI BẬT
           </Badge>
         )}
         {/* QA-B-05: nút xoá từng chỉ hiện khi rê chuột (opacity-0 group-hover), không có trên cảm ứng và

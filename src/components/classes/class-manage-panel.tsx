@@ -25,7 +25,7 @@ import {
   useClassStudentsById,
   useClassTeachersById,
 } from "@/hooks/queries/use-class-manage";
-import { getClassStatusLabel, getClassStatusVariant, isClassArchived } from "@/lib/class-status";
+import { getClassDisplayBadge, isClassArchived } from "@/lib/class-status";
 import { classService } from "@/services/class.service";
 
 type PendingRemoval = { kind: "teacher" | "student"; id: string; name: string };
@@ -87,7 +87,7 @@ export function ClassManagePanel({ classId, initialTab = "members" }: { classId:
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={getClassStatusVariant(cls.status)}>{getClassStatusLabel(cls.status)}</Badge>
+                <Badge variant={getClassDisplayBadge(cls).variant}>{getClassDisplayBadge(cls).label}</Badge>
                 <ClassSourceBadge organizationId={cls.organization_id} />
                 {canManage && cls.status === "draft" && (
                   <Button onClick={() => actions.update.mutate({ status: "active" })} disabled={actions.update.isPending}>

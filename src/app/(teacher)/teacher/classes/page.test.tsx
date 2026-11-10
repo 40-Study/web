@@ -42,6 +42,25 @@ describe("TeacherClassesPage", () => {
     expect(screen.getByRole("link", { name: /Xem khoá học/ }).getAttribute("href")).toBe("/teacher/courses/crs-1");
   });
 
+  // QA-B-12: lớp đã qua ngày kết thúc (backend trả is_ended) từng vẫn ghi "Đang hoạt động".
+  it("lớp backend báo is_ended: ghi 'Đã kết thúc'; thiếu trường thì giữ nhãn cũ", async () => {
+    mockApi.get.mockResolvedValue(
+      envelope({
+        classes: [
+          { id: "cls-1", name: "Flutter K5", status: "active", is_ended: true, student_count: 1, teacher_count: 1 },
+          { id: "cls-2", name: "React K12", status: "active", student_count: 2, teacher_count: 1 },
+        ],
+      }),
+    );
+    renderWithProviders(<TeacherClassesPage />);
+
+    const ended = (await screen.findByText("Flutter K5")).closest("li") as HTMLElement;
+    expect(ended.textContent).toContain("Đã kết thúc");
+    expect(ended.textContent).not.toContain("Đang hoạt động");
+    const running = screen.getByText("React K12").closest("li") as HTMLElement;
+    expect(running.textContent).toContain("Đang hoạt động");
+  });
+
   it("chưa có lớp nào: hiện trạng thái rỗng, không phải trang trắng", async () => {
     mockApi.get.mockResolvedValue(envelope({ classes: [] }));
     renderWithProviders(<TeacherClassesPage />);

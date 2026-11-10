@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClassSourceBadge } from "@/components/classes/class-source-badge";
 import { useMyClasses } from "@/hooks/queries/use-classes";
-import { getClassStatusLabel, getClassStatusVariant } from "@/lib/class-status";
+import { getClassDisplayBadge } from "@/lib/class-status";
 
 /**
  * QA2 Q2-06: danh sách mọi lớp giảng viên phụ trách (`GET /classes/me`). Trước đây lớp chỉ vào được từ
@@ -58,7 +58,7 @@ export default function TeacherClassesPage() {
                   <Link href={`/teacher/classes/${cls.id}`} className="truncate font-semibold hover:text-primary-600">
                     {cls.name}
                   </Link>
-                  <Badge variant={getClassStatusVariant(cls.status)}>{getClassStatusLabel(cls.status)}</Badge>
+                  <Badge variant={getClassDisplayBadge(cls).variant}>{getClassDisplayBadge(cls).label}</Badge>
                   <ClassSourceBadge organizationId={cls.organization_id} />
                 </div>
                 <p className="flex items-center gap-1 text-xs text-muted-foreground">

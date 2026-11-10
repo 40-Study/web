@@ -23,6 +23,18 @@ export function getClassStatusVariant(status?: string | null): ClassStatusBadgeV
 }
 
 /**
+ * Nhãn hiển thị của lớp, xét cả `is_ended` (QA-B-12: lớp Flutter K5 hết hạn 04/11 vẫn ghi "Đang hoạt động").
+ * Lớp đang hoạt động mà backend báo đã qua ngày kết thúc thì ghi "Đã kết thúc"; lưu trữ/nháp giữ nhãn cũ.
+ */
+export function getClassDisplayBadge(cls: { status?: string | null; is_ended?: boolean }): {
+  label: string;
+  variant: ClassStatusBadgeVariant;
+} {
+  if (cls.is_ended === true && cls.status === "active") return { label: "Đã kết thúc", variant: "secondary" };
+  return { label: getClassStatusLabel(cls.status), variant: getClassStatusVariant(cls.status) };
+}
+
+/**
  * Lớp lưu trữ là CHỈ ĐỌC: backend trả 409 CLASS_ARCHIVED cho mọi thao tác ghi, nên UI ẩn/khoá nút ghi theo `status`
  * mà backend đã trả thay vì để người dùng bấm rồi nhận lỗi.
  */
