@@ -91,9 +91,10 @@ export async function refreshSession(): Promise<void> {
 
 // ─── Khi nào 401 KHÔNG được gọi refresh (C2, QA khách 260928) ───────────────
 //
-// `/auth/refresh-token` dùng chung bucket rate-limit 5 lần/phút/IP với `/auth/login`. Trước đây
-// MỌI 401 đều gọi refresh, nên gõ sai mật khẩu tốn 2 lượt (login 401 + refresh 400) và người dùng
-// bị 429 ngay lần thứ 4. Hai trường hợp refresh chắc chắn vô ích:
+// Trước đây MỌI 401 đều gọi refresh, kể cả gõ sai mật khẩu. Hồi đó refresh còn dùng chung bucket
+// 5 lần/phút/IP với `/auth/login` nên người dùng bị 429 ngay lần thứ 4. Từ backend #69 (28/09/2026)
+// `/auth/refresh-token` có bucket riêng 30 lần/phút/IP (`postAuthRateLimiter`), không còn tốn quota
+// của login, nhưng gọi refresh ở đây vẫn là request thừa. Hai trường hợp refresh chắc chắn vô ích:
 //  1. Request tự nó là bước xác thực (gửi mật khẩu / OTP / token): 401 nghĩa là thông tin sai,
 //     không phải access token hết hạn. KHÔNG gồm /auth/me, /auth/my-roles... (cần refresh để khôi
 //     phục phiên), nên so khớp CHÍNH XÁC đường dẫn, không dùng tiền tố "/auth/".

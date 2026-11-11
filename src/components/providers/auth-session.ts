@@ -85,10 +85,11 @@ async function runBootstrap(sessionJustEstablished: boolean): Promise<SessionSta
   // lần trước (persist trong localStorage "auth-storage", xoá khi logout).
   // Bỏ qua getMe()/refresh-token hoàn toàn thay vì gọi vô điều kiện. Trước
   // đây MỌI lần tải trang của khách đều bắn 401 GET /auth/me rồi tự động
-  // POST /auth/refresh-token (api-client.ts interceptor), tốn chung quota
-  // rate-limit 5 lần/phút/IP với /auth/login (authRateLimiter) — vài lần tải
-  // lại trang bình thường đã đủ khiến người dùng thật login ngay sau đó bị
-  // 429 (QA khách P2, 260927). Người dùng ĐÃ từng đăng nhập (còn `user` cache)
+  // POST /auth/refresh-token (api-client.ts interceptor). Hồi đó refresh còn
+  // dùng chung bucket 5 lần/phút/IP với /auth/login nên vài lần tải lại trang
+  // đã khiến người dùng login ngay sau đó bị 429 (QA khách P2, 260927). Từ
+  // backend #69 refresh-token có bucket riêng 30 lần/phút/IP, guard này giữ
+  // lại để khỏi bắn 2 request vô ích. Người dùng ĐÃ từng đăng nhập (còn `user` cache)
   // vẫn được thử khôi phục phiên bình thường bên dưới.
   //
   // Guard này CHỈ áp cho bootstrap thụ động lúc tải trang. Tài khoản nhiều vai trò: response

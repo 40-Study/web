@@ -357,9 +357,9 @@ describe("extractErrorMessage — chỉ lộ chi tiết backend khi 4xx", () => 
   });
 });
 
-// C2 (QA khách 260928, P2): mọi 401 đều gọi POST /auth/refresh-token, kể cả sai mật khẩu. Refresh
-// dùng chung bucket rate-limit 5/phút/IP với /auth/login nên mỗi lần gõ sai tốn 2 lượt → 429 ở lần
-// thứ 4. Khoá lại: request xác thực và phiên `anonymous` KHÔNG kích hoạt refresh.
+// C2 (QA khách 260928, P2): mọi 401 đều gọi POST /auth/refresh-token, kể cả sai mật khẩu. Hồi đó refresh
+// còn dùng chung bucket với /auth/login nên 429 ở lần gõ sai thứ 4; từ backend #69 refresh-token có bucket
+// riêng 30/phút/IP. Khoá lại vì đó vẫn là request thừa: request xác thực và phiên `anonymous` KHÔNG refresh.
 describe("API 401 — không gọi refresh khi vô ích (C2)", () => {
   afterEach(() => {
     useAuthStore.setState({ sessionStatus: "checking", isAuthenticated: false });

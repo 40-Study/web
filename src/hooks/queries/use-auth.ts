@@ -226,7 +226,7 @@ export function useLogin() {
       console.error("Login error:", error);
       // A-P3-1 (verify-260927-student-admin.md): trước đây LUÔN hiện "Email
       // hoặc mật khẩu không đúng" bất kể lỗi thật là gì — bị rate-limit 429
-      // (dùng chung bucket với /refresh-token, xem S-P1-2) cũng hiện y hệt
+      // (bucket 5 lần/phút/IP của /login, riêng với /refresh-token) cũng hiện y hệt
       // sai mật khẩu, khiến người dùng đổi mật khẩu vô ích trong lúc chỉ cần
       // đợi. Phân biệt rõ 429 với lỗi đăng nhập thật.
       if (error instanceof RateLimitError) {
