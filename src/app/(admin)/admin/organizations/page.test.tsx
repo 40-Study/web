@@ -161,17 +161,18 @@ describe("/admin/organizations — QA-C-06: tìm kiếm, thẻ có mô tả/tr�
   });
 });
 
-describe("/admin/organizations — QA-C-20: cảnh báo bị đăng xuất khi xoá tổ chức mình là thành viên", () => {
+describe("/admin/organizations — QA-C-20: xoá tổ chức báo ai mất quyền, KHÔNG còn hứa đăng xuất (backend PR #144)", () => {
   const openDelete = async () => {
     renderWithProviders(<OrganizationsPage />);
     await screen.findByText("ForteX");
     fireEvent.click(screen.getByRole("button", { name: "Xoá" }));
   };
 
-  it("người đang đăng nhập là thành viên: hộp thoại báo trước sẽ bị đăng xuất", async () => {
+  it("người đang đăng nhập là thành viên: báo mình cũng mất vai trò trong tổ chức, không nói bị đăng xuất", async () => {
     useAuthStore.setState({ user: { id: "u1" } as never });
     await openDelete();
-    expect((await screen.findByRole("note")).textContent).toContain("bạn cũng sẽ bị đăng xuất");
+    expect((await screen.findByRole("note")).textContent).toContain("bạn cũng mất vai trò trong tổ chức này");
+    expect(screen.getByRole("dialog").textContent).not.toMatch(/đăng xuất/);
     expect(screen.getByText(/1 thành viên sẽ mất vai trò/)).toBeTruthy();
   });
 
