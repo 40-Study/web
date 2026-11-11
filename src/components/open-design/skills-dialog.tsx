@@ -57,7 +57,7 @@ export function SkillsDialog({
       }}
     >
       <DialogContent className="max-w-xl">
-        <DialogTitle>Mẫu nội dung</DialogTitle>
+        <DialogTitle>Skills</DialogTitle>
         <DialogDescription>
           Gắn một skill vào hội thoại để AI tạo đúng thứ bạn cần.
         </DialogDescription>
