@@ -8,6 +8,7 @@ import {
   AUTH_SESSION_EXPIRED_EVENT,
   applyServerRoleChange,
   bootstrapAuthSession,
+  retryBootstrapNow,
 } from "./auth-session";
 import { SessionConnectionBanner } from "./session-connection-banner";
 
@@ -51,5 +52,5 @@ export function AuthBootstrap() {
     return () => window.removeEventListener(AUTH_ROLE_CHANGED_EVENT, onRoleChanged);
   }, []);
 
-  return <SessionConnectionBanner onRetry={retrySession} />;
+  return <SessionConnectionBanner onRetry={retrySession} onRetryNow={retryBootstrapNow} />;
 }

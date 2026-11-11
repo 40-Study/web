@@ -17,6 +17,10 @@ export const AUTH_SESSION_EXPIRED_EVENT = "fortex:auth-session-expired";
 
 const knownPermissions = new Set<string>(Object.values(PERMISSIONS));
 let bootstrapPromise: Promise<SessionStatus> | null = null;
+/** Đánh thức lượt chờ thử lại đang chạy (null khi không có lượt chờ nào). */
+let wakeRetryWait: (() => void) | null = null;
+/** Lần bootstrap đang chạy phải dừng thử lại vì caller vừa có cookie mới (forceFresh). */
+let retriesCancelled = false;
 
 function toAuthUser(user: UserResponseDto): AuthUser {
   return {
@@ -121,13 +125,16 @@ async function runBootstrap(sessionJustEstablished: boolean): Promise<SessionSta
       // thường vẫn hợp lệ — QA gọi lại /auth/me ngay sau đó được 200). Giữ nguyên `user` cache và
       // trạng thái `checking` (guard không điều hướng), thử lại có giới hạn rồi báo mất kết nối.
       if (classifySessionBootstrapError(error) === "transient") {
+        if (retriesCancelled) return "checking";
         const delay = getBootstrapRetryDelay(attempt, error);
         if (delay === null) {
           connection.markOffline();
           return "checking";
         }
-        connection.markRetrying(attempt + 1);
+        connection.markRetrying(attempt + 1, delay);
         await wait(delay);
+        if (retriesCancelled) return "checking";
+        connection.markRetrying(attempt + 1);
         continue;
       }
       connection.markOk();
@@ -139,7 +146,20 @@ async function runBootstrap(sessionJustEstablished: boolean): Promise<SessionSta
 }
 
 function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => {
+    const finish = () => {
+      clearTimeout(timer);
+      wakeRetryWait = null;
+      resolve();
+    };
+    const timer = setTimeout(finish, ms);
+    wakeRetryWait = finish;
+  });
+}
+
+/** Nút "Thử lại ngay": bỏ phần chờ còn lại. Lần thử này vẫn tính vào giới hạn số lần thử lại. */
+export function retryBootstrapNow(): void {
+  wakeRetryWait?.();
 }
 
 async function loadServerSession(
@@ -227,9 +247,15 @@ export async function applyServerRoleChange(newRole: string | null): Promise<voi
  */
 export async function bootstrapAuthSession(forceFresh = false): Promise<SessionStatus> {
   if (forceFresh && bootstrapPromise) {
+    // Lần chạy cũ có thể đang chờ tới khoảng 61s (429); đăng nhập / chọn vai không được kẹt sau nó.
+    // Huỷ lượt chờ và các lần thử còn lại. Request đang bay thì vẫn đợi xong, để kết quả cũ không
+    // ghi đè lên phiên mới.
+    retriesCancelled = true;
+    wakeRetryWait?.();
     await bootstrapPromise;
   }
   if (!bootstrapPromise) {
+    retriesCancelled = false;
     bootstrapPromise = runBootstrap(forceFresh).finally(() => {
       bootstrapPromise = null;
     });
