@@ -15,10 +15,10 @@ interface DeleteOrganizationDialogProps {
 }
 
 /**
- * Xác nhận xoá tổ chức (QA-C-20). Backend xoá tổ chức xong thì tăng user_version của MỌI thành viên
- * (organization_service.go DeleteOrganization), nên mọi phiên của họ bị thu hồi. Admin hệ thống tạo tổ chức là
- * thành chủ tổ chức đó, nên admin xoá tổ chức của chính mình cũng bị đăng xuất khỏi mọi thiết bị. Hộp thoại đọc
- * danh sách thành viên để báo trước điều này thay vì để người dùng văng về /login ngay sau toast thành công.
+ * Xác nhận xoá tổ chức (QA-C-20). Từ backend PR #144, xoá tổ chức KHÔNG còn thu hồi phiên của ai: backend chỉ gỡ
+ * vai trò tổ chức của mọi thành viên trong cùng transaction (organization_service.go DeleteOrganization). Hộp thoại
+ * đọc danh sách thành viên để báo trước bao nhiêu người mất quyền trong tổ chức này, kể cả chính người đang thao tác
+ * (admin tạo tổ chức là thành chủ tổ chức đó).
  */
 export function DeleteOrganizationDialog({ org, currentUserId, onClose, onDeleted }: DeleteOrganizationDialogProps) {
   const deleteOrg = useDeleteOrganization();
@@ -58,18 +58,18 @@ export function DeleteOrganizationDialog({ org, currentUserId, onClose, onDelete
           ) : (
             memberCount > 0 && (
               <span className="mt-2 block">
-                {memberCount} thành viên sẽ mất vai trò trong tổ chức và bị đăng xuất khỏi mọi thiết bị để áp dụng thay đổi.
+                {memberCount} thành viên sẽ mất vai trò và quyền trong tổ chức này.
               </span>
             )
           )}
           {isSelfMember && (
             <span role="note" className="mt-2 block font-medium text-amber-700 dark:text-amber-400">
-              Bạn đang là thành viên của tổ chức này, nên bạn cũng sẽ bị đăng xuất ngay sau khi xoá và phải đăng nhập lại.
+              Bạn đang là thành viên của tổ chức này, nên bạn cũng mất vai trò trong tổ chức này. Vai trò hệ thống của bạn giữ nguyên.
             </span>
           )}
           {members.isError && (
             <span className="mt-2 block text-muted-foreground">
-              Không tải được danh sách thành viên. Nếu bạn là thành viên của tổ chức này, bạn sẽ bị đăng xuất sau khi xoá.
+              Không tải được danh sách thành viên. Mọi thành viên của tổ chức này sẽ mất vai trò trong tổ chức sau khi xoá.
             </span>
           )}
           {error && (
