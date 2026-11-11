@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { ApiError, AuthError, ForbiddenError, NetworkError, NotFoundError, RateLimitError } from "./errors";
 import {
   BOOTSTRAP_RETRY_DELAYS_MS,
+  RATE_LIMIT_MAX_WAIT_MS,
   classifyRefreshFailure,
   classifySessionBootstrapError,
   getBootstrapRetryDelay,
@@ -62,5 +63,30 @@ describe("getBootstrapRetryDelay", () => {
   it("có giới hạn: hết danh sách thì trả null", () => {
     expect(BOOTSTRAP_RETRY_DELAYS_MS.map((_, i) => getBootstrapRetryDelay(i))).toEqual([2_000, 5_000, 10_000]);
     expect(getBootstrapRetryDelay(BOOTSTRAP_RETRY_DELAYS_MS.length)).toBeNull();
+  });
+});
+
+describe("getBootstrapRetryDelay với 429 (đọc retry_after)", () => {
+  it("chờ retry_after + 1s đệm, không ngắn hơn nhịp backoff", () => {
+    expect(getBootstrapRetryDelay(0, new RateLimitError(30))).toBe(31_000);
+    expect(getBootstrapRetryDelay(2, new RateLimitError(3))).toBe(10_000);
+  });
+
+  it("429 không có retry_after -> chờ trọn cửa sổ 60s", () => {
+    expect(getBootstrapRetryDelay(0, new RateLimitError())).toBe(RATE_LIMIT_MAX_WAIT_MS);
+  });
+
+  it("retry_after = 60 (đúng một cửa sổ) vẫn chờ; lớn hơn trần -> null (dừng thử tự động)", () => {
+    expect(getBootstrapRetryDelay(0, new RateLimitError(60))).toBe(61_000);
+    expect(getBootstrapRetryDelay(0, new RateLimitError(61))).toBeNull();
+  });
+
+  it("vẫn tối đa 3 lần thử lại, kể cả với 429", () => {
+    expect(getBootstrapRetryDelay(BOOTSTRAP_RETRY_DELAYS_MS.length, new RateLimitError(1))).toBeNull();
+  });
+
+  it("lỗi khác 429 giữ nguyên nhịp backoff", () => {
+    expect(getBootstrapRetryDelay(0, new NetworkError())).toBe(2_000);
+    expect(getBootstrapRetryDelay(1, new ApiError(503, "UNKNOWN", "x"))).toBe(5_000);
   });
 });

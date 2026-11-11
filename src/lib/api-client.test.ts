@@ -108,6 +108,30 @@ describe("API refresh thất bại tạm thời — giữ phiên (QA-B-01)", () 
     expect(expired).not.toHaveBeenCalled();
   });
 
+  // 261111: trước đây ném RateLimitError() rỗng, bootstrap không biết phải chờ bao lâu nên thử lại dồn dập.
+  it("refresh 429 -> RateLimitError mang retry_after của body, KHÔNG phát session-expired", async () => {
+    const config = { headers: {} } as InternalAxiosRequestConfig;
+    const { error, expired } = await callProtectedWithRefreshError(
+      errorResponse(config, 429, { error: "Too many authentication attempts", retry_after: 42 })
+    );
+    expect(error).toBeInstanceOf(RateLimitError);
+    expect((error as RateLimitError).retryAfter).toBe(42);
+    expect(expired).not.toHaveBeenCalled();
+  });
+
+  it("refresh 429 chỉ có header Retry-After -> vẫn đọc được thời gian chờ", async () => {
+    const config = { headers: {} } as InternalAxiosRequestConfig;
+    const refreshError = new AxiosError("too many", "ERR_BAD_REQUEST", config, undefined, {
+      status: 429,
+      statusText: "429",
+      headers: { "retry-after": "17" },
+      config,
+      data: {},
+    });
+    const { error } = await callProtectedWithRefreshError(refreshError);
+    expect((error as RateLimitError).retryAfter).toBe(17);
+  });
+
   it("refresh 401 (refresh token bị từ chối) -> vẫn phát session-expired và xoá auth-storage", async () => {
     const config = { headers: {} } as InternalAxiosRequestConfig;
     const { error, expired } = await callProtectedWithRefreshError(errorResponse(config, 401, {}));

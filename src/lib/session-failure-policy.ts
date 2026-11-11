@@ -11,7 +11,7 @@
  */
 
 import axios from "axios";
-import { ApiError, NetworkError } from "./errors";
+import { ApiError, NetworkError, RateLimitError } from "./errors";
 
 export type SessionFailureKind = "rejected" | "transient";
 
@@ -42,7 +42,29 @@ export function classifyRefreshFailure(error: unknown): SessionFailureKind {
  */
 export const BOOTSTRAP_RETRY_DELAYS_MS = [2_000, 5_000, 10_000] as const;
 
-/** `attempt` tính từ 0 (lần thử lại đầu tiên). null = đã hết lượt thử lại tự động. */
-export function getBootstrapRetryDelay(attempt: number): number | null {
-  return BOOTSTRAP_RETRY_DELAYS_MS[attempt] ?? null;
+/**
+ * 429 (rate limit): refresh-token dùng chung bucket 5 lần/phút/IP với /auth/login (backend
+ * `AuthRateLimiter`, cửa sổ 1 phút; account lockout cũng trả 429). Thử lại theo nhịp 2s/5s/10s khi
+ * còn bị chặn chỉ đốt thêm quota, và người dùng không đăng nhập lại được. Nên chờ đúng `retry_after`
+ * (giây, backend trả cả ở body lẫn header Retry-After) cộng 1s đệm, vì backend cắt TTL xuống số giây
+ * nguyên nên con số đó có thể ngắn hơn thời gian bị chặn thật.
+ *
+ * Trần 60s = đúng một cửa sổ rate limit. Phải chờ lâu hơn (vd. tài khoản bị khoá do sai mật khẩu
+ * nhiều lần) thì KHÔNG tự thử nữa: báo mất kết nối kèm nút Thử lại, để người dùng tự bấm.
+ * 429 không kèm thời gian chờ thì coi như phải chờ trọn một cửa sổ.
+ */
+export const RATE_LIMIT_MAX_WAIT_MS = 60_000;
+const RATE_LIMIT_BUFFER_MS = 1_000;
+
+/**
+ * `attempt` tính từ 0 (lần thử lại đầu tiên). null = dừng thử lại tự động (hết lượt, hoặc 429 đòi chờ
+ * lâu hơn trần). Vẫn tối đa BOOTSTRAP_RETRY_DELAYS_MS.length lần thử lại, kể cả khi gặp 429.
+ */
+export function getBootstrapRetryDelay(attempt: number, error?: unknown): number | null {
+  const backoff = BOOTSTRAP_RETRY_DELAYS_MS[attempt];
+  if (backoff === undefined) return null;
+  if (!(error instanceof RateLimitError)) return backoff;
+  const waitMs = error.retryAfter ? error.retryAfter * 1_000 + RATE_LIMIT_BUFFER_MS : RATE_LIMIT_MAX_WAIT_MS;
+  if (waitMs > RATE_LIMIT_MAX_WAIT_MS + RATE_LIMIT_BUFFER_MS) return null;
+  return Math.max(backoff, waitMs);
 }
