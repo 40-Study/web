@@ -3,22 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Building2, GraduationCap, LayoutDashboard, LogOut, Settings, Users } from "lucide-react";
+import { Building2, LogOut, Settings } from "lucide-react";
 
 import { RoleGuard } from "@/components/guards";
+import { CommandPalette } from "@/components/layout/command-palette";
 import { RoleSwitchList } from "@/components/layout/role-switch-list";
 import { OrgAreaGate } from "@/components/org/org-area-gate";
 import { Avatar } from "@/components/ui/avatar";
 import { useLogout } from "@/hooks/queries/use-auth";
+import { orgMenu, type OrgMenuItem } from "@/lib/org-menu";
 import { normalizeRole } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
-
-const orgMenu = [
-  { label: "Tổng quan", href: "/org", icon: LayoutDashboard, exact: true },
-  { label: "Thành viên", href: "/org/members", icon: Users, exact: false },
-  { label: "Lớp học", href: "/org/classes", icon: GraduationCap, exact: false },
-];
 
 /**
  * Khu quản lý tổ chức cho chủ/quản trị tổ chức (ORG_OWNER), tách khỏi khu /admin của quản trị hệ thống:
@@ -40,7 +36,7 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  const isActive = (item: (typeof orgMenu)[number]) =>
+  const isActive = (item: OrgMenuItem) =>
     item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
   const currentSection = orgMenu.find(isActive)?.label ?? "Quản lý tổ chức";
   const normalizedRole = normalizeRole(activeRole);
@@ -91,44 +87,47 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
                 <h1 className="truncate font-heading text-base font-semibold text-foreground">{currentSection}</h1>
                 <p className="truncate text-xs text-muted-foreground md:hidden">{activeOrg?.name || "Tổ chức của bạn"}</p>
               </div>
-              <div className="relative" ref={profileMenuRef}>
-                <button
-                  onClick={() => setIsProfileOpen((v) => !v)}
-                  className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  aria-haspopup="menu"
-                  aria-expanded={isProfileOpen}
-                >
-                  <Avatar src={user?.avatar} fallback={user?.name || "TC"} size="sm" />
-                  <span className="hidden text-sm font-medium md:inline">{user?.name || "Chủ tổ chức"}</span>
-                </button>
-                {isProfileOpen && (
-                  <div className="absolute right-0 top-11 w-64 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-popover py-2 shadow-raised" role="menu">
-                    {/* QA-C-05: chuyển tổ chức/vai (vd về Quản trị hệ thống, Giảng viên) ngay trong khu /org. Tự ẩn khi
-                        chỉ có một vai. */}
-                    <RoleSwitchList onSwitch={() => setIsProfileOpen(false)} className="mb-1 border-b border-border px-2 pb-2" />
-                    <Link
-                      href="/settings"
-                      onClick={() => setIsProfileOpen(false)}
-                      className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-muted"
-                      role="menuitem"
-                    >
-                      <Settings className="h-4 w-4" aria-hidden="true" />
-                      Tài khoản
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setIsProfileOpen(false);
-                        logoutMutation.mutate();
-                      }}
-                      disabled={logoutMutation.isPending}
-                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-950/40"
-                      role="menuitem"
-                    >
-                      <LogOut className="h-4 w-4" aria-hidden="true" />
-                      Đăng xuất
-                    </button>
-                  </div>
-                )}
+              <div className="flex shrink-0 items-center gap-2">
+                <CommandPalette items={orgMenu} areaLabel="khu quản lý tổ chức" />
+                <div className="relative" ref={profileMenuRef}>
+                  <button
+                    onClick={() => setIsProfileOpen((v) => !v)}
+                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    aria-haspopup="menu"
+                    aria-expanded={isProfileOpen}
+                  >
+                    <Avatar src={user?.avatar} fallback={user?.name || "TC"} size="sm" />
+                    <span className="hidden text-sm font-medium md:inline">{user?.name || "Chủ tổ chức"}</span>
+                  </button>
+                  {isProfileOpen && (
+                    <div className="absolute right-0 top-11 w-64 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-popover py-2 shadow-raised" role="menu">
+                      {/* QA-C-05: chuyển tổ chức/vai (vd về Quản trị hệ thống, Giảng viên) ngay trong khu /org. Tự ẩn khi
+                          chỉ có một vai. */}
+                      <RoleSwitchList onSwitch={() => setIsProfileOpen(false)} className="mb-1 border-b border-border px-2 pb-2" />
+                      <Link
+                        href="/settings"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-muted"
+                        role="menuitem"
+                      >
+                        <Settings className="h-4 w-4" aria-hidden="true" />
+                        Tài khoản
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setIsProfileOpen(false);
+                          logoutMutation.mutate();
+                        }}
+                        disabled={logoutMutation.isPending}
+                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-950/40"
+                        role="menuitem"
+                      >
+                        <LogOut className="h-4 w-4" aria-hidden="true" />
+                        Đăng xuất
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <nav className="flex gap-2 overflow-x-auto border-t border-border px-4 py-2 md:hidden" aria-label="Menu tổ chức">
