@@ -213,7 +213,15 @@ api.interceptors.response.use(
         if (classifyRefreshFailure(refreshError) === "transient") {
           const refreshStatus = axios.isAxiosError(refreshError) ? refreshError.response?.status : undefined;
           if (refreshStatus === undefined) throw new NetworkError();
-          if (refreshStatus === 429) throw new RateLimitError();
+          // Giữ thời gian chờ backend trả về để bootstrap không thử lại khi còn bị chặn.
+          if (refreshStatus === 429 && axios.isAxiosError<ErrorResponseBody>(refreshError)) {
+            throw new RateLimitError(
+              readRetryAfterSeconds(
+                refreshError.response?.data,
+                refreshError.response?.headers as Record<string, unknown> | undefined
+              )
+            );
+          }
           throw new ApiError(refreshStatus, "REFRESH_UNAVAILABLE", GENERIC_SERVER_ERROR_MESSAGE);
         }
         // Refresh bị server từ chối — phát tín hiệu để bootstrap xoá session authority. Không tự

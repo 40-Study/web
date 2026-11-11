@@ -121,7 +121,7 @@ async function runBootstrap(sessionJustEstablished: boolean): Promise<SessionSta
       // thường vẫn hợp lệ — QA gọi lại /auth/me ngay sau đó được 200). Giữ nguyên `user` cache và
       // trạng thái `checking` (guard không điều hướng), thử lại có giới hạn rồi báo mất kết nối.
       if (classifySessionBootstrapError(error) === "transient") {
-        const delay = getBootstrapRetryDelay(attempt);
+        const delay = getBootstrapRetryDelay(attempt, error);
         if (delay === null) {
           connection.markOffline();
           return "checking";
