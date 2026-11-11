@@ -1,4 +1,4 @@
-import { ApiError, NetworkError } from "@/lib/errors";
+import { ApiError, NetworkError, RateLimitError } from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-messages";
 import { USER_NOT_FOUND_CODE } from "@/services/organization.service";
 
@@ -9,6 +9,12 @@ import { USER_NOT_FOUND_CODE } from "@/services/organization.service";
  */
 export function userLookupErrorMessage(error: unknown): string {
   if (error instanceof NetworkError) return "Không kết nối được máy chủ, thử lại sau.";
+  // Backend #146: user-lookup giới hạn 30 lần/phút/người, 429 kèm retry_after (api-client đọc vào RateLimitError).
+  if (error instanceof RateLimitError) {
+    return error.retryAfter
+      ? `Bạn tra cứu quá nhanh, thử lại sau ${error.retryAfter} giây.`
+      : "Bạn tra cứu quá nhanh, vui lòng đợi một chút rồi thử lại.";
+  }
   if (!(error instanceof ApiError)) return getErrorMessage(error, "Không tìm được người dùng, thử lại sau.");
   switch (error.status) {
     case 404:

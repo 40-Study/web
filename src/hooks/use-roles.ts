@@ -43,7 +43,7 @@ export function useCreateRole(organizationId?: string) {
       toast.success("Tạo vai trò thành công");
     },
     onError: (err: Error) => {
-      toast.error("Tạo vai trò thất bại", { description: err.message });
+      toast.error("Tạo vai trò thất bại", { description: getErrorMessage(err) });
     },
   });
 }
@@ -60,7 +60,7 @@ export function useUpdateRole(organizationId?: string) {
       toast.success("Cập nhật vai trò thành công");
     },
     onError: (err: Error) => {
-      toast.error("Cập nhật thất bại", { description: err.message });
+      toast.error("Cập nhật thất bại", { description: getErrorMessage(err) });
     },
   });
 }

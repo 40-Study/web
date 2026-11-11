@@ -52,6 +52,10 @@ const CODE_MESSAGES: Record<string, string> = {
   // Thành viên tổ chức (backend song song thêm 2 mã 409 này kèm câu tiếng Việt; GENERIC_CODES để câu của backend được ưu tiên).
   ORG_ROLE_ALREADY_ASSIGNED: "Người này đã giữ vai trò đó trong tổ chức.",
   ROLE_NAME_TAKEN: "Tên vai trò đã tồn tại trong tổ chức.",
+  // Backend #146: tên vai tổ chức không được trùng tên vai hệ thống (tạo, đổi tên, khôi phục); vai trùng tên còn sót
+  // trong DB thì không chọn được lúc select-role/switch-role. Message của backend là tiếng Anh nên dùng câu ở đây.
+  ROLE_NAME_RESERVED: "Tên vai này trùng tên vai hệ thống, hãy chọn tên khác.",
+  ORG_ROLE_NAME_RESERVED: "Vai này có tên trùng vai hệ thống nên không dùng được. Hãy liên hệ chủ tổ chức.",
   TEACHER_NOT_ORG_MEMBER: "Giảng viên này chưa là thành viên của tổ chức. Hãy thêm họ vào tổ chức trước khi gán vào lớp.",
   ERR_UNAUTHORIZED: SESSION_EXPIRED_MESSAGE,
   ERR_FORBIDDEN: FORBIDDEN_MESSAGE,
