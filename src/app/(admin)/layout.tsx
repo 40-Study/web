@@ -3,56 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, Banknote, Bell, Building2, Check, ChevronDown, Flag, FolderTree, LayoutDashboard, LogOut, Receipt, ScrollText, Settings, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
-import { BookCheck, Tags, Ticket, Trophy, UserCheck } from "lucide-react";
+import { Check, ChevronDown, LogOut, Settings } from "lucide-react";
 
 import { RoleGuard } from "@/components/guards";
 import { AdminMobileNav } from "@/components/admin/admin-mobile-nav";
+import { CommandPalette } from "@/components/layout/command-palette";
 import { Avatar } from "@/components/ui/avatar";
 import { useLogout, useMyRoles, useSwitchRole } from "@/hooks/queries/use-auth";
 import { cn } from "@/lib/utils";
+import { adminMenu, getVisibleAdminMenu } from "@/lib/admin-menu";
 import { findActiveAdminNavItem, isAdminNavActive } from "@/lib/admin-nav";
-import { PERMISSIONS, type Permission } from "@/lib/permissions";
 import { getSystemRoleLabel } from "@/lib/role-labels";
 import { useAuthStore } from "@/stores/auth.store";
-
-interface AdminMenuItem {
-  label: string;
-  href: string;
-  icon: typeof LayoutDashboard;
-  /** Phụ đề dưới tiêu đề header khi đang ở trang này (ADM-L3: trước đây mọi trang dùng chung một câu). */
-  description: string;
-  /** Mục chỉ hiện khi admin có quyền này — API phía sau trả 403 với admin kém quyền (QA 261009 L6). */
-  permission?: Permission;
-}
-
-const adminMenu: AdminMenuItem[] = [
-  { label: "Tổng quan", href: "/admin", icon: LayoutDashboard, description: "Số liệu và hoạt động chính của nền tảng" },
-  { label: "Người dùng", href: "/admin/users", icon: Users, description: "Tìm kiếm, xem và khoá tài khoản người dùng" },
-  { label: "Quản lý vai trò", href: "/admin/roles", icon: ShieldCheck, description: "Gán và gỡ vai trò cho người dùng" },
-  { label: "Quản lý tổ chức", href: "/admin/organizations", icon: Building2, description: "Quản lý các tổ chức và chủ tổ chức" },
-  { label: "Phân quyền", href: "/admin/permissions", icon: Settings, description: "Quyền của từng vai trò hệ thống" },
-  { label: "Danh mục khoá học", href: "/admin/categories", icon: FolderTree, description: "Cây danh mục dùng để phân loại khoá học" },
-  // QA-C-19: backend có CRUD /tags nhưng trước đây không có màn quản lý. Gói xu chưa có mục: backend chỉ có
-  // GET /coins/packages trả gói ĐANG BẬT (không có is_active), nên màn admin không thấy được gói đã tắt để bật lại.
-  { label: "Tag khoá học", href: "/admin/tags", icon: Tags, description: "Tạo, đổi tên và xoá tag khoá học" },
-  { label: "Báo cáo vi phạm", href: "/admin/moderation", icon: Flag, description: "Xử lý báo cáo vi phạm từ người dùng" },
-  { label: "Đơn hàng", href: "/admin/orders", icon: Receipt, description: "Theo dõi, đối soát và hoàn tiền đơn hàng" },
-  { label: "Rút tiền giảng viên", href: "/admin/withdrawals", icon: Banknote, description: "Duyệt yêu cầu rút tiền của giảng viên" },
-  // "Ví của tôi" (PR #24) đã được thay bằng báo cáo doanh thu nền tảng THẬT (PR #29) —
-  // xem admin/reports/page.tsx. Đổi lại tên mục nav cho khớp nội dung trang thật.
-  { label: "Báo cáo hệ thống", href: "/admin/reports", icon: BarChart3, description: "Doanh thu và hoạt động của toàn nền tảng" },
-  // Nhật ký, thông báo hệ thống, cấu hình hệ thống: API đều cần SYSTEM_SETTINGS_MANAGE nên ẩn mục với admin thiếu quyền.
-  { label: "Nhật ký hoạt động", href: "/admin/audit-logs", icon: ScrollText, description: "Tra cứu ai đã làm gì trên hệ thống", permission: PERMISSIONS.SYSTEM_SETTINGS_MANAGE },
-  { label: "Thông báo hệ thống", href: "/admin/notifications", icon: Bell, description: "Gửi thông báo đến người dùng theo đối tượng", permission: PERMISSIONS.SYSTEM_SETTINGS_MANAGE },
-  { label: "Cấu hình hệ thống", href: "/admin/settings", icon: SlidersHorizontal, description: "Thiết lập chung của hệ thống", permission: PERMISSIONS.SYSTEM_SETTINGS_MANAGE },
-  { label: "Duyệt khoá học", href: "/admin/courses", icon: BookCheck, description: "Duyệt hoặc từ chối khoá học chờ xuất bản" },
-  { label: "Duyệt giáo viên", href: "/admin/teacher-applications", icon: UserCheck, description: "Xét duyệt đơn đăng ký làm giảng viên" },
-  // Cuộc thi (contract contest-feature §7): duyệt, gắn voucher, huỷ và CHỐT kết quả — chỉ admin chốt.
-  { label: "Cuộc thi", href: "/admin/contests", icon: Trophy, description: "Duyệt cuộc thi, gắn voucher và chốt kết quả" },
-  // Voucher (L1): tạo/sửa mã giảm giá, gồm công tắc voucher "dành riêng" (holders_only).
-  { label: "Voucher", href: "/admin/vouchers", icon: Ticket, description: "Tạo và sửa mã giảm giá" },
-];
 
 export default function AdminLayout({
   children,
@@ -62,7 +24,7 @@ export default function AdminLayout({
   const pathname = usePathname();
   const { user, activeUnifiedRole, roles } = useAuthStore();
   const permissions = useAuthStore((s) => s.permissions);
-  const visibleMenu = adminMenu.filter((item) => !item.permission || permissions.includes(item.permission));
+  const visibleMenu = getVisibleAdminMenu(permissions);
   const pageSubtitle = findActiveAdminNavItem(pathname, adminMenu)?.description ?? "Quản trị nền tảng ForteX";
   const logoutMutation = useLogout();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -129,95 +91,99 @@ export default function AdminLayout({
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-40 border-b border-border bg-card">
-            <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 md:px-6">
-              <div>
+            <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4 md:px-6">
+              <div className="min-w-0">
                 <h1 className="font-heading text-base font-semibold text-foreground">Trang quản trị</h1>
-                <p className="text-xs text-muted-foreground">{pageSubtitle}</p>
+                <p className="truncate text-xs text-muted-foreground">{pageSubtitle}</p>
               </div>
-              <div className="relative" ref={profileMenuRef}>
-                <button
-                  onClick={() => setIsProfileOpen((v) => !v)}
-                  className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <Avatar src={user?.avatar} fallback={user?.name || "AD"} size="sm" />
-                  <span className="hidden text-sm font-medium md:inline">{user?.name || "Administrator"}</span>
-                </button>
+              <div className="flex shrink-0 items-center gap-2">
+                {/* Bảng lệnh Ctrl+K chỉ nhận đúng các mục admin đang được thấy (cùng danh sách với sidebar). */}
+                <CommandPalette items={visibleMenu} areaLabel="khu quản trị" />
+                <div className="relative" ref={profileMenuRef}>
+                  <button
+                    onClick={() => setIsProfileOpen((v) => !v)}
+                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <Avatar src={user?.avatar} fallback={user?.name || "AD"} size="sm" />
+                    <span className="hidden text-sm font-medium md:inline">{user?.name || "Administrator"}</span>
+                  </button>
 
-                {isProfileOpen && (
-                  <div className="absolute right-0 top-11 w-52 rounded-2xl border border-border bg-popover py-2 shadow-raised">
-                    {/* A-P2-4 (cũ): link /settings từng bị (app)/layout.tsx đá về /admin; nay đã mở được (xem mục Tài khoản bên dưới). */}
-                    {availableRoles.length > 1 && (
-                      <div className="mb-1 border-b border-border pb-1">
-                        <button
-                          type="button"
-                          aria-expanded={showRoleSwitcher}
-                          onClick={() => setShowRoleSwitcher((v) => !v)}
-                          className="flex w-full items-center justify-between px-4 py-2 text-sm text-foreground hover:bg-muted"
-                        >
-                          Chuyển vai trò
-                          <ChevronDown className={cn("h-4 w-4 transition-transform", showRoleSwitcher && "rotate-180")} aria-hidden="true" />
-                        </button>
-                        {showRoleSwitcher && (
-                          <ul className="space-y-1 px-2 pb-1" aria-label="Vai trò của bạn">
-                            {availableRoles.map((role) => {
-                              const isActive = activeUnifiedRole?.id === role.id;
-                              return (
-                                <li key={role.id}>
-                                  <button
-                                    type="button"
-                                    disabled={isActive || switchRoleMutation.isPending}
-                                    onClick={() => {
-                                      setIsProfileOpen(false);
-                                      setShowRoleSwitcher(false);
-                                      switchRoleMutation.mutate({
-                                        role_id: role.id,
-                                        role_type: role.type,
-                                        organization_id: role.organization_id || undefined,
-                                      });
-                                    }}
-                                    className={cn(
-                                      "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm disabled:opacity-60",
-                                      isActive ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300" : "hover:bg-muted"
-                                    )}
-                                  >
-                                    <span className="min-w-0 flex-1">
-                                      <span className="block truncate font-medium">{getSystemRoleLabel(role.role_name)}</span>
-                                      {role.organization_name?.trim() && (
-                                        <span className="block truncate text-xs text-muted-foreground">{role.organization_name.trim()}</span>
+                  {isProfileOpen && (
+                    <div className="absolute right-0 top-11 w-52 rounded-2xl border border-border bg-popover py-2 shadow-raised">
+                      {/* A-P2-4 (cũ): link /settings từng bị (app)/layout.tsx đá về /admin; nay đã mở được (xem mục Tài khoản bên dưới). */}
+                      {availableRoles.length > 1 && (
+                        <div className="mb-1 border-b border-border pb-1">
+                          <button
+                            type="button"
+                            aria-expanded={showRoleSwitcher}
+                            onClick={() => setShowRoleSwitcher((v) => !v)}
+                            className="flex w-full items-center justify-between px-4 py-2 text-sm text-foreground hover:bg-muted"
+                          >
+                            Chuyển vai trò
+                            <ChevronDown className={cn("h-4 w-4 transition-transform", showRoleSwitcher && "rotate-180")} aria-hidden="true" />
+                          </button>
+                          {showRoleSwitcher && (
+                            <ul className="space-y-1 px-2 pb-1" aria-label="Vai trò của bạn">
+                              {availableRoles.map((role) => {
+                                const isActive = activeUnifiedRole?.id === role.id;
+                                return (
+                                  <li key={role.id}>
+                                    <button
+                                      type="button"
+                                      disabled={isActive || switchRoleMutation.isPending}
+                                      onClick={() => {
+                                        setIsProfileOpen(false);
+                                        setShowRoleSwitcher(false);
+                                        switchRoleMutation.mutate({
+                                          role_id: role.id,
+                                          role_type: role.type,
+                                          organization_id: role.organization_id || undefined,
+                                        });
+                                      }}
+                                      className={cn(
+                                        "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm disabled:opacity-60",
+                                        isActive ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300" : "hover:bg-muted"
                                       )}
-                                    </span>
-                                    {isActive && <Check className="h-4 w-4 shrink-0" aria-label="Đang dùng" />}
-                                  </button>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        )}
-                      </div>
-                    )}
-                    {/* QA-C-23: menu avatar từng chỉ có "Đăng xuất". (app)/layout.tsx nay cho admin mở /settings
-                        (đã kiểm sống 10/11/2026), nên thêm lối vào Tài khoản như khu /org. */}
-                    <Link
-                      href="/settings"
-                      onClick={() => setIsProfileOpen(false)}
-                      className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-muted"
-                    >
-                      <Settings className="h-4 w-4" aria-hidden="true" />
-                      Tài khoản
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setIsProfileOpen(false);
-                        logoutMutation.mutate();
-                      }}
-                      disabled={logoutMutation.isPending}
-                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-950/40"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Đăng xuất
-                    </button>
-                  </div>
-                )}
+                                    >
+                                      <span className="min-w-0 flex-1">
+                                        <span className="block truncate font-medium">{getSystemRoleLabel(role.role_name)}</span>
+                                        {role.organization_name?.trim() && (
+                                          <span className="block truncate text-xs text-muted-foreground">{role.organization_name.trim()}</span>
+                                        )}
+                                      </span>
+                                      {isActive && <Check className="h-4 w-4 shrink-0" aria-label="Đang dùng" />}
+                                    </button>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                      {/* QA-C-23: menu avatar từng chỉ có "Đăng xuất". (app)/layout.tsx nay cho admin mở /settings
+                          (đã kiểm sống 10/11/2026), nên thêm lối vào Tài khoản như khu /org. */}
+                      <Link
+                        href="/settings"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-muted"
+                      >
+                        <Settings className="h-4 w-4" aria-hidden="true" />
+                        Tài khoản
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setIsProfileOpen(false);
+                          logoutMutation.mutate();
+                        }}
+                        disabled={logoutMutation.isPending}
+                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-950/40"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Đăng xuất
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <AdminMobileNav items={visibleMenu} isActive={(href) => isAdminNavActive(pathname, href)} />
