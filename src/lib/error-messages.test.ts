@@ -174,6 +174,19 @@ describe("getErrorMessage - TEACHER_NOT_ORG_MEMBER", () => {
     expect(message).not.toMatch(/teacher/i);
   });
 });
+describe("getErrorMessage — vai tổ chức trùng tên vai hệ thống (backend #146)", () => {
+  it("400 ROLE_NAME_RESERVED khi tạo/đổi tên/khôi phục vai", () => {
+    expect(getErrorMessage(new ApiError(400, "ROLE_NAME_RESERVED", "role name is reserved"))).toBe(
+      "Tên vai này trùng tên vai hệ thống, hãy chọn tên khác."
+    );
+  });
+
+  it("400 ORG_ROLE_NAME_RESERVED khi chọn hoặc đổi sang vai đó", () => {
+    expect(getErrorMessage(new ApiError(400, "ORG_ROLE_NAME_RESERVED", "organization role name collides"))).toBe(
+      "Vai này có tên trùng vai hệ thống nên không dùng được. Hãy liên hệ chủ tổ chức."
+    );
+  });
+});
 describe("getErrorMessage — ghi vào lớp đã lưu trữ (409 CLASS_ARCHIVED)", () => {
   it("backend đã trả message tiếng Việt: hiện đúng message của backend", () => {
     const error = new ApiError(409, "CLASS_ARCHIVED", "Lớp đã lưu trữ, hãy mở lại lớp trước khi chỉnh sửa");

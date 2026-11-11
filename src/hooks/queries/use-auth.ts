@@ -11,7 +11,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { getRoleFromToken } from "@/lib/jwt";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { bootstrapAuthSession } from "@/components/providers/auth-session";
-import { AuthError, RateLimitError } from "@/lib/errors";
+import { ApiError, AuthError, RateLimitError } from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-messages";
 import { sanitizeRedirect } from "@/lib/safe-redirect";
 
@@ -275,6 +275,11 @@ export function useRegister() {
   });
 }
 
+/** Backend #146: vai tổ chức trùng tên vai hệ thống bị từ chối; thử lại vô ích nên phải nói rõ lý do và ai sửa được. */
+function isReservedOrgRoleError(error: unknown): boolean {
+  return error instanceof ApiError && error.code === "ORG_ROLE_NAME_RESERVED";
+}
+
 /**
  * POST /auth/select-role - Select role during login flow (uses session_token)
  * Completes login: returns tokens, sets auth state, navigates to home.
@@ -339,6 +344,10 @@ export function useSelectRole() {
         return;
       }
       console.error("Select role error:", error);
+      if (isReservedOrgRoleError(error)) {
+        toast.error(getErrorMessage(error));
+        return;
+      }
       toast.error("Chọn vai trò thất bại", {
         description: "Vui lòng thử lại hoặc đăng nhập lại",
       });
@@ -369,7 +378,7 @@ export function useSwitchRole() {
     },
     onError: (error: unknown) => {
       console.error("Switch role error:", error);
-      toast.error("Đổi vai trò thất bại");
+      toast.error(isReservedOrgRoleError(error) ? getErrorMessage(error) : "Đổi vai trò thất bại");
     },
   });
 }
