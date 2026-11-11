@@ -17,6 +17,10 @@ export const AUTH_SESSION_EXPIRED_EVENT = "fortex:auth-session-expired";
 
 const knownPermissions = new Set<string>(Object.values(PERMISSIONS));
 let bootstrapPromise: Promise<SessionStatus> | null = null;
+/** Đánh thức lượt chờ thử lại đang chạy (null khi không có lượt chờ nào). */
+let wakeRetryWait: (() => void) | null = null;
+/** Lần bootstrap đang chạy phải dừng thử lại vì caller vừa có cookie mới (forceFresh). */
+let retriesCancelled = false;
 
 function toAuthUser(user: UserResponseDto): AuthUser {
   return {
@@ -81,10 +85,11 @@ async function runBootstrap(sessionJustEstablished: boolean): Promise<SessionSta
   // lần trước (persist trong localStorage "auth-storage", xoá khi logout).
   // Bỏ qua getMe()/refresh-token hoàn toàn thay vì gọi vô điều kiện. Trước
   // đây MỌI lần tải trang của khách đều bắn 401 GET /auth/me rồi tự động
-  // POST /auth/refresh-token (api-client.ts interceptor), tốn chung quota
-  // rate-limit 5 lần/phút/IP với /auth/login (authRateLimiter) — vài lần tải
-  // lại trang bình thường đã đủ khiến người dùng thật login ngay sau đó bị
-  // 429 (QA khách P2, 260927). Người dùng ĐÃ từng đăng nhập (còn `user` cache)
+  // POST /auth/refresh-token (api-client.ts interceptor). Hồi đó refresh còn
+  // dùng chung bucket 5 lần/phút/IP với /auth/login nên vài lần tải lại trang
+  // đã khiến người dùng login ngay sau đó bị 429 (QA khách P2, 260927). Từ
+  // backend #69 refresh-token có bucket riêng 30 lần/phút/IP, guard này giữ
+  // lại để khỏi bắn 2 request vô ích. Người dùng ĐÃ từng đăng nhập (còn `user` cache)
   // vẫn được thử khôi phục phiên bình thường bên dưới.
   //
   // Guard này CHỈ áp cho bootstrap thụ động lúc tải trang. Tài khoản nhiều vai trò: response
@@ -121,13 +126,16 @@ async function runBootstrap(sessionJustEstablished: boolean): Promise<SessionSta
       // thường vẫn hợp lệ — QA gọi lại /auth/me ngay sau đó được 200). Giữ nguyên `user` cache và
       // trạng thái `checking` (guard không điều hướng), thử lại có giới hạn rồi báo mất kết nối.
       if (classifySessionBootstrapError(error) === "transient") {
+        if (retriesCancelled) return "checking";
         const delay = getBootstrapRetryDelay(attempt, error);
         if (delay === null) {
           connection.markOffline();
           return "checking";
         }
-        connection.markRetrying(attempt + 1);
+        connection.markRetrying(attempt + 1, delay);
         await wait(delay);
+        if (retriesCancelled) return "checking";
+        connection.markRetrying(attempt + 1);
         continue;
       }
       connection.markOk();
@@ -139,7 +147,20 @@ async function runBootstrap(sessionJustEstablished: boolean): Promise<SessionSta
 }
 
 function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => {
+    const finish = () => {
+      clearTimeout(timer);
+      wakeRetryWait = null;
+      resolve();
+    };
+    const timer = setTimeout(finish, ms);
+    wakeRetryWait = finish;
+  });
+}
+
+/** Nút "Thử lại ngay": bỏ phần chờ còn lại. Lần thử này vẫn tính vào giới hạn số lần thử lại. */
+export function retryBootstrapNow(): void {
+  wakeRetryWait?.();
 }
 
 async function loadServerSession(
@@ -227,9 +248,15 @@ export async function applyServerRoleChange(newRole: string | null): Promise<voi
  */
 export async function bootstrapAuthSession(forceFresh = false): Promise<SessionStatus> {
   if (forceFresh && bootstrapPromise) {
+    // Lần chạy cũ có thể đang chờ tới khoảng 61s (429); đăng nhập / chọn vai không được kẹt sau nó.
+    // Huỷ lượt chờ và các lần thử còn lại. Request đang bay thì vẫn đợi xong, để kết quả cũ không
+    // ghi đè lên phiên mới.
+    retriesCancelled = true;
+    wakeRetryWait?.();
     await bootstrapPromise;
   }
   if (!bootstrapPromise) {
+    retriesCancelled = false;
     bootstrapPromise = runBootstrap(forceFresh).finally(() => {
       bootstrapPromise = null;
     });

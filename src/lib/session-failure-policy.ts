@@ -43,14 +43,15 @@ export function classifyRefreshFailure(error: unknown): SessionFailureKind {
 export const BOOTSTRAP_RETRY_DELAYS_MS = [2_000, 5_000, 10_000] as const;
 
 /**
- * 429 (rate limit): refresh-token dùng chung bucket 5 lần/phút/IP với /auth/login (backend
- * `AuthRateLimiter`, cửa sổ 1 phút; account lockout cũng trả 429). Thử lại theo nhịp 2s/5s/10s khi
- * còn bị chặn chỉ đốt thêm quota, và người dùng không đăng nhập lại được. Nên chờ đúng `retry_after`
- * (giây, backend trả cả ở body lẫn header Retry-After) cộng 1s đệm, vì backend cắt TTL xuống số giây
- * nguyên nên con số đó có thể ngắn hơn thời gian bị chặn thật.
+ * 429 (rate limit): POST /auth/refresh-token dùng `postAuthRateLimiter` (bucket "rate:post-auth",
+ * 30 lần/phút/IP, backend/internal/router/auth_router.go), riêng với /auth/login (5 lần/phút/IP).
+ * Limiter là cửa sổ cố định nên thử lại khi đang bị chặn không kéo dài thời gian chặn, nhưng chắc
+ * chắn lại nhận 429 và mất toi một trong 3 lượt thử lại. Nên chờ đúng `retry_after` (giây, backend
+ * trả cả ở body lẫn header Retry-After) cộng 1s đệm, vì backend cắt TTL xuống số giây nguyên nên
+ * con số đó có thể ngắn hơn thời gian bị chặn thật.
  *
- * Trần 60s = đúng một cửa sổ rate limit. Phải chờ lâu hơn (vd. tài khoản bị khoá do sai mật khẩu
- * nhiều lần) thì KHÔNG tự thử nữa: báo mất kết nối kèm nút Thử lại, để người dùng tự bấm.
+ * Trần 60s = đúng một cửa sổ của limiter trên. Vượt trần là nhánh phòng thủ (bootstrap hiện không
+ * gặp, chỉ xảy ra nếu backend đổi cửa sổ): không tự thử nữa, báo kèm nút Thử lại để người dùng bấm.
  * 429 không kèm thời gian chờ thì coi như phải chờ trọn một cửa sổ.
  */
 export const RATE_LIMIT_MAX_WAIT_MS = 60_000;

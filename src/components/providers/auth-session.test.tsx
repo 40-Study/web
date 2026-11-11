@@ -28,8 +28,8 @@ const user: UserResponseDto = {
 
 // bootstrapAuthSession() giờ chỉ gọi GET /auth/me khi store đã có `user`
 // cache (persist từ lần đăng nhập trước) — khách chưa từng đăng nhập không
-// còn tự bắn 401 rồi refresh-token, tốn chung quota rate-limit với /login
-// (QA khách P2, 260927; xem auth-session.ts). Mọi test dưới đây mô phỏng
+// còn tự bắn 401 rồi refresh-token vô ích (QA khách P2, 260927; lý do và
+// bucket rate-limit hiện tại: xem auth-session.ts). Mọi test dưới đây mô phỏng
 // "phiên đã xác thực trước đó, cookie có thể còn hợp lệ" nên phải seed
 // `user` giống với dữ liệu thật sự được persist cùng activeRole.
 const authUser: AuthUser = { id: user.id, email: user.email, name: user.full_name ?? user.email };
@@ -234,9 +234,9 @@ describe("cookie-backed auth bootstrap", () => {
 
   // QA khách P2 (260927): trước đây MỌI lần tải trang (kể cả khách chưa từng
   // đăng nhập, không có `user` cache) đều gọi GET /auth/me -> 401 -> tự động
-  // POST /auth/refresh-token, tốn chung quota rate-limit 5 lần/phút/IP với
-  // /auth/login (authRateLimiter) — vài lần refresh trang bình thường đã đủ
-  // khiến người dùng thật login ngay sau đó bị 429.
+  // POST /auth/refresh-token. Hồi đó refresh còn dùng chung bucket với
+  // /auth/login nên người dùng login ngay sau đó bị 429; từ backend #69
+  // refresh-token có bucket riêng, test này giữ để khách không bắn request thừa.
   it("khách chưa từng đăng nhập (không có user cache) không gọi getMe/refresh-token", async () => {
     // beforeEach đã clearServerSession() -> user: null, không set thêm gì.
     await expect(bootstrapAuthSession()).resolves.toBe("anonymous");

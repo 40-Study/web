@@ -4,7 +4,7 @@ import { ApiError, AuthError, NetworkError, RateLimitError } from "@/lib/errors"
 import { useSessionConnectionStore } from "@/lib/session-connection";
 import { authService, type UnifiedRole, type UserResponseDto } from "@/services/auth.service";
 import { useAuthStore, type AuthUser } from "@/stores/auth.store";
-import { bootstrapAuthSession } from "./auth-session";
+import { bootstrapAuthSession, retryBootstrapNow } from "./auth-session";
 
 // QA-B-01 / QA-C-02 (261110): request khởi tạo phiên bị timeout/huỷ/5xx thì web xoá phiên và đá về
 // /login dù cookie còn hợp lệ. Chỉ 401/403 thật (sau refresh) mới được xoá phiên.
@@ -99,8 +99,8 @@ describe("bootstrap phiên khi máy chủ chậm / lỗi mạng", () => {
   });
 });
 
-// 429 (261111): refresh-token dùng chung quota 5 lần/phút với /auth/login. Thử lại theo nhịp 2s/5s/10s
-// khi còn bị chặn chỉ đốt thêm quota; phải chờ đúng retry_after.
+// 429 (261111): refresh-token có bucket riêng 30 lần/phút/IP, cửa sổ cố định. Thử lại theo nhịp 2s/5s/10s
+// khi còn bị chặn chắc chắn lại nhận 429 và mất lượt thử; phải chờ đúng retry_after.
 describe("bootstrap gặp 429 -> chờ đúng retry_after", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -142,7 +142,7 @@ describe("bootstrap gặp 429 -> chờ đúng retry_after", () => {
     await expect(pending).resolves.toBe("authenticated");
   });
 
-  it("retry_after vượt trần (khoá 15 phút) -> dừng thử tự động ngay, báo offline, vẫn giữ phiên", async () => {
+  it("phòng thủ: retry_after vượt trần một cửa sổ (bootstrap hiện không gặp) -> dừng thử tự động, báo offline, giữ phiên", async () => {
     seedCachedSession();
     vi.mocked(authService.getMe).mockRejectedValue(new RateLimitError(900));
 
@@ -164,5 +164,120 @@ describe("bootstrap gặp 429 -> chờ đúng retry_after", () => {
     await expect(pending).resolves.toBe("checking");
     expect(authService.getMe).toHaveBeenCalledTimes(4);
     expect(useSessionConnectionStore.getState().state).toBe("offline");
+  });
+});
+
+// Review #114: đăng nhập / chọn vai (forceFresh) từng phải đợi hết lượt chờ của bootstrap trước, có thể khoảng 61s.
+describe("huỷ lượt chờ thử lại", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.mocked(authService.getMe).mockReset();
+    vi.mocked(authService.getMyRoles).mockReset().mockResolvedValue({ roles: [teacherRole] });
+    vi.mocked(authService.getMyPermissions).mockReset().mockResolvedValue([]);
+    window.localStorage.clear();
+    useAuthStore.getState().clearServerSession();
+    useAuthStore.setState({ hasHydrated: true });
+    useSessionConnectionStore.getState().markOk();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("forceFresh trong lúc chờ 429 -> chạy ngay, lần cũ dừng và không gọi thêm", async () => {
+    seedCachedSession();
+    vi.mocked(authService.getMe).mockRejectedValueOnce(new RateLimitError(30)).mockResolvedValue(user);
+
+    const oldRun = bootstrapAuthSession();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(authService.getMe).toHaveBeenCalledTimes(1);
+
+    const freshRun = bootstrapAuthSession(true);
+    await vi.advanceTimersByTimeAsync(0); // không tua tới hết 31s
+
+    await expect(freshRun).resolves.toBe("authenticated");
+    await expect(oldRun).resolves.toBe("checking");
+    expect(authService.getMe).toHaveBeenCalledTimes(2);
+    expect(useSessionConnectionStore.getState().state).toBe("ok");
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(authService.getMe).toHaveBeenCalledTimes(2);
+  });
+
+  it("forceFresh khi request cũ đang bay rồi lỗi tạm thời -> lần cũ không vào lượt chờ", async () => {
+    seedCachedSession();
+    let rejectOld!: (e: unknown) => void;
+    vi.mocked(authService.getMe)
+      .mockImplementationOnce(() => new Promise((_, reject) => { rejectOld = reject; }))
+      .mockResolvedValue(user);
+
+    const oldRun = bootstrapAuthSession();
+    await vi.advanceTimersByTimeAsync(0);
+    const freshRun = bootstrapAuthSession(true);
+    rejectOld(new RateLimitError(30));
+    await vi.advanceTimersByTimeAsync(0);
+
+    await expect(freshRun).resolves.toBe("authenticated");
+    await expect(oldRun).resolves.toBe("checking");
+  });
+
+  it("nút Thử lại ngay -> gọi lại ngay, chỉ hiện trong lượt chờ dài", async () => {
+    seedCachedSession();
+    vi.mocked(authService.getMe).mockRejectedValueOnce(new RateLimitError(30)).mockResolvedValue(user);
+
+    const pending = bootstrapAuthSession();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(useSessionConnectionStore.getState().canRetryNow).toBe(true);
+
+    retryBootstrapNow();
+    await vi.advanceTimersByTimeAsync(0);
+
+    await expect(pending).resolves.toBe("authenticated");
+    expect(authService.getMe).toHaveBeenCalledTimes(2);
+    expect(useSessionConnectionStore.getState().canRetryNow).toBe(false);
+  });
+
+  it("lượt chờ ngắn (2s) không mời bấm Thử lại ngay", async () => {
+    seedCachedSession();
+    vi.mocked(authService.getMe).mockRejectedValueOnce(new NetworkError()).mockResolvedValue(user);
+
+    const pending = bootstrapAuthSession();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(useSessionConnectionStore.getState()).toMatchObject({ state: "retrying", canRetryNow: false });
+
+    await vi.advanceTimersByTimeAsync(2_000);
+    await expect(pending).resolves.toBe("authenticated");
+  });
+
+  it("bấm Thử lại ngay vẫn tính vào giới hạn 3 lần thử lại", async () => {
+    seedCachedSession();
+    vi.mocked(authService.getMe).mockRejectedValue(new RateLimitError(30));
+
+    const pending = bootstrapAuthSession();
+    for (let i = 0; i < 3; i += 1) {
+      await vi.advanceTimersByTimeAsync(0);
+      retryBootstrapNow();
+    }
+    await vi.advanceTimersByTimeAsync(0);
+
+    await expect(pending).resolves.toBe("checking");
+    expect(authService.getMe).toHaveBeenCalledTimes(4);
+    expect(useSessionConnectionStore.getState().state).toBe("offline");
+  });
+
+  it("401 trong lần thử sau khi bấm Thử lại ngay -> vẫn xoá phiên như cũ", async () => {
+    seedCachedSession();
+    vi.mocked(authService.getMe)
+      .mockRejectedValueOnce(new RateLimitError(30))
+      .mockRejectedValue(new AuthError("Invalid or expired token", "AUTH_ERROR"));
+    const toastInfo = vi.spyOn(toast, "info").mockImplementation(() => "" as never);
+
+    const pending = bootstrapAuthSession();
+    await vi.advanceTimersByTimeAsync(0);
+    retryBootstrapNow();
+    await vi.advanceTimersByTimeAsync(0);
+
+    await expect(pending).resolves.toBe("anonymous");
+    expect(useAuthStore.getState()).toMatchObject({ sessionStatus: "anonymous", user: null });
+    toastInfo.mockRestore();
   });
 });

@@ -6,6 +6,8 @@ import { useSessionConnectionStore } from "@/lib/session-connection";
 
 interface SessionConnectionBannerProps {
   onRetry: () => void;
+  /** Bỏ phần chờ còn lại của lượt thử lại tự động đang chạy. */
+  onRetryNow: () => void;
 }
 
 /**
@@ -13,8 +15,8 @@ interface SessionConnectionBannerProps {
  * trang được bảo vệ chưa hiện nội dung (phiên còn `checking`), nên banner nằm cố định trên cùng để
  * người dùng biết họ KHÔNG bị đăng xuất, chỉ đang chờ máy chủ.
  */
-export function SessionConnectionBanner({ onRetry }: SessionConnectionBannerProps) {
-  const { state, attempt, maxAttempts } = useSessionConnectionStore();
+export function SessionConnectionBanner({ onRetry, onRetryNow }: SessionConnectionBannerProps) {
+  const { state, attempt, maxAttempts, canRetryNow } = useSessionConnectionStore();
   if (state === "ok") return null;
 
   const isOffline = state === "offline";
@@ -43,6 +45,11 @@ export function SessionConnectionBanner({ onRetry }: SessionConnectionBannerProp
         {isOffline && (
           <Button size="sm" variant="outline" onClick={onRetry} className="shrink-0">
             Thử lại
+          </Button>
+        )}
+        {!isOffline && canRetryNow && (
+          <Button size="sm" variant="outline" onClick={onRetryNow} className="shrink-0">
+            Thử lại ngay
           </Button>
         )}
       </div>
