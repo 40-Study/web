@@ -40,13 +40,23 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   // không phải lúc nào cũng có DialogTitle (L-03), nên theo dõi xem có hay không.
   const [hasTitle, setHasTitle] = React.useState(false);
   const registerTitle = React.useCallback(() => setHasTitle(true), []);
-  // Phần tử đang focus trước khi mở dialog — trả focus lại đó khi đóng (L-03).
+  // Phần tử đang focus trước khi mở dialog — trả focus lại đó khi đóng (L-03, UX-B-02).
   const triggerRef = React.useRef<HTMLElement | null>(null);
+  const wasOpenRef = React.useRef(false);
+
+  // UX-B-02: phải ghi trigger NGAY TRONG render lúc open vừa chuyển sang true. Ghi trong effect là quá muộn:
+  // effect của con (DialogContent đưa focus vào nút đầu tiên) và autoFocus của ô nhập đều chạy trước effect
+  // của Dialog, nên effect chỉ còn thấy phần tử BÊN TRONG dialog; đóng dialog thì phần tử đó bị gỡ và focus
+  // rơi về <body>. Lúc render, DOM chưa đổi nên document.activeElement vẫn là nút đã mở dialog.
+  if (open && !wasOpenRef.current && typeof document !== "undefined") {
+    triggerRef.current = document.activeElement as HTMLElement | null;
+  }
 
   // Handle escape key
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && open) {
+      // defaultPrevented: phần tử con đã tự xử lý Esc (vd. Select đang mở chỉ đóng danh sách, không đóng dialog).
+      if (e.key === "Escape" && open && !e.defaultPrevented) {
         onOpenChange(false);
       }
     };
@@ -67,14 +77,18 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
     };
   }, [open]);
 
-  // Ghi nhớ trigger lúc mở, trả focus lại lúc đóng (L-03).
+  // Trả focus về trigger khi đóng (Esc, Huỷ, nút X, bấm nền) hoặc khi Dialog bị gỡ lúc đang mở. Bỏ qua nếu
+  // trigger đã rời DOM (vd. dòng vừa bị xoá) để không gọi focus() vào phần tử tách rời.
   React.useEffect(() => {
-    if (open) {
-      triggerRef.current = document.activeElement as HTMLElement | null;
-    } else if (triggerRef.current) {
-      triggerRef.current.focus();
-      triggerRef.current = null;
-    }
+    if (!open) return;
+    wasOpenRef.current = true;
+    return () => {
+      wasOpenRef.current = false;
+      // Không xoá triggerRef ở đây: StrictMode (dev) chạy cleanup giả rồi chạy lại effect ngay lúc mount,
+      // xoá thì lần đóng thật sẽ mất trigger. Lần mở sau tự ghi đè trigger mới trong render.
+      const trigger = triggerRef.current;
+      if (trigger && trigger !== document.body && trigger.isConnected) trigger.focus();
+    };
   }, [open]);
 
   if (!open) return null;
@@ -104,8 +118,13 @@ export function DialogContent({
     const node = contentRef.current;
     if (!node) return;
 
-    const focusables = node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
-    (focusables[0] ?? node).focus();
+    // Tôn trọng autoFocus của chỗ gọi (focus đã ở trong dialog thì giữ). Nếu chưa, ưu tiên phần tử đầu tiên
+    // của NỘI DUNG (vd. ô "Tên chương") thay vì nút X nằm đầu DOM (UX-B-02 phụ); không có thì mới tới nút X.
+    if (!node.contains(document.activeElement)) {
+      const focusables = Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+      const firstContent = focusables.find((el) => !el.hasAttribute("data-dialog-close"));
+      (firstContent ?? focusables[0] ?? node).focus();
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Tab") return;
@@ -161,6 +180,8 @@ export function DialogContent({
       >
         {showCloseButton && (
           <button
+            type="button"
+            data-dialog-close=""
             onClick={() => onOpenChange(false)}
             className="absolute right-4 top-4 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors z-10 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             aria-label="Đóng hộp thoại"

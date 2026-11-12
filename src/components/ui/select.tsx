@@ -3,12 +3,11 @@
 import * as React from "react";
 import { ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isTypeaheadKey } from "./select-navigation";
+import { useSelectListbox, type SelectListboxState } from "./use-select-listbox";
 
-interface SelectContextValue {
+interface SelectContextValue extends SelectListboxState {
   value: string;
-  onValueChange: (value: string) => void;
-  open: boolean;
-  setOpen: (open: boolean) => void;
   /**
    * Nhãn hiển thị (children của SelectItem) theo từng value — đây là component Select tự
    * viết (không phải Radix), nên SelectValue không tự "biết" nhãn tương ứng với value đang
@@ -29,14 +28,24 @@ function useSelect() {
   return context;
 }
 
+function assignRef<T>(ref: React.ForwardedRef<T>, node: T | null) {
+  if (typeof ref === "function") ref(node);
+  else if (ref) ref.current = node;
+}
+
 interface SelectProps {
   value: string;
   onValueChange: (value: string) => void;
   children: React.ReactNode;
 }
 
+/**
+ * Listbox theo mẫu "collapsible dropdown listbox" của WAI-ARIA APG (UX-C-01): trigger vẫn là <button> nên giữ
+ * tên truy cập lấy từ nội dung (nhiều chỗ gọi không có aria-label); khi mở, focus chuyển vào listbox và mục
+ * đang tô báo qua aria-activedescendant. Logic bàn phím nằm ở use-select-listbox.ts.
+ */
 function Select({ value, onValueChange, children }: SelectProps) {
-  const [open, setOpen] = React.useState(false);
+  const listbox = useSelectListbox(value, onValueChange);
   const [labels, setLabels] = React.useState<Record<string, React.ReactNode>>({});
 
   // Chỉ setState khi nhãn THỰC SỰ đổi — children là object JSX mới mỗi lần render nên nếu so
@@ -46,8 +55,8 @@ function Select({ value, onValueChange, children }: SelectProps) {
   }, []);
 
   return (
-    <SelectContext.Provider value={{ value, onValueChange, open, setOpen, labels, registerLabel }}>
-      <div className="relative">{children}</div>
+    <SelectContext.Provider value={{ ...listbox, value, labels, registerLabel }}>
+      <div ref={listbox.rootRef} className="relative">{children}</div>
     </SelectContext.Provider>
   );
 }
@@ -55,26 +64,57 @@ function Select({ value, onValueChange, children }: SelectProps) {
 interface SelectTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
 
 const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps>(
-  ({ className, children, ...props }, ref) => {
-    const { open, setOpen } = useSelect();
+  ({ className, children, id, onClick, onKeyDown, onMouseDown, ...props }, ref) => {
+    const { open, openList, closeList, listboxId, triggerId, setTriggerId, triggerRef } = useSelect();
+    const resolvedId = id ?? triggerId;
+
+    // Chỗ gọi có thể tự đặt id (cho <Label htmlFor>); listbox dùng id này cho aria-labelledby.
+    React.useEffect(() => {
+      if (id) setTriggerId(id);
+    }, [id, setTriggerId]);
 
     return (
       <button
-        ref={ref}
+        {...props}
+        ref={(node) => {
+          triggerRef.current = node;
+          assignRef(ref, node);
+        }}
+        id={resolvedId}
         type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={listboxId}
         className={cn(
           "flex h-10 w-full items-center justify-between rounded-lg border border-input bg-card px-3 py-2 text-sm ring-offset-background transition-colors duration-150 hover:border-slate-400 focus:outline-none focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-input dark:hover:border-slate-500",
           className
         )}
-        onClick={() => setOpen(!open)}
-        {...props}
+        // Đang mở mà bấm lại trigger: giữ focus trong listbox để không bị đóng hai lần (blur rồi click).
+        onMouseDown={(event) => {
+          onMouseDown?.(event);
+          if (open) event.preventDefault();
+        }}
+        onClick={(event) => {
+          onClick?.(event);
+          if (open) closeList(true);
+          else openList("selected");
+        }}
+        onKeyDown={(event) => {
+          onKeyDown?.(event);
+          if (event.defaultPrevented || open) return;
+          if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            openList("selected");
+          } else if (isTypeaheadKey(event) && event.key !== " ") {
+            event.preventDefault();
+            openList("selected", event.key);
+          }
+        }}
       >
         {children}
         <ChevronDown
-          className={cn(
-            "h-4 w-4 opacity-50 transition-transform",
-            open && "rotate-180"
-          )}
+          aria-hidden="true"
+          className={cn("h-4 w-4 opacity-50 transition-transform", open && "rotate-180")}
         />
       </button>
     );
@@ -100,27 +140,8 @@ interface SelectContentProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
   ({ className, children, ...props }, ref) => {
-    const { open, setOpen } = useSelect();
-    const contentRef = React.useRef<HTMLDivElement>(null);
-
-    React.useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (
-          contentRef.current &&
-          !contentRef.current.contains(event.target as Node)
-        ) {
-          setOpen(false);
-        }
-      };
-
-      if (open) {
-        document.addEventListener("mousedown", handleClickOutside);
-      }
-
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }, [open, setOpen]);
+    const { open, listboxId, triggerId, activeValue, optionId, listboxRef, rootRef, closeList, handleListKeyDown } =
+      useSelect();
 
     // P3 QA 260927 teacher: KHÔNG unmount (return null) khi đóng nữa — SelectItem con chỉ đăng
     // ký nhãn (registerLabel) qua useEffect lúc mount; unmount hoàn toàn khi đóng khiến
@@ -129,13 +150,26 @@ const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
     // (display:none) thay vì unmount để SelectItem luôn đăng ký nhãn ngay từ lần render đầu.
     return (
       <div
-        ref={contentRef}
+        {...props}
+        ref={(node) => {
+          listboxRef.current = node;
+          assignRef(ref, node);
+        }}
+        id={listboxId}
+        role="listbox"
+        tabIndex={-1}
+        aria-labelledby={triggerId}
+        aria-activedescendant={open && activeValue !== null ? optionId(activeValue) : undefined}
+        onKeyDown={handleListKeyDown}
+        // Focus rời khỏi cả khối Select (Tab bằng chuột, bấm chỗ khác) thì đóng, không kéo focus về.
+        onBlur={(event) => {
+          if (open && !rootRef.current?.contains(event.relatedTarget as Node | null)) closeList(false);
+        }}
         className={cn(
-          "absolute z-50 mt-1 min-w-[8rem] w-full overflow-hidden rounded-lg border bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-raised animate-in fade-in-0 zoom-in-95",
+          "absolute z-50 mt-1 min-w-[8rem] w-full overflow-hidden rounded-lg border bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-raised outline-none animate-in fade-in-0 zoom-in-95",
           !open && "hidden",
           className
         )}
-        {...props}
       >
         <div className="p-1">{children}</div>
       </div>
@@ -150,8 +184,9 @@ interface SelectItemProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const SelectItem = React.forwardRef<HTMLDivElement, SelectItemProps>(
   ({ className, children, value: itemValue, ...props }, ref) => {
-    const { value, onValueChange, setOpen, registerLabel } = useSelect();
+    const { value, activeValue, setActiveValue, optionId, choose, registerLabel } = useSelect();
     const isSelected = value === itemValue;
+    const isActive = activeValue === itemValue;
 
     // P3 QA 260927 teacher: đăng ký nhãn hiển thị (children) cho value này để SelectValue tra
     // được — chỉ đăng ký khi children là chuỗi/số đơn giản (đủ cho mọi Select đang dùng trong
@@ -165,21 +200,28 @@ const SelectItem = React.forwardRef<HTMLDivElement, SelectItemProps>(
 
     return (
       <div
+        {...props}
         ref={ref}
+        id={optionId(itemValue)}
+        role="option"
+        aria-selected={isSelected}
+        data-value={itemValue}
         className={cn(
-          "relative flex w-full cursor-pointer select-none items-center rounded-md py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-          isSelected && "bg-accent",
+          "relative flex w-full cursor-pointer select-none items-center rounded-md py-1.5 pl-8 pr-2 text-sm outline-none",
+          isSelected && "font-medium",
+          isActive && "bg-accent text-accent-foreground",
           className
         )}
-        onClick={() => {
-          onValueChange(itemValue);
-          setOpen(false);
+        // Chặn mousedown để focus ở lại listbox; nếu không, listbox blur và đóng trước khi click kịp chọn.
+        onMouseDown={(event) => event.preventDefault()}
+        onMouseMove={() => {
+          if (!isActive) setActiveValue(itemValue);
         }}
-        {...props}
+        onClick={() => choose(itemValue)}
       >
         {isSelected && (
           <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-            <Check className="h-4 w-4" />
+            <Check className="h-4 w-4" aria-hidden="true" />
           </span>
         )}
         {children}
