@@ -13,6 +13,7 @@ import { AUTH_ROUTES, getRoleHomeRoute } from "@/lib/routes";
 import { getRoleFromToken } from "@/lib/jwt";
 import { validateEmail } from "@/lib/email-validation";
 import { sanitizeRedirect } from "@/lib/safe-redirect";
+import { isLoginForPendingCartIntent } from "@/lib/pending-cart-intent";
 import { showComingSoon } from "@/lib/toast-helpers";
 import { useLogin } from "@/hooks/queries/use-auth";
 import { useRedirectIfAuthenticated } from "@/hooks/use-redirect-if-authenticated";
@@ -32,8 +33,12 @@ export default function LoginPage() {
   // Lưu redirect URL vào sessionStorage (accept-invitation, mất phiên giữa chừng). Chỉ nhận đường
   // dẫn nội bộ (chống open redirect). Vào /login KHÔNG kèm redirect hợp lệ thì xoá giá trị cũ, để
   // lần đăng nhập tài khoản/vai trò khác trong cùng tab không bị đẩy tới trang của phiên trước.
+  const [isForCartIntent, setIsForCartIntent] = useState(false);
+
   useEffect(() => {
     const redirect = sanitizeRedirect(searchParams.get("redirect"));
+    // Đọc sessionStorage trong effect (chỉ ở client) để HTML server và lần render đầu khớp nhau.
+    setIsForCartIntent(isLoginForPendingCartIntent(redirect));
     if (redirect) {
       sessionStorage.setItem("auth_redirect", redirect);
     } else {
@@ -92,12 +97,24 @@ export default function LoginPage() {
     );
   };
 
-  if (redirecting) return null;
+  // UX-A-07: trước đây `return null` nên lúc kiểm lại phiên / chuyển hướng màn hình trơn hoàn toàn.
+  if (redirecting) {
+    return (
+      <AuthCard>
+        <p role="status" className="py-8 text-center text-sm text-muted-foreground">
+          Đang kiểm tra phiên đăng nhập…
+        </p>
+      </AuthCard>
+    );
+  }
 
   return (
     <AuthCard>
       <h2 className="mb-1 text-center text-xl font-semibold text-foreground">Đăng nhập</h2>
-      <p className="mb-6 text-center text-sm text-muted-foreground">Chào mừng bạn quay trở lại</p>
+      <p className="mb-6 text-center text-sm text-muted-foreground">
+        {/* UX-A-03: khách vừa bấm "Thêm vào giỏ" thì nói rõ vì sao phải đăng nhập. */}
+        {isForCartIntent ? "Đăng nhập để thêm vào giỏ" : "Chào mừng bạn quay trở lại"}
+      </p>
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <Input
