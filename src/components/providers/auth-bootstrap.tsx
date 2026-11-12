@@ -4,12 +4,8 @@ import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { AUTH_ROLE_CHANGED_EVENT, type AuthRoleChangedDetail } from "@/lib/auth-events";
 import { useSessionConnectionStore } from "@/lib/session-connection";
-import {
-  AUTH_SESSION_EXPIRED_EVENT,
-  applyServerRoleChange,
-  bootstrapAuthSession,
-  retryBootstrapNow,
-} from "./auth-session";
+import { AUTH_SESSION_EXPIRED_EVENT, bootstrapAuthSession, retryBootstrapNow } from "./auth-session";
+import { applyServerRoleChange } from "./auth-role-change";
 import { SessionConnectionBanner } from "./session-connection-banner";
 
 const retrySession = () => {

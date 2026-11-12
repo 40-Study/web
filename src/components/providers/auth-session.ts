@@ -1,12 +1,10 @@
 import { toast } from "sonner";
 import { ACCOUNT_LOCKED_TITLE, AuthError, isAccountLockedError } from "@/lib/errors";
 import { SESSION_EXPIRED_MESSAGE } from "@/lib/error-messages";
-import { PERMISSIONS, type Permission } from "@/lib/permissions";
 import { useSessionConnectionStore } from "@/lib/session-connection";
 import { classifySessionBootstrapError, getBootstrapRetryDelay } from "@/lib/session-failure-policy";
-import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
-import { authService, type UnifiedRole, type UserResponseDto } from "@/services/auth.service";
-import { useAuthStore, type AuthUser, type SessionStatus } from "@/stores/auth.store";
+import { useAuthStore, type SessionStatus } from "@/stores/auth.store";
+import { loadServerSession } from "./auth-session-load";
 
 // Thông báo khoá tài khoản (Phase 1 quản lý người dùng). Phân biệt "bị khoá" với mọi lý do 401
 // khác bằng `error.code === "ACCOUNT_LOCKED"`, KHÔNG so chuỗi message — review đối kháng
@@ -15,55 +13,11 @@ import { useAuthStore, type AuthUser, type SessionStatus } from "@/stores/auth.s
 
 export const AUTH_SESSION_EXPIRED_EVENT = "fortex:auth-session-expired";
 
-const knownPermissions = new Set<string>(Object.values(PERMISSIONS));
 let bootstrapPromise: Promise<SessionStatus> | null = null;
 /** Đánh thức lượt chờ thử lại đang chạy (null khi không có lượt chờ nào). */
 let wakeRetryWait: (() => void) | null = null;
 /** Lần bootstrap đang chạy phải dừng thử lại vì caller vừa có cookie mới (forceFresh). */
 let retriesCancelled = false;
-
-function toAuthUser(user: UserResponseDto): AuthUser {
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.full_name || user.username || user.email,
-    avatar: user.avatar_url,
-  };
-}
-
-function isSameRoleAssignment(left: UnifiedRole, right: UnifiedRole): boolean {
-  return (
-    left.id === right.id &&
-    left.type === right.type &&
-    (left.organization_id ?? null) === (right.organization_id ?? null)
-  );
-}
-
-export function resolveActiveRole(
-  roles: UnifiedRole[],
-  previousUnifiedRole: UnifiedRole | null,
-  previousRoleName: string | null
-): UnifiedRole | null {
-  if (previousUnifiedRole) {
-    const exactRole = roles.find((role) => isSameRoleAssignment(role, previousUnifiedRole));
-    if (exactRole) return exactRole;
-  }
-
-  const normalizedPreviousRole = normalizeRole(previousRoleName);
-  if (!normalizedPreviousRole) return null;
-
-  const matchingRoles = roles.filter(
-    (role) => normalizeRole(role.role_name) === normalizedPreviousRole
-  );
-  return matchingRoles.length === 1 ? matchingRoles[0] : null;
-}
-
-export async function loadPermissionsForRole(role: UnifiedRole | null): Promise<Permission[]> {
-  if (!role) return [];
-
-  const names = await authService.getMyPermissions();
-  return names.filter((permission): permission is Permission => knownPermissions.has(permission));
-}
 
 /**
  * @param sessionJustEstablished true khi caller vừa nhận response hoàn tất đăng nhập / đổi vai
@@ -107,9 +61,10 @@ async function runBootstrap(sessionJustEstablished: boolean): Promise<SessionSta
   const hadCachedUser = Boolean(store.user);
   store.setSessionStatus("checking");
   const connection = useSessionConnectionStore.getState();
-  // Người dùng bấm "Thử lại" (hoặc mạng có lại) sau khi đã báo offline: chuyển banner về "đang thử
-  // lại" ngay, để nút không còn mời bấm tiếp trong lúc request đang chạy.
-  if (connection.state === "offline") connection.markRetrying(0);
+  // Banner đang báo sự cố (offline, hoặc "đang thử lại" còn sót từ lần chạy trước) mà một request
+  // mới sắp chạy: chuyển về "đang thử lại" không kèm nút, để banner không mời bấm "Thử lại" /
+  // "Thử lại ngay" trong lúc request đang bay (việc để sau #27).
+  if (connection.state !== "ok") connection.markRetrying(0);
 
   for (let attempt = 0; ; attempt += 1) {
     try {
@@ -126,7 +81,10 @@ async function runBootstrap(sessionJustEstablished: boolean): Promise<SessionSta
       // thường vẫn hợp lệ — QA gọi lại /auth/me ngay sau đó được 200). Giữ nguyên `user` cache và
       // trạng thái `checking` (guard không điều hướng), thử lại có giới hạn rồi báo mất kết nối.
       if (classifySessionBootstrapError(error) === "transient") {
-        if (retriesCancelled) return "checking";
+        // Bị huỷ vì caller vừa có cookie mới (forceFresh): lần chạy mới sẽ tự báo kết quả. Phải xoá
+        // trạng thái "đang thử lại" của lần cũ, nếu không banner vẫn hiện "Thử lại ngay" trong lúc
+        // request mới đang chạy (việc để sau #26).
+        if (retriesCancelled) return stopCancelledRun(connection);
         const delay = getBootstrapRetryDelay(attempt, error);
         if (delay === null) {
           connection.markOffline();
@@ -134,7 +92,7 @@ async function runBootstrap(sessionJustEstablished: boolean): Promise<SessionSta
         }
         connection.markRetrying(attempt + 1, delay);
         await wait(delay);
-        if (retriesCancelled) return "checking";
+        if (retriesCancelled) return stopCancelledRun(connection);
         connection.markRetrying(attempt + 1);
         continue;
       }
@@ -144,6 +102,11 @@ async function runBootstrap(sessionJustEstablished: boolean): Promise<SessionSta
       return "anonymous";
     }
   }
+}
+
+function stopCancelledRun(connection: ReturnType<typeof useSessionConnectionStore.getState>): SessionStatus {
+  connection.markOk();
+  return "checking";
 }
 
 function wait(ms: number): Promise<void> {
@@ -163,33 +126,6 @@ export function retryBootstrapNow(): void {
   wakeRetryWait?.();
 }
 
-async function loadServerSession(
-  previousUnifiedRole: UnifiedRole | null,
-  previousRoleName: string | null
-) {
-  const user = await authService.getMe();
-  const { roles } = await authService.getMyRoles();
-  const activeUnifiedRole = resolveActiveRole(roles, previousUnifiedRole, previousRoleName);
-  // Lỗi 2 (fullstack-verify-260922): trước đây lỗi nạp quyền rơi xuống catch bên dưới và xoá
-  // phiên đã xác thực (getMe + getMyRoles đều 200), đẩy người dùng về trang chọn vai trò ngay
-  // sau khi đăng nhập. Quyền chỉ dùng để ẩn/hiện UI (server vẫn tự kiểm), nên nạp hỏng thì giữ
-  // phiên với quyền rỗng và ghi cảnh báo, không đăng xuất.
-  let permissions: Permission[] = [];
-  try {
-    permissions = await loadPermissionsForRole(activeUnifiedRole);
-  } catch (error) {
-    console.warn("[auth] Không nạp được quyền của người dùng, tạm dùng quyền rỗng", error);
-  }
-
-  return {
-    user: toAuthUser(user),
-    roles,
-    activeRole: activeUnifiedRole ? normalizeRole(activeUnifiedRole.role_name) : null,
-    activeUnifiedRole,
-    permissions,
-  };
-}
-
 function notifySessionRejected(error: unknown, hadCachedUser: boolean): void {
   // Trước đây: bị đá về /login HOÀN TOÀN ÂM THẦM khi tài khoản bị admin khoá giữa phiên —
   // không có gì phân biệt với việc token hết hạn thông thường. Toast này chạy TRƯỚC khi
@@ -203,43 +139,6 @@ function notifySessionRejected(error: unknown, hadCachedUser: boolean): void {
     // phiên hết hạn/bị thu hồi. Layout sẽ đưa về /login; toast cho biết vì sao.
     toast.info(SESSION_EXPIRED_MESSAGE);
   }
-}
-
-/** Chờ đủ lâu để người dùng đọc được toast trước khi tải lại trang ở khu vực mới. */
-const ROLE_CHANGE_REDIRECT_DELAY_MS = 1500;
-
-/**
- * Vai trò đổi phía server giữa phiên (Phase 3: admin duyệt hồ sơ giảng viên — event
- * AUTH_ROLE_CHANGED_EVENT từ api-client). Cập nhật store sang vai trò mới rồi đưa người dùng
- * về trang chủ của vai trò đó, KHÔNG bắt đăng xuất/đăng nhập lại.
- */
-export async function applyServerRoleChange(newRole: string | null): Promise<void> {
-  const store = useAuthStore.getState();
-  const normalizedNewRole = normalizeRole(newRole);
-  if (normalizedNewRole) {
-    // activeUnifiedRole cũ trỏ tới TEACHER_APPLICANT — role đã bị gỡ phía server. Xoá nó để
-    // resolveActiveRole() rơi xuống nhánh khớp THEO TÊN vai trò mới; giữ lại thì bootstrap
-    // không tìm thấy role nào khớp và activeRole thành null (bị đẩy về màn chọn vai trò).
-    store.setActiveRole(normalizedNewRole);
-    store.setActiveUnifiedRole(null);
-  }
-
-  await bootstrapAuthSession(true);
-
-  const finalRole = useAuthStore.getState().activeRole ?? normalizedNewRole;
-  if (finalRole === "TEACHER") {
-    toast.success("Hồ sơ giáo viên của bạn đã được duyệt", {
-      description: "Đang chuyển sang khu vực giảng viên…",
-    });
-  } else {
-    toast.info("Vai trò của bạn vừa được cập nhật");
-  }
-
-  // Tải lại trang (không router.push): layout/guard/menu của khu vực mới phải dựng lại từ đầu
-  // với quyền mới, giống cách useSwitchRole đang làm.
-  window.setTimeout(() => {
-    window.location.href = getRoleHomeRoute(finalRole);
-  }, ROLE_CHANGE_REDIRECT_DELAY_MS);
 }
 
 /**

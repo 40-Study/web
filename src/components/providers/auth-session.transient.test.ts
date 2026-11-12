@@ -203,6 +203,31 @@ describe("huỷ lượt chờ thử lại", () => {
     expect(authService.getMe).toHaveBeenCalledTimes(2);
   });
 
+  // Việc để sau #26/#27 (reverify 261112): lần cũ bị huỷ trả "checking" mà không markOk nên banner còn
+  // "đang thử lại" kèm nút "Thử lại ngay" trong suốt lúc request forceFresh đang bay.
+  it("forceFresh trong lúc chờ 429 -> khi request mới đang bay, banner không còn mời 'Thử lại ngay'", async () => {
+    seedCachedSession();
+    let resolveFresh!: (value: UserResponseDto) => void;
+    vi.mocked(authService.getMe)
+      .mockRejectedValueOnce(new RateLimitError(30))
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveFresh = resolve; }));
+
+    const oldRun = bootstrapAuthSession();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(useSessionConnectionStore.getState()).toMatchObject({ state: "retrying", canRetryNow: true });
+
+    const freshRun = bootstrapAuthSession(true);
+    await vi.advanceTimersByTimeAsync(0);
+    await expect(oldRun).resolves.toBe("checking");
+
+    // Request của lần forceFresh đang bay: không còn báo sự cố của lần cũ.
+    expect(authService.getMe).toHaveBeenCalledTimes(2);
+    expect(useSessionConnectionStore.getState()).toMatchObject({ state: "ok", canRetryNow: false });
+
+    resolveFresh(user);
+    await expect(freshRun).resolves.toBe("authenticated");
+  });
+
   it("forceFresh khi request cũ đang bay rồi lỗi tạm thời -> lần cũ không vào lượt chờ", async () => {
     seedCachedSession();
     let rejectOld!: (e: unknown) => void;

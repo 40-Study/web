@@ -1,4 +1,5 @@
 import { RoleGuard } from "@/components/guards/role-guard";
+import { SessionPendingSkeleton } from "@/components/guards/session-pending-skeleton";
 import { AppShellLayout } from "@/components/layout/app-shell-layout";
 
 /**
@@ -14,7 +15,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     // Mất phiên giữa chừng: đăng nhập lại xong quay về đúng trang phụ huynh đang xem (C3).
     // QA-B-24: trang chi tiết con từng không có header, sidebar, chuông, thanh điều hướng dưới trên mobile. Dùng
     // đúng khung app của /home (AppShellLayout) để phụ huynh mở thông báo/tin nhắn mà không phải quay lại.
-    <RoleGuard roles={["PARENT"]} returnToCurrentPath>
+    // UX-B-01: trong lúc kiểm phiên vẫn vẽ khung app + skeleton, không để màn trắng.
+    <RoleGuard
+      roles={["PARENT"]}
+      returnToCurrentPath
+      pendingFallback={
+        <AppShellLayout>
+          <SessionPendingSkeleton className="page-container py-6" />
+        </AppShellLayout>
+      }
+    >
       <AppShellLayout>{children}</AppShellLayout>
     </RoleGuard>
   );

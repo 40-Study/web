@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth.store";
 import type { Permission } from "@/lib/permissions";
 import { normalizeRole, AUTH_ROUTES } from "@/lib/routes";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 interface RoleGuardProps {
   roles?: string[];
@@ -21,8 +22,16 @@ interface RoleGuardProps {
    * quay về đúng chỗ (C3). Dùng cho layout server component không tự lấy được pathname.
    */
   returnToCurrentPath?: boolean;
+  /**
+   * Vẽ trong lúc còn kiểm phiên (`checking`) thay cho nội dung được bảo vệ. Layout truyền khung trang
+   * (header, sidebar) kèm skeleton để mở thẳng URL không còn màn trắng 4–9s (UX-B-01). Bỏ trống thì
+   * dùng màn tải chung. Khung chỉ chứa menu, không chứa dữ liệu của trang nên vẽ trước là an toàn.
+   */
+  pendingFallback?: React.ReactNode;
   children: React.ReactNode;
 }
+
+const DEFAULT_PENDING_FALLBACK = <LoadingScreen variant="minimal" text="Đang tải..." />;
 
 export function RoleGuard({
   roles,
@@ -30,6 +39,7 @@ export function RoleGuard({
   permissionMode = "any",
   redirectTo = "/login",
   returnToCurrentPath = false,
+  pendingFallback = DEFAULT_PENDING_FALLBACK,
   children,
 }: RoleGuardProps) {
   const router = useRouter();
@@ -94,6 +104,13 @@ export function RoleGuard({
   ]);
 
   // Never reveal protected children until cookie-backed bootstrap is complete.
+  if (sessionStatus === "checking") {
+    // Vai cache (persist) đã rõ là không được vào khu này (vd phụ huynh mở /teacher/...): không vẽ
+    // khung của khu khác cho họ, chỉ màn tải chung trong lúc chờ kết luận rồi chuyển /403.
+    const cachedRoleDenied =
+      !!normalizedRole && !!normalizedAllowedRoles && !normalizedAllowedRoles.includes(normalizedRole);
+    return <>{cachedRoleDenied ? DEFAULT_PENDING_FALLBACK : pendingFallback}</>;
+  }
   if (sessionStatus !== "authenticated") return null;
   if (!normalizedRole) return null;
   if (normalizedAllowedRoles && !normalizedAllowedRoles.includes(normalizedRole)) return null;

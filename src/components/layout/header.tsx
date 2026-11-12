@@ -9,6 +9,7 @@ import { Bell, FileText, Settings, LogOut, Menu, X, Ticket, ChevronDown, Check, 
 import { siteConfig } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AuthModal } from "@/components/auth/auth-modal";
 import { GlobalSearch } from "@/components/layout/global-search";
 import { CategoryMenu } from "@/components/layout/category-menu";
@@ -82,7 +83,11 @@ export function Header() {
   const notificationRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
-  const { isAuthenticated, user, activeRole, activeUnifiedRole, roles } = useAuthStore();
+  const { isAuthenticated, user, activeRole, activeUnifiedRole, roles, sessionStatus } = useAuthStore();
+  // UX-A-02: lúc còn kiểm phiên (SSR, chưa hydrate, đang gọi /auth/me) chưa biết là khách hay đã đăng
+  // nhập. Trước đây nhánh khách hiện "Đăng nhập · Đăng ký" 1,5–4s với người đã đăng nhập, nên vùng
+  // tài khoản hiện skeleton cho tới khi bootstrap kết luận.
+  const isSessionPending = sessionStatus === "checking";
   const logoutMutation = useLogout();
   const switchRoleMutation = useSwitchRole();
   const { data: myRolesData } = useMyRoles();
@@ -426,6 +431,11 @@ export function Header() {
                   </div>
                 )}
               </>
+            ) : isSessionPending ? (
+              <div role="status" aria-label="Đang kiểm tra đăng nhập" className="flex items-center gap-2">
+                <Skeleton className="h-10 w-32" />
+                <Skeleton variant="circular" className="h-8 w-8" />
+              </div>
             ) : (
               <>
                 <Button variant="ghost" className="text-foreground hover:text-foreground font-medium" onClick={openLogin}>
@@ -504,6 +514,10 @@ export function Header() {
                       </button>
                     </div>
                   </>
+                ) : isSessionPending ? (
+                  <p role="status" className="px-4 py-3 text-sm text-muted-foreground">
+                    Đang kiểm tra đăng nhập…
+                  </p>
                 ) : (
                   <div className="px-3 py-2 flex flex-col gap-2">
                     <Button variant="ghost" className="justify-start" onClick={openLogin}>

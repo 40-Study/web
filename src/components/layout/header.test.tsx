@@ -14,6 +14,7 @@ type AuthState = {
   activeRole: string | null;
   activeUnifiedRole: null;
   roles: never[];
+  sessionStatus?: "checking" | "authenticated" | "anonymous";
 };
 let authState: AuthState;
 
@@ -213,6 +214,40 @@ describe("Header — hamburger mobile có lối vào giỏ hàng, thông báo, t
     expect(menu.textContent).not.toContain("Giỏ hàng");
     expect(menu.textContent).not.toContain("Thông báo");
     expect(menu.textContent).not.toContain("Tin nhắn");
+  });
+});
+
+// UX-A-02: người đã đăng nhập mở trang công khai từng thấy "Đăng nhập · Đăng ký" 1,5–4s đầu.
+describe("Header — lúc còn kiểm phiên", () => {
+  beforeEach(() => {
+    authState = {
+      isAuthenticated: false,
+      user: null,
+      activeRole: null,
+      activeUnifiedRole: null,
+      roles: [],
+      sessionStatus: "checking",
+    };
+  });
+
+  it("không hiện nút Đăng nhập / Đăng ký, hiện trạng thái đang kiểm", () => {
+    render(<Header />);
+    expect(screen.queryByRole("button", { name: "Đăng nhập" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Đăng ký" })).toBeNull();
+    expect(screen.getByRole("status", { name: "Đang kiểm tra đăng nhập" })).toBeTruthy();
+  });
+
+  it("menu mobile cũng không mời đăng nhập khi phiên chưa rõ", () => {
+    render(<Header />);
+    fireEvent.click(screen.getByRole("button", { name: "Mở menu" }));
+    expect(screen.getByText("Đang kiểm tra đăng nhập…")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Đăng nhập" })).toBeNull();
+  });
+
+  it("phiên đã kết luận là khách: hiện lại nút Đăng nhập", () => {
+    authState.sessionStatus = "anonymous";
+    render(<Header />);
+    expect(screen.getAllByRole("button", { name: "Đăng nhập" }).length).toBeGreaterThan(0);
   });
 });
 

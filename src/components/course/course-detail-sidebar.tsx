@@ -18,6 +18,8 @@ import { OrderPaymentDialog } from "@/components/checkout/order-payment-dialog";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
 import { useAddToCart, useRemoveFromCart, useIsInCart } from "@/hooks/queries/use-cart";
+import { useResumePendingCartIntent } from "@/hooks/use-resume-pending-cart-intent";
+import { savePendingCartIntent } from "@/lib/pending-cart-intent";
 import { useCreateOrder } from "@/hooks/queries/use-orders";
 import { CourseDetail } from "@/types/course";
 import type { Order } from "@/services/order.service";
@@ -40,6 +42,8 @@ function formatDuration(minutes: number) {
   return `${h} giờ ${m} phút`;
 }
 
+const SESSION_PENDING_LABEL = "Đang kiểm tra đăng nhập…";
+
 /** Determine if course has any free-preview lesson */
 function hasTrial(course: CourseDetail): boolean {
   return course.sections.some((s) => s.lessons.some((l) => l.isFreePreview));
@@ -55,6 +59,9 @@ export function CourseDetailSidebar({
 }: CourseDetailSidebarProps) {
   const router = useRouter();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  // UX-A-02: lúc còn kiểm phiên chưa biết là khách hay học viên. Trước đây bấm "Thêm vào giỏ" lúc này
+  // bị nuốt im lặng (hoặc đẩy người đã đăng nhập sang /login), nên các nút mua tạm khoá kèm spinner.
+  const isSessionPending = useAuthStore((s) => !s.isAuthenticated && s.sessionStatus === "checking");
 
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
@@ -104,6 +111,7 @@ export function CourseDetailSidebar({
   const removeFromCartMutation = useRemoveFromCart();
   const { data: inCartServer } = useIsInCart(courseId);
   const createOrderMutation = useCreateOrder();
+  useResumePendingCartIntent({ courseId, isEnrolled, addToCart: addToCartMutation.mutate });
 
   // Server là nguồn duy nhất cho trạng thái giỏ hàng — khách chưa đăng nhập
   // không có giỏ nào để đọc nên luôn coi là chưa thêm (S-P0-1).
@@ -122,7 +130,11 @@ export function CourseDetailSidebar({
   }
 
   function handleCartToggle() {
+    if (isSessionPending) return;
     if (!isAuthenticated) {
+      // UX-A-03: giữ ý định thêm giỏ qua bước đăng nhập (xem lib/pending-cart-intent.ts).
+      savePendingCartIntent(courseId, course.slug);
+      toast.info("Đăng nhập để thêm vào giỏ");
       goToLoginWithReturn();
       return;
     }
@@ -134,6 +146,7 @@ export function CourseDetailSidebar({
   }
 
   function handleBuyNowClick() {
+    if (isSessionPending) return;
     if (!isAuthenticated) {
       goToLoginWithReturn();
       return;
@@ -248,7 +261,12 @@ export function CourseDetailSidebar({
               <span className="truncate text-xs text-gray-400 line-through">{formatCurrency(course.originalPrice)}</span>
             )}
           </p>
-          <Button size="sm" className="shrink-0 bg-primary-600 text-white hover:bg-primary-700" onClick={handleBuyNowClick}>
+          <Button
+            size="sm"
+            className="shrink-0 bg-primary-600 text-white hover:bg-primary-700"
+            onClick={handleBuyNowClick}
+            isLoading={isSessionPending}
+          >
             Mua khoá học
           </Button>
         </div>
@@ -330,6 +348,8 @@ export function CourseDetailSidebar({
                   className="w-full bg-primary-600 hover:bg-primary-700 text-white"
                   size="lg"
                   onClick={onEnroll}
+                  isLoading={isSessionPending}
+                  loadingText={SESSION_PENDING_LABEL}
                 >
                   Đăng ký miễn phí
                 </Button>
@@ -346,6 +366,8 @@ export function CourseDetailSidebar({
                     size="lg"
                     onClick={handleCartToggle}
                     disabled={addToCartMutation.isPending || removeFromCartMutation.isPending}
+                    isLoading={isSessionPending}
+                    loadingText={SESSION_PENDING_LABEL}
                   >
                     <ShoppingCart className="h-4 w-4" />
                     {inCart ? "Đã thêm vào giỏ hàng" : "Thêm vào giỏ hàng"}
@@ -355,6 +377,7 @@ export function CourseDetailSidebar({
                     className="w-full border-primary-300 text-primary-700 hover:bg-primary-50"
                     size="lg"
                     onClick={handleBuyNowClick}
+                    disabled={isSessionPending}
                   >
                     Mua ngay
                   </Button>
