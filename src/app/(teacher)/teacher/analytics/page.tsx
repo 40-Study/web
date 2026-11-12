@@ -194,7 +194,7 @@ export default function TeacherAnalyticsPage() {
             </div>
             {roleRows.length > 0 ? (
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-900">
+                <thead className="bg-muted/50">
                   <tr className="border-b text-left">
                     <th className="p-3 text-xs font-medium text-muted-foreground">VAI TRÒ</th>
                     <th className="p-3 text-xs font-medium text-muted-foreground">SỐ NGƯỜI</th>

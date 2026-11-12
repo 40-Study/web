@@ -137,14 +137,14 @@ export function QuizWidget({
         >
           <div className="flex items-center justify-center gap-2 mb-2">
             {passed ? (
-              <CheckCircle className="h-6 w-6 text-green-600" />
+              <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
             ) : (
-              <XCircle className="h-6 w-6 text-red-600" />
+              <XCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
             )}
             <span
               className={cn(
                 "text-lg font-semibold",
-                passed ? "text-green-700" : "text-red-700"
+                passed ? "text-green-700 dark:text-green-300" : "text-red-700 dark:text-red-300"
               )}
             >
               {passed ? "Chuc mung! Ban da dat" : "Chua dat"}
@@ -203,10 +203,10 @@ export function QuizWidget({
                   </span>
                   <span className="flex-1">{option.text}</span>
                   {showCorrectness && isCorrect && (
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                   )}
                   {showCorrectness && isSelected && !isCorrect && (
-                    <XCircle className="h-5 w-5 text-red-600" />
+                    <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
                   )}
                 </div>
               </button>

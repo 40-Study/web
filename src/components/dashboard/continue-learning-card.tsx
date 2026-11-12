@@ -66,7 +66,7 @@ export function ContinueLearningCard({ course, className }: ContinueLearningCard
           <p className="text-sm font-semibold text-primary-600 dark:text-primary-400">
             Đang học gần đây
           </p>
-          <h2 className="text-h3 line-clamp-2 text-slate-900 dark:text-slate-50">
+          <h2 className="text-h3 line-clamp-2 text-foreground">
             <Link
               href={href}
               className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-primary focus-visible:after:rounded-3xl"
@@ -75,13 +75,13 @@ export function ContinueLearningCard({ course, className }: ContinueLearningCard
             </Link>
           </h2>
           {course.category && (
-            <p className="text-body-sm text-slate-600 dark:text-slate-400">{course.category}</p>
+            <p className="text-body-sm text-muted-foreground">{course.category}</p>
           )}
         </div>
 
         <div className="space-y-2">
           <ProgressBar value={progress} variant="course" size="md" />
-          <p className="text-body-sm tabular-nums text-slate-600 dark:text-slate-400">
+          <p className="text-body-sm tabular-nums text-muted-foreground">
             {formatLessonProgress(course.completedLessons, course.totalLessons)} · {progress}%
           </p>
         </div>

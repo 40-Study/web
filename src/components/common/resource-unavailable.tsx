@@ -65,7 +65,7 @@ export function StaleDataNotice({ resourceLabel, onRetry }: { resourceLabel: str
   return (
     <div
       role="status"
-      className="flex flex-wrap items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+      className="flex flex-wrap items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
     >
       <span>{`Không làm mới được ${resourceLabel}, đang hiện dữ liệu đã tải trước đó.`}</span>
       <Button variant="outline" size="sm" onClick={onRetry}>

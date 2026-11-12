@@ -44,7 +44,7 @@ export function OrgGettingStarted({ memberCount, classCount }: OrgGettingStarted
           {steps.map((s) => (
             <li key={s.title} className="flex gap-3">
               {s.done ? (
-                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" aria-label="Đã xong" />
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600 dark:text-green-400" aria-label="Đã xong" />
               ) : (
                 <Circle className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" aria-label="Chưa làm" />
               )}
@@ -52,7 +52,7 @@ export function OrgGettingStarted({ memberCount, classCount }: OrgGettingStarted
                 <p className="font-medium text-foreground">{s.title}</p>
                 <p className="text-sm text-muted-foreground">{s.body}</p>
                 {!s.done && (
-                  <Link href={s.href} className="mt-1 inline-block text-sm font-medium text-primary-600 hover:underline">
+                  <Link href={s.href} className="mt-1 inline-block text-sm font-medium text-primary-600 hover:underline dark:text-primary-400">
                     {s.cta}
                   </Link>
                 )}

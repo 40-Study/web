@@ -1,7 +1,7 @@
 /**
  * QA3 Q13: Giao diện hiện mã "vi" thay vì "Tiếng Việt", nhãn "Bình thường" lệch vị trí 100% của thanh cỡ chữ.
  */
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { AppearanceSettings } from "./appearance-settings";
 
@@ -16,6 +16,15 @@ describe("AppearanceSettings (Q13)", () => {
   it("ngôn ngữ English hiện nhãn English", () => {
     render(<AppearanceSettings initialLanguage="en" />);
     expect(screen.getByRole("button", { name: "Ngôn ngữ hiển thị" }).textContent).toContain("English");
+  });
+
+  it("UX-A-20: nút chủ đề báo trạng thái đang chọn bằng aria-pressed", () => {
+    render(<AppearanceSettings initialTheme="system" />);
+    expect(screen.getByRole("button", { name: "Hệ thống" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Sáng" }).getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(screen.getByRole("button", { name: "Tối" }));
+    expect(screen.getByRole("button", { name: "Tối" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Hệ thống" }).getAttribute("aria-pressed")).toBe("false");
   });
 
   it("nhãn 'Bình thường' nằm đúng vị trí 100% trên thang 80-150 (≈28.57%), không phải giữa thanh", () => {

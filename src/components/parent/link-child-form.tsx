@@ -51,16 +51,16 @@ export function LinkChildForm() {
   };
 
   return (
-    <form onSubmit={submit} noValidate className="bg-white rounded-2xl border border-slate-100 p-5 space-y-4">
+    <form onSubmit={submit} noValidate className="bg-card rounded-2xl border border-border p-5 space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">Liên kết thêm con</h2>
-        <p className="text-sm text-slate-500 mt-1">
+        <h2 className="text-lg font-semibold text-foreground">Liên kết thêm con</h2>
+        <p className="text-sm text-muted-foreground mt-1">
           Nhập email tài khoản học sinh của con. Con cần đăng nhập và xác nhận thì bạn mới xem được tiến độ học tập.
         </p>
       </div>
       <div className="grid sm:grid-cols-[1fr_180px] gap-3">
         <div>
-          <label htmlFor="link-child-email" className="block text-sm font-medium text-slate-700 mb-1">
+          <label htmlFor="link-child-email" className="block text-sm font-medium text-foreground mb-1">
             Email của con
           </label>
           <Input
@@ -75,14 +75,14 @@ export function LinkChildForm() {
           />
         </div>
         <div>
-          <label htmlFor="link-child-relationship" className="block text-sm font-medium text-slate-700 mb-1">
+          <label htmlFor="link-child-relationship" className="block text-sm font-medium text-foreground mb-1">
             Bạn là
           </label>
           <select
             id="link-child-relationship"
             value={relationship}
             onChange={(e) => setRelationship(e.target.value as LinkRelationship)}
-            className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"
+            className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm"
           >
             {RELATIONSHIP_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -91,7 +91,7 @@ export function LinkChildForm() {
         </div>
       </div>
       <div>
-        <label htmlFor="link-child-message" className="block text-sm font-medium text-slate-700 mb-1">
+        <label htmlFor="link-child-message" className="block text-sm font-medium text-foreground mb-1">
           Lời nhắn cho con (không bắt buộc)
         </label>
         <Textarea
@@ -103,7 +103,7 @@ export function LinkChildForm() {
         />
       </div>
       {error && (
-        <p id="link-child-error" role="alert" className="text-sm text-red-600">{error}</p>
+        <p id="link-child-error" role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>
       )}
       <Button type="submit" isLoading={create.isPending} loadingText="Đang gửi...">
         <UserPlus className="w-4 h-4 mr-2" />

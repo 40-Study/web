@@ -58,7 +58,7 @@ export function ContestSummary({ contest }: { contest: ContestManage }) {
 
   return (
     <section
-      className="space-y-4 rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-gray-950"
+      className="space-y-4 rounded-xl border bg-card p-4 dark:border-gray-800"
       data-testid="contest-summary"
     >
       {contest.status === "REJECTED" && contest.reject_reason && (
@@ -71,7 +71,7 @@ export function ContestSummary({ contest }: { contest: ContestManage }) {
       )}
       {contest.status === "CANCELLED" && contest.cancel_reason && (
         <p
-          className="rounded-lg bg-gray-100 p-3 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-200"
+          className="rounded-lg bg-muted p-3 text-sm text-foreground"
           data-testid="cancel-reason"
         >
           Đã huỷ: {contest.cancel_reason}
@@ -80,7 +80,7 @@ export function ContestSummary({ contest }: { contest: ContestManage }) {
       <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
         {rows.map(([label, value]) => (
           <div key={label} className="flex min-w-0 flex-col">
-            <dt className="text-xs text-gray-500">{label}</dt>
+            <dt className="text-xs text-muted-foreground">{label}</dt>
             <dd className="break-words">{value}</dd>
           </div>
         ))}
@@ -109,7 +109,7 @@ export function ContestSummary({ contest }: { contest: ContestManage }) {
           </details>
         ))}
       <div>
-        <p className="text-xs text-gray-500">Giải thưởng</p>
+        <p className="text-xs text-muted-foreground">Giải thưởng</p>
         {contest.prizes.length === 0 ? (
           <p className="text-sm">Chưa có giải theo hạng.</p>
         ) : (

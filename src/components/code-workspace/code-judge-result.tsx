@@ -46,7 +46,7 @@ export function CodeJudgeResult({ result }: { result: ContestCodeResult }) {
             className="inline-flex items-center gap-1.5"
           >
             {item.status === "ACCEPTED" ? (
-              <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+              <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
             ) : (
               <XCircle className="h-3 w-3 text-red-500" />
             )}
@@ -61,22 +61,22 @@ export function CodeJudgeResult({ result }: { result: ContestCodeResult }) {
             Test {test.number} · {CODE_VERDICT_LABELS[test.status] ?? test.status}
           </p>
           {test.hidden ? (
-            <p className="mt-2 text-[11px] text-slate-400">
+            <p className="mt-2 text-[11px] text-muted-foreground">
               Test ẩn. Đầu vào và đáp án được giữ kín.
             </p>
           ) : (
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <div>
-                <p className="text-[10px] text-slate-400">ĐẦU RA CỦA BẠN</p>
+                <p className="text-[10px] text-muted-foreground">ĐẦU RA CỦA BẠN</p>
                 <pre>{test.output || "(trống)"}</pre>
               </div>
               {test.expected !== undefined && (
                 <div>
-                  <p className="text-[10px] text-slate-400">KẾT QUẢ MONG ĐỢI</p>
+                  <p className="text-[10px] text-muted-foreground">KẾT QUẢ MONG ĐỢI</p>
                   <pre>{test.expected || "(trống)"}</pre>
                 </div>
               )}
-              {test.error && <pre className="text-red-600 sm:col-span-2">{test.error}</pre>}
+              {test.error && <pre className="text-red-600 sm:col-span-2 dark:text-red-400">{test.error}</pre>}
             </div>
           )}
         </div>

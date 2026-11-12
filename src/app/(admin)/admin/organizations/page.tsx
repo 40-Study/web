@@ -96,13 +96,13 @@ export default function OrganizationsPage() {
                   <div className="mt-3 flex gap-2">
                     <button
                       onClick={() => setForm({ id: org.id, name: org.name, description: org.description ?? "" })}
-                      className="rounded bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700"
+                      className="rounded bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700 dark:bg-primary-500/15 dark:text-primary-300"
                     >
                       Sửa
                     </button>
                     <button
                       onClick={() => setConfirmDelete(org)}
-                      className="rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-700"
+                      className="rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-700 dark:bg-red-500/15 dark:text-red-300"
                     >
                       Xoá
                     </button>

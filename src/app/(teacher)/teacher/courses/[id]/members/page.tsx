@@ -152,7 +152,7 @@ export default function TeacherCourseMembersPage() {
                           <Avatar
                             fallback={member.name.charAt(0)}
                             size="sm"
-                            className="bg-primary-100 text-primary-700"
+                            className="bg-primary-100 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300"
                           />
                           <span className="font-medium">{member.name}</span>
                         </div>
@@ -162,7 +162,7 @@ export default function TeacherCourseMembersPage() {
                       <TableCell className="text-right">
                         <Link
                           href={`/teacher/students/${member.id}`}
-                          className="text-sm text-primary-600 hover:underline"
+                          className="text-sm text-primary-600 hover:underline dark:text-primary-400"
                         >
                           Hồ sơ
                         </Link>

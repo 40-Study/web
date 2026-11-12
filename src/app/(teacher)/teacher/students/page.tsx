@@ -230,7 +230,7 @@ export default function TeacherStudentsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <Avatar fallback={student.name.charAt(0)} size="sm" className="bg-primary-100 text-primary-700" />
+                          <Avatar fallback={student.name.charAt(0)} size="sm" className="bg-primary-100 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300" />
                           <div>
                             <p className="font-medium">{student.name}</p>
                             <p className="text-xs text-muted-foreground">Mã HS: {student.studentId ?? "—"}</p>
@@ -241,7 +241,7 @@ export default function TeacherStudentsPage() {
                         {student.parentName ? (
                           <a
                             href={student.parentPhone ? `tel:${student.parentPhone}` : undefined}
-                            className="text-sm text-primary-600 hover:underline"
+                            className="text-sm text-primary-600 hover:underline dark:text-primary-400"
                           >
                             {student.parentName}
                           </a>
@@ -267,7 +267,7 @@ export default function TeacherStudentsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Link href={`/teacher/students/${student.id}`} className="text-sm text-primary-600 hover:underline">
+                        <Link href={`/teacher/students/${student.id}`} className="text-sm text-primary-600 hover:underline dark:text-primary-400">
                           Hồ sơ
                         </Link>
                       </TableCell>

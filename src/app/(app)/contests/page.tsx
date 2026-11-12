@@ -57,11 +57,11 @@ export default function ContestsPage() {
   return (
     <div className="page-container space-y-5 py-6">
       <header className="space-y-1">
-        <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+        <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
           <Trophy className="h-6 w-6 text-amber-500" aria-hidden="true" />
           Cuộc thi
         </h1>
-        <p className="text-sm text-gray-600">Thi trắc nghiệm có giờ, xếp hạng và nhận chứng nhận, voucher.</p>
+        <p className="text-sm text-muted-foreground">Thi trắc nghiệm có giờ, xếp hạng và nhận chứng nhận, voucher.</p>
       </header>
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -74,7 +74,7 @@ export default function ContestsPage() {
               onClick={() => selectTab(t.value)}
               className={cn(
                 "shrink-0 rounded-full border px-3 py-1.5 text-sm font-medium transition",
-                tab === t.value ? "border-primary-600 bg-primary-600 text-white" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                tab === t.value ? "border-primary-600 bg-primary-600 text-white" : "border-border bg-card text-foreground hover:bg-muted/50"
               )}
             >
               {t.label}
@@ -84,7 +84,7 @@ export default function ContestsPage() {
         {!isMine && (
           <label className="relative block w-full md:w-72">
             <span className="sr-only">Tìm cuộc thi</span>
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
               value={search}
               onChange={(e) => {
@@ -113,7 +113,7 @@ export default function ContestsPage() {
             <ChevronLeft className="mr-1 h-4 w-4" aria-hidden="true" />
             Trước
           </Button>
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-muted-foreground">
             Trang {query.data.page}/{query.data.total_pages}
           </span>
           <Button variant="outline" size="sm" disabled={page >= query.data.total_pages} onClick={() => setPage((p) => p + 1)}>

@@ -46,18 +46,18 @@ type DeleteAccountData = z.infer<typeof deleteAccountSchema>;
 // ─── Role Helpers ──────────────────────────────────────────────────────────
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: string }> = {
-  STUDENT: { label: "Học sinh", color: "text-blue-600", bgColor: "bg-blue-100", icon: "🎓" },
-  TEACHER: { label: "Giáo viên", color: "text-emerald-600", bgColor: "bg-emerald-100", icon: "👨‍🏫" },
-  PARENT: { label: "Phụ huynh", color: "text-violet-600", bgColor: "bg-violet-100", icon: "👨‍👩‍👧" },
-  ORG_OWNER: { label: "Quản lý tổ chức", color: "text-amber-600", bgColor: "bg-amber-100", icon: "🏢" },
-  SYSTEM_ADMIN: { label: "Quản trị hệ thống", color: "text-red-600", bgColor: "bg-red-100", icon: "⚙️" },
-  TEACHER_APPLICANT: { label: "Ứng viên giáo viên", color: "text-gray-600", bgColor: "bg-gray-100", icon: "📝" },
+  STUDENT: { label: "Học sinh", color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-100 dark:bg-blue-500/15", icon: "🎓" },
+  TEACHER: { label: "Giáo viên", color: "text-emerald-600 dark:text-emerald-400", bgColor: "bg-emerald-100 dark:bg-emerald-500/15", icon: "👨‍🏫" },
+  PARENT: { label: "Phụ huynh", color: "text-violet-600 dark:text-violet-400", bgColor: "bg-violet-100 dark:bg-violet-500/15", icon: "👨‍👩‍👧" },
+  ORG_OWNER: { label: "Quản lý tổ chức", color: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-100 dark:bg-amber-500/15", icon: "🏢" },
+  SYSTEM_ADMIN: { label: "Quản trị hệ thống", color: "text-red-600 dark:text-red-400", bgColor: "bg-red-100 dark:bg-red-500/15", icon: "⚙️" },
+  TEACHER_APPLICANT: { label: "Ứng viên giáo viên", color: "text-muted-foreground", bgColor: "bg-muted", icon: "📝" },
 };
 
 // QA-C-09: nhãn lấy từ bảng chung `getSystemRoleLabel` (màn chọn vai lúc login, danh sách thành viên cũng dùng) để
 // cùng một vai không lúc là "Quản lý tổ chức", lúc là "Chủ tổ chức". ROLE_CONFIG chỉ còn giữ màu và icon.
 function getRoleConfig(role: string) {
-  const base = ROLE_CONFIG[role] || { label: role, color: "text-gray-600", bgColor: "bg-gray-100", icon: "👤" };
+  const base = ROLE_CONFIG[role] || { label: role, color: "text-muted-foreground", bgColor: "bg-muted", icon: "👤" };
   return { ...base, label: getSystemRoleLabel(role) };
 }
 
@@ -139,22 +139,22 @@ export function AccountSettings({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-900">Tài khoản</h2>
-        <p className="text-sm text-gray-500 mt-1">Quản lý thông tin đăng nhập và bảo mật</p>
+        <h2 className="text-xl font-bold text-foreground">Tài khoản</h2>
+        <p className="text-sm text-muted-foreground mt-1">Quản lý thông tin đăng nhập và bảo mật</p>
       </div>
 
       {/* Switch Account */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-2.5 bg-indigo-50 rounded-xl"><Users className="h-5 w-5 text-indigo-500" /></div>
+            <div className="p-2.5 bg-indigo-50 rounded-xl dark:bg-indigo-500/10"><Users className="h-5 w-5 text-indigo-500" /></div>
             <div>
-              <p className="font-medium text-gray-900">Chuyển tài khoản</p>
-              <p className="text-sm text-gray-500">
+              <p className="font-medium text-foreground">Chuyển tài khoản</p>
+              <p className="text-sm text-muted-foreground">
                 {activeUnifiedRole ? (
                   <>
                     Đang dùng: <span className={getRoleConfig(activeRole || "").color}>{getRoleConfig(activeRole || "").label}</span>
-                    {activeOrg && <span className="text-gray-400"> • {activeOrg.name}</span>}
+                    {activeOrg && <span className="text-muted-foreground"> • {activeOrg.name}</span>}
                   </>
                 ) : (
                   `${roles.length} vai trò khả dụng`
@@ -173,24 +173,24 @@ export function AccountSettings({
       <ApplyTeacherButton />
 
       {/* Email — display only */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="p-2.5 bg-blue-50 rounded-xl"><Mail className="h-5 w-5 text-blue-500" /></div>
+          <div className="p-2.5 bg-blue-50 rounded-xl dark:bg-blue-500/10"><Mail className="h-5 w-5 text-blue-500" /></div>
           <div>
-            <p className="font-medium text-gray-900">Địa chỉ email</p>
-            <p className="text-sm text-gray-500">{user.email}</p>
+            <p className="font-medium text-foreground">Địa chỉ email</p>
+            <p className="text-sm text-muted-foreground">{user.email}</p>
           </div>
         </div>
       </div>
 
       {/* Password */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-2.5 bg-amber-50 rounded-xl"><Lock className="h-5 w-5 text-amber-500" /></div>
+            <div className="p-2.5 bg-amber-50 rounded-xl dark:bg-amber-500/10"><Lock className="h-5 w-5 text-amber-500" /></div>
             <div>
-              <p className="font-medium text-gray-900">Mật khẩu</p>
-              <p className="text-sm text-gray-500">{formatLastPasswordChange()}</p>
+              <p className="font-medium text-foreground">Mật khẩu</p>
+              <p className="text-sm text-muted-foreground">{formatLastPasswordChange()}</p>
             </div>
           </div>
           <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setPasswordDialogOpen(true)}>
@@ -200,16 +200,16 @@ export function AccountSettings({
       </div>
 
       {/* 2FA — coming soon */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm opacity-70">
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm opacity-70">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-2.5 bg-green-50 rounded-xl"><ShieldCheck className="h-5 w-5 text-green-500" /></div>
+            <div className="p-2.5 bg-green-50 rounded-xl dark:bg-green-500/10"><ShieldCheck className="h-5 w-5 text-green-500" /></div>
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-medium text-gray-900">Xác thực hai lớp (2FA)</p>
+                <p className="font-medium text-foreground">Xác thực hai lớp (2FA)</p>
                 <Badge variant="secondary" className="text-xs">Sắp ra mắt</Badge>
               </div>
-              <p className="text-sm text-gray-500">Bảo vệ tài khoản an toàn hơn</p>
+              <p className="text-sm text-muted-foreground">Bảo vệ tài khoản an toàn hơn</p>
             </div>
           </div>
           <Switch checked={false} disabled aria-label="2FA — chưa khả dụng" />
@@ -217,13 +217,13 @@ export function AccountSettings({
       </div>
 
       {/* Delete Account */}
-      <div className="bg-white rounded-2xl border border-red-100 p-5 shadow-sm">
+      <div className="bg-card rounded-2xl border border-red-100 p-5 shadow-sm dark:border-red-500/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-2.5 bg-red-50 rounded-xl"><Trash2 className="h-5 w-5 text-red-500" /></div>
+            <div className="p-2.5 bg-red-50 rounded-xl dark:bg-red-500/10"><Trash2 className="h-5 w-5 text-red-500" /></div>
             <div>
-              <p className="font-medium text-red-600">Xoá tài khoản</p>
-              <p className="text-sm text-gray-500">Xoá vĩnh viễn tài khoản và toàn bộ dữ liệu</p>
+              <p className="font-medium text-red-600 dark:text-red-400">Xoá tài khoản</p>
+              <p className="text-sm text-muted-foreground">Xoá vĩnh viễn tài khoản và toàn bộ dữ liệu</p>
             </div>
           </div>
           <Button variant="destructive" size="sm" className="rounded-xl" onClick={() => setDeleteDialogOpen(true)}>
@@ -252,8 +252,8 @@ export function AccountSettings({
       {/* Delete Account Dialog — requires password */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="rounded-2xl">
-          <DialogHeader><DialogTitle className="text-red-600">Xoá tài khoản</DialogTitle></DialogHeader>
-          <p className="text-gray-600 text-sm">
+          <DialogHeader><DialogTitle className="text-red-600 dark:text-red-400">Xoá tài khoản</DialogTitle></DialogHeader>
+          <p className="text-muted-foreground text-sm">
             Hành động này <strong>không thể hoàn tác</strong>. Toàn bộ dữ liệu bao gồm khoá học, tiến độ và thành tích sẽ bị xoá vĩnh viễn.
           </p>
           <form onSubmit={deleteForm.handleSubmit(handleDeleteSubmit)} className="space-y-4 mt-2">
@@ -298,7 +298,7 @@ export function AccountSettings({
 
           {/* Role list */}
           <div className="p-2">
-            <p className="px-3 py-2 text-xs font-medium text-gray-500 uppercase">Vai trò của bạn</p>
+            <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase">Vai trò của bạn</p>
             <div className="space-y-1">
               {roles.map((role, idx) => {
                 const config = getRoleConfig(role.role_name);
@@ -310,53 +310,53 @@ export function AccountSettings({
                     disabled={isLoading}
                     className={cn(
                       "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors",
-                      isActive ? "bg-indigo-50" : "hover:bg-gray-50"
+                      isActive ? "bg-indigo-50 dark:bg-indigo-500/10" : "hover:bg-muted/50"
                     )}
                   >
                     <span className={cn("w-10 h-10 rounded-full flex items-center justify-center text-lg", config.bgColor)}>
                       {config.icon}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className={cn("font-medium", isActive ? "text-indigo-600" : "text-gray-900")}>
+                      <p className={cn("font-medium", isActive ? "text-indigo-600 dark:text-indigo-400" : "text-foreground")}>
                         {config.label}
                       </p>
                       {role.organization_name && (
-                        <p className="text-xs text-gray-500 truncate">{role.organization_name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{role.organization_name}</p>
                       )}
                     </div>
-                    {isActive && <Check className="h-5 w-5 text-indigo-600 shrink-0" />}
+                    {isActive && <Check className="h-5 w-5 text-indigo-600 shrink-0 dark:text-indigo-400" />}
                   </button>
                 );
               })}
             </div>
 
             {roles.length === 0 && (
-              <p className="px-3 py-4 text-sm text-gray-500 text-center">Chưa có vai trò nào</p>
+              <p className="px-3 py-4 text-sm text-muted-foreground text-center">Chưa có vai trò nào</p>
             )}
           </div>
 
           {/* Actions */}
-          <div className="p-2 border-t border-gray-100 space-y-1">
+          <div className="p-2 border-t border-border space-y-1">
             {onAddAccount && (
               <button
                 onClick={() => { setSwitchAccountOpen(false); onAddAccount(); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-muted/50 transition-colors"
               >
-                <span className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                  <Plus className="h-5 w-5 text-gray-600" />
+                <span className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                  <Plus className="h-5 w-5 text-muted-foreground" />
                 </span>
-                <span className="font-medium text-gray-700">Thêm tài khoản khác</span>
+                <span className="font-medium text-foreground">Thêm tài khoản khác</span>
               </button>
             )}
             {onLogout && (
               <button
                 onClick={() => { setSwitchAccountOpen(false); onLogout(); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-red-50 transition-colors group"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-red-50 transition-colors group dark:hover:bg-red-500/10"
               >
-                <span className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center group-hover:bg-red-100">
+                <span className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center group-hover:bg-red-100 dark:bg-red-500/10 dark:group-hover:bg-red-500/15">
                   <LogOut className="h-5 w-5 text-red-500" />
                 </span>
-                <span className="font-medium text-red-600">Đăng xuất</span>
+                <span className="font-medium text-red-600 dark:text-red-400">Đăng xuất</span>
               </button>
             )}
           </div>

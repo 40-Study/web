@@ -116,8 +116,8 @@ export default function AdminCategoriesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Danh mục khoá học</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-foreground">Danh mục khoá học</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Tạo, sửa, xoá danh mục dùng để phân loại khoá học.
         </p>
       </div>
@@ -134,13 +134,13 @@ export default function AdminCategoriesPage() {
             {data.map((cat) => (
               <div
                 key={cat.id}
-                className={`rounded-xl bg-white p-4 shadow-sm ${selected?.id === cat.id ? "ring-2 ring-primary-200" : ""}`}
+                className={`rounded-xl bg-card p-4 shadow-sm ${selected?.id === cat.id ? "ring-2 ring-primary-200" : ""}`}
               >
                 <button className="w-full text-left" onClick={() => setSelectedId(cat.id)}>
-                  <h3 className="font-semibold text-gray-900">{cat.name}</h3>
-                  <p className="text-sm text-gray-500">{cat.description || "Không có mô tả"}</p>
+                  <h3 className="font-semibold text-foreground">{cat.name}</h3>
+                  <p className="text-sm text-muted-foreground">{cat.description || "Không có mô tả"}</p>
                   {cat.is_active === false && (
-                    <span className="mt-1 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-500">
+                    <span className="mt-1 inline-block rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
                       Đã ẩn
                     </span>
                   )}
@@ -148,13 +148,13 @@ export default function AdminCategoriesPage() {
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={() => startEdit(cat)}
-                    className="rounded bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700"
+                    className="rounded bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700 dark:bg-primary-500/15 dark:text-primary-300"
                   >
                     Sửa
                   </button>
                   <button
                     onClick={() => setConfirmDeleteId(cat.id)}
-                    className="rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-700"
+                    className="rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-700 dark:bg-red-500/15 dark:text-red-300"
                   >
                     Xoá
                   </button>
@@ -165,8 +165,8 @@ export default function AdminCategoriesPage() {
         </div>
 
         <div className="space-y-4">
-          <form onSubmit={onSubmit} className="rounded-xl bg-white p-4 shadow-sm">
-            <h2 className="text-base font-semibold text-gray-900">
+          <form onSubmit={onSubmit} className="rounded-xl bg-card p-4 shadow-sm">
+            <h2 className="text-base font-semibold text-foreground">
               {form.id ? "Cập nhật danh mục" : "Tạo danh mục mới"}
             </h2>
             <div className="mt-3 space-y-2">
@@ -180,10 +180,10 @@ export default function AdminCategoriesPage() {
                   setForm((prev) => ({ ...prev, name: e.target.value }));
                   if (nameError) setNameError(null);
                 }}
-                className="h-10 w-full rounded border border-gray-200 px-3 text-sm"
+                className="h-10 w-full rounded border border-border px-3 text-sm"
               />
               {nameError && (
-                <p id="category-name-error" role="alert" className="text-xs text-red-600">
+                <p id="category-name-error" role="alert" className="text-xs text-red-600 dark:text-red-400">
                   {nameError}
                 </p>
               )}
@@ -191,7 +191,7 @@ export default function AdminCategoriesPage() {
                 placeholder="Mô tả (tuỳ chọn)"
                 value={form.description}
                 onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                className="h-10 w-full rounded border border-gray-200 px-3 text-sm"
+                className="h-10 w-full rounded border border-border px-3 text-sm"
               />
               <div className="flex gap-2">
                 <button
@@ -207,7 +207,7 @@ export default function AdminCategoriesPage() {
                     setForm(emptyForm);
                     setNameError(null);
                   }}
-                  className="rounded bg-gray-100 px-3 py-2 text-sm font-medium"
+                  className="rounded bg-muted px-3 py-2 text-sm font-medium"
                 >
                   Xoá nội dung đã nhập
                 </button>
@@ -215,19 +215,19 @@ export default function AdminCategoriesPage() {
             </div>
           </form>
 
-          <div className="rounded-xl bg-white p-4 shadow-sm">
-            <h2 className="text-base font-semibold text-gray-900">Chi tiết danh mục</h2>
+          <div className="rounded-xl bg-card p-4 shadow-sm">
+            <h2 className="text-base font-semibold text-foreground">Chi tiết danh mục</h2>
             {selected ? (
               <div className="mt-3 space-y-2 text-sm">
-                <p><span className="text-gray-500">ID:</span> {selected.id}</p>
-                <p><span className="text-gray-500">Tên:</span> {selected.name}</p>
-                <p><span className="text-gray-500">Mô tả:</span> {selected.description || "-"}</p>
+                <p><span className="text-muted-foreground">ID:</span> {selected.id}</p>
+                <p><span className="text-muted-foreground">Tên:</span> {selected.name}</p>
+                <p><span className="text-muted-foreground">Mô tả:</span> {selected.description || "-"}</p>
                 {selected.created_at && (
-                  <p><span className="text-gray-500">Tạo lúc:</span> {new Date(selected.created_at).toLocaleString("vi-VN")}</p>
+                  <p><span className="text-muted-foreground">Tạo lúc:</span> {new Date(selected.created_at).toLocaleString("vi-VN")}</p>
                 )}
               </div>
             ) : (
-              <p className="mt-2 text-sm text-gray-500">Chọn một danh mục để xem chi tiết.</p>
+              <p className="mt-2 text-sm text-muted-foreground">Chọn một danh mục để xem chi tiết.</p>
             )}
           </div>
         </div>

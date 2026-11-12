@@ -227,13 +227,13 @@ export function LessonCodeWorkspace({
   const isDone = completed || mark.data?.status === "completed";
   return (
     <section aria-label="Bài tập lập trình" className="lesson-code-workbench">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-white px-6 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-card px-6 py-4">
         <div>
-          <p className="text-xs font-medium text-primary-600">Bài tập lập trình</p>
+          <p className="text-xs font-medium text-primary-600 dark:text-primary-400">Bài tập lập trình</p>
           <h1 className="mt-1 text-xl font-semibold">{exercise.title}</h1>
         </div>
         {isDone ? (
-          <span className="flex items-center gap-1 text-sm text-green-700">
+          <span className="flex items-center gap-1 text-sm text-green-700 dark:text-green-300">
             <CheckCircle2 className="h-4 w-4" />
             Đã hoàn thành
           </span>
@@ -253,7 +253,7 @@ export function LessonCodeWorkspace({
       {error && (
         <p
           role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+          className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
         >
           {error}
         </p>
@@ -389,7 +389,7 @@ export function LessonCodeWorkspace({
             ) : result ? (
               <CodeJudgeResult key={result.id ?? result.status} result={result} />
             ) : judgeError ? (
-              <p className="code-panel-empty text-red-700">{judgeError}</p>
+              <p className="code-panel-empty text-red-700 dark:text-red-300">{judgeError}</p>
             ) : last ? (
               <div>
                 <p className="mb-2 text-xs text-muted-foreground">Bài nộp gần nhất</p>

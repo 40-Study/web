@@ -138,7 +138,7 @@ export function CourseFiltersComponent({
 
       {/* Expanded Filters */}
       {showFilters && (
-        <div className="p-4 md:p-5 border border-slate-200 rounded-2xl bg-white shadow-card space-y-4 dark:border-slate-800 dark:bg-slate-900">
+        <div className="p-4 md:p-5 border border-border rounded-2xl bg-card shadow-card space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-h4">Bộ lọc nâng cao</h3>
             {activeFilterCount > 0 && (
@@ -195,7 +195,7 @@ export function CourseFiltersComponent({
                 onChange={(e) =>
                   handleSortChange(e.target.value as CourseFilters["sortBy"])
                 }
-                className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+                className="w-full h-10 rounded-lg border border-input bg-card px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {SORT_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>

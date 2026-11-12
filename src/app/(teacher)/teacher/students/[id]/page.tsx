@@ -55,7 +55,7 @@ export default function TeacherStudentProfilePage() {
         <CardContent className="p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
-              <Avatar fallback={student.name.charAt(0)} size="lg" className="bg-primary-100 text-primary-700" />
+              <Avatar fallback={student.name.charAt(0)} size="lg" className="bg-primary-100 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300" />
               <div>
                 <p className="text-xl font-semibold">{student.name}</p>
                 <p className="text-sm text-muted-foreground">
@@ -81,7 +81,7 @@ export default function TeacherStudentProfilePage() {
               <p className="font-medium">{student.parentName ?? "—"}</p>
               <a
                 href={student.parentPhone ? `tel:${student.parentPhone}` : undefined}
-                className="inline-flex items-center gap-2 text-sm text-primary-600 hover:underline"
+                className="inline-flex items-center gap-2 text-sm text-primary-600 hover:underline dark:text-primary-400"
               >
                 <Phone className="h-4 w-4" />
                 {student.parentPhone ?? "Chưa cập nhật"}
@@ -123,7 +123,7 @@ export default function TeacherStudentProfilePage() {
                     <p className="font-medium">{mate.name}</p>
                     <p className="text-sm text-muted-foreground">{mate.studentId ?? "—"}</p>
                   </div>
-                  <Link href={`/teacher/students/${mate.id}`} className="text-sm text-primary-600 hover:underline">
+                  <Link href={`/teacher/students/${mate.id}`} className="text-sm text-primary-600 hover:underline dark:text-primary-400">
                     Xem hồ sơ
                   </Link>
                 </div>

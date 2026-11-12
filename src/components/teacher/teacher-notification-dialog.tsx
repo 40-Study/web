@@ -55,7 +55,7 @@ export default function TeacherNotificationDialog({
 
         <div
           role="status"
-          className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+          className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
         >
           <p className="font-medium">Tính năng chưa khả dụng</p>
           <p className="mt-1">

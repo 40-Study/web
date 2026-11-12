@@ -108,7 +108,7 @@ function renderQuestionText(text: string, codeSnippets?: string[]) {
         ) : (
           <code
             key={idx}
-            className="px-1.5 py-0.5 mx-0.5 bg-blue-100 text-blue-600 rounded font-mono text-base"
+            className="px-1.5 py-0.5 mx-0.5 bg-blue-100 text-blue-600 rounded font-mono text-base dark:bg-blue-500/15 dark:text-blue-400"
           >
             {part.content}
           </code>
@@ -287,43 +287,43 @@ export function QuizLessonContent({
       {/* Mobile: thanh thời gian + tiến độ gọn, dính đầu vùng nội dung. Desktop dùng thẻ Thời gian ở cột phải. */}
       <div
         data-testid="quiz-compact-bar"
-        className="sticky top-0 z-20 -mx-3 -mt-3 flex items-center gap-3 border-b border-gray-100 bg-white/95 px-4 py-2 backdrop-blur sm:-mx-5 sm:-mt-5 sm:px-5 lg:hidden"
+        className="sticky top-0 z-20 -mx-3 -mt-3 flex items-center gap-3 border-b border-border bg-card/95 px-4 py-2 backdrop-blur sm:-mx-5 sm:-mt-5 sm:px-5 lg:hidden"
       >
         <span
           className={cn(
             "flex items-center gap-1.5 text-base font-bold tabular-nums",
-            timeLeft <= 60 ? "text-red-500" : "text-gray-900"
+            timeLeft <= 60 ? "text-red-500" : "text-foreground"
           )}
         >
           <Clock className="h-4 w-4 text-orange-500" aria-hidden="true" />
           {formatTime(timeLeft)}
         </span>
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
           <div
             className="h-full rounded-full bg-blue-500 transition-all duration-300"
             style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }}
           />
         </div>
-        <span className="text-xs font-medium text-blue-600">
+        <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
           {currentIndex + 1}/{totalQuestions}
         </span>
       </div>
 
       {/* Left: Question Area */}
-      <div className="flex-1 min-w-0 flex flex-col bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col bg-card rounded-2xl shadow-sm overflow-hidden">
         {/* Quiz Header */}
-        <div className="px-4 pt-4 pb-3 sm:px-6 sm:pt-5 sm:pb-4 border-b border-gray-100">
-          <h1 className="text-xl font-bold text-gray-900">{title}</h1>
+        <div className="px-4 pt-4 pb-3 sm:px-6 sm:pt-5 sm:pb-4 border-b border-border">
+          <h1 className="text-xl font-bold text-foreground">{title}</h1>
           <div className="flex items-center justify-between mt-2">
-            <span className="text-sm text-blue-600 font-medium">
+            <span className="text-sm text-blue-600 font-medium dark:text-blue-400">
               Câu {currentIndex + 1} / {totalQuestions}
             </span>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-muted-foreground">
               Đã trả lời: {answeredCount}/{totalQuestions}
             </span>
           </div>
           {/* Progress bar */}
-          <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
             <div
               className="h-full bg-blue-500 rounded-full transition-all duration-300"
               style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }}
@@ -333,7 +333,7 @@ export function QuizLessonContent({
 
         {/* Question */}
         <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
-          <p className="text-lg text-gray-800 leading-relaxed mb-6">
+          <p className="text-lg text-foreground leading-relaxed mb-6">
             {renderQuestionText(currentQuestion.text, currentQuestion.codeSnippets)}
           </p>
 
@@ -352,20 +352,20 @@ export function QuizLessonContent({
                   className={cn(
                     "w-full flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left",
                     isSelected
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50",
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-500/10"
+                      : "border-border hover:border-input hover:bg-muted/50",
                     isSubmitted && "cursor-not-allowed opacity-70"
                   )}
                 >
                   <span
                     className={cn(
                       "w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0",
-                      isSelected ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-600"
+                      isSelected ? "bg-blue-500 text-white" : "bg-muted text-muted-foreground"
                     )}
                   >
                     {option.key}
                   </span>
-                  <span className="flex-1 text-gray-700 pt-1">{option.text}</span>
+                  <span className="flex-1 text-foreground pt-1">{option.text}</span>
                   {isSelected && <CheckCircle className="w-5 h-5 text-blue-500 shrink-0 mt-1" />}
                 </button>
               );
@@ -374,16 +374,16 @@ export function QuizLessonContent({
         </div>
 
         {/* Navigation Footer */}
-        <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2">
+        <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-border flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrev}
               disabled={currentIndex === 0}
               className={cn(
-                "flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-medium transition-colors",
+                "flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border text-sm font-medium transition-colors",
                 currentIndex === 0
                   ? "text-gray-300 cursor-not-allowed"
-                  : "text-gray-700 hover:bg-gray-50"
+                  : "text-foreground hover:bg-muted/50"
               )}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -402,7 +402,7 @@ export function QuizLessonContent({
             className={cn(
               "flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors",
               currentIndex === totalQuestions - 1
-                ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                ? "bg-muted text-gray-300 cursor-not-allowed"
                 : "bg-blue-600 text-white hover:bg-blue-700"
             )}
           >
@@ -415,19 +415,19 @@ export function QuizLessonContent({
       {/* Right (desktop) / dưới câu hỏi (mobile): Timer & Question Map */}
       <div className="w-full lg:w-72 flex flex-col gap-4">
         {/* Timer Card — mobile đã có thanh gọn ở trên */}
-        <div className="hidden lg:block bg-white rounded-2xl shadow-sm p-5">
+        <div className="hidden lg:block bg-card rounded-2xl shadow-sm p-5">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center dark:bg-orange-500/10">
               <Clock className="w-6 h-6 text-orange-500" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Thời gian
               </p>
               <p
                 className={cn(
                   "text-2xl font-bold",
-                  timeLeft <= 60 ? "text-red-500" : "text-gray-900"
+                  timeLeft <= 60 ? "text-red-500" : "text-foreground"
                 )}
               >
                 {formatTime(timeLeft)}
@@ -437,8 +437,8 @@ export function QuizLessonContent({
         </div>
 
         {/* Question Map Card */}
-        <div className="bg-white rounded-2xl shadow-sm p-5 flex-1 flex flex-col">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">
+        <div className="bg-card rounded-2xl shadow-sm p-5 flex-1 flex flex-col">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">
             Bản đồ câu hỏi
           </h3>
 
@@ -458,8 +458,8 @@ export function QuizLessonContent({
                     isCurrent
                       ? "bg-blue-500 text-white ring-2 ring-blue-300"
                       : isAnswered
-                        ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
-                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                        ? "bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-500/15 dark:text-blue-400"
+                        : "bg-muted text-muted-foreground hover:bg-muted-foreground/20"
                   )}
                 >
                   {idx + 1}
@@ -472,17 +472,17 @@ export function QuizLessonContent({
           </div>
 
           {/* Legend */}
-          <div className="flex flex-wrap gap-3 text-xs text-gray-500 mb-5">
+          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mb-5">
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded bg-blue-500" />
               <span>Hiện tại</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-blue-100" />
+              <span className="w-3 h-3 rounded bg-blue-100 dark:bg-blue-500/15" />
               <span>Đã trả lời</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-gray-100" />
+              <span className="w-3 h-3 rounded bg-muted" />
               <span>Chưa trả lời</span>
             </div>
           </div>
@@ -502,7 +502,7 @@ export function QuizLessonContent({
             className={cn(
               "mt-auto w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors",
               isSubmitted || isSubmitting
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                ? "bg-muted text-muted-foreground cursor-not-allowed"
                 : "bg-gray-900 text-white hover:bg-gray-800"
             )}
           >

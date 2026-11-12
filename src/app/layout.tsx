@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SkipLink } from "@/components/ui";
 import { SITE_URL } from "@/lib/seo";
 import { SITE_OG_IMAGES } from "@/lib/page-metadata";
-import { THEME_STORAGE_KEY } from "@/lib/appearance-storage";
+import { THEME_INIT_SCRIPT } from "@/lib/appearance-storage";
 
 export const metadata: Metadata = {
   // Bắt buộc có: thiếu metadataBase thì mọi URL ảnh OG tương đối sẽ hỏng
@@ -48,16 +48,10 @@ export default function RootLayout({
         {/*
                   Chống nháy màn hình (FOUC) dark mode (H-01): script chạy TRƯỚC khi
                   React hydrate, đọc theme đã lưu và gắn class .dark lên <html> ngay
-                  lập tức. Phải cùng quy tắc với applyTheme (appearance-storage.ts):
-                  chỉ "dark" chọn tay mới bật, "system" chưa theo OS (xem ghi chú ở đó).
+                  lập tức. Cùng quy tắc với applyTheme (appearance-storage.ts):
+                  "dark" luôn tối, "light" luôn sáng, "system"/chưa chọn theo hệ điều hành.
                 */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem(${JSON.stringify(
-              THEME_STORAGE_KEY
-            )});document.documentElement.classList.toggle("dark",t==="dark");}catch(e){}})();`,
-          }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <ThemeProvider />
         <SkipLink targetId="main-content">Bỏ qua điều hướng</SkipLink>
         <Providers>{children}</Providers>

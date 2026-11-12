@@ -57,7 +57,7 @@ export function RoleSwitchList({ onSwitch, className }: RoleSwitchListProps) {
               <span className="block font-medium text-foreground">{getSystemRoleLabel(role.role_name)}</span>
               {orgName && <span className="block truncate text-xs text-muted-foreground">{orgName}</span>}
             </span>
-            {isActive && <Check className="h-4 w-4 shrink-0 text-primary-600" aria-label="Đang dùng" />}
+            {isActive && <Check className="h-4 w-4 shrink-0 text-primary-600 dark:text-primary-400" aria-label="Đang dùng" />}
           </button>
         );
       })}

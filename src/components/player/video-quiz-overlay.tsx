@@ -53,13 +53,13 @@ export function VideoQuizOverlay({
 
   return (
     <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 flex items-center justify-between">
-          <span className="text-xs font-semibold text-primary-600 bg-primary-50 px-2.5 py-1 rounded">
+          <span className="text-xs font-semibold text-primary-600 bg-primary-50 px-2.5 py-1 rounded dark:text-primary-400 dark:bg-primary-500/10">
             QUESTION
           </span>
-          <div className="flex items-center gap-2 text-gray-500">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Clock className="w-4 h-4" />
             <span className="text-sm font-medium font-mono">{formatTime(timeLeft)}</span>
           </div>
@@ -67,7 +67,7 @@ export function VideoQuizOverlay({
 
         {/* Question */}
         <div className="px-6 pb-4">
-          <p className="text-gray-900 font-medium leading-relaxed">{quiz.question}</p>
+          <p className="text-foreground font-medium leading-relaxed">{quiz.question}</p>
         </div>
 
         {/* Options */}
@@ -79,8 +79,8 @@ export function VideoQuizOverlay({
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all",
                 selectedAnswer === option.key
-                  ? "border-primary-500 bg-primary-50"
-                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  ? "border-primary-500 bg-primary-50 dark:bg-primary-500/10"
+                  : "border-border hover:border-input hover:bg-muted/50"
               )}
             >
               <div
@@ -88,7 +88,7 @@ export function VideoQuizOverlay({
                   "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
                   selectedAnswer === option.key
                     ? "border-primary-500"
-                    : "border-gray-300"
+                    : "border-input"
                 )}
               >
                 {selectedAnswer === option.key && (
@@ -99,8 +99,8 @@ export function VideoQuizOverlay({
                 className={cn(
                   "text-sm",
                   selectedAnswer === option.key
-                    ? "text-primary-700 font-medium"
-                    : "text-gray-700"
+                    ? "text-primary-700 font-medium dark:text-primary-300"
+                    : "text-foreground"
                 )}
               >
                 {option.text}
@@ -118,14 +118,14 @@ export function VideoQuizOverlay({
               "flex-1 py-3 rounded-xl font-medium text-sm transition-colors",
               selectedAnswer
                 ? "bg-primary-600 text-white hover:bg-primary-700"
-                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-muted text-muted-foreground cursor-not-allowed"
             )}
           >
             Xác nhận
           </button>
           <button
             onClick={handleSkip}
-            className="px-6 py-3 rounded-xl font-medium text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+            className="px-6 py-3 rounded-xl font-medium text-sm text-muted-foreground bg-muted hover:bg-muted-foreground/20 transition-colors"
           >
             Bỏ qua
           </button>

@@ -72,13 +72,13 @@ export default function AdminCoursesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Duyệt khoá học</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-foreground">Duyệt khoá học</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Khoá học giáo viên gửi duyệt chỉ được xuất bản sau khi quản trị viên chấp thuận.
         </p>
       </div>
 
-      <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+      <section className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
         <div className="grid gap-3 sm:grid-cols-2">
           <input
             value={keyword}
@@ -88,7 +88,7 @@ export default function AdminCoursesPage() {
             }}
             placeholder="Tìm theo tên khoá học..."
             aria-label="Tìm khoá học"
-            className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+            className="h-10 rounded-lg border border-border px-3 text-sm dark:bg-gray-900"
           />
           <select
             value={status}
@@ -98,7 +98,7 @@ export default function AdminCoursesPage() {
               if (isCourseStatus(e.target.value)) setStatus(e.target.value);
               setPage(1);
             }}
-            className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+            className="h-10 rounded-lg border border-border px-3 text-sm dark:bg-gray-900"
           >
             {COURSE_STATUSES.map((s) => (
               <option key={s} value={s}>
@@ -122,10 +122,10 @@ export default function AdminCoursesPage() {
             : "Không có khoá học khớp bộ lọc hiện tại."
         }
       >
-        <section className="overflow-hidden rounded-xl border bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+        <section className="overflow-hidden rounded-xl border bg-card shadow-sm dark:border-gray-800">
           <div className="overflow-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-900">
+              <thead className="bg-muted/50">
                 <tr>
                   <th className="px-4 py-3 text-left">Khoá học</th>
                   <th className="px-4 py-3 text-left">Giáo viên</th>
@@ -134,15 +134,15 @@ export default function AdminCoursesPage() {
                   <th className={`px-4 py-3 text-left ${STICKY_ACTION_HEAD}`} />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              <tbody className="divide-y divide-border">
                 {courses.map((course) => (
                   <tr key={course.id} data-testid={`course-row-${course.id}`}>
                     <td className="px-4 py-3 font-medium">{course.title}</td>
                     <td className="px-4 py-3">
                       <p>{course.instructor_name || "—"}</p>
-                      <p className="text-xs text-gray-500">{course.instructor_email}</p>
+                      <p className="text-xs text-muted-foreground">{course.instructor_email}</p>
                     </td>
-                    <td className="px-4 py-3 text-gray-500">
+                    <td className="px-4 py-3 text-muted-foreground">
                       {/* A9: `submitted_at` chỉ được ghi khi khoá gửi duyệt, có khoá (seed/cũ) mang
                           giá trị null nên trước đây hiện "—". Rơi về `created_at` để hàng đợi luôn
                           có mốc thời gian để admin ưu tiên. */}
@@ -163,7 +163,7 @@ export default function AdminCoursesPage() {
                       <div className={ACTION_BUTTON_GROUP}>
                         <button
                           onClick={() => setDetailId(course.id)}
-                          className={`${ACTION_BTN} bg-gray-100 hover:bg-gray-200 dark:bg-gray-800`}
+                          className={`${ACTION_BTN} bg-muted hover:bg-muted-foreground/20`}
                         >
                           Xem chi tiết
                         </button>
@@ -192,7 +192,7 @@ export default function AdminCoursesPage() {
                             <CourseDeleteAction
                               courseId={course.id}
                               title={course.title}
-                              className={`${ACTION_BTN} bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950 dark:text-red-300`}
+                              className={`${ACTION_BTN} bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-500/15`}
                             />
                           </Can>
                         )}
@@ -206,7 +206,7 @@ export default function AdminCoursesPage() {
         </section>
 
         {data && totalPages > 1 && (
-          <div className="flex items-center justify-between px-1 text-sm text-gray-500">
+          <div className="flex items-center justify-between px-1 text-sm text-muted-foreground">
             <span>
               Trang {page}/{totalPages} — {data.total} khoá học
             </span>

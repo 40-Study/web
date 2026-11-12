@@ -19,7 +19,7 @@ export function StudentMobileCard({ student, selected, onToggle }: StudentMobile
     <li className="space-y-2 p-4" data-testid="student-card">
       <div className="flex items-start gap-3">
         <Checkbox checked={selected} onCheckedChange={onToggle} aria-label={`Chọn ${student.name}`} className="mt-1" />
-        <Avatar fallback={student.name.charAt(0)} size="sm" className="bg-primary-100 text-primary-700" />
+        <Avatar fallback={student.name.charAt(0)} size="sm" className="bg-primary-100 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300" />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{student.name}</p>
           <p className="text-xs text-muted-foreground">Mã HS: {student.studentId ?? "—"}</p>
@@ -42,14 +42,14 @@ export function StudentMobileCard({ student, selected, onToggle }: StudentMobile
         {student.parentName ? (
           <a
             href={student.parentPhone ? `tel:${student.parentPhone}` : undefined}
-            className="text-primary-600 hover:underline"
+            className="text-primary-600 hover:underline dark:text-primary-400"
           >
             PH: {student.parentName}
           </a>
         ) : (
           <span className="text-muted-foreground">PH: —</span>
         )}
-        <Link href={`/teacher/students/${student.id}`} className="text-primary-600 hover:underline">
+        <Link href={`/teacher/students/${student.id}`} className="text-primary-600 hover:underline dark:text-primary-400">
           Hồ sơ
         </Link>
       </div>

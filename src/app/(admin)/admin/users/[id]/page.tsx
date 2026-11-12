@@ -31,9 +31,9 @@ const formatDate = (iso: string | null) => formatVnDateTime(iso);
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-gray-100 py-2 last:border-0 dark:border-gray-800">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-right text-sm font-medium text-gray-900 dark:text-gray-100">{value}</span>
+    <div className="flex items-start justify-between gap-3 border-b border-border py-2 last:border-0">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-right text-sm font-medium text-foreground">{value}</span>
     </div>
   );
 }
@@ -107,8 +107,8 @@ export default function AdminUserDetailPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Chi tiết người dùng</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <h1 className="text-2xl font-bold text-foreground">Chi tiết người dùng</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Xem thông tin, khoá/mở khoá và quản lý vai trò hệ thống.
           </p>
         </div>
@@ -117,9 +117,9 @@ export default function AdminUserDetailPage() {
       {/* QA3-20: id không tồn tại (404) là kết quả cuối cùng, không phải lỗi tạm: "Thử lại" vô nghĩa nên hiện
           trạng thái riêng kèm đường về danh sách, không dùng khối lỗi chung. */}
       {isNotFound ? (
-        <div role="status" className="rounded-xl border bg-white p-8 text-center shadow-sm dark:border-gray-800 dark:bg-gray-950">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Không tìm thấy người dùng</h2>
-          <p className="mt-1 text-sm text-gray-500">Tài khoản này không tồn tại hoặc đã bị xoá.</p>
+        <div role="status" className="rounded-xl border bg-card p-8 text-center shadow-sm dark:border-gray-800">
+          <h2 className="text-lg font-semibold text-foreground">Không tìm thấy người dùng</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Tài khoản này không tồn tại hoặc đã bị xoá.</p>
           <Button className="mt-4" variant="outline" onClick={() => router.push("/admin/users")}>
             Về danh sách người dùng
           </Button>
@@ -129,13 +129,13 @@ export default function AdminUserDetailPage() {
         {user && (
           <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
             <div className="space-y-4">
-              <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+              <div className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    <h2 className="text-lg font-semibold text-foreground">
                       {user.full_name || user.user_name}
                     </h2>
-                    <p className="text-sm text-gray-500">{user.email}</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
                   </div>
                   <Badge variant={user.is_active ? "success" : "destructive"}>
                     {getUserActiveLabel(user.is_active)}
@@ -181,8 +181,8 @@ export default function AdminUserDetailPage() {
             </div>
 
             <div className="space-y-4">
-              <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Vai trò hệ thống</h3>
+              <div className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
+                <h3 className="text-base font-semibold text-foreground">Vai trò hệ thống</h3>
 
                 <div className="mt-3 space-y-2">
                   {user.system_roles.length === 0 ? (
@@ -201,10 +201,10 @@ export default function AdminUserDetailPage() {
                       return (
                         <div
                           key={role.id}
-                          className="flex items-center justify-between gap-2 rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-800"
+                          className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2"
                         >
                           <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            <p className="text-sm font-medium text-foreground">
                               {getSystemRoleLabel(role.name)}
                             </p>
                             <p className="text-xs text-muted-foreground">Gán lúc {formatDate(role.granted_at)}</p>
@@ -254,8 +254,8 @@ export default function AdminUserDetailPage() {
                 </Can>
               </div>
 
-              <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Tổ chức</h3>
+              <div className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
+                <h3 className="text-base font-semibold text-foreground">Tổ chức</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Thêm, đổi hoặc gỡ vai trò trong tổ chức ở trang Quản lý tổ chức.
                 </p>
@@ -263,7 +263,7 @@ export default function AdminUserDetailPage() {
                   {memberships.isLoading ? (
                     <p className="text-sm text-muted-foreground">Đang tải…</p>
                   ) : memberships.isError ? (
-                    <p role="alert" className="text-sm text-red-600">
+                    <p role="alert" className="text-sm text-red-600 dark:text-red-400">
                       {getErrorMessage(memberships.error, "Không tải được danh sách tổ chức của người dùng.")}
                     </p>
                   ) : (memberships.data ?? []).length === 0 ? (
@@ -272,9 +272,9 @@ export default function AdminUserDetailPage() {
                     (memberships.data ?? []).map((m) => (
                       <div
                         key={m.id}
-                        className="flex items-center justify-between gap-2 rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-800"
+                        className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2"
                       >
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <p className="text-sm font-medium text-foreground">
                           {m.organization?.name ?? "Tổ chức không rõ"}
                         </p>
                         <Badge variant="secondary" title={m.role?.name}>
@@ -306,7 +306,7 @@ export default function AdminUserDetailPage() {
           </DialogDescription>
           <div className="mt-2">
             <label htmlFor="lock-reason-detail" className="mb-1 block text-sm font-medium text-foreground">
-              Lý do khoá <span className="text-red-600">*</span>
+              Lý do khoá <span className="text-red-600 dark:text-red-400">*</span>
             </label>
             <textarea
               id="lock-reason-detail"
@@ -315,7 +315,7 @@ export default function AdminUserDetailPage() {
               maxLength={500}
               rows={3}
               placeholder="Ví dụ: Vi phạm điều khoản sử dụng"
-              className="w-full rounded-xl border border-slate-200 bg-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-border"
+              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-border"
             />
             <p className="mt-1 text-right text-xs text-muted-foreground">{lockReason.length}/500</p>
           </div>

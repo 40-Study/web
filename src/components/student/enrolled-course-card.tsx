@@ -16,9 +16,9 @@ export function EnrolledCourseCard({ course, priority = false }: EnrolledCourseC
 
   return (
     <Link href={`/courses/${course.slug}`} className="group block">
-      <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      <div className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
         {/* Thumbnail */}
-        <div className="relative aspect-[16/10] bg-gray-100">
+        <div className="relative aspect-[16/10] bg-muted">
           {course.thumbnail ? (
             <Image
               src={course.thumbnail}
@@ -39,20 +39,20 @@ export function EnrolledCourseCard({ course, priority = false }: EnrolledCourseC
 
         {/* Content */}
         <div className="p-4">
-          <h3 className="font-semibold text-gray-900 line-clamp-2 group-hover:text-primary-600 transition-colors mb-2">
+          <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary-600 transition-colors mb-2 dark:group-hover:text-primary-400">
             {course.title}
           </h3>
 
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-muted-foreground">
               {course.totalLessons} bài học
             </span>
             <Badge
               variant={isEnrolled ? "secondary" : "default"}
               className={
                 isEnrolled
-                  ? "bg-green-100 text-green-700 border-0 text-xs"
-                  : "bg-primary-100 text-primary-700 border-0 text-xs"
+                  ? "bg-green-100 text-green-700 border-0 text-xs dark:bg-green-500/15 dark:text-green-300"
+                  : "bg-primary-100 text-primary-700 border-0 text-xs dark:bg-primary-500/15 dark:text-primary-300"
               }
             >
               {isEnrolled ? "Đã đăng ký" : `${course.progress}%`}

@@ -19,21 +19,21 @@ export function LinkedChildrenList() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-100 p-12 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+      <div className="bg-card rounded-2xl border border-border p-12 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   if (children.length === 0) {
     return (
-      <div className="bg-gradient-to-b from-slate-50 to-white rounded-3xl border border-slate-100 p-10 text-center">
+      <div className="bg-gradient-to-b from-muted to-card rounded-3xl border border-border p-10 text-center">
         <div className="max-w-md mx-auto">
-          <div className="relative w-20 h-20 mx-auto mb-5 bg-primary-50 rounded-full flex items-center justify-center">
+          <div className="relative w-20 h-20 mx-auto mb-5 bg-primary-50 rounded-full flex items-center justify-center dark:bg-primary-500/10">
             <Users className="w-9 h-9 text-primary-500" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">Chưa liên kết với con nào</h3>
-          <p className="text-slate-500 leading-relaxed">
+          <h3 className="text-lg font-semibold text-foreground mb-2">Chưa liên kết với con nào</h3>
+          <p className="text-muted-foreground leading-relaxed">
             Gửi yêu cầu liên kết theo email của con ở mục phía trên, hoặc chấp nhận lời mời con đã gửi cho bạn.
           </p>
         </div>
@@ -49,18 +49,18 @@ export function LinkedChildrenList() {
         {children.map((child) => {
           const displayName = child.full_name || child.username;
           return (
-            <div key={child.id} className="bg-white rounded-2xl border border-slate-100 hover:border-primary-200 hover:shadow-md transition-all">
+            <div key={child.id} className="bg-card rounded-2xl border border-border hover:border-primary-200 hover:shadow-md transition-all dark:hover:border-primary-500/30">
               <Link href={`/parent/children/${child.id}`} className="group flex items-center gap-4 p-5 pb-3">
                 {child.avatar_url ? (
                   <Image src={child.avatar_url} alt={displayName} width={48} height={48} className="rounded-full object-cover" />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-                    <span className="text-lg font-medium text-primary-700">{displayName.charAt(0).toUpperCase()}</span>
+                  <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center shrink-0 dark:bg-primary-500/15">
+                    <span className="text-lg font-medium text-primary-700 dark:text-primary-300">{displayName.charAt(0).toUpperCase()}</span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-900 truncate group-hover:text-primary-600">{displayName}</p>
-                  <p className="text-sm text-slate-500 flex items-center gap-1">
+                  <p className="font-medium text-foreground truncate group-hover:text-primary-600 dark:group-hover:text-primary-400">{displayName}</p>
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
                     <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
                     Đã liên kết
                   </p>

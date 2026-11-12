@@ -71,7 +71,7 @@ export function VideoDurationField({
           className={
             fromUpload
               ? "mt-1 text-xs text-muted-foreground"
-              : "mt-1 text-xs text-amber-700"
+              : "mt-1 text-xs text-amber-700 dark:text-amber-300"
           }
         >
           {fromUpload ? HINT_UPLOAD : HINT_EXTERNAL}

@@ -151,20 +151,20 @@ export function SubmissionGradingPanel({ assignmentId }: SubmissionGradingPanelP
           icon={<CheckCircle2 className="h-5 w-5" />}
           label="Tổng bài nộp"
           value={stats.total}
-          color="bg-blue-100 text-blue-700"
+          color="bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"
         />
         <StatCard
           icon={<CheckCircle2 className="h-5 w-5" />}
           label="Đã chấm điểm"
           value={stats.graded}
           subValue={stats.total > 0 ? `${Math.round((stats.graded / stats.total) * 100)}%` : undefined}
-          color="bg-green-100 text-green-700"
+          color="bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300"
         />
         <StatCard
           icon={<Clock className="h-5 w-5" />}
           label="Nộp muộn"
           value={stats.late}
-          color="bg-yellow-100 text-yellow-700"
+          color="bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-300"
         />
       </div>
 
@@ -195,13 +195,13 @@ export function SubmissionGradingPanel({ assignmentId }: SubmissionGradingPanelP
       </div>
 
       {archived && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
           Lớp đã lưu trữ: chỉ xem bài nộp và điểm đã chấm, không chấm thêm cho tới khi mở lại lớp.
         </p>
       )}
 
       {!classId && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
           Bài tập này chưa gắn với lớp nào nên chỉ xem được bài nộp, chưa chấm điểm được.
         </p>
       )}
@@ -223,7 +223,7 @@ export function SubmissionGradingPanel({ assignmentId }: SubmissionGradingPanelP
               <tr key={row.studentId} className="border-t transition-colors hover:bg-muted/30">
                 <td className="p-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-medium text-primary-700">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-medium text-primary-700 dark:bg-primary-500/15 dark:text-primary-300">
                       {row.studentName.charAt(0).toUpperCase()}
                     </div>
                     <span className="font-medium">{row.studentName}</span>

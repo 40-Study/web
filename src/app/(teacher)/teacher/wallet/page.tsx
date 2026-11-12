@@ -168,11 +168,11 @@ export default function TeacherWalletPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-3">
           {/* Available Balance */}
-          <Card className="border-green-200">
+          <Card className="border-green-200 dark:border-green-500/30">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center dark:bg-green-500/15">
+                  <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
                 <span className="text-sm text-muted-foreground">Số dư khả dụng</span>
               </div>
@@ -180,7 +180,7 @@ export default function TeacherWalletPage() {
                   thay vì xanh cố định, xem withdrawal-contract.md công thức số dư. */}
               <p
                 className={`text-3xl font-bold mb-1 ${
-                  Number(wallet?.available_balance ?? 0) < 0 ? "text-red-600" : "text-green-600"
+                  Number(wallet?.available_balance ?? 0) < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"
                 }`}
               >
                 {formatMoney(wallet?.available_balance ?? 0)}
@@ -196,15 +196,15 @@ export default function TeacherWalletPage() {
           </Card>
 
           {/* Order count */}
-          <Card className="border-blue-200">
+          <Card className="border-blue-200 dark:border-blue-500/30">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center dark:bg-blue-500/15">
+                  <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <span className="text-sm text-muted-foreground">Số đơn hàng</span>
               </div>
-              <p className="text-3xl font-bold text-blue-600 mb-2">
+              <p className="text-3xl font-bold text-blue-600 mb-2 dark:text-blue-400">
                 {wallet?.order_count ?? 0}
               </p>
               {/*
@@ -225,7 +225,7 @@ export default function TeacherWalletPage() {
                 <span className="text-sm font-medium">Tài khoản nhận tiền</span>
                 <Button
                   variant="link"
-                  className="h-auto p-0 text-primary-600"
+                  className="h-auto p-0 text-primary-600 dark:text-primary-400"
                   onClick={() => setShowBankDialog(true)}
                 >
                   {hasBankInfo ? "Thay đổi" : "Thêm TK"}
@@ -291,7 +291,7 @@ export default function TeacherWalletPage() {
             <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
               <input
                 type="checkbox"
-                className="h-4 w-4 rounded border-gray-300"
+                className="h-4 w-4 rounded border-input"
                 checked={showCancelled}
                 onChange={(e) => setShowCancelled(e.target.checked)}
               />
@@ -349,11 +349,11 @@ export default function TeacherWalletPage() {
                     const amountClassName = isRefund
                       ? "text-red-500"
                       : isCompleted
-                        ? "text-green-600"
+                        ? "text-green-600 dark:text-green-400"
                         : "text-muted-foreground";
                     const amountSign = isRefund ? "-" : isCompleted ? "+" : "";
                     return (
-                      <tr key={`${tx.order_id}-${tx.course_id}`} className="border-b last:border-0 hover:bg-gray-50">
+                      <tr key={`${tx.order_id}-${tx.course_id}`} className="border-b last:border-0 hover:bg-muted/50">
                         <td className="p-3 text-sm font-medium">{tx.order_number}</td>
                         <td className="p-3 text-sm text-muted-foreground">
                           {formatDate(tx.created_at)}

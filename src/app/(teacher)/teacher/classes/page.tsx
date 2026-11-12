@@ -44,7 +44,7 @@ export default function TeacherClassesPage() {
           title="Bạn chưa có lớp nào"
           description="Mở một khoá học của bạn và tạo lớp để bắt đầu ghi danh học viên."
           action={
-            <Link href="/teacher/courses" className="text-sm font-medium text-primary-600 hover:underline">
+            <Link href="/teacher/courses" className="text-sm font-medium text-primary-600 hover:underline dark:text-primary-400">
               Tới khoá học của tôi
             </Link>
           }
@@ -55,7 +55,7 @@ export default function TeacherClassesPage() {
             <li key={cls.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-4">
               <div className="min-w-0 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Link href={`/teacher/classes/${cls.id}`} className="truncate font-semibold hover:text-primary-600">
+                  <Link href={`/teacher/classes/${cls.id}`} className="truncate font-semibold hover:text-primary-600 dark:hover:text-primary-400">
                     {cls.name}
                   </Link>
                   <Badge variant={getClassDisplayBadge(cls).variant}>{getClassDisplayBadge(cls).label}</Badge>
@@ -69,14 +69,14 @@ export default function TeacherClassesPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <Link
                   href={`/teacher/classes/${cls.id}/attendance`}
-                  className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm font-medium hover:border-primary-300 hover:text-primary-600"
+                  className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm font-medium hover:border-primary-300 hover:text-primary-600 dark:hover:border-primary-500/30 dark:hover:text-primary-400"
                 >
                   <ClipboardCheck className="h-4 w-4" aria-hidden="true" /> Điểm danh
                 </Link>
                 {cls.course_id && (
                   <Link
                     href={`/teacher/courses/${cls.course_id}`}
-                    className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm font-medium hover:border-primary-300 hover:text-primary-600"
+                    className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm font-medium hover:border-primary-300 hover:text-primary-600 dark:hover:border-primary-500/30 dark:hover:text-primary-400"
                   >
                     <BookOpen className="h-4 w-4" aria-hidden="true" /> Xem khoá học
                   </Link>

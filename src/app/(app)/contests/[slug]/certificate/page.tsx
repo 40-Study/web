@@ -42,7 +42,7 @@ export default function ContestCertificatePage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-6 sm:px-6 print:max-w-none print:p-0">
       <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
-        <Link href={contestPath(slug)} className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+        <Link href={contestPath(slug)} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Về trang cuộc thi
         </Link>
@@ -52,15 +52,15 @@ export default function ContestCertificatePage() {
         </Button>
       </div>
 
-      <article className="rounded-2xl border-4 border-double border-amber-400 bg-gradient-to-b from-amber-50 to-white px-5 py-10 text-center shadow-sm sm:px-10 print:shadow-none">
+      <article className="rounded-2xl border-4 border-double border-amber-400 bg-gradient-to-b from-amber-50 to-card px-5 py-10 text-center shadow-sm sm:px-10 print:shadow-none dark:from-amber-500/10">
         <Award className="mx-auto h-14 w-14 text-amber-500" aria-hidden="true" />
-        <p className="mt-3 text-xs font-semibold uppercase tracking-[0.3em] text-amber-700">{siteConfig.name}</p>
-        <h1 className="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl">Chứng nhận cuộc thi</h1>
-        <p className="mt-6 text-sm text-gray-600">Chứng nhận</p>
-        <p className="mt-1 break-words text-2xl font-bold text-primary-800 sm:text-3xl">{cert.user_name}</p>
-        <p className="mt-4 text-sm text-gray-600">đã tham gia và {cert.rank !== null ? `đạt hạng ${cert.rank} tại` : "đạt chuẩn chứng nhận tại"} cuộc thi</p>
-        <p className="mt-1 break-words text-lg font-semibold text-gray-900">{cert.contest_title}</p>
-        <div className="mt-8 flex flex-col items-center justify-center gap-1 text-xs text-gray-500 sm:flex-row sm:gap-6">
+        <p className="mt-3 text-xs font-semibold uppercase tracking-[0.3em] text-amber-700 dark:text-amber-300">{siteConfig.name}</p>
+        <h1 className="mt-2 text-2xl font-bold text-foreground sm:text-3xl">Chứng nhận cuộc thi</h1>
+        <p className="mt-6 text-sm text-muted-foreground">Chứng nhận</p>
+        <p className="mt-1 break-words text-2xl font-bold text-primary-800 sm:text-3xl dark:text-primary-300">{cert.user_name}</p>
+        <p className="mt-4 text-sm text-muted-foreground">đã tham gia và {cert.rank !== null ? `đạt hạng ${cert.rank} tại` : "đạt chuẩn chứng nhận tại"} cuộc thi</p>
+        <p className="mt-1 break-words text-lg font-semibold text-foreground">{cert.contest_title}</p>
+        <div className="mt-8 flex flex-col items-center justify-center gap-1 text-xs text-muted-foreground sm:flex-row sm:gap-6">
           <span>Số chứng nhận: {cert.certificate_number}</span>
           <span>Ngày cấp: {formatContestDateTime(cert.issued_at)}</span>
         </div>

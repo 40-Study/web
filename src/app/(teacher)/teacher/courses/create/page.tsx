@@ -137,7 +137,7 @@ export default function CreateCoursePage() {
             Quay lại
           </Button>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Tạo khoá học mới</h1>
+            <h1 className="text-xl font-bold text-foreground">Tạo khoá học mới</h1>
             <p className="text-sm text-muted-foreground">
               Bước {currentStep}/{STEPS.length} — {STEPS[currentStep - 1].title}
             </p>
@@ -175,8 +175,8 @@ export default function CreateCoursePage() {
                   onClick={() => step.id <= currentStep && setCurrentStep(step.id)}
                   className={cn(
                     "flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-sm transition-colors text-left",
-                    isCurrent && "bg-primary-50 text-primary-700 font-medium",
-                    isCompleted && "text-green-600 hover:bg-green-50 cursor-pointer",
+                    isCurrent && "bg-primary-50 text-primary-700 font-medium dark:bg-primary-500/10 dark:text-primary-300",
+                    isCompleted && "text-green-600 hover:bg-green-50 cursor-pointer dark:text-green-400 dark:hover:bg-green-500/10",
                     !isCurrent && !isCompleted && "text-muted-foreground cursor-default"
                   )}
                 >
@@ -185,7 +185,7 @@ export default function CreateCoursePage() {
                       "w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium shrink-0",
                       isCurrent && "bg-primary-600 text-white",
                       isCompleted && "bg-green-500 text-white",
-                      !isCurrent && !isCompleted && "bg-gray-200 text-gray-500"
+                      !isCurrent && !isCompleted && "bg-muted-foreground/20 text-muted-foreground"
                     )}
                   >
                     {isCompleted ? <Check className="w-3.5 h-3.5" /> : step.id}
@@ -198,8 +198,8 @@ export default function CreateCoursePage() {
             {/* Progress bar */}
             <div className="mt-6 px-3">
               <p className="text-xs text-muted-foreground mb-1">TIẾN TRÌNH</p>
-              <p className="text-2xl font-bold text-gray-900">{currentStep}/4</p>
-              <div className="mt-2 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <p className="text-2xl font-bold text-foreground">{currentStep}/4</p>
+              <div className="mt-2 h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-primary-600 rounded-full transition-all duration-300"
                   style={{ width: `${(currentStep / 4) * 100}%` }}
@@ -218,7 +218,7 @@ export default function CreateCoursePage() {
                 key={step.id}
                 className={cn(
                   "h-1 flex-1 rounded-full",
-                  step.id <= currentStep ? "bg-primary-600" : "bg-gray-200"
+                  step.id <= currentStep ? "bg-primary-600" : "bg-muted-foreground/20"
                 )}
               />
             ))}
@@ -232,7 +232,7 @@ export default function CreateCoursePage() {
           {currentStep === 4 && <Step4Review formData={formData} />}
 
           {thumbnailUploading && (
-            <p role="status" className="mt-6 flex items-center gap-2 text-sm text-amber-700">
+            <p role="status" className="mt-6 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
               <Loader2 className="h-4 w-4 animate-spin" />
               {THUMBNAIL_UPLOADING_NOTE}
             </p>
@@ -290,7 +290,7 @@ function Step4Review({ formData }: { formData: CourseFormData }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">Xác nhận & Hoàn tất</h2>
+        <h2 className="text-xl font-semibold text-foreground">Xác nhận & Hoàn tất</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Kiểm tra lại thông tin trước khi tạo khoá học. Khoá học chỉ được xuất bản sau khi quản trị viên duyệt.
         </p>
@@ -340,7 +340,7 @@ function Step4Review({ formData }: { formData: CourseFormData }) {
           {formData.thumbnail_preview && (
             <div>
               <span className="text-sm text-muted-foreground">Ảnh bìa:</span>
-              <div className="mt-2 relative rounded-lg overflow-hidden aspect-video max-w-xs bg-gray-100">
+              <div className="mt-2 relative rounded-lg overflow-hidden aspect-video max-w-xs bg-muted">
                 <SafeImage src={formData.thumbnail_preview} alt="Ảnh bìa khoá học" fill sizes="320px" className="object-cover" />
               </div>
             </div>
@@ -380,7 +380,7 @@ function Step4Review({ formData }: { formData: CourseFormData }) {
             <div className="sm:pl-6 space-y-3">
               <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Bước tiếp theo</h3>
               <div className="relative pl-5">
-                <div className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-gray-200" />
+                <div className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-muted-foreground/20" />
                 {[
                   // QA-B-16: bỏ chú thích tiếng Anh "Section"/"Lesson".
                   { title: "Thêm chương", desc: "Chia khoá thành các phần" },
@@ -389,8 +389,8 @@ function Step4Review({ formData }: { formData: CourseFormData }) {
                   { title: "Mở lớp học", desc: "Mời học viên" },
                 ].map((item, i) => (
                   <div key={i} className="relative pb-3 last:pb-0">
-                    <div className="absolute -left-5 top-[3px] w-[11px] h-[11px] rounded-full border-2 border-gray-300 bg-white" />
-                    <p className="text-sm text-gray-900">{item.title} <span className="text-muted-foreground">— {item.desc}</span></p>
+                    <div className="absolute -left-5 top-[3px] w-[11px] h-[11px] rounded-full border-2 border-input bg-card" />
+                    <p className="text-sm text-foreground">{item.title} <span className="text-muted-foreground">— {item.desc}</span></p>
                   </div>
                 ))}
               </div>
@@ -408,12 +408,12 @@ function ChecklistItem({ done, label }: { done: boolean; label: string }) {
       <div
         className={cn(
           "w-5 h-5 rounded-full flex items-center justify-center shrink-0",
-          done ? "bg-green-500" : "bg-gray-200"
+          done ? "bg-green-500" : "bg-muted-foreground/20"
         )}
       >
         {done && <Check className="w-3 h-3 text-white" />}
       </div>
-      <span className={cn("text-sm", done ? "text-gray-900" : "text-muted-foreground")}>
+      <span className={cn("text-sm", done ? "text-foreground" : "text-muted-foreground")}>
         {label}
       </span>
     </div>

@@ -17,10 +17,10 @@ interface DiscussionPostCardProps {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  programming: "bg-slate-100 text-slate-600",
-  design: "bg-blue-100 text-blue-600",
-  "learning-tips": "bg-green-100 text-green-600",
-  project: "bg-purple-100 text-purple-600",
+  programming: "bg-muted text-muted-foreground",
+  design: "bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
+  "learning-tips": "bg-green-100 text-green-600 dark:bg-green-500/15 dark:text-green-400",
+  project: "bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400",
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -48,7 +48,7 @@ function stripHtml(html: string): string {
 
 export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCardProps) {
   const hasVoted = post.user_vote === "upvote";
-  const categoryColor = CATEGORY_COLORS[post.category] ?? "bg-slate-100 text-slate-600";
+  const categoryColor = CATEGORY_COLORS[post.category] ?? "bg-muted text-muted-foreground";
   const initials = post.author_name?.slice(0, 2).toUpperCase() ?? "??";
 
   const handleShare = () => {
@@ -57,19 +57,19 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
 
   return (
     <ScrollReveal delay={delay}>
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 hover:shadow-md transition-shadow">
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-5 hover:shadow-md transition-shadow">
         {/* Author row */}
         <div className="flex items-center gap-3 mb-3">
           {post.avatar_url ? (
             <img src={post.avatar_url} alt={post.author_name} className="w-9 h-9 rounded-full object-cover" />
           ) : (
-            <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-sm">
+            <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-sm dark:bg-primary-500/15 dark:text-primary-300">
               {initials}
             </div>
           )}
           <div>
-            <p className="text-sm font-medium text-slate-800">{post.author_name}</p>
-            <p className="text-xs text-slate-400">{timeAgo(post.created_at)}</p>
+            <p className="text-sm font-medium text-foreground">{post.author_name}</p>
+            <p className="text-xs text-muted-foreground">{timeAgo(post.created_at)}</p>
           </div>
           <span className={cn("ml-auto text-xs font-medium px-2.5 py-1 rounded-full", categoryColor)}>
             {CATEGORY_LABELS[post.category] ?? post.category}
@@ -78,19 +78,19 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
 
         {/* Title + excerpt */}
         <Link href={`/discussions/${post.slug}`} className="block group">
-          <h3 className="font-semibold text-slate-900 group-hover:text-primary-600 transition-colors mb-1 line-clamp-2">
+          <h3 className="font-semibold text-foreground group-hover:text-primary-600 transition-colors mb-1 line-clamp-2 dark:group-hover:text-primary-400">
             {post.title}
           </h3>
-          <p className="text-sm text-slate-500 line-clamp-2">{stripHtml(post.content)}</p>
+          <p className="text-sm text-muted-foreground line-clamp-2">{stripHtml(post.content)}</p>
         </Link>
 
         {/* Actions */}
-        <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-50">
+        <div className="flex items-center gap-4 mt-4 pt-4 border-t border-border">
           <button
             onClick={() => onVote(post.id, hasVoted)}
             className={cn(
               "flex items-center gap-1.5 text-sm transition-colors",
-              hasVoted ? "text-rose-500" : "text-slate-400 hover:text-rose-400"
+              hasVoted ? "text-rose-500" : "text-muted-foreground hover:text-rose-400"
             )}
           >
             <Heart className={cn("w-4 h-4", hasVoted && "fill-rose-500")} />
@@ -99,7 +99,7 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
 
           <Link
             href={`/discussions/${post.slug}`}
-            className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-primary-500 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary-500 transition-colors"
           >
             <MessageSquare className="w-4 h-4" />
             <span>{post.reply_count}</span>
@@ -107,7 +107,7 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
 
           <button
             onClick={handleShare}
-            className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-600 transition-colors ml-auto"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-muted-foreground transition-colors ml-auto"
           >
             <Share2 className="w-4 h-4" />
             <span>Chia sẻ</span>

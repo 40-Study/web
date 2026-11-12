@@ -30,7 +30,7 @@ export default function TeacherClassManagePage() {
         </Link>
         <Link
           href={`/teacher/classes/${classId}/attendance`}
-          className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm font-medium hover:border-primary-300 hover:text-primary-600"
+          className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm font-medium hover:border-primary-300 hover:text-primary-600 dark:hover:border-primary-500/30 dark:hover:text-primary-400"
         >
           <ClipboardCheck className="h-4 w-4" aria-hidden="true" /> Điểm danh
         </Link>
@@ -46,7 +46,7 @@ export default function TeacherClassManagePage() {
             Giao bài trong{" "}
             <Link
               href={cls?.course_id ? `/teacher/assignments?courseId=${cls.course_id}` : "/teacher/assignments"}
-              className="font-medium text-primary-600 hover:underline"
+              className="font-medium text-primary-600 hover:underline dark:text-primary-400"
             >
               Quản lý bài tập
             </Link>

@@ -136,7 +136,7 @@ export function WithdrawalSection() {
           </div>
         ) : isHistoryError ? (
           // Lỗi tải phải hiện là lỗi, không được rơi xuống nhánh "chưa có yêu cầu nào".
-          <div className="flex flex-col items-center gap-2 p-6 text-sm text-red-600">
+          <div className="flex flex-col items-center gap-2 p-6 text-sm text-red-600 dark:text-red-400">
             <span>Không tải được lịch sử yêu cầu rút tiền.</span>
             <Button variant="outline" size="sm" onClick={() => refetchHistory()}>
               Thử lại
@@ -190,7 +190,7 @@ export function WithdrawalSection() {
           <div className="mt-4 space-y-3">
             <div>
               <label htmlFor="withdrawal-amount" className="mb-1 block text-sm font-medium">
-                Số tiền muốn rút <span className="text-red-600">*</span>
+                Số tiền muốn rút <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <Input
                 id="withdrawal-amount"
@@ -201,7 +201,7 @@ export function WithdrawalSection() {
                 onChange={(e) => setAmountInput(e.target.value)}
               />
               {isAmountEntered && !isAmountValid && (
-                <p className="mt-1 text-xs text-red-600">
+                <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                   {amountNumber < minWithdrawal
                     ? `Số tiền rút tối thiểu là ${formatWithdrawalAmount(minWithdrawal)}.`
                     : `Số tiền vượt quá số dư khả dụng (${formatWithdrawalAmount(availableBalance)}).`}
@@ -209,11 +209,11 @@ export function WithdrawalSection() {
               )}
             </div>
 
-            <div className="rounded-lg bg-gray-50 px-3 py-2 text-sm dark:bg-gray-900">
+            <div className="rounded-lg bg-muted/50 px-3 py-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Số dư còn lại sau khi rút</span>
                 <span
-                  className={`font-semibold ${remainingAfterWithdrawal < 0 ? "text-red-600" : "text-green-600"}`}
+                  className={`font-semibold ${remainingAfterWithdrawal < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}
                 >
                   {formatWithdrawalAmount(remainingAfterWithdrawal)}
                 </span>

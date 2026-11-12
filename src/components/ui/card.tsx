@@ -12,11 +12,10 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
             ref={ref}
             className={cn(
                 // 16px + viền 1px + shadow-card. Nâng (lift + shadow-raised) chỉ khi hoverable.
-                "rounded-2xl border border-slate-200 bg-white text-card-foreground shadow-card",
+                "rounded-2xl border border-border bg-card text-card-foreground shadow-card",
                 "transition-[box-shadow,transform,border-color] duration-200 motion-reduce:transition-none",
-                "dark:border-slate-800 dark:bg-slate-900",
                 hoverable &&
-                    "cursor-pointer hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-raised dark:hover:border-slate-700 motion-reduce:transform-none",
+                    "cursor-pointer hover:-translate-y-0.5 hover:border-input hover:shadow-raised motion-reduce:transform-none",
                 className
             )}
             {...props}

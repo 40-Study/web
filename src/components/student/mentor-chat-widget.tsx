@@ -21,17 +21,17 @@ export function MentorChatWidget() {
   return (
     <div className="fixed bottom-6 right-6 z-50">
       {open && (
-        <div className="mb-3 w-80 rounded-2xl border bg-white p-5 text-center shadow-xl">
+        <div className="mb-3 w-80 rounded-2xl border bg-card p-5 text-center shadow-xl">
           <button
             onClick={() => setOpen(false)}
-            className="absolute right-3 top-3 rounded-full p-1 text-neutral-400 hover:bg-neutral-100"
+            className="absolute right-3 top-3 rounded-full p-1 text-muted-foreground hover:bg-muted"
             aria-label="Đóng"
           >
             <X className="h-4 w-4" />
           </button>
           <Sparkles className="mx-auto mb-2 h-8 w-8 text-primary-500" />
-          <p className="text-sm font-medium text-black">Trợ lý AI đang được phát triển</p>
-          <p className="mt-1 text-xs text-neutral-500">
+          <p className="text-sm font-medium text-foreground">Trợ lý AI đang được phát triển</p>
+          <p className="mt-1 text-xs text-muted-foreground">
             Tính năng chat với gia sư AI chưa sẵn sàng. Vui lòng quay lại sau.
           </p>
         </div>

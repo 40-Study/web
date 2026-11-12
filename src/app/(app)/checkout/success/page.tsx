@@ -18,7 +18,7 @@ export default function CheckoutSuccessPage() {
     return (
       <div className="commerce-page max-w-xl py-16 text-center">
         <h1 className="text-xl font-semibold">Chưa có thông tin đơn hàng</h1>
-        <p className="my-4 text-sm text-slate-500">
+        <p className="my-4 text-sm text-muted-foreground">
           Mở Đơn hàng của tôi để xem trạng thái thanh toán.
         </p>
         <Link href="/orders">
@@ -46,13 +46,13 @@ export default function CheckoutSuccessPage() {
             <h1 className="text-center text-2xl font-semibold tracking-tight">
               {paid ? (free ? "Đăng ký thành công" : "Thanh toán thành công") : ORDER_STATUS_LABEL[order.status]}
             </h1>
-            <p className="mt-3 text-center text-sm leading-relaxed text-slate-500">
+            <p className="mt-3 text-center text-sm leading-relaxed text-muted-foreground">
               {paid
                 ? "Khoá học đã được thêm vào tài khoản. Bạn có thể bắt đầu học ngay."
                 : "Đơn chưa được xác nhận thanh toán hoàn tất. Xem chi tiết trong Đơn hàng của tôi để tiếp tục."}
             </p>
-            <div className="my-7 rounded-xl bg-slate-50 p-5">
-              <div className="mb-4 flex items-center gap-2 text-xs text-slate-500">
+            <div className="my-7 rounded-xl bg-muted/50 p-5">
+              <div className="mb-4 flex items-center gap-2 text-xs text-muted-foreground">
                 <ReceiptText className="h-4 w-4" />
                 {order.order_number}
               </div>
@@ -83,11 +83,11 @@ export default function CheckoutSuccessPage() {
             </div>
             <p className="commerce-help text-center">
               Bạn có thể xem lại thông tin tại{" "}
-              <Link href="/orders" className="text-indigo-600">
+              <Link href="/orders" className="text-indigo-600 dark:text-indigo-400">
                 Đơn hàng của tôi
               </Link>{" "}
               hoặc{" "}
-              <Link href="/help" className="text-indigo-600">
+              <Link href="/help" className="text-indigo-600 dark:text-indigo-400">
                 liên hệ hỗ trợ
               </Link>
               .

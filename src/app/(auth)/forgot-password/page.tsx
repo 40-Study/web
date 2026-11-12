@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
     <AuthCard>
       <AuthIconHeader
         icon={<LockIcon size={32} className="text-amber-500" />}
-        iconBgClassName="bg-amber-100"
+        iconBgClassName="bg-amber-100 dark:bg-amber-500/15"
         title="Quên mật khẩu?"
         description="Nhập email của bạn để nhận mã xác thực"
         className="mb-6"

@@ -12,7 +12,7 @@ export function CartItemPrice({ item }: { item: PricedCartItem }) {
     <>
       <span>{formatCurrency(price)}</span>
       {originalPrice !== undefined && (
-        <del className="ml-1.5 text-xs font-normal text-gray-400">
+        <del className="ml-1.5 text-xs font-normal text-muted-foreground">
           {formatCurrency(originalPrice)}
         </del>
       )}

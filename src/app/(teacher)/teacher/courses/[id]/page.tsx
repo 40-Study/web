@@ -120,45 +120,45 @@ const CONTENT_TYPES = [
     label: "Video bài giảng",
     desc: "Upload hoặc dán link video",
     icon: Play,
-    color: "text-blue-600",
-    bg: "bg-blue-50",
-    border: "border-blue-200",
+    color: "text-blue-600 dark:text-blue-400",
+    bg: "bg-blue-50 dark:bg-blue-500/10",
+    border: "border-blue-200 dark:border-blue-500/30",
   },
   {
     type: "livestream",
     label: "Buổi học trực tiếp",
     desc: "Lên lịch livestream",
     icon: Radio,
-    color: "text-rose-600",
-    bg: "bg-rose-50",
-    border: "border-rose-200",
+    color: "text-rose-600 dark:text-rose-400",
+    bg: "bg-rose-50 dark:bg-rose-500/10",
+    border: "border-rose-200 dark:border-rose-500/30",
   },
   {
     type: "exercise",
     label: "Bài tập code",
     desc: "Thực hành lập trình",
     icon: Code,
-    color: "text-amber-600",
-    bg: "bg-amber-50",
-    border: "border-amber-200",
+    color: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-50 dark:bg-amber-500/10",
+    border: "border-amber-200 dark:border-amber-500/30",
   },
   {
     type: "article",
     label: "Bài viết",
     desc: "Bài đọc có định dạng",
     icon: BookOpen,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
-    border: "border-emerald-200",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-500/10",
+    border: "border-emerald-200 dark:border-emerald-500/30",
   },
   {
     type: "quiz",
     label: "Trắc nghiệm",
     desc: "Bài kiểm tra trắc nghiệm",
     icon: FileQuestion,
-    color: "text-violet-600",
-    bg: "bg-violet-50",
-    border: "border-violet-200",
+    color: "text-violet-600 dark:text-violet-400",
+    bg: "bg-violet-50 dark:bg-violet-500/10",
+    border: "border-violet-200 dark:border-violet-500/30",
   },
 ];
 
@@ -223,9 +223,9 @@ function SortableSectionCard({
       <Card>
         <CardContent className="p-0">
           {/* Section header */}
-          <div className="flex items-center gap-2 px-4 py-3 border-b bg-gray-50/80">
+          <div className="flex items-center gap-2 px-4 py-3 border-b bg-muted/50">
             {!readOnly && (
-              <button {...attributes} {...listeners} aria-label="Kéo để sắp xếp chương" className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-gray-400 hover:text-gray-600">
+              <button {...attributes} {...listeners} aria-label="Kéo để sắp xếp chương" className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-muted-foreground hover:text-muted-foreground">
                 <GripVertical className="w-4 h-4" />
               </button>
             )}
@@ -240,7 +240,7 @@ function SortableSectionCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-gray-400 hover:text-red-500"
+                className="h-7 w-7 text-muted-foreground hover:text-red-500"
                 aria-label="Xoá chương"
                 onClick={() => onDeleteSection(section.id)}
               >
@@ -283,7 +283,7 @@ function SortableSectionCard({
             <div className="px-4 pb-3">
               <button
                 onClick={() => onAddLesson(section.id)}
-                className="w-full py-2 border border-dashed rounded-lg text-sm text-muted-foreground hover:text-primary-600 hover:border-primary-300 transition-colors flex items-center justify-center gap-1"
+                className="w-full py-2 border border-dashed rounded-lg text-sm text-muted-foreground hover:text-primary-600 hover:border-primary-300 transition-colors flex items-center justify-center gap-1 dark:hover:text-primary-400 dark:hover:border-primary-500/30"
               >
                 <Plus className="w-3.5 h-3.5" /> Thêm bài học
               </button>
@@ -326,13 +326,13 @@ function SortableLessonRow({
   return (
     <div ref={setNodeRef} style={style} className={cn(isDragging && "opacity-50")}>
       {/* Lesson header row */}
-      <div className="flex items-center gap-2 rounded-lg px-2 py-2 group hover:bg-gray-50 transition-colors">
+      <div className="flex items-center gap-2 rounded-lg px-2 py-2 group hover:bg-muted/50 transition-colors">
         {!readOnly && (
-          <button {...attributes} {...listeners} aria-label="Kéo để sắp xếp bài học" className="cursor-grab active:cursor-grabbing p-0.5 text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button {...attributes} {...listeners} aria-label="Kéo để sắp xếp bài học" className="cursor-grab active:cursor-grabbing p-0.5 text-gray-300 hover:text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
             <GripVertical className="w-3.5 h-3.5" />
           </button>
         )}
-        <button onClick={() => setExpanded(!expanded)} className="p-0.5 text-gray-400 hover:text-gray-600">
+        <button onClick={() => setExpanded(!expanded)} className="p-0.5 text-muted-foreground hover:text-muted-foreground">
           <ChevronRight className={cn("w-3.5 h-3.5 transition-transform", expanded && "rotate-90")} />
         </button>
         <button
@@ -407,7 +407,7 @@ function LessonContentsPanel({
   const [submissionsFor, setSubmissionsFor] = useState<LessonContent | null>(null);
 
   return (
-    <div className="ml-10 mr-2 mb-2 border-l-2 border-gray-100 pl-4">
+    <div className="ml-10 mr-2 mb-2 border-l-2 border-border pl-4">
       {isLoading ? (
         <div className="py-2 text-xs text-muted-foreground flex items-center gap-1">
           <Loader2 className="w-3 h-3 animate-spin" /> Tải nội dung...
@@ -455,7 +455,7 @@ function LessonContentsPanel({
                   }
                 };
                 return (
-                  <div key={c.id} className="flex items-center gap-2 py-1.5 group/content hover:bg-gray-50 rounded-lg px-1 -mx-1 transition-colors">
+                  <div key={c.id} className="flex items-center gap-2 py-1.5 group/content hover:bg-muted/50 rounded-lg px-1 -mx-1 transition-colors">
                     <div className={cn("w-5 h-5 rounded flex items-center justify-center shrink-0", cfg.bg, cfg.color)}>
                       <Icon className="w-3 h-3" />
                     </div>
@@ -473,7 +473,7 @@ function LessonContentsPanel({
                       }
                       className="flex-1 min-w-0 text-left disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      <p className="text-xs font-medium truncate hover:text-primary-600">{c.title}</p>
+                      <p className="text-xs font-medium truncate hover:text-primary-600 dark:hover:text-primary-400">{c.title}</p>
                       <p className="text-[10px] text-muted-foreground">
                         {cfg.label}
                         {c.duration ? ` · ${Math.round(c.duration / 60)} phút` : ""}
@@ -483,7 +483,7 @@ function LessonContentsPanel({
                       {(c.type === "video" && c.video_url) && (
                         <button
                           onClick={handleViewContent}
-                          className="p-0.5 text-gray-400 hover:text-primary-600"
+                          className="p-0.5 text-muted-foreground hover:text-primary-600 dark:hover:text-primary-400"
                           title="Xem video"
                         >
                           <Eye className="w-3 h-3" />
@@ -492,7 +492,7 @@ function LessonContentsPanel({
                       {c.type === "exercise" && c.exercise_id && (
                         <button
                           onClick={() => setSubmissionsFor(c)}
-                          className="p-0.5 text-gray-400 hover:text-primary-600"
+                          className="p-0.5 text-muted-foreground hover:text-primary-600 dark:hover:text-primary-400"
                           title="Bài nộp của học viên"
                           aria-label={`Bài nộp của học viên: ${c.title}`}
                         >
@@ -506,7 +506,7 @@ function LessonContentsPanel({
                           )}
                           <button
                             onClick={() => onEditContent?.(c)}
-                            className="p-0.5 text-gray-400 hover:text-primary-600"
+                            className="p-0.5 text-muted-foreground hover:text-primary-600 dark:hover:text-primary-400"
                             title="Chỉnh sửa"
                           >
                             <Pencil className="w-3 h-3" />
@@ -535,7 +535,7 @@ function LessonContentsPanel({
           {!readOnly && (
             <button
               onClick={() => onOpenAddModal?.(lessonId)}
-              className="w-full flex items-center justify-center gap-1.5 py-2 text-[11px] text-primary-600 hover:text-primary-700 font-medium transition-colors border border-dashed border-primary-200 rounded-lg hover:bg-primary-50"
+              className="w-full flex items-center justify-center gap-1.5 py-2 text-[11px] text-primary-600 hover:text-primary-700 font-medium transition-colors border border-dashed border-primary-200 rounded-lg hover:bg-primary-50 dark:text-primary-400 dark:hover:text-primary-300 dark:border-primary-500/30 dark:hover:bg-primary-500/10"
             >
               <Plus className="w-3.5 h-3.5" /> Thêm nội dung
             </button>
@@ -1136,7 +1136,7 @@ export default function CourseDetailPage() {
 
         {/* Course thumbnail */}
         {course.thumbnail_url && (
-          <div className="hidden sm:block w-20 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
+          <div className="hidden sm:block w-20 h-12 rounded-lg overflow-hidden bg-muted shrink-0">
             <SafeImage src={course.thumbnail_url} alt="" width={80} height={48} className="object-cover w-full h-full" />
           </div>
         )}
@@ -1226,7 +1226,7 @@ export default function CourseDetailPage() {
       {!isLocked && sections.length > 0 && (
         <button
           onClick={() => setSectionDialog(true)}
-          className="w-full py-4 border-2 border-dashed rounded-xl text-muted-foreground hover:text-primary-600 hover:border-primary-300 hover:bg-primary-50/30 transition-all flex items-center justify-center gap-2 text-sm font-medium"
+          className="w-full py-4 border-2 border-dashed rounded-xl text-muted-foreground hover:text-primary-600 hover:border-primary-300 hover:bg-primary-50/30 transition-all flex items-center justify-center gap-2 text-sm font-medium dark:hover:text-primary-400 dark:hover:border-primary-500/30"
         >
           <Plus className="w-5 h-5" /> Thêm chương mới
         </button>
@@ -1434,7 +1434,7 @@ function ClassManagementDialog({
           <div className="space-y-3">
             {classes.map((cls) => (
               <div key={cls.id} className="flex items-center gap-3 p-3 border rounded-xl hover:bg-muted/50 transition-colors">
-                <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center text-primary-600 font-semibold">
+                <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center text-primary-600 font-semibold dark:bg-primary-500/15 dark:text-primary-400">
                   {cls.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -1447,13 +1447,13 @@ function ClassManagementDialog({
                 </div>
                 <Link
                   href={`/teacher/classes/${cls.id}`}
-                  className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-primary-600 hover:border-primary-300 transition-colors"
+                  className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-primary-600 hover:border-primary-300 transition-colors dark:hover:text-primary-400 dark:hover:border-primary-500/30"
                 >
                   Quản lý
                 </Link>
                 <Link
                   href={`/teacher/classes/${cls.id}/attendance`}
-                  className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-primary-600 hover:border-primary-300 transition-colors"
+                  className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-primary-600 hover:border-primary-300 transition-colors dark:hover:text-primary-400 dark:hover:border-primary-500/30"
                 >
                   Điểm danh
                 </Link>
@@ -1475,7 +1475,7 @@ function ClassManagementDialog({
 
             <button
               onClick={() => setShowCreateForm(true)}
-              className="w-full py-3 border-2 border-dashed rounded-xl text-muted-foreground hover:text-primary-600 hover:border-primary-300 transition-colors flex items-center justify-center gap-2 text-sm"
+              className="w-full py-3 border-2 border-dashed rounded-xl text-muted-foreground hover:text-primary-600 hover:border-primary-300 transition-colors flex items-center justify-center gap-2 text-sm dark:hover:text-primary-400 dark:hover:border-primary-500/30"
             >
               <Plus className="w-4 h-4" /> Thêm lớp mới
             </button>

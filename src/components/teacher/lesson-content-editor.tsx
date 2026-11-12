@@ -139,7 +139,7 @@ export function LessonContentEditor({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Video className="h-5 w-5 text-primary-600" />
+          <Video className="h-5 w-5 text-primary-600 dark:text-primary-400" />
           <div>
             <h3 className="font-semibold">{lessonTitle}</h3>
             <p className="text-sm text-muted-foreground">Quản lý nội dung bài học</p>
@@ -301,10 +301,10 @@ function ContentItemRow({ item, onEdit, onRemove }: ContentItemRowProps) {
       <div
         className={cn(
           "p-2 rounded-lg",
-          item.type === "video" && "bg-blue-100 text-blue-600",
-          item.type === "live" && "bg-purple-100 text-purple-600",
-          item.type === "document" && "bg-orange-100 text-orange-600",
-          item.type === "exercise" && "bg-green-100 text-green-600"
+          item.type === "video" && "bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
+          item.type === "live" && "bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400",
+          item.type === "document" && "bg-orange-100 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400",
+          item.type === "exercise" && "bg-green-100 text-green-600 dark:bg-green-500/15 dark:text-green-400"
         )}
       >
         <Icon className="h-4 w-4" />

@@ -26,10 +26,10 @@ export function LessonLoadError({ onRetry, className }: LessonLoadErrorProps) {
       role="status"
       className={
         className ??
-        "flex flex-col items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-center"
+        "flex flex-col items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-center dark:border-amber-500/30 dark:bg-amber-500/10"
       }
     >
-      <div className="flex items-center gap-2 text-amber-700">
+      <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
         <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
         <p className="text-sm font-medium">{LESSON_LOAD_ERROR_MESSAGE}</p>
       </div>
@@ -37,7 +37,7 @@ export function LessonLoadError({ onRetry, className }: LessonLoadErrorProps) {
         <button
           type="button"
           onClick={onRetry}
-          className="flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-100"
+          className="flex items-center gap-1.5 rounded-lg border border-amber-300 bg-card px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-100 dark:border-amber-500/30 dark:text-amber-300 dark:hover:bg-amber-500/15"
         >
           <RotateCw className="h-3.5 w-3.5" aria-hidden="true" />
           Thử lại

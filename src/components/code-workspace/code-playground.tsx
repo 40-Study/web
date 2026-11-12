@@ -203,7 +203,7 @@ export function CodePlayground() {
                 <p
                   role="status"
                   className={
-                    result.status?.id === 3 ? "text-sm text-green-700" : "text-sm text-destructive"
+                    result.status?.id === 3 ? "text-sm text-green-700 dark:text-green-300" : "text-sm text-destructive"
                   }
                 >
                   {result.status?.id === 3 ? "Chạy thành công" : "Chạy không thành công"}

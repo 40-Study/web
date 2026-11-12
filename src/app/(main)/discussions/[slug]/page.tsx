@@ -25,10 +25,10 @@ interface PageProps {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  programming: "bg-slate-100 text-slate-600",
-  design: "bg-blue-100 text-blue-600",
-  "learning-tips": "bg-green-100 text-green-600",
-  project: "bg-purple-100 text-purple-600",
+  programming: "bg-muted text-muted-foreground",
+  design: "bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
+  "learning-tips": "bg-green-100 text-green-600 dark:bg-green-500/15 dark:text-green-400",
+  project: "bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400",
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -62,7 +62,7 @@ export default function DiscussionDetailPage({ params }: PageProps) {
   const sessionStatus = useAuthStore((s) => s.sessionStatus);
 
   const hasVoted = post?.user_vote === "upvote";
-  const categoryColor = CATEGORY_COLORS[post?.category ?? ""] ?? "bg-slate-100 text-slate-600";
+  const categoryColor = CATEGORY_COLORS[post?.category ?? ""] ?? "bg-muted text-muted-foreground";
   const initials = post?.author_name?.slice(0, 2).toUpperCase() ?? "??";
 
   const handlePostVote = () => {
@@ -95,10 +95,10 @@ export default function DiscussionDetailPage({ params }: PageProps) {
   if (isLoading) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-8 animate-pulse space-y-4">
-        <div className="h-4 w-24 bg-slate-200 rounded" />
-        <div className="h-8 w-2/3 bg-slate-200 rounded" />
-        <div className="h-4 w-full bg-slate-100 rounded" />
-        <div className="h-4 w-4/5 bg-slate-100 rounded" />
+        <div className="h-4 w-24 bg-muted-foreground/20 rounded" />
+        <div className="h-8 w-2/3 bg-muted-foreground/20 rounded" />
+        <div className="h-4 w-full bg-muted rounded" />
+        <div className="h-4 w-4/5 bg-muted rounded" />
       </div>
     );
   }
@@ -106,7 +106,7 @@ export default function DiscussionDetailPage({ params }: PageProps) {
   if (!post) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <p className="text-slate-500">Bài viết không tồn tại.</p>
+        <p className="text-muted-foreground">Bài viết không tồn tại.</p>
         <Link href="/discussions" className="text-primary-500 hover:underline text-sm mt-2 inline-block">
           Quay lại diễn đàn
         </Link>
@@ -119,23 +119,23 @@ export default function DiscussionDetailPage({ params }: PageProps) {
       {/* Back link */}
       <Link
         href="/discussions"
-        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary-500 transition-colors mb-6"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary-500 transition-colors mb-6"
       >
         <ArrowLeft className="w-4 h-4" />
         Diễn đàn
       </Link>
 
       {/* Post card */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-6 mb-6">
         {/* Category + meta */}
         <div className="flex items-center gap-3 mb-4">
           <span className={cn("text-xs font-medium px-2.5 py-1 rounded-full", categoryColor)}>
             {CATEGORY_LABELS[post.category] ?? post.category}
           </span>
-          <span className="text-xs text-slate-400">{timeAgo(post.created_at)}</span>
+          <span className="text-xs text-muted-foreground">{timeAgo(post.created_at)}</span>
         </div>
 
-        <h1 className="text-xl font-bold text-slate-900 mb-4">{post.title}</h1>
+        <h1 className="text-xl font-bold text-foreground mb-4">{post.title}</h1>
 
         {/* Author */}
         <div className="flex items-center gap-3 mb-5">
@@ -143,32 +143,32 @@ export default function DiscussionDetailPage({ params }: PageProps) {
             // eslint-disable-next-line @next/next/no-img-element -- avatar từ URL ngoài, chưa cấu hình next/image
             <img src={post.avatar_url} alt={post.author_name} className="w-9 h-9 rounded-full object-cover" />
           ) : (
-            <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-sm">
+            <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-sm dark:bg-primary-500/15 dark:text-primary-300">
               {initials}
             </div>
           )}
-          <span className="text-sm font-medium text-slate-700">{post.author_name}</span>
+          <span className="text-sm font-medium text-foreground">{post.author_name}</span>
         </div>
 
         {/* Content */}
         <div
-          className="prose prose-sm max-w-none text-slate-700 mb-6"
+          className="prose prose-sm max-w-none text-foreground mb-6"
           dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
         />
 
         {/* Actions */}
-        <div className="flex items-center gap-4 pt-4 border-t border-slate-100">
+        <div className="flex items-center gap-4 pt-4 border-t border-border">
           <button
             onClick={handlePostVote}
             className={cn(
               "flex items-center gap-1.5 text-sm transition-colors",
-              hasVoted ? "text-rose-500" : "text-slate-400 hover:text-rose-400"
+              hasVoted ? "text-rose-500" : "text-muted-foreground hover:text-rose-400"
             )}
           >
             <Heart className={cn("w-4 h-4", hasVoted && "fill-rose-500")} />
             <span>{post.upvote_count}</span>
           </button>
-          <div className="flex items-center gap-1.5 text-sm text-slate-400">
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <MessageSquare className="w-4 h-4" />
             <span>{post.reply_count} bình luận</span>
           </div>
@@ -177,8 +177,8 @@ export default function DiscussionDetailPage({ params }: PageProps) {
 
       {/* Comment composer */}
       {sessionStatus === "authenticated" && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
-          <p className="text-sm font-medium text-slate-700 mb-3">Viết bình luận</p>
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-5 mb-6">
+          <p className="text-sm font-medium text-foreground mb-3">Viết bình luận</p>
           <TiptapEditor
             value={commentContent}
             onChange={setCommentContent}
@@ -197,14 +197,14 @@ export default function DiscussionDetailPage({ params }: PageProps) {
         </div>
       )}
       {sessionStatus === "anonymous" && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6" data-testid="discussion-login-cta">
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-5 mb-6" data-testid="discussion-login-cta">
           <LoginRequiredPrompt message="Đăng nhập để tham gia bình luận." returnTo={`/discussions/${slug}`} />
         </div>
       )}
 
       {/* Comments thread */}
       {post.comments?.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm px-5 divide-y divide-slate-50">
+        <div className="bg-card rounded-2xl border border-border shadow-sm px-5 divide-y divide-border">
           {post.comments.map((comment) => (
             <DiscussionComment
               key={comment.id}

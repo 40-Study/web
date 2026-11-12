@@ -14,14 +14,14 @@ import ScheduleEventDetailDialog from "@/components/schedule/schedule-event-deta
 import { liveSessionToEvent, timetableEntriesToEvents, visibleDateRange, toVnWallClock } from "@/lib/teacher-schedule-events";
 
 const EVENT_COLORS = [
-  { name: "Toán", bg: "bg-blue-100", border: "border-blue-300", text: "text-blue-800", dot: "bg-blue-500" },
-  { name: "Văn", bg: "bg-emerald-100", border: "border-emerald-300", text: "text-emerald-800", dot: "bg-emerald-500" },
-  { name: "Anh", bg: "bg-violet-100", border: "border-violet-300", text: "text-violet-800", dot: "bg-violet-500" },
-  { name: "Lý", bg: "bg-rose-100", border: "border-rose-300", text: "text-rose-800", dot: "bg-rose-500" },
-  { name: "Hoá", bg: "bg-amber-100", border: "border-amber-300", text: "text-amber-800", dot: "bg-amber-500" },
-  { name: "Sinh", bg: "bg-pink-100", border: "border-pink-300", text: "text-pink-800", dot: "bg-pink-500" },
-  { name: "Sử", bg: "bg-cyan-100", border: "border-cyan-300", text: "text-cyan-800", dot: "bg-cyan-500" },
-  { name: "Khác", bg: "bg-gray-100", border: "border-gray-300", text: "text-gray-800", dot: "bg-gray-500" },
+  { name: "Toán", bg: "bg-blue-100 dark:bg-blue-500/15", border: "border-blue-300 dark:border-blue-500/30", text: "text-blue-800 dark:text-blue-300", dot: "bg-blue-500" },
+  { name: "Văn", bg: "bg-emerald-100 dark:bg-emerald-500/15", border: "border-emerald-300 dark:border-emerald-500/30", text: "text-emerald-800 dark:text-emerald-300", dot: "bg-emerald-500" },
+  { name: "Anh", bg: "bg-violet-100 dark:bg-violet-500/15", border: "border-violet-300 dark:border-violet-500/30", text: "text-violet-800 dark:text-violet-300", dot: "bg-violet-500" },
+  { name: "Lý", bg: "bg-rose-100 dark:bg-rose-500/15", border: "border-rose-300 dark:border-rose-500/30", text: "text-rose-800 dark:text-rose-300", dot: "bg-rose-500" },
+  { name: "Hoá", bg: "bg-amber-100 dark:bg-amber-500/15", border: "border-amber-300 dark:border-amber-500/30", text: "text-amber-800 dark:text-amber-300", dot: "bg-amber-500" },
+  { name: "Sinh", bg: "bg-pink-100 dark:bg-pink-500/15", border: "border-pink-300 dark:border-pink-500/30", text: "text-pink-800 dark:text-pink-300", dot: "bg-pink-500" },
+  { name: "Sử", bg: "bg-cyan-100 dark:bg-cyan-500/15", border: "border-cyan-300 dark:border-cyan-500/30", text: "text-cyan-800 dark:text-cyan-300", dot: "bg-cyan-500" },
+  { name: "Khác", bg: "bg-muted", border: "border-input", text: "text-foreground", dot: "bg-muted-foreground" },
 ];
 
 const RECURRENCE_OPTIONS = [
@@ -147,16 +147,16 @@ function FullEventDialog({
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 placeholder="Tên môn học / Nội dung học"
-                className="text-lg font-semibold border-0 bg-transparent px-0 h-auto focus-visible:ring-0 placeholder:text-gray-500"
+                className="text-lg font-semibold border-0 bg-transparent px-0 h-auto focus-visible:ring-0 placeholder:text-muted-foreground"
                 autoFocus
               />
-              <p className="text-sm text-gray-600 mt-1">{dateLabel}</p>
+              <p className="text-sm text-muted-foreground mt-1">{dateLabel}</p>
             </div>
             <button
               onClick={() => onOpenChange(false)}
               className="p-1.5 rounded-full hover:bg-black/10 transition-colors"
             >
-              <X className="h-5 w-5 text-gray-600" />
+              <X className="h-5 w-5 text-muted-foreground" />
             </button>
           </div>
         </div>
@@ -165,13 +165,13 @@ function FullEventDialog({
         <div className="px-5 py-4 space-y-4">
           {/* Date & Time */}
           <div className="flex items-center gap-3">
-            <Clock className="h-5 w-5 text-gray-400 shrink-0" />
+            <Clock className="h-5 w-5 text-muted-foreground shrink-0" />
             <div className="flex items-center gap-2 flex-1">
               <input
                 type="date"
                 value={selectedDate}
                 onChange={e => setSelectedDate(e.target.value)}
-                className="h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="h-9 px-3 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <input
                 type="time"
@@ -185,23 +185,23 @@ function FullEventDialog({
                     setEndTime(`${String(newEnd).padStart(2, "0")}:${String(sm).padStart(2, "0")}`);
                   }
                 }}
-                className="h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="h-9 px-3 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <span className="text-gray-400">–</span>
+              <span className="text-muted-foreground">–</span>
               <input
                 type="time"
                 value={endTime}
                 onChange={e => setEndTime(e.target.value)}
-                className="h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="h-9 px-3 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           {/* Recurrence */}
           <div className="flex items-center gap-3">
-            <Repeat className="h-5 w-5 text-gray-400 shrink-0" />
+            <Repeat className="h-5 w-5 text-muted-foreground shrink-0" />
             <Select value={recurrence} onValueChange={setRecurrence}>
-              <SelectTrigger className="h-9 text-sm border-gray-200">
+              <SelectTrigger className="h-9 text-sm border-border">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -214,20 +214,20 @@ function FullEventDialog({
 
           {/* Location */}
           <div className="flex items-center gap-3">
-            <MapPin className="h-5 w-5 text-gray-400 shrink-0" />
+            <MapPin className="h-5 w-5 text-muted-foreground shrink-0" />
             <Input
               value={location}
               onChange={e => setLocation(e.target.value)}
               placeholder="Phòng học (VD: A101, Online)"
-              className="h-9 text-sm border-gray-200"
+              className="h-9 text-sm border-border"
             />
           </div>
 
           {/* Reminder */}
           <div className="flex items-center gap-3">
-            <Bell className="h-5 w-5 text-gray-400 shrink-0" />
+            <Bell className="h-5 w-5 text-muted-foreground shrink-0" />
             <Select value={reminderMin} onValueChange={setReminderMin}>
-              <SelectTrigger className="h-9 text-sm border-gray-200">
+              <SelectTrigger className="h-9 text-sm border-border">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -243,7 +243,7 @@ function FullEventDialog({
 
           {/* Subject Color */}
           <div className="flex items-center gap-3">
-            <BookOpen className="h-5 w-5 text-gray-400 shrink-0" />
+            <BookOpen className="h-5 w-5 text-muted-foreground shrink-0" />
             <div className="flex flex-wrap gap-2">
               {EVENT_COLORS.map((c, i) => (
                 <button
@@ -253,7 +253,7 @@ function FullEventDialog({
                   className={cn(
                     "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all",
                     c.bg, c.text, c.border, "border",
-                    colorIdx === i && "ring-2 ring-offset-1 ring-gray-400"
+                    colorIdx === i && "ring-2 ring-offset-1 ring-muted-foreground/60"
                   )}
                 >
                   {c.name}
@@ -270,18 +270,18 @@ function FullEventDialog({
               onChange={e => setDescription(e.target.value)}
               placeholder="Ghi chú (bài tập, nội dung cần chuẩn bị...)"
               rows={2}
-              className="text-sm border-gray-200 resize-none"
+              className="text-sm border-border resize-none"
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-3 border-t bg-gray-50">
+        <div className="flex items-center justify-between px-5 py-3 border-t bg-muted/50">
           {isEditing && onDelete ? (
             <Button
               variant="ghost"
               onClick={handleDelete}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10"
             >
               <Trash2 className="h-4 w-4 mr-1" />
               Xoá
@@ -326,7 +326,7 @@ export default function SchedulePage() {
   }, [timetable, range, sessions, notes]);
   return <div>
     {isLoading && <p role="status" className="mb-2 text-xs text-muted-foreground">Đang tải lịch học…</p>}
-    {(isError || liveError) && <p role="alert" className="mb-2 text-sm text-red-600">Chưa tải được đầy đủ lịch học. Vui lòng tải lại trang.</p>}
+    {(isError || liveError) && <p role="alert" className="mb-2 text-sm text-red-600 dark:text-red-400">Chưa tải được đầy đủ lịch học. Vui lòng tải lại trang.</p>}
     {/* QA-A-15: học viên chỉ tạo được ghi chú cá nhân, không tạo buổi học như giáo viên. */}
     <WeekCalendarGrid events={events} selectable selectionHelp="Bấm hoặc kéo trên lịch để thêm ghi chú cá nhân." onRangeChange={handleRange}
       onSelectMore={start => setFullDialog({ open: true, date: start, hour: start.getHours(), editingNote: null })}

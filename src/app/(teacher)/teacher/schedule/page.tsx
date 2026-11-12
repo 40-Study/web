@@ -149,7 +149,7 @@ export default function TeacherSchedulePage() {
   return (
     <div>
       {isLoading && <p className="mb-3 text-sm text-muted-foreground">Đang tải lịch dạy...</p>}
-      {(isError || timetableError) && <p role="alert" className="mb-3 text-sm text-red-600">Chưa tải được đầy đủ lịch. <button className="underline" onClick={() => { if (isError) void refetch(); if (timetableError) void refetchTimetable(); }}>Thử lại</button></p>}
+      {(isError || timetableError) && <p role="alert" className="mb-3 text-sm text-red-600 dark:text-red-400">Chưa tải được đầy đủ lịch. <button className="underline" onClick={() => { if (isError) void refetch(); if (timetableError) void refetchTimetable(); }}>Thử lại</button></p>}
       <WeekCalendarGrid
         events={events}
         selectable

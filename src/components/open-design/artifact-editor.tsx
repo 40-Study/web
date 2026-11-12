@@ -216,7 +216,7 @@ export function ArtifactEditor({
               </label>
               <fieldset className="space-y-2">
                 <legend className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
                   Chọn một đáp án đúng
                 </legend>
                 {q.options.map((option, j) => (

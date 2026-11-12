@@ -21,8 +21,8 @@ export default function TeacherApplicationPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Hồ sơ ứng tuyển giảng viên</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-foreground">Hồ sơ ứng tuyển giảng viên</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Quản trị viên xem hồ sơ và cấp quyền giảng dạy. Bạn có thể tạo khoá học sau khi được duyệt.
         </p>
       </div>
@@ -39,7 +39,7 @@ export default function TeacherApplicationPage() {
 function CreateApplication() {
   const create = useCreateTeacherApplication();
   return (
-    <section className="rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+    <section className="rounded-xl border bg-card p-5 shadow-sm dark:border-gray-800">
       <h2 className="mb-4 text-base font-semibold">Nộp hồ sơ</h2>
       <ApplicationForm
         submitLabel="Nộp hồ sơ"
@@ -94,9 +94,9 @@ function RejectedApplication({ application }: { application: MyTeacherApplicatio
 
       {/* can_resubmit do backend tính (rejected && resubmission_count < max) — không tự tính lại. */}
       {application.can_resubmit ? (
-        <section className="rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+        <section className="rounded-xl border bg-card p-5 shadow-sm dark:border-gray-800">
           <h2 className="text-base font-semibold">Sửa hồ sơ và nộp lại</h2>
-          <p className="mb-4 mt-1 text-sm text-gray-500">Bạn còn {remaining} lần nộp lại.</p>
+          <p className="mb-4 mt-1 text-sm text-muted-foreground">Bạn còn {remaining} lần nộp lại.</p>
           <ApplicationForm
             initial={application}
             submitLabel="Nộp lại"
@@ -109,7 +109,7 @@ function RejectedApplication({ application }: { application: MyTeacherApplicatio
         <p
           role="alert"
           data-testid="application-resubmit-limit"
-          className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300"
+          className="rounded-lg border border-border bg-card p-4 text-sm text-foreground"
         >
           Bạn đã nộp lại tối đa 3 lần. Vui lòng liên hệ bộ phận hỗ trợ để được xem xét.
         </p>
@@ -119,9 +119,9 @@ function RejectedApplication({ application }: { application: MyTeacherApplicatio
 }
 
 const TONE_CLASS = {
-  success: "border-green-200 bg-green-50 text-green-800",
-  warning: "border-amber-200 bg-amber-50 text-amber-800",
-  danger: "border-red-200 bg-red-50 text-red-800",
+  success: "border-green-200 bg-green-50 text-green-800 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-300",
+  warning: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300",
+  danger: "border-red-200 bg-red-50 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300",
 } as const;
 
 function Banner({

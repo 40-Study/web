@@ -107,7 +107,7 @@ function RejectReasonBody({
       <DialogTitle>{title}</DialogTitle>
       <DialogDescription>{description}</DialogDescription>
       <div className="mt-4 text-sm">
-        <label htmlFor="reject-reason" className="mb-1 block font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="reject-reason" className="mb-1 block font-medium text-foreground">
           Lý do từ chối <span className="text-red-500">*</span>
         </label>
         <textarea
@@ -118,9 +118,9 @@ function RejectReasonBody({
           maxLength={REJECT_REASON_MAX_LEN}
           rows={4}
           placeholder="Nêu rõ lý do để người gửi biết cần sửa gì..."
-          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm dark:bg-gray-900"
         />
-        <p className="mt-1 text-right text-xs text-gray-400">
+        <p className="mt-1 text-right text-xs text-muted-foreground">
           {reason.length}/{REJECT_REASON_MAX_LEN}
         </p>
       </div>

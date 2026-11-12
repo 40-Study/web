@@ -253,12 +253,12 @@ export function CourseDetailSidebar({
       {!isEnrolled && !isFree && !isPurchaseCardVisible && (
         <div
           data-testid="mobile-buy-bar"
-          className="fixed bottom-[5.5rem] left-2 right-2 z-40 flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-2 shadow-md sm:left-4 sm:right-4 lg:hidden"
+          className="fixed bottom-[5.5rem] left-2 right-2 z-40 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-2 shadow-md sm:left-4 sm:right-4 lg:hidden"
         >
           <p className="flex min-w-0 items-baseline gap-2">
-            <span className="text-base font-bold text-gray-900">{formatCurrency(course.price)}</span>
+            <span className="text-base font-bold text-foreground">{formatCurrency(course.price)}</span>
             {discountPct > 0 && course.originalPrice && (
-              <span className="truncate text-xs text-gray-400 line-through">{formatCurrency(course.originalPrice)}</span>
+              <span className="truncate text-xs text-muted-foreground line-through">{formatCurrency(course.originalPrice)}</span>
             )}
           </p>
           <Button
@@ -273,7 +273,7 @@ export function CourseDetailSidebar({
       )}
 
       <div className="sticky top-28 space-y-4">
-        <div ref={purchaseCardRef} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md">
+        <div ref={purchaseCardRef} className="overflow-hidden rounded-2xl border border-border bg-card shadow-md">
           {/* Video preview thumbnail */}
           <div className="relative aspect-video cursor-pointer overflow-hidden bg-gray-900">
             <img
@@ -301,15 +301,15 @@ export function CourseDetailSidebar({
             {!isEnrolled && !isFree && (
               <div className="mb-4">
                 <div className="flex items-end gap-2">
-                  <span className="text-3xl font-bold text-gray-900">
+                  <span className="text-3xl font-bold text-foreground">
                     {formatCurrency(course.price)}
                   </span>
                   {discountPct > 0 && course.originalPrice && (
                     <>
-                      <span className="text-base text-gray-400 line-through">
+                      <span className="text-base text-muted-foreground line-through">
                         {formatCurrency(course.originalPrice)}
                       </span>
-                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600">
+                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 dark:bg-red-500/15 dark:text-red-400">
                         -{discountPct}%
                       </span>
                     </>
@@ -323,11 +323,11 @@ export function CourseDetailSidebar({
               {isEnrolled ? (
                 /* State 4: Already enrolled */
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm text-gray-600">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <span>Tiến độ</span>
                     <span className="font-medium">{progress}%</span>
                   </div>
-                  <div className="mb-3 h-2 overflow-hidden rounded-full bg-gray-100">
+                  <div className="mb-3 h-2 overflow-hidden rounded-full bg-muted">
                     <div
                       className="h-full rounded-full bg-primary-500 transition-all"
                       style={{ width: `${progress}%` }}
@@ -360,7 +360,7 @@ export function CourseDetailSidebar({
                     className={cn(
                       "w-full gap-2",
                       inCart
-                        ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        ? "bg-muted text-foreground hover:bg-muted-foreground/20"
                         : "bg-primary-600 hover:bg-primary-700 text-white"
                     )}
                     size="lg"
@@ -374,7 +374,7 @@ export function CourseDetailSidebar({
                   </Button>
                   <Button
                     variant="outline"
-                    className="w-full border-primary-300 text-primary-700 hover:bg-primary-50"
+                    className="w-full border-primary-300 text-primary-700 hover:bg-primary-50 dark:border-primary-500/30 dark:text-primary-300 dark:hover:bg-primary-500/10"
                     size="lg"
                     onClick={handleBuyNowClick}
                     disabled={isSessionPending}
@@ -388,7 +388,7 @@ export function CourseDetailSidebar({
             {/* B5 (QA vòng 2 N4, chủ dự án chốt Q9): bỏ cam kết "hoàn tiền trong 7 ngày" vì
                 không có chính sách/nút nào thực hiện nó; hoàn tiền là admin xử lý thủ công. */}
             {!isEnrolled && !isFree && (
-              <p className="mt-3 text-center text-xs text-gray-500">
+              <p className="mt-3 text-center text-xs text-muted-foreground">
                 Cần hỗ trợ hoặc hoàn tiền? Vui lòng liên hệ bộ phận hỗ trợ.
               </p>
             )}
@@ -396,12 +396,12 @@ export function CourseDetailSidebar({
         </div>
 
         {/* Course includes box */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <h3 className="mb-3 font-semibold text-gray-900">Khoá học này bao gồm:</h3>
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <h3 className="mb-3 font-semibold text-foreground">Khoá học này bao gồm:</h3>
           <ul className="space-y-2">
             {courseIncludes.map(({ icon: Icon, label }) => (
-              <li key={label} className="flex items-center gap-2.5 text-sm text-gray-600">
-                <Icon className="h-4 w-4 flex-shrink-0 text-gray-400" />
+              <li key={label} className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                <Icon className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                 {label}
               </li>
             ))}
@@ -410,8 +410,8 @@ export function CourseDetailSidebar({
 
         {/* Voucher - only for unenrolled paid courses */}
         {!isEnrolled && !isFree && (
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <h3 className="mb-3 font-semibold text-gray-900">Mã giảm giá</h3>
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <h3 className="mb-3 font-semibold text-foreground">Mã giảm giá</h3>
             {/* subtotal = giá khoá: thiếu thì mặc định 0 và voucher có đơn tối thiểu luôn bị từ chối (cùng lỗi A-05 ở
                 dialog Mua ngay). Kết quả được giữ lại để "Mua ngay" mở dialog với voucher đã áp, không bắt nhập lại. */}
             <VoucherInput courseIds={[String(course.id)]} subtotal={course.price} onApplied={setVoucherResult} />

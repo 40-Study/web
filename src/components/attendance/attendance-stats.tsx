@@ -51,9 +51,9 @@ function StatCard({
   className?: string;
 }) {
   return (
-    <div className={cn("rounded-lg border border-gray-200 p-4", className)}>
-      <p className="text-xs font-medium uppercase text-gray-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-gray-900">{value}</p>
+    <div className={cn("rounded-lg border border-border p-4", className)}>
+      <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
+      <p className="mt-1 text-2xl font-semibold text-foreground">{value}</p>
     </div>
   );
 }
@@ -87,7 +87,7 @@ export function AttendanceStats({ summary }: { summary: AttendanceSummary }) {
       </div>
 
       {summary.shouldWarn && (
-        <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
           Bạn đã vắng {pct(summary.absenceRate)} số buổi đã ghi nhận. Hãy liên hệ
           giáo viên nếu cần hỗ trợ.
         </p>

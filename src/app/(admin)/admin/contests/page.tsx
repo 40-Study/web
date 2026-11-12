@@ -44,8 +44,8 @@ export default function AdminContestsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Cuộc thi</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-foreground">Cuộc thi</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Duyệt cuộc thi giảng viên gửi lên, gắn giải voucher, huỷ và chốt kết quả sau khi cuộc thi kết thúc.
         </p>
       </div>
@@ -67,7 +67,7 @@ export default function AdminContestsPage() {
               "rounded-lg px-3 py-1.5 text-sm font-medium",
               tab === key
                 ? "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
-                : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                : "bg-muted text-muted-foreground"
             )}
           >
             {label}
@@ -75,7 +75,7 @@ export default function AdminContestsPage() {
         ))}
       </div>
 
-      <section className="grid gap-3 rounded-xl border bg-white p-4 shadow-sm sm:grid-cols-2 dark:border-gray-800 dark:bg-gray-950">
+      <section className="grid gap-3 rounded-xl border bg-card p-4 shadow-sm sm:grid-cols-2 dark:border-gray-800">
         <input
           value={keyword}
           onChange={(e) => {
@@ -84,7 +84,7 @@ export default function AdminContestsPage() {
           }}
           placeholder="Tìm theo tên cuộc thi..."
           aria-label="Tìm cuộc thi"
-          className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+          className="h-10 rounded-lg border border-border px-3 text-sm dark:bg-gray-900"
         />
         {tab === "all" && (
           <select
@@ -94,7 +94,7 @@ export default function AdminContestsPage() {
               setStatus(isContestStatus(e.target.value) ? e.target.value : "");
               setPage(1);
             }}
-            className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+            className="h-10 rounded-lg border border-border px-3 text-sm dark:bg-gray-900"
           >
             <option value="">Tất cả trạng thái</option>
             {CONTEST_STATUSES.map((s) => (
@@ -122,7 +122,7 @@ export default function AdminContestsPage() {
             <li
               key={c.id}
               data-testid={`admin-contest-${c.id}`}
-              className="flex flex-col gap-2 rounded-xl border bg-white p-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800 dark:bg-gray-950"
+              className="flex flex-col gap-2 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800"
             >
               <div className="min-w-0 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
@@ -130,14 +130,14 @@ export default function AdminContestsPage() {
                   <Badge variant={phaseVariant(c.phase)}>{phaseLabel(c.phase)}</Badge>
                   {c.has_voucher_prize && <Badge variant="secondary">Có voucher</Badge>}
                 </div>
-                <p className="break-words text-xs text-gray-500">
+                <p className="break-words text-xs text-muted-foreground">
                   {c.creator_name} · {formatVnDateTime(c.start_time)} → {formatVnDateTime(c.end_time)}
                   {c.submitted_at ? ` · gửi duyệt ${formatVnDateTime(c.submitted_at)}` : ""}
                 </p>
               </div>
               <Link
                 href={`/admin/contests/${c.id}`}
-                className="shrink-0 rounded-lg bg-gray-100 px-3 py-1.5 text-center text-sm font-medium hover:bg-gray-200 dark:bg-gray-800"
+                className="shrink-0 rounded-lg bg-muted px-3 py-1.5 text-center text-sm font-medium hover:bg-muted-foreground/20"
               >
                 Xem và xử lý
               </Link>
@@ -145,7 +145,7 @@ export default function AdminContestsPage() {
           ))}
         </ul>
         {data && data.total_pages > 1 && (
-          <div className="flex items-center justify-between text-sm text-gray-500">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>
               Trang {page}/{data.total_pages} — {data.total_count} cuộc thi
             </span>

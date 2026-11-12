@@ -17,7 +17,7 @@ import type { ContestPhase } from "@/types/contest";
 import { ContestLoading } from "./contest-states";
 import { useServerCountdown } from "./use-server-countdown";
 
-const MEDAL_COLOR: Record<number, string> = { 1: "text-amber-500", 2: "text-slate-400", 3: "text-orange-600" };
+const MEDAL_COLOR: Record<number, string> = { 1: "text-amber-500", 2: "text-muted-foreground", 3: "text-orange-600 dark:text-orange-400" };
 
 interface ContestLeaderboardProps {
   contestId: string;
@@ -43,7 +43,7 @@ export function ContestLeaderboard({ contestId, phase, endTime, serverTime, rece
 
   if (!visibility.visible) {
     return (
-      <p className="text-sm text-gray-600" role="status">
+      <p className="text-sm text-muted-foreground" role="status">
         {visibility.message}
       </p>
     );
@@ -53,7 +53,7 @@ export function ContestLeaderboard({ contestId, phase, endTime, serverTime, rece
     const hidden = contestErrorCode(query.error) === "CONTEST_LEADERBOARD_HIDDEN";
     return (
       <div className="space-y-2 text-sm" role={hidden ? "status" : "alert"}>
-        <p className={hidden ? "text-gray-600" : "text-red-600"}>{contestErrorMessage(query.error)}</p>
+        <p className={hidden ? "text-muted-foreground" : "text-red-600 dark:text-red-400"}>{contestErrorMessage(query.error)}</p>
         {!hidden && (
           <Button variant="outline" size="sm" onClick={() => query.refetch()}>
             Thử lại
@@ -64,36 +64,36 @@ export function ContestLeaderboard({ contestId, phase, endTime, serverTime, rece
   }
   const data = query.data;
   if (!data || data.items.length === 0) {
-    return <p className="text-sm text-gray-600">Chưa có ai nộp bài trong cuộc thi này.</p>;
+    return <p className="text-sm text-muted-foreground">Chưa có ai nộp bài trong cuộc thi này.</p>;
   }
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted-foreground">
         {data.finalized ? "Kết quả đã được chốt chính thức." : "Xếp hạng tạm thời, chờ quản trị viên chốt kết quả."} Điểm bằng nhau thì
         ai nộp trước xếp trên.
       </p>
-      <ol className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200">
+      <ol className="divide-y divide-border overflow-hidden rounded-xl border border-border">
         {data.items.map((row) => (
           <li
             key={`${row.rank}-${row.user_name}`}
-            className={cn("flex items-center gap-3 px-3 py-2.5", row.is_me && "bg-primary-50")}
+            className={cn("flex items-center gap-3 px-3 py-2.5", row.is_me && "bg-primary-50 dark:bg-primary-500/10")}
           >
-            <span className="flex w-8 shrink-0 justify-center font-bold text-gray-700">
+            <span className="flex w-8 shrink-0 justify-center font-bold text-foreground">
               {row.rank <= 3 ? <Medal className={cn("h-5 w-5", MEDAL_COLOR[row.rank])} aria-label={`Hạng ${row.rank}`} /> : row.rank}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-gray-900">
+              <p className="truncate text-sm font-medium text-foreground">
                 {row.user_name}
-                {row.is_me && <span className="ml-1.5 text-xs font-semibold text-primary-700">(Bạn)</span>}
+                {row.is_me && <span className="ml-1.5 text-xs font-semibold text-primary-700 dark:text-primary-300">(Bạn)</span>}
               </p>
-              <p className="text-xs text-gray-500">{formatContestDuration(row.time_spent_seconds)}</p>
+              <p className="text-xs text-muted-foreground">{formatContestDuration(row.time_spent_seconds)}</p>
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-sm font-semibold text-foreground">
                 {formatContestScore(row.score)}/{formatContestScore(row.total_points)}
               </p>
-              <p className="text-xs text-gray-500">{formatContestPercent(row.percentage)}</p>
+              <p className="text-xs text-muted-foreground">{formatContestPercent(row.percentage)}</p>
             </div>
           </li>
         ))}
@@ -103,7 +103,7 @@ export function ContestLeaderboard({ contestId, phase, endTime, serverTime, rece
           <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} aria-label="Trang trước">
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </Button>
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-muted-foreground">
             {data.page}/{data.total_pages}
           </span>
           <Button variant="outline" size="sm" disabled={page >= data.total_pages} onClick={() => setPage((p) => p + 1)} aria-label="Trang sau">

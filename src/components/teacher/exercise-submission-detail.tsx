@@ -57,7 +57,7 @@ export function ExerciseSubmissionDetail({ submission, testCases, testCasesLoadi
       {submission.error_message && (
         <div>
           <p className="text-sm font-medium mb-1">Thông báo lỗi</p>
-          <pre className="max-h-40 overflow-auto rounded-lg bg-red-50 p-3 text-xs text-red-700 whitespace-pre-wrap">
+          <pre className="max-h-40 overflow-auto rounded-lg bg-red-50 p-3 text-xs text-red-700 whitespace-pre-wrap dark:bg-red-500/10 dark:text-red-300">
             {submission.error_message}
           </pre>
         </div>
@@ -95,8 +95,8 @@ export function ExerciseSubmissionDetail({ submission, testCases, testCasesLoadi
               )}
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <pre className="overflow-auto rounded bg-gray-50 p-2 whitespace-pre-wrap">{tc.input || "(trống)"}</pre>
-              <pre className="overflow-auto rounded bg-gray-50 p-2 whitespace-pre-wrap">{tc.expected_output}</pre>
+              <pre className="overflow-auto rounded bg-muted/50 p-2 whitespace-pre-wrap">{tc.input || "(trống)"}</pre>
+              <pre className="overflow-auto rounded bg-muted/50 p-2 whitespace-pre-wrap">{tc.expected_output}</pre>
             </div>
           </div>
         ))}

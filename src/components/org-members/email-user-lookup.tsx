@@ -67,7 +67,7 @@ export function EmailUserLookup({ orgId, memberIds, selected, onSelect }: EmailU
       </div>
       <p className="text-xs text-muted-foreground">Nhập đúng email người đó dùng để đăng nhập.</p>
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {error}
         </p>
       )}

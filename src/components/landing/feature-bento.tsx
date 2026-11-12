@@ -50,10 +50,10 @@ export function FeatureBento() {
           <p className="mb-3 text-sm font-semibold text-primary-600 dark:text-primary-400">
             Tính năng
           </p>
-          <h2 className="text-h2 text-slate-900 dark:text-slate-50">
+          <h2 className="text-h2 text-foreground">
             Hệ sinh thái học tập toàn diện
           </h2>
-          <p className="text-body mt-4 text-slate-600 dark:text-slate-300">
+          <p className="text-body mt-4 text-muted-foreground">
             Mọi công cụ bạn cần để tiến xa hơn trên con đường phát triển sự nghiệp.
           </p>
         </div>
@@ -66,8 +66,8 @@ export function FeatureBento() {
               <div className="mb-6 flex size-12 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400">
                 <Icon className="h-6 w-6" aria-hidden />
               </div>
-              <h3 className="text-h3 text-slate-900 dark:text-slate-50">{title}</h3>
-              <p className="text-body mt-3 max-w-[65ch] text-slate-600 dark:text-slate-300">
+              <h3 className="text-h3 text-foreground">{title}</h3>
+              <p className="text-body mt-3 max-w-[65ch] text-muted-foreground">
                 {description}
               </p>
             </Card>

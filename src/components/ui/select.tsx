@@ -86,7 +86,7 @@ const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps>(
         aria-expanded={open}
         aria-controls={listboxId}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-lg border border-input bg-card px-3 py-2 text-sm ring-offset-background transition-colors duration-150 hover:border-slate-400 focus:outline-none focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-input dark:hover:border-slate-500",
+          "flex h-10 w-full items-center justify-between rounded-lg border border-input bg-card px-3 py-2 text-sm ring-offset-background transition-colors duration-150 hover:border-muted-foreground/60 focus:outline-none focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-input",
           className
         )}
         // Đang mở mà bấm lại trigger: giữ focus trong listbox để không bị đóng hai lần (blur rồi click).
@@ -166,7 +166,7 @@ const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
           if (open && !rootRef.current?.contains(event.relatedTarget as Node | null)) closeList(false);
         }}
         className={cn(
-          "absolute z-50 mt-1 min-w-[8rem] w-full overflow-hidden rounded-lg border bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-raised outline-none animate-in fade-in-0 zoom-in-95",
+          "absolute z-50 mt-1 min-w-[8rem] w-full overflow-hidden rounded-lg border bg-card text-foreground shadow-raised outline-none animate-in fade-in-0 zoom-in-95",
           !open && "hidden",
           className
         )}

@@ -31,14 +31,14 @@ export function HeroSection() {
         </Badge>
 
         {/* Mobile (390px): text-4xl + cụm nhấn mạnh được xuống dòng; nowrap chỉ từ sm (PG-H2). */}
-        <h1 className="text-display max-w-4xl break-words text-balance text-4xl text-slate-900 dark:text-slate-50 sm:text-5xl md:text-6xl">
+        <h1 className="text-display max-w-4xl break-words text-balance text-4xl text-foreground sm:text-5xl md:text-6xl">
           Khai phóng tiềm năng{" "}
           <span className="text-primary-600 dark:text-primary-400 sm:whitespace-nowrap">
             công nghệ của bạn
           </span>
         </h1>
 
-        <p className="text-body-lg mt-6 max-w-2xl text-slate-600 dark:text-slate-300">
+        <p className="text-body-lg mt-6 max-w-2xl text-muted-foreground">
           Học lập trình và thiết kế qua bài giảng video, bài tập và buổi học trực tiếp cùng
           giảng viên, bám sát các dự án thực tế.
         </p>
@@ -68,7 +68,7 @@ export function HeroSection() {
 
         {/* QA-A-05: bỏ dòng "Được 10.000+ học viên tin dùng" kèm avatar giả — chưa có API thống kê công khai
             nên không có số thật để hiện. */}
-        <ul className="mt-8 flex flex-col items-center gap-x-8 gap-y-3 text-sm font-medium text-slate-600 dark:text-slate-300 sm:flex-row">
+        <ul className="mt-8 flex flex-col items-center gap-x-8 gap-y-3 text-sm font-medium text-muted-foreground sm:flex-row">
           {HIGHLIGHTS.map(({ icon: Icon, label }) => (
             <li key={label} className="flex items-center gap-2">
               <Icon className="h-4 w-4 text-primary-600 dark:text-primary-400" aria-hidden />

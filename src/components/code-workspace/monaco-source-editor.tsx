@@ -81,7 +81,7 @@ export function MonacoSourceEditor({
           className="flex flex-col items-start gap-3 p-6 text-sm"
           style={{ minHeight: height }}
         >
-          <p className="flex items-center gap-2 font-medium text-red-700">
+          <p className="flex items-center gap-2 font-medium text-red-700 dark:text-red-300">
             <AlertTriangle className="h-4 w-4" />
             Không tải được trình soạn thảo code.
           </p>

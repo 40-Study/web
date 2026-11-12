@@ -229,7 +229,7 @@ function LessonContentsPanel({
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="text-primary-600 hover:text-primary-700 h-7 px-2"
+                  className="text-primary-600 hover:text-primary-700 h-7 px-2 dark:text-primary-400 dark:hover:text-primary-300"
                   onClick={(e) => {
                     e.stopPropagation();
                     onViewVideo(makeViewing(content));
@@ -312,7 +312,7 @@ function ExpandableLessonRow({
             {formatDuration(lesson.duration)}
           </span>
           {canAccess && showTrialLinks && (
-            <span className="text-sm text-primary-600">Xem thử</span>
+            <span className="text-sm text-primary-600 dark:text-primary-400">Xem thử</span>
           )}
         </div>
       </div>

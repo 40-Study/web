@@ -50,10 +50,10 @@ export function StreakCard({
           <Flame className="h-5 w-5" aria-hidden="true" />
         </div>
         <div className="min-w-0">
-          <p className="text-h2 leading-none tabular-nums text-slate-900 dark:text-slate-50">
+          <p className="text-h2 leading-none tabular-nums text-foreground">
             {currentStreak}
           </p>
-          <p className="text-body-sm mt-1 text-slate-600 dark:text-slate-400">ngày liên tiếp</p>
+          <p className="text-body-sm mt-1 text-muted-foreground">ngày liên tiếp</p>
         </div>
       </div>
 
@@ -70,7 +70,7 @@ export function StreakCard({
                 "mx-auto flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold",
                 done
                   ? "bg-streak text-white dark:bg-orange-500 dark:text-slate-950"
-                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+                  : "bg-muted text-muted-foreground",
                 isToday && "ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-slate-900"
               )}
             >
@@ -80,7 +80,7 @@ export function StreakCard({
         })}
       </ul>
 
-      <p className="text-body-sm mt-3 text-slate-600 dark:text-slate-400">
+      <p className="text-body-sm mt-3 text-muted-foreground">
         {hasStreakToday
           ? `Kỷ lục ${longestStreak} ngày`
           : "Hoàn thành một bài học để giữ chuỗi"}

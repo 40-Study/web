@@ -101,20 +101,20 @@ export default function ClassAttendancePage() {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-6">
       <header className="mb-6">
-        <Link href={`/teacher/classes/${classId}`} className="mb-2 inline-block text-sm text-gray-500 hover:text-gray-900">
+        <Link href={`/teacher/classes/${classId}`} className="mb-2 inline-block text-sm text-muted-foreground hover:text-foreground">
           ← Quản lý lớp
         </Link>
-        <h1 className="text-2xl font-semibold text-gray-900">Điểm danh</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-semibold text-foreground">Điểm danh</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Chọn buổi học rồi đánh dấu trạng thái cho từng học viên.
         </p>
       </header>
 
       {!sessionsLoading && sessions.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+        <div className="rounded-lg border border-dashed border-input p-8 text-center text-sm text-muted-foreground">
           Lớp này chưa có buổi học nào. Hãy tạo lịch học trước khi điểm danh.
           <div className="mt-3">
-            <Link href={`/teacher/classes/${classId}?tab=schedule`} className="font-medium text-primary-600 hover:underline">
+            <Link href={`/teacher/classes/${classId}?tab=schedule`} className="font-medium text-primary-600 hover:underline dark:text-primary-400">
               Tạo lịch học cho lớp
             </Link>
           </div>
@@ -123,7 +123,7 @@ export default function ClassAttendancePage() {
         <>
           <div className="mb-4 flex flex-wrap items-end gap-3">
             <label className="flex-1 min-w-[240px]">
-              <span className="mb-1 block text-xs font-medium text-gray-600">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">
                 Buổi học
               </span>
               <select
@@ -132,7 +132,7 @@ export default function ClassAttendancePage() {
                   reset();
                   setSessionId(e.target.value);
                 }}
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary-500"
+                className="w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-primary-500"
               >
                 {groups.past.length > 0 && (
                   <optgroup label="Hôm nay và đã qua">
@@ -155,7 +155,7 @@ export default function ClassAttendancePage() {
               type="button"
               onClick={markAllPresent}
               disabled={archived || saving || rows.length === 0}
-              className="rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/50 disabled:opacity-50"
             >
               Đánh dấu tất cả có mặt
             </button>
@@ -171,13 +171,13 @@ export default function ClassAttendancePage() {
           </div>
 
           {archived && (
-            <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
               Lớp đã lưu trữ: chỉ xem điểm danh. Hãy mở lại lớp ở trang quản lý lớp để điểm danh tiếp.
             </p>
           )}
 
           {selectedSession?.status === "cancelled" && (
-            <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">
               Buổi học này đã bị huỷ
               {selectedSession.cancel_reason
                 ? `: ${selectedSession.cancel_reason}`
@@ -186,7 +186,7 @@ export default function ClassAttendancePage() {
           )}
 
           {loading ? (
-            <div className="rounded-lg border border-gray-200 p-8 text-center text-sm text-gray-500">
+            <div className="rounded-lg border border-border p-8 text-center text-sm text-muted-foreground">
               Đang tải…
             </div>
           ) : (

@@ -12,44 +12,44 @@ export function getEventColor(event: ScheduleEvent) {
   if (event.kind === "class-schedule" || event.kind === "class-session") {
     return {
       border: "border-l-teal-500",
-      bg: "bg-teal-50",
-      text: "text-teal-700",
-      tagBg: "bg-teal-100 text-teal-700",
+      bg: "bg-teal-50 dark:bg-teal-500/10",
+      text: "text-teal-700 dark:text-teal-300",
+      tagBg: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
       fc: "#14b8a6",
     };
   }
   if (event.tag === "GIAO VIỆC" || event.type === "hybrid") {
     return {
       border: "border-l-purple-500",
-      bg: "bg-purple-50",
-      text: "text-purple-700",
-      tagBg: "bg-purple-100 text-purple-700",
+      bg: "bg-purple-50 dark:bg-purple-500/10",
+      text: "text-purple-700 dark:text-purple-300",
+      tagBg: "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300",
       fc: "#a855f7",
     };
   }
   if (event.status === "ongoing") {
     return {
       border: "border-l-red-500",
-      bg: "bg-red-50",
-      text: "text-red-700",
-      tagBg: "bg-red-100 text-red-700",
+      bg: "bg-red-50 dark:bg-red-500/10",
+      text: "text-red-700 dark:text-red-300",
+      tagBg: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300",
       fc: "#ef4444",
     };
   }
   if (event.status === "completed") {
     return {
       border: "border-l-green-500",
-      bg: "bg-green-50",
-      text: "text-green-700",
-      tagBg: "bg-green-100 text-green-700",
+      bg: "bg-green-50 dark:bg-green-500/10",
+      text: "text-green-700 dark:text-green-300",
+      tagBg: "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300",
       fc: "#22c55e",
     };
   }
   return {
     border: "border-l-blue-500",
-    bg: "bg-blue-50",
-    text: "text-blue-700",
-    tagBg: "bg-blue-100 text-blue-700",
+    bg: "bg-blue-50 dark:bg-blue-500/10",
+    text: "text-blue-700 dark:text-blue-300",
+    tagBg: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
     fc: "#3b82f6",
   };
 }
@@ -94,7 +94,7 @@ export default function CalendarEventCard({ event }: CalendarEventCardProps) {
           <span className={cn("text-[10px] font-semibold shrink-0", colors.text)}>
             {format(parseISO(event.startTime), "HH:mm")}
           </span>
-          <span className="text-[10px] font-medium text-gray-900 truncate">
+          <span className="text-[10px] font-medium text-foreground truncate">
             {event.title}
           </span>
         </div>
@@ -108,7 +108,7 @@ export default function CalendarEventCard({ event }: CalendarEventCardProps) {
               {timeStr}
             </span>
           </div>
-          <span className="text-[11px] font-semibold text-gray-900 truncate leading-tight">
+          <span className="text-[11px] font-semibold text-foreground truncate leading-tight">
             {event.title}
           </span>
         </div>
@@ -121,7 +121,7 @@ export default function CalendarEventCard({ event }: CalendarEventCardProps) {
             <p className={cn("text-[10px] font-semibold leading-tight", colors.text)}>
               {timeStr}
             </p>
-            <h4 className="font-semibold text-gray-900 text-[11px] mt-0.5 line-clamp-2 leading-tight">
+            <h4 className="font-semibold text-foreground text-[11px] mt-0.5 line-clamp-2 leading-tight">
               {event.title}
             </h4>
           </div>
@@ -135,7 +135,7 @@ export default function CalendarEventCard({ event }: CalendarEventCardProps) {
             <div className="flex items-center gap-1 ml-auto">
               {event.recurrenceRule && <Repeat className={cn("w-2.5 h-2.5 shrink-0", colors.text)} />}
               {event.participants && (
-                <span className="text-[9px] text-gray-500">+{event.participants}</span>
+                <span className="text-[9px] text-muted-foreground">+{event.participants}</span>
               )}
             </div>
           </div>

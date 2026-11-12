@@ -105,7 +105,7 @@ export default function AdminTagsPage() {
           </div>
         </div>
         {formError && (
-          <p role="alert" className="mt-2 text-xs text-red-600">
+          <p role="alert" className="mt-2 text-xs text-red-600 dark:text-red-400">
             {formError}
           </p>
         )}

@@ -16,7 +16,7 @@ export default function CreateContestPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <Link href="/teacher/contests" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:underline">
+      <Link href="/teacher/contests" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline">
         <ArrowLeft className="h-4 w-4" />
         Cuộc thi của tôi
       </Link>

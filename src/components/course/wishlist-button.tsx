@@ -72,8 +72,8 @@ export function WishlistButton({ courseId, variant = "icon", className }: Wishli
         "inline-flex items-center justify-center gap-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60",
         variant === "icon"
           ? "h-9 w-9 rounded-full bg-white/95 text-slate-600 shadow-xs backdrop-blur-sm hover:text-rose-600 dark:bg-slate-900/95 dark:text-slate-300"
-          : "rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:border-rose-300 hover:text-rose-600",
-        saved && "text-rose-600",
+          : "rounded-full border border-input bg-card px-4 py-2 text-sm font-medium text-foreground hover:border-rose-300 hover:text-rose-600 dark:hover:border-rose-500/30 dark:hover:text-rose-400",
+        saved && "text-rose-600 dark:text-rose-400",
         className,
       )}
     >

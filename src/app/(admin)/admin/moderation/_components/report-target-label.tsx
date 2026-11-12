@@ -13,15 +13,15 @@ const NO_TITLE_LABEL: Record<string, string> = {
 export function ReportTargetLabel({ report }: { report: Report }) {
   const target = report.target;
   if (!target) {
-    return <span className="break-all font-mono text-[11px] text-gray-400">{report.reported_id}</span>;
+    return <span className="break-all font-mono text-[11px] text-muted-foreground">{report.reported_id}</span>;
   }
   if (!target.exists) {
-    return <span className="text-xs italic text-gray-500">Đối tượng đã bị xoá</span>;
+    return <span className="text-xs italic text-muted-foreground">Đối tượng đã bị xoá</span>;
   }
 
   const name = target.name || NO_TITLE_LABEL[target.type] || "Không có tiêu đề";
   const link = getReportTargetLink(report);
-  if (!link) return <span className="text-xs text-gray-600 dark:text-gray-300">{name}</span>;
+  if (!link) return <span className="text-xs text-muted-foreground">{name}</span>;
   return (
     <Link
       href={link.href}

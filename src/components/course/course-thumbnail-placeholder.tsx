@@ -17,7 +17,7 @@ export function CourseThumbnailPlaceholder({
     <div
       data-testid="course-thumbnail-placeholder"
       className={cn(
-        "absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-800",
+        "absolute inset-0 flex items-center justify-center bg-muted",
         className
       )}
     >

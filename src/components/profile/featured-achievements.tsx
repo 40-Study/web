@@ -22,7 +22,7 @@ interface FeaturedAchievementsProps {
 }
 
 const rarityGradients: Record<string, string> = {
-  common: "bg-gray-400",
+  common: "bg-muted-foreground",
   rare: "bg-blue-500",
   epic: "bg-purple-500",
   legendary: "bg-yellow-500",
@@ -36,7 +36,7 @@ export function FeaturedAchievements({
     return (
       <Card className={cn("p-6", className)}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-gray-900 dark:text-white">
+          <h2 className="font-semibold text-foreground">
             Thành tích nổi bật
           </h2>
           <Button variant="ghost" size="sm" asChild>
@@ -53,7 +53,7 @@ export function FeaturedAchievements({
   return (
     <Card className={cn("p-6", className)}>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-semibold text-gray-900 dark:text-white">
+        <h2 className="font-semibold text-foreground">
           Thành tích nổi bật
         </h2>
         <Button variant="ghost" size="sm" asChild>
@@ -85,7 +85,7 @@ export function FeaturedAchievements({
                 achievement.icon || achievement.name.slice(0, 1).toUpperCase()
               )}
             </div>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 line-clamp-2">
+            <p className="text-xs font-medium text-foreground line-clamp-2">
               {achievement.name}
             </p>
           </div>

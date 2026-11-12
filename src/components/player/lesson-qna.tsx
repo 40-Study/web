@@ -68,19 +68,19 @@ export function LessonQnA({ lessonId, lessonTitle }: LessonQnAProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-gray-100 p-4">
+      <div className="border-b border-border p-4">
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Tiêu đề câu hỏi (không bắt buộc)"
-          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-400 focus:outline-none"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-400 focus:outline-none"
         />
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={3}
           placeholder="Bạn chưa hiểu chỗ nào?"
-          className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-400 focus:outline-none"
+          className="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-400 focus:outline-none"
         />
         <div className="mt-2 flex justify-end">
           <button
@@ -107,11 +107,11 @@ export function LessonQnA({ lessonId, lessonTitle }: LessonQnAProps) {
           // Review vòng 1 (#16): mất mạng/lỗi thật KHÔNG còn bị nuốt thành
           // "chưa có câu hỏi nào" — hiện đúng trạng thái + nút thử lại.
           <div className="flex flex-col items-center gap-2 py-10 text-center">
-            <p className="text-sm text-gray-500">Không tải được câu hỏi. Vui lòng thử lại.</p>
+            <p className="text-sm text-muted-foreground">Không tải được câu hỏi. Vui lòng thử lại.</p>
             <button
               type="button"
               onClick={() => refetch()}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50"
             >
               Thử lại
             </button>
@@ -119,22 +119,22 @@ export function LessonQnA({ lessonId, lessonTitle }: LessonQnAProps) {
         ) : posts.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <MessageCircleQuestion className="h-8 w-8 text-gray-200" aria-hidden="true" />
-            <p className="text-sm text-gray-500">{LESSON_QNA_EMPTY_MESSAGE}</p>
+            <p className="text-sm text-muted-foreground">{LESSON_QNA_EMPTY_MESSAGE}</p>
           </div>
         ) : (
           <ul className="space-y-3">
             {posts.map((post) => (
-              <li key={post.id} className="rounded-xl border border-gray-100 bg-white p-3">
-                <p className="text-sm font-medium text-gray-900">{post.title}</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-gray-600">{post.content}</p>
-                <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
+              <li key={post.id} className="rounded-xl border border-border bg-card p-3">
+                <p className="text-sm font-medium text-foreground">{post.title}</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{post.content}</p>
+                <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                   <span>{post.author_name}</span>
                   <div className="flex items-center gap-3">
                     <span>{post.reply_count} trả lời</span>
                     <button
                       type="button"
                       onClick={() => voteMutation.mutate(post.id)}
-                      className="flex items-center gap-1 hover:text-primary-600"
+                      className="flex items-center gap-1 hover:text-primary-600 dark:hover:text-primary-400"
                       aria-label="Hữu ích"
                     >
                       <ThumbsUp className="h-3.5 w-3.5" aria-hidden="true" />

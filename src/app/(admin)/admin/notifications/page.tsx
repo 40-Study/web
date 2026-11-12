@@ -21,7 +21,7 @@ const TITLE_MAX = 255;
 const CONTENT_MAX = 2000;
 
 const selectClass =
-  "h-10 w-full rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900";
+  "h-10 w-full rounded-lg border border-border px-3 text-sm dark:bg-gray-900";
 
 export default function AdminBroadcastNotificationsPage() {
   const [title, setTitle] = useState("");
@@ -66,14 +66,14 @@ export default function AdminBroadcastNotificationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Thông báo hệ thống</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-foreground">Thông báo hệ thống</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Gửi thông báo tới toàn bộ người dùng hoặc theo vai trò. Chỉ tài khoản đang hoạt động nhận được.
         </p>
       </div>
 
       <form
-        className="space-y-5 rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950"
+        className="space-y-5 rounded-xl border bg-card p-5 shadow-sm dark:border-gray-800"
         onSubmit={(e) => {
           e.preventDefault();
           if (canSubmit) setConfirmOpen(true);
@@ -100,7 +100,7 @@ export default function AdminBroadcastNotificationsPage() {
         </div>
 
         <fieldset className="space-y-2">
-          <legend className="text-sm font-medium text-gray-900 dark:text-gray-100">Đối tượng nhận</legend>
+          <legend className="text-sm font-medium text-foreground">Đối tượng nhận</legend>
           <label className="flex items-center gap-2 text-sm">
             <input type="radio" name="audience" checked={audience === "all"} onChange={() => setAudience("all")} />
             Tất cả người dùng
@@ -111,9 +111,9 @@ export default function AdminBroadcastNotificationsPage() {
           </label>
           {audience === "roles" && (
             <div className="ml-6 space-y-1" role="group" aria-label="Vai trò nhận thông báo">
-              {rolesQuery.isLoading && <p className="text-sm text-gray-500">Đang tải vai trò...</p>}
+              {rolesQuery.isLoading && <p className="text-sm text-muted-foreground">Đang tải vai trò...</p>}
               {rolesQuery.isError && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-red-600 dark:text-red-400">
                   Không tải được danh sách vai trò.{" "}
                   <button type="button" className="underline" onClick={() => rolesQuery.refetch()}>
                     Thử lại
@@ -144,13 +144,13 @@ export default function AdminBroadcastNotificationsPage() {
             <option value="promotion">Khuyến mãi</option>
           </select>
           {type === "promotion" && (
-            <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-1.5 text-xs text-muted-foreground">
               Người dùng đã tắt nhận thông báo khuyến mãi sẽ không nằm trong số người nhận.
             </p>
           )}
         </div>
 
-        <p className="text-sm text-gray-600 dark:text-gray-300" role="status" aria-live="polite">
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
           {!audienceReady
             ? "Chọn ít nhất một vai trò để xem số người nhận."
             : preview.isError

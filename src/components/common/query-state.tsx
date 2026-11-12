@@ -112,11 +112,11 @@ export function QueryState({
     return (
       <div
         className={cn(
-          "flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-200 px-6 py-12 text-center dark:border-gray-800",
+          "flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border px-6 py-12 text-center",
           className
         )}
       >
-        <p className="font-medium text-gray-700 dark:text-gray-200">{emptyTitle}</p>
+        <p className="font-medium text-foreground">{emptyTitle}</p>
         <p className="text-sm text-muted-foreground">{emptyDescription}</p>
       </div>
     );

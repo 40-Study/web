@@ -135,14 +135,14 @@ export function VoucherInput({
 
   if (applied?.valid) {
     return (
-      <div className={cn("flex items-center justify-between rounded-lg bg-green-50 border border-green-200 px-3 py-2", className)}>
-        <div className="flex items-center gap-2 text-green-700">
+      <div className={cn("flex items-center justify-between rounded-lg bg-green-50 border border-green-200 px-3 py-2 dark:bg-green-500/10 dark:border-green-500/30", className)}>
+        <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
           <Tag className="h-4 w-4 shrink-0" />
           <span className="text-sm font-medium">{applied.voucher?.code}</span>
           <span className="text-sm">— Giảm {formatCurrency(applied.discount_amount)}</span>
         </div>
-        <button onClick={handleRemove} className="p-1 hover:bg-green-100 rounded" aria-label="Xoá voucher">
-          <X className="h-4 w-4 text-green-600" />
+        <button onClick={handleRemove} className="p-1 hover:bg-green-100 rounded dark:hover:bg-green-500/15" aria-label="Xoá voucher">
+          <X className="h-4 w-4 text-green-600 dark:text-green-400" />
         </button>
       </div>
     );

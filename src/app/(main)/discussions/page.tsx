@@ -41,8 +41,8 @@ export default function DiscussionsPage() {
   return (
     <div className="page-container py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Diễn đàn thảo luận</h1>
-        <p className="text-slate-500 mt-1">Trao đổi, chia sẻ và học hỏi cùng cộng đồng</p>
+        <h1 className="text-2xl font-bold text-foreground">Diễn đàn thảo luận</h1>
+        <p className="text-muted-foreground mt-1">Trao đổi, chia sẻ và học hỏi cùng cộng đồng</p>
       </div>
 
       <div className="flex gap-6">
@@ -56,25 +56,25 @@ export default function DiscussionsPage() {
           {isLoading ? (
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 animate-pulse">
+                <div key={i} className="bg-card rounded-2xl border border-border shadow-sm p-5 animate-pulse">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-full bg-slate-200" />
+                    <div className="w-9 h-9 rounded-full bg-muted-foreground/20" />
                     <div className="space-y-1.5">
-                      <div className="h-3 w-24 bg-slate-200 rounded" />
-                      <div className="h-2.5 w-16 bg-slate-100 rounded" />
+                      <div className="h-3 w-24 bg-muted-foreground/20 rounded" />
+                      <div className="h-2.5 w-16 bg-muted rounded" />
                     </div>
                   </div>
-                  <div className="h-4 w-3/4 bg-slate-200 rounded mb-2" />
-                  <div className="h-3 w-full bg-slate-100 rounded" />
+                  <div className="h-4 w-3/4 bg-muted-foreground/20 rounded mb-2" />
+                  <div className="h-3 w-full bg-muted rounded" />
                 </div>
               ))}
             </div>
           ) : posts.length === 0 ? (
             <div className="text-center py-16">
-              <div className="mx-auto w-14 h-14 rounded-2xl bg-primary-50 flex items-center justify-center mb-4">
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-primary-50 flex items-center justify-center mb-4 dark:bg-primary-500/10">
                 <MessageSquare className="w-7 h-7 text-primary-400" />
               </div>
-              <p className="text-slate-500">Chưa có bài viết nào. Hãy mở đầu cuộc thảo luận!</p>
+              <p className="text-muted-foreground">Chưa có bài viết nào. Hãy mở đầu cuộc thảo luận!</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -87,7 +87,7 @@ export default function DiscussionsPage() {
                 />
               ))}
               <div className="flex flex-col items-center gap-2 pt-2">
-                <p className="text-sm text-slate-500" aria-live="polite">
+                <p className="text-sm text-muted-foreground" aria-live="polite">
                   Đang hiển thị {posts.length} / {feedTotal} bài viết
                 </p>
                 {hasNextPage && (

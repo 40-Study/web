@@ -15,7 +15,7 @@ import { useServerCountdown } from "./use-server-countdown";
  */
 export function ContestAwardPanel({ slug, award }: { slug: string; award: ContestAwardBrief }) {
   return (
-    <div className="min-w-0 space-y-2 rounded-xl bg-violet-50 p-3 text-sm text-violet-900">
+    <div className="min-w-0 space-y-2 rounded-xl bg-violet-50 p-3 text-sm text-violet-900 dark:bg-violet-500/10 dark:text-violet-300">
       <p className="font-semibold">Chúc mừng, bạn đã nhận giải!</p>
       {award.certificate_number && (
         <div className="flex flex-wrap items-center gap-2">
@@ -23,7 +23,7 @@ export function ContestAwardPanel({ slug, award }: { slug: string; award: Contes
             <Award className="mr-1.5 h-4 w-4" aria-hidden="true" />
             Xem chứng nhận
           </Link>
-          <span className="min-w-0 break-all text-xs text-violet-800" data-testid="certificate-number">
+          <span className="min-w-0 break-all text-xs text-violet-800 dark:text-violet-300" data-testid="certificate-number">
             Số {award.certificate_number}
           </span>
         </div>
@@ -61,7 +61,7 @@ export function ContestAnswersPending({ answersAvailableAt, serverTime, received
   const remaining = useServerCountdown(answersAvailableAt, serverTime, onAvailable, receivedAt);
   if (remaining === 0) {
     return (
-      <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600" role="status">
+      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground" role="status">
         <span>Đã tới giờ công bố, đang tải đáp án…</span>
         <Button variant="outline" size="sm" onClick={onAvailable}>
           Tải lại
@@ -70,10 +70,10 @@ export function ContestAnswersPending({ answersAvailableAt, serverTime, received
     );
   }
   return (
-    <div className="space-y-1 text-sm text-gray-600" role="status">
+    <div className="space-y-1 text-sm text-muted-foreground" role="status">
       <p>Đáp án và giải thích được công bố lúc {formatContestTimeWithSeconds(answersAvailableAt)}.</p>
       {remaining !== null && (
-        <p className="flex items-center gap-1.5 font-mono font-semibold text-gray-900" role="timer">
+        <p className="flex items-center gap-1.5 font-mono font-semibold text-foreground" role="timer">
           <Clock className="h-4 w-4" aria-hidden="true" />
           Còn {formatCountdown(remaining)}
         </p>

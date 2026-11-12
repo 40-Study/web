@@ -38,38 +38,38 @@ export function contestCorrectAnswer(a: ContestReviewAnswer): string {
 }
 
 export function ContestAnswerReview({ answers }: { answers: ContestReviewAnswer[] }) {
-  if (answers.length === 0) return <p className="text-sm text-gray-600">Chưa có dữ liệu chi tiết cho bài làm này.</p>;
+  if (answers.length === 0) return <p className="text-sm text-muted-foreground">Chưa có dữ liệu chi tiết cho bài làm này.</p>;
 
   return (
     <ol className="space-y-3">
       {answers.map((a, i) => {
         const given = contestAnswerGiven(a);
         const Icon = given === null ? MinusCircle : a.is_correct ? CheckCircle : XCircle;
-        const tone = given === null ? "text-gray-400" : a.is_correct ? "text-emerald-600" : "text-red-500";
+        const tone = given === null ? "text-muted-foreground" : a.is_correct ? "text-emerald-600 dark:text-emerald-400" : "text-red-500";
         const correct = contestCorrectAnswer(a);
         return (
-          <li key={a.id} className="min-w-0 space-y-1.5 rounded-xl border border-gray-200 p-3 text-sm">
-            <p className="flex items-start gap-2 font-medium text-gray-900">
+          <li key={a.id} className="min-w-0 space-y-1.5 rounded-xl border border-border p-3 text-sm">
+            <p className="flex items-start gap-2 font-medium text-foreground">
               <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", tone)} aria-hidden="true" />
               <span className="min-w-0 break-words">
                 Câu {i + 1}. {a.question_text}
               </span>
             </p>
-            <p className="pl-6 text-xs text-gray-500">
+            <p className="pl-6 text-xs text-muted-foreground">
               {given === null ? "Bạn bỏ trống câu này" : a.is_correct ? "Đúng" : "Sai"} · {formatContestScore(a.points_earned)} điểm
             </p>
             <p className="break-words pl-6">
-              <span className="text-gray-500">Bạn trả lời: </span>
+              <span className="text-muted-foreground">Bạn trả lời: </span>
               {given ?? "—"}
             </p>
             {correct && (
               <p className="break-words pl-6">
-                <span className="text-gray-500">Đáp án đúng: </span>
-                <span className="font-medium text-emerald-700">{correct}</span>
+                <span className="text-muted-foreground">Đáp án đúng: </span>
+                <span className="font-medium text-emerald-700 dark:text-emerald-300">{correct}</span>
               </p>
             )}
             {a.explanation && (
-              <p className="ml-6 flex items-start gap-1.5 rounded-lg bg-amber-50 p-2 text-amber-900">
+              <p className="ml-6 flex items-start gap-1.5 rounded-lg bg-amber-50 p-2 text-amber-900 dark:bg-amber-500/10 dark:text-amber-300">
                 <Lightbulb className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                 <span className="break-words">{a.explanation}</span>
               </p>

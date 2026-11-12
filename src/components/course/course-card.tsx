@@ -69,7 +69,7 @@ export function CourseCard({ course, className, priority = false, showWishlist =
     >
       <Card hoverable className={cn("flex h-full flex-col overflow-hidden", className)}>
         {/* Thumbnail */}
-        <div className="relative aspect-video overflow-hidden bg-slate-100 dark:bg-slate-800">
+        <div className="relative aspect-video overflow-hidden bg-muted">
           {!imgError && course.thumbnail ? (
             <img
               src={course.thumbnail}
@@ -94,16 +94,16 @@ export function CourseCard({ course, className, priority = false, showWishlist =
         </div>
 
         <div className="flex flex-1 flex-col p-4 md:p-5">
-          <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
+          <p className="text-xs font-medium text-muted-foreground">
             {meta}
           </p>
 
-          <h3 className="text-h4 mt-1 line-clamp-2 min-h-[56px] text-slate-900 dark:text-slate-50">
+          <h3 className="text-h4 mt-1 line-clamp-2 min-h-[56px] text-foreground">
             {course.title}
           </h3>
 
           {instructorName && (
-            <p className="text-body-sm mt-1 text-slate-600 dark:text-slate-400">
+            <p className="text-body-sm mt-1 text-muted-foreground">
               {instructorName}
             </p>
           )}
@@ -116,16 +116,16 @@ export function CourseCard({ course, className, priority = false, showWishlist =
                     className="h-4 w-4 fill-amber-400 text-amber-400"
                     aria-hidden="true"
                   />
-                  <span className="font-semibold text-slate-900 dark:text-slate-50">
+                  <span className="font-semibold text-foreground">
                     {(course.rating as number).toFixed(1)}
                   </span>
-                  <span className="text-xs text-slate-600 dark:text-slate-400">
+                  <span className="text-xs text-muted-foreground">
                     ({(course.reviewCount as number).toLocaleString("vi-VN")})
                   </span>
                 </>
               )}
               {hasStudents && (
-                <span className="text-xs text-slate-600 dark:text-slate-400">
+                <span className="text-xs text-muted-foreground">
                   {hasRating ? "· " : ""}
                   {(course.studentCount as number).toLocaleString("vi-VN")} học viên
                 </span>
@@ -133,13 +133,13 @@ export function CourseCard({ course, className, priority = false, showWishlist =
             </div>
           )}
 
-          <div className="mt-auto border-t border-slate-100 pt-3 dark:border-slate-800">
+          <div className="mt-auto border-t border-border pt-3">
             <div>
               {enrolled ? (
                 <div className="space-y-2">
                   <ProgressBar value={course.progress} variant="course" size="sm" />
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs font-medium text-slate-600 tabular-nums dark:text-slate-400">
+                    <span className="text-xs font-medium text-muted-foreground tabular-nums">
                       {course.progress}% · {formatLessonProgress(course.completedLessons, course.totalLessons)}
                     </span>
                     {/* asChild → <span>: không lồng <button> trong <a>. */}
@@ -150,11 +150,11 @@ export function CourseCard({ course, className, priority = false, showWishlist =
                 </div>
               ) : (
                 <div className="flex items-baseline gap-2">
-                  <span className="font-heading text-lg font-bold text-slate-900 dark:text-slate-50">
+                  <span className="font-heading text-lg font-bold text-foreground">
                     {course.price === 0 ? "Miễn phí" : formatCurrency(course.price)}
                   </span>
                   {hasDiscount && (
-                    <span className="text-sm text-slate-500 line-through dark:text-slate-400">
+                    <span className="text-sm text-muted-foreground line-through">
                       {formatCurrency(course.originalPrice as number)}
                     </span>
                   )}

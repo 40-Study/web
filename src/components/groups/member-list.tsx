@@ -96,7 +96,7 @@ export function MemberList({ group, viewerId, manage = false }: MemberListProps)
                     {roles.length > 0 && (
                       <select
                         aria-label={`Đổi vai trò của ${memberDisplayName(member)}`}
-                        className="h-9 rounded-lg border border-slate-200 bg-background px-2 text-sm dark:border-slate-700"
+                        className="h-9 rounded-lg border border-border bg-background px-2 text-sm"
                         value=""
                         disabled={updateRole.isPending}
                         onChange={(e) => {

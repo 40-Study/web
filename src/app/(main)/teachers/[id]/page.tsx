@@ -21,7 +21,7 @@ import type { PublicTeacherProfile } from "@/services/teacher.service";
 function Stat({ icon: Icon, label, value }: { icon: typeof Users; label: string; value: string }) {
   return (
     <div className="rounded-xl border bg-card p-4">
-      <Icon className="mb-2 h-5 w-5 text-primary-600" aria-hidden="true" />
+      <Icon className="mb-2 h-5 w-5 text-primary-600 dark:text-primary-400" aria-hidden="true" />
       <p className="text-xl font-semibold">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
     </div>
@@ -76,7 +76,7 @@ function ProfileBody({ profile }: { profile: PublicTeacherProfile }) {
           <h1 className="text-2xl font-bold">{name}</h1>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
             {!hidden && profile.is_verified && (
-              <span className="inline-flex items-center gap-1 text-emerald-600">
+              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                 <BadgeCheck className="h-4 w-4" aria-hidden="true" /> Đã xác minh
               </span>
             )}

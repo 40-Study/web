@@ -57,7 +57,7 @@ export function PriceRangeSlider({
   return (
     <div className={cn("space-y-3", className)}>
       {/* Price labels */}
-      <div className="flex justify-between text-xs font-medium text-gray-600">
+      <div className="flex justify-between text-xs font-medium text-muted-foreground">
         <span>{formatPrice(minVal)}</span>
         <span>{formatPrice(maxVal)}</span>
       </div>
@@ -65,7 +65,7 @@ export function PriceRangeSlider({
       {/* Dual-range track */}
       <div className="relative h-5 flex items-center">
         {/* Background track */}
-        <div className="absolute w-full h-1.5 rounded-full bg-gray-200" />
+        <div className="absolute w-full h-1.5 rounded-full bg-muted-foreground/20" />
 
         {/* Active range highlight */}
         <div
@@ -99,7 +99,7 @@ export function PriceRangeSlider({
       </div>
 
       {/* Min/max boundary labels */}
-      <div className="flex justify-between text-[10px] text-gray-400">
+      <div className="flex justify-between text-[10px] text-muted-foreground">
         <span>{formatPrice(min)}</span>
         <span>{formatPrice(max)}</span>
       </div>

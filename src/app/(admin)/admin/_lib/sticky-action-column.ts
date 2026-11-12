@@ -6,10 +6,10 @@
 const STICKY = "sticky right-0 z-10 shadow-[-6px_0_6px_-6px_rgba(0,0,0,0.18)] sm:shadow-none";
 
 /** className cho <th> của cột hành động. */
-export const STICKY_ACTION_HEAD = `${STICKY} bg-gray-50 dark:bg-gray-900`;
+export const STICKY_ACTION_HEAD = `${STICKY} bg-muted/50`;
 
 /** className cho <td> của cột hành động. */
-export const STICKY_ACTION_CELL = `${STICKY} bg-white dark:bg-gray-950`;
+export const STICKY_ACTION_CELL = `${STICKY} bg-card`;
 
 /**
  * className cho khối nút trong ô hành động có nhiều nút: ở mobile xếp dọc và hẹp để cột ghim không che

@@ -5,9 +5,9 @@ import { cn } from "@/lib/utils";
 
 /** Maps exercise difficulty to Vietnamese label + color style */
 const DIFFICULTY_CONFIG = {
-  EASY: { label: "DỄ", className: "bg-green-100 text-green-700 border-green-200" },
-  MEDIUM: { label: "TRUNG BÌNH", className: "bg-orange-100 text-orange-700 border-orange-200" },
-  HARD: { label: "KHÓ", className: "bg-red-100 text-red-700 border-red-200" },
+  EASY: { label: "DỄ", className: "bg-green-100 text-green-700 border-green-200 dark:bg-green-500/15 dark:text-green-300 dark:border-green-500/30" },
+  MEDIUM: { label: "TRUNG BÌNH", className: "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-500/30" },
+  HARD: { label: "KHÓ", className: "bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/30" },
 } as const;
 
 interface Example {
@@ -30,7 +30,7 @@ function renderInlineCode(text: string) {
   const parts = text.split(/(`[^`]+`)/g);
   return parts.map((part, i) =>
     part.startsWith("`") && part.endsWith("`") ? (
-      <code key={i} className="px-1 py-0.5 bg-gray-100 rounded text-sm font-mono">
+      <code key={i} className="px-1 py-0.5 bg-muted rounded text-sm font-mono">
         {part.slice(1, -1)}
       </code>
     ) : (
@@ -65,34 +65,34 @@ export function CodeExerciseProblemPanel({
         >
           {diff.label}
         </span>
-        <span className="text-sm text-gray-400">ID: {problemId}</span>
+        <span className="text-sm text-muted-foreground">ID: {problemId}</span>
       </div>
 
       {/* Title */}
-      <h1 className="text-2xl font-bold text-gray-900">Bai tap: {title}</h1>
+      <h1 className="text-2xl font-bold text-foreground">Bai tap: {title}</h1>
 
       {/* Description */}
-      <p className="text-gray-700 leading-relaxed whitespace-pre-line">{description}</p>
+      <p className="text-foreground leading-relaxed whitespace-pre-line">{description}</p>
 
       {/* Examples */}
       <div className="space-y-4">
         {examples.map((ex, idx) => (
           <div key={idx}>
-            <div className="flex items-center gap-2 mb-2 font-medium text-gray-700">
+            <div className="flex items-center gap-2 mb-2 font-medium text-foreground">
               <Lightbulb className="h-4 w-4 text-yellow-500" />
               <span>Vi du {idx + 1}:</span>
             </div>
-            <div className="rounded-md bg-gray-50 border border-gray-200 p-4 space-y-2 text-sm font-mono">
+            <div className="rounded-md bg-muted/50 border border-border p-4 space-y-2 text-sm font-mono">
               <div>
-                <span className="text-gray-500">Input: </span>
-                <span className="text-gray-900">{ex.input}</span>
+                <span className="text-muted-foreground">Input: </span>
+                <span className="text-foreground">{ex.input}</span>
               </div>
               <div>
-                <span className="text-gray-500">Output: </span>
-                <span className="text-gray-900">{ex.output}</span>
+                <span className="text-muted-foreground">Output: </span>
+                <span className="text-foreground">{ex.output}</span>
               </div>
               {ex.explanation && (
-                <div className="font-sans text-gray-600 pt-1 border-t border-gray-200">
+                <div className="font-sans text-muted-foreground pt-1 border-t border-border">
                   {ex.explanation}
                 </div>
               )}
@@ -103,11 +103,11 @@ export function CodeExerciseProblemPanel({
 
       {/* Constraints */}
       <div>
-        <h3 className="font-semibold text-gray-800 mb-2">Rang buoc:</h3>
+        <h3 className="font-semibold text-foreground mb-2">Rang buoc:</h3>
         <ul className="space-y-1.5">
           {constraints.map((c, i) => (
-            <li key={i} className="flex gap-2 text-sm text-gray-700">
-              <span className="text-gray-400 mt-0.5">•</span>
+            <li key={i} className="flex gap-2 text-sm text-foreground">
+              <span className="text-muted-foreground mt-0.5">•</span>
               <span>{renderInlineCode(c)}</span>
             </li>
           ))}

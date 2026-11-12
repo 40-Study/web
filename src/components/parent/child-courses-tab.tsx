@@ -31,7 +31,7 @@ export function ChildCoursesTab({ courses, isLoading }: { courses?: ChildCourse[
     );
   }
   if (!courses || courses.length === 0) {
-    return <p className="text-center text-gray-500 py-8">Chưa đăng ký khoá học nào</p>;
+    return <p className="text-center text-muted-foreground py-8">Chưa đăng ký khoá học nào</p>;
   }
 
   const messageTeacher = (teacherId: string) =>
@@ -42,21 +42,21 @@ export function ChildCoursesTab({ courses, isLoading }: { courses?: ChildCourse[
   return (
     <div className="space-y-3">
       {courses.map((course) => (
-        <div key={course.id} className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 p-3 rounded-lg border hover:bg-gray-50">
+        <div key={course.id} className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 p-3 rounded-lg border hover:bg-muted/50">
           {course.course_thumbnail ? (
             <Image src={course.course_thumbnail} alt={course.course_name} width={80} height={45} className="rounded object-cover" />
           ) : (
-            <div className="w-20 h-11 rounded bg-gray-200 flex items-center justify-center shrink-0">
-              <BookOpen className="w-5 h-5 text-gray-400" />
+            <div className="w-20 h-11 rounded bg-muted-foreground/20 flex items-center justify-center shrink-0">
+              <BookOpen className="w-5 h-5 text-muted-foreground" />
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-gray-900 truncate">{course.course_name}</h3>
-            <p className="text-sm text-gray-500 truncate">{course.instructor_name || "Chưa có giảng viên"}</p>
+            <h3 className="font-medium text-foreground truncate">{course.course_name}</h3>
+            <p className="text-sm text-muted-foreground truncate">{course.instructor_name || "Chưa có giảng viên"}</p>
           </div>
           <div className="text-right">
-            <div className="text-sm font-medium text-primary-600">{Math.round(course.progress_percent)}%</div>
-            <div className="w-20 h-2 bg-gray-200 rounded-full mt-1">
+            <div className="text-sm font-medium text-primary-600 dark:text-primary-400">{Math.round(course.progress_percent)}%</div>
+            <div className="w-20 h-2 bg-muted-foreground/20 rounded-full mt-1">
               <div className="h-full bg-primary-500 rounded-full" style={{ width: `${Math.min(100, course.progress_percent)}%` }} />
             </div>
           </div>

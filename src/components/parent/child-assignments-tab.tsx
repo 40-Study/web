@@ -44,18 +44,18 @@ export function ChildAssignmentsTab({
     <div>
       {stats && (
         <>
-          <p className="mb-2 text-sm text-gray-500">Tổng {stats.total_assignments} bài tập</p>
+          <p className="mb-2 text-sm text-muted-foreground">Tổng {stats.total_assignments} bài tập</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <StatCell value={stats.completed} label="Hoàn thành" tone="bg-green-50 text-green-600" />
-            <StatCell value={stats.in_progress} label="Đã nộp, chưa xong" tone="bg-blue-50 text-blue-600" />
-            <StatCell value={stats.not_started} label="Chưa nộp" tone="bg-gray-50 text-gray-700" />
-            <StatCell value={stats.overdue} label="Quá hạn, chưa nộp" tone="bg-red-50 text-red-600" />
+            <StatCell value={stats.completed} label="Hoàn thành" tone="bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400" />
+            <StatCell value={stats.in_progress} label="Đã nộp, chưa xong" tone="bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400" />
+            <StatCell value={stats.not_started} label="Chưa nộp" tone="bg-muted/50 text-foreground" />
+            <StatCell value={stats.overdue} label="Quá hạn, chưa nộp" tone="bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400" />
           </div>
         </>
       )}
 
       {assignments.length === 0 ? (
-        <p className="text-center text-gray-500 py-4">Chưa có bài tập nào</p>
+        <p className="text-center text-muted-foreground py-4">Chưa có bài tập nào</p>
       ) : (
         <ul className="space-y-2" data-testid="child-assignment-list">
           {assignments.map((a) => {
@@ -66,13 +66,13 @@ export function ChildAssignmentsTab({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-medium">{a.title}</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                       {/* /parent/children/:id/assignments không trả class_name — chỉ hiện khi có */}
                       {a.class_name && <>{a.class_name} | </>}
                       {[assignmentTypeLabel(a.type), difficultyLabel(a.difficulty)].filter(Boolean).join(" | ")}
                     </p>
                     {a.due_date && (
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-muted-foreground">
                         Hạn nộp {new Date(a.due_date).toLocaleDateString("vi-VN")}
                       </p>
                     )}
@@ -81,8 +81,8 @@ export function ChildAssignmentsTab({
                     <span className={cn("text-sm font-medium", CHILD_ASSIGNMENT_STATE_CLASS[state])}>
                       {CHILD_ASSIGNMENT_STATE_LABEL[state]}
                     </span>
-                    {result && <p className="text-xs text-gray-500">{result}</p>}
-                    <p className="text-xs text-gray-400">{a.submission_count} lần nộp</p>
+                    {result && <p className="text-xs text-muted-foreground">{result}</p>}
+                    <p className="text-xs text-muted-foreground">{a.submission_count} lần nộp</p>
                   </div>
                 </div>
               </li>
@@ -98,7 +98,7 @@ function StatCell({ value, label, tone }: { value: number; label: string; tone: 
   return (
     <div className={cn("text-center p-3 rounded-lg", tone)}>
       <p className="text-2xl font-bold">{value}</p>
-      <p className="text-xs text-gray-500">{label}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
 }

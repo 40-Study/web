@@ -57,7 +57,7 @@ function AcceptInvitationContent() {
     return (
       <AuthCard>
         <div className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/15">
             <svg className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -187,7 +187,7 @@ function AcceptInvitationContent() {
             variant="outline"
             onClick={() => handleRespond("reject")}
             disabled={respondMutation.isPending}
-            className="h-12 w-full text-red-600 hover:bg-red-50 hover:text-red-700"
+            className="h-12 w-full text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-300"
           >
             Từ chối
           </Button>

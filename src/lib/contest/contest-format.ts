@@ -19,14 +19,14 @@ export const CONTEST_PHASE_LABELS: Record<ContestPhase, string> = {
 };
 
 export const CONTEST_PHASE_BADGE: Record<ContestPhase, string> = {
-  DRAFT: "bg-gray-100 text-gray-700",
-  PENDING_REVIEW: "bg-amber-100 text-amber-800",
-  REJECTED: "bg-red-100 text-red-700",
-  CANCELLED: "bg-red-100 text-red-700",
-  UPCOMING: "bg-blue-100 text-blue-700",
-  ACTIVE: "bg-emerald-100 text-emerald-700",
-  ENDED: "bg-orange-100 text-orange-700",
-  FINALIZED: "bg-violet-100 text-violet-700",
+  DRAFT: "bg-muted text-foreground",
+  PENDING_REVIEW: "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300",
+  REJECTED: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300",
+  CANCELLED: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300",
+  UPCOMING: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
+  ACTIVE: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  ENDED: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300",
+  FINALIZED: "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
 };
 
 /** Điểm kiểu "7,5" (bỏ số 0 thừa). Null → "—". */

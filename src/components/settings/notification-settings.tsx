@@ -72,12 +72,12 @@ export function NotificationSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-900">Thông báo</h2>
-        <p className="text-sm text-gray-500 mt-1">Chọn loại thông báo bạn muốn nhận</p>
+        <h2 className="text-xl font-bold text-foreground">Thông báo</h2>
+        <p className="text-sm text-muted-foreground mt-1">Chọn loại thông báo bạn muốn nhận</p>
       </div>
 
       {/* Channel headers */}
-      <div className="flex items-center gap-4 px-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+      <div className="flex items-center gap-4 px-5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
         <div className="flex-1" />
         <div className="w-16 text-center flex flex-col items-center gap-1">
           <Mail className="h-4 w-4" />
@@ -94,14 +94,14 @@ export function NotificationSettings() {
         {ITEMS.map((item) => (
           <div
             key={item.id}
-            className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex items-center gap-4"
+            className="bg-card rounded-2xl border border-border p-4 shadow-sm flex items-center gap-4"
           >
-            <div className="p-2.5 bg-primary-50 rounded-xl shrink-0">
+            <div className="p-2.5 bg-primary-50 rounded-xl shrink-0 dark:bg-primary-500/10">
               <Bell className="h-4 w-4 text-primary-500" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-gray-900 text-sm">{item.title}</p>
-              <p className="text-xs text-gray-500 truncate">{item.description}</p>
+              <p className="font-medium text-foreground text-sm">{item.title}</p>
+              <p className="text-xs text-muted-foreground truncate">{item.description}</p>
             </div>
 
             {/* Email toggle */}
@@ -135,7 +135,7 @@ export function NotificationSettings() {
         ))}
       </div>
 
-      <p className="text-xs text-gray-400 px-1">
+      <p className="text-xs text-muted-foreground px-1">
         Bạn có thể huỷ đăng ký nhận email bất cứ lúc nào bằng cách nhấn vào liên kết huỷ đăng ký trong email.
       </p>
     </div>

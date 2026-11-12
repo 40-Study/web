@@ -92,13 +92,13 @@ export function TranscriptPanel({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-3">
-        <h3 className="text-sm font-semibold text-gray-900">Phụ đề</h3>
+      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+        <h3 className="text-sm font-semibold text-foreground">Phụ đề</h3>
         <button
           type="button"
           onClick={handleAddSelection}
           disabled={!onAddToNote}
-          className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 disabled:opacity-40"
+          className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-muted disabled:opacity-40"
           title="Bôi đen một đoạn rồi bấm để lưu vào ghi chú"
         >
           <MessageSquarePlus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -112,9 +112,9 @@ export function TranscriptPanel({
             <Loader2 className="h-5 w-5 animate-spin text-gray-300" />
           </div>
         ) : error ? (
-          <p className="py-6 text-center text-sm text-gray-500">{error}</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">{error}</p>
         ) : cues.length === 0 ? (
-          <p className="py-6 text-center text-sm text-gray-500">Bài học này chưa có phụ đề.</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">Bài học này chưa có phụ đề.</p>
         ) : (
           <ul className="space-y-1">
             {cues.map((cue, index) => (
@@ -124,13 +124,13 @@ export function TranscriptPanel({
                   onClick={() => onSeek?.(cue.start)}
                   className={cn(
                     "flex w-full gap-3 rounded-lg px-2 py-1.5 text-left transition-colors",
-                    index === activeIndex ? "bg-primary-50" : "hover:bg-gray-50"
+                    index === activeIndex ? "bg-primary-50 dark:bg-primary-500/10" : "hover:bg-muted/50"
                   )}
                 >
                   <span
                     className={cn(
                       "shrink-0 pt-0.5 font-mono text-[11px]",
-                      index === activeIndex ? "text-primary-600" : "text-gray-400"
+                      index === activeIndex ? "text-primary-600 dark:text-primary-400" : "text-muted-foreground"
                     )}
                   >
                     {formatCueTime(cue.start)}
@@ -138,7 +138,7 @@ export function TranscriptPanel({
                   <span
                     className={cn(
                       "text-sm leading-relaxed",
-                      index === activeIndex ? "text-primary-900" : "text-gray-600"
+                      index === activeIndex ? "text-primary-900 dark:text-primary-300" : "text-muted-foreground"
                     )}
                   >
                     {cue.text}

@@ -7,10 +7,10 @@ import { useCancelLinkRequest, useSentLinkRequests } from "@/hooks/queries/use-p
 import type { LinkRequestStatus } from "@/services/parent-link.service";
 
 const STATUS_LABEL: Record<LinkRequestStatus, { text: string; className: string }> = {
-  pending: { text: "Đang chờ con xác nhận", className: "bg-amber-50 text-amber-700" },
-  accepted: { text: "Con đã xác nhận", className: "bg-emerald-50 text-emerald-700" },
-  rejected: { text: "Con đã từ chối", className: "bg-red-50 text-red-700" },
-  cancelled: { text: "Đã huỷ", className: "bg-slate-100 text-slate-600" },
+  pending: { text: "Đang chờ con xác nhận", className: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300" },
+  accepted: { text: "Con đã xác nhận", className: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300" },
+  rejected: { text: "Con đã từ chối", className: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300" },
+  cancelled: { text: "Đã huỷ", className: "bg-muted text-muted-foreground" },
 };
 
 const formatDay = (iso: string) => new Date(iso).toLocaleDateString("vi-VN");
@@ -30,31 +30,31 @@ export function SentLinkRequests() {
   const cancel = useCancelLinkRequest();
 
   if (isLoading) {
-    return <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div>;
+    return <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
   }
   if (isError) {
     return (
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted-foreground">
         Không tải được yêu cầu đã gửi.{" "}
-        <button type="button" className="text-primary-600 underline" onClick={() => refetch()}>Thử lại</button>
+        <button type="button" className="text-primary-600 underline dark:text-primary-400" onClick={() => refetch()}>Thử lại</button>
       </p>
     );
   }
   if (requests.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-5">
-      <h2 className="text-base font-semibold text-slate-900 mb-3">Yêu cầu đã gửi</h2>
-      <ul className="divide-y divide-slate-100">
+    <div className="bg-card rounded-2xl border border-border p-5">
+      <h2 className="text-base font-semibold text-foreground mb-3">Yêu cầu đã gửi</h2>
+      <ul className="divide-y divide-border">
         {requests.map((r) => {
-          const status = STATUS_LABEL[r.status] ?? { text: r.status, className: "bg-slate-100 text-slate-600" };
+          const status = STATUS_LABEL[r.status] ?? { text: r.status, className: "bg-muted text-muted-foreground" };
           // Còn chờ thì backend không trả tên học sinh — hiện đúng email phụ huynh đã nhập.
           const who = r.student ? r.student.full_name || r.student.username : r.student_email;
           return (
             <li key={r.id} className="py-3 flex flex-wrap items-center gap-3 justify-between">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-900 truncate">{who}</p>
-                <p className="text-xs text-slate-500 truncate">
+                <p className="text-sm font-medium text-foreground truncate">{who}</p>
+                <p className="text-xs text-muted-foreground truncate">
                   {r.student ? `${r.student_email} · ` : ""}gửi {formatDay(r.created_at)}
                 </p>
               </div>

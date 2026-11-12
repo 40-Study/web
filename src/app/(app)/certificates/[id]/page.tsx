@@ -36,7 +36,7 @@ export default function CertificateDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-8 text-center text-sm text-gray-500">
+      <div className="mx-auto max-w-4xl px-4 py-8 text-center text-sm text-muted-foreground">
         Đang tải…
       </div>
     );
@@ -45,12 +45,12 @@ export default function CertificateDetailPage() {
   if (isError || !certificate) {
     return (
       <div className="mx-auto max-w-xl px-4 py-8 text-center">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Không tìm thấy chứng chỉ này hoặc bạn không có quyền xem.
         </p>
         <Link
           href="/certificates"
-          className="mt-4 inline-block rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="mt-4 inline-block rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/50"
         >
           Về danh sách chứng chỉ
         </Link>
@@ -63,7 +63,7 @@ export default function CertificateDetailPage() {
       <div className="no-print mb-5 flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/certificates"
-          className="text-sm text-gray-600 hover:text-gray-900"
+          className="text-sm text-muted-foreground hover:text-foreground"
         >
           ← Chứng chỉ của tôi
         </Link>
@@ -72,7 +72,7 @@ export default function CertificateDetailPage() {
           <button
             type="button"
             onClick={copyVerifyLink}
-            className="rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/50"
           >
             {copied ? "Đã sao chép" : "Copy link xác minh"}
           </button>
@@ -96,7 +96,7 @@ export default function CertificateDetailPage() {
             href={certificate.certificate_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary-600 hover:underline"
+            className="text-primary-600 hover:underline dark:text-primary-400"
           >
             Tải bản PDF chính thức
           </a>

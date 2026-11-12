@@ -88,14 +88,14 @@ export default function AdminModerationPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Báo cáo vi phạm</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-foreground">Báo cáo vi phạm</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Kiểm duyệt báo cáo vi phạm do người dùng gửi (khoá học, đánh giá, thảo luận, người dùng).
           Mở một báo cáo để xem chi tiết và cập nhật trạng thái xử lý.
         </p>
       </div>
 
-      <section className="rounded-xl border bg-white p-3 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+      <section className="rounded-xl border bg-card p-3 shadow-sm dark:border-gray-800">
         <div className="flex flex-wrap gap-2">
           {(["pending", "reviewing", "resolved", "dismissed", "ALL"] as StatusFilter[]).map((s) => (
             <button
@@ -104,7 +104,7 @@ export default function AdminModerationPage() {
               className={`rounded-full px-3 py-1.5 text-xs font-medium ${
                 statusFilter === s
                   ? "bg-primary-600 text-white"
-                  : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                  : "bg-muted text-muted-foreground"
               }`}
             >
               {s === "ALL" ? "Tất cả" : STATUS_LABEL[s]}
@@ -114,7 +114,7 @@ export default function AdminModerationPage() {
       </section>
 
       <div className="grid gap-4 xl:grid-cols-[1.8fr_1fr]">
-        <div className="overflow-hidden rounded-xl border bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+        <div className="overflow-hidden rounded-xl border bg-card shadow-sm dark:border-gray-800">
           <QueryState
             isLoading={isLoading}
             isError={isError}
@@ -126,7 +126,7 @@ export default function AdminModerationPage() {
           >
             <div className="overflow-auto">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-900">
+                <thead className="bg-muted/50">
                   <tr>
                     <th className="px-4 py-3 text-left">Đối tượng bị báo cáo</th>
                     <th className="px-4 py-3 text-left">Lý do</th>
@@ -135,7 +135,7 @@ export default function AdminModerationPage() {
                     <th className={`px-4 py-3 text-left ${STICKY_ACTION_HEAD}`}>Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody className="divide-y divide-border">
                   {reports.map((r) => (
                     <tr key={r.id} className={selected?.id === r.id ? "bg-primary-50/60 dark:bg-primary-900/20" : ""}>
                       <td className="px-4 py-3">
@@ -148,7 +148,7 @@ export default function AdminModerationPage() {
                       <td className={`px-4 py-3 ${STICKY_ACTION_CELL}`}>
                         <button
                           onClick={() => openReport(r)}
-                          className="rounded bg-gray-100 px-2 py-1 text-xs hover:bg-gray-200 dark:bg-gray-800"
+                          className="rounded bg-muted px-2 py-1 text-xs hover:bg-muted-foreground/20"
                         >
                           Xem
                         </button>
@@ -161,27 +161,27 @@ export default function AdminModerationPage() {
           </QueryState>
         </div>
 
-        <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+        <div className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
           <h2 className="mb-3 text-base font-semibold">Chi tiết báo cáo</h2>
           {selected ? (
             <div className="space-y-3 text-sm">
               <p>
-                <span className="text-gray-500">Đối tượng:</span>{" "}
+                <span className="text-muted-foreground">Đối tượng:</span>{" "}
                 <ReportTargetLabel report={selected} />
               </p>
-              <p><span className="text-gray-500">Loại:</span> {REPORTED_TYPE_LABEL[selected.reported_type] ?? selected.reported_type}</p>
-              <p className="break-all"><span className="text-gray-500">ID đối tượng:</span> {selected.reported_id}</p>
-              <p><span className="text-gray-500">Lý do:</span> {REASON_LABEL[selected.reason] ?? selected.reason}</p>
-              <p><span className="text-gray-500">Mô tả:</span> {selected.description || "-"}</p>
-              <p><span className="text-gray-500">Trạng thái hiện tại:</span> {STATUS_LABEL[selected.status] ?? selected.status}</p>
-              <p><span className="text-gray-500">Gửi lúc:</span> {formatDate(selected.created_at)}</p>
+              <p><span className="text-muted-foreground">Loại:</span> {REPORTED_TYPE_LABEL[selected.reported_type] ?? selected.reported_type}</p>
+              <p className="break-all"><span className="text-muted-foreground">ID đối tượng:</span> {selected.reported_id}</p>
+              <p><span className="text-muted-foreground">Lý do:</span> {REASON_LABEL[selected.reason] ?? selected.reason}</p>
+              <p><span className="text-muted-foreground">Mô tả:</span> {selected.description || "-"}</p>
+              <p><span className="text-muted-foreground">Trạng thái hiện tại:</span> {STATUS_LABEL[selected.status] ?? selected.status}</p>
+              <p><span className="text-muted-foreground">Gửi lúc:</span> {formatDate(selected.created_at)}</p>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Ghi chú admin</label>
+                <label className="mb-1 block text-xs font-medium text-foreground">Ghi chú admin</label>
                 <textarea
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
-                  className="h-20 w-full rounded border border-gray-200 px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-900"
+                  className="h-20 w-full rounded border border-border px-2 py-1.5 text-sm dark:bg-gray-900"
                 />
               </div>
 
@@ -213,7 +213,7 @@ export default function AdminModerationPage() {
 
               {(availableActions.length > 0 || canOpenUserPage) && (
                 <div className="space-y-2 border-t pt-3 dark:border-gray-800">
-                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Xử lý đối tượng</p>
+                  <p className="text-xs font-medium text-foreground">Xử lý đối tượng</p>
                   <div className="flex flex-wrap gap-2">
                     {availableActions.map((action) => (
                       <Button
@@ -228,7 +228,7 @@ export default function AdminModerationPage() {
                     {canOpenUserPage && (
                       <Link
                         href={`/admin/users/${selected.reported_id}`}
-                        className="inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-900"
+                        className="inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted/50 dark:border-gray-700"
                       >
                         Mở trang người dùng để khoá tài khoản
                       </Link>
@@ -238,7 +238,7 @@ export default function AdminModerationPage() {
               )}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">Chọn một báo cáo để xem chi tiết.</p>
+            <p className="text-sm text-muted-foreground">Chọn một báo cáo để xem chi tiết.</p>
           )}
         </div>
       </div>

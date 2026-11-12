@@ -25,7 +25,7 @@ export function OrgAreaGate() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
-        <Building2 className="mx-auto h-10 w-10 text-primary-600" aria-hidden="true" />
+        <Building2 className="mx-auto h-10 w-10 text-primary-600 dark:text-primary-400" aria-hidden="true" />
         <h1 className="mt-3 font-heading text-xl font-semibold text-foreground">Khu quản lý tổ chức</h1>
         {myRoles.isLoading && ownerRoles.length === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">Đang kiểm tra vai trò của bạn…</p>
@@ -61,7 +61,7 @@ export function OrgAreaGate() {
             chức, bạn sẽ vào được khu này.
           </p>
         )}
-        <Link href={homeHref} className="mt-4 inline-block text-sm font-medium text-primary-600 hover:underline">
+        <Link href={homeHref} className="mt-4 inline-block text-sm font-medium text-primary-600 hover:underline dark:text-primary-400">
           Về trang chủ
         </Link>
       </div>

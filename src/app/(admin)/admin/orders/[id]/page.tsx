@@ -70,13 +70,13 @@ export default function AdminOrderDetailPage() {
       <div className="flex items-center gap-3">
         <Link
           href="/admin/orders"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border hover:bg-muted/50 dark:border-gray-700"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Chi tiết đơn hàng</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{order?.order_number ?? id}</p>
+          <h1 className="text-2xl font-bold text-foreground">Chi tiết đơn hàng</h1>
+          <p className="text-sm text-muted-foreground">{order?.order_number ?? id}</p>
         </div>
       </div>
 
@@ -84,9 +84,9 @@ export default function AdminOrderDetailPage() {
         {order && (
           <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
             {/* Danh sách khoá học trong đơn */}
-            <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+            <section className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
               <h2 className="mb-3 text-base font-semibold">Khoá học trong đơn</h2>
-              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              <div className="divide-y divide-border">
                 {order.items.map((item) => (
                   <div key={item.id} className="flex items-center justify-between py-2 text-sm">
                     <span>{item.course_name || "Khoá học không còn tồn tại"}</span>
@@ -102,7 +102,7 @@ export default function AdminOrderDetailPage() {
 
             {/* Thông tin đơn + hành động hoàn tiền */}
             <section className="space-y-4">
-              <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+              <div className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
                 <h2 className="mb-3 text-base font-semibold">Thông tin đơn</h2>
                 <div className="space-y-2 text-sm">
                   <Row
@@ -174,7 +174,7 @@ export default function AdminOrderDetailPage() {
 
           <div className="mt-4 space-y-3 text-sm">
             <div>
-              <label className="mb-1 block font-medium text-gray-700 dark:text-gray-300">
+              <label className="mb-1 block font-medium text-foreground">
                 Lý do hoàn tiền <span className="text-red-500">*</span>
               </label>
               <textarea
@@ -183,15 +183,15 @@ export default function AdminOrderDetailPage() {
                 maxLength={REASON_MAX_LEN}
                 rows={3}
                 placeholder="VD: Học viên khiếu nại nội dung sai, đã xác minh và đồng ý hoàn tiền."
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm dark:bg-gray-900"
               />
-              <p className="mt-1 text-right text-xs text-gray-400">
+              <p className="mt-1 text-right text-xs text-muted-foreground">
                 {reason.length}/{REASON_MAX_LEN}
               </p>
             </div>
 
             <div>
-              <label htmlFor="refund-transaction-ref" className="mb-1 block font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="refund-transaction-ref" className="mb-1 block font-medium text-foreground">
                 Mã giao dịch chuyển khoản <span className="text-red-500">*</span>
               </label>
               <input
@@ -200,11 +200,11 @@ export default function AdminOrderDetailPage() {
                 onChange={(e) => setTransactionRef(e.target.value)}
                 maxLength={TRANSACTION_REF_MAX_LEN}
                 placeholder="VD: FT26271123456789 (mã trên sao kê ngân hàng)"
-                className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+                className="h-10 w-full rounded-lg border border-border px-3 text-sm dark:bg-gray-900"
               />
             </div>
 
-            <div className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:bg-gray-900 dark:text-gray-400">
+            <div className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
               Hình thức hoàn tiền: <strong>chuyển khoản thủ công</strong> — bạn tự chuyển khoản cho
               học viên NGOÀI hệ thống trước, sau đó bấm xác nhận bên dưới để ghi nhận đã hoàn.
               Hệ thống hiện chưa hỗ trợ hoàn vào ví xu (quyết định chủ dự án 27/09/2026).
@@ -237,9 +237,9 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-2 last:border-0 dark:border-gray-800">
-      <span className="text-gray-500">{label}</span>
-      <span className="text-right font-medium text-gray-900 dark:text-gray-100">{value}</span>
+    <div className="flex items-start justify-between gap-3 border-b border-border pb-2 last:border-0">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-right font-medium text-foreground">{value}</span>
     </div>
   );
 }

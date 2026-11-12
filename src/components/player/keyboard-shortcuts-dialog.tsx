@@ -36,7 +36,7 @@ export function KeyboardShortcutsDialog({
       <DialogContent className="max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Keyboard className="h-5 w-5 text-gray-500" aria-hidden="true" />
+            <Keyboard className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
             Phím tắt
           </DialogTitle>
           <DialogDescription>
@@ -44,20 +44,20 @@ export function KeyboardShortcutsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <ul className="divide-y divide-gray-100">
+        <ul className="divide-y divide-border">
           {rows.map((row) => (
             <li key={row.description} className="flex items-center justify-between gap-4 py-2.5">
               <div className="flex items-center gap-1.5">
                 {row.keys.map((key, index) => (
                   <span key={`${row.description}-${key}-${index}`} className="flex items-center gap-1.5">
-                    {index > 0 && <span className="text-xs text-gray-400">+</span>}
-                    <kbd className="min-w-7 rounded border border-gray-200 bg-gray-50 px-2 py-1 text-center text-xs font-medium text-gray-700">
+                    {index > 0 && <span className="text-xs text-muted-foreground">+</span>}
+                    <kbd className="min-w-7 rounded border border-border bg-muted/50 px-2 py-1 text-center text-xs font-medium text-foreground">
                       {key}
                     </kbd>
                   </span>
                 ))}
               </div>
-              <span className="text-sm text-gray-600">{row.description}</span>
+              <span className="text-sm text-muted-foreground">{row.description}</span>
             </li>
           ))}
         </ul>

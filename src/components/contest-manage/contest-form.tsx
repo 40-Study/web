@@ -22,7 +22,7 @@ import {
 import type { ContestQuizBrief, ContestUpsertRequest } from "@/types/contest";
 
 const FIELD =
-  "h-10 w-full rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900";
+  "h-10 w-full rounded-lg border border-border px-3 text-sm dark:bg-gray-900";
 
 interface ContestFormProps {
   initialValues: ContestFormValues;
@@ -36,7 +36,7 @@ interface ContestFormProps {
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
   return (
-    <p id={id} role="alert" className="mt-1 text-xs text-red-600">
+    <p id={id} role="alert" className="mt-1 text-xs text-red-600 dark:text-red-400">
       {message}
     </p>
   );
@@ -105,14 +105,14 @@ export function ContestForm({
           <FieldError id="err-problems" message={errors.problems} />
         </section>
       ) : (
-        <section className="space-y-3 rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+        <section className="space-y-3 rounded-xl border bg-card p-4 dark:border-gray-800">
           <h2 className="font-semibold">1. Bài trắc nghiệm</h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-muted-foreground">
             Chỉ dùng bài trắc nghiệm riêng cho cuộc thi (không gắn bài học), có ít nhất 1 câu, không
             có câu tự luận và chưa ai làm. Sau khi gửi duyệt, đề bị khoá không sửa được.
           </p>
           {quizOptions.isError && (
-            <p role="alert" className="text-sm text-red-600">
+            <p role="alert" className="text-sm text-red-600 dark:text-red-400">
               Không tải được danh sách bài trắc nghiệm.{" "}
               <button type="button" className="underline" onClick={() => quizOptions.refetch()}>
                 Thử lại
@@ -150,7 +150,7 @@ export function ContestForm({
             )}
           </div>
           {!quizOptions.isLoading && options.length === 0 && !buildingQuiz && (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               Bạn chưa có bài trắc nghiệm đủ điều kiện. Hãy tạo bài mới.
             </p>
           )}
@@ -168,7 +168,7 @@ export function ContestForm({
         </section>
       )}
 
-      <section className="space-y-4 rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+      <section className="space-y-4 rounded-xl border bg-card p-4 dark:border-gray-800">
         <h2 className="font-semibold">2. Thông tin cuộc thi</h2>
         <div>
           <label htmlFor="contest-title" className="mb-1 block text-sm font-medium">
@@ -193,7 +193,7 @@ export function ContestForm({
             value={values.description}
             onChange={(e) => set("description", e.target.value)}
             rows={3}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+            className="w-full rounded-lg border border-border px-3 py-2 text-sm dark:bg-gray-900"
           />
         </div>
         <div>
@@ -294,9 +294,9 @@ export function ContestForm({
       </section>
 
       {values.type !== "CODING" && (
-        <section className="space-y-3 rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+        <section className="space-y-3 rounded-xl border bg-card p-4 dark:border-gray-800">
           <h2 className="font-semibold">3. Giải thưởng</h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-muted-foreground">
             Giảng viên chỉ trao chứng nhận theo hạng. Giải voucher do quản trị viên gắn khi duyệt.
           </p>
           <PrizeEditor

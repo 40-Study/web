@@ -39,11 +39,11 @@ export function ContestErrorState({
   return (
     <div
       role="alert"
-      className={cn("mx-auto flex max-w-md flex-col items-center gap-3 rounded-2xl border border-red-100 bg-red-50/60 p-6 text-center", className)}
+      className={cn("mx-auto flex max-w-md flex-col items-center gap-3 rounded-2xl border border-red-100 bg-red-50/60 p-6 text-center dark:border-red-500/30", className)}
     >
       <AlertTriangle className="h-8 w-8 text-red-500" aria-hidden="true" />
-      <p className="font-semibold text-gray-900">{title}</p>
-      <p className="text-sm text-gray-600">{message ?? contestErrorMessage(error)}</p>
+      <p className="font-semibold text-foreground">{title}</p>
+      <p className="text-sm text-muted-foreground">{message ?? contestErrorMessage(error)}</p>
       <div className="flex flex-wrap justify-center gap-2">
         {onRetry && (
           <Button variant="outline" size="sm" onClick={onRetry}>

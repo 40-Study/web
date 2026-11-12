@@ -177,8 +177,8 @@ export default function RolesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý vai trò &amp; người dùng</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-foreground">Quản lý vai trò &amp; người dùng</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Xem danh sách vai trò, số người dùng theo vai trò, và gán hoặc gỡ vai trò khỏi người dùng.
         </p>
       </div>
@@ -186,23 +186,23 @@ export default function RolesPage() {
       <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
         <div className="space-y-3">
           {rolesLoading ? (
-            <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-200" />)}</div>
+            <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-lg bg-muted-foreground/20" />)}</div>
           ) : (
             rolesWithCounts.map((role) => {
               const active = selectedRole?.id === role.id;
               const protectedRole = BUILT_IN_ROLE_NAMES.has(role.name);
 
               return (
-                <div key={role.id} className={`rounded-lg bg-white p-4 shadow-sm ${active ? "ring-2 ring-primary-200" : ""}`}>
+                <div key={role.id} className={`rounded-lg bg-card p-4 shadow-sm ${active ? "ring-2 ring-primary-200" : ""}`}>
                   <button className="w-full text-left" onClick={() => setSelectedRoleId(role.id)}>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <h3 className="font-medium text-gray-900">{getSystemRoleLabel(role.name)}</h3>
+                        <h3 className="font-medium text-foreground">{getSystemRoleLabel(role.name)}</h3>
                         <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">{role.name}</span>
                       </div>
                       <span
                         className={`shrink-0 rounded-full px-2 py-1 text-xs ${
-                          role.userCountError ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"
+                          role.userCountError ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" : "bg-muted text-muted-foreground"
                         }`}
                         title={
                           isOrgScopedSystemRole(role.name)
@@ -215,8 +215,8 @@ export default function RolesPage() {
                         {roleUserCountLabel(role)}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-gray-500">{role.description || "Không có mô tả"}</p>
-                    {isOrgScopedSystemRole(role.name) && <p className="mt-1 text-xs text-amber-700">{ORG_SCOPED_ROLE_HINT}</p>}
+                    <p className="mt-1 text-xs text-muted-foreground">{role.description || "Không có mô tả"}</p>
+                    {isOrgScopedSystemRole(role.name) && <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">{ORG_SCOPED_ROLE_HINT}</p>}
                   </button>
 
                   <Can permission={PERMISSIONS.MANAGE_ROLES}>
@@ -244,8 +244,8 @@ export default function RolesPage() {
 
         <div className="space-y-4">
           <Can permission={PERMISSIONS.MANAGE_ROLES}>
-            <form onSubmit={submitRole} className="rounded-lg bg-white p-4 shadow-sm">
-              <h2 className="text-base font-semibold text-gray-900">{roleForm.id ? "Cập nhật vai trò" : "Tạo vai trò mới"}</h2>
+            <form onSubmit={submitRole} className="rounded-lg bg-card p-4 shadow-sm">
+              <h2 className="text-base font-semibold text-foreground">{roleForm.id ? "Cập nhật vai trò" : "Tạo vai trò mới"}</h2>
               <div className="mt-3 space-y-2">
                 <input
                   placeholder="Tên vai trò"
@@ -256,15 +256,15 @@ export default function RolesPage() {
                     setRoleForm((prev) => ({ ...prev, name: e.target.value }));
                     if (nameError) setNameError(null);
                   }}
-                  className="h-10 w-full rounded border border-gray-200 px-3 text-sm"
+                  className="h-10 w-full rounded border border-border px-3 text-sm"
                 />
                 {nameError && (
-                  <p role="alert" className="text-xs text-red-600">
+                  <p role="alert" className="text-xs text-red-600 dark:text-red-400">
                     {nameError}
                   </p>
                 )}
-                <input placeholder="Mô tả" value={roleForm.description} onChange={(e) => setRoleForm((prev) => ({ ...prev, description: e.target.value }))} className="h-10 w-full rounded border border-gray-200 px-3 text-sm" />
-                <div className="max-h-32 space-y-1 overflow-auto rounded border border-gray-200 p-2">
+                <input placeholder="Mô tả" value={roleForm.description} onChange={(e) => setRoleForm((prev) => ({ ...prev, description: e.target.value }))} className="h-10 w-full rounded border border-border px-3 text-sm" />
+                <div className="max-h-32 space-y-1 overflow-auto rounded border border-border p-2">
                   {permsData.map((perm) => (
                     <label key={perm.id} className="flex items-center gap-2 text-sm">
                       <input type="checkbox" checked={roleForm.permissions.includes(perm.name)} onChange={() => togglePermission(perm.name)} />
@@ -280,7 +280,7 @@ export default function RolesPage() {
                   >
                     {roleForm.id ? "Lưu vai trò" : "Tạo vai trò"}
                   </button>
-                  <button type="button" onClick={resetRoleForm} className="rounded bg-gray-100 px-3 py-2 text-sm font-medium">
+                  <button type="button" onClick={resetRoleForm} className="rounded bg-muted px-3 py-2 text-sm font-medium">
                     {roleForm.id ? "Huỷ sửa" : "Xoá nội dung đã nhập"}
                   </button>
                 </div>
@@ -288,35 +288,35 @@ export default function RolesPage() {
             </form>
           </Can>
 
-          <div className="rounded-lg bg-white p-4 shadow-sm">
-            <h2 className="text-base font-semibold text-gray-900">
+          <div className="rounded-lg bg-card p-4 shadow-sm">
+            <h2 className="text-base font-semibold text-foreground">
               Người dùng theo vai trò
               {roleUsersPage && !isOrgScopedSystemRole(selectedRole?.name) ? ` — tổng ${roleUsersPage.total}` : ""}
             </h2>
             {selectedRole && isOrgScopedSystemRole(selectedRole.name) ? (
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-2 text-sm text-muted-foreground">
                 {ORG_SCOPED_ROLE_HINT}{" "}
-                <Link href="/admin/organizations" className="font-medium text-primary-600 hover:underline">
+                <Link href="/admin/organizations" className="font-medium text-primary-600 hover:underline dark:text-primary-400">
                   Mở Quản lý tổ chức
                 </Link>
               </p>
             ) : selectedRole ? (
               <div className="mt-3 space-y-3">
                 {usersLoading ? (
-                  <p className="text-xs text-gray-500">Đang tải…</p>
+                  <p className="text-xs text-muted-foreground">Đang tải…</p>
                 ) : usersError ? (
-                  <p className="text-xs text-red-600">Không tải được danh sách người dùng.</p>
+                  <p className="text-xs text-red-600 dark:text-red-400">Không tải được danh sách người dùng.</p>
                 ) : roleUsers.length === 0 ? (
-                  <p className="text-xs text-gray-500">Chưa có người dùng nào được gán vai trò này.</p>
+                  <p className="text-xs text-muted-foreground">Chưa có người dùng nào được gán vai trò này.</p>
                 ) : (
                   <div className="space-y-2">
                     {roleUsers.map((u) => (
-                      <div key={u.id} className="rounded border border-gray-100 p-2">
-                        <p className="text-xs font-medium text-gray-900">{memberLabel(u)}</p>
+                      <div key={u.id} className="rounded border border-border p-2">
+                        <p className="text-xs font-medium text-foreground">{memberLabel(u)}</p>
                         {memberEmail(u) && (
-                          <p className="break-all text-xs text-gray-600">{memberEmail(u)}</p>
+                          <p className="break-all text-xs text-muted-foreground">{memberEmail(u)}</p>
                         )}
-                        <p className="mt-1 text-xs text-gray-500">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           {USER_STATUS_LABEL[u.status] ?? u.status} · Gán lúc {formatVnDateTime(u.granted_at)}
                         </p>
                         <Can permission={PERMISSIONS.MANAGE_ROLES}>
@@ -333,7 +333,7 @@ export default function RolesPage() {
 
                 <Can permission={PERMISSIONS.MANAGE_ROLES}>
                   <div className="space-y-2">
-                    <p className="text-xs font-medium text-gray-700">Gán vai trò cho người dùng</p>
+                    <p className="text-xs font-medium text-foreground">Gán vai trò cho người dùng</p>
                     <PersonPicker
                       queryKey={["admin-role-assign-search", selectedRoleId]}
                       search={searchUsers}
@@ -348,7 +348,7 @@ export default function RolesPage() {
                 </Can>
               </div>
             ) : (
-              <p className="mt-2 text-sm text-gray-500">Chọn một vai trò để quản lý người dùng.</p>
+              <p className="mt-2 text-sm text-muted-foreground">Chọn một vai trò để quản lý người dùng.</p>
             )}
           </div>
         </div>

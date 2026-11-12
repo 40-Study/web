@@ -232,7 +232,7 @@ export default function ScheduleEventFormDialog({
           {/* Khoá học + Lớp — bắt buộc khi tạo mới, cố định sau khi tạo (backend
               không hỗ trợ đổi lớp của một buổi live đã tồn tại). */}
           {isEditing ? (
-            <div className="rounded-lg border bg-gray-50 p-3 text-xs text-muted-foreground">
+            <div className="rounded-lg border bg-muted/50 p-3 text-xs text-muted-foreground">
               Buổi học đã gắn với lớp học của bạn — không thể đổi khoá/lớp sau khi tạo.
             </div>
           ) : (
@@ -271,7 +271,7 @@ export default function ScheduleEventFormDialog({
                   </SelectContent>
                 </Select>
                 {courseId && !classesLoading && classes.length === 0 && (
-                  <p className="text-xs text-amber-600">Khoá học này chưa có lớp nào.</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400">Khoá học này chưa có lớp nào.</p>
                 )}
               </div>
             </div>
@@ -320,7 +320,7 @@ export default function ScheduleEventFormDialog({
             </p>
           )}
           {error && (
-            <p role="alert" className="-mt-2 text-sm text-red-600">
+            <p role="alert" className="-mt-2 text-sm text-red-600 dark:text-red-400">
               {error}
             </p>
           )}
@@ -329,7 +329,7 @@ export default function ScheduleEventFormDialog({
           <div className="space-y-2">
             <Label htmlFor="event-location">Phòng học</Label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 id="event-location"
                 value={location}
@@ -341,15 +341,15 @@ export default function ScheduleEventFormDialog({
             </div>
           </div>
 
-          <div className="rounded-lg bg-blue-50 p-3 text-xs text-blue-900 flex gap-2"><Bell className="w-4 h-4 shrink-0" /><span>Tự động nhắc trước 15 phút và khi đến giờ cho giáo viên, học sinh của lớp và phụ huynh đã liên kết.</span></div>
-          {confirmDelete && <p role="alert" className="text-xs text-red-600">Huỷ buổi học này? Lịch nhắc học của buổi cũng sẽ ngừng.</p>}
+          <div className="rounded-lg bg-blue-50 p-3 text-xs text-blue-900 flex gap-2 dark:bg-blue-500/10 dark:text-blue-300"><Bell className="w-4 h-4 shrink-0" /><span>Tự động nhắc trước 15 phút và khi đến giờ cho giáo viên, học sinh của lớp và phụ huynh đã liên kết.</span></div>
+          {confirmDelete && <p role="alert" className="text-xs text-red-600 dark:text-red-400">Huỷ buổi học này? Lịch nhắc học của buổi cũng sẽ ngừng.</p>}
           {/* Footer Actions */}
           <DialogFooter className="gap-2">
             {isEditing && onDelete && (
               <Button
                 type="button"
                 variant="outline"
-                className="mr-auto text-red-500 hover:text-red-600 hover:bg-red-50"
+                className="mr-auto text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10"
                 onClick={() => void handleDelete()}
               >
                 <Trash2 className="w-4 h-4 mr-1" />

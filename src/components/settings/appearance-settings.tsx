@@ -25,14 +25,15 @@ const themes: Array<{
   bg: string;
   iconColor: string;
 }> = [
-  { id: "light", label: "Sáng", icon: Sun, bg: "bg-white border border-gray-200", iconColor: "text-amber-400" },
+  // Ô xem trước là mẫu của TỪNG chế độ nên dùng màu cố định (trắng/xám đậm), không dùng token đổi theo dark.
+  { id: "light", label: "Sáng", icon: Sun, bg: "bg-white border border-slate-200", iconColor: "text-amber-400" },
   { id: "dark", label: "Tối", icon: Moon, bg: "bg-gray-900", iconColor: "text-blue-400" },
   {
     id: "system",
     label: "Hệ thống",
     icon: Monitor,
-    bg: "bg-gradient-to-r from-white to-gray-900 border border-gray-200",
-    iconColor: "text-gray-500",
+    bg: "bg-gradient-to-r from-white to-gray-900 border border-border",
+    iconColor: "text-muted-foreground",
   },
 ];
 
@@ -78,13 +79,13 @@ export function AppearanceSettings({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-900">Giao diện</h2>
-        <p className="text-sm text-gray-500 mt-1">Tuỳ chỉnh giao diện ForteX theo ý bạn</p>
+        <h2 className="text-xl font-bold text-foreground">Giao diện</h2>
+        <p className="text-sm text-muted-foreground mt-1">Tuỳ chỉnh giao diện ForteX theo ý bạn</p>
       </div>
 
       {/* Theme */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-        <p className="font-medium text-gray-900 mb-4">Chủ đề</p>
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
+        <p className="font-medium text-foreground mb-4">Chủ đề</p>
         <div className="grid grid-cols-3 gap-3">
           {themes.map((theme) => {
             const Icon = theme.icon;
@@ -92,12 +93,14 @@ export function AppearanceSettings({
             return (
               <button
                 key={theme.id}
+                type="button"
+                aria-pressed={isActive}
                 onClick={() => handleThemeChange(theme.id)}
                 className={cn(
                   "relative p-4 rounded-2xl border-2 transition-all duration-200",
                   isActive
-                    ? "border-primary-500 bg-primary-50 shadow-md shadow-primary-100"
-                    : "border-gray-100 hover:border-gray-200 hover:shadow-sm"
+                    ? "border-primary-500 bg-primary-50 shadow-md shadow-primary-100 dark:bg-primary-500/10"
+                    : "border-border hover:border-border hover:shadow-sm"
                 )}
               >
                 {isActive && (
@@ -110,7 +113,7 @@ export function AppearanceSettings({
                 >
                   <Icon className={cn("h-6 w-6", theme.iconColor)} />
                 </div>
-                <p className="text-sm font-medium text-gray-900">{theme.label}</p>
+                <p className="text-sm font-medium text-foreground">{theme.label}</p>
               </button>
             );
           })}
@@ -118,15 +121,15 @@ export function AppearanceSettings({
       </div>
 
       {/* Font Size */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <p className="font-medium text-gray-900">Cỡ chữ</p>
-          <span className="text-sm font-semibold text-primary-600 bg-primary-50 px-3 py-1 rounded-full">
+          <p className="font-medium text-foreground">Cỡ chữ</p>
+          <span className="text-sm font-semibold text-primary-600 bg-primary-50 px-3 py-1 rounded-full dark:text-primary-400 dark:bg-primary-500/10">
             {fontSize}%
           </span>
         </div>
         <Slider value={[fontSize]} onValueChange={handleFontSizeChange} min={FONT_MIN} max={FONT_MAX} step={10} />
-        <div className="relative mt-2 h-4 px-1 text-xs text-gray-400" data-testid="font-scale-labels">
+        <div className="relative mt-2 h-4 px-1 text-xs text-muted-foreground" data-testid="font-scale-labels">
           <span className="absolute left-1">Nhỏ</span>
           <span
             data-testid="font-scale-normal"
@@ -140,11 +143,11 @@ export function AppearanceSettings({
       </div>
 
       {/* Language */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-medium text-gray-900">Ngôn ngữ</p>
-            <p className="text-sm text-gray-500">Chọn ngôn ngữ hiển thị</p>
+            <p className="font-medium text-foreground">Ngôn ngữ</p>
+            <p className="text-sm text-muted-foreground">Chọn ngôn ngữ hiển thị</p>
           </div>
           <Select value={language} onValueChange={handleLanguageChange}>
             <SelectTrigger className="w-44 rounded-xl" aria-label="Ngôn ngữ hiển thị">

@@ -24,11 +24,11 @@ import {
 } from "./voucher-form-model";
 
 const RUN_STATE_CLASS: Record<VoucherRunState, string> = {
-  running: "bg-green-50 text-green-700 ring-1 ring-green-200",
-  scheduled: "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
-  expired: "bg-red-50 text-red-700 ring-1 ring-red-200",
-  exhausted: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-  disabled: "bg-gray-100 text-gray-500",
+  running: "bg-green-50 text-green-700 ring-1 ring-green-200 dark:bg-green-500/10 dark:text-green-300",
+  scheduled: "bg-sky-50 text-sky-700 ring-1 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300",
+  expired: "bg-red-50 text-red-700 ring-1 ring-red-200 dark:bg-red-500/10 dark:text-red-300",
+  exhausted: "bg-amber-50 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300",
+  disabled: "bg-muted text-muted-foreground",
 };
 
 function VoucherRunBadge({ state }: { state: VoucherRunState }) {
@@ -43,14 +43,14 @@ function VoucherRunBadge({ state }: { state: VoucherRunState }) {
 // web chưa có trang nào để admin dùng. Trang này tạo/sửa voucher, gồm công tắc "Dành riêng"
 // (holders_only). Mã, loại giảm và cách giảm không đổi được sau khi tạo (backend không cho sửa).
 
-const inputClass = "h-10 w-full rounded border border-gray-200 px-3 text-sm disabled:bg-gray-50 disabled:text-gray-500";
+const inputClass = "h-10 w-full rounded border border-border px-3 text-sm disabled:bg-muted/50 disabled:text-muted-foreground";
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
     <label className="block space-y-1 text-sm">
-      <span className="font-medium text-gray-700">{label}</span>
+      <span className="font-medium text-foreground">{label}</span>
       {children}
-      {hint && <span className="block text-xs text-gray-400">{hint}</span>}
+      {hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
     </label>
   );
 }
@@ -105,8 +105,8 @@ export default function AdminVouchersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Voucher</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-foreground">Voucher</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Tạo và sửa mã giảm giá. Voucher &quot;{HOLDERS_ONLY_LABEL}&quot; không hiện ở danh sách công khai và chỉ người đã được cấp mới dùng được.
         </p>
       </div>
@@ -124,29 +124,29 @@ export default function AdminVouchersPage() {
               <div
                 key={v.id}
                 data-testid="admin-voucher-row"
-                className={`rounded-xl bg-white p-4 shadow-sm ${editingId === v.id ? "ring-2 ring-primary-200" : ""}`}
+                className={`rounded-xl bg-card p-4 shadow-sm ${editingId === v.id ? "ring-2 ring-primary-200" : ""}`}
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <Ticket className="h-4 w-4 text-primary-500" aria-hidden="true" />
-                  <span className="font-mono font-bold tracking-wide text-gray-900">{v.code}</span>
+                  <span className="font-mono font-bold tracking-wide text-foreground">{v.code}</span>
                   {v.holders_only && (
-                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-200">
+                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300">
                       {HOLDERS_ONLY_LABEL}
                     </span>
                   )}
                   {v.first_order_only && (
-                    <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 ring-1 ring-sky-200">
+                    <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 ring-1 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300">
                       {FIRST_ORDER_ONLY_BADGE_LABEL}
                     </span>
                   )}
                   <VoucherRunBadge state={voucherRunState(v)} />
                 </div>
-                <p className="mt-1 text-sm text-gray-700">{v.name}</p>
-                <p className="text-sm font-medium text-primary-600">{formatVoucherDiscountLabel(v)}</p>
-                <p className="mt-1 text-xs text-gray-500" data-testid="voucher-validity">
+                <p className="mt-1 text-sm text-foreground">{v.name}</p>
+                <p className="text-sm font-medium text-primary-600 dark:text-primary-400">{formatVoucherDiscountLabel(v)}</p>
+                <p className="mt-1 text-xs text-muted-foreground" data-testid="voucher-validity">
                   {voucherValidityText(v)}
                 </p>
-                <p className="mt-1 text-xs text-gray-400">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Đã dùng {v.used_count ?? 0}
                   {v.usage_limit ? `/${v.usage_limit}` : ""} lượt
                 </p>
@@ -154,7 +154,7 @@ export default function AdminVouchersPage() {
                   <button
                     type="button"
                     onClick={() => startEdit(v)}
-                    className="rounded bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700"
+                    className="rounded bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700 dark:bg-primary-500/15 dark:text-primary-300"
                   >
                     Sửa
                   </button>
@@ -164,7 +164,7 @@ export default function AdminVouchersPage() {
           </QueryState>
 
           {pageData && totalPages > 1 && (
-            <nav className="flex items-center justify-between px-1 text-sm text-gray-500" aria-label="Phân trang voucher" data-testid="voucher-pagination">
+            <nav className="flex items-center justify-between px-1 text-sm text-muted-foreground" aria-label="Phân trang voucher" data-testid="voucher-pagination">
               <span>
                 Trang {page}/{totalPages} — {pageData.total} voucher
               </span>
@@ -192,8 +192,8 @@ export default function AdminVouchersPage() {
 
         {/* noValidate: để buildCreate/UpdateVoucherPayload báo lỗi tiếng Việt trong khung đỏ bên dưới thay vì tooltip
             tiếng Anh của trình duyệt cho min/max ("Value must be less than or equal to 100", ADM-L1, QA2 261013). */}
-        <form onSubmit={onSubmit} noValidate className="h-fit space-y-3 rounded-xl bg-white p-4 shadow-sm" data-testid="voucher-form">
-          <h2 className="text-base font-semibold text-gray-900">{editingId ? "Cập nhật voucher" : "Tạo voucher mới"}</h2>
+        <form onSubmit={onSubmit} noValidate className="h-fit space-y-3 rounded-xl bg-card p-4 shadow-sm" data-testid="voucher-form">
+          <h2 className="text-base font-semibold text-foreground">{editingId ? "Cập nhật voucher" : "Tạo voucher mới"}</h2>
 
           <Field label="Mã voucher">
             <input
@@ -273,13 +273,13 @@ export default function AdminVouchersPage() {
             </Field>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2 text-sm text-foreground">
             <input type="checkbox" checked={form.is_active} onChange={(e) => set("is_active", e.target.checked)} />
             Đang bật
           </label>
 
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-            <label className="flex items-start gap-2 text-sm font-medium text-gray-800">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+            <label className="flex items-start gap-2 text-sm font-medium text-foreground">
               <input
                 type="checkbox"
                 className="mt-0.5"
@@ -289,16 +289,16 @@ export default function AdminVouchersPage() {
               />
               <span>Voucher {HOLDERS_ONLY_LABEL.toLowerCase()}</span>
             </label>
-            <p id="holders-only-hint" className="mt-1 pl-6 text-xs text-gray-600">
+            <p id="holders-only-hint" className="mt-1 pl-6 text-xs text-muted-foreground">
               {HOLDERS_ONLY_HINT}
             </p>
             {/* L6 mục 7: bật cho voucher đã công khai không thu hồi quyền người đã lưu. */}
-            <p className="mt-1 pl-6 text-xs text-amber-800" data-testid="holders-only-enable-note">
+            <p className="mt-1 pl-6 text-xs text-amber-800 dark:text-amber-300" data-testid="holders-only-enable-note">
               {HOLDERS_ONLY_ENABLE_NOTE}
             </p>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2 text-sm text-foreground">
             <input
               type="checkbox"
               checked={form.first_order_only}
@@ -308,7 +308,7 @@ export default function AdminVouchersPage() {
           </label>
 
           {error && (
-            <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               <span>{error}</span>
             </div>

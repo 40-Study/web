@@ -73,11 +73,11 @@ export function MyOrderCard({
   const variant = heldButExpired ? STATUS_VARIANT.expired : STATUS_VARIANT[order.status];
 
   return (
-    <article className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+    <article className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-xs text-gray-500">Mã đơn</p>
-          <p className="break-all font-medium text-gray-900 dark:text-gray-100">{order.order_number}</p>
+          <p className="text-xs text-muted-foreground">Mã đơn</p>
+          <p className="break-all font-medium text-foreground">{order.order_number}</p>
         </div>
         <Badge variant={variant}>{statusLabel}</Badge>
       </div>
@@ -85,7 +85,7 @@ export function MyOrderCard({
       <ul className="mt-3 space-y-1 text-sm">
         {order.items.map((item) => (
           <li key={item.id} className="flex items-start justify-between gap-3">
-            <span className="min-w-0 text-gray-700 dark:text-gray-300">
+            <span className="min-w-0 text-foreground">
               {item.course_name || "Khoá học không còn tồn tại"}
             </span>
             <span className="shrink-0 font-medium">{formatCurrency(Number(item.final_price))}</span>
@@ -95,16 +95,16 @@ export function MyOrderCard({
 
       <dl className="mt-3 grid gap-1 border-t pt-3 text-sm dark:border-gray-800">
         <div className="flex justify-between gap-3">
-          <dt className="text-gray-500">Tổng tiền</dt>
+          <dt className="text-muted-foreground">Tổng tiền</dt>
           <dd className="font-semibold">{formatCurrency(Number(order.total_amount))}</dd>
         </div>
         <div className="flex justify-between gap-3">
-          <dt className="text-gray-500">Ngày tạo</dt>
+          <dt className="text-muted-foreground">Ngày tạo</dt>
           <dd>{formatOrderDateTime(order.created_at)}</dd>
         </div>
         {open && order.expires_at && (
           <div className="flex justify-between gap-3">
-            <dt className="text-gray-500">Giữ đơn đến</dt>
+            <dt className="text-muted-foreground">Giữ đơn đến</dt>
             <dd>{formatOrderDateTime(order.expires_at)}</dd>
           </div>
         )}
@@ -121,7 +121,7 @@ export function MyOrderCard({
 
       {isReconciling && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Hệ thống đang đối chiếu thanh toán của đơn này với ngân hàng nên chưa thể huỷ hay tạo đơn mới.
             Nếu bạn đã chuyển khoản, đừng chuyển lại.
           </p>
@@ -144,12 +144,12 @@ export function MyOrderCard({
       {/* Học viên chỉ thấy câu chung. `refund_reason` là ghi chú đối soát nội bộ của admin (backend đã
           bỏ khỏi phản hồi học viên) nên KHÔNG bao giờ render ở đây dù có mặt trong dữ liệu. */}
       {order.status === "refunded" && (
-        <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">{REFUNDED_NOTICE}</p>
+        <p className="mt-4 text-sm text-muted-foreground">{REFUNDED_NOTICE}</p>
       )}
 
       {closedWithCode && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             {order.status === "expired"
               ? "Nếu bạn đã chuyển khoản cho đơn này, hãy kiểm tra thanh toán trước khi tạo đơn mới để không phải trả hai lần."
               : "Nếu bạn đã chuyển khoản cho đơn này, hãy kiểm tra để hệ thống đối chiếu với ngân hàng."}
@@ -162,7 +162,7 @@ export function MyOrderCard({
 
       {isExpired && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-gray-500">Đơn đã hết hạn giữ chỗ. Bạn có thể tạo đơn mới theo giá hiện tại.</p>
+          <p className="text-sm text-muted-foreground">Đơn đã hết hạn giữ chỗ. Bạn có thể tạo đơn mới theo giá hiện tại.</p>
           <Button className="shrink-0" isLoading={isReordering} onClick={() => onReorder(order)}>
             Tạo đơn mới
           </Button>

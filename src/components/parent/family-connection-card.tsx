@@ -46,9 +46,9 @@ export function FamilyConnectionCard({ className }: FamilyConnectionCardProps) {
 
   if (isLoading) {
     return (
-      <div className={cn("bg-white rounded-2xl p-5 shadow-sm", className)}>
+      <div className={cn("bg-card rounded-2xl p-5 shadow-sm", className)}>
         <div className="flex items-center justify-center py-6">
-          <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
         </div>
       </div>
     );
@@ -57,14 +57,14 @@ export function FamilyConnectionCard({ className }: FamilyConnectionCardProps) {
   // Parent View
   if (isParent) {
     return (
-      <div className={cn("bg-white rounded-2xl p-5 shadow-sm", className)}>
+      <div className={cn("bg-card rounded-2xl p-5 shadow-sm", className)}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">
+          <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">
             Con của tôi
           </h3>
           <Link
             href="/settings/family"
-            className="text-xs font-semibold text-primary-600 hover:text-primary-700"
+            className="text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
           >
             Xem tất cả
           </Link>
@@ -72,8 +72,8 @@ export function FamilyConnectionCard({ className }: FamilyConnectionCardProps) {
 
         {children.length === 0 ? (
           <div className="text-center py-4">
-            <p className="text-sm text-gray-500 mb-1">Chưa có liên kết nào</p>
-            <p className="text-xs text-gray-400">Chờ con mời bạn tham gia</p>
+            <p className="text-sm text-muted-foreground mb-1">Chưa có liên kết nào</p>
+            <p className="text-xs text-muted-foreground">Chờ con mời bạn tham gia</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -94,14 +94,14 @@ export function FamilyConnectionCard({ className }: FamilyConnectionCardProps) {
                       className="rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center">
-                      <span className="text-sm font-medium text-primary-700">
+                    <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center dark:bg-primary-500/15">
+                      <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
                         {displayName.charAt(0).toUpperCase()}
                       </span>
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate group-hover:text-primary-600">
+                    <p className="text-sm font-medium text-foreground truncate group-hover:text-primary-600 dark:group-hover:text-primary-400">
                       {displayName}
                     </p>
                   </div>
@@ -118,14 +118,14 @@ export function FamilyConnectionCard({ className }: FamilyConnectionCardProps) {
   // Student View
   return (
     <>
-      <div className={cn("bg-white rounded-2xl p-5 shadow-sm", className)}>
+      <div className={cn("bg-card rounded-2xl p-5 shadow-sm", className)}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">
+          <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">
             Gia đình
           </h3>
           <Link
             href="/settings/family"
-            className="text-xs font-semibold text-primary-600 hover:text-primary-700"
+            className="text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
           >
             Quản lý
           </Link>
@@ -137,7 +137,7 @@ export function FamilyConnectionCard({ className }: FamilyConnectionCardProps) {
             {linkedParents.slice(0, 2).map((inv) => (
               <div key={inv.id} className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-500" />
-                <p className="text-sm text-gray-700 truncate flex-1">{inv.invitee_email}</p>
+                <p className="text-sm text-foreground truncate flex-1">{inv.invitee_email}</p>
                 <CheckCircle className="w-3.5 h-3.5 text-green-500" />
               </div>
             ))}
@@ -150,7 +150,7 @@ export function FamilyConnectionCard({ className }: FamilyConnectionCardProps) {
             {pendingInvitations.slice(0, 2).map((inv) => (
               <div key={inv.id} className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-amber-400" />
-                <p className="text-sm text-gray-600 truncate flex-1">{inv.invitee_email}</p>
+                <p className="text-sm text-muted-foreground truncate flex-1">{inv.invitee_email}</p>
                 <Clock className="w-3.5 h-3.5 text-amber-500" />
               </div>
             ))}
@@ -159,7 +159,7 @@ export function FamilyConnectionCard({ className }: FamilyConnectionCardProps) {
 
         {/* Empty state */}
         {linkedParents.length === 0 && pendingInvitations.length === 0 && (
-          <p className="text-sm text-gray-500 mb-3">
+          <p className="text-sm text-muted-foreground mb-3">
             Mời phụ huynh theo dõi tiến độ học tập
           </p>
         )}

@@ -44,8 +44,8 @@ function ScoreCircle({ percent }: { percent: number }) {
                 />
             </svg>
             <div className="relative flex flex-col items-center leading-tight">
-                <span className="text-3xl font-bold text-gray-800">{percent}%</span>
-                <span className="text-[10px] font-semibold tracking-widest text-gray-500 uppercase">
+                <span className="text-3xl font-bold text-foreground">{percent}%</span>
+                <span className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
                     Score
                 </span>
             </div>
@@ -70,7 +70,7 @@ function StatItem({
     return (
         <div className="flex flex-col items-center gap-1">
             <div className={cn("text-2xl font-bold", color)}>{value}</div>
-            <div className="flex items-center gap-1 text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+            <div className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
                 {icon}
                 {label}
             </div>
@@ -84,13 +84,13 @@ function StatItem({
 const STATUS_DOT: Record<QuestionStatus, string> = {
     correct: "bg-green-500",
     incorrect: "bg-red-500",
-    skipped: "bg-gray-300",
+    skipped: "bg-muted-foreground/30",
 };
 
 const STATUS_TEXT: Record<QuestionStatus, string> = {
-    correct: "bg-green-100 text-green-700 border border-green-200",
-    incorrect: "bg-red-100 text-red-700 border border-red-200",
-    skipped: "bg-gray-100 text-gray-500 border border-gray-200",
+    correct: "bg-green-100 text-green-700 border border-green-200 dark:bg-green-500/15 dark:text-green-300 dark:border-green-500/30",
+    incorrect: "bg-red-100 text-red-700 border border-red-200 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/30",
+    skipped: "bg-muted text-muted-foreground border border-border",
 };
 
 function QuestionMap({
@@ -105,8 +105,8 @@ function QuestionMap({
     onSelect: (i: number) => void;
 }) {
     return (
-        <div className="rounded-2xl bg-white shadow-sm p-5 flex flex-col gap-4 min-w-[220px]">
-            <h3 className="text-xs font-bold tracking-widest text-gray-500 uppercase">
+        <div className="rounded-2xl bg-card shadow-sm p-5 flex flex-col gap-4 min-w-[220px]">
+            <h3 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
                 Bản đồ câu hỏi
             </h3>
 
@@ -130,7 +130,7 @@ function QuestionMap({
             </div>
 
             {/* Legend */}
-            <div className="flex flex-wrap gap-3 text-[11px] text-gray-500 font-medium mt-auto">
+            <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground font-medium mt-auto">
                 {(["correct", "incorrect", "skipped"] as QuestionStatus[]).map((s) => (
                     <span key={s} className="flex items-center gap-1 capitalize">
                         <span className={cn("w-2.5 h-2.5 rounded-full", STATUS_DOT[s])} />
@@ -169,7 +169,7 @@ export function ScoreCardSection({
     return (
         <div className="flex flex-col md:flex-row gap-4">
             {/* Summary card */}
-            <div className="flex-1 rounded-2xl bg-white shadow-sm p-6 flex flex-col gap-5">
+            <div className="flex-1 rounded-2xl bg-card shadow-sm p-6 flex flex-col gap-5">
                 <div className="flex flex-col sm:flex-row items-center gap-6">
                     <ScoreCircle percent={scorePercent} />
 
@@ -191,13 +191,13 @@ export function ScoreCardSection({
                             label="Bỏ qua"
                             value={skipped}
                             icon={<SkipForward className="w-3 h-3" />}
-                            color="text-gray-400"
+                            color="text-muted-foreground"
                         />
                         <StatItem
                             label="Thời gian"
                             value={formatTime(timeSpent)}
                             icon={<Clock className="w-3 h-3" />}
-                            color="text-gray-700"
+                            color="text-foreground"
                         />
                     </div>
                 </div>
@@ -208,13 +208,13 @@ export function ScoreCardSection({
                         className={cn(
                             "px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase",
                             passed
-                                ? "bg-green-100 text-green-700"
-                                : "bg-red-100 text-red-600"
+                                ? "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300"
+                                : "bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400"
                         )}
                     >
                         {passed ? "Passed" : "Failed"}
                     </span>
-                    <span className="text-sm text-gray-400">
+                    <span className="text-sm text-muted-foreground">
                         {passed ? "Chúc mừng! Bạn đã vượt qua bài kiểm tra." : "Cần ôn tập thêm và thử lại."}
                     </span>
                 </div>
@@ -229,7 +229,7 @@ export function ScoreCardSection({
                     </button>
                     <button
                         onClick={onRetry}
-                        className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors"
+                        className="px-5 py-2 rounded-lg border border-input text-foreground text-sm font-semibold hover:bg-muted/50 transition-colors"
                     >
                         Làm lại bài
                     </button>

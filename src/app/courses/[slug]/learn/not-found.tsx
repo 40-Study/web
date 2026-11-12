@@ -4,10 +4,10 @@ export default function CourseNotFound() {
   return (
     <div className="flex-1 flex items-center justify-center">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        <h1 className="text-2xl font-bold text-foreground mb-2">
           Không tìm thấy khoá học
         </h1>
-        <p className="text-gray-500 mb-6">
+        <p className="text-muted-foreground mb-6">
           Khoá học này không tồn tại hoặc bạn không có quyền truy cập.
         </p>
         <Link

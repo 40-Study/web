@@ -24,17 +24,17 @@ export function LinkedParentsList({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      <div className="bg-white rounded-2xl border border-slate-100 p-5">
+      <div className="bg-card rounded-2xl border border-border p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Users className="w-5 h-5 text-primary-600" />
-          <h2 className="text-base font-semibold text-slate-900">Phụ huynh đang liên kết</h2>
+          <Users className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+          <h2 className="text-base font-semibold text-foreground">Phụ huynh đang liên kết</h2>
         </div>
-        <ul className="divide-y divide-slate-100">
+        <ul className="divide-y divide-border">
           {parents.map((p) => (
             <li key={p.id} className="py-3 flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-900 truncate">{p.full_name || p.username}</p>
-                <p className="text-xs text-slate-500 truncate">
+                <p className="text-sm font-medium text-foreground truncate">{p.full_name || p.username}</p>
+                <p className="text-xs text-muted-foreground truncate">
                   {RELATIONSHIP_OPTIONS.find((o) => o.value === p.relationship)?.label ?? p.relationship} · {p.email}
                 </p>
               </div>

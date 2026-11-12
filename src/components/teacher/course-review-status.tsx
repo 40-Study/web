@@ -22,11 +22,11 @@ import { SubmitReviewDialog } from "./submit-review-dialog";
 import { COURSE_STATUS_LABEL, isCourseStatus, type CourseStatus } from "@/types/approval";
 
 const BADGE_CLASS: Record<CourseStatus, string> = {
-  draft: "bg-gray-100 text-gray-700 border-gray-200",
-  pending_review: "bg-amber-100 text-amber-700 border-amber-200",
-  published: "bg-green-100 text-green-700 border-green-200",
-  rejected: "bg-red-100 text-red-700 border-red-200",
-  archived: "bg-slate-100 text-slate-600 border-slate-200",
+  draft: "bg-muted text-foreground border-border",
+  pending_review: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
+  published: "bg-green-100 text-green-700 border-green-200 dark:bg-green-500/15 dark:text-green-300 dark:border-green-500/30",
+  rejected: "bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/30",
+  archived: "bg-muted text-muted-foreground border-border",
 };
 
 export function CourseStatusBadge({ status }: { status?: string }) {
@@ -68,7 +68,7 @@ function SubmitReviewBlockedAlert({ error }: { error: unknown }) {
     <div
       role="alert"
       data-testid="submit-review-no-content"
-      className="w-full rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+      className="w-full rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
     >
       <p className="font-medium">{approvalErrorMessage(error, "Có bài học chưa có nội dung.")}</p>
       {lessons.length > 0 && (
@@ -143,7 +143,7 @@ export function CourseReviewPanel({
       <div
         role="status"
         data-testid="course-pending-banner"
-        className="flex w-full flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 sm:flex-row sm:items-center"
+        className="flex w-full flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 sm:flex-row sm:items-center dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
       >
         <div className="flex flex-1 items-start gap-2">
           <Clock className="mt-0.5 h-4 w-4 shrink-0" />
@@ -155,7 +155,7 @@ export function CourseReviewPanel({
         <Button
           size="sm"
           variant="outline"
-          className="shrink-0 border-amber-300 bg-white"
+          className="shrink-0 border-amber-300 bg-card dark:border-amber-500/30"
           onClick={() => withdrawReview.mutate(courseId)}
           isLoading={withdrawReview.isPending}
           disabled={withdrawReview.isPending}
@@ -172,7 +172,7 @@ export function CourseReviewPanel({
       <div
         role="alert"
         data-testid="course-rejected-banner"
-        className="w-full space-y-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+        className="w-full space-y-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
       >
         <div className="flex items-start gap-2">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -181,7 +181,7 @@ export function CourseReviewPanel({
             <p className="mt-1 whitespace-pre-line" data-testid="course-rejection-reason">
               {rejectionReason || "Quản trị viên không ghi lý do."}
             </p>
-            <p className="mt-1 text-xs text-red-700">Chỉnh sửa theo góp ý rồi gửi duyệt lại.</p>
+            <p className="mt-1 text-xs text-red-700 dark:text-red-300">Chỉnh sửa theo góp ý rồi gửi duyệt lại.</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -195,7 +195,7 @@ export function CourseReviewPanel({
           >
             Gửi duyệt lại
           </Button>
-          {isEmpty && <span className="text-xs text-red-700">{EMPTY_COURSE_HINT}</span>}
+          {isEmpty && <span className="text-xs text-red-700 dark:text-red-300">{EMPTY_COURSE_HINT}</span>}
         </div>
         <SubmitReviewBlockedAlert error={submitReview.error} />
         {confirmDialog}

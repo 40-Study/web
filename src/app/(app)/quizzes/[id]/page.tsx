@@ -96,8 +96,8 @@ export default function StandaloneQuizPage() {
   if (isQuizError || !quiz) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <p className="text-sm text-gray-600">Không tìm thấy bài kiểm tra này.</p>
-        <Link href="/my-courses" className="mt-4 inline-block text-sm text-primary-600 hover:underline">
+        <p className="text-sm text-muted-foreground">Không tìm thấy bài kiểm tra này.</p>
+        <Link href="/my-courses" className="mt-4 inline-block text-sm text-primary-600 hover:underline dark:text-primary-400">
           Về khoá học của tôi
         </Link>
       </div>
@@ -113,7 +113,7 @@ export default function StandaloneQuizPage() {
           onSaveAnswer={handleSaveAnswer}
           isSubmitting={submitQuizMutation.isPending}
         />
-        {actionError && <p className="mt-3 text-sm text-red-600">{actionError}</p>}
+        {actionError && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{actionError}</p>}
       </div>
     );
   }
@@ -127,7 +127,7 @@ export default function StandaloneQuizPage() {
         onSelect={handleSelectMode}
         isStarting={startQuizMutation.isPending}
       />
-      {actionError && <p className="mt-3 text-sm text-red-600">{actionError}</p>}
+      {actionError && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{actionError}</p>}
     </div>
   );
 }

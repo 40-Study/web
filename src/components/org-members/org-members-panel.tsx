@@ -129,7 +129,7 @@ export function OrgMembersPanel({ orgId, canAddMember, memberLookup = "directory
         </p>
       )}
       {roles.isError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {getErrorMessage(roles.error, "Không tải được danh sách vai trò của tổ chức.")}
         </p>
       )}
@@ -195,7 +195,7 @@ export function OrgMembersPanel({ orgId, canAddMember, memberLookup = "directory
               ? "Người này sẽ không còn là thành viên của tổ chức và bị đăng xuất để áp dụng thay đổi."
               : "Người này bị đăng xuất để áp dụng thay đổi."}
             {confirmError && (
-              <span role="alert" className="mt-2 block text-red-600">
+              <span role="alert" className="mt-2 block text-red-600 dark:text-red-400">
                 {confirmError}
               </span>
             )}

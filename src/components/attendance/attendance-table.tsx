@@ -30,16 +30,16 @@ export function AttendanceTable({
 }) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+      <div className="rounded-lg border border-dashed border-input p-8 text-center text-sm text-muted-foreground">
         Lớp này chưa có học viên nào.
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200">
+    <div className="overflow-x-auto rounded-lg border border-border">
       <table className="w-full min-w-[720px] text-sm">
-        <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+        <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
           <tr>
             <th className="px-4 py-3 font-medium">Học viên</th>
             <th className="px-4 py-3 font-medium">Trạng thái</th>
@@ -47,11 +47,11 @@ export function AttendanceTable({
             <th className="px-4 py-3 font-medium">Ghi chú</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-border">
           {rows.map((row) => (
-            <tr key={row.studentId} className="hover:bg-gray-50/60">
+            <tr key={row.studentId} className="hover:bg-muted/50">
               <td className="px-4 py-3">
-                <p className="font-medium text-gray-900">{row.name}</p>
+                <p className="font-medium text-foreground">{row.name}</p>
               </td>
 
               <td className="px-4 py-3">
@@ -70,7 +70,7 @@ export function AttendanceTable({
                           "rounded-full border px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50",
                           active
                             ? meta.button
-                            : "border-gray-200 bg-white text-gray-600 hover:bg-gray-100"
+                            : "border-border bg-card text-muted-foreground hover:bg-muted"
                         )}
                       >
                         {meta.label}
@@ -80,18 +80,18 @@ export function AttendanceTable({
                 </div>
               </td>
 
-              <td className="px-4 py-3 text-xs text-gray-600">
+              <td className="px-4 py-3 text-xs text-muted-foreground">
                 {row.checkInTime ? (
                   <span>
                     {formatTime(row.checkInTime)}
                     {row.lateMinutes ? (
-                      <span className="ml-1 text-amber-600">
+                      <span className="ml-1 text-amber-600 dark:text-amber-400">
                         (trễ {row.lateMinutes}′)
                       </span>
                     ) : null}
                   </span>
                 ) : (
-                  <span className="text-gray-400">—</span>
+                  <span className="text-muted-foreground">—</span>
                 )}
               </td>
 
@@ -103,7 +103,7 @@ export function AttendanceTable({
                   onChange={(e) => onNoteChange(row.studentId, e.target.value)}
                   placeholder="Ghi chú…"
                   aria-label={`Ghi chú cho ${row.name}`}
-                  className="w-full rounded-md border border-gray-200 px-2.5 py-1.5 text-sm outline-none focus:border-primary-500 disabled:bg-gray-50"
+                  className="w-full rounded-md border border-border px-2.5 py-1.5 text-sm outline-none focus:border-primary-500 disabled:bg-muted/50"
                 />
               </td>
             </tr>

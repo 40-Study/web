@@ -18,7 +18,7 @@ import { useEnrolledCourses } from "@/hooks/use-courses";
 
 function FullscreenLoading() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+    <div className="flex min-h-screen items-center justify-center bg-muted/50">
       <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
     </div>
   );

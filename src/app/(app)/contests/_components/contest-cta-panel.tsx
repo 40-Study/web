@@ -33,7 +33,7 @@ export function ContestCtaPanel({ detail, receivedAt, activeRole, onPhaseBoundar
     case "buy-course":
       return (
         <div className="space-y-2">
-          <p className="text-sm text-gray-600">{cta.message}</p>
+          <p className="text-sm text-muted-foreground">{cta.message}</p>
           <Link href={cta.href} className={buttonVariants({ size: "lg", className: "w-full" })}>
             <ShoppingCart className="mr-2 h-4 w-4" aria-hidden="true" />
             {cta.label}
@@ -72,14 +72,14 @@ export function ContestCtaPanel({ detail, receivedAt, activeRole, onPhaseBoundar
       );
     case "expired":
       return (
-        <p className="flex items-start gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-700" role="status">
+        <p className="flex items-start gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300" role="status">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           {cta.message}
         </p>
       );
     case "info":
       return (
-        <p className="flex items-start gap-2 rounded-xl bg-gray-50 p-3 text-sm text-gray-700" role="status">
+        <p className="flex items-start gap-2 rounded-xl bg-muted/50 p-3 text-sm text-foreground" role="status">
           <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           {cta.message}
         </p>
@@ -90,9 +90,9 @@ export function ContestCtaPanel({ detail, receivedAt, activeRole, onPhaseBoundar
 function RegisteredCountdown({ label, target, serverTime, receivedAt, onZero }: { label: string; target: string; serverTime: string; receivedAt: number; onZero: () => void }) {
   const remaining = useServerCountdown(target, serverTime, onZero, receivedAt);
   return (
-    <div className="rounded-xl bg-blue-50 p-3 text-center" role="timer" aria-live="off">
-      <p className="text-sm text-blue-800">{label}</p>
-      <p className="mt-1 flex items-center justify-center gap-1.5 font-mono text-xl font-bold text-blue-900">
+    <div className="rounded-xl bg-blue-50 p-3 text-center dark:bg-blue-500/10" role="timer" aria-live="off">
+      <p className="text-sm text-blue-800 dark:text-blue-300">{label}</p>
+      <p className="mt-1 flex items-center justify-center gap-1.5 font-mono text-xl font-bold text-blue-900 dark:text-blue-300">
         <Clock className="h-5 w-5" aria-hidden="true" />
         {remaining === null ? "—" : formatCountdown(remaining)}
       </p>

@@ -61,13 +61,13 @@ function CourseDetailBody({ courseId }: { courseId: string }) {
               <Info label="Trình độ" value={courseLevelLabel(course.data.level)} />
             </div>
             {course.data.short_description && (
-              <p className="font-medium text-gray-700 dark:text-gray-300">
+              <p className="font-medium text-foreground">
                 {course.data.short_description}
               </p>
             )}
             <div>
               <h3 className="mb-1 font-semibold">Mô tả</h3>
-              <p className="whitespace-pre-line text-gray-600 dark:text-gray-400">
+              <p className="whitespace-pre-line text-muted-foreground">
                 {course.data.description || "Giáo viên chưa nhập mô tả chi tiết."}
               </p>
             </div>
@@ -103,11 +103,11 @@ function CourseDetailBody({ courseId }: { courseId: string }) {
 
 function SectionLessons({ courseId, sectionId }: { courseId: string; sectionId: string }) {
   const { data, isLoading, isError } = useLessons(courseId, sectionId);
-  if (isLoading) return <p className="mt-1 text-xs text-gray-400">Đang tải bài học…</p>;
+  if (isLoading) return <p className="mt-1 text-xs text-muted-foreground">Đang tải bài học…</p>;
   if (isError) return <p className="mt-1 text-xs text-red-500">Không tải được danh sách bài học.</p>;
-  if (!data || data.length === 0) return <p className="mt-1 text-xs text-gray-400">Chưa có bài học.</p>;
+  if (!data || data.length === 0) return <p className="mt-1 text-xs text-muted-foreground">Chưa có bài học.</p>;
   return (
-    <ul className="mt-1 list-disc space-y-0.5 pl-5 text-gray-600 dark:text-gray-400">
+    <ul className="mt-1 list-disc space-y-0.5 pl-5 text-muted-foreground">
       {data.map((lesson) => (
         <li key={lesson.id}>
           {lesson.title}
@@ -120,8 +120,8 @@ function SectionLessons({ courseId, sectionId }: { courseId: string; sectionId: 
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900">
-      <p className="text-xs text-gray-500">{label}</p>
+    <div className="rounded-lg bg-muted/50 px-3 py-2">
+      <p className="text-xs text-muted-foreground">{label}</p>
       <p className="font-medium">{value}</p>
     </div>
   );

@@ -169,7 +169,7 @@ export default function LoginPage() {
 
       <div className="my-6 flex items-center gap-3">
         <div className="h-px flex-1 bg-border" />
-        <span className="text-sm text-slate-600 dark:text-slate-400">hoặc đăng nhập với</span>
+        <span className="text-sm text-muted-foreground">hoặc đăng nhập với</span>
         <div className="h-px flex-1 bg-border" />
       </div>
 

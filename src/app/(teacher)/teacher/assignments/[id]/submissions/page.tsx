@@ -47,9 +47,9 @@ export default function AssignmentSubmissionsPage() {
             <div
               className={cn(
                 "rounded-lg p-2",
-                assignmentType === "live_coding" && "bg-purple-100 text-purple-600",
-                assignmentType === "homework" && "bg-blue-100 text-blue-600",
-                assignmentType === "project" && "bg-orange-100 text-orange-600",
+                assignmentType === "live_coding" && "bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400",
+                assignmentType === "homework" && "bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
+                assignmentType === "project" && "bg-orange-100 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400",
               )}
             >
               <TypeIcon className="h-5 w-5" />

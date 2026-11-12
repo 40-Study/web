@@ -5,7 +5,7 @@ import { Sparkles } from "lucide-react";
 import type { Achievement, AchievementRarity } from "./achievement-card";
 
 const rarityColors: Record<AchievementRarity, string> = {
-  common: "bg-gray-400",
+  common: "bg-muted-foreground",
   rare: "bg-blue-500",
   epic: "bg-purple-500",
   legendary: "bg-yellow-500",
@@ -30,14 +30,14 @@ function AchievementToastContent({ achievement }: AchievementToastContentProps) 
       </div>
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-gray-900 dark:text-white">
+          <span className="font-semibold text-foreground">
             {achievement.name}
           </span>
-          <span className="text-xs px-1.5 py-0.5 bg-green-100 text-green-700 rounded-full">
+          <span className="text-xs px-1.5 py-0.5 bg-green-100 text-green-700 rounded-full dark:bg-green-500/15 dark:text-green-300">
             +{achievement.xpReward} XP
           </span>
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-muted-foreground">
           {achievement.description}
         </p>
       </div>
@@ -53,7 +53,7 @@ export function showAchievementUnlockToast(achievement: Achievement) {
   toast.custom(
     (t) => (
       <div
-        className="w-full max-w-md bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 cursor-pointer"
+        className="w-full max-w-md bg-card rounded-lg shadow-lg border border-border p-4 cursor-pointer"
         onClick={() => toast.dismiss(t)}
       >
         <div className="flex items-center gap-2 mb-2">
