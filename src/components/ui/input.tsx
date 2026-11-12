@@ -45,8 +45,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     <input
                         type={isPassword && isPasswordVisible ? "text" : type}
                         id={inputId}
+                        // UX-C-15: chữ 16px dưới 640px vì iOS Safari tự phóng to trang khi focus ô có chữ < 16px.
                         className={cn(
-                            "flex h-10 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground transition-colors duration-150 hover:border-slate-400 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                            "flex h-10 w-full rounded-lg border border-input bg-card px-4 py-2 text-base sm:text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground transition-colors duration-150 hover:border-slate-400 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
                             "dark:border-input dark:placeholder:text-slate-400 dark:hover:border-slate-500",
                             error && "border-red-400 focus-visible:border-red-500 focus-visible:ring-red-500/40 dark:border-red-500/70",
                             isPassword && "pr-11",

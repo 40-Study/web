@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
@@ -55,6 +56,30 @@ export function Badge({ className, variant, size, ...props }: BadgeProps) {
       className={cn(badgeVariants({ variant, size }), className)}
       {...props}
     />
+  );
+}
+
+interface BadgeRemoveButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
+  /** Bắt buộc: nút chỉ có dấu X nên tên truy cập phải nói rõ gỡ cái gì (vd. "Gỡ vai trò Giáo viên của An"). */
+  "aria-label": string;
+}
+
+/**
+ * Nút X gỡ đặt trong Badge (UX-C-05). Vùng bấm 24×24 (WCAG 2.5.8) nhưng margin âm giữ badge cao như cũ,
+ * nên đặt vào không làm vỡ hàng; dấu X vẫn nhỏ để không lấn chữ.
+ */
+export function BadgeRemoveButton({ className, type = "button", ...props }: BadgeRemoveButtonProps) {
+  return (
+    <button
+      type={type}
+      className={cn(
+        "-my-1 -mr-1.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/10",
+        className
+      )}
+      {...props}
+    >
+      <X className="h-3 w-3" aria-hidden="true" />
+    </button>
   );
 }
 

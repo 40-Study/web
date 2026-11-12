@@ -89,8 +89,22 @@ export interface ButtonProps
     loadingText?: string;
 }
 
+/**
+ * UX-A-09 / UX-C-07: nút size="icon" chỉ có biểu tượng nên trình đọc màn hình không có gì để đọc nếu thiếu
+ * aria-label. Không ép bằng kiểu TypeScript vì sẽ làm hỏng build ở các chỗ gọi cũ; cảnh báo khi dev để lộ ra.
+ * Chạy ngay trong render (không dùng effect) vì Button cũng được dùng trong Server Component.
+ */
+function warnIfIconButtonUnnamed(size: ButtonProps["size"], props: React.HTMLAttributes<HTMLElement>) {
+    if (process.env.NODE_ENV === "production" || size !== "icon") return;
+    if (props["aria-label"] || props["aria-labelledby"] || props.title) return;
+    console.warn('[Button] Nút size="icon" thiếu aria-label: trình đọc màn hình sẽ không biết nút này làm gì.');
+}
+
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant, size, asChild = false, isLoading = false, loadingText, children, disabled, ...props }, ref) => {
+        // asChild: tên có thể đặt trên phần tử con (vd. <Link aria-label>), nên gộp props của con vào khi kiểm.
+        const childProps = asChild && React.isValidElement<React.HTMLAttributes<HTMLElement>>(children) ? children.props : {};
+        warnIfIconButtonUnnamed(size, { ...props, ...childProps });
         if (asChild) {
             // Slot: ap class/props len chinh phan tu con (vd. <Link>) thay vi boc them the.
             // isLoading/loadingText khong ap dung (khong the chen spinner vao phan tu con).
