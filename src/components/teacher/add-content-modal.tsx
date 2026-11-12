@@ -201,10 +201,10 @@ interface AddContentModalProps {
 // ─── Constants ─────────────────────────────────────────────────────────────
 
 const CONTENT_TYPES = [
-  { type: "video" as const, label: "Video bài giảng", icon: Play, color: "text-blue-600", bg: "bg-blue-50" },
-  { type: "livestream" as const, label: "Buổi học trực tiếp", icon: Radio, color: "text-rose-600", bg: "bg-rose-50" },
-  { type: "exercise" as const, label: "Bài tập", icon: FileText, color: "text-amber-600", bg: "bg-amber-50" },
-  { type: "article" as const, label: "Bài viết", icon: BookOpen, color: "text-emerald-600", bg: "bg-emerald-50" },
+  { type: "video" as const, label: "Video bài giảng", icon: Play, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10" },
+  { type: "livestream" as const, label: "Buổi học trực tiếp", icon: Radio, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-500/10" },
+  { type: "exercise" as const, label: "Bài tập", icon: FileText, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10" },
+  { type: "article" as const, label: "Bài viết", icon: BookOpen, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
 ];
 
 const EXERCISE_TYPES = [
@@ -617,8 +617,8 @@ export function AddContentModal({
                   <label className="text-sm font-medium mb-2 block">Video</label>
                   {videoFile ? (
                     <div className="space-y-2">
-                      <div className="flex items-center gap-3 p-3 border rounded-xl bg-blue-50">
-                        <Video className="w-8 h-8 text-blue-600" />
+                      <div className="flex items-center gap-3 p-3 border rounded-xl bg-blue-50 dark:bg-blue-500/10">
+                        <Video className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{videoFile.name}</p>
                           <p className="text-xs text-muted-foreground">{formatFileSize(videoFile.size)}</p>
@@ -634,9 +634,9 @@ export function AddContentModal({
                         <div className="space-y-1">
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-muted-foreground">{uploadStatus || "Đang upload..."}</span>
-                            <span className="font-medium text-primary-600">{uploadProgress}%</span>
+                            <span className="font-medium text-primary-600 dark:text-primary-400">{uploadProgress}%</span>
                           </div>
-                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
                             <div
                               className="h-full bg-primary-600 rounded-full transition-all duration-300"
                               style={{ width: `${uploadProgress}%` }}
@@ -650,15 +650,15 @@ export function AddContentModal({
                       onClick={() => videoInputRef.current?.click()}
                       onDragOver={(e) => {
                         e.preventDefault();
-                        e.currentTarget.classList.add("border-primary-400", "bg-primary-50");
+                        e.currentTarget.classList.add("border-primary-400", "bg-primary-50 dark:bg-primary-500/10");
                       }}
                       onDragLeave={(e) => {
                         e.preventDefault();
-                        e.currentTarget.classList.remove("border-primary-400", "bg-primary-50");
+                        e.currentTarget.classList.remove("border-primary-400", "bg-primary-50 dark:bg-primary-500/10");
                       }}
                       onDrop={(e) => {
                         e.preventDefault();
-                        e.currentTarget.classList.remove("border-primary-400", "bg-primary-50");
+                        e.currentTarget.classList.remove("border-primary-400", "bg-primary-50 dark:bg-primary-500/10");
                         const file = e.dataTransfer.files?.[0];
                         if (file && file.type.startsWith("video/")) {
                           setVideoFile(file);
@@ -832,7 +832,7 @@ export function AddContentModal({
                   // bản cũ, không phải "chưa xác định được lớp".
                   <div
                     role="alert"
-                    className="flex items-start justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800"
+                    className="flex items-start justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
                   >
                     <div className="flex items-start gap-2">
                       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -853,7 +853,7 @@ export function AddContentModal({
                   !hasCachedClasses && (
                     <div
                       role="alert"
-                      className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800"
+                      className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
                     >
                       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                       <div>
@@ -922,7 +922,7 @@ export function AddContentModal({
                     onClick={() => setExerciseType(et.type)}
                     className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-input hover:border-primary-400 hover:shadow-md transition-all"
                   >
-                    <div className="p-4 rounded-xl bg-amber-50 text-amber-600">
+                    <div className="p-4 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
                       <Icon className="w-8 h-8" />
                     </div>
                     <span className="font-medium">{et.label}</span>

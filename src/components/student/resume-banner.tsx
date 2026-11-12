@@ -11,27 +11,27 @@ interface ResumeBannerProps {
 
 export function ResumeBanner({ course }: ResumeBannerProps) {
   return (
-    <div className="bg-white rounded-2xl p-8 shadow-sm">
+    <div className="bg-card rounded-2xl p-8 shadow-sm">
       <div className="flex gap-8">
         {/* Left: Course Info */}
         <div className="flex-1">
-          <span className="inline-block px-3 py-1 bg-primary-100 text-primary-700 text-xs font-semibold rounded-full mb-4">
+          <span className="inline-block px-3 py-1 bg-primary-100 text-primary-700 text-xs font-semibold rounded-full mb-4 dark:bg-primary-500/15 dark:text-primary-300">
             KHOÁ HỌC ĐANG HỌC
           </span>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-foreground mb-2">
             {course.title}{" "}
             <span className="text-primary-500">{course.highlightedText}</span>
           </h2>
 
-          <p className="text-gray-600">{course.chapter}</p>
+          <p className="text-muted-foreground">{course.chapter}</p>
         </div>
 
         {/* Right: Progress */}
         <div className="w-80">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">Tiến độ khoá học</span>
-            <span className="text-sm font-semibold text-primary-600">
+            <span className="text-sm text-muted-foreground">Tiến độ khoá học</span>
+            <span className="text-sm font-semibold text-primary-600 dark:text-primary-400">
               {course.progress}%
             </span>
           </div>

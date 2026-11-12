@@ -119,8 +119,8 @@ export default function LoginRolePage() {
               />
             ))
           ) : roleLoadError ? (
-            <div className="space-y-3 rounded-lg border border-red-200 bg-red-50 p-4 text-center" role="alert">
-              <p className="text-sm text-red-700">{roleLoadError}</p>
+            <div className="space-y-3 rounded-lg border border-red-200 bg-red-50 p-4 text-center dark:border-red-500/30 dark:bg-red-500/10" role="alert">
+              <p className="text-sm text-red-700 dark:text-red-300">{roleLoadError}</p>
               <Button variant="outline" onClick={fetchAllSystemRoles} className="h-10">
                 Thử lại
               </Button>

@@ -72,13 +72,13 @@ export default function AdminTeacherApplicationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Duyệt giáo viên</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-foreground">Duyệt giáo viên</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Hồ sơ ứng tuyển giảng viên — duyệt để cấp vai trò giảng viên, hoặc từ chối kèm lý do.
         </p>
       </div>
 
-      <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+      <section className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
         <div className="grid gap-3 sm:grid-cols-2">
           <input
             value={keyword}
@@ -88,7 +88,7 @@ export default function AdminTeacherApplicationsPage() {
             }}
             placeholder="Tìm theo họ tên hoặc email..."
             aria-label="Tìm hồ sơ"
-            className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+            className="h-10 rounded-lg border border-border px-3 text-sm dark:bg-gray-900"
           />
           <select
             value={status}
@@ -98,7 +98,7 @@ export default function AdminTeacherApplicationsPage() {
               if (isApprovalStatus(e.target.value)) setStatus(e.target.value);
               setPage(1);
             }}
-            className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+            className="h-10 rounded-lg border border-border px-3 text-sm dark:bg-gray-900"
           >
             {TEACHER_APPROVAL_STATUSES.map((s) => (
               <option key={s} value={s}>
@@ -120,10 +120,10 @@ export default function AdminTeacherApplicationsPage() {
           status === "pending" ? "Hiện không có hồ sơ nào chờ duyệt." : "Không có hồ sơ khớp bộ lọc."
         }
       >
-        <section className="overflow-hidden rounded-xl border bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+        <section className="overflow-hidden rounded-xl border bg-card shadow-sm dark:border-gray-800">
           <div className="overflow-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-900">
+              <thead className="bg-muted/50">
                 <tr>
                   <th className="px-4 py-3 text-left">Họ tên</th>
                   <th className="px-4 py-3 text-left">Chuyên môn</th>
@@ -134,19 +134,19 @@ export default function AdminTeacherApplicationsPage() {
                   <th className="px-4 py-3 text-left" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              <tbody className="divide-y divide-border">
                 {items.map((app) => (
                   <tr key={app.profile_id} data-testid={`application-row-${app.user_id}`}>
                     <td className="px-4 py-3">
                       <p className="font-medium">{app.full_name || "—"}</p>
-                      <p className="text-xs text-gray-500">{app.email}</p>
+                      <p className="text-xs text-muted-foreground">{app.email}</p>
                     </td>
                     <td className="px-4 py-3">{app.specialization || "—"}</td>
                     <td className="px-4 py-3">
                       {app.experience_years != null ? `${app.experience_years} năm` : "—"}
                     </td>
                     <td className="px-4 py-3">{app.resubmission_count}</td>
-                    <td className="px-4 py-3 text-gray-500">{formatDate(app.updated_at)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{formatDate(app.updated_at)}</td>
                     <td className="px-4 py-3">
                       <Badge variant={STATUS_VARIANT[app.approval_status]}>
                         {TEACHER_APPROVAL_STATUS_LABEL[app.approval_status]}
@@ -156,7 +156,7 @@ export default function AdminTeacherApplicationsPage() {
                       <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => setDetail(app)}
-                          className={`${ACTION_BTN} bg-gray-100 hover:bg-gray-200 dark:bg-gray-800`}
+                          className={`${ACTION_BTN} bg-muted hover:bg-muted-foreground/20`}
                         >
                           Xem chi tiết
                         </button>
@@ -189,7 +189,7 @@ export default function AdminTeacherApplicationsPage() {
         </section>
 
         {data && data.total_pages > 1 && (
-          <div className="flex items-center justify-between px-1 text-sm text-gray-500">
+          <div className="flex items-center justify-between px-1 text-sm text-muted-foreground">
             <span>
               Trang {data.page}/{data.total_pages} — {data.total_count} hồ sơ
             </span>

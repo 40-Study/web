@@ -125,7 +125,7 @@ export default function CartPage() {
       {showRefetchBanner && (
         <div
           role="alert"
-          className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
         >
           <span>Không làm mới được giỏ hàng — đang hiển thị dữ liệu lần trước.</span>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
@@ -135,20 +135,20 @@ export default function CartPage() {
       )}
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Link href="/courses" className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
-          <ArrowLeft className="w-5 h-5 text-neutral-600" />
+        <Link href="/courses" className="p-2 hover:bg-muted rounded-full transition-colors">
+          <ArrowLeft className="w-5 h-5 text-muted-foreground" />
         </Link>
         <div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-slate-900">Giỏ hàng</h1>
-          <p className="text-neutral-500">{items.length} khoá học</p>
+          <h1 className="text-[28px] font-semibold tracking-tight text-foreground">Giỏ hàng</h1>
+          <p className="text-muted-foreground">{items.length} khoá học</p>
         </div>
       </div>
 
       {items.length === 0 ? (
         <Card className="p-12 text-center">
           <ShoppingCart className="w-16 h-16 mx-auto text-neutral-300 mb-4" />
-          <h2 className="text-xl font-light text-black mb-2">Giỏ hàng trống</h2>
-          <p className="text-neutral-500 mb-6">Hãy khám phá các khoá học và thêm vào giỏ hàng</p>
+          <h2 className="text-xl font-light text-foreground mb-2">Giỏ hàng trống</h2>
+          <p className="text-muted-foreground mb-6">Hãy khám phá các khoá học và thêm vào giỏ hàng</p>
           <Link href="/courses">
             <Button>Khám phá khoá học</Button>
           </Link>
@@ -167,14 +167,14 @@ export default function CartPage() {
                       checked={allSelected}
                       onCheckedChange={toggleSelectAll}
                     />
-                    <span className="text-sm font-medium text-gray-700">
+                    <span className="text-sm font-medium text-foreground">
                       Chọn tất cả ({items.length} khoá học)
                     </span>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                    className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10"
                     onClick={() => clearCart.mutate()}
                     disabled={clearCart.isPending}
                   >
@@ -203,7 +203,7 @@ export default function CartPage() {
                     />
 
                     {/* Thumbnail */}
-                    <div className="relative w-32 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
+                    <div className="relative w-32 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-muted">
                       {item.course?.thumbnail ? (
                         <Image
                           src={item.course.thumbnail}
@@ -221,12 +221,12 @@ export default function CartPage() {
                     <div className="flex-1 min-w-0">
                       <Link
                         href={`/courses/${item.course_id}`}
-                        className="text-base font-semibold text-gray-900 hover:text-primary-600 transition-colors line-clamp-2"
+                        className="text-base font-semibold text-foreground hover:text-primary-600 transition-colors line-clamp-2 dark:hover:text-primary-400"
                       >
                         {item.course?.title || "Khoá học"}
                       </Link>
                       {item.course?.instructor && (
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">
                           Giảng viên: {item.course.instructor.name}
                         </p>
                       )}
@@ -234,12 +234,12 @@ export default function CartPage() {
 
                     {/* Price & remove */}
                     <div className="text-right flex-shrink-0">
-                      <p className="text-lg font-bold text-primary-600">
+                      <p className="text-lg font-bold text-primary-600 dark:text-primary-400">
                         <CartItemPrice item={item} />
                       </p>
                       <button
                         className={cn(
-                          "mt-2 text-sm text-gray-400 hover:text-red-500 transition-colors",
+                          "mt-2 text-sm text-muted-foreground hover:text-red-500 transition-colors",
                           removeFromCart.isPending && "opacity-50 pointer-events-none"
                         )}
                         onClick={() => removeFromCart.mutate(item.course_id)}
@@ -257,11 +257,11 @@ export default function CartPage() {
           <div className="lg:w-80 flex-shrink-0">
             <Card className="sticky top-24">
               <CardContent className="p-6">
-                <h2 className="text-base font-semibold text-slate-900 mb-4">Tóm tắt đơn hàng</h2>
+                <h2 className="text-base font-semibold text-foreground mb-4">Tóm tắt đơn hàng</h2>
 
                 {/* Voucher input */}
                 <div className="mb-4">
-                  <label className="text-sm font-medium text-neutral-700 mb-2 block">
+                  <label className="text-sm font-medium text-foreground mb-2 block">
                     Mã giảm giá
                   </label>
                   <VoucherInput
@@ -274,21 +274,21 @@ export default function CartPage() {
 
                 <div className="pt-4 space-y-3" style={{ borderTop: "1px solid rgba(0,0,0,0.05)" }}>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-neutral-600">Tạm tính</span>
+                    <span className="text-muted-foreground">Tạm tính</span>
                     <span className="font-medium">{formatPrice(effectiveSubtotal)}</span>
                   </div>
                   {discount > 0 && (
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-neutral-600">Giảm giá</span>
-                      <span className="font-medium text-green-600">-{formatPrice(discount)}</span>
+                      <span className="text-muted-foreground">Giảm giá</span>
+                      <span className="font-medium text-green-600 dark:text-green-400">-{formatPrice(discount)}</span>
                     </div>
                   )}
                   <div
                     className="pt-3 flex items-center justify-between"
                     style={{ borderTop: "1px solid rgba(0,0,0,0.05)" }}
                   >
-                    <span className="font-medium text-black">Tổng cộng</span>
-                    <span className="text-xl font-medium text-black">
+                    <span className="font-medium text-foreground">Tổng cộng</span>
+                    <span className="text-xl font-medium text-foreground">
                       {formatPrice(finalTotal)}
                     </span>
                   </div>
@@ -313,16 +313,16 @@ export default function CartPage() {
 
                 {selectedIds.length === 0 && items.length > 0 && (
                   <p
-                    className="text-xs text-center text-amber-600 mt-2"
+                    className="text-xs text-center text-amber-600 mt-2 dark:text-amber-400"
                     data-testid="cart-select-hint"
                   >
                     Chọn ít nhất một khoá học để thanh toán.
                   </p>
                 )}
 
-                <p className="text-xs text-center text-neutral-500 mt-3">
+                <p className="text-xs text-center text-muted-foreground mt-3">
                   Bằng việc thanh toán, bạn đồng ý với{" "}
-                  <Link href="/terms" className="text-black hover:underline">
+                  <Link href="/terms" className="text-foreground hover:underline">
                     Điều khoản dịch vụ
                   </Link>
                 </p>

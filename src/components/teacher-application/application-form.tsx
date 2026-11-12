@@ -15,7 +15,7 @@ interface ApplicationFormProps {
 }
 
 const INPUT_CLASS =
-  "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900";
+  "w-full rounded-lg border border-border px-3 py-2 text-sm dark:bg-gray-900";
 
 /** "" → undefined: backend coi field vắng mặt là "không khai", không lưu chuỗi rỗng. */
 function optional(value: string): string | undefined {
@@ -86,7 +86,7 @@ export function ApplicationForm({
           className={INPUT_CLASS}
         />
         {!isYearsValid && (
-          <p className="mt-1 text-xs text-red-600">Số năm kinh nghiệm phải là số nguyên từ 0 đến 60.</p>
+          <p className="mt-1 text-xs text-red-600 dark:text-red-400">Số năm kinh nghiệm phải là số nguyên từ 0 đến 60.</p>
         )}
       </Field>
       <Field id="education" label="Học vấn">
@@ -129,7 +129,7 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      <label htmlFor={id} className="mb-1 block text-sm font-medium text-foreground">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       {children}

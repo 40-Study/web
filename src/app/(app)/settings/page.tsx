@@ -93,17 +93,17 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen bg-muted/50">
       {/* Page Header */}
-      <div className="bg-white border-b border-gray-100">
+      <div className="bg-card border-b border-border">
         <div className="container max-w-6xl mx-auto px-4 py-6">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary-50 rounded-2xl">
-              <Settings className="h-7 w-7 text-primary-600" />
+            <div className="p-3 bg-primary-50 rounded-2xl dark:bg-primary-500/10">
+              <Settings className="h-7 w-7 text-primary-600 dark:text-primary-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Cài đặt</h1>
-              <p className="text-sm text-gray-500">Quản lý tài khoản và tuỳ chỉnh trải nghiệm</p>
+              <h1 className="text-2xl font-bold text-foreground">Cài đặt</h1>
+              <p className="text-sm text-muted-foreground">Quản lý tài khoản và tuỳ chỉnh trải nghiệm</p>
             </div>
           </div>
         </div>

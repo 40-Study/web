@@ -59,7 +59,7 @@ function OrgClassesList() {
             }}
             className={cn(
               "rounded-full border px-3 py-1 text-sm transition-colors",
-              status === f.value ? "border-primary-600 bg-primary-50 text-primary-700" : "border-border text-muted-foreground hover:text-foreground"
+              status === f.value ? "border-primary-600 bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-300" : "border-border text-muted-foreground hover:text-foreground"
             )}
           >
             {f.label}

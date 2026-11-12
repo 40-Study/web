@@ -384,7 +384,7 @@ export function ExerciseModal({
                           variant="ghost"
                           size="sm"
                           onClick={() => addOption(q.id)}
-                          className="text-primary-600"
+                          className="text-primary-600 dark:text-primary-400"
                         >
                           <Plus className="h-4 w-4 mr-1" />
                           Thêm phương án
@@ -456,7 +456,7 @@ export function ExerciseModal({
               {codeForm.testCases.map((tc, idx) => (
                 <div key={tc.id} className="border rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-primary-600">
+                    <span className="text-sm font-medium text-primary-600 dark:text-primary-400">
                       Test case #{idx + 1}
                     </span>
                     <div className="flex items-center gap-2">
@@ -528,7 +528,7 @@ export function ExerciseModal({
                     setCodeForm((prev) => ({ ...prev, solutionCode: e.target.value }))
                   }
                   rows={6}
-                  className="bg-transparent border-none text-green-400 placeholder:text-gray-500 resize-y"
+                  className="bg-transparent border-none text-green-400 placeholder:text-muted-foreground resize-y"
                 />
               </div>
             </div>
@@ -648,11 +648,11 @@ function TypeCard({ icon, label, selected, onClick }: TypeCardProps) {
       className={cn(
         "flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 transition-all hover:shadow-md",
         selected
-          ? "border-primary-600 bg-primary-50 text-primary-700"
-          : "border-input hover:border-primary-300"
+          ? "border-primary-600 bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-300"
+          : "border-input hover:border-primary-300 dark:hover:border-primary-500/30"
       )}
     >
-      <div className="p-3 rounded-xl bg-primary-100 text-primary-600">{icon}</div>
+      <div className="p-3 rounded-xl bg-primary-100 text-primary-600 dark:bg-primary-500/15 dark:text-primary-400">{icon}</div>
       <span className="text-sm font-medium">{label}</span>
     </button>
   );

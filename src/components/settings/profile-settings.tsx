@@ -120,11 +120,11 @@ export function ProfileSettings() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Hồ sơ</h2>
-          <p className="text-sm text-gray-500 mt-1">Cập nhật thông tin cá nhân của bạn</p>
+          <h2 className="text-xl font-bold text-foreground">Hồ sơ</h2>
+          <p className="text-sm text-muted-foreground mt-1">Cập nhật thông tin cá nhân của bạn</p>
         </div>
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
         </div>
       </div>
     );
@@ -133,20 +133,20 @@ export function ProfileSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-900">Hồ sơ</h2>
-        <p className="text-sm text-gray-500 mt-1">Cập nhật thông tin cá nhân của bạn</p>
+        <h2 className="text-xl font-bold text-foreground">Hồ sơ</h2>
+        <p className="text-sm text-muted-foreground mt-1">Cập nhật thông tin cá nhân của bạn</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Avatar */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
           <div className="flex items-center gap-6">
             <div className="relative group">
               <Avatar
                 size="xl"
                 src={displayAvatar}
                 fallback={displayName}
-                className="w-20 h-20 ring-4 ring-gray-50"
+                className="w-20 h-20 ring-4 ring-border"
               />
               <button
                 type="button"
@@ -164,15 +164,15 @@ export function ProfileSettings() {
               />
             </div>
             <div>
-              <p className="font-medium text-gray-900">{displayName}</p>
-              <p className="text-sm text-gray-500">{displayEmail}</p>
+              <p className="font-medium text-foreground">{displayName}</p>
+              <p className="text-sm text-muted-foreground">{displayEmail}</p>
               {profileData?.username && (
-                <p className="text-sm text-primary-600">@{profileData.username}</p>
+                <p className="text-sm text-primary-600 dark:text-primary-400">@{profileData.username}</p>
               )}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="mt-2 text-sm font-medium text-primary-600 hover:text-primary-700"
+                className="mt-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
               >
                 Thay đổi ảnh đại diện
               </button>
@@ -182,7 +182,7 @@ export function ProfileSettings() {
         </div>
 
         {/* Form fields */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm space-y-5">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div className="space-y-2">
               <Label htmlFor="fullName">Họ và tên</Label>
@@ -197,7 +197,7 @@ export function ProfileSettings() {
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">@</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
                 <Input
                   id="username"
                   {...register("username")}
@@ -231,7 +231,7 @@ export function ProfileSettings() {
               rows={3}
               className="rounded-xl"
             />
-            <p className="text-xs text-gray-400 text-right">{bio.length}/160</p>
+            <p className="text-xs text-muted-foreground text-right">{bio.length}/160</p>
           </div>
         </div>
 

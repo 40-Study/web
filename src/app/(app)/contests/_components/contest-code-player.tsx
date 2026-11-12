@@ -249,7 +249,7 @@ export function ContestCodePlayer({
           Điểm tốt nhất
           <strong>
             {data.score}
-            <span className="text-xs font-normal text-slate-400"> / {data.total_points}</span>
+            <span className="text-xs font-normal text-muted-foreground"> / {data.total_points}</span>
           </strong>
         </div>
         {data.started_at && !ended && (
@@ -266,7 +266,7 @@ export function ContestCodePlayer({
           </Button>
         )}
         {ended && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
             <CheckCircle2 className="h-3.5 w-3.5" />
             Đã hoàn thành
           </span>
@@ -312,7 +312,7 @@ export function ContestCodePlayer({
         {error && (
           <p
             role="alert"
-            className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700"
+            className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
           >
             {error}
           </p>
@@ -337,7 +337,7 @@ export function ContestCodePlayer({
         )}
         {activeTab === "summary" && (
           <section className="code-summary" aria-label="Tổng kết bài thi">
-            <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+            <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
             <h2>{ended ? "Bài thi đã được ghi nhận" : "Kết quả hiện tại"}</h2>
             <p>Mọi lần nộp được lưu. Điểm mỗi bài là kết quả tốt nhất bạn đạt được.</p>
             <div className="code-summary-stats">
@@ -370,9 +370,9 @@ export function ContestCodePlayer({
           </section>
         )}
         {activeTab === "leaderboard" && (
-          <section className="mx-auto max-w-4xl rounded-xl border bg-white p-6">
+          <section className="mx-auto max-w-4xl rounded-xl border bg-card p-6">
             <div className="mb-5 flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-emerald-600" />
+              <Trophy className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               <h2 className="text-lg font-semibold">Bảng xếp hạng cuộc thi</h2>
             </div>
             <ContestLeaderboard
@@ -385,10 +385,10 @@ export function ContestCodePlayer({
           </section>
         )}
         {activeTab === "submissions" && (
-          <section className="mx-auto max-w-5xl overflow-hidden rounded-xl border bg-white">
+          <section className="mx-auto max-w-5xl overflow-hidden rounded-xl border bg-card">
             <div className="border-b p-5">
               <h2 className="font-semibold">Bài nộp của tôi</h2>
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Chọn một bài nộp để xem kết quả từng test.
               </p>
             </div>
@@ -413,7 +413,7 @@ export function ContestCodePlayer({
                       <td>{submission.language}</td>
                       <td
                         className={
-                          submission.status === "ACCEPTED" ? "text-emerald-600" : "text-red-500"
+                          submission.status === "ACCEPTED" ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"
                         }
                       >
                         {CODE_VERDICT_LABELS[submission.status] ?? submission.status}
@@ -424,7 +424,7 @@ export function ContestCodePlayer({
                       <td>{submission.execution_time_ms} ms</td>
                       <td>
                         <button
-                          className="text-emerald-700 hover:underline"
+                          className="text-emerald-700 hover:underline dark:text-emerald-300"
                           onClick={() => {
                             setResult(submission);
                             setConsoleTab("result");
@@ -473,7 +473,7 @@ export function ContestCodePlayer({
                     {data.submissions.some(
                       (submission) =>
                         submission.problem_id === item.id && submission.score >= item.points
-                    ) && <CheckCircle2 className="h-3 w-3 text-emerald-600" />}
+                    ) && <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />}
                   </button>
                 ))}
               </nav>
@@ -506,7 +506,7 @@ export function ContestCodePlayer({
                       </div>
                     </div>
                   ))}
-                  <div className="mt-7 border-t pt-4 text-[11px] leading-6 text-slate-400">
+                  <div className="mt-7 border-t pt-4 text-[11px] leading-6 text-muted-foreground">
                     Đọc dữ liệu từ đầu vào chuẩn (stdin) và in kết quả ra đầu ra chuẩn (stdout).
                     Chạy thử không tính điểm; nộp bài để chấm cả test ẩn.
                   </div>
@@ -602,7 +602,7 @@ export function ContestCodePlayer({
                   Kết quả
                   {result && (
                     <span
-                      className={result.status === "ACCEPTED" ? "text-emerald-600" : "text-red-500"}
+                      className={result.status === "ACCEPTED" ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}
                     >
                       ●
                     </span>

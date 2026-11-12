@@ -104,15 +104,15 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md mx-4 bg-card rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h2 className="text-lg font-medium text-slate-900">Mời phụ huynh</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h2 className="text-lg font-medium text-foreground">Mời phụ huynh</h2>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+            className="p-2 hover:bg-muted rounded-full transition-colors"
           >
-            <X className="w-5 h-5 text-slate-500" />
+            <X className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
 
@@ -122,11 +122,11 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email input */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Email phụ huynh
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type="email"
                     placeholder="email@example.com"
@@ -136,14 +136,14 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
                     autoFocus
                   />
                 </div>
-                <p className="mt-1.5 text-xs text-slate-500">
+                <p className="mt-1.5 text-xs text-muted-foreground">
                   Phụ huynh sẽ nhận được email với liên kết để tham gia
                 </p>
               </div>
 
               {/* Relationship selection */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Mối quan hệ
                 </label>
                 <div className="grid grid-cols-1 gap-2">
@@ -155,8 +155,8 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
                       className={cn(
                         "flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left",
                         relationship === rel.value
-                          ? "border-primary-500 bg-primary-50"
-                          : "border-slate-200 hover:border-slate-300"
+                          ? "border-primary-500 bg-primary-50 dark:bg-primary-500/10"
+                          : "border-border hover:border-input"
                       )}
                     >
                       <div
@@ -164,23 +164,23 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
                           "p-2 rounded-lg",
                           relationship === rel.value
                             ? "bg-primary-600 text-white"
-                            : "bg-slate-100 text-slate-500"
+                            : "bg-muted text-muted-foreground"
                         )}
                       >
                         {rel.icon}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-slate-900">{rel.label}</p>
-                        <p className="text-xs text-slate-500">{rel.description}</p>
+                        <p className="font-medium text-foreground">{rel.label}</p>
+                        <p className="text-xs text-muted-foreground">{rel.description}</p>
                       </div>
                       <div
                         className={cn(
                           "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                          relationship === rel.value ? "border-primary-600 bg-primary-600" : "border-slate-300"
+                          relationship === rel.value ? "border-primary-600 bg-primary-600" : "border-input"
                         )}
                       >
                         {relationship === rel.value && (
-                          <div className="w-2 h-2 rounded-full bg-white" />
+                          <div className="w-2 h-2 rounded-full bg-card" />
                         )}
                       </div>
                     </button>
@@ -190,18 +190,18 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
 
               {/* Optional message */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Lời nhắn <span className="text-slate-400 font-normal">(tuỳ chọn)</span>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Lời nhắn <span className="text-muted-foreground font-normal">(tuỳ chọn)</span>
                 </label>
                 <textarea
                   placeholder="Gửi lời nhắn kèm theo lời mời..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 resize-none text-sm transition-colors"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-primary-500 focus:ring-1 focus:ring-primary-500 resize-none text-sm transition-colors"
                   maxLength={500}
                 />
-                <p className="mt-1 text-xs text-slate-400 text-right">{message.length}/500</p>
+                <p className="mt-1 text-xs text-muted-foreground text-right">{message.length}/500</p>
               </div>
 
               {/* Submit */}
@@ -214,26 +214,26 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
 
           {step === "sending" && (
             <div className="py-12 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-primary-100 rounded-full flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+              <div className="w-16 h-16 mx-auto mb-4 bg-primary-100 rounded-full flex items-center justify-center dark:bg-primary-500/15">
+                <Loader2 className="w-8 h-8 text-primary-600 animate-spin dark:text-primary-400" />
               </div>
-              <h3 className="text-lg font-medium text-slate-900 mb-1">Đang gửi lời mời</h3>
-              <p className="text-sm text-slate-500">Vui lòng đợi trong giây lát...</p>
+              <h3 className="text-lg font-medium text-foreground mb-1">Đang gửi lời mời</h3>
+              <p className="text-sm text-muted-foreground">Vui lòng đợi trong giây lát...</p>
             </div>
           )}
 
           {step === "success" && (
             <div className="py-12 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center dark:bg-green-500/15">
+                <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
-              <h3 className="text-lg font-medium text-slate-900 mb-1">Đã gửi lời mời!</h3>
-              <p className="text-sm text-slate-500 mb-6">
+              <h3 className="text-lg font-medium text-foreground mb-1">Đã gửi lời mời!</h3>
+              <p className="text-sm text-muted-foreground mb-6">
                 Lời mời đã được gửi đến <span className="font-medium">{email}</span>
               </p>
-              <div className="p-4 bg-primary-50 rounded-xl text-left border border-primary-100">
-                <p className="text-sm text-slate-600">
-                  <span className="font-medium text-primary-700">Bước tiếp theo:</span> Phụ huynh sẽ nhận được email
+              <div className="p-4 bg-primary-50 rounded-xl text-left border border-primary-100 dark:bg-primary-500/10 dark:border-primary-500/30">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-primary-700 dark:text-primary-300">Bước tiếp theo:</span> Phụ huynh sẽ nhận được email
                   với liên kết để chấp nhận lời mời. Lời mời có hiệu lực trong 7 ngày.
                 </p>
               </div>
@@ -245,11 +245,11 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
 
           {step === "error" && (
             <div className="py-12 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-8 h-8 text-red-600" />
+              <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center dark:bg-red-500/15">
+                <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
               </div>
-              <h3 className="text-lg font-medium text-slate-900 mb-1">Không thể gửi lời mời</h3>
-              <p className="text-sm text-slate-500 mb-6">{errorMessage}</p>
+              <h3 className="text-lg font-medium text-foreground mb-1">Không thể gửi lời mời</h3>
+              <p className="text-sm text-muted-foreground mb-6">{errorMessage}</p>
               <div className="flex gap-3">
                 <Button variant="outline" onClick={handleClose} className="flex-1 h-12">
                   Đóng

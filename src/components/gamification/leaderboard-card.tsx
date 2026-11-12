@@ -43,7 +43,7 @@ function formatNumber(num: number): string {
 /** Huy hiệu hạng 1-3: chữ số trong vòng tròn, màu phân biệt kèm số nên không chỉ dựa vào màu. */
 const RANK_BADGE: Record<number, string> = {
   1: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
-  2: "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-100",
+  2: "bg-muted-foreground/20 text-foreground",
   3: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200",
 };
 
@@ -74,7 +74,7 @@ export function LeaderboardCard({
         <span
           className={cn(
             "flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold tabular-nums",
-            RANK_BADGE[rank] ?? "text-slate-600 dark:text-slate-400"
+            RANK_BADGE[rank] ?? "text-muted-foreground"
           )}
         >
           {rank}
@@ -96,12 +96,12 @@ export function LeaderboardCard({
             "truncate text-sm font-medium",
             isCurrentUser
               ? "text-primary-700 dark:text-primary-300"
-              : "text-slate-900 dark:text-slate-50"
+              : "text-foreground"
           )}
         >
           {entry.name} {isCurrentUser && "(Bạn)"}
         </p>
-        {entry.level ? <p className="text-xs text-slate-600 dark:text-slate-400">Cấp {entry.level}</p> : null}
+        {entry.level ? <p className="text-xs text-muted-foreground">Cấp {entry.level}</p> : null}
       </div>
 
       {/* XP trong kỳ đang xem */}
@@ -109,7 +109,7 @@ export function LeaderboardCard({
         <p className="font-bold tabular-nums text-xp dark:text-xp-light">
           +{formatNumber(entry.weeklyXP)}
         </p>
-        <p className="text-xs text-slate-600 dark:text-slate-400">{xpLabel}</p>
+        <p className="text-xs text-muted-foreground">{xpLabel}</p>
       </div>
 
       {/* Xu hướng hạng: backend chưa trả dữ liệu nên trend = 0 ở mọi dòng; chỉ hiện khi thật sự có thay đổi,
@@ -154,7 +154,7 @@ export function LeaderboardList({
   const isCurrentUserInTop = entries.some((e) => e.userId === currentUserId);
 
   return (
-    <Card className={cn("divide-y divide-slate-100 overflow-hidden dark:divide-slate-800", className)}>
+    <Card className={cn("divide-y divide-border overflow-hidden", className)}>
       {entries.map((entry, idx) => (
         <LeaderboardCard
           key={entry.userId}
@@ -168,7 +168,7 @@ export function LeaderboardList({
       {/* Show current user if not in top entries */}
       {!isCurrentUserInTop && currentUserEntry && (
         <>
-          <div className="px-4 py-2 text-center text-sm text-slate-600 dark:text-slate-400" aria-hidden="true">
+          <div className="px-4 py-2 text-center text-sm text-muted-foreground" aria-hidden="true">
             • • •
           </div>
           <LeaderboardCard

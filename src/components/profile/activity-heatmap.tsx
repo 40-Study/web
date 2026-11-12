@@ -16,7 +16,7 @@ interface ActivityHeatmapProps {
 }
 
 function getActivityLevel(count: number): string {
-  if (count === 0) return "bg-gray-100 dark:bg-gray-800";
+  if (count === 0) return "bg-muted";
   if (count <= 2) return "bg-green-200 dark:bg-green-900";
   if (count <= 5) return "bg-green-400 dark:bg-green-700";
   return "bg-green-600 dark:bg-green-500";
@@ -145,7 +145,7 @@ export function ActivityHeatmap({
                   <div
                     key={day.date}
                     className={cn(
-                      "w-3 h-3 rounded-sm transition-colors cursor-pointer hover:ring-1 hover:ring-gray-400",
+                      "w-3 h-3 rounded-sm transition-colors cursor-pointer hover:ring-1 hover:ring-muted-foreground/60",
                       getActivityLevel(day.count)
                     )}
                     title={`${day.date}: ${day.count} bài học`}
@@ -160,7 +160,7 @@ export function ActivityHeatmap({
       {/* Legend */}
       <div className="flex items-center justify-end gap-2 mt-3 text-xs text-muted-foreground">
         <span>Ít</span>
-        <div className="w-3 h-3 rounded-sm bg-gray-100 dark:bg-gray-800" />
+        <div className="w-3 h-3 rounded-sm bg-muted" />
         <div className="w-3 h-3 rounded-sm bg-green-200 dark:bg-green-900" />
         <div className="w-3 h-3 rounded-sm bg-green-400 dark:bg-green-700" />
         <div className="w-3 h-3 rounded-sm bg-green-600 dark:bg-green-500" />

@@ -23,11 +23,11 @@ export const CHILD_ASSIGNMENT_STATE_LABEL: Record<ChildAssignmentState, string> 
 
 /** Màu chữ cho từng trạng thái, dùng chung để ba màn hình tô cùng một màu. */
 export const CHILD_ASSIGNMENT_STATE_CLASS: Record<ChildAssignmentState, string> = {
-  completed: "text-green-600",
-  awaiting_grade: "text-blue-600",
-  needs_retry: "text-amber-600",
-  overdue: "text-red-600",
-  not_started: "text-gray-500",
+  completed: "text-green-600 dark:text-green-400",
+  awaiting_grade: "text-blue-600 dark:text-blue-400",
+  needs_retry: "text-amber-600 dark:text-amber-400",
+  overdue: "text-red-600 dark:text-red-400",
+  not_started: "text-muted-foreground",
 };
 
 function dueTime(a: ChildAssignment): number | null {

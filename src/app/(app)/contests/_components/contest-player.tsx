@@ -79,10 +79,10 @@ export function ContestPlayer({ detail, session }: { detail: ContestDetail; sess
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-8 pt-4 sm:px-6">
-      <div className="sticky top-0 z-20 -mx-4 mb-4 flex items-center justify-between gap-3 border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-b-xl">
+      <div className="sticky top-0 z-20 -mx-4 mb-4 flex items-center justify-between gap-3 border-b border-border bg-card/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-b-xl">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-gray-900">{detail.title}</p>
-          <p className="text-xs text-gray-500">
+          <p className="truncate text-sm font-semibold text-foreground">{detail.title}</p>
+          <p className="text-xs text-muted-foreground">
             Đã trả lời {answeredCount}/{questions.length} câu
           </p>
         </div>
@@ -94,7 +94,7 @@ export function ContestPlayer({ detail, session }: { detail: ContestDetail; sess
             aria-label="Thời gian còn lại"
             className={cn(
               "flex items-center gap-1 rounded-lg px-2 py-1.5 font-mono text-base font-bold sm:px-3 sm:text-lg",
-              remaining !== null && remaining <= WARNING_MS ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-900"
+              remaining !== null && remaining <= WARNING_MS ? "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300" : "bg-muted text-foreground"
             )}
           >
             <Clock className="h-4 w-4" aria-hidden="true" />
@@ -108,7 +108,7 @@ export function ContestPlayer({ detail, session }: { detail: ContestDetail; sess
       </div>
 
       {questions.length === 0 ? (
-        <p className="py-10 text-center text-sm text-gray-600">Đề thi chưa có câu hỏi.</p>
+        <p className="py-10 text-center text-sm text-muted-foreground">Đề thi chưa có câu hỏi.</p>
       ) : (
         <div className="space-y-4">
           {questions.map((q, i) => (
@@ -117,7 +117,7 @@ export function ContestPlayer({ detail, session }: { detail: ContestDetail; sess
         </div>
       )}
 
-      <p className="mt-4 text-center text-xs text-gray-600">
+      <p className="mt-4 text-center text-xs text-muted-foreground">
         Bài được chấm ở máy chủ. Hết giờ hệ thống tự nộp. Đáp án công bố sau khi cuộc thi kết thúc.
       </p>
 

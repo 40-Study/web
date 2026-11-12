@@ -72,13 +72,13 @@ function TransactionRow({ tx }: { tx: CoinTransaction }) {
         <div
           className={cn(
             "h-9 w-9 rounded-full flex items-center justify-center",
-            isEarn ? "bg-green-100" : "bg-red-100"
+            isEarn ? "bg-green-100 dark:bg-green-500/15" : "bg-red-100 dark:bg-red-500/15"
           )}
         >
           {isEarn ? (
-            <ArrowDownRight className="h-4 w-4 text-green-600" />
+            <ArrowDownRight className="h-4 w-4 text-green-600 dark:text-green-400" />
           ) : (
-            <ArrowUpRight className="h-4 w-4 text-red-600" />
+            <ArrowUpRight className="h-4 w-4 text-red-600 dark:text-red-400" />
           )}
         </div>
         <div>
@@ -88,7 +88,7 @@ function TransactionRow({ tx }: { tx: CoinTransaction }) {
           </p>
         </div>
       </div>
-      <div className={cn("font-semibold text-sm", isEarn ? "text-green-600" : "text-red-600")}>
+      <div className={cn("font-semibold text-sm", isEarn ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
         {isEarn ? "+" : ""}
         {formatNumber(tx.amount)}
       </div>
@@ -197,7 +197,7 @@ function SendGiftDialog({ balance }: { balance: number }) {
               />
             </div>
             {validationError && (
-              <p role="alert" className="text-xs text-red-600">
+              <p role="alert" className="text-xs text-red-600 dark:text-red-400">
                 {validationError}
               </p>
             )}
@@ -313,7 +313,7 @@ export default function CoinsPage() {
             <div className="commerce-checkout-grid">
               <section>
                 <h2 className="mb-2 text-base font-semibold">Chọn gói xu phù hợp</h2>
-                <p className="mb-5 text-xs text-slate-400">
+                <p className="mb-5 text-xs text-muted-foreground">
                   Số xu nhận được đã bao gồm xu tặng thêm.
                 </p>
                 <div className="coin-package-grid">
@@ -327,7 +327,7 @@ export default function CoinsPage() {
                       onClick={() => setSelectedID(pkg.id)}
                       aria-label={`Chọn ${pkg.name}: ${formatNumber(pkg.total_coins)} xu`}
                     >
-                      <span className="text-[11px] text-slate-500">{pkg.name}</span>
+                      <span className="text-[11px] text-muted-foreground">{pkg.name}</span>
                       {selected?.id === pkg.id ? (
                         <CheckCircle2 className="coin-choice-indicator h-4 w-4" />
                       ) : (
@@ -344,7 +344,7 @@ export default function CoinsPage() {
                       <div className="coin-package-price">
                         {formatNumber(Number(pkg.price))} ₫{" "}
                         {pkg.is_featured && (
-                          <span className="ml-1 rounded bg-indigo-50 px-2 py-1 text-[9px] text-indigo-500">
+                          <span className="ml-1 rounded bg-indigo-50 px-2 py-1 text-[9px] text-indigo-500 dark:bg-indigo-500/10">
                             Phổ biến
                           </span>
                         )}
@@ -353,13 +353,13 @@ export default function CoinsPage() {
                   ))}
                 </div>
                 {packages.data?.length === 0 && (
-                  <div className="commerce-panel p-10 text-center text-sm text-slate-400">
+                  <div className="commerce-panel p-10 text-center text-sm text-muted-foreground">
                     Hiện chưa có gói xu. Vui lòng quay lại sau.
                   </div>
                 )}
               </section>
               <aside className="commerce-panel commerce-summary">
-                <div className="mb-4 inline-grid h-10 w-10 place-items-center rounded-xl bg-amber-50 text-amber-500">
+                <div className="mb-4 inline-grid h-10 w-10 place-items-center rounded-xl bg-amber-50 text-amber-500 dark:bg-amber-500/10">
                   <Coins className="h-5 w-5" />
                 </div>
                 <h2>Thông tin nạp xu</h2>
@@ -374,7 +374,7 @@ export default function CoinsPage() {
                   </div>
                   <div>
                     <dt>Xu tặng thêm</dt>
-                    <dd className="text-emerald-600">
+                    <dd className="text-emerald-600 dark:text-emerald-400">
                       +{formatNumber(selected?.bonus_amount ?? 0)} xu
                     </dd>
                   </div>
@@ -403,7 +403,7 @@ export default function CoinsPage() {
                   Chuyển khoản bằng VND. Xu được cộng sau khi ngân hàng xác nhận. Bạn có thể mở lại
                   đơn trong “Đơn nạp xu”.
                 </p>
-                <Link href="/orders" className="mt-5 block border-t pt-4 text-xs text-indigo-600">
+                <Link href="/orders" className="mt-5 block border-t pt-4 text-xs text-indigo-600 dark:text-indigo-400">
                   Xem đơn mua khoá học →
                 </Link>
               </aside>
@@ -467,10 +467,10 @@ export default function CoinsPage() {
                 </tbody>
               </table>
               {!purchases.data?.purchases.length && (
-                <p className="p-10 text-center text-sm text-slate-400">Bạn chưa có đơn nạp xu.</p>
+                <p className="p-10 text-center text-sm text-muted-foreground">Bạn chưa có đơn nạp xu.</p>
               )}
             </div>
-            <div className="mt-4 flex items-center justify-end gap-3 text-xs text-slate-500">
+            <div className="mt-4 flex items-center justify-end gap-3 text-xs text-muted-foreground">
               <Button
                 size="sm"
                 variant="outline"
@@ -502,7 +502,7 @@ export default function CoinsPage() {
               {transactions.data?.transactions.length ? (
                 transactions.data.transactions.map((tx) => <TransactionRow key={tx.id} tx={tx} />)
               ) : (
-                <p className="p-8 text-center text-sm text-slate-400">Chưa có biến động số dư.</p>
+                <p className="p-8 text-center text-sm text-muted-foreground">Chưa có biến động số dư.</p>
               )}
             </div>
           </QueryState>

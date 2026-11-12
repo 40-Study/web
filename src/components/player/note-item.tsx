@@ -54,12 +54,12 @@ export function NoteItem({
   };
 
   return (
-    <li className="rounded-xl border border-gray-100 bg-white px-3 py-2.5">
+    <li className="rounded-xl border border-border bg-card px-3 py-2.5">
       <div className="flex items-start justify-between gap-2">
         <button
           type="button"
           onClick={() => onSeek(note.timestamp_seconds)}
-          className="rounded-md bg-primary-50 px-2 py-0.5 font-mono text-xs font-medium text-primary-600 hover:bg-primary-100"
+          className="rounded-md bg-primary-50 px-2 py-0.5 font-mono text-xs font-medium text-primary-600 hover:bg-primary-100 dark:bg-primary-500/10 dark:text-primary-400 dark:hover:bg-primary-500/15"
           title="Tới đoạn này trong video"
         >
           {formatCueTime(note.timestamp_seconds)}
@@ -69,7 +69,7 @@ export function NoteItem({
           <button
             type="button"
             onClick={() => setIsEditing((v) => !v)}
-            className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-muted-foreground"
             aria-label="Sửa ghi chú"
           >
             <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
@@ -77,7 +77,7 @@ export function NoteItem({
           <button
             type="button"
             onClick={() => setIsConfirmingDelete(true)}
-            className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
+            className="rounded p-1 text-muted-foreground hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
             aria-label="Xoá ghi chú"
           >
             <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -86,7 +86,7 @@ export function NoteItem({
       </div>
 
       {showLesson && (
-        <p className="mt-1.5 text-[11px] text-gray-400">
+        <p className="mt-1.5 text-[11px] text-muted-foreground">
           {note.section_title} • {note.lesson_title}
         </p>
       )}
@@ -99,12 +99,12 @@ export function NoteItem({
             rows={3}
             maxLength={MAX_NOTE_CONTENT_LENGTH + 200}
             className={cn(
-              "w-full rounded-lg border px-2.5 py-2 text-sm text-gray-700 focus:outline-none",
-              isDraftTooLong ? "border-red-300 focus:border-red-400" : "border-gray-200 focus:border-primary-400"
+              "w-full rounded-lg border px-2.5 py-2 text-sm text-foreground focus:outline-none",
+              isDraftTooLong ? "border-red-300 focus:border-red-400 dark:border-red-500/30" : "border-border focus:border-primary-400"
             )}
             placeholder="Nội dung ghi chú"
           />
-          <p className={cn("mt-1 text-xs", isDraftTooLong ? "text-red-600" : "text-gray-400")}>
+          <p className={cn("mt-1 text-xs", isDraftTooLong ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
             {draft.length}/{MAX_NOTE_CONTENT_LENGTH}
             {isDraftTooLong && " — vượt quá giới hạn, hãy rút gọn lại"}
           </p>
@@ -115,7 +115,7 @@ export function NoteItem({
                 setDraft(note.content);
                 setIsEditing(false);
               }}
-              className="rounded-lg px-2.5 py-1 text-xs text-gray-500 hover:bg-gray-100"
+              className="rounded-lg px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted"
             >
               Huỷ
             </button>
@@ -133,17 +133,17 @@ export function NoteItem({
           </div>
         </div>
       ) : (
-        <p className="mt-1.5 whitespace-pre-wrap text-sm text-gray-700">{note.content}</p>
+        <p className="mt-1.5 whitespace-pre-wrap text-sm text-foreground">{note.content}</p>
       )}
 
       {isConfirmingDelete && (
-        <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-red-50 px-2.5 py-1.5">
-          <span className="text-xs text-red-700">Xoá ghi chú này?</span>
+        <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-red-50 px-2.5 py-1.5 dark:bg-red-500/10">
+          <span className="text-xs text-red-700 dark:text-red-300">Xoá ghi chú này?</span>
           <div className="flex gap-1.5">
             <button
               type="button"
               onClick={() => setIsConfirmingDelete(false)}
-              className="rounded px-2 py-0.5 text-xs text-gray-600 hover:bg-white"
+              className="rounded px-2 py-0.5 text-xs text-muted-foreground hover:bg-card"
             >
               Giữ lại
             </button>

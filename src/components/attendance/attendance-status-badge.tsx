@@ -10,22 +10,22 @@ export const ATTENDANCE_STATUS_META: Record<
 > = {
   present: {
     label: "Có mặt",
-    badge: "bg-green-100 text-green-700 border-green-200",
+    badge: "bg-green-100 text-green-700 border-green-200 dark:bg-green-500/15 dark:text-green-300 dark:border-green-500/30",
     button: "bg-green-600 text-white border-green-600",
   },
   late: {
     label: "Đi trễ",
-    badge: "bg-amber-100 text-amber-700 border-amber-200",
+    badge: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
     button: "bg-amber-500 text-white border-amber-500",
   },
   absent: {
     label: "Vắng",
-    badge: "bg-red-100 text-red-700 border-red-200",
+    badge: "bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/30",
     button: "bg-red-600 text-white border-red-600",
   },
   excused: {
     label: "Có phép",
-    badge: "bg-blue-100 text-blue-700 border-blue-200",
+    badge: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30",
     button: "bg-blue-600 text-white border-blue-600",
   },
 };

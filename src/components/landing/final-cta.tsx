@@ -19,7 +19,7 @@ export function FinalCta() {
               href="/courses"
               className={cn(
                 buttonVariants({ size: "lg", variant: "outline" }),
-                "min-h-11 w-full gap-2 border-transparent bg-white text-primary-700 hover:bg-slate-100 dark:border-transparent dark:bg-white dark:text-primary-700 dark:hover:bg-slate-100 sm:w-auto"
+                "min-h-11 w-full gap-2 border-transparent bg-card text-primary-700 hover:bg-muted dark:border-transparent dark:text-primary-700 sm:w-auto"
               )}
             >
               Xem các khoá học

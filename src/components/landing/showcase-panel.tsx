@@ -17,7 +17,7 @@ const WEEK: ChartBar[] = [
 ];
 
 const CARD =
-  "rounded-2xl border border-slate-200 bg-white p-4 shadow-card dark:border-slate-800 dark:bg-slate-950";
+  "rounded-2xl border border-border bg-card p-4 shadow-card";
 
 /**
  * Minh hoạ giao diện học viên: khung code gõ dần, thẻ "Tiếp tục học", biểu đồ tuần,
@@ -29,17 +29,17 @@ export function ShowcasePanel() {
     <div
       role="img"
       aria-label="Minh hoạ giao diện học tập của học viên: bài học lập trình React, khoá học đang học, thời gian học trong tuần, chuỗi ngày học và điểm kinh nghiệm"
-      className="mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-raised dark:border-slate-800 dark:bg-slate-900"
+      className="mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-border bg-muted shadow-raised"
     >
       <div className="flex">
-        <div className="hidden w-16 shrink-0 flex-col items-center gap-3 border-r border-slate-200 bg-white py-6 dark:border-slate-800 dark:bg-slate-950 md:flex">
+        <div className="hidden w-16 shrink-0 flex-col items-center gap-3 border-r border-border bg-card py-6 md:flex">
           {NAV_ICONS.map((Icon, i) => (
             <div
               key={i}
               className={
                 i === 0
                   ? "flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-300"
-                  : "flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 dark:text-slate-400"
+                  : "flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground"
               }
             >
               <Icon className="h-5 w-5" />
@@ -52,44 +52,44 @@ export function ShowcasePanel() {
 
           <div className="flex min-w-0 flex-col gap-4 md:col-span-2 md:gap-6">
             <div className={CARD}>
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Tiếp tục học</p>
+              <p className="text-sm font-medium text-muted-foreground">Tiếp tục học</p>
               <div className="mt-3 flex aspect-[16/7] items-end rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 p-4">
                 <p className="font-heading text-lg font-semibold text-white">Web với React</p>
               </div>
-              <p className="mt-3 font-heading text-base font-semibold text-slate-900 dark:text-slate-50">
+              <p className="mt-3 font-heading text-base font-semibold text-foreground">
                 Lập trình Web với React
               </p>
               <div className="mt-2 flex items-center gap-3">
                 <AnimatedProgressBarOnScroll
                   percent={42}
-                  className="flex-1 bg-slate-200 dark:bg-slate-800"
+                  className="flex-1 bg-muted-foreground/20"
                   barClassName="bg-primary-600 dark:bg-primary-400"
                 />
-                <span className="text-xs font-medium tabular-nums text-slate-600 dark:text-slate-400">
+                <span className="text-xs font-medium tabular-nums text-muted-foreground">
                   Bài 5/12 · 42%
                 </span>
               </div>
             </div>
 
             <div className={`${CARD} hidden flex-1 md:block`}>
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Học trong tuần</p>
+              <p className="text-sm font-medium text-muted-foreground">Học trong tuần</p>
               <AnimatedBarChartOnScroll bars={WEEK} className="mt-3 h-24" />
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <div>
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                     <Flame className="h-3.5 w-3.5 text-streak dark:text-streak-light" aria-hidden />
                     Chuỗi ngày
                   </div>
-                  <p className="mt-1 font-heading text-xl font-bold tabular-nums text-slate-900 dark:text-slate-50">
+                  <p className="mt-1 font-heading text-xl font-bold tabular-nums text-foreground">
                     <AnimatedCounterOnScroll target={4} suffix=" ngày" />
                   </p>
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                     <Zap className="h-3.5 w-3.5 text-xp dark:text-xp-light" aria-hidden />
                     Kinh nghiệm
                   </div>
-                  <p className="mt-1 font-heading text-xl font-bold tabular-nums text-slate-900 dark:text-slate-50">
+                  <p className="mt-1 font-heading text-xl font-bold tabular-nums text-foreground">
                     <AnimatedCounterOnScroll target={1240} suffix=" XP" />
                   </p>
                 </div>

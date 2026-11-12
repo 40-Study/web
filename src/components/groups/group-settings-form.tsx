@@ -103,7 +103,7 @@ export function GroupSettingsForm({ group }: { group: Group }) {
             onChange={(e) => setValues({ ...values, name: e.target.value })}
             aria-invalid={showErrors && !!errors.name}
           />
-          {showErrors && errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
+          {showErrors && errors.name && <p className="text-sm text-red-600 dark:text-red-400">{errors.name}</p>}
         </div>
 
         <div className="space-y-2">
@@ -120,7 +120,7 @@ export function GroupSettingsForm({ group }: { group: Group }) {
           <Label htmlFor="group-privacy">Quyền riêng tư</Label>
           <select
             id="group-privacy"
-            className="h-10 w-full rounded-lg border border-slate-200 bg-background px-3 text-sm dark:border-slate-700"
+            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm"
             value={values.privacy}
             onChange={(e) => setValues({ ...values, privacy: e.target.value })}
           >
@@ -143,7 +143,7 @@ export function GroupSettingsForm({ group }: { group: Group }) {
             onChange={(e) => setValues({ ...values, maxMembers: e.target.valueAsNumber })}
             aria-invalid={showErrors && !!errors.maxMembers}
           />
-          {showErrors && errors.maxMembers && <p className="text-sm text-red-600">{errors.maxMembers}</p>}
+          {showErrors && errors.maxMembers && <p className="text-sm text-red-600 dark:text-red-400">{errors.maxMembers}</p>}
         </div>
 
         <div className="flex justify-end">

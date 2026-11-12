@@ -29,7 +29,7 @@ function RecentActivity() {
       <div className="mt-4">
         <QueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
           {items.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-800">
+            <div className="rounded-lg border border-dashed border-border">
               <EmptyState
                 icon={Activity}
                 title="Chưa có nhật ký hoạt động"
@@ -39,9 +39,9 @@ function RecentActivity() {
           ) : (
             <ul className="space-y-2">
               {items.map((item) => (
-                <li key={item.id} className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900">
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{auditActionLabel(item.action)}</p>
-                  <p className="text-xs text-gray-500">
+                <li key={item.id} className="rounded-lg bg-muted/50 px-3 py-2">
+                  <p className="text-sm font-medium text-foreground">{auditActionLabel(item.action)}</p>
+                  <p className="text-xs text-muted-foreground">
                     {item.actor?.name ?? "—"} · {formatVnDateTime(item.created_at)}
                   </p>
                 </li>
@@ -50,7 +50,7 @@ function RecentActivity() {
           )}
         </QueryState>
       </div>
-      <Link href="/admin/audit-logs" className="mt-3 inline-block text-sm font-medium text-primary-600 hover:underline">
+      <Link href="/admin/audit-logs" className="mt-3 inline-block text-sm font-medium text-primary-600 hover:underline dark:text-primary-400">
         Xem tất cả
       </Link>
     </>
@@ -94,8 +94,8 @@ export default function AdminIndexPage() {
   return (
     <div className="space-y-6">
       <section>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Tổng quan vận hành</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h2 className="text-2xl font-bold text-foreground">Tổng quan vận hành</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Số tổ chức, vai trò, quyền và các thao tác quản trị gần đây.
         </p>
       </section>
@@ -110,30 +110,30 @@ export default function AdminIndexPage() {
         }}
       >
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-            <p className="text-sm text-gray-500">Tổng tổ chức</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <div className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
+            <p className="text-sm text-muted-foreground">Tổng tổ chức</p>
+            <p className="mt-2 text-3xl font-bold text-foreground">
               {orgPage?.total ?? 0}
             </p>
           </div>
-          <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-            <p className="text-sm text-gray-500">Vai trò hệ thống</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <div className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
+            <p className="text-sm text-muted-foreground">Vai trò hệ thống</p>
+            <p className="mt-2 text-3xl font-bold text-foreground">
               {roles.length}
             </p>
           </div>
-          <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-            <p className="text-sm text-gray-500">Quyền hệ thống</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <div className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
+            <p className="text-sm text-muted-foreground">Quyền hệ thống</p>
+            <p className="mt-2 text-3xl font-bold text-foreground">
               {permissions.length}
             </p>
           </div>
-          <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-            <p className="text-sm text-gray-500">Tổng lượt gán vai trò</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <div className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
+            <p className="text-sm text-muted-foreground">Tổng lượt gán vai trò</p>
+            <p className="mt-2 text-3xl font-bold text-foreground">
               {totalAssignedUsersError ? "lỗi" : totalAssignedUsers === null ? "…" : totalAssignedUsers}
             </p>
-            <p className="mt-1 text-[11px] text-gray-400">
+            <p className="mt-1 text-[11px] text-muted-foreground">
               {totalAssignedUsersError
                 ? "Không tải được số người dùng theo vai trò — có thể thiếu quyền hoặc hệ thống đang lỗi."
                 : "Tổng số lượt gán vai trò: một người giữ 2 vai trò sẽ được tính 2 lần."}
@@ -142,22 +142,22 @@ export default function AdminIndexPage() {
         </section>
 
         <section className="mt-6 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Vai trò có nhiều người dùng nhất</h3>
+          <div className="rounded-xl border bg-card p-5 shadow-sm dark:border-gray-800">
+            <h3 className="text-lg font-semibold text-foreground">Vai trò có nhiều người dùng nhất</h3>
             <div className="mt-4 space-y-3">
               {topRoles.length === 0 ? (
-                <p className="text-sm text-gray-500">Chưa có dữ liệu vai trò</p>
+                <p className="text-sm text-muted-foreground">Chưa có dữ liệu vai trò</p>
               ) : (
                 topRoles.map((role) => (
-                  <div key={role.id} className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900">
+                  <div key={role.id} className="flex items-center justify-between gap-3 rounded-lg bg-muted/50 px-3 py-2">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{getSystemRoleLabel(role.name)}</p>
-                      <p className="text-xs text-gray-500">{role.description || "Không có mô tả"}</p>
+                      <p className="text-sm font-medium text-foreground">{getSystemRoleLabel(role.name)}</p>
+                      <p className="text-xs text-muted-foreground">{role.description || "Không có mô tả"}</p>
                     </div>
                     <span
                       className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${
                         role.userCountError
-                          ? "bg-amber-100 text-amber-700"
+                          ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
                           : "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
                       }`}
                       title={role.userCountError ? "Không tải được số người dùng (có thể thiếu quyền hoặc hệ thống đang lỗi)" : undefined}
@@ -171,8 +171,8 @@ export default function AdminIndexPage() {
           </div>
 
           <Can permission={PERMISSIONS.SYSTEM_SETTINGS_MANAGE}>
-            <div className="rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Hoạt động gần đây</h3>
+            <div className="rounded-xl border bg-card p-5 shadow-sm dark:border-gray-800">
+              <h3 className="text-lg font-semibold text-foreground">Hoạt động gần đây</h3>
               <RecentActivity />
             </div>
           </Can>

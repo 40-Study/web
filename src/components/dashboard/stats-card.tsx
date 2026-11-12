@@ -19,13 +19,13 @@ export function StatsCard({ title, value, change, icon, className }: StatsCardPr
   return (
     <Card className={cn("p-4 md:p-5", className)}>
       <div className="flex items-center justify-between">
-        <span className="text-body-sm text-slate-600 dark:text-slate-400">{title}</span>
+        <span className="text-body-sm text-muted-foreground">{title}</span>
         <div className="rounded-lg bg-primary-50 p-2 text-primary-600 dark:bg-primary-950 dark:text-primary-400">
           {icon}
         </div>
       </div>
 
-      <p className="text-h2 mt-2 tabular-nums text-slate-900 dark:text-slate-50">{value}</p>
+      <p className="text-h2 mt-2 tabular-nums text-foreground">{value}</p>
 
       {hasChange && (
         <div

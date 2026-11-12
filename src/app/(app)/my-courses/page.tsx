@@ -23,15 +23,15 @@ import { compareByRecentAccess, pickContinueCourse } from "@/lib/continue-course
 
 function LoadingSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="page-container !px-0">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 w-48 bg-gray-200 rounded" />
-          <div className="h-4 w-64 bg-gray-200 rounded" />
-          <div className="h-64 bg-gray-200 rounded-2xl" />
+          <div className="h-8 w-48 bg-muted-foreground/20 rounded" />
+          <div className="h-4 w-64 bg-muted-foreground/20 rounded" />
+          <div className="h-64 bg-muted-foreground/20 rounded-2xl" />
           <div className="grid grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-48 bg-gray-200 rounded-2xl" />
+              <div key={i} className="h-48 bg-muted-foreground/20 rounded-2xl" />
             ))}
           </div>
         </div>
@@ -43,13 +43,13 @@ function LoadingSkeleton() {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
-      <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-        <BookOpen className="w-10 h-10 text-gray-400" />
+      <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+        <BookOpen className="w-10 h-10 text-muted-foreground" />
       </div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+      <h3 className="text-lg font-semibold text-foreground mb-2">
         Chưa có khoá học nào
       </h3>
-      <p className="text-sm text-gray-500 text-center mb-6 max-w-sm">
+      <p className="text-sm text-muted-foreground text-center mb-6 max-w-sm">
         Bạn chưa đăng ký khoá học nào. Khám phá các khoá học để bắt đầu hành trình học tập!
       </p>
       <Link
@@ -123,7 +123,7 @@ export default function MyCoursesPage() {
             year: "numeric",
           })}`
         : "",
-      color: "bg-yellow-100",
+      color: "bg-yellow-100 dark:bg-yellow-500/15",
     }));
   }, [certificatesData]);
 
@@ -138,9 +138,9 @@ export default function MyCoursesPage() {
   // Đặt trước `currentCourse`/`stats` vì cả hai đều đọc từ `enrolledCourses` rỗng.
   if (coursesError) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-muted/50 p-6">
         <div className="page-container !px-0">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Khoá học của tôi</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-6">Khoá học của tôi</h1>
           <QueryState
             isError
             error={coursesErrorObj}
@@ -158,13 +158,13 @@ export default function MyCoursesPage() {
   const firstName = user?.name?.split(" ").pop() || "bạn";
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted/50">
       <div className="page-container py-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Khoá học của tôi</h1>
-            <p className="text-gray-500 mt-1">
+            <h1 className="text-2xl font-bold text-foreground">Khoá học của tôi</h1>
+            <p className="text-muted-foreground mt-1">
               Chào mừng trở lại {firstName}, hãy tập trung vào mục tiêu hôm nay.
             </p>
           </div>
@@ -182,7 +182,7 @@ export default function MyCoursesPage() {
                 <section>
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-2 h-2 rounded-full bg-green-500" />
-                    <h2 className="text-xs font-bold text-green-600 uppercase tracking-wide">
+                    <h2 className="text-xs font-bold text-green-600 uppercase tracking-wide dark:text-green-400">
                       Đang học gần đây
                     </h2>
                   </div>
@@ -196,14 +196,14 @@ export default function MyCoursesPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-primary-500" />
-                    <h2 className="text-xs font-bold text-gray-600 uppercase tracking-wide">
+                    <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
                       Khoá học của tôi
                     </h2>
                   </div>
                   {allCourses.length > 4 && (
                     <Link
                       href="/courses"
-                      className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors"
+                      className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors dark:text-primary-400 dark:hover:text-primary-300"
                     >
                       Xem tất cả
                     </Link>
@@ -229,19 +229,19 @@ export default function MyCoursesPage() {
               {achievements.length > 0 ? (
                 <AchievementSidebar achievements={achievements} />
               ) : (
-                <div className="bg-white rounded-2xl p-5 shadow-sm">
+                <div className="bg-card rounded-2xl p-5 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
                     <Award className="w-4 h-4 text-yellow-500" />
-                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">
+                    <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">
                       Bức tường thành tựu
                     </h3>
                   </div>
-                  <p className="text-sm text-gray-500 text-center py-4">
+                  <p className="text-sm text-muted-foreground text-center py-4">
                     Hoàn thành khoá học để nhận chứng chỉ đầu tiên!
                   </p>
                   <Link
                     href="/achievements"
-                    className="block text-center text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors py-2 border-t border-gray-100"
+                    className="block text-center text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors py-2 border-t border-border dark:text-primary-400 dark:hover:text-primary-300"
                   >
                     Xem chứng chỉ của tôi →
                   </Link>

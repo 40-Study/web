@@ -108,7 +108,7 @@ export function ExerciseSettingsEditor({ exerciseId, onChange }: ExerciseSetting
 
   if (isError) {
     return (
-      <p role="alert" className="text-sm text-red-600">
+      <p role="alert" className="text-sm text-red-600 dark:text-red-400">
         Không tải được bộ test và giới hạn chấm của bài. Bạn vẫn có thể sửa tiêu đề.
       </p>
     );

@@ -237,7 +237,7 @@ function MessagesContent() {
                   */
                   <div
                     role="alert"
-                    className="mb-1 w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+                    className="mb-1 w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
                   >
                     <button onClick={() => refetchConversations()} className="w-full text-left">
                       Không làm mới được danh sách — bấm để thử lại.

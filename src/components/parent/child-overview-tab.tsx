@@ -43,8 +43,8 @@ export function ChildOverviewTab({
       <Section icon={BookOpen} title="Khoá đang học" empty={inProgress.length === 0 ? "Không có khoá nào đang học." : null}>
         {inProgress.map((c) => (
           <li key={c.id} className="flex items-center justify-between gap-3 text-sm">
-            <span className="truncate text-gray-700">{c.course_name}</span>
-            <span className="shrink-0 font-medium text-primary-600">{Math.round(c.progress_percent)}%</span>
+            <span className="truncate text-foreground">{c.course_name}</span>
+            <span className="shrink-0 font-medium text-primary-600 dark:text-primary-400">{Math.round(c.progress_percent)}%</span>
           </li>
         ))}
       </Section>
@@ -52,8 +52,8 @@ export function ChildOverviewTab({
       <Section icon={ClipboardList} title="Bài tập sắp hạn" empty={upcoming.length === 0 ? "Không có bài tập nào sắp tới hạn." : null}>
         {upcoming.map((a) => (
           <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
-            <span className="truncate text-gray-700">{a.title}</span>
-            <span className="shrink-0 text-gray-400">{new Date(a.due_date!).toLocaleDateString("vi-VN")}</span>
+            <span className="truncate text-foreground">{a.title}</span>
+            <span className="shrink-0 text-muted-foreground">{new Date(a.due_date!).toLocaleDateString("vi-VN")}</span>
           </li>
         ))}
       </Section>
@@ -62,8 +62,8 @@ export function ChildOverviewTab({
         <Section icon={ClipboardList} title={`Quá hạn (${overdueAll.length})`} empty={null}>
           {overdue.map((a) => (
             <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
-              <span className="truncate text-gray-700">{a.title}</span>
-              <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-red-600">
+              <span className="truncate text-foreground">{a.title}</span>
+              <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-red-600 dark:bg-red-500/10 dark:text-red-400">
                 Chưa nộp, hạn {new Date(a.due_date!).toLocaleDateString("vi-VN")}
               </span>
             </li>
@@ -74,7 +74,7 @@ export function ChildOverviewTab({
       <Section icon={CalendarCheck} title="Điểm danh gần đây" empty={recentAttendance.length === 0 ? "Chưa có dữ liệu điểm danh." : null}>
         {recentAttendance.map((r) => (
           <li key={r.id} className="flex items-center justify-between gap-3 text-sm">
-            <span className="truncate text-gray-700">{r.class_name} — buổi {r.session_number}</span>
+            <span className="truncate text-foreground">{r.class_name} — buổi {r.session_number}</span>
             <ChildAttendanceStatus status={r.status} className="shrink-0" />
           </li>
         ))}
@@ -84,7 +84,7 @@ export function ChildOverviewTab({
 }
 
 function Notice({ children }: { children: React.ReactNode }) {
-  return <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">{children}</div>;
+  return <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800 dark:bg-yellow-500/10 dark:border-yellow-500/30 dark:text-yellow-300">{children}</div>;
 }
 
 function Section({
@@ -101,10 +101,10 @@ function Section({
   return (
     <section>
       <div className="flex items-center gap-1.5 mb-2">
-        <Icon className="h-4 w-4 text-primary-600" />
-        <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+        <Icon className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       </div>
-      {empty ? <p className="text-sm text-gray-400">{empty}</p> : <ul className="space-y-2">{children}</ul>}
+      {empty ? <p className="text-sm text-muted-foreground">{empty}</p> : <ul className="space-y-2">{children}</ul>}
     </section>
   );
 }

@@ -42,7 +42,7 @@ export function LessonCodeHistory({
       {loading ? (
         <p className="text-xs text-muted-foreground">Đang tải lịch sử nộp bài…</p>
       ) : failed ? (
-        <p className="text-xs text-red-700">Không tải được lịch sử nộp bài.</p>
+        <p className="text-xs text-red-700 dark:text-red-300">Không tải được lịch sử nộp bài.</p>
       ) : !items.length ? (
         <p className="text-xs text-muted-foreground">Chưa có bài nộp nào.</p>
       ) : (
@@ -65,7 +65,7 @@ export function LessonCodeHistory({
                   <td
                     className={
                       item.status === "ACCEPTED"
-                        ? "text-emerald-600"
+                        ? "text-emerald-600 dark:text-emerald-400"
                         : isJudged(item.status)
                           ? "text-red-500"
                           : "text-muted-foreground"
@@ -85,7 +85,7 @@ export function LessonCodeHistory({
                   <td>
                     <button
                       type="button"
-                      className="whitespace-nowrap text-emerald-700 hover:underline disabled:opacity-50"
+                      className="whitespace-nowrap text-emerald-700 hover:underline disabled:opacity-50 dark:text-emerald-300"
                       disabled={disabled}
                       aria-label={`Mở lại mã bài nộp ${item.language} lúc ${submittedAt.format(new Date(item.created_at))}`}
                       onClick={() => onOpen(item)}

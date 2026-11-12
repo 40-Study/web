@@ -155,8 +155,8 @@ export default function MyOrdersPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Đơn hàng của tôi</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-foreground">Đơn hàng của tôi</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Tiếp tục thanh toán hoặc huỷ các đơn đang chờ. Cần hoàn tiền? Vui lòng liên hệ bộ phận hỗ trợ.
         </p>
       </div>
@@ -168,7 +168,7 @@ export default function MyOrdersPage() {
           setStatus(e.target.value as OrderStatus | "");
           setPage(1);
         }}
-        className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm sm:w-64 dark:border-gray-700 dark:bg-gray-900"
+        className="h-10 w-full rounded-lg border border-border px-3 text-sm sm:w-64 dark:bg-gray-900"
       >
         <option value="">Tất cả trạng thái</option>
         {STATUS_FILTERS.map((s) => (
@@ -203,7 +203,7 @@ export default function MyOrdersPage() {
         </div>
 
         {data && data.total_pages > 1 && (
-          <div className="flex items-center justify-between text-sm text-gray-500">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>
               Trang {data.page}/{data.total_pages}
             </span>

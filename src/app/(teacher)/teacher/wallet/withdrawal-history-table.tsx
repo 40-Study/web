@@ -107,7 +107,7 @@ export function WithdrawalHistoryTable({ items }: { items: WithdrawalItem[] }) {
           </thead>
           <tbody>
             {items.map((w) => (
-              <tr key={w.id} className="border-b last:border-0 hover:bg-gray-50">
+              <tr key={w.id} className="border-b last:border-0 hover:bg-muted/50">
                 <td className="p-3 text-sm font-medium">{shortId(w.id)}</td>
                 <td className="p-3 text-sm text-right font-medium">{formatWithdrawalAmount(w.amount)}</td>
                 <td className="p-3">

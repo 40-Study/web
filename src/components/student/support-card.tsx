@@ -36,7 +36,7 @@ export function SupportCard({ variant = "gradient" }: SupportCardProps) {
 
           <Link
             href="/help"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white text-primary-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-card text-primary-600 text-sm font-semibold rounded-xl hover:bg-muted/50 transition-colors dark:text-primary-400"
           >
             <HelpCircle className="w-4 h-4" />
             Mở trang trợ giúp
@@ -47,17 +47,17 @@ export function SupportCard({ variant = "gradient" }: SupportCardProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <div className="bg-card rounded-2xl p-5 shadow-sm border border-border">
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-          <HelpCircle className="w-4 h-4 text-primary-600" />
+        <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center dark:bg-primary-500/15">
+          <HelpCircle className="w-4 h-4 text-primary-600 dark:text-primary-400" />
         </div>
-        <span className="text-xs font-bold text-gray-900 uppercase tracking-wide">
+        <span className="text-xs font-bold text-foreground uppercase tracking-wide">
           Hỗ trợ
         </span>
       </div>
 
-      <p className="text-sm text-gray-600 mb-4">
+      <p className="text-sm text-muted-foreground mb-4">
         Có thắc mắc? Xem câu hỏi thường gặp hoặc liên hệ đội hỗ trợ.
       </p>
 

@@ -25,15 +25,15 @@ export function CertificateVerifyResult({
   // tìm thấy". Backend không trả tên người học / khoá học cho mã đã thu hồi và trang này cũng không hiện.
   if (!isValid && result?.revoked === true) {
     return (
-      <div className="mx-auto max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
-        <h1 className="text-lg font-semibold text-amber-800">Chứng chỉ đã bị thu hồi</h1>
-        <p className="mt-2 text-sm text-amber-700">
+      <div className="mx-auto max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-6 text-center dark:border-amber-500/30 dark:bg-amber-500/10">
+        <h1 className="text-lg font-semibold text-amber-800 dark:text-amber-300">Chứng chỉ đã bị thu hồi</h1>
+        <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
           Mã <span className="font-mono font-medium">{certificateNumber}</span> từng được cấp nhưng đã bị thu
           hồi nên không còn giá trị.
         </p>
         <Link
           href="/certificates/verify"
-          className="mt-4 inline-block rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100"
+          className="mt-4 inline-block rounded-md border border-amber-300 bg-card px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100 dark:border-amber-500/30 dark:text-amber-300 dark:hover:bg-amber-500/15"
         >
           Tra cứu mã khác
         </Link>
@@ -43,18 +43,18 @@ export function CertificateVerifyResult({
 
   if (!isValid) {
     return (
-      <div className="mx-auto max-w-xl rounded-xl border border-red-200 bg-red-50 p-6 text-center">
-        <h1 className="text-lg font-semibold text-red-800">
+      <div className="mx-auto max-w-xl rounded-xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/30 dark:bg-red-500/10">
+        <h1 className="text-lg font-semibold text-red-800 dark:text-red-300">
           Không tìm thấy chứng chỉ
         </h1>
-        <p className="mt-2 text-sm text-red-700">
+        <p className="mt-2 text-sm text-red-700 dark:text-red-300">
           Mã{" "}
           <span className="font-mono font-medium">{certificateNumber}</span>{" "}
           không hợp lệ hoặc không tồn tại trong hệ thống.
         </p>
         <Link
           href="/certificates/verify"
-          className="mt-4 inline-block rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+          className="mt-4 inline-block rounded-md border border-red-300 bg-card px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100 dark:border-red-500/30 dark:text-red-300 dark:hover:bg-red-500/15"
         >
           Tra cứu mã khác
         </Link>
@@ -64,11 +64,11 @@ export function CertificateVerifyResult({
 
   return (
     <div className="space-y-6">
-      <div className="mx-auto max-w-xl rounded-xl border border-green-200 bg-green-50 p-4 text-center">
-        <p className="text-sm font-semibold text-green-800">
+      <div className="mx-auto max-w-xl rounded-xl border border-green-200 bg-green-50 p-4 text-center dark:border-green-500/30 dark:bg-green-500/10">
+        <p className="text-sm font-semibold text-green-800 dark:text-green-300">
           ✓ Chứng chỉ hợp lệ
         </p>
-        <p className="mt-1 text-xs text-green-700">
+        <p className="mt-1 text-xs text-green-700 dark:text-green-300">
           Được cấp bởi ForteX và đã xác minh trong hệ thống.
         </p>
       </div>

@@ -68,7 +68,7 @@ export function CourseReviews({
               <div key={star} className="flex items-center gap-2">
                 <span className="text-sm w-3">{star}</span>
                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="flex-1 h-2 bg-muted-foreground/20 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-yellow-400 transition-all duration-300"
                     style={{ width: `${percentage}%` }}

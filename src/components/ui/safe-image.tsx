@@ -34,7 +34,7 @@ export function SafeImage({ src, alt, className, fill, sizes, width, height, fal
         aria-label={alt || "Chưa có ảnh"}
         data-testid="safe-image-placeholder"
         className={cn(
-          "flex items-center justify-center bg-gray-50 text-gray-300",
+          "flex items-center justify-center bg-muted/50 text-gray-300",
           fill ? "absolute inset-0" : "h-full w-full",
         )}
       >

@@ -130,15 +130,15 @@ export function ApplyTeacherButton() {
   const label = applicantRole ? "Xem hồ sơ ứng tuyển" : "Đăng ký làm giảng viên";
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+    <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="p-2.5 bg-emerald-50 rounded-xl">
-            <GraduationCap className="h-5 w-5 text-emerald-600" />
+          <div className="p-2.5 bg-emerald-50 rounded-xl dark:bg-emerald-500/10">
+            <GraduationCap className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <p className="font-medium text-gray-900">Giảng dạy trên {siteConfig.name}</p>
-            <p className="text-sm text-gray-500">
+            <p className="font-medium text-foreground">Giảng dạy trên {siteConfig.name}</p>
+            <p className="text-sm text-muted-foreground">
               {applicantRole
                 ? "Bạn đã có hồ sơ ứng tuyển — xem trạng thái duyệt."
                 : "Nộp hồ sơ để quản trị viên duyệt bạn trở thành giảng viên."}

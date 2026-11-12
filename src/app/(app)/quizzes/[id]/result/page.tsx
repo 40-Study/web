@@ -36,8 +36,8 @@ function StatCard({ icon: Icon, label, value, tone = "neutral" }: StatCardProps)
       <div
         className={cn(
           "mb-1 flex items-center gap-2 text-xs uppercase tracking-wide",
-          tone === "pass" && "text-emerald-600",
-          tone === "fail" && "text-rose-600",
+          tone === "pass" && "text-emerald-600 dark:text-emerald-400",
+          tone === "fail" && "text-rose-600 dark:text-rose-400",
           tone === "neutral" && "text-muted-foreground"
         )}
       >
@@ -69,8 +69,8 @@ export default function QuizResultPage() {
   if (!attemptId) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <p className="text-sm text-gray-600">Thiếu thông tin lần làm bài.</p>
-        <Link href={`/quizzes/${quizId}`} className="mt-4 inline-block text-sm text-primary-600 hover:underline">
+        <p className="text-sm text-muted-foreground">Thiếu thông tin lần làm bài.</p>
+        <Link href={`/quizzes/${quizId}`} className="mt-4 inline-block text-sm text-primary-600 hover:underline dark:text-primary-400">
           Làm bài kiểm tra
         </Link>
       </div>
@@ -88,8 +88,8 @@ export default function QuizResultPage() {
   if (isError || !attempt) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <p className="text-sm text-gray-600">Không tải được kết quả bài làm.</p>
-        <Link href={`/quizzes/${quizId}`} className="mt-4 inline-block text-sm text-primary-600 hover:underline">
+        <p className="text-sm text-muted-foreground">Không tải được kết quả bài làm.</p>
+        <Link href={`/quizzes/${quizId}`} className="mt-4 inline-block text-sm text-primary-600 hover:underline dark:text-primary-400">
           Về trang bài kiểm tra
         </Link>
       </div>

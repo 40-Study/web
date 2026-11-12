@@ -53,8 +53,8 @@ export function UnsureToggle({ isUnsure, onToggle, compact = false, className }:
         "flex items-center gap-1.5 rounded-lg border text-xs font-medium transition-colors",
         compact ? "p-2.5" : "px-2.5 py-2",
         isUnsure
-          ? "border-amber-300 bg-amber-50 text-amber-700"
-          : "border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700",
+          ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
+          : "border-border text-muted-foreground hover:bg-muted/50 hover:text-foreground",
         className
       )}
     >
@@ -68,7 +68,7 @@ export function UnsureToggle({ isUnsure, onToggle, compact = false, className }:
 export function UnsureSummary({ count }: { count: number }) {
   if (count === 0) return null;
   return (
-    <p className="text-xs text-amber-700">
+    <p className="text-xs text-amber-700 dark:text-amber-300">
       Bạn còn đánh dấu {count} câu là chưa chắc. Soi lại trước khi nộp nhé.
     </p>
   );

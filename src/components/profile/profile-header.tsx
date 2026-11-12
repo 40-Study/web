@@ -86,11 +86,11 @@ export function ProfileHeader({
             )}
             {isOwnProfile && (
               <button
-                className="absolute bottom-0 right-0 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors"
+                className="absolute bottom-0 right-0 bg-card rounded-full p-1.5 shadow-lg hover:bg-muted transition-colors"
                 onClick={onAvatarUpload}
                 aria-label="Tải ảnh đại diện"
               >
-                <Camera className="h-4 w-4 text-gray-600" />
+                <Camera className="h-4 w-4 text-muted-foreground" />
               </button>
             )}
           </div>

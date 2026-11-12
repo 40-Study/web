@@ -28,7 +28,7 @@ interface PrizeEditorProps {
 }
 
 const FIELD =
-  "h-9 w-full rounded-lg border border-gray-200 px-2 text-sm dark:border-gray-700 dark:bg-gray-900";
+  "h-9 w-full rounded-lg border border-border px-2 text-sm dark:bg-gray-900";
 
 export function PrizeEditor({
   value,
@@ -54,7 +54,7 @@ export function PrizeEditor({
   return (
     <div className="space-y-3" data-testid="prize-editor">
       {value.length === 0 && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-muted-foreground">
           Chưa có giải nào. Cuộc thi vẫn xếp hạng, chỉ không trao thưởng theo hạng.
         </p>
       )}
@@ -62,9 +62,9 @@ export function PrizeEditor({
         <div
           key={index}
           data-testid={`prize-row-${index}`}
-          className="grid gap-2 rounded-lg border border-gray-200 p-3 sm:grid-cols-[repeat(2,minmax(0,6rem))_1fr_auto] sm:items-end dark:border-gray-700"
+          className="grid gap-2 rounded-lg border border-border p-3 sm:grid-cols-[repeat(2,minmax(0,6rem))_1fr_auto] sm:items-end"
         >
-          <label className="text-xs text-gray-600 dark:text-gray-300">
+          <label className="text-xs text-muted-foreground">
             Từ hạng
             <input
               type="number"
@@ -78,7 +78,7 @@ export function PrizeEditor({
               aria-label={`Giải ${index + 1} từ hạng`}
             />
           </label>
-          <label className="text-xs text-gray-600 dark:text-gray-300">
+          <label className="text-xs text-muted-foreground">
             Đến hạng
             <input
               type="number"
@@ -151,7 +151,7 @@ export function PrizeEditor({
         </div>
       ))}
       {error && (
-        <p role="alert" className="text-sm text-red-600" data-testid="prize-error">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400" data-testid="prize-error">
           {error}
         </p>
       )}

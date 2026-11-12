@@ -32,7 +32,7 @@ export function CoursePricingStep({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">Cài đặt giá</h2>
+        <h2 className="text-xl font-semibold text-foreground">Cài đặt giá</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Thiết lập chi phí và chương trình ưu đãi cho khoá học
         </p>
@@ -50,8 +50,8 @@ export function CoursePricingStep({
               className={cn(
                 "rounded-xl border-2 p-4 text-left transition-all",
                 formData.is_free
-                  ? "border-primary-500 bg-primary-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? "border-primary-500 bg-primary-50 dark:bg-primary-500/10"
+                  : "border-border hover:border-input"
               )}
             >
               <p className="font-medium">Miễn phí</p>
@@ -63,8 +63,8 @@ export function CoursePricingStep({
               className={cn(
                 "rounded-xl border-2 p-4 text-left transition-all",
                 !formData.is_free
-                  ? "border-primary-500 bg-primary-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? "border-primary-500 bg-primary-50 dark:bg-primary-500/10"
+                  : "border-border hover:border-input"
               )}
             >
               <div className="flex items-start justify-between">
@@ -72,7 +72,7 @@ export function CoursePricingStep({
                   <p className="font-medium">Có phí</p>
                   <p className="text-sm text-muted-foreground">Thu phí ghi danh</p>
                 </div>
-                {!formData.is_free && <Check className="w-5 h-5 text-primary-600 shrink-0" />}
+                {!formData.is_free && <Check className="w-5 h-5 text-primary-600 shrink-0 dark:text-primary-400" />}
               </div>
             </button>
           </div>
@@ -91,7 +91,7 @@ export function CoursePricingStep({
                   aria-describedby={priceError ? "price-error" : undefined}
                 />
                 {priceError && (
-                  <p id="price-error" role="alert" className="text-xs text-red-600">
+                  <p id="price-error" role="alert" className="text-xs text-red-600 dark:text-red-400">
                     {priceError}
                   </p>
                 )}
@@ -108,12 +108,12 @@ export function CoursePricingStep({
                   aria-describedby={discountError ? "discount-price-error" : undefined}
                 />
                 {discountError ? (
-                  <p id="discount-price-error" role="alert" className="text-xs text-red-600">
+                  <p id="discount-price-error" role="alert" className="text-xs text-red-600 dark:text-red-400">
                     {discountError} Muốn bỏ khuyến mãi, hãy để trống ô này.
                   </p>
                 ) : (
                   discount > 0 && (
-                    <p className="text-xs text-green-600 font-medium">
+                    <p className="text-xs text-green-600 font-medium dark:text-green-400">
                       Giảm {discount}%
                     </p>
                   )

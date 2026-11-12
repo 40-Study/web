@@ -47,7 +47,7 @@ const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
         />
         <div
           className={cn(
-            "relative h-2 w-full cursor-pointer overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700",
+            "relative h-2 w-full cursor-pointer overflow-hidden rounded-full bg-muted-foreground/20",
             disabled && "cursor-not-allowed opacity-50"
           )}
           onClick={(e) => {
@@ -67,7 +67,7 @@ const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
         </div>
         <div
           className={cn(
-            "absolute top-1/2 -translate-y-1/2 h-5 w-5 rounded-full border-2 border-primary-600 bg-white shadow transition-all cursor-pointer",
+            "absolute top-1/2 -translate-y-1/2 h-5 w-5 rounded-full border-2 border-primary-600 bg-card shadow transition-all cursor-pointer",
             disabled && "cursor-not-allowed"
           )}
           style={{ left: `calc(${percentage}% - 10px)` }}

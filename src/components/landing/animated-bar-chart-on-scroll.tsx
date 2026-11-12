@@ -45,7 +45,7 @@ export function AnimatedBarChartOnScroll({
               }}
             />
           </div>
-          <span className="text-[10px] font-medium text-slate-600 dark:text-slate-400">
+          <span className="text-[10px] font-medium text-muted-foreground">
             {bar.label}
           </span>
         </div>

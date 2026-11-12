@@ -64,7 +64,7 @@ export function MemberRoleDialog({
             <RoleSelect roles={roles} value={roleId} onChange={setRoleId} ariaLabel="Vai trò" />
           )}
           {error && (
-            <p role="alert" className="mt-2 text-sm text-red-600">
+            <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
               {error}
             </p>
           )}

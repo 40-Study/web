@@ -35,10 +35,10 @@ export default function TeacherContestsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h1 className="flex items-center gap-2 text-2xl font-bold">
-            <Trophy className="h-6 w-6 shrink-0 text-primary-600" />
+            <Trophy className="h-6 w-6 shrink-0 text-primary-600 dark:text-primary-400" />
             Cuộc thi của tôi
           </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             Tạo cuộc thi trắc nghiệm hoặc lập trình, gửi quản trị viên duyệt. Kết quả do quản trị viên chốt sau khi cuộc thi kết thúc.
           </p>
         </div>
@@ -57,7 +57,7 @@ export default function TeacherContestsPage() {
           setStatus(isContestStatus(e.target.value) ? e.target.value : "");
           setPage(1);
         }}
-        className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm sm:w-64 dark:border-gray-700 dark:bg-gray-900"
+        className="h-10 w-full rounded-lg border border-border px-3 text-sm sm:w-64 dark:bg-gray-900"
       >
         <option value="">Tất cả trạng thái</option>
         {CONTEST_STATUSES.map((s) => (
@@ -81,7 +81,7 @@ export default function TeacherContestsPage() {
             <li
               key={c.id}
               data-testid={`teacher-contest-${c.id}`}
-              className="rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-gray-950"
+              className="rounded-xl border bg-card p-4 dark:border-gray-800"
             >
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0 space-y-1">
@@ -91,17 +91,17 @@ export default function TeacherContestsPage() {
                     </Link>
                     <Badge variant={phaseVariant(c.phase)}>{phaseLabel(c.phase)}</Badge>
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {formatVnDateTime(c.start_time)} → {formatVnDateTime(c.end_time)} · {c.duration_minutes} phút ·{" "}
                     {c.participant_count} người tham gia
                   </p>
                   {c.status === "REJECTED" && c.reject_reason && (
-                    <p className="text-sm text-red-600" data-testid="reject-reason">
+                    <p className="text-sm text-red-600 dark:text-red-400" data-testid="reject-reason">
                       Lý do từ chối: {c.reject_reason}
                     </p>
                   )}
                   {c.status === "CANCELLED" && c.cancel_reason && (
-                    <p className="text-sm text-gray-600">Lý do huỷ: {c.cancel_reason}</p>
+                    <p className="text-sm text-muted-foreground">Lý do huỷ: {c.cancel_reason}</p>
                   )}
                 </div>
                 <ContestRowActions contest={c} />
@@ -110,7 +110,7 @@ export default function TeacherContestsPage() {
           ))}
         </ul>
         {data && data.total_pages > 1 && (
-          <div className="flex items-center justify-between text-sm text-gray-500">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>
               Trang {page}/{data.total_pages}
             </span>

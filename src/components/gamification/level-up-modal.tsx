@@ -48,7 +48,7 @@ export function LevelUpModal({
         {/* Level badge */}
         <div className="relative mx-auto w-32 h-32 mb-6">
           <div className="absolute inset-0 bg-primary-500 rounded-full animate-pulse-glow" />
-          <div className="absolute inset-2 bg-white dark:bg-gray-900 rounded-full flex items-center justify-center">
+          <div className="absolute inset-2 bg-card rounded-full flex items-center justify-center">
             <div className="text-center">
               <p className="text-xs text-muted-foreground font-medium">CẤP ĐỘ</p>
               <p className="text-4xl font-bold text-primary-500">
@@ -58,7 +58,7 @@ export function LevelUpModal({
           </div>
         </div>
 
-        <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
+        <h2 className="text-2xl font-bold mb-2 text-foreground">
           Lên cấp!
         </h2>
         <p className="text-muted-foreground mb-6">
@@ -67,8 +67,8 @@ export function LevelUpModal({
 
         {/* Rewards */}
         {rewards.length > 0 && (
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-6">
-            <p className="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">
+          <div className="bg-muted/50 rounded-lg p-4 mb-6">
+            <p className="text-sm font-medium mb-3 text-foreground">
               You unlocked:
             </p>
             <div className="flex justify-center gap-4 flex-wrap">
@@ -77,7 +77,7 @@ export function LevelUpModal({
                   <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center mb-1 text-2xl">
                     {reward.icon}
                   </div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     {reward.name}
                   </p>
                 </div>

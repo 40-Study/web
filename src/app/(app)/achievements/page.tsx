@@ -36,10 +36,10 @@ function deriveRarity(points: number): AchievementRarity {
 
 function getRarityConfig(rarity: AchievementRarity) {
   const configs = {
-    common: { label: "PHỔ THÔNG", color: "bg-orange-500", textColor: "text-orange-600" },
-    rare: { label: "HIẾM", color: "bg-gray-400", textColor: "text-gray-600" },
-    epic: { label: "SỬ THI", color: "bg-purple-500", textColor: "text-purple-600" },
-    legendary: { label: "HUYỀN THOẠI", color: "bg-yellow-500", textColor: "text-yellow-600" },
+    common: { label: "PHỔ THÔNG", color: "bg-orange-500", textColor: "text-orange-600 dark:text-orange-400" },
+    rare: { label: "HIẾM", color: "bg-muted-foreground", textColor: "text-muted-foreground" },
+    epic: { label: "SỬ THI", color: "bg-purple-500", textColor: "text-purple-600 dark:text-purple-400" },
+    legendary: { label: "HUYỀN THOẠI", color: "bg-yellow-500", textColor: "text-yellow-600 dark:text-yellow-400" },
   };
   return configs[rarity];
 }
@@ -216,15 +216,15 @@ function BadgeCard({
   const config = getRarityConfig(rarity);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center hover:shadow-lg transition-shadow">
-      <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+    <div className="bg-card rounded-2xl border border-border p-6 text-center hover:shadow-lg transition-shadow">
+      <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-muted to-muted flex items-center justify-center">
         {icon}
       </div>
-      <h3 className="font-bold text-gray-900 mb-2">{name}</h3>
+      <h3 className="font-bold text-foreground mb-2">{name}</h3>
       <Badge className={cn("text-xs", config.color, "text-white")}>
         {config.label}
       </Badge>
-      <p className="text-sm text-gray-500 mt-3 line-clamp-2">{description}</p>
+      <p className="text-sm text-muted-foreground mt-3 line-clamp-2">{description}</p>
     </div>
   );
 }
@@ -309,7 +309,7 @@ function RadarChart({ skills }: { skills: SkillData[] }) {
       {points.map((p, i) => (
         <div
           key={i}
-          className="absolute text-xs font-medium text-gray-700 bg-white px-2 py-1 rounded-full border border-gray-200"
+          className="absolute text-xs font-medium text-foreground bg-card px-2 py-1 rounded-full border border-border"
           style={{
             left: `${(p.labelX / 240) * 100}%`,
             top: `${(p.labelY / 240) * 100}%`,
@@ -329,7 +329,7 @@ function HeatmapCalendar({ data }: { data: number[] }) {
   const daysPerWeek = 7;
 
   const getColor = (value: number) => {
-    if (value === 0) return "bg-blue-100";
+    if (value === 0) return "bg-blue-100 dark:bg-blue-500/15";
     if (value === 1) return "bg-blue-200";
     if (value === 2) return "bg-blue-300";
     if (value === 3) return "bg-blue-400";
@@ -356,7 +356,7 @@ function HeatmapCalendar({ data }: { data: number[] }) {
           </div>
         ))}
       </div>
-      <div className="flex justify-between text-xs text-gray-400">
+      <div className="flex justify-between text-xs text-muted-foreground">
         {months.map(month => (
           <span key={month}>{month}</span>
         ))}
@@ -377,13 +377,13 @@ function StatCard({
   value: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-4">
+    <div className="bg-card rounded-2xl border border-border p-5 flex items-center gap-4">
       <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", iconBg)}>
         {icon}
       </div>
       <div>
-        <p className="text-xs text-gray-500 uppercase tracking-wider">{label}</p>
-        <p className="text-xl font-bold text-gray-900">{value}</p>
+        <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
+        <p className="text-xl font-bold text-foreground">{value}</p>
       </div>
     </div>
   );
@@ -455,7 +455,7 @@ export default function AchievementsPage() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin dark:border-indigo-500/30" />
       </div>
     );
   }
@@ -477,11 +477,11 @@ export default function AchievementsPage() {
         {/* Left Column - Badges */}
         <div className="lg:col-span-2 space-y-6">
           {/* Badge Collection */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+          <div className="bg-card rounded-2xl border border-border p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <Trophy className="w-6 h-6 text-yellow-500" />
-                <h2 className="text-xl font-bold text-gray-900">Bộ sưu tập Huy hiệu</h2>
+                <h2 className="text-xl font-bold text-foreground">Bộ sưu tập Huy hiệu</h2>
               </div>
               <Button variant="outline" className="rounded-full gap-1">
                 Xem tất cả
@@ -506,8 +506,8 @@ export default function AchievementsPage() {
                 // trả rỗng — empty state thật thay vì dữ liệu giả.
                 <div className="sm:col-span-3 text-center py-8">
                   <Star className="w-10 h-10 mx-auto mb-3 text-gray-200" />
-                  <p className="text-sm font-medium text-gray-600">Chưa có huy hiệu nào</p>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-sm font-medium text-muted-foreground">Chưa có huy hiệu nào</p>
+                  <p className="text-xs text-muted-foreground mt-1">
                     Hoàn thành khoá học và thử thách để mở khoá huy hiệu đầu tiên.
                   </p>
                 </div>
@@ -516,16 +516,16 @@ export default function AchievementsPage() {
           </div>
 
           {/* Learning Frequency */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+          <div className="bg-card rounded-2xl border border-border p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <Flame className="w-6 h-6 text-orange-500" />
-                <h2 className="text-xl font-bold text-gray-900">Tần suất học tập</h2>
+                <h2 className="text-xl font-bold text-foreground">Tần suất học tập</h2>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>ÍT</span>
                 <div className="flex gap-1">
-                  <div className="w-3 h-3 bg-blue-100 rounded-sm" />
+                  <div className="w-3 h-3 bg-blue-100 rounded-sm dark:bg-blue-500/15" />
                   <div className="w-3 h-3 bg-blue-200 rounded-sm" />
                   <div className="w-3 h-3 bg-blue-300 rounded-sm" />
                   <div className="w-3 h-3 bg-blue-400 rounded-sm" />
@@ -542,10 +542,10 @@ export default function AchievementsPage() {
         {/* Right Column - Stats & Radar */}
         <div className="space-y-6">
           {/* Skill Analysis */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+          <div className="bg-card rounded-2xl border border-border p-6">
             <div className="flex items-center gap-3 mb-6">
               <Zap className="w-6 h-6 text-indigo-500" />
-              <h2 className="text-xl font-bold text-gray-900">Phân tích Năng lực</h2>
+              <h2 className="text-xl font-bold text-foreground">Phân tích Năng lực</h2>
             </div>
 
             <div className="relative h-64">
@@ -554,8 +554,8 @@ export default function AchievementsPage() {
 
             {topSkill && (
               <div className="text-center mt-4">
-                <span className="text-sm text-gray-500">NĂNG LỰC NỔI BẬT: </span>
-                <span className="text-sm font-bold text-indigo-600">
+                <span className="text-sm text-muted-foreground">NĂNG LỰC NỔI BẬT: </span>
+                <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
                   {topSkill.name} ({topSkill.value}%)
                 </span>
               </div>
@@ -565,21 +565,21 @@ export default function AchievementsPage() {
           {/* Quick Stats */}
           <StatCard
             icon={<Zap className="w-6 h-6 text-blue-500" />}
-            iconBg="bg-blue-100"
+            iconBg="bg-blue-100 dark:bg-blue-500/15"
             label="TỔNG XP"
             value={totalXp.toLocaleString("vi-VN")}
           />
 
           <StatCard
             icon={<Flame className="w-6 h-6 text-orange-500" />}
-            iconBg="bg-orange-100"
+            iconBg="bg-orange-100 dark:bg-orange-500/15"
             label="CHUỖI DÀI NHẤT"
             value={`${longestStreak} ngày`}
           />
 
           <StatCard
             icon={<CheckCircle className="w-6 h-6 text-green-500" />}
-            iconBg="bg-green-100"
+            iconBg="bg-green-100 dark:bg-green-500/15"
             label="CHỨNG CHỈ"
             value={String(certificateCount)}
           />

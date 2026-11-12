@@ -147,8 +147,8 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="container max-w-2xl mx-auto px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Không có khoá học nào</h1>
-        <p className="text-gray-500 mb-6">
+        <h1 className="text-2xl font-bold text-foreground mb-4">Không có khoá học nào</h1>
+        <p className="text-muted-foreground mb-6">
           Giỏ hàng không có khoá học được chọn. Nếu đã tạo đơn, bạn có thể tiếp tục trong Đơn hàng
           của tôi.
         </p>
@@ -177,12 +177,12 @@ export default function CheckoutPage() {
       </nav>
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Link href="/cart" className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
-          <ArrowLeft className="w-5 h-5 text-neutral-600" />
+        <Link href="/cart" className="p-2 hover:bg-muted rounded-full transition-colors">
+          <ArrowLeft className="w-5 h-5 text-muted-foreground" />
         </Link>
         <div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-slate-900">Thanh toán</h1>
-          <p className="text-neutral-500">{items.length} khoá học</p>
+          <h1 className="text-[28px] font-semibold tracking-tight text-foreground">Thanh toán</h1>
+          <p className="text-muted-foreground">{items.length} khoá học</p>
         </div>
       </div>
 
@@ -193,27 +193,27 @@ export default function CheckoutPage() {
               chưa có gateway thẻ/MoMo, xem ghi chú ở trên) */}
           <Card>
             <CardContent className="p-6">
-              <h2 className="text-base font-semibold text-slate-900 mb-4">
+              <h2 className="text-base font-semibold text-foreground mb-4">
                 Phương thức thanh toán
               </h2>
               <div
-                className="w-full flex items-center gap-4 rounded-xl px-4 py-3 bg-neutral-50"
+                className="w-full flex items-center gap-4 rounded-xl px-4 py-3 bg-muted/50"
                 style={{ boxShadow: "rgba(0,0,0,0.1) 0px 0px 0px 1px inset" }}
               >
-                <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
+                <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
                   <Building2 className="h-5 w-5" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-black">
+                  <p className="font-medium text-foreground">
                     {total === 0 ? "Đăng ký miễn phí" : "Chuyển khoản ngân hàng"}
                   </p>
-                  <p className="text-sm text-neutral-500">
+                  <p className="text-sm text-muted-foreground">
                     {total === 0
                       ? "Khoá học sẽ được thêm vào tài khoản sau khi xác nhận đăng ký."
                       : "Sau khi đặt hàng, bạn sẽ nhận thông tin chuyển khoản và mã đơn hàng"}
                   </p>
                 </div>
-                <CheckCircle2 className="w-5 h-5 text-black" />
+                <CheckCircle2 className="w-5 h-5 text-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -221,13 +221,13 @@ export default function CheckoutPage() {
           {/* Order items */}
           <Card>
             <CardContent className="p-6">
-              <h2 className="text-base font-semibold text-slate-900 mb-4">
+              <h2 className="text-base font-semibold text-foreground mb-4">
                 Khoá học ({items.length})
               </h2>
               <div className="space-y-4">
                 {items.map((item) => (
                   <div key={item.id} className="flex items-start gap-4">
-                    <div className="relative w-24 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-neutral-100">
+                    <div className="relative w-24 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-muted">
                       {item.course?.thumbnail ? (
                         <Image
                           src={item.course.thumbnail}
@@ -241,16 +241,16 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-black line-clamp-2">
+                      <p className="font-medium text-foreground line-clamp-2">
                         {item.course?.title || "Khoá học"}
                       </p>
                       {item.course?.instructor && (
-                        <p className="text-sm text-neutral-500 mt-0.5">
+                        <p className="text-sm text-muted-foreground mt-0.5">
                           {item.course.instructor.name}
                         </p>
                       )}
                     </div>
-                    <p className="font-medium text-black flex-shrink-0">
+                    <p className="font-medium text-foreground flex-shrink-0">
                       <CartItemPrice item={item} />
                     </p>
                   </div>
@@ -264,11 +264,11 @@ export default function CheckoutPage() {
         <div className="lg:w-80 flex-shrink-0">
           <Card className="sticky top-24 commerce-panel">
             <CardContent className="p-6">
-              <h2 className="text-base font-semibold text-slate-900 mb-4">Tóm tắt đơn hàng</h2>
+              <h2 className="text-base font-semibold text-foreground mb-4">Tóm tắt đơn hàng</h2>
 
               {/* Voucher */}
               <fieldset disabled={!!activeOrder} className="mb-4 disabled:opacity-60">
-                <label className="text-sm font-medium text-neutral-700 mb-2 block">
+                <label className="text-sm font-medium text-foreground mb-2 block">
                   Mã giảm giá
                 </label>
                 <VoucherInput
@@ -282,11 +282,11 @@ export default function CheckoutPage() {
               {/* Price breakdown */}
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-neutral-600">Tạm tính ({items.length} khoá học)</span>
+                  <span className="text-muted-foreground">Tạm tính ({items.length} khoá học)</span>
                   <span className="font-medium">{formatPrice(subtotal)}</span>
                 </div>
                 {discount > 0 && (
-                  <div className="flex items-center justify-between text-green-600">
+                  <div className="flex items-center justify-between text-green-600 dark:text-green-400">
                     <span>Giảm giá</span>
                     <span>-{formatPrice(discount)}</span>
                   </div>
@@ -295,8 +295,8 @@ export default function CheckoutPage() {
                   className="pt-3 flex items-center justify-between"
                   style={{ borderTop: "1px solid rgba(0,0,0,0.05)" }}
                 >
-                  <span className="font-medium text-black">Tổng cộng</span>
-                  <span className="text-xl font-medium text-black">
+                  <span className="font-medium text-foreground">Tổng cộng</span>
+                  <span className="text-xl font-medium text-foreground">
                     {formatPrice(activeOrder ? Number(activeOrder.total_amount) : total)}
                   </span>
                 </div>
@@ -323,23 +323,23 @@ export default function CheckoutPage() {
               </Button>
 
               {checkoutError && (
-                <p role="alert" className="mt-3 text-xs text-red-600">
+                <p role="alert" className="mt-3 text-xs text-red-600 dark:text-red-400">
                   {checkoutError}
                 </p>
               )}
               {activeOrder && (
-                <p className="mt-3 text-xs leading-relaxed text-slate-500">
+                <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
                   Đơn {activeOrder.order_number} đã được lưu. Đóng cửa sổ vẫn có thể thanh toán lại
                   tại{" "}
-                  <Link href="/orders" className="text-indigo-600 underline">
+                  <Link href="/orders" className="text-indigo-600 underline dark:text-indigo-400">
                     Đơn hàng của tôi
                   </Link>
                   .
                 </p>
               )}
               {/* Security note */}
-              <div className="flex items-center gap-2 mt-4 text-xs text-neutral-500">
-                <ShieldCheck className="w-4 h-4 text-green-600" />
+              <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground">
+                <ShieldCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
                 <span>
                   {total === 0
                     ? "Xác nhận để thêm khoá học vào tài khoản"
@@ -347,9 +347,9 @@ export default function CheckoutPage() {
                 </span>
               </div>
 
-              <p className="text-xs text-center text-neutral-500 mt-3">
+              <p className="text-xs text-center text-muted-foreground mt-3">
                 Bằng việc thanh toán, bạn đồng ý với{" "}
-                <Link href="/terms" className="text-black hover:underline">
+                <Link href="/terms" className="text-foreground hover:underline">
                   Điều khoản dịch vụ
                 </Link>
               </p>

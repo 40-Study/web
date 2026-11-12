@@ -129,7 +129,7 @@ export default function RecurrenceSelector({
               onChange={(e) => update({ interval: Math.max(1, parseInt(e.target.value) || 1) })}
               className="w-20"
             />
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-muted-foreground">
               {value.frequency === "daily" && "ngày"}
               {value.frequency === "weekly" && "tuần"}
               {value.frequency === "monthly" && "tháng"}
@@ -152,7 +152,7 @@ export default function RecurrenceSelector({
                         "w-9 h-9 rounded-full text-xs font-semibold transition-all",
                         isActive
                           ? "bg-primary-600 text-white"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          : "bg-muted text-muted-foreground hover:bg-muted-foreground/20"
                       )}
                     >
                       {label}
@@ -202,7 +202,7 @@ export default function RecurrenceSelector({
                   }
                   className="w-24"
                 />
-                <span className="text-sm text-gray-500">lần</span>
+                <span className="text-sm text-muted-foreground">lần</span>
               </div>
             )}
           </div>

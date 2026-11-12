@@ -22,28 +22,28 @@ export default function MyCertificatesPage() {
     <div className="mx-auto w-full max-w-5xl px-4 py-6">
       <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
+          <h1 className="text-2xl font-semibold text-foreground">
             Chứng chỉ của tôi
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Chứng chỉ nhận được sau khi hoàn thành khoá học.
           </p>
         </div>
         <Link
           href="/certificates/verify"
-          className="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted/50"
         >
           Tra cứu chứng chỉ
         </Link>
       </header>
 
       {isLoading ? (
-        <div className="rounded-lg border border-gray-200 p-8 text-center text-sm text-gray-500">
+        <div className="rounded-lg border border-border p-8 text-center text-sm text-muted-foreground">
           Đang tải…
         </div>
       ) : certificates.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center">
-          <p className="text-sm text-gray-500">
+        <div className="rounded-lg border border-dashed border-input p-8 text-center">
+          <p className="text-sm text-muted-foreground">
             Bạn chưa có chứng chỉ nào. Hoàn thành một khoá học để nhận chứng
             chỉ đầu tiên.
           </p>
@@ -68,18 +68,18 @@ export default function MyCertificatesPage() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="rounded-md border border-gray-200 px-3 py-1.5 hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-md border border-border px-3 py-1.5 hover:bg-muted/50 disabled:opacity-50"
               >
                 Trước
               </button>
-              <span className="text-gray-500">
+              <span className="text-muted-foreground">
                 Trang {page}/{totalPages}
               </span>
               <button
                 type="button"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="rounded-md border border-gray-200 px-3 py-1.5 hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-md border border-border px-3 py-1.5 hover:bg-muted/50 disabled:opacity-50"
               >
                 Sau
               </button>

@@ -34,12 +34,12 @@ export function LinkedAccountsSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-900">Liên kết tài khoản</h2>
-        <p className="text-sm text-gray-500 mt-1">Kết nối tài khoản mạng xã hội để đăng nhập nhanh hơn</p>
+        <h2 className="text-xl font-bold text-foreground">Liên kết tài khoản</h2>
+        <p className="text-sm text-muted-foreground mt-1">Kết nối tài khoản mạng xã hội để đăng nhập nhanh hơn</p>
       </div>
 
       {isLoading ? (
-        <div className="flex items-center gap-2 text-gray-500 py-4">
+        <div className="flex items-center gap-2 text-muted-foreground py-4">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span className="text-sm">Đang tải...</span>
         </div>
@@ -52,7 +52,7 @@ export function LinkedAccountsSettings() {
             return (
               <div
                 key={provider.id}
-                className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm"
+                className="bg-card rounded-2xl border border-border p-5 shadow-sm"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -62,10 +62,10 @@ export function LinkedAccountsSettings() {
                       <span className="text-white font-bold text-sm">{provider.initial}</span>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{provider.name}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="font-medium text-foreground">{provider.name}</p>
+                      <p className="text-sm text-muted-foreground">
                         {isConnected ? (
-                          <span className="flex items-center gap-1 text-green-600">
+                          <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
                             <Check className="h-3.5 w-3.5" />
                             {linkedAccount?.email ? linkedAccount.email : "Đã kết nối"}
                           </span>

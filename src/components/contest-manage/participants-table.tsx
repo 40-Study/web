@@ -33,7 +33,7 @@ export function ParticipantsTable({ contestId }: { contestId: string }) {
     >
       <div className="overflow-x-auto rounded-xl border dark:border-gray-800">
         <table className="min-w-full text-sm" data-testid="participants-table">
-          <thead className="bg-gray-50 dark:bg-gray-900">
+          <thead className="bg-muted/50">
             <tr>
               <th className="px-3 py-2 text-left">Hạng</th>
               <th className="px-3 py-2 text-left">Học viên</th>
@@ -43,7 +43,7 @@ export function ParticipantsTable({ contestId }: { contestId: string }) {
               <th className="px-3 py-2 text-left">Nộp lúc</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+          <tbody className="divide-y divide-border">
             {rows.map((row) => (
               <tr key={row.user_id}>
                 <td className="px-3 py-2">{row.rank ?? "—"}</td>
@@ -60,7 +60,7 @@ export function ParticipantsTable({ contestId }: { contestId: string }) {
         </table>
       </div>
       {data && data.total_pages > 1 && (
-        <div className="flex items-center justify-between pt-2 text-sm text-gray-500">
+        <div className="flex items-center justify-between pt-2 text-sm text-muted-foreground">
           <span>
             Trang {page}/{data.total_pages} — {data.total_count} người
           </span>

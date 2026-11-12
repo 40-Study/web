@@ -25,7 +25,7 @@ const STATUS_LABEL: Record<ScheduleStatus, string> = {
 };
 
 const STATUS_DOT: Record<ScheduleStatus, string> = {
-  done: "bg-slate-400 dark:bg-slate-500",
+  done: "bg-muted-foreground",
   ongoing: "bg-primary-600 dark:bg-primary-400",
   upcoming: "bg-amber-500",
 };
@@ -76,7 +76,7 @@ export function TodaySchedule({ items, className }: TodayScheduleProps) {
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400">
           <CalendarDays className="h-5 w-5" aria-hidden="true" />
         </div>
-        <p className="text-body-sm text-slate-600 dark:text-slate-400">
+        <p className="text-body-sm text-muted-foreground">
           Hôm nay bạn không có lịch học.
         </p>
       </Card>
@@ -91,21 +91,21 @@ export function TodaySchedule({ items, className }: TodayScheduleProps) {
             hoverable
             className="relative flex min-h-14 items-center gap-4 rounded-2xl px-4 py-2"
           >
-            <p className="w-24 shrink-0 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+            <p className="w-24 shrink-0 text-sm font-semibold tabular-nums text-foreground">
               {item.start} – {item.end}
             </p>
             <div className="min-w-0 flex-1">
               <Link
                 href="/schedule"
-                className="block truncate text-sm font-medium text-slate-900 after:absolute after:inset-0 after:content-[''] dark:text-slate-50"
+                className="block truncate text-sm font-medium text-foreground after:absolute after:inset-0 after:content-['']"
               >
                 {item.title}
               </Link>
               {item.room && (
-                <p className="truncate text-xs text-slate-600 dark:text-slate-400">{item.room}</p>
+                <p className="truncate text-xs text-muted-foreground">{item.room}</p>
               )}
             </div>
-            <span className="flex shrink-0 items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+            <span className="flex shrink-0 items-center gap-2 text-xs font-medium text-muted-foreground">
               <span
                 className={cn("h-2 w-2 rounded-full", STATUS_DOT[item.status])}
                 aria-hidden="true"

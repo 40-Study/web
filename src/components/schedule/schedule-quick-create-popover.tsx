@@ -117,22 +117,22 @@ export default function ScheduleQuickCreatePopover({
       ref={popoverRef}
       style={{ left, top, width: POPOVER_WIDTH }}
       className={cn(
-        "fixed z-[9999] bg-white rounded-2xl shadow-2xl border border-gray-200",
+        "fixed z-[9999] bg-card rounded-2xl shadow-2xl border border-border",
         "animate-in fade-in-0 zoom-in-95 duration-150"
       )}
     >
       {/* Header bar */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <span className="text-xs font-medium text-gray-500">
+        <span className="text-xs font-medium text-muted-foreground">
           {formatDateHeader(startTime)}
         </span>
         <button
           type="button"
           onClick={onClose}
-          className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+          className="p-1 rounded-full hover:bg-muted transition-colors"
           aria-label="Đóng"
         >
-          <X className="w-3.5 h-3.5 text-gray-400" />
+          <X className="w-3.5 h-3.5 text-muted-foreground" />
         </button>
       </div>
 
@@ -145,14 +145,14 @@ export default function ScheduleQuickCreatePopover({
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Thêm tiêu đề"
           className={cn(
-            "w-full text-base font-medium text-gray-900 placeholder:text-gray-400",
-            "border-0 border-b-2 border-gray-200 focus:border-blue-500",
+            "w-full text-base font-medium text-foreground placeholder:text-muted-foreground",
+            "border-0 border-b-2 border-border focus:border-blue-500",
             "outline-none bg-transparent pb-1 transition-colors"
           )}
         />
 
         {/* Time display */}
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span className="w-3.5 h-3.5 rounded-full bg-blue-500 shrink-0" />
           <span className="font-medium">{formatTimeRange(startTime, endTime)}</span>
         </div>
@@ -163,7 +163,7 @@ export default function ScheduleQuickCreatePopover({
           <button
             type="button"
             onClick={handleMoreOptions}
-            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
+            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors dark:text-blue-400 dark:hover:text-blue-300"
           >
             Thêm tuỳ chọn
             <ChevronRight className="w-3 h-3" />
@@ -177,7 +177,7 @@ export default function ScheduleQuickCreatePopover({
               "px-4 py-1.5 text-sm font-semibold rounded-full transition-all",
               title.trim()
                 ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-muted text-muted-foreground cursor-not-allowed"
             )}
           >
             Lưu

@@ -38,7 +38,7 @@ function getAchievementRarity(category: string): FeaturedAchievement["rarity"] {
 
 function PublicProfilePageSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-muted/50">
       <div className="bg-primary-600">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row items-center gap-6">
@@ -147,9 +147,9 @@ export default function PublicProfilePage() {
 
   if (error || !data || !user || !stats) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-muted/50 flex items-center justify-center px-4">
         <Card className="p-8 max-w-md w-full text-center">
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-xl font-semibold text-foreground mb-2">
             Không tải được hồ sơ công khai
           </h1>
           <p className="text-muted-foreground">
@@ -163,9 +163,9 @@ export default function PublicProfilePage() {
   // S6: hồ sơ riêng tư chỉ có tên + ảnh; không hiện số liệu 0 như thể người đó chưa học gì.
   if (data.is_private && !isOwnProfile) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-muted/50 flex items-center justify-center px-4">
         <Card className="p-8 max-w-md w-full text-center">
-          <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-primary-100 overflow-hidden flex items-center justify-center text-2xl font-semibold text-primary-700">
+          <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-primary-100 overflow-hidden flex items-center justify-center text-2xl font-semibold text-primary-700 dark:bg-primary-500/15 dark:text-primary-300">
             {user.avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={user.avatar} alt="" className="h-full w-full object-cover" />
@@ -173,7 +173,7 @@ export default function PublicProfilePage() {
               user.fullName.slice(0, 1).toUpperCase()
             )}
           </div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{user.fullName}</h1>
+          <h1 className="text-xl font-semibold text-foreground">{user.fullName}</h1>
           <p className="mt-2 text-muted-foreground">Người dùng này đã đặt hồ sơ ở chế độ riêng tư.</p>
         </Card>
       </div>
@@ -184,14 +184,14 @@ export default function PublicProfilePage() {
   // level/XP/streak, thống kê, thành tích hay lịch sử hoạt động.
   if (isOwnProfile && normalizeRole(activeRole) === "PARENT") {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-muted/50">
         <ProfileHeader user={user} isOwnProfile stats={stats} showLearningStats={false} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-muted/50">
       <ProfileHeader user={user} isOwnProfile={isOwnProfile} stats={stats} />
 
       <div className="container max-w-6xl mx-auto px-4 py-8">
@@ -209,7 +209,7 @@ export default function PublicProfilePage() {
 
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="font-semibold text-gray-900 dark:text-white">
+                    <h2 className="font-semibold text-foreground">
                       Hoạt động học tập
                     </h2>
                     <span className="text-sm text-muted-foreground">20 tuần gần nhất</span>
@@ -218,7 +218,7 @@ export default function PublicProfilePage() {
                 </Card>
 
                 <Card className="p-6">
-                  <h2 className="font-semibold mb-4 text-gray-900 dark:text-white">
+                  <h2 className="font-semibold mb-4 text-foreground">
                     Khoá học đã hoàn thành
                   </h2>
                   {completedCourses.length === 0 ? (
@@ -228,14 +228,14 @@ export default function PublicProfilePage() {
                       {completedCourses.map((course) => (
                         <div
                           key={course.id}
-                          className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800"
+                          className="flex items-center justify-between p-3 rounded-xl bg-muted/50"
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-green-500 flex items-center justify-center">
                               <span className="text-white text-lg">✓</span>
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900 dark:text-white">
+                              <p className="font-medium text-foreground">
                                 {course.title}
                               </p>
                               <p className="text-xs text-muted-foreground">
@@ -258,7 +258,7 @@ export default function PublicProfilePage() {
 
               <div className="space-y-6">
                 <Card className="p-6">
-                  <h3 className="font-semibold mb-4 text-gray-900 dark:text-white">
+                  <h3 className="font-semibold mb-4 text-foreground">
                     Thống kê
                   </h3>
                   <div className="space-y-4">
@@ -290,7 +290,7 @@ export default function PublicProfilePage() {
                 </Card>
 
                 <Card className="p-6">
-                  <h3 className="font-semibold mb-4 text-gray-900 dark:text-white">
+                  <h3 className="font-semibold mb-4 text-foreground">
                     Huy hiệu nổi bật
                   </h3>
                   {achievements.length === 0 ? (
@@ -315,7 +315,7 @@ export default function PublicProfilePage() {
 
           <TabsContent value="achievements">
             <Card className="p-6">
-              <h2 className="font-semibold mb-6 text-gray-900 dark:text-white">
+              <h2 className="font-semibold mb-6 text-foreground">
                 Toàn bộ thành tích ({stats.achievements})
               </h2>
               {achievements.length === 0 ? (
@@ -325,12 +325,12 @@ export default function PublicProfilePage() {
                   {achievements.map((achievement) => (
                     <div
                       key={achievement.id}
-                      className="text-center p-4 rounded-2xl bg-gray-50 dark:bg-gray-800"
+                      className="text-center p-4 rounded-2xl bg-muted/50"
                     >
                       <div className="w-14 h-14 mx-auto rounded-xl bg-yellow-500 flex items-center justify-center text-2xl mb-2 shadow-lg text-white">
                         {achievement.icon || achievement.name.slice(0, 1).toUpperCase()}
                       </div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p className="text-sm font-medium text-foreground">
                         {achievement.name}
                       </p>
                       <Badge variant="outline" size="sm" className="mt-1 capitalize">
@@ -345,7 +345,7 @@ export default function PublicProfilePage() {
 
           <TabsContent value="activity">
             <Card className="p-6">
-              <h2 className="font-semibold mb-4 text-gray-900 dark:text-white">
+              <h2 className="font-semibold mb-4 text-foreground">
                 Lịch sử hoạt động
               </h2>
               <ActivityHeatmap data={data.activity} weeks={52} />

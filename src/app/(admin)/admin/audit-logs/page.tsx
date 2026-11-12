@@ -25,10 +25,10 @@ const HEADERS = [...Object.values(COL), ""];
 // một thẻ xếp dọc (nhãn trái, giá trị phải, không cuộn ngang); từ `sm` trở lên là bảng như cũ.
 const ACTION_COLUMN_CLASS = "sm:min-w-[10rem]";
 const CELL_CLASS =
-  "flex items-start justify-between gap-4 px-4 py-1.5 text-right before:shrink-0 before:text-left before:font-medium before:text-gray-500 before:content-[attr(data-label)] sm:table-cell sm:py-3 sm:text-left sm:before:hidden";
+  "flex items-start justify-between gap-4 px-4 py-1.5 text-right before:shrink-0 before:text-left before:font-medium before:text-muted-foreground before:content-[attr(data-label)] sm:table-cell sm:py-3 sm:text-left sm:before:hidden";
 const DATE_RANGE_ERROR = "Từ ngày phải trước hoặc cùng ngày với Đến ngày.";
 const INPUT_CLASS =
-  "h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900";
+  "h-10 rounded-lg border border-border px-3 text-sm dark:bg-gray-900";
 
 function parsePage(value: string | null): number {
   const n = Number(value);
@@ -118,13 +118,13 @@ function AuditLogsContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Nhật ký hoạt động</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-foreground">Nhật ký hoạt động</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Theo dõi các thao tác quản trị để kiểm soát thay đổi hệ thống.
         </p>
       </div>
 
-      <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+      <section className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <select
             aria-label="Lọc theo hành động"
@@ -191,47 +191,47 @@ function AuditLogsContent() {
         }
       >
         {/* overflow-x-auto để bảng nhiều cột cuộn ngang được trên mobile (H-11) */}
-        <div className="overflow-x-auto rounded-xl border bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
-          <table className="block w-full divide-y sm:table sm:min-w-full divide-gray-200 text-sm dark:divide-gray-800">
-            <thead className="hidden bg-gray-50 dark:bg-gray-900 sm:table-header-group">
+        <div className="overflow-x-auto rounded-xl border bg-card shadow-sm dark:border-gray-800">
+          <table className="block w-full divide-y sm:table sm:min-w-full divide-border text-sm">
+            <thead className="hidden bg-muted/50 sm:table-header-group">
               <tr>
                 {HEADERS.map((h) => (
                   <th
                     key={h || "expand"}
-                    className={`px-4 py-3 text-left font-medium text-gray-500 ${h === COL.action ? ACTION_COLUMN_CLASS : ""}`}
+                    className={`px-4 py-3 text-left font-medium text-muted-foreground ${h === COL.action ? ACTION_COLUMN_CLASS : ""}`}
                   >
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="block divide-y divide-gray-100 dark:divide-gray-800 sm:table-row-group">
+            <tbody className="block divide-y divide-border sm:table-row-group">
               {items.map((log) => (
                 <Fragment key={log.id}>
                   <tr className="block py-2 sm:table-row sm:py-0">
-                    <td data-label={COL.time} className={`${CELL_CLASS} whitespace-nowrap text-gray-600 dark:text-gray-300`}>
+                    <td data-label={COL.time} className={`${CELL_CLASS} whitespace-nowrap text-muted-foreground`}>
                       {formatVnDateTime(log.created_at)}
                     </td>
                     <td data-label={COL.actor} className={CELL_CLASS}>
                       {log.actor ? (
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-100">{log.actor.name}</p>
-                          <p className="text-xs text-gray-500">{log.actor.email}</p>
+                          <p className="font-medium text-foreground">{log.actor.name}</p>
+                          <p className="text-xs text-muted-foreground">{log.actor.email}</p>
                         </div>
                       ) : (
-                        <span className="text-gray-400">Tài khoản không còn</span>
+                        <span className="text-muted-foreground">Tài khoản không còn</span>
                       )}
                     </td>
-                    <td data-label={COL.action} className={`${CELL_CLASS} text-gray-900 dark:text-gray-100 ${ACTION_COLUMN_CLASS}`}>
+                    <td data-label={COL.action} className={`${CELL_CLASS} text-foreground ${ACTION_COLUMN_CLASS}`}>
                       {auditActionLabel(log.action)}
                     </td>
-                    <td data-label={COL.target} className={`${CELL_CLASS} break-all text-gray-600 dark:text-gray-300 sm:break-normal`}>
+                    <td data-label={COL.target} className={`${CELL_CLASS} break-all text-muted-foreground sm:break-normal`}>
                       {targetText(log)}
                     </td>
                     <td data-label={COL.result} className={CELL_CLASS}>
                       <Badge variant="success">{log.status_code}</Badge>
                     </td>
-                    <td data-label={COL.ip} className={`${CELL_CLASS} text-gray-600 dark:text-gray-300`}>
+                    <td data-label={COL.ip} className={`${CELL_CLASS} text-muted-foreground`}>
                       {log.ip ?? "—"}
                     </td>
                     <td className={CELL_CLASS}>
@@ -240,7 +240,7 @@ function AuditLogsContent() {
                           type="button"
                           aria-expanded={expanded === log.id}
                           onClick={() => setExpanded(expanded === log.id ? null : log.id)}
-                          className="ml-auto rounded bg-gray-100 px-2 py-1 text-xs font-medium hover:bg-gray-200 dark:bg-gray-800 sm:ml-0"
+                          className="ml-auto rounded bg-muted px-2 py-1 text-xs font-medium hover:bg-muted-foreground/20 sm:ml-0"
                         >
                           {expanded === log.id ? "Ẩn chi tiết" : "Chi tiết"}
                         </button>
@@ -249,8 +249,8 @@ function AuditLogsContent() {
                   </tr>
                   {log.metadata && expanded === log.id && (
                     <tr className="block sm:table-row">
-                      <td colSpan={7} className="block bg-gray-50 px-4 py-3 dark:bg-gray-900 sm:table-cell">
-                        <pre className="overflow-x-auto text-xs text-gray-700 dark:text-gray-300">
+                      <td colSpan={7} className="block bg-muted/50 px-4 py-3 sm:table-cell">
+                        <pre className="overflow-x-auto text-xs text-foreground">
                           {JSON.stringify(log.metadata, null, 2)}
                         </pre>
                       </td>
@@ -263,7 +263,7 @@ function AuditLogsContent() {
         </div>
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-1 text-sm text-gray-500">
+          <div className="flex items-center justify-between px-1 text-sm text-muted-foreground">
             <span>
               Trang {page}/{totalPages} — {data?.total} thao tác
             </span>

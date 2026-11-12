@@ -54,14 +54,14 @@ export default function ContestResultPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6 sm:px-6">
-      <Link href={contestPath(slug)} className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+      <Link href={contestPath(slug)} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         {detail.title}
       </Link>
 
-      <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5">
+      <section className="space-y-4 rounded-2xl border border-border bg-card p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h1 className="text-xl font-bold text-gray-900">Kết quả của bạn</h1>
+          <h1 className="text-xl font-bold text-foreground">Kết quả của bạn</h1>
           <ContestPhaseBadge phase={detail.phase} />
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -70,19 +70,19 @@ export default function ContestResultPage() {
           <Stat label="Thời gian" value={formatContestDuration(mine?.time_spent_seconds)} />
           <Stat label="Hạng" value={mine?.rank !== null && mine?.rank !== undefined ? `${mine.rank}` : "Chưa chốt"} />
         </div>
-        <p className="text-xs text-gray-500">Nộp lúc {formatContestDateTime(mine?.submitted_at)}</p>
+        <p className="text-xs text-muted-foreground">Nộp lúc {formatContestDateTime(mine?.submitted_at)}</p>
 
         {award && (award.certificate_number || award.voucher) ? (
           <ContestAwardPanel slug={slug} award={award} />
         ) : detail.phase === "FINALIZED" ? (
-          <p className="text-sm text-gray-600">Kết quả đã chốt. Lần này bạn chưa đạt giải, hẹn gặp lại ở cuộc thi sau.</p>
+          <p className="text-sm text-muted-foreground">Kết quả đã chốt. Lần này bạn chưa đạt giải, hẹn gặp lại ở cuộc thi sau.</p>
         ) : (
-          <p className="text-sm text-gray-600">Hạng và giải thưởng có sau khi quản trị viên chốt kết quả.</p>
+          <p className="text-sm text-muted-foreground">Hạng và giải thưởng có sau khi quản trị viên chốt kết quả.</p>
         )}
       </section>
 
-      <section className="space-y-3 rounded-2xl border border-gray-200 bg-white p-5">
-        <h2 className="font-semibold text-gray-900">Đáp án và giải thích</h2>
+      <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
+        <h2 className="font-semibold text-foreground">Đáp án và giải thích</h2>
         {result.questions === null ? (
           <ContestAnswersPending
             answersAvailableAt={result.answers_available_at}
@@ -101,9 +101,9 @@ export default function ContestResultPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-gray-50 p-3 text-center">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="mt-0.5 break-words text-lg font-bold text-gray-900">{value}</p>
+    <div className="rounded-xl bg-muted/50 p-3 text-center">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-0.5 break-words text-lg font-bold text-foreground">{value}</p>
     </div>
   );
 }

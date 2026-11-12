@@ -7,7 +7,7 @@
 export function FamilyLoadError({ what, onRetry, className }: { what: string; onRetry: () => void; className?: string }) {
   return (
     <div className={className}>
-      <p role="alert" className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+      <p role="alert" className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
         Không tải được {what}.{" "}
         <button type="button" className="font-medium underline" onClick={onRetry}>
           Thử lại

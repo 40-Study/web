@@ -16,9 +16,9 @@ export function LoginRequiredPrompt({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-600", className)}>
+    <div className={cn("flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground", className)}>
       <span>{message}</span>
-      <Link href={loginHref(returnTo)} className="font-medium text-primary-600 hover:underline">
+      <Link href={loginHref(returnTo)} className="font-medium text-primary-600 hover:underline dark:text-primary-400">
         Đăng nhập
       </Link>
     </div>

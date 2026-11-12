@@ -91,22 +91,22 @@ export function NonVideoLessonContent({
   const isDone = completed || markCompleted.data?.status === "completed";
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
-      <div className="flex items-center gap-2 text-sm font-medium text-primary-600">
+    <div className="bg-card rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
+      <div className="flex items-center gap-2 text-sm font-medium text-primary-600 dark:text-primary-400">
         {kind === "exercise" ? <ClipboardList className="w-4 h-4" /> : <Radio className="w-4 h-4" />}
         <span>{copy.badge}</span>
       </div>
-      <h1 className="text-xl font-bold text-gray-900">{title}</h1>
+      <h1 className="text-xl font-bold text-foreground">{title}</h1>
       {description ? (
-        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{description}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{description}</p>
       ) : null}
-      <p className="text-sm text-gray-500">{copy.hint}</p>
+      <p className="text-sm text-muted-foreground">{copy.hint}</p>
 
       <div className="flex flex-wrap items-center gap-3 pt-1">
         {kind === "exercise" && (
           <Link
             href={`/courses/${courseSlug}/exercises`}
-            className="px-4 py-2 text-sm font-medium text-primary-600 border border-primary-200 rounded-lg hover:bg-primary-50"
+            className="px-4 py-2 text-sm font-medium text-primary-600 border border-primary-200 rounded-lg hover:bg-primary-50 dark:text-primary-400 dark:border-primary-500/30 dark:hover:bg-primary-500/10"
           >
             Xem bài tập của khoá
           </Link>
@@ -116,16 +116,16 @@ export function NonVideoLessonContent({
             <Link
               href={livestreamHref}
           prefetch={false}
-              className="px-4 py-2 text-sm font-medium text-primary-600 border border-primary-200 rounded-lg hover:bg-primary-50"
+              className="px-4 py-2 text-sm font-medium text-primary-600 border border-primary-200 rounded-lg hover:bg-primary-50 dark:text-primary-400 dark:border-primary-500/30 dark:hover:bg-primary-500/10"
             >
               Vào phòng học trực tiếp
             </Link>
           ) : (
-            <span className="text-sm text-gray-500">{LIVESTREAM_NOT_READY_HINT}</span>
+            <span className="text-sm text-muted-foreground">{LIVESTREAM_NOT_READY_HINT}</span>
           ))}
 
         {isDone ? (
-          <span className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg">
+          <span className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg dark:text-green-300 dark:bg-green-500/10">
             <CheckCircle2 className="w-4 h-4" />
             Đã hoàn thành
           </span>

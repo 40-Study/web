@@ -24,8 +24,8 @@ import { courseTaskHref, mapSectionsToExercises } from "@/lib/course-exercises";
 import type { Section } from "@/types/section";
 
 const KIND_BADGE = {
-  exercise: { label: "Bài tập code", icon: Code2, iconBg: "bg-blue-100", iconFg: "text-blue-600", badge: "bg-blue-100 text-blue-700" },
-  quiz: { label: "Trắc nghiệm", icon: ListChecks, iconBg: "bg-purple-100", iconFg: "text-purple-600", badge: "bg-purple-100 text-purple-700" },
+  exercise: { label: "Bài tập code", icon: Code2, iconBg: "bg-blue-100 dark:bg-blue-500/15", iconFg: "text-blue-600 dark:text-blue-400", badge: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300" },
+  quiz: { label: "Trắc nghiệm", icon: ListChecks, iconBg: "bg-purple-100 dark:bg-purple-500/15", iconFg: "text-purple-600 dark:text-purple-400", badge: "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300" },
 } as const;
 
 export default function CourseExercisesPage() {
@@ -90,7 +90,7 @@ export default function CourseExercisesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted/50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
       </div>
     );
@@ -106,12 +106,12 @@ export default function CourseExercisesPage() {
   const pendingCount = exercises.filter((e) => !e.completed && !e.locked).length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted/50">
       <div className="max-w-4xl mx-auto px-6 py-8">
         {/* Back link */}
         <Link
           href={`/courses/${slug}`}
-          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6"
         >
           <ChevronLeft className="w-4 h-4" />
           Quay lại khoá học
@@ -119,17 +119,17 @@ export default function CourseExercisesPage() {
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Bài tập & Kiểm tra</h1>
-          <p className="text-gray-500 mt-1">{course?.title ?? ""}</p>
+          <h1 className="text-2xl font-bold text-foreground">Bài tập & Kiểm tra</h1>
+          <p className="text-muted-foreground mt-1">{course?.title ?? ""}</p>
           <div className="flex items-center gap-4 mt-3 text-sm">
-            <span className="text-green-600">{completedCount} hoàn thành</span>
-            <span className="text-orange-600">{pendingCount} chưa làm</span>
-            <span className="text-gray-400">{exercises.length} tổng cộng</span>
+            <span className="text-green-600 dark:text-green-400">{completedCount} hoàn thành</span>
+            <span className="text-orange-600 dark:text-orange-400">{pendingCount} chưa làm</span>
+            <span className="text-muted-foreground">{exercises.length} tổng cộng</span>
           </div>
         </div>
 
         {failedQuizLessons > 0 && (
-          <p className="mb-4 flex items-center gap-2 text-sm text-orange-700 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
+          <p className="mb-4 flex items-center gap-2 text-sm text-orange-700 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 dark:text-orange-300 dark:bg-orange-500/10 dark:border-orange-500/30">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             Không tải được trắc nghiệm của {failedQuizLessons} bài học, danh sách có thể thiếu.
           </p>
@@ -138,7 +138,7 @@ export default function CourseExercisesPage() {
         {/* Exercise cards */}
         <div className="space-y-3">
           {exercises.length === 0 ? (
-            <p className="text-gray-500 text-center py-10">Khoá học chưa có bài tập nào.</p>
+            <p className="text-muted-foreground text-center py-10">Khoá học chưa có bài tập nào.</p>
           ) : (
             exercises.map((ex) => {
               const kind = KIND_BADGE[ex.kind];
@@ -148,12 +148,12 @@ export default function CourseExercisesPage() {
               <div
                 key={ex.id}
                 className={cn(
-                  "bg-white rounded-xl border p-4 transition-all",
+                  "bg-card rounded-xl border p-4 transition-all",
                   ex.locked
-                    ? "border-gray-200 opacity-60"
+                    ? "border-border opacity-60"
                     : ex.completed
-                    ? "border-green-200 hover:border-green-300"
-                    : "border-gray-200 hover:border-primary-300 hover:shadow-sm"
+                    ? "border-green-200 hover:border-green-300 dark:border-green-500/30 dark:hover:border-green-500/30"
+                    : "border-border hover:border-primary-300 hover:shadow-sm dark:hover:border-primary-500/30"
                 )}
               >
                 <div className="flex items-center gap-4">
@@ -164,11 +164,11 @@ export default function CourseExercisesPage() {
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900">{ex.title}</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="font-medium text-foreground">{ex.title}</p>
+                    <p className="text-sm text-muted-foreground">
                       Chương {ex.chapterIndex}: {ex.chapterTitle}
                     </p>
-                    <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-400">
+                    <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
                       <span className={cn("px-2 py-0.5 rounded-full font-medium", kind.badge)}>
                         {kind.label}
                       </span>
@@ -182,19 +182,19 @@ export default function CourseExercisesPage() {
                   {/* Status + Action */}
                   <div className="shrink-0 text-right">
                     {ex.locked ? (
-                      <div className="flex items-center gap-2 text-gray-400">
+                      <div className="flex items-center gap-2 text-muted-foreground">
                         <Lock className="w-4 h-4" />
                         <span className="text-sm">Khoá</span>
                       </div>
                     ) : ex.completed ? (
                       <div className="flex flex-col items-end gap-2">
-                        <span className="flex items-center gap-1 text-green-600 text-sm">
+                        <span className="flex items-center gap-1 text-green-600 text-sm dark:text-green-400">
                           <CheckCircle className="w-4 h-4" />
                           Hoàn thành
                         </span>
                         <Link
                           href={href}
-                          className="text-sm text-primary-600 hover:underline"
+                          className="text-sm text-primary-600 hover:underline dark:text-primary-400"
                         >
                           Xem lại
                         </Link>

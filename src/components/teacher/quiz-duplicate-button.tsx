@@ -27,7 +27,7 @@ export function QuizDuplicateButton({ lessonId, quizId, isMandatory = true }: Qu
       type="button"
       onClick={handleClick}
       disabled={duplicate.isPending}
-      className="p-0.5 text-gray-400 hover:text-primary-600 disabled:opacity-50"
+      className="p-0.5 text-muted-foreground hover:text-primary-600 disabled:opacity-50 dark:hover:text-primary-400"
       title="Nhân bản bài trắc nghiệm"
       aria-label="Nhân bản bài trắc nghiệm"
     >

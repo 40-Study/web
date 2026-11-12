@@ -142,7 +142,7 @@ export function BankTransferDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto p-0">
-        <DialogHeader className="border-b bg-slate-50/70 px-6 py-5">
+        <DialogHeader className="border-b bg-muted/50 px-6 py-5">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Building2 className="h-4 w-4 text-primary" />
             Chuyển khoản ngân hàng
@@ -152,7 +152,7 @@ export function BankTransferDialog({
         {isLoading ? (
           <div
             role="status"
-            className="flex items-center justify-center gap-3 p-12 text-sm text-slate-500"
+            className="flex items-center justify-center gap-3 p-12 text-sm text-muted-foreground"
           >
             <Loader2 className="h-5 w-5 animate-spin" />
             Đang chuẩn bị thông tin chuyển khoản…
@@ -221,9 +221,9 @@ export function BankTransferDialog({
               xu sẽ được cập nhật sau khi giao dịch được xác nhận.
             </p>
 
-            <div className="rounded-lg bg-slate-50 px-4 py-5 text-center">
+            <div className="rounded-lg bg-muted/50 px-4 py-5 text-center">
               <p className="text-xs text-muted-foreground">Số tiền cần chuyển</p>
-              <p className="text-2xl font-bold text-slate-900">{formatCurrency(amount)}</p>
+              <p className="text-2xl font-bold text-foreground">{formatCurrency(amount)}</p>
             </div>
 
             <div className="space-y-2">
@@ -234,7 +234,7 @@ export function BankTransferDialog({
             </div>
 
             {!bankConfigured && (
-              <p className="text-xs text-amber-600">
+              <p className="text-xs text-amber-600 dark:text-amber-400">
                 Chưa cấu hình đầy đủ tài khoản nhận tiền. Vui lòng quay lại sau hoặc liên hệ hỗ trợ;
                 bạn chưa cần chuyển khoản.
               </p>
@@ -243,13 +243,13 @@ export function BankTransferDialog({
             {errorMessage && (
               <p
                 role="alert"
-                className="rounded-lg bg-amber-50 p-3 text-xs leading-relaxed text-amber-800"
+                className="rounded-lg bg-amber-50 p-3 text-xs leading-relaxed text-amber-800 dark:bg-amber-500/10 dark:text-amber-300"
               >
                 {errorMessage}
               </p>
             )}
             {isFinalChecking ? (
-              <p className="text-center text-xs text-amber-600">
+              <p className="text-center text-xs text-amber-600 dark:text-amber-400">
                 Đã hết thời gian chuyển khoản. Hệ thống đang kiểm tra lần cuối các giao dịch đã
                 nhận, vui lòng không chuyển khoản lại.
               </p>

@@ -17,12 +17,12 @@ export function PlayerHeader({ courseTitle, courseSlug, exerciseCount = 0 }: Pla
   const user = useAuthStore((s) => s.user);
 
   return (
-    <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 shrink-0 z-20">
+    <header className="h-14 bg-card border-b border-border flex items-center justify-between px-4 sm:px-6 shrink-0 z-20">
       {/* Left: Back arrow */}
       <div className="flex items-center">
         <Link
           href="/home"
-          className="flex items-center text-gray-500 hover:text-gray-900 transition-colors"
+          className="flex items-center text-muted-foreground hover:text-foreground transition-colors"
         >
           <ChevronLeft className="w-6 h-6" />
         </Link>
@@ -32,14 +32,14 @@ export function PlayerHeader({ courseTitle, courseSlug, exerciseCount = 0 }: Pla
       <div className="flex items-center gap-4 sm:gap-5">
         <Link
           href="/my-courses"
-          className="text-sm text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
+          className="text-sm text-foreground hover:text-foreground transition-colors whitespace-nowrap"
         >
           Khoá học của tôi
         </Link>
 
         <Link
           href={`/courses/${courseSlug}/exercises`}
-          className="relative text-sm text-gray-700 hover:text-gray-900 transition-colors"
+          className="relative text-sm text-foreground hover:text-foreground transition-colors"
         >
           Bài tập
           {exerciseCount > 0 && (
@@ -52,7 +52,7 @@ export function PlayerHeader({ courseTitle, courseSlug, exerciseCount = 0 }: Pla
         <Link
           href={user?.id ? `/profile/${user.id}` : "/login"}
           aria-label="Trang cá nhân"
-          className="p-0.5 rounded-full hover:ring-2 hover:ring-gray-200 transition-all"
+          className="p-0.5 rounded-full hover:ring-2 hover:ring-border transition-all"
         >
           <Avatar src={user?.avatar} fallback={user?.name || "U"} size="sm" />
         </Link>

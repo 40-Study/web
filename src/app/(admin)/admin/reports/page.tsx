@@ -24,10 +24,10 @@ const STATUS_LABEL: Record<string, string> = { ...ORDER_STATUS_LABEL, failed: "T
 
 function MetricCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <article className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
-      {hint && <p className="mt-1 text-xs text-gray-400">{hint}</p>}
+    <article className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-bold text-foreground">{value}</p>
+      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </article>
   );
 }
@@ -54,19 +54,19 @@ export default function AdminReportsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+        <h1 className="text-2xl font-bold text-foreground">
           Báo cáo doanh thu nền tảng
         </h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-1 text-sm text-muted-foreground">
           Doanh thu thật tính trực tiếp từ đơn hàng — không phải ví của người xem báo cáo.
         </p>
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        <p className="mt-1 text-xs text-muted-foreground">
           Số liệu tính theo đơn tạo trong kỳ đã chọn.
         </p>
       </div>
 
       {/* Filter khoảng thời gian */}
-      <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+      <section className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
         <div className="flex gap-2">
           {(["7days", "30days", "90days"] as PeriodFilter[]).map((p) => (
             <button
@@ -75,7 +75,7 @@ export default function AdminReportsPage() {
               className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
                 period === p
                   ? "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
-                  : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                  : "bg-muted text-muted-foreground"
               }`}
             >
               {PERIOD_DAYS[p]} ngày gần nhất
@@ -114,12 +114,12 @@ export default function AdminReportsPage() {
             </section>
 
             {/* Phân bổ theo trạng thái */}
-            <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+            <section className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
               <h2 className="mb-3 text-base font-semibold">Phân bổ theo trạng thái</h2>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {Object.entries(report.by_status).map(([status, count]) => (
-                  <div key={status} className="rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
-                    <p className="text-xs text-gray-500">{STATUS_LABEL[status] ?? status}</p>
+                  <div key={status} className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-xs text-muted-foreground">{STATUS_LABEL[status] ?? status}</p>
                     <p className="text-lg font-semibold">{count}</p>
                   </div>
                 ))}
@@ -143,22 +143,22 @@ function PlatformFeeSettingCard() {
   const currentPercent = Number(data?.platform_fee_percent ?? 0);
 
   return (
-    <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+    <section className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
       <h2 className="mb-1 text-base font-semibold">Phí nền tảng hiện hành</h2>
-      <p className="mb-3 text-xs text-gray-500">
+      <p className="mb-3 text-xs text-muted-foreground">
         % áp dụng cho đơn thanh toán SAU thời điểm lưu — không ảnh hưởng đơn đã hoàn tất trước đó
         (mỗi đơn chốt % ngay lúc thanh toán).
       </p>
 
       {isLoading ? (
-        <p className="text-sm text-gray-400">Đang tải...</p>
+        <p className="text-sm text-muted-foreground">Đang tải...</p>
       ) : (
         <div className="flex items-center gap-3">
-          <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <span className="text-2xl font-bold text-foreground">
             {currentPercent}%
           </span>
           {/* Nơi sửa duy nhất là trang cấu hình hệ thống (phase 5). */}
-          <Link href="/admin/settings" className="text-sm font-medium text-primary-700 hover:underline">
+          <Link href="/admin/settings" className="text-sm font-medium text-primary-700 hover:underline dark:text-primary-300">
             Chỉnh sửa tại Cấu hình hệ thống
           </Link>
         </div>

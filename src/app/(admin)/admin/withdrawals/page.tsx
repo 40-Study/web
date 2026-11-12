@@ -169,14 +169,14 @@ function AdminWithdrawalsContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Rút tiền giảng viên</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-foreground">Rút tiền giảng viên</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Duyệt, từ chối, và xác nhận đã chuyển khoản cho các yêu cầu rút tiền của giảng viên.
         </p>
       </div>
 
       {isNegativeError && (
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-red-600 dark:text-red-400">
           Không tải được danh sách giảng viên có số dư âm — kiểm tra lại cột &quot;Số dư hiện tại&quot; trước khi duyệt.
         </p>
       )}
@@ -200,7 +200,7 @@ function AdminWithdrawalsContent() {
       )}
 
       {/* Filters */}
-      <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+      <section className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
         <div className="grid gap-3 sm:grid-cols-2">
           <Select
             value={status || "ALL"}
@@ -218,7 +218,7 @@ function AdminWithdrawalsContent() {
               ))}
             </SelectContent>
           </Select>
-          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-center text-sm text-muted-foreground">
             {teacherId ? (
               <span className="flex items-center gap-2">
                 Giảng viên: <strong>{teacherFilterLabel ?? shortId(teacherId)}</strong>
@@ -242,10 +242,10 @@ function AdminWithdrawalsContent() {
         emptyTitle="Không có yêu cầu rút tiền nào"
         emptyDescription="Chưa có yêu cầu khớp bộ lọc hiện tại."
       >
-        <section className="overflow-hidden rounded-xl border bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+        <section className="overflow-hidden rounded-xl border bg-card shadow-sm dark:border-gray-800">
           <div className="overflow-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-900">
+              <thead className="bg-muted/50">
                 <tr>
                   <th className="px-4 py-3 text-left">Giảng viên</th>
                   <th className="px-4 py-3 text-left">Số tiền</th>
@@ -256,7 +256,7 @@ function AdminWithdrawalsContent() {
                   <th className={`px-4 py-3 text-left ${STICKY_ACTION_HEAD}`}>Hành động</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              <tbody className="divide-y divide-border">
                 {items.map((w) => {
                   const teacherBalance = Number(w.teacher_available_balance);
                   const isNegative = teacherBalance < 0;
@@ -271,10 +271,10 @@ function AdminWithdrawalsContent() {
                         >
                           {w.teacher_name || w.teacher_email}
                         </button>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{w.teacher_email}</div>
+                        <div className="text-xs text-muted-foreground">{w.teacher_email}</div>
                       </td>
                       <td className="px-4 py-3 font-medium">{formatWithdrawalAmount(w.amount)}</td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                      <td className="px-4 py-3 text-muted-foreground">
                         {w.bank_name ? (
                           <>
                             <div>{w.bank_name}</div>
@@ -291,13 +291,13 @@ function AdminWithdrawalsContent() {
                           {getWithdrawalStatusLabel(w.status)}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-gray-500">{formatDate(w.created_at)}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{formatDate(w.created_at)}</td>
                       <td className="px-4 py-3">
                         <span
                           className={
                             isNegative
-                              ? "flex items-center gap-1 font-medium text-red-600"
-                              : "text-gray-600 dark:text-gray-400"
+                              ? "flex items-center gap-1 font-medium text-red-600 dark:text-red-400"
+                              : "text-muted-foreground"
                           }
                         >
                           {isNegative && <AlertTriangle className="h-3.5 w-3.5" />}
@@ -340,7 +340,7 @@ function AdminWithdrawalsContent() {
 
         {/* Pagination */}
         {data && data.total_pages > 1 && (
-          <div className="flex items-center justify-between px-1 text-sm text-gray-500">
+          <div className="flex items-center justify-between px-1 text-sm text-muted-foreground">
             <span>
               Trang {data.page}/{data.total_pages} — {data.total_count} yêu cầu
             </span>
@@ -408,7 +408,7 @@ function AdminWithdrawalsContent() {
           </DialogDescription>
           <div className="mt-2">
             <label htmlFor="reject-reason" className="mb-1 block text-sm font-medium">
-              Lý do từ chối <span className="text-red-600">*</span>
+              Lý do từ chối <span className="text-red-600 dark:text-red-400">*</span>
             </label>
             <textarea
               id="reject-reason"
@@ -417,7 +417,7 @@ function AdminWithdrawalsContent() {
               maxLength={REASON_MAX_LEN}
               rows={3}
               placeholder="Ví dụ: Thông tin ngân hàng không khớp hồ sơ giảng viên"
-              className="w-full rounded-xl border border-slate-200 bg-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-border"
+              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-border"
             />
             <p className="mt-1 text-right text-xs text-muted-foreground">{rejectReason.length}/{REASON_MAX_LEN}</p>
           </div>
@@ -448,7 +448,7 @@ function AdminWithdrawalsContent() {
           </DialogDescription>
           <div className="mt-2">
             <label htmlFor="transaction-id" className="mb-1 block text-sm font-medium">
-              Mã giao dịch ngân hàng <span className="text-red-600">*</span>
+              Mã giao dịch ngân hàng <span className="text-red-600 dark:text-red-400">*</span>
             </label>
             <Input
               id="transaction-id"

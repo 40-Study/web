@@ -40,10 +40,10 @@ const TAB_EMPTY_MESSAGE: Record<CourseStatus, string> = {
 };
 
 const CARD_STATUS_BADGE: Partial<Record<CourseStatus, { label: string; className: string }>> = {
-  draft: { label: "BẢN NHÁP", className: "bg-orange-100 text-orange-700 border-orange-200" },
-  pending_review: { label: "CHỜ DUYỆT", className: "bg-amber-100 text-amber-700 border-amber-200" },
-  rejected: { label: "BỊ TỪ CHỐI", className: "bg-red-100 text-red-700 border-red-200" },
-  archived: { label: "LƯU TRỮ", className: "bg-slate-100 text-slate-600 border-slate-200" },
+  draft: { label: "BẢN NHÁP", className: "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-500/30" },
+  pending_review: { label: "CHỜ DUYỆT", className: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30" },
+  rejected: { label: "BỊ TỪ CHỐI", className: "bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/30" },
+  archived: { label: "LƯU TRỮ", className: "bg-muted text-muted-foreground border-border" },
 };
 
 interface Course {
@@ -135,11 +135,11 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (course: C
   return (
     <Card className={cn("overflow-hidden hover:shadow-md transition-shadow group", needsWork && "border-dashed")}>
       {/* Thumbnail */}
-      <div className="relative aspect-video bg-gray-100">
+      <div className="relative aspect-video bg-muted">
         {course.thumbnail ? (
           <SafeImage src={course.thumbnail} alt={course.title} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+          <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
             <FileEdit className="w-8 h-8 text-gray-200" />
           </div>
         )}
@@ -187,7 +187,7 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (course: C
               <Users className="w-3.5 h-3.5" />
               {course.students}
             </span>
-            <span className="ml-auto font-medium text-gray-900">
+            <span className="ml-auto font-medium text-foreground">
               {course.price ? formatCurrency(course.price) : "Miễn phí"}
             </span>
           </div>
@@ -195,7 +195,7 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (course: C
 
         {/* Missing items for draft */}
         {needsWork && course.missingItems && (
-          <p className="text-[11px] text-orange-600">{course.missingItems}</p>
+          <p className="text-[11px] text-orange-600 dark:text-orange-400">{course.missingItems}</p>
         )}
 
         {/* Action buttons */}

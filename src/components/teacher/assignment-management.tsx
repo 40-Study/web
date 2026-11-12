@@ -93,26 +93,26 @@ function getStatusConfig(status: SubmissionStatus) {
     case "submitted":
       return {
         label: "Đã nộp",
-        color: "bg-blue-100 text-blue-700",
+        color: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
         icon: CheckCircle2,
       };
     case "graded":
       return {
         label: "Đã chấm",
-        color: "bg-green-100 text-green-700",
+        color: "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300",
         icon: CheckCircle2,
       };
     case "late":
       return {
         label: "Nộp muộn",
-        color: "bg-yellow-100 text-yellow-700",
+        color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-300",
         icon: Clock,
       };
     case "not_submitted":
     default:
       return {
         label: "Chưa nộp",
-        color: "bg-red-100 text-red-700",
+        color: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300",
         icon: XCircle,
       };
   }
@@ -247,28 +247,28 @@ export function AssignmentManagement({
           icon={<Users className="h-5 w-5" />}
           label="Tổng học viên"
           value={assignment.totalStudents}
-          color="bg-gray-100 text-gray-700"
+          color="bg-muted text-foreground"
         />
         <StatCard
           icon={<CheckCircle2 className="h-5 w-5" />}
           label="Đã nộp"
           value={stats.submitted}
           subValue={`${Math.round((stats.submitted / assignment.totalStudents) * 100)}%`}
-          color="bg-blue-100 text-blue-700"
+          color="bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"
         />
         <StatCard
           icon={<XCircle className="h-5 w-5" />}
           label="Chưa nộp"
           value={stats.notSubmitted}
           subValue={`${Math.round((stats.notSubmitted / assignment.totalStudents) * 100)}%`}
-          color="bg-red-100 text-red-700"
+          color="bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300"
         />
         <StatCard
           icon={<CheckCircle2 className="h-5 w-5" />}
           label="Đã chấm điểm"
           value={stats.graded}
           subValue={`${Math.round((stats.graded / assignment.totalStudents) * 100)}%`}
-          color="bg-green-100 text-green-700"
+          color="bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300"
         />
       </div>
 
@@ -336,7 +336,7 @@ export function AssignmentManagement({
                     key={submission.studentId}
                     className={cn(
                       "border-t hover:bg-muted/30 transition-colors",
-                      selectedStudents.has(submission.studentId) && "bg-primary-50"
+                      selectedStudents.has(submission.studentId) && "bg-primary-50 dark:bg-primary-500/10"
                     )}
                   >
                     <td className="p-3">
@@ -359,7 +359,7 @@ export function AssignmentManagement({
                             <ChevronRight className="h-4 w-4" />
                           )}
                         </button>
-                        <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-medium text-sm">
+                        <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-medium text-sm dark:bg-primary-500/15 dark:text-primary-300">
                           {submission.studentName.charAt(0)}
                         </div>
                         <span className="font-medium">{submission.studentName}</span>
@@ -411,7 +411,7 @@ export function AssignmentManagement({
                                 setSelectedStudents(new Set([submission.studentId]));
                                 setReminderModalOpen(true);
                               }}
-                              className="gap-1 text-yellow-600 hover:text-yellow-700"
+                              className="gap-1 text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300"
                             >
                               <Bell className="h-4 w-4" />
                               Nhắc nhở
@@ -441,7 +441,7 @@ export function AssignmentManagement({
                           </div>
                           <div>
                             {submission.status === "not_submitted" && (
-                              <div className="flex items-center gap-2 text-yellow-600">
+                              <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
                                 <AlertTriangle className="h-4 w-4" />
                                 Học viên chưa nộp bài
                               </div>

@@ -85,7 +85,7 @@ export function QuizSettingsEditor({ quizId, onChange }: QuizSettingsEditorProps
 
   if (isError) {
     return (
-      <p role="alert" className="text-sm text-red-600">
+      <p role="alert" className="text-sm text-red-600 dark:text-red-400">
         Không tải được cài đặt bài trắc nghiệm (điểm đạt, số lần làm). Bạn vẫn có thể sửa tiêu đề.
       </p>
     );

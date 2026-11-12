@@ -66,7 +66,7 @@ export function ExerciseSubmissionsPanel({ exerciseId, exerciseTitle, open, onOp
 
         {selected ? (
           testCases.isError ? (
-            <p role="alert" className="text-sm text-red-600">Không tải được bộ test của bài.</p>
+            <p role="alert" className="text-sm text-red-600 dark:text-red-400">Không tải được bộ test của bài.</p>
           ) : (
             <ExerciseSubmissionDetail
               submission={selected}
@@ -80,7 +80,7 @@ export function ExerciseSubmissionsPanel({ exerciseId, exerciseTitle, open, onOp
             <Loader2 className="h-4 w-4 animate-spin" /> Đang tải bài nộp…
           </p>
         ) : list.isError ? (
-          <div role="alert" className="space-y-2 py-4 text-sm text-red-600">
+          <div role="alert" className="space-y-2 py-4 text-sm text-red-600 dark:text-red-400">
             <p>Không tải được danh sách bài nộp.</p>
             <Button variant="outline" size="sm" onClick={() => void list.refetch()}>Thử lại</Button>
           </div>
@@ -98,7 +98,7 @@ export function ExerciseSubmissionsPanel({ exerciseId, exerciseTitle, open, onOp
                     type="button"
                     onClick={() => setSelected(sub)}
                     aria-label={`Xem bài nộp của ${studentName(sub)} lúc ${formatSubmittedAt(sub.created_at)}: ${verdictLabel(sub.verdict)}, ${submissionScore(sub)}/100 điểm, ${sub.test_cases_passed}/${sub.total_test_cases} test đạt`}
-                    className="grid w-full grid-cols-2 gap-2 rounded-lg border px-2 py-2 text-left text-xs hover:bg-gray-50 sm:grid-cols-[minmax(0,2fr)_8rem_4rem_4rem_5rem_8rem] sm:items-center"
+                    className="grid w-full grid-cols-2 gap-2 rounded-lg border px-2 py-2 text-left text-xs hover:bg-muted/50 sm:grid-cols-[minmax(0,2fr)_8rem_4rem_4rem_5rem_8rem] sm:items-center"
                   >
                     <span className="col-span-2 min-w-0 sm:col-span-1">
                       <span className="block truncate font-medium">{studentName(sub)}</span>

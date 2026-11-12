@@ -349,23 +349,23 @@ function VideoLessonContent({
         />
       )}
 
-      <div className="bg-white rounded-2xl shadow-sm px-4 sm:px-6 pt-5 pb-4">
+      <div className="bg-card rounded-2xl shadow-sm px-4 sm:px-6 pt-5 pb-4">
         {/* A7: xếp dọc dưới sm — nút "Bài tiếp theo" shrink-0 cạnh tiêu đề dài
             từng tràn ra ngoài khung ở 390px. */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
           <div className="min-w-0">
-            <h1 className="text-xl font-bold text-gray-900 break-words">
+            <h1 className="text-xl font-bold text-foreground break-words">
               {currentLesson?.title ?? "Đang tải bài học..."}
             </h1>
             {/* A8 (QA vòng 2, N8): trước đây hiện "4.8/5.0 · 0 học viên" — điểm
                 ghi cứng từ seed và số học viên của GIẢNG VIÊN (API không trả,
                 luôn 0). Nay: điểm chỉ hiện khi có đánh giá thật, số học viên là
                 của khoá. Bỏ chữ "Cập nhật gần đây" không có dữ liệu nào đứng sau. */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-sm text-gray-500">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-sm text-muted-foreground">
               {course.reviewCount > 0 ? (
-                <div className="flex items-center gap-1 bg-gray-100 rounded-full px-2.5 py-0.5 whitespace-nowrap">
+                <div className="flex items-center gap-1 bg-muted rounded-full px-2.5 py-0.5 whitespace-nowrap">
                   <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-                  <span className="font-medium text-gray-700">{course.rating.toFixed(1)}/5</span>
+                  <span className="font-medium text-foreground">{course.rating.toFixed(1)}/5</span>
                   <span>({course.reviewCount} đánh giá)</span>
                 </div>
               ) : (
@@ -384,7 +384,7 @@ function VideoLessonContent({
             </Link>
           )}
         </div>
-        <div className="mt-4 border-t border-gray-100 pt-1">
+        <div className="mt-4 border-t border-border pt-1">
           <PlayerTabs course={course} lessonQuizzes={lessonQuizzes} />
         </div>
       </div>
@@ -520,7 +520,7 @@ export default function CourseLessonPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted/50">
         <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
       </div>
     );
@@ -531,7 +531,7 @@ export default function CourseLessonPage() {
   if (courseError) {
     if (courseError instanceof NotFoundError) notFound();
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-muted/50 px-4">
         <LessonLoadError onRetry={() => refetchCourse()} />
       </div>
     );
@@ -688,16 +688,16 @@ export default function CourseLessonPage() {
         const percentage = submittedAttempt.percentage ?? 0;
         return (
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
-            <div className="bg-white rounded-2xl shadow-sm p-6 space-y-1">
-              <h2 className="text-xl font-bold text-gray-900">
+            <div className="bg-card rounded-2xl shadow-sm p-6 space-y-1">
+              <h2 className="text-xl font-bold text-foreground">
                 {submittedAttempt.is_passed ? "Bạn đã đạt bài kiểm tra này" : "Bạn chưa đạt bài kiểm tra này"}
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Điểm: {Math.round(percentage)}% · Đúng {submittedAttempt.answers.filter((a) => a.is_correct === true).length}/{submittedAttempt.answers.length} câu
               </p>
               <button
                 onClick={handleRetryQuiz}
-                className="mt-3 px-4 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50"
+                className="mt-3 px-4 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 dark:text-blue-400 dark:border-blue-500/30 dark:hover:bg-blue-500/10"
               >
                 Làm lại
               </button>
@@ -722,19 +722,19 @@ export default function CourseLessonPage() {
       // Quiz start screen
       return (
         <div className="flex-1 overflow-y-auto p-5 flex items-center justify-center">
-          <div className="text-center bg-white rounded-2xl shadow-sm p-8 max-w-md">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="text-center bg-card rounded-2xl shadow-sm p-8 max-w-md">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 dark:bg-blue-500/15">
               <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">
+            <h2 className="text-xl font-bold text-foreground mb-2">
               {lessonQuiz?.title || primaryContent?.title || "Bài kiểm tra"}
             </h2>
             {lessonQuiz?.description && (
-              <p className="text-gray-500 mb-4">{lessonQuiz.description}</p>
+              <p className="text-muted-foreground mb-4">{lessonQuiz.description}</p>
             )}
-            <div className="flex flex-col gap-2 text-sm text-gray-500 mb-6">
+            <div className="flex flex-col gap-2 text-sm text-muted-foreground mb-6">
               {lessonQuiz?.time_limit_minutes ? (
                 <span>Thời gian: {lessonQuiz.time_limit_minutes} phút</span>
               ) : null}
@@ -760,7 +760,7 @@ export default function CourseLessonPage() {
             {lessonQuiz?.id && (
               <Link
                 href={`/quizzes/${lessonQuiz.id}`}
-                className="mt-3 block text-sm text-blue-600 hover:underline"
+                className="mt-3 block text-sm text-blue-600 hover:underline dark:text-blue-400"
               >
                 Mở trang làm bài riêng (có chế độ luyện tập)
               </Link>
@@ -792,7 +792,7 @@ export default function CourseLessonPage() {
               <ChevronRight className="w-4 h-4" />
             </Link>
           )}
-          <div className="bg-white rounded-2xl shadow-sm px-4 sm:px-6 pb-4">
+          <div className="bg-card rounded-2xl shadow-sm px-4 sm:px-6 pb-4">
             <PlayerTabs course={course} lessonQuizzes={tabQuizzes} />
           </div>
         </div>
@@ -855,7 +855,7 @@ export default function CourseLessonPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-muted/50">
       <PlayerHeader
         courseTitle={course.title}
         courseSlug={courseSlug}

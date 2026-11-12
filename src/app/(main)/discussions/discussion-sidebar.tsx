@@ -26,10 +26,10 @@ export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, 
   return (
     <div className="space-y-5">
       {/* Trending categories */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="w-4 h-4 text-primary-500" />
-          <h3 className="text-sm font-semibold text-slate-800">Chủ đề nổi bật</h3>
+          <h3 className="text-sm font-semibold text-foreground">Chủ đề nổi bật</h3>
         </div>
         <div className="space-y-1">
           <button
@@ -37,12 +37,12 @@ export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, 
             className={cn(
               "w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors",
               !activeCategory
-                ? "bg-primary-50 text-primary-700 font-medium"
-                : "text-slate-600 hover:bg-slate-50"
+                ? "bg-primary-50 text-primary-700 font-medium dark:bg-primary-500/10 dark:text-primary-300"
+                : "text-muted-foreground hover:bg-muted/50"
             )}
           >
             <span>Tất cả</span>
-            <span className="text-xs text-slate-400">{total ?? "–"}</span>
+            <span className="text-xs text-muted-foreground">{total ?? "–"}</span>
           </button>
           {DISCUSSION_CATEGORIES.map((cat) => (
             <button
@@ -51,14 +51,14 @@ export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, 
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors",
                 activeCategory === cat.value
-                  ? "bg-primary-50 text-primary-700 font-medium"
-                  : "text-slate-600 hover:bg-slate-50"
+                  ? "bg-primary-50 text-primary-700 font-medium dark:bg-primary-500/10 dark:text-primary-300"
+                  : "text-muted-foreground hover:bg-muted/50"
               )}
             >
               <span>
                 {cat.emoji} {cat.label}
               </span>
-              <span className="text-xs text-slate-400">{categoryCounts[cat.value] ?? "–"}</span>
+              <span className="text-xs text-muted-foreground">{categoryCounts[cat.value] ?? "–"}</span>
             </button>
           ))}
         </div>
@@ -66,10 +66,10 @@ export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, 
 
       {/* Active members */}
       {members.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
           <div className="flex items-center gap-2 mb-4">
             <Users className="w-4 h-4 text-primary-500" />
-            <h3 className="text-sm font-semibold text-slate-800">Thành viên tích cực</h3>
+            <h3 className="text-sm font-semibold text-foreground">Thành viên tích cực</h3>
           </div>
           <div className="space-y-3">
             {members.map((m, index) => {
@@ -80,17 +80,17 @@ export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, 
                   {m.avatar_url ? (
                     <img src={m.avatar_url} alt={name} className="w-8 h-8 rounded-full object-cover" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-xs">
+                    <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-xs dark:bg-primary-500/15 dark:text-primary-300">
                       {initials}
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-800 truncate">
+                    <p className="text-sm font-medium text-foreground truncate">
                       {name}
                     </p>
-                    <p className="text-xs text-slate-400">{m.points} điểm</p>
+                    <p className="text-xs text-muted-foreground">{m.points} điểm</p>
                   </div>
-                  <span className="text-xs font-bold text-slate-400">#{m.rank}</span>
+                  <span className="text-xs font-bold text-muted-foreground">#{m.rank}</span>
                 </div>
               );
             })}

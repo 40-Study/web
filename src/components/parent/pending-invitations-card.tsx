@@ -56,7 +56,7 @@ function InvitationItem({
   const expiryInfo = invitation.expires_at ? getExpiryInfo(invitation.expires_at) : null;
 
   return (
-    <div className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-primary-200 hover:shadow-sm transition-all">
+    <div className="p-5 rounded-2xl bg-card border border-border hover:border-primary-200 hover:shadow-sm transition-all dark:hover:border-primary-500/30">
       <div className="flex items-start gap-4">
         {/* Student avatar */}
         <div className="relative">
@@ -77,33 +77,33 @@ function InvitationItem({
               </span>
             </div>
           )}
-          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow">
-            <Users className="w-3.5 h-3.5 text-slate-600" />
+          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-card rounded-full flex items-center justify-center shadow">
+            <Users className="w-3.5 h-3.5 text-muted-foreground" />
           </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-slate-900">
+          <p className="font-medium text-foreground">
             {invitation.student?.full_name || invitation.student?.user_name || "Học viên"}
           </p>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             mời bạn làm{" "}
-            <span className="font-medium text-slate-900">
+            <span className="font-medium text-foreground">
               {relationshipLabels[invitation.relationship] || invitation.relationship}
             </span>
           </p>
 
           {/* Meta */}
           <div className="flex items-center gap-3 mt-2">
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-muted-foreground">
               {formatTimeAgo(invitation.created_at)}
             </span>
             {expiryInfo && (
               <span
                 className={cn(
                   "flex items-center gap-1 text-xs",
-                  expiryInfo.urgent ? "text-amber-600" : "text-slate-400"
+                  expiryInfo.urgent ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"
                 )}
               >
                 {expiryInfo.urgent && <AlertTriangle className="w-3 h-3" />}
@@ -115,8 +115,8 @@ function InvitationItem({
 
           {/* Message */}
           {invitation.message && (
-            <div className="mt-3 p-3 bg-slate-50 rounded-xl">
-              <p className="text-sm text-slate-600 italic">&ldquo;{invitation.message}&rdquo;</p>
+            <div className="mt-3 p-3 bg-muted/50 rounded-xl">
+              <p className="text-sm text-muted-foreground italic">&ldquo;{invitation.message}&rdquo;</p>
             </div>
           )}
         </div>
@@ -144,15 +144,15 @@ function InvitationItem({
               variant="outline"
               onClick={() => setConfirmReject(true)}
               disabled={isResponding}
-              className="flex-1 h-11 rounded-full text-slate-600 hover:text-red-600 hover:border-red-200 hover:bg-red-50"
+              className="flex-1 h-11 rounded-full text-muted-foreground hover:text-red-600 hover:border-red-200 hover:bg-red-50 dark:hover:text-red-400 dark:hover:border-red-500/30 dark:hover:bg-red-500/10"
             >
               <XCircle className="w-4 h-4 mr-2" />
               Từ chối
             </Button>
           </>
         ) : (
-          <div className="w-full p-3 bg-red-50 rounded-xl">
-            <p className="text-sm text-red-700 mb-3">
+          <div className="w-full p-3 bg-red-50 rounded-xl dark:bg-red-500/10">
+            <p className="text-sm text-red-700 mb-3 dark:text-red-300">
               Bạn có chắc muốn từ chối lời mời này? Hành động này không thể hoàn tác.
             </p>
             <div className="flex gap-2">
@@ -210,9 +210,9 @@ export function PendingInvitationsCard({ className }: PendingInvitationsCardProp
 
   if (isLoading) {
     return (
-      <div className={cn("p-6 rounded-2xl bg-white border border-slate-200", className)}>
+      <div className={cn("p-6 rounded-2xl bg-card border border-border", className)}>
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
       </div>
     );
@@ -226,8 +226,8 @@ export function PendingInvitationsCard({ className }: PendingInvitationsCardProp
     <div className={cn("space-y-4", className)}>
       {/* Header */}
       <div className="flex items-center gap-2">
-        <h3 className="text-lg font-medium text-slate-900">Lời mời đang chờ</h3>
-        <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">
+        <h3 className="text-lg font-medium text-foreground">Lời mời đang chờ</h3>
+        <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-sm font-medium dark:bg-amber-500/15 dark:text-amber-300">
           {invitations.length}
         </span>
       </div>

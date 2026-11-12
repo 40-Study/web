@@ -11,10 +11,10 @@ export default function DevicesPage() {
   if (isLoading) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-8">
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Thiết bị đăng nhập</h1>
+        <h1 className="mb-6 text-2xl font-bold text-foreground">Thiết bị đăng nhập</h1>
         <div className="animate-pulse space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 rounded-xl bg-gray-200" />
+            <div key={i} className="h-20 rounded-xl bg-muted-foreground/20" />
           ))}
         </div>
       </div>
@@ -26,7 +26,7 @@ export default function DevicesPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Thiết bị đăng nhập</h1>
+        <h1 className="text-2xl font-bold text-foreground">Thiết bị đăng nhập</h1>
         {devices.length > 1 && (
           <LogoutAllButton />
         )}
@@ -38,18 +38,18 @@ export default function DevicesPage() {
           return (
             <div
               key={device.device_id}
-              className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm"
+              className="flex items-center justify-between rounded-xl bg-card p-4 shadow-sm"
             >
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-900">{label}</span>
+                  <span className="font-medium text-foreground">{label}</span>
                   {device.is_current && (
-                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-500/15 dark:text-green-300">
                       Thiết bị này
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {sessionLabel && `${sessionLabel} • `}Đăng nhập lúc{" "}
                   {formatVnDateTime(device.logged_in_at)}
                 </p>
@@ -59,8 +59,8 @@ export default function DevicesPage() {
         })}
 
         {devices.length === 0 && (
-          <div className="rounded-xl bg-white p-8 text-center shadow-sm">
-            <p className="text-gray-500">Không có thiết bị nào</p>
+          <div className="rounded-xl bg-card p-8 text-center shadow-sm">
+            <p className="text-muted-foreground">Không có thiết bị nào</p>
           </div>
         )}
       </div>

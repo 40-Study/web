@@ -38,7 +38,7 @@ export function CourseBasicInfoStep({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">Thông tin cơ bản</h2>
+        <h2 className="text-xl font-semibold text-foreground">Thông tin cơ bản</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Thiết lập thông tin cốt lõi cho khoá học của bạn
         </p>
@@ -79,14 +79,14 @@ export function CourseBasicInfoStep({
                 className={cn(
                   "relative flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all text-center",
                   selected
-                    ? "border-primary-500 bg-primary-50 shadow-sm"
-                    : "border-gray-200 hover:border-gray-300 bg-white"
+                    ? "border-primary-500 bg-primary-50 shadow-sm dark:bg-primary-500/10"
+                    : "border-border hover:border-input bg-card"
                 )}
               >
                 <div
                   className={cn(
                     "w-11 h-11 rounded-full flex items-center justify-center",
-                    selected ? "bg-primary-100 text-primary-600" : "bg-gray-100 text-gray-400"
+                    selected ? "bg-primary-100 text-primary-600 dark:bg-primary-500/15 dark:text-primary-400" : "bg-muted text-muted-foreground"
                   )}
                 >
                   <Icon className="w-5 h-5" />

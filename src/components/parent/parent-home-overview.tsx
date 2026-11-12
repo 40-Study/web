@@ -30,11 +30,11 @@ import { formatStudyMinutes } from "@/lib/format-study-time";
 
 function StatPill({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | number }) {
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2">
-      <Icon className="h-4 w-4 text-primary-600 shrink-0" />
+    <div className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2">
+      <Icon className="h-4 w-4 text-primary-600 shrink-0 dark:text-primary-400" />
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-gray-900 truncate">{value}</p>
-        <p className="text-[11px] text-gray-500 truncate">{label}</p>
+        <p className="text-sm font-semibold text-foreground truncate">{value}</p>
+        <p className="text-[11px] text-muted-foreground truncate">{label}</p>
       </div>
     </div>
   );
@@ -56,19 +56,19 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
   const recentAttendance = attendanceData?.records ?? [];
 
   return (
-    <Card className="p-5 bg-white border border-gray-100">
+    <Card className="p-5 bg-card border border-border">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3 min-w-0">
           {child.avatar_url ? (
             <Image src={child.avatar_url} alt={displayName} width={44} height={44} className="rounded-full object-cover shrink-0" />
           ) : (
-            <div className="w-11 h-11 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-              <span className="text-base font-semibold text-primary-700">{displayName.charAt(0).toUpperCase()}</span>
+            <div className="w-11 h-11 rounded-full bg-primary-100 flex items-center justify-center shrink-0 dark:bg-primary-500/15">
+              <span className="text-base font-semibold text-primary-700 dark:text-primary-300">{displayName.charAt(0).toUpperCase()}</span>
             </div>
           )}
           <div className="min-w-0">
-            <p className="font-semibold text-gray-900 truncate">{displayName}</p>
-            <p className="text-xs text-gray-500">Con của tôi</p>
+            <p className="font-semibold text-foreground truncate">{displayName}</p>
+            <p className="text-xs text-muted-foreground">Con của tôi</p>
           </div>
         </div>
         <Link href={`/parent/children/${child.id}`}>
@@ -79,7 +79,7 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
       </div>
 
       {loadingOverview ? (
-        <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>
+        <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : overview ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
           <StatPill icon={BookOpen} label="Đang học" value={inProgressCourseCount(overview)} />
@@ -88,26 +88,26 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
           <StatPill icon={Flame} label="Chuỗi ngày học" value={overview.current_streak} />
         </div>
       ) : (
-        <p className="text-sm text-gray-400 mb-4">Chưa có dữ liệu tổng quan.</p>
+        <p className="text-sm text-muted-foreground mb-4">Chưa có dữ liệu tổng quan.</p>
       )}
 
-      <div className="grid sm:grid-cols-2 gap-4 pt-3 border-t border-gray-100">
+      <div className="grid sm:grid-cols-2 gap-4 pt-3 border-t border-border">
         {/* Bài tập sắp hạn */}
         <div>
           <div className="flex items-center gap-1.5 mb-2">
             <ClipboardList className="h-4 w-4 text-amber-500" />
-            <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Bài tập sắp hạn</h4>
+            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wide">Bài tập sắp hạn</h4>
           </div>
           {loadingAssignments ? (
-            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           ) : upcomingAssignments.length === 0 ? (
-            <p className="text-xs text-gray-400">Không có bài tập nào sắp tới hạn.</p>
+            <p className="text-xs text-muted-foreground">Không có bài tập nào sắp tới hạn.</p>
           ) : (
             <ul className="space-y-1.5">
               {upcomingAssignments.map((a) => (
-                <li key={a.id} className="text-xs text-gray-600 flex items-center justify-between gap-2">
+                <li key={a.id} className="text-xs text-muted-foreground flex items-center justify-between gap-2">
                   <span className="truncate">{a.title}</span>
-                  <span className="text-gray-400 shrink-0">
+                  <span className="text-muted-foreground shrink-0">
                     {a.due_date ? new Date(a.due_date).toLocaleDateString("vi-VN") : ""}
                   </span>
                 </li>
@@ -116,12 +116,12 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
           )}
           {!loadingAssignments && overdueAssignments.length > 0 && (
             <div className="mt-3" data-testid="overdue-assignments">
-              <p className="text-xs font-semibold text-red-600 mb-1.5">Quá hạn ({overdue.length})</p>
+              <p className="text-xs font-semibold text-red-600 mb-1.5 dark:text-red-400">Quá hạn ({overdue.length})</p>
               <ul className="space-y-1.5">
                 {overdueAssignments.map((a) => (
-                  <li key={a.id} className="text-xs text-gray-600 flex items-center justify-between gap-2">
+                  <li key={a.id} className="text-xs text-muted-foreground flex items-center justify-between gap-2">
                     <span className="truncate">{a.title}</span>
-                    <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-red-600">
+                    <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-red-600 dark:bg-red-500/10 dark:text-red-400">
                       Chưa nộp, hạn {new Date(a.due_date!).toLocaleDateString("vi-VN")}
                     </span>
                   </li>
@@ -135,16 +135,16 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
         <div>
           <div className="flex items-center gap-1.5 mb-2">
             <CalendarCheck className="h-4 w-4 text-emerald-500" />
-            <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Điểm danh gần đây</h4>
+            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wide">Điểm danh gần đây</h4>
           </div>
           {loadingAttendance ? (
-            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           ) : recentAttendance.length === 0 ? (
-            <p className="text-xs text-gray-400">Chưa có dữ liệu điểm danh.</p>
+            <p className="text-xs text-muted-foreground">Chưa có dữ liệu điểm danh.</p>
           ) : (
             <ul className="space-y-1.5">
               {recentAttendance.map((r) => (
-                <li key={r.id} className="text-xs text-gray-600 flex items-center justify-between gap-2">
+                <li key={r.id} className="text-xs text-muted-foreground flex items-center justify-between gap-2">
                   <span className="truncate">{r.class_name} — buổi {r.session_number}</span>
                   <ChildAttendanceStatus status={r.status} className="shrink-0" />
                 </li>
@@ -162,20 +162,20 @@ export function ParentHomeOverview() {
   const children = childrenData?.children ?? [];
 
   return (
-    <div className="min-h-screen bg-[#f8f9fb]">
+    <div className="min-h-screen bg-background">
       <div className="page-container py-5 space-y-5">
         <div>
-          <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Con của tôi</h1>
-          <p className="text-sm text-gray-500 mt-1">Tổng quan tiến độ học tập, bài tập và điểm danh của con.</p>
+          <h1 className="text-xl lg:text-2xl font-bold text-foreground">Con của tôi</h1>
+          <p className="text-sm text-muted-foreground mt-1">Tổng quan tiến độ học tập, bài tập và điểm danh của con.</p>
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>
+          <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
         ) : children.length === 0 ? (
-          <Card className="p-10 text-center bg-white border border-gray-100">
+          <Card className="p-10 text-center bg-card border border-border">
             <Users className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-            <p className="text-gray-700 font-medium mb-1">Chưa liên kết với con nào</p>
-            <p className="text-gray-500 text-sm mb-4">
+            <p className="text-foreground font-medium mb-1">Chưa liên kết với con nào</p>
+            <p className="text-muted-foreground text-sm mb-4">
               Vào &quot;Con của tôi&quot; để gửi yêu cầu liên kết theo email của con (con cần xác nhận),
               hoặc chấp nhận lời mời con đã gửi cho bạn.
             </p>

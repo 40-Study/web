@@ -48,23 +48,23 @@ export function ArticleContentView({
   const hasBody = body != null && body.trim() !== "" && safeHtml.trim() !== "";
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium text-primary-600">
+    <div className="bg-card rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium text-primary-600 dark:text-primary-400">
         <span className="inline-flex items-center gap-2">
           <BookOpen className="w-4 h-4" />
           Bài viết
         </span>
         {readingTimeMinutes && readingTimeMinutes > 0 ? (
-          <span className="inline-flex items-center gap-1.5 text-gray-500 font-normal">
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground font-normal">
             <Clock className="w-4 h-4" />
             {readingTimeMinutes} phút đọc
           </span>
         ) : null}
       </div>
       {embedded ? (
-        <h2 className="text-xl font-bold text-gray-900 break-words">{title}</h2>
+        <h2 className="text-xl font-bold text-foreground break-words">{title}</h2>
       ) : (
-        <h1 className="text-xl font-bold text-gray-900 break-words">{title}</h1>
+        <h1 className="text-xl font-bold text-foreground break-words">{title}</h1>
       )}
 
       {hasBody ? (
@@ -72,17 +72,17 @@ export function ArticleContentView({
           data-testid="article-body"
           // relative + isolate + overflow-hidden + contain:paint kẹp mọi phần tử định vị (kể cả `fixed`) lọt qua
           // sanitizer vào trong vùng đọc — contain:paint làm vùng này thành containing block của `fixed`.
-          className="relative isolate overflow-hidden [contain:paint] prose prose-sm sm:prose-base max-w-none break-words text-gray-800"
+          className="relative isolate overflow-hidden [contain:paint] prose prose-sm sm:prose-base max-w-none break-words text-foreground"
           dangerouslySetInnerHTML={{ __html: safeHtml }}
         />
       ) : (
-        <p className="text-sm text-gray-500">{ARTICLE_EMPTY_MESSAGE}</p>
+        <p className="text-sm text-muted-foreground">{ARTICLE_EMPTY_MESSAGE}</p>
       )}
 
       {!embedded && (
         <div className="flex flex-wrap items-center gap-3 pt-1">
           {isDone ? (
-            <span className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg">
+            <span className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg dark:text-green-300 dark:bg-green-500/10">
               <CheckCircle2 className="w-4 h-4" />
               Đã hoàn thành
             </span>

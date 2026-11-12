@@ -113,11 +113,11 @@ export default function TeacherAssignmentsPage() {
         setSelectedAssignmentId("");
       }}
       className={`w-full rounded-lg border p-3 text-left transition-colors ${
-        selectedCourseId === course.id ? "border-primary-500 bg-primary-50" : "hover:bg-gray-50"
+        selectedCourseId === course.id ? "border-primary-500 bg-primary-50 dark:bg-primary-500/10" : "hover:bg-muted/50"
       }`}
     >
       <p className="text-sm font-medium">{course.title}</p>
-      <Badge variant="outline" className={course.isPublished ? "mt-2 border-green-200 text-green-700" : "mt-2"}>
+      <Badge variant="outline" className={course.isPublished ? "mt-2 border-green-200 text-green-700 dark:border-green-500/30 dark:text-green-300" : "mt-2"}>
         {isCourseStatus(course.status) ? COURSE_STATUS_LABEL[course.status] : "Chưa xuất bản"}
       </Badge>
     </button>
@@ -243,7 +243,7 @@ export default function TeacherAssignmentsPage() {
                       type="button"
                       aria-expanded={othersVisible}
                       onClick={() => setShowUnpublished((v) => !v)}
-                      className="w-full pt-2 text-left text-xs font-medium text-muted-foreground hover:text-gray-900"
+                      className="w-full pt-2 text-left text-xs font-medium text-muted-foreground hover:text-foreground"
                     >
                       {othersVisible ? "Ẩn" : "Hiện"} khoá chưa xuất bản ({filteredCourses.others.length})
                     </button>
@@ -284,7 +284,7 @@ export default function TeacherAssignmentsPage() {
                     setSelectedAssignmentId("");
                   }}
                   className={`w-full rounded-lg border p-3 text-left transition-colors ${
-                    selectedSessionId === session.id ? "border-primary-500 bg-primary-50" : "hover:bg-gray-50"
+                    selectedSessionId === session.id ? "border-primary-500 bg-primary-50 dark:bg-primary-500/10" : "hover:bg-muted/50"
                   }`}
                 >
                   <p className="flex items-center gap-2 text-sm font-medium">
@@ -456,7 +456,7 @@ export default function TeacherAssignmentsPage() {
               )}
 
               {selectedSessionId && assignmentsError && (
-                <p className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+                <p className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
                   Không tải được danh sách bài tập. Vui lòng thử lại.
                 </p>
               )}
@@ -484,7 +484,7 @@ export default function TeacherAssignmentsPage() {
               )}
 
               {selectedAssignment && (
-                <div className="rounded-lg border bg-gray-50 p-4">
+                <div className="rounded-lg border bg-muted/50 p-4">
                   <p className="text-sm font-medium">Chi tiết nhanh: {selectedAssignment.title}</p>
                   <div
                     className="prose prose-sm mt-2 max-w-none text-sm text-muted-foreground"

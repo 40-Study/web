@@ -16,11 +16,11 @@ const buttonVariants = cva(
                 // Đỏ đặc chỉ dành cho nút xác nhận cuối trong hộp thoại xoá.
                 destructiveGhost: "text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg dark:text-red-400 dark:hover:bg-red-950/50 dark:hover:text-red-300",
                 // Outline: White with border
-                outline: "border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-lg shadow-xs dark:border-slate-700 dark:bg-transparent dark:text-slate-200 dark:hover:bg-slate-800",
+                outline: "border border-border bg-card hover:bg-muted/50 text-foreground rounded-lg shadow-xs dark:bg-transparent",
                 // Secondary: Light blue
                 secondary: "bg-primary-50 text-primary-700 hover:bg-primary-100 rounded-lg dark:bg-slate-800 dark:text-slate-50 dark:hover:bg-slate-700",
                 // Ghost
-                ghost: "hover:bg-slate-100 text-slate-700 rounded-lg dark:text-slate-200 dark:hover:bg-slate-800",
+                ghost: "hover:bg-muted text-foreground rounded-lg",
                 // Link
                 link: "text-primary-600 underline-offset-4 hover:underline dark:text-primary-400",
             },

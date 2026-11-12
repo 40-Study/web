@@ -89,8 +89,8 @@ export default function CoursesPage() {
         {/* Header: tiêu đề + tìm kiếm */}
         <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="text-h1 text-slate-900 dark:text-slate-50">Khám phá khoá học</h1>
-            <p className="text-body mt-2 text-slate-600 dark:text-slate-400">
+            <h1 className="text-h1 text-foreground">Khám phá khoá học</h1>
+            <p className="text-body mt-2 text-muted-foreground">
               Cập nhật liên tục
             </p>
           </div>
@@ -114,7 +114,7 @@ export default function CoursesPage() {
           />
 
           {!isLoading && (
-            <p className="text-sm text-slate-600 dark:text-slate-400" aria-live="polite">
+            <p className="text-sm text-muted-foreground" aria-live="polite">
               {allCourses.length} khoá học
               {searchQuery && ` cho "${searchQuery}"`}
             </p>

@@ -35,7 +35,7 @@ const privacyOptions: PrivacyOption[] = [
     label: "Hiển thị hồ sơ",
     description: "Ai có thể xem hồ sơ của bạn",
     icon: Eye,
-    iconBg: "bg-blue-50",
+    iconBg: "bg-blue-50 dark:bg-blue-500/10",
     iconColor: "text-blue-500",
     options: [
       { value: "public", label: "Công khai" },
@@ -49,7 +49,7 @@ const privacyOptions: PrivacyOption[] = [
     label: "Trạng thái hoạt động",
     description: "Cho người khác biết khi bạn đang học",
     icon: Users,
-    iconBg: "bg-green-50",
+    iconBg: "bg-green-50 dark:bg-green-500/10",
     iconColor: "text-green-500",
     options: [
       { value: "everyone", label: "Mọi người" },
@@ -64,7 +64,7 @@ const privacyOptions: PrivacyOption[] = [
     label: "Bảng xếp hạng",
     description: "Hiển thị tên bạn trên bảng xếp hạng công khai",
     icon: Trophy,
-    iconBg: "bg-amber-50",
+    iconBg: "bg-amber-50 dark:bg-amber-500/10",
     iconColor: "text-amber-500",
     options: [
       { value: "name", label: "Hiển thị tên" },
@@ -96,8 +96,8 @@ export function PrivacySettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-900">Quyền riêng tư</h2>
-        <p className="text-sm text-gray-500 mt-1">Kiểm soát ai có thể xem thông tin của bạn</p>
+        <h2 className="text-xl font-bold text-foreground">Quyền riêng tư</h2>
+        <p className="text-sm text-muted-foreground mt-1">Kiểm soát ai có thể xem thông tin của bạn</p>
       </div>
 
       <div className={`space-y-3 ${isLoading ? "pointer-events-none opacity-60" : ""}`}>
@@ -106,7 +106,7 @@ export function PrivacySettings() {
           return (
             <div
               key={option.id}
-              className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm"
+              className="bg-card rounded-2xl border border-border p-5 shadow-sm"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -114,8 +114,8 @@ export function PrivacySettings() {
                     <Icon className={`h-5 w-5 ${option.iconColor}`} />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{option.label}</p>
-                    <p className="text-sm text-gray-500">{option.description}</p>
+                    <p className="font-medium text-foreground">{option.label}</p>
+                    <p className="text-sm text-muted-foreground">{option.description}</p>
                   </div>
                 </div>
                 <Select

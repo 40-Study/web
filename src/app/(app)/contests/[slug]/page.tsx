@@ -59,7 +59,7 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5 px-4 py-6 sm:px-6">
-      <Link href="/contests" className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+      <Link href="/contests" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         Tất cả cuộc thi
       </Link>
@@ -73,11 +73,11 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
         <section className="min-w-0 space-y-5">
           <div className="space-y-2">
             <ContestPhaseBadge phase={detail.phase} />
-            <h1 className="break-words text-2xl font-bold text-gray-900">{detail.title}</h1>
-            {detail.description && <p className="whitespace-pre-line break-words text-gray-700">{detail.description}</p>}
+            <h1 className="break-words text-2xl font-bold text-foreground">{detail.title}</h1>
+            {detail.description && <p className="whitespace-pre-line break-words text-foreground">{detail.description}</p>}
           </div>
 
-          <dl className="grid grid-cols-1 gap-3 rounded-2xl border border-gray-200 bg-white p-4 text-sm sm:grid-cols-2">
+          <dl className="grid grid-cols-1 gap-3 rounded-2xl border border-border bg-card p-4 text-sm sm:grid-cols-2">
             <InfoRow icon={CalendarClock} label="Mở lúc" value={formatContestDateTime(detail.start_time)} />
             <InfoRow icon={CalendarClock} label="Đóng lúc" value={formatContestDateTime(detail.end_time)} />
             <InfoRow icon={Clock} label="Thời gian làm bài" value={`${detail.duration_minutes} phút`} />
@@ -89,7 +89,7 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
                 icon={Lock}
                 label="Dành cho học viên khoá"
                 value={
-                  <Link href={`/courses/${encodeURIComponent(detail.course.slug)}`} className="text-primary-700 hover:underline">
+                  <Link href={`/courses/${encodeURIComponent(detail.course.slug)}`} className="text-primary-700 hover:underline dark:text-primary-300">
                     {detail.course.title}
                   </Link>
                 }
@@ -97,15 +97,15 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
             )}
           </dl>
 
-          <section className="space-y-2 rounded-2xl border border-gray-200 bg-white p-4">
-            <h2 className="flex items-center gap-2 font-semibold text-gray-900">
-              <Award className="h-5 w-5 text-violet-600" aria-hidden="true" />
+          <section className="space-y-2 rounded-2xl border border-border bg-card p-4">
+            <h2 className="flex items-center gap-2 font-semibold text-foreground">
+              <Award className="h-5 w-5 text-violet-600 dark:text-violet-400" aria-hidden="true" />
               Giải thưởng
             </h2>
             {detail.prizes.length === 0 && detail.certificate_min_percentage === null ? (
-              <p className="text-sm text-gray-600">Cuộc thi này không có giải thưởng.</p>
+              <p className="text-sm text-muted-foreground">Cuộc thi này không có giải thưởng.</p>
             ) : (
-              <ul className="space-y-1 text-sm text-gray-700">
+              <ul className="space-y-1 text-sm text-foreground">
                 {detail.prizes.map((p) => (
                   <li key={p.id}>• {formatContestPrize(p)}</li>
                 ))}
@@ -114,11 +114,11 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
                 )}
               </ul>
             )}
-            <p className="text-xs text-gray-500">Giải được trao sau khi quản trị viên chốt kết quả.</p>
+            <p className="text-xs text-muted-foreground">Giải được trao sau khi quản trị viên chốt kết quả.</p>
           </section>
 
-          <section className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
-            <h2 className="flex items-center gap-2 font-semibold text-gray-900">
+          <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
+            <h2 className="flex items-center gap-2 font-semibold text-foreground">
               <Trophy className="h-5 w-5 text-amber-500" aria-hidden="true" />
               Bảng xếp hạng
             </h2>
@@ -127,11 +127,11 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
         </section>
 
         <aside className="space-y-3 lg:sticky lg:top-20 lg:self-start">
-          <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="space-y-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
             {remaining !== null && (
               <div className="text-center">
-                <p className="text-xs uppercase tracking-wide text-gray-500">{detail.phase === "UPCOMING" ? "Mở sau" : "Kết thúc sau"}</p>
-                <p className="font-mono text-2xl font-bold text-gray-900" role="timer">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">{detail.phase === "UPCOMING" ? "Mở sau" : "Kết thúc sau"}</p>
+                <p className="font-mono text-2xl font-bold text-foreground" role="timer">
                   {formatCountdown(remaining)}
                 </p>
               </div>
@@ -140,8 +140,8 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
           </div>
 
           {mine && mine.attempt_status === "SUBMITTED" && (
-            <div className="space-y-1 rounded-2xl border border-gray-200 bg-white p-4 text-sm">
-              <p className="font-semibold text-gray-900">Kết quả của bạn</p>
+            <div className="space-y-1 rounded-2xl border border-border bg-card p-4 text-sm">
+              <p className="font-semibold text-foreground">Kết quả của bạn</p>
               <p>
                 {formatContestScore(mine.score)}/{formatContestScore(mine.total_points)} điểm ({formatContestPercent(mine.percentage)})
               </p>
@@ -157,10 +157,10 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
 function InfoRow({ icon: Icon, label, value }: { icon: typeof Clock; label: string; value: React.ReactNode }) {
   return (
     <div className="flex min-w-0 items-start gap-2">
-      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       <div className="min-w-0">
-        <dt className="text-xs text-gray-500">{label}</dt>
-        <dd className="break-words font-medium text-gray-900">{value}</dd>
+        <dt className="text-xs text-muted-foreground">{label}</dt>
+        <dd className="break-words font-medium text-foreground">{value}</dd>
       </div>
     </div>
   );

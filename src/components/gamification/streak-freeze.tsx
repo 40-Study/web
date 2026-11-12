@@ -29,7 +29,7 @@ export function StreakFreeze({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-cyan-500" />
-          <h3 className="font-semibold text-gray-900 dark:text-white">
+          <h3 className="font-semibold text-foreground">
             Thẻ bảo vệ chuỗi
           </h3>
         </div>
@@ -47,7 +47,7 @@ export function StreakFreeze({
               "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
               idx < streakFreezes
                 ? "bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400"
-                : "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600"
+                : "bg-muted text-gray-300 dark:text-gray-600"
             )}
           >
             <Shield className="h-5 w-5" />
@@ -241,7 +241,7 @@ export function StreakCard({
                     ? "border-2 border-dashed border-current"
                     : hasCompletedToday
                     ? "bg-white/20"
-                    : "bg-gray-200 dark:bg-gray-700"
+                    : "bg-muted-foreground/20"
                 )}
               >
                 {isCompleted ? "✓" : day}

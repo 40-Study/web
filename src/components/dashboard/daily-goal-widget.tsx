@@ -52,14 +52,14 @@ export function DailyGoalWidget({ completed, target, bonusXP, className }: Daily
             className="stroke-primary-600 dark:stroke-primary-400"
           />
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-sm font-bold tabular-nums text-slate-900 dark:text-slate-50">
+        <span className="absolute inset-0 flex items-center justify-center text-sm font-bold tabular-nums text-foreground">
           {isCompleted ? <Check className="h-5 w-5" aria-hidden="true" /> : `${completed}/${safeTarget}`}
         </span>
       </div>
 
       <div className="min-w-0 space-y-1.5">
-        <p className="text-h4 text-slate-900 dark:text-slate-50">Mục tiêu hôm nay</p>
-        <p className="text-body-sm text-slate-600 dark:text-slate-400">
+        <p className="text-h4 text-foreground">Mục tiêu hôm nay</p>
+        <p className="text-body-sm text-muted-foreground">
           {isCompleted
             ? "Bạn đã hoàn thành mục tiêu"
             : `Còn ${remaining} bài học để nhận thưởng`}

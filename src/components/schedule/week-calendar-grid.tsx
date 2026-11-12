@@ -241,7 +241,7 @@ export default function WeekCalendarGrid({
         const fmt = (d: Date) =>
           `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
         return (
-          <div className="flex items-center justify-center h-full text-sm font-medium text-blue-700">
+          <div className="flex items-center justify-center h-full text-sm font-medium text-blue-700 dark:text-blue-300">
             {fmt(start)} – {fmt(end)}
           </div>
         );
@@ -345,7 +345,7 @@ export default function WeekCalendarGrid({
   return (
     <div className="school-calendar">
       <div className="calendar-toolbar">
-        <div className="calendar-heading"><CalendarDays className="h-5 w-5 text-blue-600" /><h1>Lịch học</h1></div>
+        <div className="calendar-heading"><CalendarDays className="h-5 w-5 text-blue-600 dark:text-blue-400" /><h1>Lịch học</h1></div>
         <button className="calendar-today" onClick={() => navigate(toVnWallClock(new Date()))}>Hôm nay</button>
         <div className="flex items-center">
           <button className="calendar-icon" aria-label="Khoảng trước" onClick={() => calendarRef.current?.getApi().prev()}><ChevronLeft className="h-4 w-4" /></button>
@@ -472,11 +472,11 @@ export default function WeekCalendarGrid({
 
 function StatCard({ icon, label, value }: { icon?: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3 bg-white rounded-2xl border px-5 py-4 shadow-sm" data-testid="schedule-stat">
-      {icon && <div className="p-2 bg-gray-50 rounded-xl">{icon}</div>}
+    <div className="flex items-center gap-3 bg-card rounded-2xl border px-5 py-4 shadow-sm" data-testid="schedule-stat">
+      {icon && <div className="p-2 bg-muted/50 rounded-xl">{icon}</div>}
       <div>
-        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
-        <p className="text-xl font-bold text-gray-900">{value}</p>
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
+        <p className="text-xl font-bold text-foreground">{value}</p>
       </div>
     </div>
   );

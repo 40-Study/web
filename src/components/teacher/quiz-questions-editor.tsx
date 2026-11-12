@@ -123,7 +123,7 @@ export function QuizQuestionsEditor({ quizId }: { quizId: string }) {
   }
   if (isError) {
     return (
-      <p role="alert" className="text-sm text-red-600">
+      <p role="alert" className="text-sm text-red-600 dark:text-red-400">
         Không tải được danh sách câu hỏi của bài trắc nghiệm.
       </p>
     );

@@ -25,14 +25,14 @@ export function XPProgressCard({ totalXP, level, progress, className }: XPProgre
           <Star className="h-4 w-4" aria-hidden="true" />
           Cấp {level}
         </Badge>
-        <span className="text-label tabular-nums text-slate-600 dark:text-slate-400">
+        <span className="text-label tabular-nums text-muted-foreground">
           {totalXP.toLocaleString("vi-VN")} XP
         </span>
       </div>
 
       <ProgressBar value={percent} variant="xp" size="md" className="mt-4" />
 
-      <p className="text-body-sm mt-2 tabular-nums text-slate-600 dark:text-slate-400">
+      <p className="text-body-sm mt-2 tabular-nums text-muted-foreground">
         {percent}% để lên cấp {level + 1}
       </p>
     </Card>

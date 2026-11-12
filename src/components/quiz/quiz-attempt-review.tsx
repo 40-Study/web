@@ -62,9 +62,9 @@ export function QuizAttemptReview({ answers, answerText, className }: QuizAttemp
               {isSkipped ? (
                 <MinusCircle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               ) : isCorrect ? (
-                <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+                <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
               ) : (
-                <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" aria-hidden="true" />
+                <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" aria-hidden="true" />
               )}
               <div className="flex-1 space-y-1">
                 <p className="text-sm font-medium">
@@ -95,7 +95,7 @@ export function QuizAttemptReview({ answers, answerText, className }: QuizAttemp
               {answer.correct_answer_ids && answer.correct_answer_ids.length > 0 && (
                 <div className="flex gap-2">
                   <dt className="shrink-0 text-muted-foreground">Đáp án đúng:</dt>
-                  <dd className="font-medium text-emerald-700">
+                  <dd className="font-medium text-emerald-700 dark:text-emerald-300">
                     {answer.correct_answer_ids.map((id) => labelFor(id, answerText)).join(", ")}
                   </dd>
                 </div>
@@ -103,7 +103,7 @@ export function QuizAttemptReview({ answers, answerText, className }: QuizAttemp
             </dl>
 
             {answer.explanation && (
-              <div className="ml-6 flex gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <div className="ml-6 flex gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-500/10 dark:text-amber-300">
                 <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <p>{answer.explanation}</p>
               </div>

@@ -642,7 +642,7 @@ export function OpenDesignWorkspace() {
         {storageWarning && (
           <p
             role="alert"
-            className="mx-4 mb-2 rounded-lg bg-amber-50 p-2 text-[11px] text-amber-900"
+            className="mx-4 mb-2 rounded-lg bg-amber-50 p-2 text-[11px] text-amber-900 dark:bg-amber-500/10 dark:text-amber-300"
           >
             {storageWarning}
           </p>

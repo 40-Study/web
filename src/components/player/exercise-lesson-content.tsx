@@ -87,7 +87,7 @@ function renderTextWithCode(text: string, highlights?: string[]) {
     <>
       {parts.map((part, idx) =>
         highlights.includes(part) ? (
-          <code key={idx} className="px-1.5 py-0.5 mx-0.5 bg-gray-100 text-gray-800 rounded font-mono text-sm">
+          <code key={idx} className="px-1.5 py-0.5 mx-0.5 bg-muted text-foreground rounded font-mono text-sm">
             {part}
           </code>
         ) : (
@@ -101,26 +101,26 @@ function renderTextWithCode(text: string, highlights?: string[]) {
 function getDifficultyConfig(difficulty: ExerciseData["difficulty"]) {
   switch (difficulty) {
     case "easy":
-      return { label: "Dễ", color: "bg-green-100 text-green-700" };
+      return { label: "Dễ", color: "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300" };
     case "medium":
-      return { label: "Trung bình", color: "bg-yellow-100 text-yellow-700" };
+      return { label: "Trung bình", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-300" };
     case "hard":
-      return { label: "Khó", color: "bg-red-100 text-red-700" };
+      return { label: "Khó", color: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300" };
   }
 }
 
 function getStatusConfig(status: SubmitResult["status"]) {
   switch (status) {
     case "accepted":
-      return { label: "Được chấp nhận", color: "text-green-600", icon: CheckCircle };
+      return { label: "Được chấp nhận", color: "text-green-600 dark:text-green-400", icon: CheckCircle };
     case "wrong_answer":
-      return { label: "Sai đáp án", color: "text-red-600", icon: XCircle };
+      return { label: "Sai đáp án", color: "text-red-600 dark:text-red-400", icon: XCircle };
     case "time_limit":
-      return { label: "Quá thời gian", color: "text-orange-600", icon: Clock };
+      return { label: "Quá thời gian", color: "text-orange-600 dark:text-orange-400", icon: Clock };
     case "runtime_error":
-      return { label: "Lỗi khi chạy", color: "text-red-600", icon: XCircle };
+      return { label: "Lỗi khi chạy", color: "text-red-600 dark:text-red-400", icon: XCircle };
     case "compile_error":
-      return { label: "Lỗi biên dịch", color: "text-red-600", icon: XCircle };
+      return { label: "Lỗi biên dịch", color: "text-red-600 dark:text-red-400", icon: XCircle };
   }
 }
 
@@ -136,16 +136,16 @@ function ProblemPanel({ exercise }: { exercise: ExerciseData }) {
         <span className={cn("px-2.5 py-1 rounded text-xs font-bold uppercase", diffConfig.color)}>
           {diffConfig.label}
         </span>
-        <span className="text-sm text-gray-400">ID: {exercise.id}</span>
+        <span className="text-sm text-muted-foreground">ID: {exercise.id}</span>
       </div>
 
       {/* Title */}
-      <h1 className="text-xl font-bold text-gray-900 mb-4">
+      <h1 className="text-xl font-bold text-foreground mb-4">
         Bài tập: {exercise.title}
       </h1>
 
       {/* Description */}
-      <div className="text-gray-700 leading-relaxed mb-6">
+      <div className="text-foreground leading-relaxed mb-6">
         {renderTextWithCode(exercise.description, exercise.codeHighlights)}
       </div>
 
@@ -153,23 +153,23 @@ function ProblemPanel({ exercise }: { exercise: ExerciseData }) {
       <div className="space-y-4 mb-6">
         {exercise.examples.map((example, idx) => (
           <div key={idx}>
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-600 mb-2">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground mb-2">
               <Lightbulb className="w-4 h-4 text-yellow-500" />
               Ví dụ {idx + 1}:
             </h3>
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm font-mono">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm font-mono">
               <div>
-                <span className="text-gray-500">Input: </span>
-                <span className="text-gray-800">{example.input}</span>
+                <span className="text-muted-foreground">Input: </span>
+                <span className="text-foreground">{example.input}</span>
               </div>
               <div>
-                <span className="text-gray-500">Output: </span>
-                <span className="text-gray-800">{example.output}</span>
+                <span className="text-muted-foreground">Output: </span>
+                <span className="text-foreground">{example.output}</span>
               </div>
               {example.explanation && (
-                <div className="pt-2 border-t border-gray-200">
-                  <span className="text-gray-500">Giải thích: </span>
-                  <span className="text-gray-700 font-sans">{example.explanation}</span>
+                <div className="pt-2 border-t border-border">
+                  <span className="text-muted-foreground">Giải thích: </span>
+                  <span className="text-foreground font-sans">{example.explanation}</span>
                 </div>
               )}
             </div>
@@ -179,10 +179,10 @@ function ProblemPanel({ exercise }: { exercise: ExerciseData }) {
 
       {/* Constraints */}
       <div>
-        <h3 className="font-semibold text-gray-800 mb-3">Ràng buộc:</h3>
+        <h3 className="font-semibold text-foreground mb-3">Ràng buộc:</h3>
         <ul className="space-y-2">
           {exercise.constraints.map((constraint, idx) => (
-            <li key={idx} className="text-gray-700 text-sm">
+            <li key={idx} className="text-foreground text-sm">
               {renderTextWithCode(constraint.text, constraint.codeHighlights)}
             </li>
           ))}
@@ -231,12 +231,12 @@ function CodeEditorPanel({
   const displayResults = submitResult?.testResults || testResults || [];
 
   return (
-    <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm overflow-hidden relative">
+    <div className="flex-1 flex flex-col bg-card rounded-2xl shadow-sm overflow-hidden relative">
       {/* Editor Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         {/* Language Selector */}
         <div className="relative">
-          <button className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors">
+          <button className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg text-sm font-medium text-foreground hover:bg-muted-foreground/20 transition-colors">
             <span className="w-2 h-2 rounded-full bg-green-500" />
             {currentLang?.name} ({currentLang?.version})
             <ChevronDown className="w-4 h-4" />
@@ -251,8 +251,8 @@ function CodeEditorPanel({
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
               isRunning
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-muted text-muted-foreground cursor-not-allowed"
+                : "bg-muted text-foreground hover:bg-muted-foreground/20"
             )}
           >
             {isRunning ? (
@@ -294,25 +294,25 @@ function CodeEditorPanel({
       </div>
 
       {/* Resizer */}
-      <div className="h-2 bg-gray-100 flex items-center justify-center cursor-row-resize hover:bg-gray-200 transition-colors shrink-0">
+      <div className="h-2 bg-muted flex items-center justify-center cursor-row-resize hover:bg-muted-foreground/20 transition-colors shrink-0">
         <div className="flex gap-1">
-          <span className="w-1 h-1 rounded-full bg-gray-400" />
-          <span className="w-1 h-1 rounded-full bg-gray-400" />
-          <span className="w-1 h-1 rounded-full bg-gray-400" />
+          <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+          <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+          <span className="w-1 h-1 rounded-full bg-muted-foreground" />
         </div>
       </div>
 
       {/* Test Results Panel */}
       <div className="flex-1 min-h-[200px] flex flex-col">
         {/* Tabs */}
-        <div className="flex border-b border-gray-100">
+        <div className="flex border-b border-border">
           <button
             onClick={() => setActiveTab("testcases")}
             className={cn(
               "px-4 py-3 text-sm font-medium transition-colors",
               activeTab === "testcases"
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-500 hover:text-gray-700"
+                ? "text-blue-600 border-b-2 border-blue-600 dark:text-blue-400"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             TESTCASES
@@ -322,8 +322,8 @@ function CodeEditorPanel({
             className={cn(
               "px-4 py-3 text-sm font-medium transition-colors",
               activeTab === "results"
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-500 hover:text-gray-700"
+                ? "text-blue-600 border-b-2 border-blue-600 dark:text-blue-400"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             KẾT QUẢ CHẠY THỬ
@@ -343,8 +343,8 @@ function CodeEditorPanel({
                     className={cn(
                       "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
                       selectedCase === idx
-                        ? "bg-gray-200 text-gray-800"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        ? "bg-muted-foreground/20 text-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted-foreground/20"
                     )}
                   >
                     Case {idx + 1}
@@ -356,18 +356,18 @@ function CodeEditorPanel({
               {exercise.testCases[selectedCase] && (
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       Input
                     </label>
-                    <div className="mt-1 p-3 bg-gray-50 rounded-lg font-mono text-sm text-gray-700">
+                    <div className="mt-1 p-3 bg-muted/50 rounded-lg font-mono text-sm text-foreground">
                       {exercise.testCases[selectedCase].input}
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       Kết quả mong đợi
                     </label>
-                    <div className="mt-1 p-3 bg-gray-50 rounded-lg font-mono text-sm text-gray-700">
+                    <div className="mt-1 p-3 bg-muted/50 rounded-lg font-mono text-sm text-foreground">
                       {exercise.testCases[selectedCase].expectedOutput}
                     </div>
                   </div>
@@ -390,7 +390,7 @@ function CodeEditorPanel({
                           {config.label}
                         </span>
                         {submitResult.runtime && (
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-muted-foreground">
                             Runtime: {submitResult.runtime}ms
                           </span>
                         )}
@@ -410,11 +410,11 @@ function CodeEditorPanel({
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
                       selectedCase === idx
                         ? result.passed
-                          ? "bg-green-100 text-green-700 ring-2 ring-green-300"
-                          : "bg-red-100 text-red-700 ring-2 ring-red-300"
+                          ? "bg-green-100 text-green-700 ring-2 ring-green-300 dark:bg-green-500/15 dark:text-green-300"
+                          : "bg-red-100 text-red-700 ring-2 ring-red-300 dark:bg-red-500/15 dark:text-red-300"
                         : result.passed
-                        ? "bg-green-50 text-green-600 hover:bg-green-100"
-                        : "bg-red-50 text-red-600 hover:bg-red-100"
+                        ? "bg-green-50 text-green-600 hover:bg-green-100 dark:bg-green-500/10 dark:text-green-400 dark:hover:bg-green-500/15"
+                        : "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/15"
                     )}
                   >
                     Case {idx + 1}
@@ -431,32 +431,32 @@ function CodeEditorPanel({
               {displayResults[selectedCase] && (
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       Input
                     </label>
-                    <div className="mt-1 p-3 bg-gray-50 rounded-lg font-mono text-sm text-gray-700">
+                    <div className="mt-1 p-3 bg-muted/50 rounded-lg font-mono text-sm text-foreground">
                       {displayResults[selectedCase].input}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                         Output
                       </label>
                       <div className={cn(
                         "mt-1 p-3 rounded-lg font-mono text-sm",
                         displayResults[selectedCase].passed
-                          ? "bg-green-50 text-green-700"
-                          : "bg-red-50 text-red-700"
+                          ? "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300"
+                          : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
                       )}>
                         {displayResults[selectedCase].output}
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                         Expected
                       </label>
-                      <div className="mt-1 p-3 bg-gray-50 rounded-lg font-mono text-sm text-gray-700">
+                      <div className="mt-1 p-3 bg-muted/50 rounded-lg font-mono text-sm text-foreground">
                         {displayResults[selectedCase].expected}
                       </div>
                     </div>
@@ -469,16 +469,16 @@ function CodeEditorPanel({
 
         {/* Solution Toggle Button */}
         {exercise.solution && (
-          <div className="border-t border-gray-100 shrink-0">
+          <div className="border-t border-border shrink-0">
             <button
               onClick={onToggleSolution}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500" />
                 Giải pháp (Solution)
               </div>
-              <div className="flex items-center gap-1 text-blue-600">
+              <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
                 {showSolution ? (
                   <>
                     <EyeOff className="w-4 h-4" />
@@ -500,7 +500,7 @@ function CodeEditorPanel({
       {exercise.solution && (
         <div
           className={cn(
-            "absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl border border-gray-200 border-b-0 transition-all duration-300 ease-out z-10",
+            "absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl shadow-2xl border border-border border-b-0 transition-all duration-300 ease-out z-10",
             showSolution
               ? "translate-y-0 opacity-100"
               : "translate-y-full opacity-0 pointer-events-none"
@@ -508,10 +508,10 @@ function CodeEditorPanel({
         >
           <div className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-semibold text-gray-700">Giải pháp mẫu</h4>
+              <h4 className="text-sm font-semibold text-foreground">Giải pháp mẫu</h4>
               <button
                 onClick={onToggleSolution}
-                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                className="p-1 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded transition-colors"
               >
                 <EyeOff className="w-4 h-4" />
               </button>
@@ -613,7 +613,7 @@ export function ExerciseLessonContent({
   return (
     <div className="flex-1 flex gap-5 p-5 overflow-hidden">
       {/* Left: Problem Description */}
-      <div className="w-[380px] bg-white rounded-2xl shadow-sm overflow-hidden shrink-0 flex flex-col">
+      <div className="w-[380px] bg-card rounded-2xl shadow-sm overflow-hidden shrink-0 flex flex-col">
         <ProblemPanel exercise={exercise} />
       </div>
 

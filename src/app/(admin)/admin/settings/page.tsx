@@ -35,7 +35,7 @@ function parseFeePercent(raw: string): { value: number } | { error: string } {
 function UpdatedBy({ settings }: { settings: AdminSettings }) {
   if (!settings.updated_at) {
     return (
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted-foreground">
         Chưa từng được chỉnh sửa — đang dùng mặc định 0% cho tới khi bạn đặt.
       </p>
     );
@@ -43,7 +43,7 @@ function UpdatedBy({ settings }: { settings: AdminSettings }) {
   const when = formatVnDateTime(settings.updated_at);
   const who = settings.updated_by?.name?.trim();
   return (
-    <p className="text-xs text-gray-500">
+    <p className="text-xs text-muted-foreground">
       {who ? `Cập nhật lần cuối bởi ${who} lúc ${when}` : `Cập nhật lần cuối lúc ${when}`}
     </p>
   );
@@ -65,9 +65,9 @@ function PlatformFeeCard({ settings }: { settings: AdminSettings }) {
   };
 
   return (
-    <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+    <section className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
       <h2 className="mb-1 text-base font-semibold">Phí nền tảng</h2>
-      <p className="mb-4 text-xs text-gray-500">
+      <p className="mb-4 text-xs text-muted-foreground">
         % áp dụng cho đơn thanh toán SAU thời điểm lưu — không ảnh hưởng đơn đã hoàn tất trước đó (mỗi
         đơn chốt % ngay lúc thanh toán).
       </p>
@@ -101,15 +101,15 @@ export default function AdminSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Cấu hình hệ thống</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-foreground">Cấu hình hệ thống</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Các tham số vận hành toàn nền tảng. Chỉ quản trị viên có quyền cấu hình hệ thống mới xem và sửa được.
         </p>
       </div>
 
       <Can
         permission={PERMISSIONS.MANAGE_PLATFORM_FEE}
-        fallback={<p className="text-sm text-gray-500">Bạn không có quyền xem cấu hình hệ thống.</p>}
+        fallback={<p className="text-sm text-muted-foreground">Bạn không có quyền xem cấu hình hệ thống.</p>}
       >
         <SettingsContent />
       </Can>

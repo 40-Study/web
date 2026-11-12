@@ -63,7 +63,7 @@ export function ExerciseTestCaseEditor({ testCases, onChange, disabled = false }
       {testCases.map((tc, idx) => (
         <div key={tc.id} className="border rounded-xl p-3 space-y-2" data-testid={`test-case-${idx}`}>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-primary-600">Test #{idx + 1}</span>
+            <span className="text-sm font-medium text-primary-600 dark:text-primary-400">Test #{idx + 1}</span>
             {testCases.length > 1 && (
               <Button
                 variant="ghost"

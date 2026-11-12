@@ -138,7 +138,7 @@ export function LessonNotesPanel({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-gray-100 p-4">
+      <div className="border-b border-border p-4">
         <button
           type="button"
           onClick={openComposer}
@@ -161,14 +161,14 @@ export function LessonNotesPanel({
               // riêng vì dán (paste) một đoạn dài bỏ qua `maxLength` của DOM.
               maxLength={MAX_NOTE_CONTENT_LENGTH + 200}
               className={cn(
-                "w-full rounded-lg border px-2.5 py-2 text-sm text-gray-700 focus:outline-none",
+                "w-full rounded-lg border px-2.5 py-2 text-sm text-foreground focus:outline-none",
                 isDraftTooLong
-                  ? "border-red-300 focus:border-red-400"
-                  : "border-gray-200 focus:border-primary-400"
+                  ? "border-red-300 focus:border-red-400 dark:border-red-500/30"
+                  : "border-border focus:border-primary-400"
               )}
             />
             <div className="mt-1 flex items-center justify-between">
-              <p className={cn("text-xs", isDraftTooLong ? "text-red-600" : "text-gray-400")}>
+              <p className={cn("text-xs", isDraftTooLong ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
                 {draft.length}/{MAX_NOTE_CONTENT_LENGTH}
                 {isDraftTooLong && " — vượt quá giới hạn, hãy rút gọn lại"}
               </p>
@@ -181,7 +181,7 @@ export function LessonNotesPanel({
                   setDraftTimestamp(null);
                   setIsAdding(false);
                 }}
-                className="rounded-lg px-2.5 py-1.5 text-xs text-gray-500 hover:bg-gray-100"
+                className="rounded-lg px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-muted"
               >
                 Huỷ
               </button>
@@ -198,7 +198,7 @@ export function LessonNotesPanel({
         )}
 
         <div className="mt-3 flex items-center justify-between gap-2">
-          <div className="flex rounded-lg bg-gray-100 p-0.5">
+          <div className="flex rounded-lg bg-muted p-0.5">
             <ScopeButton active={scope === "section"} onClick={() => setScope("section")}>
               Trong chương hiện tại
             </ScopeButton>
@@ -210,7 +210,7 @@ export function LessonNotesPanel({
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as NoteSort)}
-            className="rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-600 focus:outline-none"
+            className="rounded-lg border border-border px-2 py-1 text-xs text-muted-foreground focus:outline-none"
             aria-label="Sắp xếp ghi chú"
           >
             <option value="newest">Mới nhất</option>
@@ -227,7 +227,7 @@ export function LessonNotesPanel({
         ) : sortedNotes.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <StickyNote className="h-8 w-8 text-gray-200" aria-hidden="true" />
-            <p className="text-sm text-gray-500">{NOTES_EMPTY_MESSAGE}</p>
+            <p className="text-sm text-muted-foreground">{NOTES_EMPTY_MESSAGE}</p>
           </div>
         ) : (
           <ul className="space-y-2">
@@ -267,7 +267,7 @@ function ScopeButton({
       onClick={onClick}
       className={cn(
         "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
-        active ? "bg-white text-primary-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+        active ? "bg-card text-primary-600 shadow-sm dark:text-primary-400" : "text-muted-foreground hover:text-foreground"
       )}
     >
       {children}

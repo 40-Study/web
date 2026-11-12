@@ -95,7 +95,7 @@ export function LessonNotes({
                   {note.timestamp !== undefined && (
                     <button
                       onClick={() => onSeekToTimestamp?.(note.timestamp!)}
-                      className="text-xs text-primary-600 hover:underline mb-1 inline-block"
+                      className="text-xs text-primary-600 hover:underline mb-1 inline-block dark:text-primary-400"
                     >
                       {formatTimestamp(note.timestamp)}
                     </button>

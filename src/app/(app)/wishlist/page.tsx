@@ -27,7 +27,7 @@ function WishlistRow({ item }: { item: WishlistItem }) {
 
   return (
     <li className="flex gap-4 rounded-xl border bg-card p-3 sm:p-4">
-      <div className="relative h-20 w-32 shrink-0 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+      <div className="relative h-20 w-32 shrink-0 overflow-hidden rounded-lg bg-muted">
         {course.thumbnail_url ? (
           <Image src={course.thumbnail_url} alt="" fill sizes="128px" className="object-cover" />
         ) : (
@@ -37,7 +37,7 @@ function WishlistRow({ item }: { item: WishlistItem }) {
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <Link href={`/courses/${course.slug}`} className="line-clamp-2 font-semibold hover:text-primary-600">
+        <Link href={`/courses/${course.slug}`} className="line-clamp-2 font-semibold hover:text-primary-600 dark:hover:text-primary-400">
           {course.title}
         </Link>
         {course.instructor_name && <p className="text-sm text-muted-foreground">{course.instructor_name}</p>}
@@ -47,7 +47,7 @@ function WishlistRow({ item }: { item: WishlistItem }) {
       <Button
         variant="ghost"
         size="sm"
-        className="self-start text-rose-600"
+        className="self-start text-rose-600 dark:text-rose-400"
         disabled={toggle.isPending}
         onClick={() => toggle.mutate({ courseId: item.course_id, saved: true })}
         aria-label={`Bỏ khỏi danh sách yêu thích: ${course.title}`}
@@ -77,7 +77,7 @@ export default function WishlistPage() {
         isEmpty={items.length === 0}
         emptyTitle="Bạn chưa lưu khoá học nào"
         emptyDescription={
-          <Link href="/courses" className="font-medium text-primary-600 hover:underline">
+          <Link href="/courses" className="font-medium text-primary-600 hover:underline dark:text-primary-400">
             Khám phá khoá học
           </Link>
         }

@@ -30,7 +30,7 @@ export function AttendanceCardList({
   if (rows.length === 0) {
     // Bảng bị ẩn dưới md nên thông báo rỗng phải có ở cả bố cục thẻ.
     return (
-      <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+      <div className="rounded-lg border border-dashed border-input p-8 text-center text-sm text-muted-foreground">
         Lớp này chưa có học viên nào.
       </div>
     );
@@ -39,8 +39,8 @@ export function AttendanceCardList({
   return (
     <ul className="space-y-3">
       {rows.map((row) => (
-        <li key={row.studentId} className="space-y-3 rounded-lg border border-gray-200 p-3">
-          <p className="font-medium text-gray-900">{row.name}</p>
+        <li key={row.studentId} className="space-y-3 rounded-lg border border-border p-3">
+          <p className="font-medium text-foreground">{row.name}</p>
           <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Trạng thái của ${row.name}`}>
             {ATTENDANCE_STATUSES.map((status) => {
               const meta = ATTENDANCE_STATUS_META[status];
@@ -53,7 +53,7 @@ export function AttendanceCardList({
                   aria-pressed={row.status === status}
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50",
-                    row.status === status ? meta.button : "border-gray-200 bg-white text-gray-600 hover:bg-gray-100"
+                    row.status === status ? meta.button : "border-border bg-card text-muted-foreground hover:bg-muted"
                   )}
                 >
                   {meta.label}
@@ -62,9 +62,9 @@ export function AttendanceCardList({
             })}
           </div>
           {row.checkInTime && formatTime(row.checkInTime) && (
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-muted-foreground">
               Check-in {formatTime(row.checkInTime)}
-              {row.lateMinutes ? <span className="ml-1 text-amber-600">(trễ {row.lateMinutes}′)</span> : null}
+              {row.lateMinutes ? <span className="ml-1 text-amber-600 dark:text-amber-400">(trễ {row.lateMinutes}′)</span> : null}
             </p>
           )}
           <input
@@ -74,7 +74,7 @@ export function AttendanceCardList({
             onChange={(e) => onNoteChange(row.studentId, e.target.value)}
             placeholder="Ghi chú…"
             aria-label={`Ghi chú cho ${row.name}`}
-            className="w-full rounded-md border border-gray-200 px-2.5 py-1.5 text-sm outline-none focus:border-primary-500 disabled:bg-gray-50"
+            className="w-full rounded-md border border-border px-2.5 py-1.5 text-sm outline-none focus:border-primary-500 disabled:bg-muted/50"
           />
         </li>
       ))}

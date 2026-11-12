@@ -52,7 +52,7 @@ export function CartDropdown() {
     <div className="relative" ref={dropdownRef}>
       {/* Cart button */}
       <button
-        className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors"
+        className="relative p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors"
         onClick={() => setIsOpen((v) => !v)}
         aria-label="Giỏ hàng"
       >
@@ -76,7 +76,7 @@ export function CartDropdown() {
               {itemCount > 0 && (
                 <Link
                   href="/cart"
-                  className="text-xs text-primary-600 hover:underline font-medium"
+                  className="text-xs text-primary-600 hover:underline font-medium dark:text-primary-400"
                   onClick={() => setIsOpen(false)}
                 >
                   Xem tất cả
@@ -96,7 +96,7 @@ export function CartDropdown() {
                 <ShoppingCart className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">Giỏ hàng trống</p>
                 <Link href="/courses" onClick={() => setIsOpen(false)}>
-                  <Button variant="link" className="mt-2 text-primary-600">
+                  <Button variant="link" className="mt-2 text-primary-600 dark:text-primary-400">
                     Khám phá khoá học
                   </Button>
                 </Link>
@@ -127,12 +127,12 @@ export function CartDropdown() {
                     <div className="flex-1 min-w-0">
                       <Link
                         href={`/courses/${item.course_id}`}
-                        className="text-sm font-medium text-foreground line-clamp-2 hover:text-primary-600 transition-colors"
+                        className="text-sm font-medium text-foreground line-clamp-2 hover:text-primary-600 transition-colors dark:hover:text-primary-400"
                         onClick={() => setIsOpen(false)}
                       >
                         {item.course?.title || "Khoá học"}
                       </Link>
-                      <p className="text-sm font-semibold text-primary-600 mt-0.5">
+                      <p className="text-sm font-semibold text-primary-600 mt-0.5 dark:text-primary-400">
                         <CartItemPrice item={item} />
                       </p>
                     </div>
@@ -140,7 +140,7 @@ export function CartDropdown() {
                     {/* Remove button */}
                     <button
                       className={cn(
-                        "p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors",
+                        "p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors dark:hover:text-red-400",
                         removeFromCart.isPending && "opacity-50 pointer-events-none"
                       )}
                       onClick={() => removeFromCart.mutate(item.course_id)}

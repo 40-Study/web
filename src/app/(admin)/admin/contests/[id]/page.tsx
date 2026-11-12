@@ -96,11 +96,11 @@ function AdminContestActionsPanel({ contest }: { contest: ContestManage }) {
         <section
           id="contest-prizes"
           tabIndex={-1}
-          className="scroll-mt-24 space-y-3 rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-gray-950"
+          className="scroll-mt-24 space-y-3 rounded-xl border bg-card p-4 dark:border-gray-800"
         >
           <h2 className="font-semibold">Cơ cấu giải (gắn voucher)</h2>
           {vouchers.isError && (
-            <p role="alert" className="text-sm text-red-600">
+            <p role="alert" className="text-sm text-red-600 dark:text-red-400">
               {contestErrorMessage(vouchers.error, "Không tải được danh sách voucher.")}
             </p>
           )}
@@ -136,7 +136,7 @@ function AdminContestActionsPanel({ contest }: { contest: ContestManage }) {
               Duyệt và công bố
             </Button>
             {actions.approveBlockedReason && (
-              <span className="text-xs text-red-600" data-testid="approve-blocked">
+              <span className="text-xs text-red-600 dark:text-red-400" data-testid="approve-blocked">
                 {actions.approveBlockedReason}
               </span>
             )}
@@ -162,13 +162,13 @@ function AdminContestActionsPanel({ contest }: { contest: ContestManage }) {
             <Button disabled data-testid="finalize-contest">
               Chốt kết quả
             </Button>
-            <span className="text-xs text-gray-500" data-testid="finalize-wait">
+            <span className="text-xs text-muted-foreground" data-testid="finalize-wait">
               Mở chốt lúc {formatVnDateTime(actions.finalize.availableAt.toISOString())} (60 giây sau khi kết thúc)
             </span>
           </div>
         )}
         {actions.finalize.kind === "done" && (
-          <span className="text-sm text-green-700" data-testid="finalized-note">
+          <span className="text-sm text-green-700 dark:text-green-300" data-testid="finalized-note">
             Đã chốt kết quả lúc {formatVnDateTime(contest.finalized_at)}.
           </span>
         )}
@@ -239,7 +239,7 @@ export default function AdminContestDetailPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <Link href="/admin/contests" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:underline">
+      <Link href="/admin/contests" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline">
         <ArrowLeft className="h-4 w-4" />
         Danh sách cuộc thi
       </Link>

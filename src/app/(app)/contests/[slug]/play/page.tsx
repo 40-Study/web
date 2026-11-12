@@ -93,8 +93,8 @@ function PlayStarter({ detail }: { detail: ContestDetail }) {
 function PlayNotice({ title, message, href, label }: { title: string; message: string; href: string; label: string }) {
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-3 px-4 py-12 text-center" role="status">
-      <p className="text-lg font-semibold text-gray-900">{title}</p>
-      <p className="text-sm text-gray-600">{message}</p>
+      <p className="text-lg font-semibold text-foreground">{title}</p>
+      <p className="text-sm text-muted-foreground">{message}</p>
       <Link href={href} className={buttonVariants({ variant: "outline" })}>
         <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden="true" />
         {label}

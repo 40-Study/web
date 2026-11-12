@@ -38,7 +38,7 @@ const statusSizes = {
 
 const statusColors = {
   online: "bg-green-500",
-  offline: "bg-slate-400",
+  offline: "bg-muted-foreground",
   busy: "bg-red-500",
   streak: "bg-orange-500",
 };

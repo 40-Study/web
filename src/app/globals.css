@@ -32,7 +32,7 @@
   --secondary-foreground: 221 83% 53%; /* #2563eb blue-600 */
 
   --muted: 210 40% 96%; /* #f1f5f9 slate-100 */
-  --muted-foreground: 215 16% 47%; /* #64748b slate-500 */
+  --muted-foreground: 215 19% 40%; /* ~#52617a: 5.60:1 trên muted, 6.14:1 trên trắng (UX-C-10; slate-500 cũ chỉ 4.30:1 trên muted) */
 
   --accent: 199 89% 48%; /* #0ea5e9 sky-500 */
   --accent-foreground: 0 0% 100%;
@@ -214,43 +214,43 @@ body {
 
   /* White button with border */
   .btn-secondary {
-    @apply bg-white text-slate-700 px-4 py-2 rounded-lg font-medium text-[15px];
-    @apply border border-slate-200 hover:bg-slate-50 transition-colors;
+    @apply bg-card text-foreground px-4 py-2 rounded-lg font-medium text-[15px];
+    @apply border border-border hover:bg-muted/50 transition-colors;
     box-shadow: var(--shadow-subtle);
   }
 
   /* Light blue accent button */
   .btn-accent {
-    @apply bg-primary-50 text-primary-700 px-5 py-3 font-medium text-[15px];
+    @apply bg-primary-50 text-primary-700 px-5 py-3 font-medium text-[15px] dark:bg-primary-500/10 dark:text-primary-300;
     @apply rounded-lg hover:bg-primary-100 transition-colors;
   }
 
   /* Ghost button */
   .btn-ghost {
-    @apply text-slate-600 px-4 py-2 font-medium text-[15px];
-    @apply rounded-lg hover:bg-slate-100 transition-colors;
+    @apply text-muted-foreground px-4 py-2 font-medium text-[15px];
+    @apply rounded-lg hover:bg-muted transition-colors;
   }
 }
 
 /* Educational Card Styles */
 @layer components {
   .card-elevated {
-    @apply bg-white rounded-2xl;
+    @apply bg-card rounded-2xl;
     box-shadow: var(--shadow-card);
   }
 
   .card-subtle {
-    @apply bg-white rounded-2xl border border-slate-200;
+    @apply bg-card rounded-2xl border border-border;
   }
 
   .card-interactive {
-    @apply bg-white rounded-2xl border border-slate-200 shadow-card transition-[box-shadow,transform,border-color] duration-200;
-    @apply hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-raised cursor-pointer;
+    @apply bg-card rounded-2xl border border-border shadow-card transition-[box-shadow,transform,border-color] duration-200;
+    @apply hover:-translate-y-0.5 hover:border-input hover:shadow-raised cursor-pointer;
     @apply motion-reduce:transform-none;
   }
 
   .card-primary {
-    @apply bg-primary-50 rounded-2xl border border-primary-100;
+    @apply bg-primary-50 rounded-2xl border border-primary-100 dark:bg-primary-500/10 dark:border-primary-500/30;
   }
 }
 
@@ -736,14 +736,14 @@ html {
 .fc-custom-wrap {
   font-family: var(--font-ui);
   font-size: 13px;
-  color: #3c4043;
+  color: hsl(var(--foreground));
 }
 
 /* ── Toolbar ──────────────────────────────────────────────────────────────── */
 .fc-custom-wrap .fc-toolbar {
   padding: 8px 16px 8px 12px;
   align-items: center;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid hsl(var(--border));
   margin-bottom: 0 !important;
   position: relative;
   z-index: 10;
@@ -757,7 +757,7 @@ html {
 .fc-custom-wrap .fc-toolbar-title {
   font-size: 1.125rem;
   font-weight: 400;
-  color: #3c4043;
+  color: hsl(var(--foreground));
   letter-spacing: 0;
 }
 
@@ -765,8 +765,8 @@ html {
 .fc-custom-wrap .fc-button,
 .fc-custom-wrap .fc-button-primary {
   background-color: transparent !important;
-  border: 1px solid #dadce0 !important;
-  color: #3c4043 !important;
+  border: 1px solid hsl(var(--border)) !important;
+  color: hsl(var(--foreground)) !important;
   font-size: 0.8125rem !important;
   font-weight: 500 !important;
   padding: 0.3125rem 0.75rem !important;
@@ -778,7 +778,7 @@ html {
 
 .fc-custom-wrap .fc-button:hover,
 .fc-custom-wrap .fc-button-primary:hover {
-  background-color: #f1f3f4 !important;
+  background-color: hsl(var(--muted)) !important;
   box-shadow: none !important;
 }
 
@@ -790,15 +790,15 @@ html {
 
 /* "Hôm nay" button — outlined blue like Google */
 .fc-custom-wrap .fc-today-button {
-  border-color: #dadce0 !important;
-  color: #1a73e8 !important;
+  border-color: hsl(var(--border)) !important;
+  color: hsl(var(--primary)) !important;
   border-radius: 4px !important;
   padding: 0.3125rem 0.875rem !important;
   font-weight: 500 !important;
 }
 
 .fc-custom-wrap .fc-today-button:hover {
-  background-color: #e8f0fe !important;
+  background-color: rgba(26, 115, 232, 0.12) !important;
 }
 
 /* Prev/next navigation arrows */
@@ -817,24 +817,24 @@ html {
 /* Active view button — blue pill */
 .fc-custom-wrap .fc-button-active,
 .fc-custom-wrap .fc-button-primary:not(:disabled).fc-button-active {
-  background-color: #e8f0fe !important;
-  border-color: #e8f0fe !important;
-  color: #1a73e8 !important;
+  background-color: rgba(26, 115, 232, 0.12) !important;
+  border-color: rgba(26, 115, 232, 0.12) !important;
+  color: hsl(var(--primary)) !important;
   box-shadow: none !important;
 }
 
 /* ── Column header — day name + date number ───────────────────────────────── */
 .fc-custom-wrap .fc-col-header {
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .fc-custom-wrap .fc-col-header-cell {
   font-size: 0.6875rem;
   font-weight: 500;
-  color: #70757a;
+  color: hsl(var(--muted-foreground));
   padding: 6px 0 4px;
   border: none !important;
-  background: #fff;
+  background: hsl(var(--card));
   letter-spacing: 0.3px;
   text-transform: uppercase;
 }
@@ -861,13 +861,13 @@ html {
   align-items: center;
   gap: 2px;
   text-decoration: none;
-  color: #3c4043;
+  color: hsl(var(--foreground));
 }
 
 /* Today column header — blue circle around date */
 .fc-custom-wrap .fc-day-today .fc-col-header-cell-cushion,
 .fc-custom-wrap .fc-day-today a {
-  color: #1a73e8;
+  color: hsl(var(--primary));
   font-weight: 600;
 }
 
@@ -879,7 +879,7 @@ html {
 .fc-custom-wrap .fc-scrollgrid-section > td,
 .fc-custom-wrap .fc-scrollgrid td,
 .fc-custom-wrap .fc-scrollgrid th {
-  border-color: #e0e0e0 !important;
+  border-color: hsl(var(--border)) !important;
 }
 
 /* Remove outer border */
@@ -891,29 +891,29 @@ html {
 /* Thin 1px horizontal slot lines */
 .fc-custom-wrap .fc-timegrid-slot {
   height: 48px;
-  border-top: 1px solid #f1f3f4 !important;
+  border-top: 1px solid hsl(var(--muted)) !important;
 }
 
 /* Full-hour lines slightly darker */
 .fc-custom-wrap .fc-timegrid-slot-major {
-  border-top: 1px solid #e0e0e0 !important;
+  border-top: 1px solid hsl(var(--border)) !important;
 }
 
 /* Half-hour dashed line */
 .fc-custom-wrap .fc-timegrid-slot-minor {
-  border-top: 1px dashed #f1f3f4 !important;
+  border-top: 1px dashed hsl(var(--muted)) !important;
 }
 
 /* Vertical day column dividers */
 .fc-custom-wrap .fc-timegrid-col {
-  border-right: 1px solid #e0e0e0 !important;
+  border-right: 1px solid hsl(var(--border)) !important;
 }
 
 /* ── Time labels (left axis) ─────────────────────────────────────────────── */
 .fc-custom-wrap .fc-timegrid-slot-label {
   font-size: 0.6875rem;
   font-weight: 500;
-  color: #70757a;
+  color: hsl(var(--muted-foreground));
   text-align: right;
   vertical-align: top;
   padding: 0 8px 0 0 !important;
@@ -986,7 +986,7 @@ html {
 .fc-custom-wrap .fc-daygrid-day-number {
   font-size: 0.75rem;
   font-weight: 400;
-  color: #3c4043;
+  color: hsl(var(--foreground));
   padding: 4px 8px;
   text-decoration: none;
 }
@@ -1014,12 +1014,12 @@ html {
 }
 
 .fc-custom-wrap .fc-scroller::-webkit-scrollbar-thumb {
-  background: #dadce0;
+  background: hsl(var(--border));
   border-radius: 3px;
 }
 
 .fc-custom-wrap .fc-scroller::-webkit-scrollbar-thumb:hover {
-  background: #bdc1c6;
+  background: hsl(var(--input));
 }
 
 /* ─── Certificate Print ────────────────────────────────────────────────────

@@ -43,7 +43,7 @@ export function DailyCheckin({
 }: DailyCheckinProps) {
   return (
     <Card className={cn("p-4 md:p-5 lg:p-6", className)}>
-      <h2 className="text-h3 mb-4 flex items-center gap-2 text-slate-900 dark:text-slate-50">
+      <h2 className="text-h3 mb-4 flex items-center gap-2 text-foreground">
         <Calendar className="h-5 w-5 text-primary-600 dark:text-primary-400" aria-hidden="true" />
         Điểm danh hằng ngày
       </h2>
@@ -65,7 +65,7 @@ export function DailyCheckin({
                   ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-900/30 dark:text-green-300"
                   : isToday
                     ? "border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-950 dark:text-primary-300"
-                    : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
+                    : "border-border bg-muted/50 text-muted-foreground"
               )}
             >
               <span className="text-xs font-medium">Ngày {dayNum}</span>
@@ -82,12 +82,12 @@ export function DailyCheckin({
 
       {/* Day 7 bonus highlight */}
       <div className="mb-4 flex items-center gap-3 rounded-lg bg-secondary-50 p-3 dark:bg-secondary-950">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-secondary-700 dark:bg-slate-900 dark:text-secondary-300">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-card text-secondary-700 dark:text-secondary-300">
           <Gift className="h-5 w-5" aria-hidden="true" />
         </div>
         <div className="flex-1">
-          <p className="font-medium text-slate-900 dark:text-slate-50">Thưởng 7 ngày</p>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="font-medium text-foreground">Thưởng 7 ngày</p>
+          <p className="text-sm text-muted-foreground">
             Điểm danh đủ 7 ngày để nhận thêm {rewards[6]?.bonusXP || 100} XP.
           </p>
         </div>

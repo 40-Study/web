@@ -78,7 +78,7 @@ export function LateRefundDialog({ orderId, orderNumber, totalAmount, pendingIte
   const renderItem = (item: LateRefundItem) => (
     <label
       key={item.ref}
-      className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-700"
+      className="flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2"
     >
       <input
         type="checkbox"
@@ -134,7 +134,7 @@ export function LateRefundDialog({ orderId, orderNumber, totalAmount, pendingIte
 
           {seenItems.length > 0 && (
             <fieldset className="mt-4 space-y-2 text-sm">
-              <legend className="mb-1 font-medium text-gray-700 dark:text-gray-300">Khoản đã hoàn</legend>
+              <legend className="mb-1 font-medium text-foreground">Khoản đã hoàn</legend>
               {seenItems.map(renderItem)}
             </fieldset>
           )}
@@ -154,7 +154,7 @@ export function LateRefundDialog({ orderId, orderNumber, totalAmount, pendingIte
 
           <div className="mt-4 space-y-3 text-sm">
             <div>
-              <label htmlFor="late-refund-ref" className="mb-1 block font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="late-refund-ref" className="mb-1 block font-medium text-foreground">
                 Mã giao dịch hoàn (không bắt buộc)
               </label>
               <input
@@ -163,11 +163,11 @@ export function LateRefundDialog({ orderId, orderNumber, totalAmount, pendingIte
                 onChange={(e) => setTransactionRef(e.target.value)}
                 maxLength={TRANSACTION_REF_MAX_LEN}
                 placeholder="VD: FT26271123456789 (mã trên sao kê ngân hàng)"
-                className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+                className="h-10 w-full rounded-lg border border-border px-3 text-sm dark:bg-gray-900"
               />
             </div>
             <div>
-              <label htmlFor="late-refund-note" className="mb-1 block font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="late-refund-note" className="mb-1 block font-medium text-foreground">
                 Ghi chú (không bắt buộc)
               </label>
               <textarea
@@ -176,9 +176,9 @@ export function LateRefundDialog({ orderId, orderNumber, totalAmount, pendingIte
                 onChange={(e) => setNote(e.target.value)}
                 maxLength={NOTE_MAX_LEN}
                 rows={3}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm dark:bg-gray-900"
               />
-              <p className="mt-1 text-right text-xs text-gray-400">
+              <p className="mt-1 text-right text-xs text-muted-foreground">
                 {note.length}/{NOTE_MAX_LEN}
               </p>
             </div>

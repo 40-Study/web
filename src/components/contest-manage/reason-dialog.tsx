@@ -57,7 +57,7 @@ function ReasonBody({
       <DialogTitle>{title}</DialogTitle>
       <DialogDescription>{description}</DialogDescription>
       <div className="mt-4 text-sm">
-        <label htmlFor="contest-reason" className="mb-1 block font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="contest-reason" className="mb-1 block font-medium text-foreground">
           {fieldLabel} <span className="text-red-500">*</span>
         </label>
         <textarea
@@ -67,9 +67,9 @@ function ReasonBody({
           onChange={(e) => setReason(e.target.value)}
           maxLength={CONTEST_REASON_MAX_LEN}
           rows={4}
-          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm dark:bg-gray-900"
         />
-        <p className="mt-1 text-right text-xs text-gray-400">
+        <p className="mt-1 text-right text-xs text-muted-foreground">
           {reason.length}/{CONTEST_REASON_MAX_LEN}
         </p>
       </div>

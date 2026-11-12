@@ -31,26 +31,26 @@ export function CourseCarousel({ title, subtitle, courses }: CourseCarouselProps
   const handleNext = () => setScrollIndex((prev) => Math.min(maxIndex, prev + 1));
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm">
+    <div className="bg-card rounded-2xl p-6 shadow-sm">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-          <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+          <h2 className="text-xl font-bold text-foreground">{title}</h2>
+          <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
         </div>
 
         <div className="flex gap-2">
           <button
             onClick={handlePrev}
             disabled={scrollIndex === 0}
-            className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={handleNext}
             disabled={scrollIndex >= maxIndex}
-            className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -102,13 +102,13 @@ function CourseCard({ course }: { course: RecommendedCourse }) {
       </div>
 
       {/* Info */}
-      <h4 className="font-semibold text-gray-900 mb-1 group-hover:text-primary-600 transition-colors line-clamp-1">
+      <h4 className="font-semibold text-foreground mb-1 group-hover:text-primary-600 transition-colors line-clamp-1 dark:group-hover:text-primary-400">
         {course.title}
       </h4>
 
       <p className="text-orange-500 font-semibold mb-2">{formatPrice(course.price)}</p>
 
-      <div className="flex items-center gap-3 text-xs text-gray-500">
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <Users className="w-3.5 h-3.5" />
           {formatNumber(course.students)}

@@ -46,7 +46,7 @@ export default function OrgOverviewPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((s) => (
             <Link key={s.label} href={s.href} className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-              <Card className="h-full transition-colors hover:border-primary-300">
+              <Card className="h-full transition-colors hover:border-primary-300 dark:hover:border-primary-500/30">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                     <s.icon className="h-4 w-4" aria-hidden="true" />

@@ -152,7 +152,7 @@ export default function LeaderboardPage() {
           <Trophy className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Bảng xếp hạng</h1>
+          <h1 className="text-3xl font-bold text-foreground">Bảng xếp hạng</h1>
           <p className="text-muted-foreground">Thi đua cùng bạn bè và leo hạng mỗi ngày</p>
         </div>
       </div>
@@ -205,12 +205,12 @@ export default function LeaderboardPage() {
             onClick={() => setIsLeagueDropdownOpen(!isLeagueDropdownOpen)}
             aria-expanded={isLeagueDropdownOpen}
             aria-haspopup="listbox"
-            className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl hover:border-gray-200 dark:hover:border-gray-600 transition-colors"
+            className="w-full flex items-center justify-between p-4 bg-card border border-border rounded-2xl hover:border-border transition-colors"
           >
             <div className="flex items-center gap-3">
               <span className="text-3xl">{currentLeague.icon}</span>
               <div className="text-left">
-                <p className="font-semibold text-gray-900 dark:text-white">
+                <p className="font-semibold text-foreground">
                   Giải {currentLeague.name}
                 </p>
                 <p className="text-sm text-muted-foreground">Chọn giải để xem</p>
@@ -218,14 +218,14 @@ export default function LeaderboardPage() {
             </div>
             <ChevronDown
               className={cn(
-                "h-5 w-5 text-gray-400 transition-transform",
+                "h-5 w-5 text-muted-foreground transition-transform",
                 isLeagueDropdownOpen && "rotate-180"
               )}
             />
           </button>
 
           {isLeagueDropdownOpen && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl z-10 overflow-hidden">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-2xl shadow-xl z-10 overflow-hidden">
               {LEAGUES.map((league) => (
                 <button
                   key={league.id}
@@ -234,12 +234,12 @@ export default function LeaderboardPage() {
                     setIsLeagueDropdownOpen(false);
                   }}
                   className={cn(
-                    "w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors",
-                    league.id === selectedLeague && "bg-gray-50 dark:bg-gray-800"
+                    "w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors",
+                    league.id === selectedLeague && "bg-muted/50"
                   )}
                 >
                   <span className="text-2xl">{league.icon}</span>
-                  <span className="font-medium text-gray-900 dark:text-white">
+                  <span className="font-medium text-foreground">
                     {league.name}
                   </span>
                 </button>
@@ -254,7 +254,7 @@ export default function LeaderboardPage() {
             <Clock className="h-5 w-5 text-muted-foreground" />
             <div>
               <p className="text-sm text-muted-foreground">Làm mới sau</p>
-              <p className="font-mono font-bold text-lg text-gray-900 dark:text-white">
+              <p className="font-mono font-bold text-lg text-foreground">
                 {formatTimeRemaining(timeRemaining)}
               </p>
             </div>
@@ -288,7 +288,7 @@ export default function LeaderboardPage() {
                 </span>
               </div>
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">Vị trí của bạn</p>
+                <p className="font-semibold text-foreground">Vị trí của bạn</p>
                 <p className="text-sm text-muted-foreground">
                   +{myEntry.weeklyXP.toLocaleString("vi-VN")} XP trong kỳ này
                 </p>
@@ -303,7 +303,7 @@ export default function LeaderboardPage() {
 
       {/* League progress */}
       <Card className="p-4 mb-6">
-        <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Tiến độ giải đấu</h3>
+        <h3 className="font-semibold mb-3 text-foreground">Tiến độ giải đấu</h3>
         {/* Luôn là giải CỦA MÌNH theo XP tích luỹ, không phụ thuộc giải đang xem hay kỳ đang chọn. */}
         <LeagueProgress currentXP={totalXP} currentLeague={myLeague.id} />
       </Card>

@@ -16,9 +16,9 @@ interface ScheduleEventDetailDialogProps {
 }
 
 const STATUS_CONFIG = {
-  completed: { label: "ĐÃ HOÀN THÀNH", className: "bg-green-100 text-green-700" },
-  ongoing: { label: "ĐANG DIỄN RA", className: "bg-red-100 text-red-700" },
-  upcoming: { label: "SẮP DIỄN RA", className: "bg-blue-100 text-blue-700" },
+  completed: { label: "ĐÃ HOÀN THÀNH", className: "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300" },
+  ongoing: { label: "ĐANG DIỄN RA", className: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300" },
+  upcoming: { label: "SẮP DIỄN RA", className: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300" },
 } as const;
 
 const TYPE_CONFIG = {
@@ -60,7 +60,7 @@ export default function ScheduleEventDetailDialog({
             <span className="font-medium">
               {format(parseISO(event.startTime), "EEEE, dd/MM/yyyy", { locale: vi })}
             </span>
-            <span className="text-gray-500 ml-1">
+            <span className="text-muted-foreground ml-1">
               {format(parseISO(event.startTime), "HH:mm")} -{" "}
               {format(parseISO(event.endTime), "HH:mm")}
             </span>
@@ -97,7 +97,7 @@ export default function ScheduleEventDetailDialog({
           {/* Description */}
           {event.description && (
             <DetailRow icon={FileText}>
-              <span className="text-gray-600 dark:text-gray-300">{event.description}</span>
+              <span className="text-muted-foreground">{event.description}</span>
             </DetailRow>
           )}
           {event.meetingUrl?.startsWith("/rooms/") && event.status === "ongoing" && <Link href={event.meetingUrl} prefetch={false} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white"><Radio className="h-4 w-4" />Vào lớp học</Link>}
@@ -111,7 +111,7 @@ export default function ScheduleEventDetailDialog({
 function DetailRow({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3 text-sm">
-      <Icon className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+      <Icon className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
       <div>{children}</div>
     </div>
   );

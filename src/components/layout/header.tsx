@@ -280,7 +280,7 @@ export function Header() {
                     <div className="px-5 py-3 border-t border-border bg-muted">
                       <Link
                         href="/notifications"
-                        className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                        className="text-sm text-primary-600 hover:text-primary-700 font-medium dark:text-primary-400 dark:hover:text-primary-300"
                         onClick={() => setIsNotificationOpen(false)}
                       >
                         Xem tất cả thông báo

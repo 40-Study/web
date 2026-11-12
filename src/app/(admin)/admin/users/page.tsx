@@ -156,8 +156,8 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Người dùng</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-foreground">Người dùng</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Tìm kiếm, lọc và khoá/mở khoá tài khoản người dùng trên toàn hệ thống.
         </p>
       </div>
@@ -219,7 +219,7 @@ export default function AdminUsersPage() {
         emptyDescription="Thử đổi từ khoá tìm kiếm hoặc bộ lọc."
         onRetry={() => refetch()}
       >
-        <div className="overflow-hidden rounded-xl border bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+        <div className="overflow-hidden rounded-xl border bg-card shadow-sm dark:border-gray-800">
           <Table>
             <TableHeader>
               <TableRow>
@@ -232,7 +232,7 @@ export default function AdminUsersPage() {
                 {/* A7 (mobile 390px): bảng rộng hơn màn hình nên cột hành động bị đẩy khỏi tầm
                     nhìn, không có dấu hiệu cuộn. Ghim cột này vào mép phải để nút Khoá/Mở khoá
                     luôn tới được. Nền đục để hàng không lộ qua khi cuộn ngang. */}
-                <TableHead className="sticky right-0 z-10 bg-gray-50 text-right dark:bg-gray-900">
+                <TableHead className="sticky right-0 z-10 bg-muted/50 text-right">
                   Hành động
                 </TableHead>
               </TableRow>
@@ -243,7 +243,7 @@ export default function AdminUsersPage() {
                 return (
                   <TableRow key={user.id}>
                     <TableCell>
-                      <Link href={`/admin/users/${user.id}`} className="font-medium text-primary-700 hover:underline">
+                      <Link href={`/admin/users/${user.id}`} className="font-medium text-primary-700 hover:underline dark:text-primary-300">
                         {user.email}
                       </Link>
                     </TableCell>
@@ -268,7 +268,7 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{formatDate(user.created_at)}</TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{formatDate(user.last_login_at)}</TableCell>
-                    <TableCell className="sticky right-0 z-10 bg-white text-right dark:bg-gray-950">
+                    <TableCell className="sticky right-0 z-10 bg-card text-right">
                       <Can permission={PERMISSIONS.USERS_BAN}>
                         {user.is_active ? (
                           <Button
@@ -332,7 +332,7 @@ export default function AdminUsersPage() {
           </DialogDescription>
           <div className="mt-2">
             <label htmlFor="lock-reason" className="mb-1 block text-sm font-medium text-foreground">
-              Lý do khoá <span className="text-red-600">*</span>
+              Lý do khoá <span className="text-red-600 dark:text-red-400">*</span>
             </label>
             <textarea
               id="lock-reason"
@@ -341,7 +341,7 @@ export default function AdminUsersPage() {
               maxLength={500}
               rows={3}
               placeholder="Ví dụ: Vi phạm điều khoản sử dụng"
-              className="w-full rounded-xl border border-slate-200 bg-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-border"
+              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-border"
             />
             <p className="mt-1 text-right text-xs text-muted-foreground">{lockReason.length}/500</p>
           </div>

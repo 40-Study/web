@@ -121,7 +121,7 @@ export function SkillsDialog({
               }}
             />
             {error && (
-              <p role="alert" className="text-xs text-red-600">
+              <p role="alert" className="text-xs text-red-600 dark:text-red-400">
                 {error}
               </p>
             )}
@@ -167,7 +167,7 @@ export function SkillsDialog({
                 {!BUILTIN_SKILLS.some((s) => s.id === skill.id) && (
                   <button
                     aria-label={`Xoá skill ${skill.name}`}
-                    className="mr-3 rounded-lg p-2 text-muted-foreground hover:text-red-600"
+                    className="mr-3 rounded-lg p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400"
                     onClick={() => onDelete(skill.id)}
                   >
                     <Trash2 className="h-4 w-4" />

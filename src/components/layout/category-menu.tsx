@@ -100,7 +100,7 @@ export function CategoryMenu({ onAfterNavigate }: { onAfterNavigate?: () => void
         aria-label="Danh mục khoá học"
         className={cn(
           "flex items-center gap-1.5 h-8 px-3 rounded-full text-sm font-medium transition-colors",
-          "bg-primary-50 text-primary-700 hover:bg-primary-100",
+          "bg-primary-50 text-primary-700 hover:bg-primary-100 dark:bg-primary-500/10 dark:text-primary-300 dark:hover:bg-primary-500/15",
           "dark:bg-primary-900/40 dark:text-primary-300 dark:hover:bg-primary-900/60",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         )}

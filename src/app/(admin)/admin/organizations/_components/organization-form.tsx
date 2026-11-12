@@ -62,7 +62,7 @@ export function OrganizationForm({ form, onChange }: OrganizationFormProps) {
           className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm"
         />
         {nameError && (
-          <p role="alert" className="text-xs text-red-600">
+          <p role="alert" className="text-xs text-red-600 dark:text-red-400">
             {nameError}
           </p>
         )}

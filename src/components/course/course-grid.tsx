@@ -29,8 +29,8 @@ const PRIORITY_COUNT = 5;
 
 function CourseCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card dark:border-slate-800 dark:bg-slate-900">
-      <Skeleton className="aspect-video w-full rounded-none bg-slate-100 dark:bg-slate-800" />
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+      <Skeleton className="aspect-video w-full rounded-none bg-muted" />
       <div className="space-y-3 p-4 md:p-5">
         <Skeleton className="h-3 w-1/3" />
         <Skeleton className="h-6 w-full" />
@@ -64,7 +64,7 @@ export function CourseGrid({
     return (
       <div
         className={cn(
-          "flex min-h-[320px] items-center justify-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-700",
+          "flex min-h-[320px] items-center justify-center rounded-2xl border border-dashed border-input",
           className
         )}
       >

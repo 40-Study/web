@@ -100,25 +100,25 @@ function AdminOrdersContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Đơn hàng</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-foreground">Đơn hàng</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Toàn bộ đơn hàng trên hệ thống — xem chi tiết và xử lý hoàn tiền.
         </p>
       </div>
 
       {/* Filters */}
-      <section className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+      <section className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-800">
         <div className="grid gap-3 sm:grid-cols-2">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm theo mã đơn, email hoặc tên người mua..."
-            className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+            className="h-10 rounded-lg border border-border px-3 text-sm dark:bg-gray-900"
           />
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as StatusFilter)}
-            className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
+            className="h-10 rounded-lg border border-border px-3 text-sm dark:bg-gray-900"
           >
             <option value="">Tất cả trạng thái</option>
             {STATUS_LIST.map((s) => (
@@ -140,10 +140,10 @@ function AdminOrdersContent() {
         emptyDescription="Chưa có đơn khớp bộ lọc hiện tại."
       >
         <OrderCardList items={items} />
-        <section className="hidden overflow-hidden rounded-xl border bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950 sm:block">
+        <section className="hidden overflow-hidden rounded-xl border bg-card shadow-sm dark:border-gray-800 sm:block">
           <div className="overflow-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-900">
+              <thead className="bg-muted/50">
                 <tr>
                   <th className="px-4 py-3 text-left">Mã đơn</th>
                   <th className="px-4 py-3 text-left">Học viên</th>
@@ -154,23 +154,23 @@ function AdminOrdersContent() {
                   <th className={`px-4 py-3 text-left ${STICKY_ACTION_HEAD}`} />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              <tbody className="divide-y divide-border">
                 {items.map((order) => (
                   <tr key={order.id}>
                     <td className="px-4 py-3 font-medium">{order.order_number}</td>
                     <td className="px-4 py-3">{order.user_email}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                    <td className="px-4 py-3 text-muted-foreground">
                       {order.items.map((i) => i.course_title).join(", ") || "-"}
                     </td>
                     <td className="px-4 py-3 font-medium">{formatVnd(order.total_amount)}</td>
                     <td className="px-4 py-3">
                       <OrderStatusCell order={order} />
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-500">{formatVnDateTime(order.created_at)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{formatVnDateTime(order.created_at)}</td>
                     <td className={`px-4 py-3 ${STICKY_ACTION_CELL}`}>
                       <Link
                         href={`/admin/orders/${order.id}`}
-                        className="rounded bg-gray-100 px-2 py-1 text-xs font-medium hover:bg-gray-200 dark:bg-gray-800"
+                        className="rounded bg-muted px-2 py-1 text-xs font-medium hover:bg-muted-foreground/20"
                       >
                         Chi tiết
                       </Link>
@@ -184,7 +184,7 @@ function AdminOrdersContent() {
 
         {/* Pagination */}
         {data && data.total_pages > 1 && (
-          <div className="flex items-center justify-between px-1 text-sm text-gray-500">
+          <div className="flex items-center justify-between px-1 text-sm text-muted-foreground">
             <span>
               Trang {data.page}/{data.total_pages} — {data.total_count} đơn
             </span>

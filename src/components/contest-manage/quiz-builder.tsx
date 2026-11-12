@@ -27,7 +27,7 @@ import {
 import { quizService } from "@/services/quiz.service";
 
 const FIELD =
-  "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:bg-gray-50 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-900";
+  "w-full rounded-lg border border-border px-3 py-2 text-sm disabled:bg-muted/50 disabled:text-muted-foreground dark:bg-gray-900";
 
 interface QuizBuilderProps {
   onCreated: (quizId: string) => void;
@@ -129,11 +129,11 @@ export function QuizBuilder({ onCreated, onCancel }: QuizBuilderProps) {
         const locked = isLocked(qi);
         const fillBlank = q.type === "fill_blank";
         return (
-          <div key={qi} className="space-y-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-950" data-testid={`question-${qi}`}>
+          <div key={qi} className="space-y-2 rounded-lg border border-border bg-card p-3" data-testid={`question-${qi}`}>
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm font-semibold">
                 Câu {qi + 1}
-                {locked && <span className="ml-2 text-xs font-normal text-green-700">Đã lưu</span>}
+                {locked && <span className="ml-2 text-xs font-normal text-green-700 dark:text-green-300">Đã lưu</span>}
               </span>
               <Button
                 type="button"
@@ -184,7 +184,7 @@ export function QuizBuilder({ onCreated, onCancel }: QuizBuilderProps) {
               />
             </div>
             {fillBlank && (
-              <p className="text-xs text-gray-500" data-testid={`fill-blank-hint-${qi}`}>
+              <p className="text-xs text-muted-foreground" data-testid={`fill-blank-hint-${qi}`}>
                 Học viên gõ câu trả lời; bài được tính đúng khi khớp một trong các đáp án dưới đây. Hệ thống bỏ
                 khoảng trắng thừa và không phân biệt chữ hoa, chữ thường, nhưng GIỮ NGUYÊN dấu (&quot;Ha Noi&quot; khác
                 &quot;Hà Nội&quot;). Thêm các cách viết khác nếu muốn chấp nhận.
@@ -218,7 +218,7 @@ export function QuizBuilder({ onCreated, onCancel }: QuizBuilderProps) {
                   {!locked && q.type !== "true_false" && q.answers.length > (fillBlank ? 1 : 2) && (
                     <button
                       type="button"
-                      className="text-xs text-red-600"
+                      className="text-xs text-red-600 dark:text-red-400"
                       onClick={() => updateQuestion(qi, { answers: q.answers.filter((_, i) => i !== ai) })}
                     >
                       Xoá
@@ -229,7 +229,7 @@ export function QuizBuilder({ onCreated, onCancel }: QuizBuilderProps) {
               {!locked && q.type !== "true_false" && q.answers.length < (fillBlank ? FILL_BLANK_MAX_ACCEPTED : 6) && (
                 <button
                   type="button"
-                  className="text-xs font-medium text-primary-700"
+                  className="text-xs font-medium text-primary-700 dark:text-primary-300"
                   onClick={() =>
                     updateQuestion(qi, { answers: [...q.answers, { text: "", correct: fillBlank }] })
                   }
@@ -248,7 +248,7 @@ export function QuizBuilder({ onCreated, onCancel }: QuizBuilderProps) {
       </Button>
 
       {error && (
-        <p role="alert" className="text-sm text-red-600" data-testid="quiz-builder-error">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400" data-testid="quiz-builder-error">
           {error}
         </p>
       )}

@@ -191,7 +191,7 @@ export function LiveSessionModal({
                 <label className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
                   Mô tả và chuẩn bị
                 </label>
-                <label className="flex items-center gap-2 text-sm text-primary-600 cursor-pointer hover:underline">
+                <label className="flex items-center gap-2 text-sm text-primary-600 cursor-pointer hover:underline dark:text-primary-400">
                   <Paperclip className="h-4 w-4" />
                   Đính kèm tệp
                   <input
@@ -215,14 +215,14 @@ export function LiveSessionModal({
                   {form.attachments.map((file, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-2 bg-primary-50 text-primary-700 px-3 py-1.5 rounded-full text-sm"
+                      className="flex items-center gap-2 bg-primary-50 text-primary-700 px-3 py-1.5 rounded-full text-sm dark:bg-primary-500/10 dark:text-primary-300"
                     >
                       <Paperclip className="h-3.5 w-3.5" />
                       <span className="max-w-[150px] truncate">{file.name}</span>
                       <button
                         type="button"
                         onClick={() => removeAttachment(idx)}
-                        className="hover:text-primary-900"
+                        className="hover:text-primary-900 dark:hover:text-primary-300"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
@@ -289,8 +289,8 @@ export function LiveSessionModal({
 
             {/* Calculated end time */}
             {form.date && form.startTime && (
-              <div className="flex items-center gap-2 p-3 bg-primary-50 rounded-xl text-sm">
-                <Clock className="h-4 w-4 text-primary-600" />
+              <div className="flex items-center gap-2 p-3 bg-primary-50 rounded-xl text-sm dark:bg-primary-500/10">
+                <Clock className="h-4 w-4 text-primary-600 dark:text-primary-400" />
                 <span>
                   Buổi học trực tiếp sẽ diễn ra vào{" "}
                   <strong>
@@ -417,14 +417,14 @@ function PlatformCard({ icon, label, sublabel, selected, onClick }: PlatformCard
       className={cn(
         "flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all",
         selected
-          ? "border-primary-600 bg-primary-50 text-primary-700"
-          : "border-input hover:border-primary-300 hover:bg-muted/50"
+          ? "border-primary-600 bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-300"
+          : "border-input hover:border-primary-300 hover:bg-muted/50 dark:hover:border-primary-500/30"
       )}
     >
       {icon}
       <span className="text-sm font-medium">{label}</span>
       {sublabel && (
-        <span className="text-xs text-primary-600 bg-primary-100 px-2 py-0.5 rounded-full">
+        <span className="text-xs text-primary-600 bg-primary-100 px-2 py-0.5 rounded-full dark:text-primary-400 dark:bg-primary-500/15">
           {sublabel}
         </span>
       )}

@@ -33,18 +33,18 @@ export default function MyAttendancePage() {
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-6">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Chuyên cần</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-semibold text-foreground">Chuyên cần</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Lịch sử điểm danh các buổi học của bạn.
         </p>
       </header>
 
       {isLoading ? (
-        <div className="rounded-lg border border-gray-200 p-8 text-center text-sm text-gray-500">
+        <div className="rounded-lg border border-border p-8 text-center text-sm text-muted-foreground">
           Đang tải…
         </div>
       ) : attendances.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+        <div className="rounded-lg border border-dashed border-input p-8 text-center text-sm text-muted-foreground">
           Chưa có buổi học nào được điểm danh.
         </div>
       ) : (
@@ -52,14 +52,14 @@ export default function MyAttendancePage() {
           {/* S3: số liệu tính trên TOÀN BỘ lịch sử (không phải chỉ trang đang xem). */}
           <AttendanceStats summary={summary} />
           {isLoadingAll && (
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-muted-foreground">
               Đang tổng hợp toàn bộ lịch sử…
             </p>
           )}
 
-          <div className="mt-5 overflow-x-auto rounded-lg border border-gray-200">
+          <div className="mt-5 overflow-x-auto rounded-lg border border-border">
             <table className="w-full min-w-[560px] text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+              <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-medium">Thời gian</th>
                   <th className="px-4 py-3 font-medium">Trạng thái</th>
@@ -67,20 +67,20 @@ export default function MyAttendancePage() {
                   <th className="px-4 py-3 font-medium">Ghi chú</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {attendances.map((a) => (
-                  <tr key={a.id} className="hover:bg-gray-50/60">
+                  <tr key={a.id} className="hover:bg-muted/50">
                     {/* S11: formatter chung (giờ VN, bỏ giây); F-18: ngày trước, giờ sau. */}
-                    <td className="px-4 py-3 text-gray-700">
+                    <td className="px-4 py-3 text-foreground">
                       {formatVnDateThenTime(a.check_in_time ?? a.created_at)}
                     </td>
                     <td className="px-4 py-3">
                       <AttendanceStatusBadge status={a.status} />
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-muted-foreground">
                       {a.late_minutes ? `${a.late_minutes}′` : "—"}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{a.note || "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{a.note || "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -93,18 +93,18 @@ export default function MyAttendancePage() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="rounded-md border border-gray-200 px-3 py-1.5 hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-md border border-border px-3 py-1.5 hover:bg-muted/50 disabled:opacity-50"
               >
                 Trước
               </button>
-              <span className="text-gray-500">
+              <span className="text-muted-foreground">
                 Trang {page}/{totalPages}
               </span>
               <button
                 type="button"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="rounded-md border border-gray-200 px-3 py-1.5 hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-md border border-border px-3 py-1.5 hover:bg-muted/50 disabled:opacity-50"
               >
                 Sau
               </button>

@@ -107,7 +107,7 @@ export function AddMemberDialog({ open, onOpenChange, roles, memberIds, onSubmit
             <ul aria-label="Kết quả tìm kiếm" className="max-h-56 divide-y divide-border overflow-y-auto rounded-xl border border-border">
               {search.isLoading && <li className="p-3 text-sm text-muted-foreground">Đang tìm…</li>}
               {search.isError && (
-                <li role="alert" className="p-3 text-sm text-red-600">
+                <li role="alert" className="p-3 text-sm text-red-600 dark:text-red-400">
                   {getErrorMessage(search.error, "Không tìm được người dùng, thử lại sau.")}
                 </li>
               )}
@@ -140,7 +140,7 @@ export function AddMemberDialog({ open, onOpenChange, roles, memberIds, onSubmit
           )}
           <RoleSelect roles={roles} value={roleId} onChange={setRoleId} ariaLabel="Vai trò trong tổ chức" />
           {error && (
-            <p role="alert" className="text-sm text-red-600">
+            <p role="alert" className="text-sm text-red-600 dark:text-red-400">
               {error}
             </p>
           )}

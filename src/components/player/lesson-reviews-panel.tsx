@@ -79,23 +79,23 @@ export function LessonReviewsPanel({ courseId, data, isLoading, isError }: Lesso
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+      <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
         {total > 0 ? (
           <div className="text-center">
-            <p className="text-4xl font-bold text-gray-900">{average.toFixed(1)}</p>
+            <p className="text-4xl font-bold text-foreground">{average.toFixed(1)}</p>
             <Stars value={average} />
-            <p className="text-xs text-gray-500 mt-1">{total} đánh giá</p>
+            <p className="text-xs text-muted-foreground mt-1">{total} đánh giá</p>
           </div>
         ) : (
-          <p className="text-sm text-gray-500">Khoá học chưa có đánh giá nào.</p>
+          <p className="text-sm text-muted-foreground">Khoá học chưa có đánh giá nào.</p>
         )}
       </div>
 
       {alreadyReviewed ? (
-        <p className="text-sm text-gray-500">Bạn đã đánh giá khoá học này. Cảm ơn bạn!</p>
+        <p className="text-sm text-muted-foreground">Bạn đã đánh giá khoá học này. Cảm ơn bạn!</p>
       ) : (
-        <form onSubmit={submit} className="space-y-3 border border-gray-200 rounded-lg p-4">
-          <p className="text-sm font-medium text-gray-900">Viết đánh giá của bạn</p>
+        <form onSubmit={submit} className="space-y-3 border border-border rounded-lg p-4">
+          <p className="text-sm font-medium text-foreground">Viết đánh giá của bạn</p>
           <div className="flex items-center gap-1" role="radiogroup" aria-label="Chọn số sao">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
@@ -119,7 +119,7 @@ export function LessonReviewsPanel({ courseId, data, isLoading, isError }: Lesso
             rows={3}
             maxLength={2000}
             placeholder="Chia sẻ cảm nhận của bạn về khoá học (không bắt buộc)"
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-200"
+            className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-200"
           />
           <button
             type="submit"
@@ -133,20 +133,20 @@ export function LessonReviewsPanel({ courseId, data, isLoading, isError }: Lesso
       )}
 
       {reviews.map((review) => (
-        <div key={review.id} className="border-b border-gray-100 pb-4 last:border-0">
+        <div key={review.id} className="border-b border-border pb-4 last:border-0">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600 shrink-0">
+            <div className="w-8 h-8 rounded-full bg-muted-foreground/20 flex items-center justify-center text-xs font-medium text-muted-foreground shrink-0">
               {(review.user_name || "?").charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-900">{review.user_name || "Học viên"}</p>
+              <p className="text-sm font-medium text-foreground">{review.user_name || "Học viên"}</p>
               <div className="flex items-center gap-2">
                 <Stars value={review.rating} />
-                <span className="text-xs text-gray-400">{formatReviewDate(review.created_at)}</span>
+                <span className="text-xs text-muted-foreground">{formatReviewDate(review.created_at)}</span>
               </div>
             </div>
           </div>
-          {review.comment ? <p className="text-sm text-gray-600 leading-relaxed">{review.comment}</p> : null}
+          {review.comment ? <p className="text-sm text-muted-foreground leading-relaxed">{review.comment}</p> : null}
         </div>
       ))}
     </div>

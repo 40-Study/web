@@ -83,7 +83,7 @@ export function QuizResult({ quiz, answers, timeSpent, onRetry }: QuizResultProp
     return (
         <div className="flex flex-col gap-6 p-4 md:p-6 max-w-5xl mx-auto">
             {/* Quiz title */}
-            <h1 className="text-xl font-bold text-gray-800">{quiz.title}</h1>
+            <h1 className="text-xl font-bold text-foreground">{quiz.title}</h1>
 
             {/* Top section: score card + question map */}
             <ScoreCardSection
@@ -99,7 +99,7 @@ export function QuizResult({ quiz, answers, timeSpent, onRetry }: QuizResultProp
             {/* Question detail list — shown after "Review Answers" is clicked */}
             {reviewMode && (
                 <div className="flex flex-col gap-4">
-                    <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest">
+                    <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
                         Chi tiết câu trả lời
                     </h2>
 

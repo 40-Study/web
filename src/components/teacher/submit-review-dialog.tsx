@@ -33,13 +33,13 @@ export function SubmitReviewDialog({ open, onOpenChange, items, actionLabel, isP
               <span
                 className={cn(
                   "flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
-                  item.done === false ? "bg-red-100 text-red-600" : item.done ? "bg-green-500 text-white" : "bg-gray-200 text-gray-500"
+                  item.done === false ? "bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400" : item.done ? "bg-green-500 text-white" : "bg-muted-foreground/20 text-muted-foreground"
                 )}
                 aria-hidden="true"
               >
                 {item.done === false ? <X className="h-3 w-3" /> : item.done ? <Check className="h-3 w-3" /> : null}
               </span>
-              <span className={item.done === false ? "text-red-700" : undefined}>
+              <span className={item.done === false ? "text-red-700 dark:text-red-300" : undefined}>
                 {item.label}
                 {item.hint && <span className="text-muted-foreground"> ({item.hint})</span>}
                 {item.done === false && <span className="sr-only"> (chưa có)</span>}
@@ -48,7 +48,7 @@ export function SubmitReviewDialog({ open, onOpenChange, items, actionLabel, isP
           ))}
         </ul>
         {missing.length > 0 && (
-          <p role="alert" data-testid="submit-review-missing" className="mt-3 text-sm text-red-700">
+          <p role="alert" data-testid="submit-review-missing" className="mt-3 text-sm text-red-700 dark:text-red-300">
             Còn thiếu: {missing.map((m) => m.label.toLowerCase()).join(", ")}. Bổ sung (Sửa thông tin hoặc thêm bài học) rồi gửi duyệt.
           </p>
         )}

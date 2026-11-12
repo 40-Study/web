@@ -37,14 +37,14 @@ export function DiscussionComposer({ onSubmit, isSubmitting }: DiscussionCompose
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
+    <div className="bg-card rounded-2xl border border-border shadow-sm p-5 mb-6">
       <input
         type="text"
         placeholder="Bắt đầu một cuộc thảo luận..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onFocus={() => setExpanded(true)}
-        className="w-full text-sm font-medium placeholder:text-slate-400 outline-none text-slate-800 mb-0"
+        className="w-full text-sm font-medium placeholder:text-muted-foreground outline-none text-foreground mb-0"
       />
 
       {expanded && (
@@ -66,7 +66,7 @@ export function DiscussionComposer({ onSubmit, isSubmitting }: DiscussionCompose
                   "text-xs font-medium px-3 py-1.5 rounded-full border transition-colors",
                   category === cat.value
                     ? "bg-primary-500 text-white border-primary-500"
-                    : "border-slate-200 text-slate-500 hover:border-primary-300"
+                    : "border-border text-muted-foreground hover:border-primary-300 dark:hover:border-primary-500/30"
                 )}
               >
                 {cat.label}
@@ -77,7 +77,7 @@ export function DiscussionComposer({ onSubmit, isSubmitting }: DiscussionCompose
           <div className="flex justify-end gap-2">
             <button
               onClick={() => setExpanded(false)}
-              className="text-sm text-slate-400 hover:text-slate-600 px-4 py-2"
+              className="text-sm text-muted-foreground hover:text-muted-foreground px-4 py-2"
             >
               Huỷ
             </button>

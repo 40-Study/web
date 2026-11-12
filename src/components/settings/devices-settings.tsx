@@ -21,12 +21,12 @@ export function DevicesSettings() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Thiết bị</h2>
-          <p className="text-sm text-gray-500 mt-1">Quản lý các phiên đăng nhập</p>
+          <h2 className="text-xl font-bold text-foreground">Thiết bị</h2>
+          <p className="text-sm text-muted-foreground mt-1">Quản lý các phiên đăng nhập</p>
         </div>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 rounded-2xl bg-gray-100 animate-pulse" />
+            <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />
           ))}
         </div>
       </div>
@@ -37,15 +37,15 @@ export function DevicesSettings() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Thiết bị</h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <h2 className="text-xl font-bold text-foreground">Thiết bị</h2>
+          <p className="text-sm text-muted-foreground mt-1">
             {devices.length > 0
               ? `${devices.length} thiết bị đang đăng nhập`
               : "Không có thiết bị nào"}
           </p>
         </div>
         {devices.length > 1 && (
-          <LogoutAllButton className="rounded-xl text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600" />
+          <LogoutAllButton className="rounded-xl text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-red-500/30 dark:hover:bg-red-500/10 dark:hover:text-red-400" />
         )}
       </div>
 
@@ -55,21 +55,21 @@ export function DevicesSettings() {
           return (
             <div
               key={device.device_id}
-              className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex items-center gap-4"
+              className="bg-card rounded-2xl border border-border p-5 shadow-sm flex items-center gap-4"
             >
-              <div className="p-2.5 bg-gray-50 rounded-xl shrink-0">
-                <DeviceIcon kind={kind} className="h-5 w-5 text-gray-600" />
+              <div className="p-2.5 bg-muted/50 rounded-xl shrink-0">
+                <DeviceIcon kind={kind} className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="font-medium text-gray-900 truncate">{label}</p>
+                  <p className="font-medium text-foreground truncate">{label}</p>
                   {device.is_current && (
-                    <span className="shrink-0 inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-200">
+                    <span className="shrink-0 inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-200 dark:bg-green-500/10 dark:text-green-300">
                       Thiết bị này
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-500 mt-0.5">
+                <p className="text-sm text-muted-foreground mt-0.5">
                   {sessionLabel && `${sessionLabel} \u00b7 `}Đăng nhập lúc{" "}
                   {formatVnDateTime(device.logged_in_at)}
                 </p>
@@ -79,9 +79,9 @@ export function DevicesSettings() {
         })}
 
         {devices.length === 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center shadow-sm">
+          <div className="bg-card rounded-2xl border border-border p-8 text-center shadow-sm">
             <Monitor className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">Không có thiết bị nào đang đăng nhập</p>
+            <p className="text-muted-foreground">Không có thiết bị nào đang đăng nhập</p>
           </div>
         )}
       </div>

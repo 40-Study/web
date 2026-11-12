@@ -37,7 +37,7 @@ function ReviewsPlaceholder({ state, onRetry }: { state: "loading" | "error"; on
           <div className="h-16 rounded-lg bg-muted" />
         </div>
       ) : (
-        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
           <span>Chưa tải được đánh giá của khoá học.</span>
           {onRetry && (
             <Button variant="outline" size="sm" onClick={onRetry}>
@@ -92,14 +92,14 @@ export function CourseDetailContent({
       {/* What you'll learn */}
       {course.learningOutcomes.length > 0 && (
         <section>
-          <h2 className="mb-4 text-xl font-semibold text-gray-900">
+          <h2 className="mb-4 text-xl font-semibold text-foreground">
             Bạn sẽ học được gì
           </h2>
-          <div className="grid gap-3 rounded-2xl border border-green-100 bg-green-50/50 p-5 sm:grid-cols-2">
+          <div className="grid gap-3 rounded-2xl border border-green-100 bg-green-50/50 p-5 sm:grid-cols-2 dark:border-green-500/30">
             {course.learningOutcomes.map((outcome, idx) => (
               <div key={idx} className="flex items-start gap-2.5">
-                <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
-                <span className="text-sm text-gray-700">{outcome}</span>
+                <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600 dark:text-green-400" />
+                <span className="text-sm text-foreground">{outcome}</span>
               </div>
             ))}
           </div>
@@ -119,11 +119,11 @@ export function CourseDetailContent({
       {/* Requirements */}
       {course.requirements && course.requirements.length > 0 && (
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-gray-900">Yêu cầu</h2>
+          <h2 className="mb-3 text-xl font-semibold text-foreground">Yêu cầu</h2>
           <ul className="space-y-2">
             {course.requirements.map((req, idx) => (
-              <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-gray-400" />
+              <li key={idx} className="flex items-start gap-2 text-sm text-foreground">
+                <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-muted-foreground" />
                 {req}
               </li>
             ))}
@@ -133,7 +133,7 @@ export function CourseDetailContent({
 
       {/* Instructor */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold text-gray-900">Giảng viên</h2>
+        <h2 className="mb-4 text-xl font-semibold text-foreground">Giảng viên</h2>
         <InstructorCard instructor={course.instructor} />
       </section>
 

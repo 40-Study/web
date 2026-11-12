@@ -64,8 +64,8 @@ export function LessonStudyTools({
   const effectiveTool = activeTool === "transcript" && !hasTranscript ? null : activeTool;
 
   return (
-    <div className="rounded-2xl bg-white shadow-sm">
-      <div className="flex items-center gap-1 border-b border-gray-100 px-3 pt-2">
+    <div className="rounded-2xl bg-card shadow-sm">
+      <div className="flex items-center gap-1 border-b border-border px-3 pt-2">
         {tabs.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -75,8 +75,8 @@ export function LessonStudyTools({
             className={cn(
               "flex items-center gap-1.5 rounded-t-lg px-3 py-2 text-sm font-medium transition-colors",
               effectiveTool === key
-                ? "border-b-2 border-primary-600 text-primary-600"
-                : "text-gray-500 hover:text-gray-700"
+                ? "border-b-2 border-primary-600 text-primary-600 dark:text-primary-400"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <Icon className="h-4 w-4" aria-hidden="true" />

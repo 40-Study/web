@@ -29,7 +29,7 @@ export function InstructorCard({ instructor, className }: InstructorCardProps) {
             <img
               src={instructor.avatar}
               alt={displayName}
-              className="w-20 h-20 rounded-full object-cover flex-shrink-0 bg-gray-100"
+              className="w-20 h-20 rounded-full object-cover flex-shrink-0 bg-muted"
               onError={(e) => {
                 e.currentTarget.style.display = "none";
                 e.currentTarget.nextElementSibling?.classList.remove("hidden");
@@ -37,17 +37,17 @@ export function InstructorCard({ instructor, className }: InstructorCardProps) {
             />
           ) : null}
           <div className={cn(
-            "w-20 h-20 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center flex-shrink-0",
+            "w-20 h-20 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center flex-shrink-0 dark:from-primary-500/10",
             hasAvatar && "hidden"
           )}>
-            <User className="w-10 h-10 text-primary-600" />
+            <User className="w-10 h-10 text-primary-600 dark:text-primary-400" />
           </div>
 
           <div className="flex-1 min-w-0">
             {/* Name and Title */}
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-foreground">
               {hasProfile ? (
-                <Link href={`/teachers/${instructor.id}`} className="hover:text-primary-600 hover:underline">
+                <Link href={`/teachers/${instructor.id}`} className="hover:text-primary-600 hover:underline dark:hover:text-primary-400">
                   {displayName}
                 </Link>
               ) : (

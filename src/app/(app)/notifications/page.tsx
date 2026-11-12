@@ -43,7 +43,7 @@ export default function NotificationsPage() {
             <Bell className="h-6 w-6 text-primary-600 dark:text-primary-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Thông báo</h1>
+            <h1 className="text-2xl font-bold text-foreground">Thông báo</h1>
             {data && data.unread_count > 0 && (
               <p className="text-sm text-muted-foreground">{data.unread_count} thông báo chưa đọc</p>
             )}
@@ -71,11 +71,11 @@ export default function NotificationsPage() {
         emptyDescription="Thông báo về khoá học, bài tập và tin nhắn sẽ xuất hiện ở đây."
         onRetry={() => refetch()}
       >
-        <ul className="divide-y divide-gray-100 dark:divide-gray-800 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+        <ul className="divide-y divide-border rounded-2xl border border-border overflow-hidden">
           {notifications.map((item) => (
             <li key={item.id}>
               <button
-                className={`w-full text-left px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors ${
+                className={`w-full text-left px-5 py-4 hover:bg-muted/50 transition-colors ${
                   !item.is_read ? "bg-primary-50/50 dark:bg-primary-900/10" : ""
                 }`}
                 onClick={() => {
@@ -96,16 +96,16 @@ export default function NotificationsPage() {
                     <p
                       className={`text-sm leading-snug ${
                         !item.is_read
-                          ? "text-gray-900 dark:text-gray-100 font-medium"
-                          : "text-gray-700 dark:text-gray-300"
+                          ? "text-foreground font-medium"
+                          : "text-foreground"
                       }`}
                     >
                       {item.title}
                     </p>
                     {item.content && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{item.content}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{item.content}</p>
                     )}
-                    <p className="text-xs text-gray-400 mt-1.5">{timeAgo(item.created_at)}</p>
+                    <p className="text-xs text-muted-foreground mt-1.5">{timeAgo(item.created_at)}</p>
                   </div>
                 </div>
               </button>

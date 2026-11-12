@@ -24,25 +24,25 @@ export function IncomingLinkRequestsCard({ className }: { className?: string }) 
 
   return (
     <div className={className}>
-      <div className="bg-white rounded-2xl border border-amber-200 p-5">
+      <div className="bg-card rounded-2xl border border-amber-200 p-5 dark:border-amber-500/30">
         <div className="flex items-center gap-2 mb-1">
-          <ShieldCheck className="w-5 h-5 text-amber-600" />
-          <h2 className="text-base font-semibold text-slate-900">Yêu cầu liên kết từ phụ huynh</h2>
+          <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          <h2 className="text-base font-semibold text-foreground">Yêu cầu liên kết từ phụ huynh</h2>
         </div>
-        <p className="text-sm text-slate-500 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           Khi bạn xác nhận, người này xem được tiến độ học tập, điểm số và điểm danh của bạn. Chỉ xác nhận nếu đúng là phụ huynh của bạn.
         </p>
         <ul className="space-y-3">
           {requests.map((r) => {
             const name = r.parent ? r.parent.full_name || r.parent.username : "Phụ huynh";
             return (
-              <li key={r.id} className="rounded-xl border border-slate-100 p-4">
-                <p className="text-sm text-slate-900">
+              <li key={r.id} className="rounded-xl border border-border p-4">
+                <p className="text-sm text-foreground">
                   <span className="font-medium">{name}</span>{" "}
-                  <span className="text-slate-500">({r.parent?.email})</span> muốn liên kết với bạn với vai trò{" "}
+                  <span className="text-muted-foreground">({r.parent?.email})</span> muốn liên kết với bạn với vai trò{" "}
                   <span className="font-medium">{relationshipLabel(r.relationship)}</span>.
                 </p>
-                {r.message && <p className="mt-2 text-sm italic text-slate-600">&ldquo;{r.message}&rdquo;</p>}
+                {r.message && <p className="mt-2 text-sm italic text-muted-foreground">&ldquo;{r.message}&rdquo;</p>}
                 <div className="mt-3 flex gap-2">
                   <Button
                     size="sm"

@@ -53,14 +53,14 @@ export function DiscussionComment({
   };
 
   return (
-    <div className={cn("group", depth > 0 && "ml-8 border-l-2 border-slate-100 pl-4")}>
+    <div className={cn("group", depth > 0 && "ml-8 border-l-2 border-border pl-4")}>
       <div className="flex gap-3 py-3">
         {/* Avatar */}
         {comment.avatar_url ? (
           // eslint-disable-next-line @next/next/no-img-element -- avatar từ URL ngoài, chưa cấu hình next/image
           <img src={comment.avatar_url} alt={comment.author_name} className="w-8 h-8 rounded-full object-cover shrink-0" />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-xs shrink-0">
+          <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-xs shrink-0 dark:bg-primary-500/15 dark:text-primary-300">
             {initials}
           </div>
         )}
@@ -68,13 +68,13 @@ export function DiscussionComment({
         <div className="flex-1 min-w-0">
           {/* Author + time */}
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-sm font-semibold text-slate-800">{comment.author_name}</span>
-            <span className="text-xs text-slate-400">{timeAgo(comment.created_at)}</span>
+            <span className="text-sm font-semibold text-foreground">{comment.author_name}</span>
+            <span className="text-xs text-muted-foreground">{timeAgo(comment.created_at)}</span>
           </div>
 
           {/* Content */}
           <div
-            className="prose prose-sm max-w-none text-slate-700 [&_p]:mb-1"
+            className="prose prose-sm max-w-none text-foreground [&_p]:mb-1"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(comment.content) }}
           />
 
@@ -84,7 +84,7 @@ export function DiscussionComment({
               onClick={() => onVote(comment.id, hasVoted)}
               className={cn(
                 "flex items-center gap-1 text-xs transition-colors",
-                hasVoted ? "text-rose-500" : "text-slate-400 hover:text-rose-400"
+                hasVoted ? "text-rose-500" : "text-muted-foreground hover:text-rose-400"
               )}
             >
               <Heart className={cn("w-3.5 h-3.5", hasVoted && "fill-rose-500")} />
@@ -94,7 +94,7 @@ export function DiscussionComment({
             {canReply && depth < 2 && (
               <button
                 onClick={() => setShowReplyBox(!showReplyBox)}
-                className="flex items-center gap-1 text-xs text-slate-400 hover:text-primary-500 transition-colors"
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary-500 transition-colors"
               >
                 <CornerDownRight className="w-3.5 h-3.5" />
                 Trả lời
@@ -114,7 +114,7 @@ export function DiscussionComment({
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowReplyBox(false)}
-                  className="text-xs text-slate-400 hover:text-slate-600 px-3 py-1.5"
+                  className="text-xs text-muted-foreground hover:text-muted-foreground px-3 py-1.5"
                 >
                   Huỷ
                 </button>

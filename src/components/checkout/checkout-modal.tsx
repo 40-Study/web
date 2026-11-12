@@ -99,12 +99,12 @@ export function CheckoutModal({
             className="h-16 w-28 rounded-lg object-cover shrink-0"
           />
           <div className="min-w-0">
-            <p className="font-medium text-sm line-clamp-2 text-gray-900">{course.title}</p>
-            <p className="text-xs text-gray-500 mt-1">{course.instructor.name}</p>
+            <p className="font-medium text-sm line-clamp-2 text-foreground">{course.title}</p>
+            <p className="text-xs text-muted-foreground mt-1">{course.instructor.name}</p>
             <div className="mt-1 flex items-center gap-2">
-              <span className="font-semibold text-primary-600">{formatCurrency(course.price)}</span>
+              <span className="font-semibold text-primary-600 dark:text-primary-400">{formatCurrency(course.price)}</span>
               {courseDiscount > 0 && (
-                <span className="text-xs text-gray-400 line-through">{formatCurrency(originalPrice)}</span>
+                <span className="text-xs text-muted-foreground line-through">{formatCurrency(originalPrice)}</span>
               )}
             </div>
           </div>
@@ -112,7 +112,7 @@ export function CheckoutModal({
 
         {/* Voucher */}
         <div>
-          <p className="text-sm font-medium text-gray-700 mb-2">Mã giảm giá</p>
+          <p className="text-sm font-medium text-foreground mb-2">Mã giảm giá</p>
           <VoucherInput
             courseIds={[String(course.id)]}
             // A-05: thiếu subtotal thì mặc định 0 -> voucher có đơn tối thiểu luôn bị từ chối, % tính 0đ.
@@ -125,9 +125,9 @@ export function CheckoutModal({
         {/* Payment method — backend chỉ có chuyển khoản (A-18: trước đây hiện cả Thẻ/MoMo nhưng
             mọi đơn đều tạo bank_transfer). Khớp với trang /checkout. */}
         <div>
-          <p className="text-sm font-medium text-gray-700 mb-2">Phương thức thanh toán</p>
-          <div className="w-full flex items-center gap-3 rounded-lg border border-primary-500 bg-primary-50 px-3 py-2.5 text-sm text-primary-700">
-            <Building2 className="h-4 w-4 text-primary-600" />
+          <p className="text-sm font-medium text-foreground mb-2">Phương thức thanh toán</p>
+          <div className="w-full flex items-center gap-3 rounded-lg border border-primary-500 bg-primary-50 px-3 py-2.5 text-sm text-primary-700 dark:bg-primary-500/10 dark:text-primary-300">
+            <Building2 className="h-4 w-4 text-primary-600 dark:text-primary-400" />
             <div className="min-w-0">
               <p className="font-medium">Chuyển khoản ngân hàng</p>
               <p className="text-xs text-primary-700/80">
@@ -138,20 +138,20 @@ export function CheckoutModal({
         </div>
 
         {/* Price breakdown */}
-        <div className="rounded-xl bg-gray-50 p-3 space-y-1.5 text-sm">
-          <div className="flex justify-between text-gray-600">
+        <div className="rounded-xl bg-muted/50 p-3 space-y-1.5 text-sm">
+          <div className="flex justify-between text-muted-foreground">
             <span>Giá gốc</span>
             <span>{formatCurrency(course.price)}</span>
           </div>
           {voucherDiscount > 0 && (
-            <div className="flex justify-between text-green-600">
+            <div className="flex justify-between text-green-600 dark:text-green-400">
               <span>Voucher ({voucherResult?.voucher?.code})</span>
               <span>- {formatCurrency(voucherDiscount)}</span>
             </div>
           )}
-          <div className="flex justify-between font-semibold text-gray-900 pt-1 border-t border-gray-200">
+          <div className="flex justify-between font-semibold text-foreground pt-1 border-t border-border">
             <span>Tổng thanh toán</span>
-            <span className="text-primary-600">{formatCurrency(finalPrice)}</span>
+            <span className="text-primary-600 dark:text-primary-400">{formatCurrency(finalPrice)}</span>
           </div>
         </div>
 

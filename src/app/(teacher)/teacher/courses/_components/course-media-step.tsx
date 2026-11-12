@@ -156,7 +156,7 @@ export function CourseMediaStep({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">Hình ảnh & Mô tả</h2>
+        <h2 className="text-xl font-semibold text-foreground">Hình ảnh & Mô tả</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Thêm ảnh bìa, video giới thiệu và mô tả chi tiết
         </p>
@@ -176,7 +176,7 @@ export function CourseMediaStep({
         />
 
         {formData.thumbnail_preview ? (
-          <div className="relative rounded-xl overflow-hidden border bg-gray-100 aspect-video max-w-md">
+          <div className="relative rounded-xl overflow-hidden border bg-muted aspect-video max-w-md">
             <SafeImage
               src={formData.thumbnail_preview}
               alt="Xem trước ảnh bìa"
@@ -215,7 +215,7 @@ export function CourseMediaStep({
                 : "hover:border-primary-400 hover:bg-primary-50/50"
             )}
           >
-            <ImageIcon className={cn("w-10 h-10", isDragging ? "text-primary-600" : "text-muted-foreground")} />
+            <ImageIcon className={cn("w-10 h-10", isDragging ? "text-primary-600 dark:text-primary-400" : "text-muted-foreground")} />
             <p className="text-sm font-medium">
               {isDragging ? "Thả ảnh vào đây!" : "Kéo thả ảnh hoặc click để chọn"}
             </p>
@@ -238,10 +238,10 @@ export function CourseMediaStep({
         />
 
         {formData.preview_video_file || videoUpload.isUploading ? (
-          <div className="max-w-md border rounded-xl p-4 bg-gray-50">
+          <div className="max-w-md border rounded-xl p-4 bg-muted/50">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                <Film className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0 dark:bg-blue-500/15">
+                <Film className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">
@@ -249,7 +249,7 @@ export function CourseMediaStep({
                 </p>
                 {videoUpload.isUploading ? (
                   <div className="mt-1.5">
-                    <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-primary-600 rounded-full transition-all"
                         style={{ width: `${videoUpload.progress}%` }}
@@ -260,7 +260,7 @@ export function CourseMediaStep({
                     </p>
                   </div>
                 ) : videoUpload.uploadId ? (
-                  <p className="text-xs text-green-600 mt-0.5">Tải lên thành công</p>
+                  <p className="text-xs text-green-600 mt-0.5 dark:text-green-400">Tải lên thành công</p>
                 ) : videoUpload.error ? (
                   <p className="text-xs text-red-500 mt-0.5" role="alert">
                     {approvalErrorMessage(videoUpload.error, PREVIEW_VIDEO_UPLOAD_ERROR)}
@@ -269,7 +269,7 @@ export function CourseMediaStep({
               </div>
               <button
                 onClick={removeVideo}
-                className="w-8 h-8 text-gray-400 hover:text-red-500 rounded-full flex items-center justify-center transition"
+                className="w-8 h-8 text-muted-foreground hover:text-red-500 rounded-full flex items-center justify-center transition"
               >
                 <X className="w-4 h-4" />
               </button>

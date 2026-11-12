@@ -210,8 +210,8 @@ export function DocumentUpload({
         className={cn(
           "border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors",
           isDragging
-            ? "border-primary-500 bg-primary-50"
-            : "border-input hover:border-primary-300 hover:bg-muted/50"
+            ? "border-primary-500 bg-primary-50 dark:bg-primary-500/10"
+            : "border-input hover:border-primary-300 hover:bg-muted/50 dark:hover:border-primary-500/30"
         )}
       >
         <input
@@ -225,7 +225,7 @@ export function DocumentUpload({
         <Upload
           className={cn(
             "h-10 w-10 mx-auto mb-3",
-            isDragging ? "text-primary-600" : "text-muted-foreground"
+            isDragging ? "text-primary-600 dark:text-primary-400" : "text-muted-foreground"
           )}
         />
         <p className="text-sm text-muted-foreground">
@@ -249,7 +249,7 @@ export function DocumentUpload({
                   doc.status === "error"
                     ? "border-destructive bg-destructive/5"
                     : doc.status === "success"
-                    ? "border-green-500 bg-green-50"
+                    ? "border-green-500 bg-green-50 dark:bg-green-500/10"
                     : "border-input"
                 )}
               >
@@ -259,8 +259,8 @@ export function DocumentUpload({
                     doc.status === "error"
                       ? "bg-destructive/10 text-destructive"
                       : doc.status === "success"
-                      ? "bg-green-100 text-green-600"
-                      : "bg-primary-100 text-primary-600"
+                      ? "bg-green-100 text-green-600 dark:bg-green-500/15 dark:text-green-400"
+                      : "bg-primary-100 text-primary-600 dark:bg-primary-500/15 dark:text-primary-400"
                   )}
                 >
                   <FileIcon className="h-5 w-5" />
@@ -276,10 +276,10 @@ export function DocumentUpload({
                 </div>
                 <div className="flex items-center gap-2">
                   {doc.status === "uploading" && (
-                    <Loader2 className="h-4 w-4 animate-spin text-primary-600" />
+                    <Loader2 className="h-4 w-4 animate-spin text-primary-600 dark:text-primary-400" />
                   )}
                   {doc.status === "success" && (
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
                   )}
                   {doc.status === "error" && (
                     <AlertCircle className="h-4 w-4 text-destructive" />
@@ -326,20 +326,20 @@ export function DocumentUploadInline({
         {documents.map((doc) => (
           <div
             key={doc.id}
-            className="flex items-center gap-2 bg-primary-50 text-primary-700 px-3 py-1.5 rounded-full text-sm"
+            className="flex items-center gap-2 bg-primary-50 text-primary-700 px-3 py-1.5 rounded-full text-sm dark:bg-primary-500/10 dark:text-primary-300"
           >
             <Paperclip className="h-3.5 w-3.5" />
             <span className="max-w-[150px] truncate">{doc.name}</span>
             <button
               type="button"
               onClick={() => onRemove(doc.id)}
-              className="hover:text-primary-900"
+              className="hover:text-primary-900 dark:hover:text-primary-300"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
         ))}
-        <label className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 hover:underline cursor-pointer">
+        <label className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 hover:underline cursor-pointer dark:text-primary-400">
           <Paperclip className="h-3.5 w-3.5" />
           Đính kèm tệp
           <input

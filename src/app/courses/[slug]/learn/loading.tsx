@@ -2,9 +2,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CourseLearnLoading() {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-muted/50">
       {/* Header Skeleton */}
-      <div className="h-16 bg-white border-b border-gray-200 flex items-center px-5 gap-4">
+      <div className="h-16 bg-card border-b border-border flex items-center px-5 gap-4">
         <Skeleton className="h-8 w-8 rounded" />
         <Skeleton className="h-5 w-48" />
         <div className="flex-1" />
@@ -15,14 +15,14 @@ export default function CourseLearnLoading() {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col p-5 gap-4">
           {/* Video Player Skeleton */}
-          <div className="relative rounded-2xl overflow-hidden bg-gray-200 aspect-video animate-pulse">
+          <div className="relative rounded-2xl overflow-hidden bg-muted-foreground/20 aspect-video animate-pulse">
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-16 h-16 rounded-full bg-gray-300" />
+              <div className="w-16 h-16 rounded-full bg-muted-foreground/30" />
             </div>
           </div>
 
           {/* Lesson Info Card Skeleton */}
-          <div className="bg-white rounded-2xl shadow-sm px-6 py-5 space-y-4">
+          <div className="bg-card rounded-2xl shadow-sm px-6 py-5 space-y-4">
             {/* Title and meta */}
             <div className="flex items-start justify-between">
               <div className="space-y-2 flex-1">
@@ -37,7 +37,7 @@ export default function CourseLearnLoading() {
 
             {/* Tabs Skeleton */}
             <div className="border-t pt-4">
-              <div className="flex gap-6 border-b border-gray-100 pb-3">
+              <div className="flex gap-6 border-b border-border pb-3">
                 <Skeleton className="h-5 w-24" />
                 <Skeleton className="h-5 w-20" />
                 <Skeleton className="h-5 w-28" />
@@ -53,15 +53,15 @@ export default function CourseLearnLoading() {
         </div>
 
         {/* Sidebar Skeleton */}
-        <aside className="w-[380px] bg-white border-l border-gray-200 flex flex-col">
+        <aside className="w-[380px] bg-card border-l border-border flex flex-col">
           {/* Tabs */}
-          <div className="flex border-b border-gray-200">
+          <div className="flex border-b border-border">
             <Skeleton className="flex-1 h-12 m-2 rounded" />
             <Skeleton className="flex-1 h-12 m-2 rounded" />
           </div>
 
           {/* Progress Header */}
-          <div className="p-5 border-b border-gray-100 space-y-3">
+          <div className="p-5 border-b border-border space-y-3">
             <Skeleton className="h-5 w-40" />
             <Skeleton className="h-2 w-full rounded-full" />
             <div className="flex justify-between">

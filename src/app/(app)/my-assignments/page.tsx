@@ -72,25 +72,25 @@ function AssignmentCard({
 
   const borderCls =
     status === "ended"
-      ? "border-l-4 border-l-gray-300"
+      ? "border-l-4 border-l-input"
       : active
       ? "border-l-4 border-l-green-400"
       : "border-l-4 border-l-orange-400";
   const deadline = item.end_time ? formatDeadline(item.end_time) : "";
 
   return (
-    <div className={cn("bg-white rounded-2xl border border-gray-100 p-5 flex flex-col gap-4 shadow-sm", borderCls)}>
+    <div className={cn("bg-card rounded-2xl border border-border p-5 flex flex-col gap-4 shadow-sm", borderCls)}>
       {/* Top section */}
       <div className="flex gap-3 items-start">
-        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-          <Code className="w-5 h-5 text-blue-600" />
+        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 dark:bg-blue-500/15">
+          <Code className="w-5 h-5 text-blue-600 dark:text-blue-400" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm leading-snug">
             {item.title}
           </p>
           {item.description && (
-            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{item.description}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{item.description}</p>
           )}
         </div>
       </div>
@@ -100,7 +100,7 @@ function AssignmentCard({
         {/* Language */}
         {/* Backend trả language là mảng (vd ["python"]) */}
         {item.language?.length > 0 && (
-          <span className="text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full">
+          <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
             {item.language.join(", ")}
           </span>
         )}
@@ -108,10 +108,10 @@ function AssignmentCard({
         {/* Status info */}
         <div className="flex items-center gap-1 text-xs">
           {!item.is_published && (
-            <span className="text-gray-400">Chưa công bố</span>
+            <span className="text-muted-foreground">Chưa công bố</span>
           )}
           {deadline && (
-            <span className={cn(pastDue ? "text-orange-600" : "text-gray-500")}>
+            <span className={cn(pastDue ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground")}>
               {pastDue ? "Quá hạn, còn nộp muộn · " : "Hạn: "}
               {deadline}
             </span>
@@ -121,7 +121,7 @@ function AssignmentCard({
         {/* Time limit */}
         {item.time_limit && item.time_limit > 0 && (
           <span
-            className="text-xs text-gray-400 flex items-center gap-1"
+            className="text-xs text-muted-foreground flex items-center gap-1"
             title="Thời gian chạy tối đa cho mỗi test (không phải đồng hồ đếm ngược)"
           >
             <Clock className="w-3 h-3" aria-hidden="true" />
@@ -141,7 +141,7 @@ function AssignmentCard({
         ) : (
           <button
             disabled
-            className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-400 cursor-not-allowed"
+            className="text-xs px-3 py-1.5 rounded-lg border border-input text-muted-foreground cursor-not-allowed"
           >
             {status === "ended" ? "Đã đóng" : "Chưa mở"}
           </button>
@@ -156,10 +156,10 @@ function AssignmentCard({
 function EmptyState() {
   return (
     <div className="col-span-3 flex flex-col items-center justify-center py-16 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
+      <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4 dark:bg-blue-500/10">
         <BookOpen className="w-8 h-8 text-blue-400" />
       </div>
-      <p className="text-gray-500 text-sm">Không có bài tập nào.</p>
+      <p className="text-muted-foreground text-sm">Không có bài tập nào.</p>
     </div>
   );
 }
@@ -219,8 +219,8 @@ export default function MyAssignmentsPage() {
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Bài tập của tôi</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-foreground">Bài tập của tôi</h1>
+          <p className="text-muted-foreground mt-1">
             {isLoading
               ? "Đang tải..."
               : `Bạn có ${activeCount} bài tập đang mở.`}
@@ -229,7 +229,7 @@ export default function MyAssignmentsPage() {
         {/* A-07: đường vào điểm số, người chấm và nhận xét của chính học viên */}
         <Link
           href="/my-grades"
-          className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+          className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 transition-colors dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/15"
         >
           <GraduationCap className="w-4 h-4" />
           Điểm của tôi
@@ -237,7 +237,7 @@ export default function MyAssignmentsPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-6 flex items-center gap-3 flex-wrap shadow-sm">
+      <div className="bg-card rounded-2xl border border-border p-4 mb-6 flex items-center gap-3 flex-wrap shadow-sm">
         {/* Tabs */}
         {/* A-21: whitespace-nowrap + cuộn ngang để nhãn ("Tất cả") không bị bẻ dòng ở 390px */}
         <div className="flex gap-1 flex-1 overflow-x-auto">
@@ -249,14 +249,14 @@ export default function MyAssignmentsPage() {
                 "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0",
                 activeTab === tab.key
                   ? "bg-blue-600 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
+                  : "text-muted-foreground hover:bg-muted"
               )}
             >
               {tab.label}
               {tab.key === "active" && activeCount > 0 && (
                 <span className={cn(
                   "text-xs px-1.5 py-0.5 rounded-full font-semibold",
-                  activeTab === "active" ? "bg-white text-blue-600" : "bg-orange-100 text-orange-600"
+                  activeTab === "active" ? "bg-card text-blue-600 dark:text-blue-400" : "bg-orange-100 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400"
                 )}>
                   {activeCount}
                 </span>
@@ -267,16 +267,16 @@ export default function MyAssignmentsPage() {
 
         {/* View mode toggle */}
         {/* Ở 390px chế độ lưới/danh sách đều là một cột nên ẩn đi để đủ chỗ cho 4 tab */}
-        <div className="hidden sm:flex border border-gray-100 rounded-xl overflow-hidden">
+        <div className="hidden sm:flex border border-border rounded-xl overflow-hidden">
           <button
             onClick={() => setViewMode("grid")}
-            className={cn("p-1.5 transition-colors", viewMode === "grid" ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100")}
+            className={cn("p-1.5 transition-colors", viewMode === "grid" ? "bg-blue-600 text-white" : "text-muted-foreground hover:bg-muted")}
           >
             <LayoutGrid className="w-4 h-4" />
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={cn("p-1.5 transition-colors", viewMode === "list" ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100")}
+            className={cn("p-1.5 transition-colors", viewMode === "list" ? "bg-blue-600 text-white" : "text-muted-foreground hover:bg-muted")}
           >
             <List className="w-4 h-4" />
           </button>
@@ -319,14 +319,14 @@ export default function MyAssignmentsPage() {
 
       {/* Pagination summary */}
       {!isLoading && (
-        <div className="flex items-center justify-between text-sm text-gray-500">
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>Hiển thị {filtered.length} trong số {assignments.length} bài tập</span>
           <div className="flex items-center gap-1">
-            <button className="p-1.5 rounded-xl border border-gray-100 hover:bg-gray-50 disabled:opacity-40" disabled>
+            <button className="p-1.5 rounded-xl border border-border hover:bg-muted/50 disabled:opacity-40" disabled>
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-sm font-medium">1</button>
-            <button className="p-1.5 rounded-xl border border-gray-100 hover:bg-gray-50 disabled:opacity-40" disabled>
+            <button className="p-1.5 rounded-xl border border-border hover:bg-muted/50 disabled:opacity-40" disabled>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>

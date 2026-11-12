@@ -32,7 +32,7 @@ export function SessionCheckIn({
 
   if (checkedOutAt) {
     return (
-      <p className={cn("text-sm text-gray-500", className)}>
+      <p className={cn("text-sm text-muted-foreground", className)}>
         Đã điểm danh xong buổi này.
       </p>
     );
@@ -54,7 +54,7 @@ export function SessionCheckIn({
           type="button"
           disabled={busy}
           onClick={() => checkOut.mutate()}
-          className="rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/50 disabled:opacity-50"
         >
           {checkOut.isPending ? "Đang check-out…" : "Check-out"}
         </button>

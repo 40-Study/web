@@ -69,7 +69,7 @@ export function LeagueBadge({
       className={cn(
         "inline-flex items-center gap-2 rounded-full font-medium",
         muted
-          ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          ? "bg-muted text-foreground"
           : cn("text-white", leagueData.color),
         styles.container,
         className
@@ -107,7 +107,7 @@ export function LeagueProgress({
     return (
       <div className={cn("flex flex-col items-center", className)}>
         <LeagueBadge league="champion" size="lg" />
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Bạn đã đạt giải cao nhất</p>
+        <p className="mt-2 text-sm text-muted-foreground">Bạn đã đạt giải cao nhất</p>
       </div>
     );
   }
@@ -122,13 +122,13 @@ export function LeagueProgress({
         <LeagueBadge league={currentLeague} size="sm" />
         <LeagueBadge league={nextLeague.id} size="sm" muted />
       </div>
-      <div className="relative h-2.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+      <div className="relative h-2.5 overflow-hidden rounded-full bg-muted-foreground/20">
         <div
           className={cn("h-full rounded-full transition-all duration-500", currentLeagueData.color)}
           style={{ width: `${progressPercent}%` }}
         />
       </div>
-      <p className="text-center text-xs tabular-nums text-slate-600 dark:text-slate-400">
+      <p className="text-center text-xs tabular-nums text-muted-foreground">
         Còn {Math.max(0, nextLeague.minXP - currentXP).toLocaleString("vi-VN")} XP để lên {nextLeague.name}
       </p>
     </div>

@@ -26,7 +26,7 @@ export function FeaturedCourses() {
             <p className="mb-3 text-sm font-semibold text-primary-600 dark:text-primary-400">
               Khoá học nổi bật
             </p>
-            <h2 className="text-h2 text-slate-900 dark:text-slate-50">Bắt đầu với khoá học được chọn</h2>
+            <h2 className="text-h2 text-foreground">Bắt đầu với khoá học được chọn</h2>
           </div>
           <Link
             href="/courses"

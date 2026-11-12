@@ -73,7 +73,7 @@ export function DeleteOrganizationDialog({ org, currentUserId, onClose, onDelete
             </span>
           )}
           {error && (
-            <span role="alert" className="mt-2 block text-red-600">
+            <span role="alert" className="mt-2 block text-red-600 dark:text-red-400">
               {error}
             </span>
           )}

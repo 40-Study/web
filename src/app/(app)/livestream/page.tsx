@@ -28,36 +28,36 @@ function SessionCard({ session }: { session: LiveSession }) {
   return (
     <li
       className={cn(
-        "flex flex-col gap-3 rounded-xl border bg-white p-4 sm:flex-row sm:items-center sm:justify-between",
-        isLive ? "border-red-200" : "border-gray-200"
+        "flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between",
+        isLive ? "border-red-200 dark:border-red-500/30" : "border-border"
       )}
     >
       <div className="min-w-0 space-y-1.5">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="truncate text-base font-semibold text-gray-900">{session.title}</h3>
+          <h3 className="truncate text-base font-semibold text-foreground">{session.title}</h3>
           <span
             className={cn(
               "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-              isLive && "bg-red-100 text-red-700",
-              session.status === "scheduled" && "bg-blue-50 text-blue-700",
-              (session.status === "ended" || session.status === "cancelled") && "bg-gray-100 text-gray-600"
+              isLive && "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300",
+              session.status === "scheduled" && "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300",
+              (session.status === "ended" || session.status === "cancelled") && "bg-muted text-muted-foreground"
             )}
           >
             {isLive && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" aria-hidden="true" />}
             {LIVE_STATUS_LABEL[session.status]}
           </span>
         </div>
-        {session.description && <p className="line-clamp-2 text-sm text-gray-500">{session.description}</p>}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
+        {session.description && <p className="line-clamp-2 text-sm text-muted-foreground">{session.description}</p>}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
           {(date || time) && (
             <span className="inline-flex items-center gap-1.5">
-              <Clock className="h-4 w-4 text-gray-400" aria-hidden="true" />
+              <Clock className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               {[date, time].filter(Boolean).join(" · ")}
             </span>
           )}
           {session.location && (
             <span className="inline-flex items-center gap-1.5">
-              <MapPin className="h-4 w-4 text-gray-400" aria-hidden="true" />
+              <MapPin className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               {session.location}
             </span>
           )}
@@ -74,7 +74,7 @@ function SessionCard({ session }: { session: LiveSession }) {
           Vào lớp
         </Link>
       ) : session.status === "scheduled" ? (
-        <span className="shrink-0 text-sm text-gray-500">Chưa bắt đầu</span>
+        <span className="shrink-0 text-sm text-muted-foreground">Chưa bắt đầu</span>
       ) : null}
     </li>
   );
@@ -84,7 +84,7 @@ function Section({ title, sessions }: { title: string; sessions: LiveSession[] }
   if (sessions.length === 0) return null;
   return (
     <section className="space-y-3" aria-label={title}>
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
         {title} ({sessions.length})
       </h2>
       <ul className="space-y-3">
@@ -104,21 +104,21 @@ export default function StudentLivestreamPage() {
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-6">
       <header className="mb-6">
-        <h1 className="flex items-center gap-2 text-2xl font-semibold text-gray-900">
+        <h1 className="flex items-center gap-2 text-2xl font-semibold text-foreground">
           <Radio className="h-6 w-6 text-red-500" aria-hidden="true" />
           Livestream
         </h1>
-        <p className="mt-1 text-sm text-gray-500">Các buổi học trực tiếp của những lớp bạn đang tham gia.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Các buổi học trực tiếp của những lớp bạn đang tham gia.</p>
       </header>
 
       {isLoading ? (
-        <div className="rounded-lg border border-gray-200 p-8 text-center text-sm text-gray-500">Đang tải…</div>
+        <div className="rounded-lg border border-border p-8 text-center text-sm text-muted-foreground">Đang tải…</div>
       ) : isError ? (
-        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-8 text-center text-sm text-red-700">
+        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-8 text-center text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
           Không thể tải danh sách buổi học trực tiếp. Vui lòng tải lại trang.
         </div>
       ) : isEmpty ? (
-        <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+        <div className="rounded-lg border border-dashed border-input p-8 text-center text-sm text-muted-foreground">
           Chưa có buổi học trực tiếp nào cho các lớp của bạn.
         </div>
       ) : (
