@@ -20,7 +20,7 @@ describe("OrderCardList", () => {
     const list = screen.getByRole("list", { name: "Danh sách đơn hàng" });
     expect(list.className).toContain("sm:hidden");
     const card = within(list).getByRole("listitem");
-    expect(within(card).getByText("699.000đ")).toBeTruthy();
+    expect(within(card).getByText("699.000 ₫")).toBeTruthy();
     expect(within(card).getByText("Đang chờ chuyển khoản")).toBeTruthy();
     expect(within(card).getByText("12:38 03/10/2026")).toBeTruthy();
     expect(within(card).getByRole("link", { name: "Chi tiết" }).getAttribute("href")).toBe("/admin/orders/o1");

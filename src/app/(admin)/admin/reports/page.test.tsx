@@ -87,11 +87,11 @@ describe("AdminReportsPage — real platform revenue report", () => {
     expect(screen.queryByRole("spinbutton")).toBeNull();
   });
 
-  it("QA-C-08/C-12: trạng thái 'processing' cùng nhãn với trang Đơn hàng; tiền dạng '1.746.400đ'", () => {
+  it("QA-C-08/C-12: trạng thái 'processing' cùng nhãn với trang Đơn hàng; tiền dạng '1.746.400 ₫' (formatCurrency, Q6-T06)", () => {
     render(<AdminReportsPage />);
     expect(screen.getByText("Đang chờ chuyển khoản")).toBeTruthy();
     expect(screen.queryByText("Đang xử lý")).toBeNull();
-    expect(screen.getByText("1.746.400đ")).toBeTruthy();
+    expect(screen.getByText("1.746.400 ₫")).toBeTruthy();
   });
 
   it("hides the fee card without SYSTEM_SETTINGS_MANAGE (the fee endpoint would 403)", () => {

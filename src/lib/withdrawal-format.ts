@@ -1,13 +1,13 @@
 /**
- * Định dạng tiền + nhãn trạng thái dùng chung cho luồng rút tiền giảng viên (Phase 4).
+ * Nhãn trạng thái rút tiền + hàm định dạng tiền dùng chung cho ví giảng viên và khu admin.
  *
- * TÁCH RIÊNG khỏi lib/utils.ts formatCurrency(): formatCurrency dùng Intl style "currency",
- * ra "900.000 ₫" (có khoảng trắng, ký hiệu ₫) — khác định dạng withdrawal-contract.md yêu cầu:
- * "100.000đ" (chấm phân cách nghìn, hậu tố "đ" dính liền, không khoảng trắng). KHÔNG sửa
- * formatCurrency vì nhiều trang khác đang phụ thuộc định dạng cũ của nó.
+ * Q6-T06: định dạng tiền chuẩn của cả web là `formatCurrency` (lib/utils.ts, Intl) = "599.000 ₫". Trước đây hàm này
+ * có kiểu riêng "599.000đ" (hậu tố dính liền) nên ví và lịch sử rút tiền lệch với thẻ khoá học, voucher, giỏ hàng.
+ * Giờ nó chỉ là lớp mỏng ép số về `number` rồi gọi đúng `formatCurrency`, không có định dạng thứ hai.
  */
 
 import type { WithdrawalStatus } from "@/services/wallet.service";
+import { formatCurrency } from "./utils";
 
 /**
  * amount có thể là decimal dạng chuỗi JSON ("500000") theo hợp đồng API, hoặc number — luôn
@@ -16,8 +16,7 @@ import type { WithdrawalStatus } from "@/services/wallet.service";
  */
 export function formatWithdrawalAmount(amount: string | number): string {
   const n = Number(amount);
-  if (!Number.isFinite(n)) return "0đ";
-  return `${n.toLocaleString("vi-VN")}đ`;
+  return formatCurrency(Number.isFinite(n) ? n : 0);
 }
 
 export const WITHDRAWAL_STATUS_LABELS: Record<WithdrawalStatus, string> = {
