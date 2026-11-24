@@ -6,7 +6,7 @@ import { useAuthStore } from "@/stores/auth.store";
 
 describe("PlayerHeader", () => {
   afterEach(() => {
-    useAuthStore.setState({ user: null });
+    useAuthStore.setState({ user: null, activeRole: null, roles: [] });
   });
 
   it("hiện chữ tắt của người đang học thay vì 'TK'", () => {
@@ -20,5 +20,29 @@ describe("PlayerHeader", () => {
     useAuthStore.setState({ user: { id: "u1", email: "student1@demo.com", name: "Lê Văn C" } });
     render(<PlayerHeader courseSlug="git" />);
     expect(screen.getByRole("link", { name: "Trang cá nhân" }).getAttribute("href")).toBe("/profile/u1");
+  });
+
+  // Q5-T15 (L2): /my-courses là trang của học viên; giảng viên bấm vào sẽ bị guard đá lại kèm toast cảnh báo.
+  it("giảng viên: 'Khoá học của tôi' trỏ /teacher/courses; học viên vẫn /my-courses", () => {
+    useAuthStore.setState({ activeRole: "TEACHER" });
+    const { unmount } = render(<PlayerHeader courseSlug="git" />);
+    expect(screen.getByRole("link", { name: "Khoá học của tôi" }).getAttribute("href")).toBe("/teacher/courses");
+    unmount();
+
+    useAuthStore.setState({ activeRole: "STUDENT" });
+    render(<PlayerHeader courseSlug="git" />);
+    expect(screen.getByRole("link", { name: "Khoá học của tôi" }).getAttribute("href")).toBe("/my-courses");
+  });
+
+  it("vai tuỳ biến của tổ chức (QA3_TEACHER) quy về giảng viên theo vai hệ thống đang sở hữu", () => {
+    useAuthStore.setState({
+      activeRole: "QA3_TEACHER",
+      roles: [
+        { id: "sr-t", type: "system", role_name: "TEACHER", display_name: "TEACHER" },
+        { id: "or-q", type: "organization", role_name: "QA3_TEACHER", display_name: "QA3_TEACHER" },
+      ],
+    });
+    render(<PlayerHeader courseSlug="git" />);
+    expect(screen.getByRole("link", { name: "Khoá học của tôi" }).getAttribute("href")).toBe("/teacher/courses");
   });
 });

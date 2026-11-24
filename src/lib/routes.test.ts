@@ -11,8 +11,10 @@ import {
   ROLE_SCOPED_PATTERNS,
   ROLE_SCOPED_ROUTES,
   canAccessStudentOnlyRoute,
+  getRoleRestrictedNotice,
   getRoleRestrictedRedirect,
   isRouteAllowedForRole,
+  resolveRoleAwareHref,
   type NavRole,
 } from "./routes";
 
@@ -118,6 +120,27 @@ describe("isRouteAllowedForRole — ma trận role x route (ROLE_SCOPED_ROUTES)"
     // Trang giảng viên tên gần giống không bị chặn.
     expect(canAccessStudentOnlyRoute("/teacher/schedule", "TEACHER")).toBe(true);
     expect(canAccessStudentOnlyRoute("/schedule-old", "TEACHER")).toBe(true);
+  });
+
+  // L2: lời nhắn và link nội bộ của giảng viên không được dẫn tới trang chủ/guard sai.
+  it("Q5-T15 (L2): toast của giảng viên ở /my-courses, /schedule không nói 'trang chủ'; vai khác giữ lời nhắn cũ", () => {
+    for (const href of ["/my-courses", "/schedule/x"]) {
+      expect(getRoleRestrictedNotice(href, "TEACHER", "Giảng viên").description).not.toContain("trang chủ");
+      expect(getRoleRestrictedNotice(href, "TEACHER", "Giảng viên").description).toContain("giảng viên");
+      expect(getRoleRestrictedNotice(href, "PARENT", "Phụ huynh").description).toContain("trang chủ");
+    }
+    // /livestream giữ lời nhắn riêng của Q3-24.
+    expect(getRoleRestrictedNotice("/livestream", "TEACHER", "Giảng viên").title).toContain("Lịch giảng dạy");
+  });
+
+  it("Q5-T15 (L2): resolveRoleAwareHref trỏ giảng viên tới trang giảng viên, vai khác giữ nguyên link", () => {
+    expect(resolveRoleAwareHref("/my-courses", "TEACHER")).toBe("/teacher/courses");
+    expect(resolveRoleAwareHref("/schedule", "TEACHER")).toBe("/teacher/schedule");
+    expect(resolveRoleAwareHref("/my-courses", "STUDENT")).toBe("/my-courses");
+    expect(resolveRoleAwareHref("/my-courses", null)).toBe("/my-courses");
+    expect(resolveRoleAwareHref("/notifications", "TEACHER")).toBe("/notifications");
+    // Đích của link luôn được guard cho phép: không vòng lặp chuyển hướng.
+    expect(canAccessStudentOnlyRoute(resolveRoleAwareHref("/my-courses", "TEACHER"), "TEACHER")).toBe(true);
   });
 
   it("/settings/family và /messages cho cả STUDENT lẫn PARENT (không phải route học sinh-only)", () => {

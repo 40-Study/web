@@ -219,19 +219,36 @@ export function getRoleRestrictedNotice(
       description: "Trang /livestream là danh sách buổi học dành cho học viên nên bạn được đưa về Lịch giảng dạy.",
     };
   }
+  // Q5-T15 (L2): giảng viên mở /my-courses, /schedule được đưa tới trang giảng viên tương ứng, không phải trang chủ.
+  if (findTeacherFallback(pathname, role)) {
+    return {
+      title: `Trang này không dành cho ${roleLabel}.`,
+      description: "Bạn đã được đưa về trang tương ứng dành cho giảng viên.",
+    };
+  }
   return {
     title: `Trang này không dành cho ${roleLabel}.`,
     description: "Bạn đã được đưa về trang chủ phù hợp với vai trò của mình.",
   };
 }
 
+/** `teacherFallback` của route học viên mà `pathname` thuộc về; chỉ khi vai THẬT là giảng viên (nguồn: ROLE_SCOPED_ROUTES). */
+function findTeacherFallback(pathname: string, role?: string | null): string | undefined {
+  if (normalizeRole(role) !== "TEACHER") return undefined;
+  return ROLE_SCOPED_ROUTES.find((r) => pathname === r.href || pathname.startsWith(`${r.href}/`))?.teacherFallback;
+}
+
+/**
+ * Link nội bộ tới route học viên: giảng viên được trỏ thẳng tới trang giảng viên tương ứng, để bấm vào không bị
+ * guard của (app)/layout đá lại kèm toast cảnh báo. Vai khác giữ nguyên `href`.
+ */
+export function resolveRoleAwareHref(href: string, role?: string | null): string {
+  return findTeacherFallback(href, role) ?? href;
+}
+
 /** Đích chuyển hướng khi route bị chặn theo vai trò: pattern có đích riêng, còn lại về home. */
 export function getRoleRestrictedRedirect(pathname: string, role?: string | null): string {
   const scopedPattern = ROLE_SCOPED_PATTERNS.find((p) => p.pattern.test(pathname));
   if (scopedPattern) return scopedPattern.fallback(pathname);
-  if (normalizeRole(role) === "TEACHER") {
-    const entry = ROLE_SCOPED_ROUTES.find((r) => pathname === r.href || pathname.startsWith(`${r.href}/`));
-    if (entry?.teacherFallback) return entry.teacherFallback;
-  }
-  return getRoleHomeRoute(role);
+  return findTeacherFallback(pathname, role) ?? getRoleHomeRoute(role);
 }
