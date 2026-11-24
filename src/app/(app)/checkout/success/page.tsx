@@ -5,10 +5,12 @@ import { CheckCircle2, BookOpen, ArrowRight, Clock3, ReceiptText } from "lucide-
 import { Button } from "@/components/ui/button";
 import { QueryState } from "@/components/common/query-state";
 import { useOrder } from "@/hooks/queries/use-orders";
+import { useRoleAwareHref } from "@/hooks/use-role-aware-href";
 import { ORDER_STATUS_LABEL } from "@/services/order.service";
 import { formatCurrency } from "@/lib/utils";
 import "@/components/commerce/commerce.css";
 export default function CheckoutSuccessPage() {
+  const roleAwareHref = useRoleAwareHref();
   const orderId = useSearchParams().get("order_id");
   const query = useOrder(orderId || "");
   const order = query.data;
@@ -68,7 +70,7 @@ export default function CheckoutSuccessPage() {
               </div>
             </div>
             <div className="space-y-3">
-              <Link href={paid ? "/my-courses" : "/orders"} className="block">
+              <Link href={paid ? roleAwareHref("/my-courses") : "/orders"} className="block">
                 <Button size="lg" className="w-full">
                   <BookOpen className="mr-2 h-4 w-4" />
                   {paid ? "Đi đến khoá học của tôi" : "Xem trạng thái đơn hàng"}

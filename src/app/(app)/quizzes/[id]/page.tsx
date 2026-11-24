@@ -15,6 +15,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { QuizLessonContent } from "@/components/player";
+import { useRoleAwareHref } from "@/hooks/use-role-aware-href";
 import { QuizModePicker } from "@/components/quiz";
 import {
   useQuiz,
@@ -28,6 +29,7 @@ import type { QuizMode, StartQuizResponse } from "@/services/quiz.service";
 export default function StandaloneQuizPage() {
   const params = useParams();
   const router = useRouter();
+  const roleAwareHref = useRoleAwareHref();
   const quizId = String(params.id ?? "");
 
   const { data: quiz, isLoading: isLoadingQuiz, isError: isQuizError } = useQuiz(quizId);
@@ -100,7 +102,7 @@ export default function StandaloneQuizPage() {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <p className="text-sm text-gray-600">Không tìm thấy bài kiểm tra này.</p>
-        <Link href="/my-courses" className="mt-4 inline-block text-sm text-primary-600 hover:underline">
+        <Link href={roleAwareHref("/my-courses")} className="mt-4 inline-block text-sm text-primary-600 hover:underline">
           Về khoá học của tôi
         </Link>
       </div>

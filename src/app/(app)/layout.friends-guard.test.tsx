@@ -71,6 +71,29 @@ describe("(app)/layout — /friends chỉ dành cho học viên: ai không dùng
     });
   }
 
+  // Round 2: lần render đầu `activeRole` là mã tuỳ biến (QA3_STUDENT) chưa quy về STUDENT; cổng phải đọc vai ĐÃ quy đổi.
+  it("học viên mang vai tuỳ biến của tổ chức vào /friends -> render, không bị đá", () => {
+    vi.mocked(usePathname).mockReturnValue("/friends");
+    useAuthStore.setState({
+      isAuthenticated: true,
+      activeRole: "QA3_STUDENT",
+      roles: [
+        { type: "system", role_name: "STUDENT" },
+        { type: "organization", role_name: "QA3_STUDENT" },
+      ] as never,
+      hasHydrated: true,
+      sessionStatus: "authenticated",
+    });
+    render(
+      <AppLayout>
+        <div data-testid="child">CHILD</div>
+      </AppLayout>
+    );
+    expect(screen.queryByTestId("child")).not.toBeNull();
+    expect(replace).not.toHaveBeenCalled();
+    useAuthStore.setState({ roles: [] });
+  });
+
   it("đích chuyển hướng không nằm dưới /friends (không vòng lặp) và chỉ chuyển một lần", () => {
     for (const role of ["TEACHER", "PARENT", "SYSTEM_ADMIN"]) {
       cleanup(); // bỏ lần render trước, kẻo nó còn đăng ký store và gọi replace lại khi vai đổi

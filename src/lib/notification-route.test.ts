@@ -51,6 +51,12 @@ describe("isFriendNotification", () => {
   });
 });
 
+it("nhắc học của học viên: giảng viên đang dùng vai giảng viên không bị đưa tới /schedule (guard sẽ đá lại)", () => {
+ const n = { notification_type: "lesson_reminder", reference_type: "student_schedule" };
+ expect(getNotificationHref(n, "TEACHER")).toBe("/teacher/schedule");
+ expect(getNotificationHref(n, "STUDENT")).toBe("/schedule");
+});
+
 it("nhắc học mở đúng lịch và không cho phụ huynh link vào phòng", () => {
  expect(getNotificationHref({ notification_type: "lesson_reminder", reference_type: "child_schedule", reference_id: "child-1" })).toBe("/parent/children/child-1?tab=schedule");
  expect(getNotificationHref({ notification_type: "lesson_reminder", reference_type: "teacher_schedule" })).toBe("/teacher/schedule");

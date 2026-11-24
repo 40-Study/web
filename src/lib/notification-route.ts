@@ -4,6 +4,8 @@
  * không lệch nhau. Loại thông báo khác (course/class/assignment) giữ cách xử lý cũ ở nơi gọi.
  */
 
+import { resolveRoleAwareHref } from "@/lib/routes";
+
 export interface NotificationTarget {
   notification_type: string;
   reference_type?: string | null;
@@ -18,7 +20,8 @@ export function getNotificationHref(n: NotificationTarget, role?: string | null)
   if (n.notification_type === "lesson_reminder") {
     if (n.reference_type === "child_schedule") return n.reference_id ? `/parent/children/${n.reference_id}?tab=schedule` : null;
     if (n.reference_type === "teacher_schedule") return "/teacher/schedule";
-    if (n.reference_type === "student_schedule") return "/schedule";
+    // Round 2: giảng viên đang dùng vai giảng viên bấm thông báo học viên -> /schedule bị guard đá lại; về lịch giảng dạy.
+    if (n.reference_type === "student_schedule") return resolveRoleAwareHref("/schedule", role);
     if (n.reference_type === "livestream") return n.reference_id ? `/rooms/${n.reference_id}` : null;
   }
   // Admin duyệt/từ chối khoá (contract-be1 ADM-N1): notification_type "course_update" nhưng đích nằm ở

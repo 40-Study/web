@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { buildTodaySchedule, TodaySchedule } from "./today-schedule";
 import type { ClassSchedule } from "@/types/class-schedule";
+import { useAuthStore } from "@/stores/auth.store";
 
 // 2026-09-30 là Thứ Tư (day_of_week = 3)
 const NOW = new Date(2026, 8, 30, 10, 0, 0);
@@ -62,5 +63,17 @@ describe("TodaySchedule", () => {
     );
     expect(screen.getByText("Đang diễn ra")).toBeTruthy();
     expect(screen.getByText("09:30 – 10:30")).toBeTruthy();
+  });
+
+  it("Round 2: link buổi học theo vai — giảng viên tới lịch giảng dạy, học viên tới /schedule", () => {
+    const items = buildTodaySchedule([make({ id: "b" })], NOW);
+    useAuthStore.setState({ activeRole: "TEACHER" });
+    const { unmount } = render(<TodaySchedule items={items} />);
+    expect(screen.getByRole("link").getAttribute("href")).toBe("/teacher/schedule");
+    unmount();
+    useAuthStore.setState({ activeRole: "STUDENT" });
+    render(<TodaySchedule items={items} />);
+    expect(screen.getByRole("link").getAttribute("href")).toBe("/schedule");
+    useAuthStore.setState({ activeRole: null });
   });
 });
