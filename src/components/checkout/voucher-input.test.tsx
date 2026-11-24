@@ -60,7 +60,7 @@ describe("VoucherInput — chip voucher luôn khớp với mức giảm thật (
     expect(onApplied).toHaveBeenLastCalledWith(null);
     // Chip không được còn hiện "đang áp dụng" khi tổng tiền không còn giảm.
     expect(screen.queryByLabelText("Xoá voucher")).toBeNull();
-    expect(screen.getByText(/tối thiểu 300\.000đ/)).toBeTruthy();
+    expect(screen.getByText(/tối thiểu 300\.000\s₫/)).toBeTruthy();
   });
 
   it("voucher theo phần trăm: subtotal đổi mà vẫn đủ điều kiện thì mức giảm được tính lại và báo parent", async () => {
