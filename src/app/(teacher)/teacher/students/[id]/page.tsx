@@ -49,7 +49,7 @@ export default function TeacherStudentProfilePage() {
         <CardContent className="p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
-              <Avatar fallback={student.name.charAt(0)} size="lg" className="bg-primary-100 text-primary-700" />
+              <Avatar fallback={student.name.charAt(0)} size="lg" tone="soft" />
               <div>
                 <p className="text-xl font-semibold">{student.name}</p>
                 <p className="text-sm text-muted-foreground">

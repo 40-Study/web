@@ -13,7 +13,7 @@ export function StudentMobileCard({ student }: { student: GroupedStudent }) {
   return (
     <li className="space-y-2 p-4" data-testid="student-card">
       <div className="flex items-start gap-3">
-        <Avatar fallback={student.name.charAt(0)} size="sm" className="bg-primary-100 text-primary-700" />
+        <Avatar fallback={student.name.charAt(0)} size="sm" tone="soft" />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{student.name}</p>
           <p className="text-xs text-muted-foreground">Mã HS: {student.studentId ?? "—"}</p>

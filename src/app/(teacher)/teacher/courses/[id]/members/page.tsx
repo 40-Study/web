@@ -143,7 +143,7 @@ export default function TeacherCourseMembersPage() {
                           <Avatar
                             fallback={member.name.charAt(0)}
                             size="sm"
-                            className="bg-primary-100 text-primary-700"
+                            tone="soft"
                           />
                           <span className="font-medium">{member.name}</span>
                         </div>

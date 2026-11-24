@@ -9,8 +9,18 @@ interface AvatarProps {
   fallback: string;
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   status?: "online" | "offline" | "busy" | "streak";
+  /**
+   * Màu của VÒNG TRÒN chữ cái (Q6-T05). `className` chỉ áp lên khung ngoài (vuông) nên truyền `bg-primary-100` qua đó
+   * tô ô vuông sau hình tròn thay vì tô chính hình tròn. "soft" = nền nhạt, chữ đậm (danh sách học viên); mặc định "solid".
+   */
+  tone?: "solid" | "soft";
   className?: string;
 }
+
+const tones = {
+  solid: "bg-primary-500 text-white",
+  soft: "bg-primary-100 text-primary-700",
+};
 
 const sizes = {
   xs: "h-6 w-6 text-xs",
@@ -48,13 +58,15 @@ export function Avatar({
   fallback,
   size = "md",
   status,
+  tone = "solid",
   className,
 }: AvatarProps) {
   return (
     <div className={cn("relative inline-block", className)}>
       <div
         className={cn(
-          "rounded-full bg-primary-500 flex items-center justify-center overflow-hidden",
+          "rounded-full flex items-center justify-center overflow-hidden",
+          tones[tone],
           sizes[size]
         )}
       >
@@ -67,7 +79,7 @@ export function Avatar({
             className="w-full h-full object-cover"
           />
         ) : (
-          <span className="font-medium text-white uppercase">
+          <span className="font-medium uppercase">
             {fallback.slice(0, 2)}
           </span>
         )}
