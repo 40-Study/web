@@ -17,6 +17,8 @@ let mockClassStatus: string | undefined;
 const createGrade = vi.fn();
 const updateGrade = vi.fn();
 
+// Thẻ mobile (Q4-T18) có test riêng ở submission-card-list.test.tsx; ở đây chỉ kiểm bảng để truy vấn không trùng.
+vi.mock("./submission-card-list", () => ({ SubmissionCardList: () => null }));
 vi.mock("@/hooks/queries/use-assignments", () => ({
   useAssignment: () => ({ data: mockAssignment, isLoading: false, error: mockAssignmentError }),
 }));
@@ -263,5 +265,14 @@ describe("SubmissionGradingPanel", () => {
     const row = screen.getByText("student1").closest("tr")!;
     expect(within(row).getByRole("button", { name: /Chấm điểm/ })).toBeTruthy();
     expect(screen.queryByText(/Lớp đã lưu trữ/)).toBeNull();
+  });
+});
+
+describe("SubmissionGradingPanel — bố cục mobile (Q4-T18)", () => {
+  it("bảng chỉ hiện từ md; dưới md dùng thẻ", () => {
+    render(<SubmissionGradingPanel assignmentId="a1" />);
+    const cls = screen.getByRole("table").parentElement?.className.split(" ") ?? [];
+    expect(cls).toContain("hidden");
+    expect(cls).toContain("md:block");
   });
 });

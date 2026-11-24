@@ -21,6 +21,8 @@ const emptyWallet = {
 };
 let mockWallet = emptyWallet;
 
+// Thẻ mobile (Q4-T18) có test riêng; ở đây chỉ kiểm bảng để truy vấn chữ không bị trùng.
+vi.mock("./transaction-card-list", () => ({ TransactionCardList: () => null }));
 vi.mock("@/hooks/queries/use-wallet", () => ({
   useTeacherWallet: () => ({ data: mockWallet, isLoading: false }),
   useTeacherTransactions: () => ({
@@ -133,5 +135,16 @@ describe("/teacher/wallet — đơn huỷ không hiện như đã nhận tiền 
 
     const amountCell = screen.getByText(/-.*499\.000/);
     expect(amountCell.className).toContain("text-red-500");
+  });
+});
+
+describe("/teacher/wallet — bố cục mobile (Q4-T18)", () => {
+  it("bảng giao dịch chỉ hiện từ md; ô tìm kiếm có nhãn đầy đủ", () => {
+    mockTransactions = [txFixture({})];
+    render(<TeacherWalletPage />);
+    const cls = screen.getByRole("table").parentElement?.className.split(" ") ?? [];
+    expect(cls).toContain("hidden");
+    expect(cls).toContain("md:block");
+    expect(screen.getByRole("textbox", { name: /Tìm theo mã giao dịch/ })).toBeTruthy();
   });
 });

@@ -24,37 +24,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { formatWithdrawalAmount } from "@/lib/withdrawal-format";
-import { formatVnDateThenTime } from "@/lib/vn-datetime";
 import { buildCsv, downloadCsv, type CsvCell } from "@/lib/csv-export";
 import { useTeacherWallet, useTeacherTransactions } from "@/hooks/queries/use-wallet";
 import { walletService, type TeacherTransaction } from "@/services/wallet.service";
 import { BankInfoDialog } from "./bank-info-dialog";
 import { WithdrawalSection } from "./withdrawal-section";
-
-// ─── Status display config ──────────────────────────────────────────────────
-
-type BadgeVariant = "success" | "warning" | "secondary" | "destructive";
-
-const STATUS_CONFIG: Record<string, { label: string; variant: BadgeVariant }> = {
-  completed: { label: "Hoàn thành", variant: "success" },
-  pending: { label: "Chờ xử lý", variant: "warning" },
-  cancelled: { label: "Đã huỷ", variant: "secondary" },
-  failed: { label: "Thất bại", variant: "destructive" },
-  refunded: { label: "Hoàn tiền", variant: "destructive" },
-};
-
-function getStatusConfig(status: string): { label: string; variant: BadgeVariant } {
-  return STATUS_CONFIG[status] ?? { label: status, variant: "secondary" as BadgeVariant };
-}
+import { TransactionCardList } from "./transaction-card-list";
+import { formatDate, formatMoney, getStatusConfig, transactionAmountDisplay } from "./transaction-display";
 
 /** Backend chấp nhận limit 1..100; ngoài khoảng đó nó âm thầm đổi về 20. */
 const EXPORT_PAGE_SIZE = 100;
-
-// QA-B-14: trang ví từng trộn "22/9/2026" (giao dịch) với "29/09/2026 23:23" (rút tiền) và "438.200 ₫" với
-// "250.000đ". Cả trang dùng chung một định dạng: ngày giờ VN "dd/MM/yyyy HH:mm", tiền "438.200đ" như khối rút tiền.
-const formatDate = formatVnDateThenTime;
-const formatMoney = formatWithdrawalAmount;
 
 export default function TeacherWalletPage() {
   const [activeTab, setActiveTab] = useState("all");
@@ -283,7 +262,9 @@ export default function TeacherWalletPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 className="pl-9"
-                placeholder="Tìm mã GD, tên khoá học, tên người mua..."
+                // Q4-T18: câu gợi ý dài bị cắt ở 390px; aria-label giữ đủ nghĩa.
+                placeholder="Mã GD, khoá học, người mua"
+                aria-label="Tìm theo mã giao dịch, tên khoá học hoặc tên người mua"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -315,7 +296,11 @@ export default function TeacherWalletPage() {
             // cuộn cả trang thay vì chỉ bảng — bọc trong khung có cuộn ngang RIÊNG
             // (overflow-x-auto) để phần còn lại của trang (thẻ tổng quan, tab) không bị kéo
             // theo, và thu hẹp min-width từng cột để không quá thưa trên mobile.
-            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <>
+            <div className="md:hidden">
+              <TransactionCardList transactions={filteredTransactions} />
+            </div>
+            <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[640px]">
               <thead>
                 <tr className="border-b text-left">
@@ -338,20 +323,8 @@ export default function TeacherWalletPage() {
                   </tr>
                 ) : (
                   filteredTransactions.map((tx) => {
-                    const isRefund = tx.type === "expense";
-                    // P2 QA 260927 teacher: trước đây +/- và màu chỉ phụ thuộc `tx.type`, bỏ qua
-                    // hẳn `tx.status` — 1 đơn "Đã huỷ" vẫn hiện "+499.000 ₫" màu xanh y hệt thu
-                    // nhập thật, dễ khiến giáo viên tưởng đã nhận được tiền. Chỉ dấu "+"/màu xanh
-                    // khi giao dịch thật sự hoàn tất; các trạng thái khác (chờ xử lý, đã huỷ...)
-                    // hiện trung tính, không dấu.
-                    const isCompleted = tx.status === "completed";
                     const cfg = getStatusConfig(tx.status);
-                    const amountClassName = isRefund
-                      ? "text-red-500"
-                      : isCompleted
-                        ? "text-green-600"
-                        : "text-muted-foreground";
-                    const amountSign = isRefund ? "-" : isCompleted ? "+" : "";
+                    const { sign: amountSign, className: amountClassName } = transactionAmountDisplay(tx);
                     return (
                       <tr key={`${tx.order_id}-${tx.course_id}`} className="border-b last:border-0 hover:bg-gray-50">
                         <td className="p-3 text-sm font-medium">{tx.order_number}</td>
@@ -376,6 +349,7 @@ export default function TeacherWalletPage() {
               </tbody>
             </table>
             </div>
+            </>
           )}
 
           {/* Pagination */}
@@ -389,6 +363,7 @@ export default function TeacherWalletPage() {
                 size="sm"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
+                aria-label="Trang trước"
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
@@ -400,6 +375,7 @@ export default function TeacherWalletPage() {
                 size="sm"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
+                aria-label="Trang sau"
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>
