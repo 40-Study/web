@@ -250,7 +250,7 @@ describe("isMissingResource — không đụng tới route khác", () => {
     "/home",
     "/quizzes/abc/result",
     "/learn",
-    "/contests/thi-git",
+    "/contests/thi-git/play",
   ])("%s -> không gọi backend", async (path) => {
     const fetchImpl = fakeFetch(404);
     const missing = await isMissingResource(documentRequest(path, { cookie: "accessToken=x" }), {
@@ -305,6 +305,30 @@ describe("isMissingResource — bài thảo luận công khai (/discussions/<slu
   it("danh sách /discussions (không có slug) không bị dò", async () => {
     const fetchImpl = fakeFetch(404);
     expect(await isMissingResource(documentRequest("/discussions"), { fetchImpl, apiBaseUrl: API })).toBe(false);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
+describe("isMissingResource — chi tiết cuộc thi (/contests/<slug>) (N-03)", () => {
+  it("backend 404 -> thiếu, dò đúng endpoint", async () => {
+    const fetchImpl = fakeFetch(404);
+    const missing = await isMissingResource(documentRequest("/contests/khong-ton-tai"), { fetchImpl, apiBaseUrl: API });
+    expect(missing).toBe(true);
+    expect(String(fetchImpl.mock.calls[0]?.[0])).toBe(`${API}/contests/khong-ton-tai`);
+  });
+
+  it("backend 200 hoặc 5xx -> không coi là thiếu", async () => {
+    for (const status of [200, 500]) {
+      const missing = await isMissingResource(documentRequest("/contests/demo"), { fetchImpl: fakeFetch(status), apiBaseUrl: API });
+      expect(missing, `status ${status}`).toBe(false);
+    }
+  });
+
+  it("danh sách và trang con (play/result/certificate) không bị dò", async () => {
+    const fetchImpl = fakeFetch(404);
+    for (const path of ["/contests", "/contests/demo/play", "/contests/demo/result", "/contests/demo/certificate"]) {
+      expect(await isMissingResource(documentRequest(path), { fetchImpl, apiBaseUrl: API }), path).toBe(false);
+    }
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 });

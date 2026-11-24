@@ -82,6 +82,18 @@ const PROBE_RULES: readonly ProbeRule[] = [
     requiresSession: false,
     missingStatuses: [404],
   },
+  {
+    // Chi tiết cuộc thi (N-03, QA4 261123): slug sai trả 200 kèm "Không tìm thấy cuộc thi" (soft 404).
+    // GET /contests/:slug là OptionalAuth; cookie được chuyển tiếp nên cuộc thi chỉ người đăng nhập thấy vẫn mở
+    // được. Không khớp /contests/<slug>/play|result|certificate.
+    // Chấp nhận (review web#123 #6): cookie `accessToken` hết hạn sau 15 phút; giảng viên/admin xem cuộc thi chưa
+    // công bố của mình sau khi để máy lâu sẽ bị dò ẩn danh và thấy 404 thay vì trang tự làm mới token. Rule khoá
+    // học ở trên cũng y như vậy (khoá `archived`), giữ hai rule cùng hành vi.
+    pattern: /^\/contests\/([^/]+)\/?$/,
+    endpoint: (slug) => `/contests/${slug}`,
+    requiresSession: false,
+    missingStatuses: [404],
+  },
 ];
 
 interface ProbeOptions {

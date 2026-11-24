@@ -26,15 +26,19 @@ vi.mock("@/lib/meet/api", async () => {
 import AssignmentWorkOverlay from "./AssignmentWorkOverlay";
 import { MeetApiError } from "@/lib/meet/api";
 
+// CI chậm (runner dùng chung): chuỗi tải bài -> chọn đáp án -> nộp -> 409 -> hộp thông báo từng vượt 1000 ms mặc định
+// của findBy* (run 45308347090). Nới thời gian chờ, không đổi điều kiện kiểm.
+const SLOW_CI = { timeout: 5000 };
+
 describe("AssignmentWorkOverlay — nộp bài vào lớp đã lưu trữ", () => {
-  it("409 CLASS_ARCHIVED: hộp thông báo hiện message tiếng Việt của backend, không phải 'HTTP 409'", async () => {
+  it("409 CLASS_ARCHIVED: hộp thông báo hiện message tiếng Việt của backend, không phải 'HTTP 409'", { timeout: 15000 }, async () => {
     post.mockRejectedValue(new MeetApiError(409, "HTTP 409", "Lớp đã lưu trữ, không nhận bài nộp mới", "CLASS_ARCHIVED"));
     render(<AssignmentWorkOverlay assignmentId="a1" title="T" userId="u1" onClose={() => {}} />);
 
-    fireEvent.click(await screen.findByText("Bốn"));
+    fireEvent.click(await screen.findByText("Bốn", undefined, SLOW_CI));
     fireEvent.click(screen.getAllByText("Nộp bài")[0]);
 
-    expect(await screen.findByText("Lớp đã lưu trữ, không nhận bài nộp mới")).toBeTruthy();
+    expect(await screen.findByText("Lớp đã lưu trữ, không nhận bài nộp mới", undefined, SLOW_CI)).toBeTruthy();
     await waitFor(() => expect(post).toHaveBeenCalled());
     expect(screen.queryByText("HTTP 409")).toBeNull();
   });

@@ -103,6 +103,8 @@ interface WeekCalendarGridProps {
    * lịch học viên chỉ tạo được ghi chú cá nhân nên truyền câu riêng (QA-A-15).
    */
   selectionHelp?: string;
+  /** Tiêu đề nhóm bộ lọc ở cột trái. Lịch của con (phụ huynh xem) truyền câu riêng (N-09, QA4 261123). */
+  railLabel?: string;
 }
 
 const DEFAULT_SELECTION_HELP = "Bấm hoặc kéo trên lịch để chọn giờ cho buổi học mới.";
@@ -179,6 +181,7 @@ export default function WeekCalendarGrid({
   headerActions,
   stats,
   selectionHelp = DEFAULT_SELECTION_HELP,
+  railLabel = "Lịch của tôi",
 }: WeekCalendarGridProps) {
   const calendarRef = useRef<FullCalendar>(null);
   const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
@@ -371,7 +374,7 @@ export default function WeekCalendarGrid({
               return <button key={day.toISOString()} aria-label={format(day, "dd/MM/yyyy")} aria-pressed={isSameDay(day, focusDate)} data-outside={!isSameMonth(day, month)} data-today={isSameDay(day, toVnWallClock(new Date()))} onClick={() => navigate(day)}>{day.getDate()}</button>;
             })}
           </div>
-          <p className="calendar-rail-label">Lịch của tôi</p>
+          <p className="calendar-rail-label">{railLabel}</p>
           {([{ key: "livestream", label: "Lớp học trực tuyến", color: "#2563eb" }, { key: "class-schedule", label: "Thời khoá biểu", color: "#0d9488" }, { key: "class-session", label: "Buổi học của lớp", color: "#7c3aed" }] as const).map(item => (
             <label className="calendar-filter" key={item.key}><input type="checkbox" style={{ accentColor: item.color }} checked={!hiddenKinds.includes(item.key)} onChange={() => setHiddenKinds(current => current.includes(item.key) ? current.filter(key => key !== item.key) : [...current, item.key])} />{item.label}</label>
           ))}

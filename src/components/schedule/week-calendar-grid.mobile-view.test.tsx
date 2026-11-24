@@ -33,3 +33,15 @@ describe("WeekCalendarGrid — chế độ xem mặc định theo bề rộng", 
     expect(document.querySelector(".fc-timeGridWeek-view")).not.toBeNull();
   });
 });
+
+// N-09 (QA4 261123): lịch của con (phụ huynh xem) từng ghi "Lịch của tôi" ở cột trái.
+describe("WeekCalendarGrid — tiêu đề cột trái", () => {
+  it("mặc định 'Lịch của tôi'; trang gọi đổi được", () => {
+    const { unmount } = render(<WeekCalendarGrid events={[]} />);
+    expect(screen.getByText("Lịch của tôi")).toBeTruthy();
+    unmount();
+    render(<WeekCalendarGrid events={[]} railLabel="Lịch học của con" />);
+    expect(screen.getByText("Lịch học của con")).toBeTruthy();
+    expect(screen.queryByText("Lịch của tôi")).toBeNull();
+  });
+});

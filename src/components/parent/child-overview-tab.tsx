@@ -1,7 +1,7 @@
 "use client";
 
 import { BookOpen, CalendarCheck, ClipboardList } from "lucide-react";
-import { splitAssignmentsByDeadline } from "./child-assignments";
+import { CHILD_ASSIGNMENT_STATE_LABEL, childAssignmentState, splitAssignmentsByDeadline } from "./child-assignments";
 import { ChildAttendanceStatus } from "./child-attendance-status";
 import type {
   ChildAssignment,
@@ -27,9 +27,10 @@ export function ChildOverviewTab({
   attendance: ChildAttendance[];
 }) {
   const inProgress = courses.filter((c) => !c.completed_at).slice(0, 4);
-  const { upcoming: upcomingAll, overdue: overdueAll } = splitAssignmentsByDeadline(assignments);
+  const { upcoming: upcomingAll, overdue: overdueAll, retry: retryAll } = splitAssignmentsByDeadline(assignments);
   const upcoming = upcomingAll.slice(0, 3);
   const overdue = overdueAll.slice(0, 3);
+  const retry = retryAll.slice(0, 3);
   const recentAttendance = attendance.slice(0, 3);
 
   return (
@@ -65,6 +66,21 @@ export function ChildOverviewTab({
               <span className="truncate text-gray-700">{a.title}</span>
               <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-red-600">
                 Chưa nộp, hạn {new Date(a.due_date!).toLocaleDateString("vi-VN")}
+              </span>
+            </li>
+          ))}
+        </Section>
+      )}
+
+      {/* N-04 (QA4 261123): bài đã nộp, chưa xong, đã qua hạn từng không hiện ở đâu trên phần tóm tắt. "Cần chú ý"
+          chứ không "Cần làm lại": nhóm có cả bài lỗi chấm, con không phải làm lại. */}
+      {retry.length > 0 && (
+        <Section icon={ClipboardList} title={`Cần chú ý (${retryAll.length})`} empty={null}>
+          {retry.map((a) => (
+            <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
+              <span className="truncate text-gray-700">{a.title}</span>
+              <span className="shrink-0 rounded bg-amber-50 px-1.5 py-0.5 text-amber-700">
+                {CHILD_ASSIGNMENT_STATE_LABEL[childAssignmentState(a)]}
               </span>
             </li>
           ))}

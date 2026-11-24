@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AuthCard } from "@/components/auth/auth-card";
 import { AuthIconHeader } from "@/components/auth/auth-icon-header";
@@ -11,10 +11,13 @@ import { AUTH_ROUTES } from "@/lib/routes";
 import { STORAGE_KEYS } from "@/lib/constants";
 import {
   useRegister,
-  useRegisterRequest,
+  useRegisterResendOtp,
   authErrorMessage,
+  isRegistrationExpiredError,
+  REGISTRATION_EXPIRED_MESSAGE,
   translateOtpErrorMessage,
 } from "@/hooks/queries/use-auth";
+import { markOneShotPage } from "@/hooks/use-one-shot-page";
 import { useFlowGuard } from "@/hooks/use-flow-guard";
 
 export default function OtpPage() {
@@ -25,8 +28,12 @@ export default function OtpPage() {
     AUTH_ROUTES.REGISTER,
     "Chưa có yêu cầu đăng ký nào cần xác thực. Vui lòng đăng ký trước.",
   );
+  // Dọn mật khẩu dạng rõ mà bản cũ để lại trong sessionStorage (review web#123 #4).
+  useEffect(() => {
+    sessionStorage.removeItem(STORAGE_KEYS.LEGACY_REGISTER_PAYLOAD);
+  }, []);
   const register = useRegister();
-  const registerRequest = useRegisterRequest();
+  const resendOtp = useRegisterResendOtp();
   const [otp, setOtp] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   // Đổi key để remount OtpInput -> xoá sạch 6 ô nhập sau khi OTP sai, thay vì
@@ -47,7 +54,7 @@ export default function OtpPage() {
     try {
       await register.mutateAsync({ email, otp: otpCode });
       sessionStorage.removeItem(STORAGE_KEYS.REGISTER_EMAIL);
-      sessionStorage.removeItem(STORAGE_KEYS.REGISTER_PAYLOAD);
+      markOneShotPage(STORAGE_KEYS.REGISTER_SUCCESS_FLAG);
       router.push(AUTH_ROUTES.REGISTER_SUCCESS); // Navigate manually since hook no longer does it
     } catch (error) {
       // Trước đây chỉ log console — người dùng không biết thao tác vừa thất
@@ -66,25 +73,26 @@ export default function OtpPage() {
 
   const handleResend = async () => {
     const email = sessionStorage.getItem(STORAGE_KEYS.REGISTER_EMAIL);
-    const payloadRaw = sessionStorage.getItem(STORAGE_KEYS.REGISTER_PAYLOAD);
-    if (!email || !payloadRaw) {
+    if (!email) {
       router.push(AUTH_ROUTES.REGISTER);
       return;
     }
     try {
-      const payload = JSON.parse(payloadRaw) as {
-        password: string;
-        confirm_password: string;
-        user_name: string;
-        full_name?: string;
-      };
-      // Backend không có endpoint resend riêng — gọi lại register/request với
-      // cùng payload đã lưu để gửi mã OTP mới (khác bucket rate-limit với
-      // /login, xem otpRateLimiter trong auth_router.go).
-      await registerRequest.mutateAsync({ email, ...payload });
+      // N-07 (QA4 261123): backend gửi lại mã từ đăng ký đang chờ phía server, chỉ cần email. Trước đây trang
+      // gọi lại register/request với mật khẩu lưu dạng rõ trong sessionStorage.
+      await resendOtp.mutateAsync({ email });
       setErrorMessage("");
-    } catch {
-      toast.error("Không thể gửi lại mã, vui lòng thử lại sau");
+    } catch (error) {
+      if (isRegistrationExpiredError(error)) {
+        // Không còn đăng ký đang chờ: quay lại form, điền sẵn email, người dùng nhập lại phần còn lại.
+        sessionStorage.removeItem(STORAGE_KEYS.REGISTER_EMAIL);
+        sessionStorage.setItem(STORAGE_KEYS.REGISTER_PREFILL_EMAIL, email);
+        toast.error(REGISTRATION_EXPIRED_MESSAGE);
+        router.push(AUTH_ROUTES.REGISTER_FORM);
+        return;
+      }
+      // 429 (3 lần / 5 phút / email, chung bucket với register/request): RateLimitError đã mang câu kèm số giây.
+      toast.error(authErrorMessage(error, "Không thể gửi lại mã, vui lòng thử lại sau"));
     }
   };
 

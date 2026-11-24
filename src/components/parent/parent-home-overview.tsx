@@ -24,7 +24,7 @@ import {
 } from "@/hooks/queries/use-parent-dashboard";
 import type { Child } from "@/services/auth.service";
 import { inProgressCourseCount } from "./child-stats";
-import { splitAssignmentsByDeadline } from "./child-assignments";
+import { CHILD_ASSIGNMENT_STATE_LABEL, childAssignmentState, splitAssignmentsByDeadline } from "./child-assignments";
 import { ChildAttendanceStatus } from "./child-attendance-status";
 import { formatStudyMinutes } from "@/lib/format-study-time";
 
@@ -49,9 +49,12 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
 
   // Bài tập sắp hạn (hạn >= hiện tại, gần nhất trước) tách khỏi bài đã quá hạn (P-02, QA3 261104). Bài con đã
   // nộp không bao giờ tính quá hạn (QA-B-23), cùng quy tắc với tab Tổng quan và tab Bài tập.
-  const { upcoming, overdue } = splitAssignmentsByDeadline(assignmentsData?.assignments ?? []);
+  const { upcoming, overdue, retry } = splitAssignmentsByDeadline(assignmentsData?.assignments ?? []);
   const upcomingAssignments = upcoming.slice(0, 3);
   const overdueAssignments = overdue.slice(0, 3);
+  // N-04 (QA4 261123): bài đã nộp nhưng chưa xong, hạn đã qua: trước đây không nằm trong nhóm nào. Tiêu đề
+  // "Cần chú ý" vì nhóm có cả bài lỗi chấm (con không phải làm lại).
+  const retryAssignments = retry.slice(0, 3);
 
   const recentAttendance = attendanceData?.records ?? [];
 
@@ -123,6 +126,21 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
                     <span className="truncate">{a.title}</span>
                     <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-red-600">
                       Chưa nộp, hạn {new Date(a.due_date!).toLocaleDateString("vi-VN")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {!loadingAssignments && retryAssignments.length > 0 && (
+            <div className="mt-3" data-testid="retry-assignments">
+              <p className="text-xs font-semibold text-amber-700 mb-1.5">Cần chú ý ({retry.length})</p>
+              <ul className="space-y-1.5">
+                {retryAssignments.map((a) => (
+                  <li key={a.id} className="text-xs text-gray-600 flex items-center justify-between gap-2">
+                    <span className="truncate">{a.title}</span>
+                    <span className="shrink-0 rounded bg-amber-50 px-1.5 py-0.5 text-amber-700">
+                      {CHILD_ASSIGNMENT_STATE_LABEL[childAssignmentState(a)]}
                     </span>
                   </li>
                 ))}

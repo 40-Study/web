@@ -1,11 +1,19 @@
+"use client";
+
 import Link from "next/link";
 import { AuthCard } from "@/components/auth/auth-card";
 import { AuthIconHeader } from "@/components/auth/auth-icon-header";
 import { Button } from "@/components/ui/button";
 import { ShieldCheckIcon } from "@/components/icons";
 import { AUTH_ROUTES } from "@/lib/routes";
+import { STORAGE_KEYS } from "@/lib/constants";
+import { useOneShotPage } from "@/hooks/use-one-shot-page";
 
 export default function ResetPasswordSuccessPage() {
+  // N-11 (QA4 261123): chỉ hiện ngay sau bước trước của luồng; mở thẳng URL thì về /login.
+  const allowed = useOneShotPage(STORAGE_KEYS.RESET_PASSWORD_SUCCESS_FLAG, AUTH_ROUTES.LOGIN);
+  if (!allowed) return null;
+
   return (
     <AuthCard>
       <div className="flex flex-col items-center py-4">

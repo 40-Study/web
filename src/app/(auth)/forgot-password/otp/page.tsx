@@ -8,16 +8,24 @@ import { OtpInput } from "@/components/auth/otp-input";
 import { MailIcon } from "@/components/icons";
 import { AUTH_ROUTES } from "@/lib/routes";
 import { useResetPasswordRequest } from "@/hooks/queries/use-auth";
+import { useFlowGuard } from "@/hooks/use-flow-guard";
+import { STORAGE_KEYS } from "@/lib/constants";
 
 export default function ForgotPasswordOtpPage() {
   const router = useRouter();
+  // N-02 (QA4 261123): mở thẳng URL khi chưa yêu cầu mã -> về /forgot-password ngay (như /otp, G-05).
+  const hasResetRequest = useFlowGuard(
+    [STORAGE_KEYS.RESET_PASSWORD_EMAIL],
+    AUTH_ROUTES.FORGOT_PASSWORD,
+    "Chưa có yêu cầu đặt lại mật khẩu nào. Vui lòng nhập email để nhận mã xác nhận.",
+  );
   const resetPasswordRequest = useResetPasswordRequest();
   const [, setOtp] = useState("");
 
   const handleComplete = (otpCode: string) => {
     setOtp(otpCode);
 
-    const email = sessionStorage.getItem("reset_password_email");
+    const email = sessionStorage.getItem(STORAGE_KEYS.RESET_PASSWORD_EMAIL);
     if (!email) {
       router.push(AUTH_ROUTES.FORGOT_PASSWORD);
       return;
@@ -32,7 +40,7 @@ export default function ForgotPasswordOtpPage() {
   };
 
   const handleResend = () => {
-    const email = sessionStorage.getItem("reset_password_email");
+    const email = sessionStorage.getItem(STORAGE_KEYS.RESET_PASSWORD_EMAIL);
     if (!email) {
       router.push(AUTH_ROUTES.FORGOT_PASSWORD);
       return;
@@ -40,6 +48,8 @@ export default function ForgotPasswordOtpPage() {
     // useResetPasswordRequest tự toast "Mã xác nhận đã được gửi" khi thành công.
     resetPasswordRequest.mutate({ email });
   };
+
+  if (!hasResetRequest) return null;
 
   return (
     <AuthCard>

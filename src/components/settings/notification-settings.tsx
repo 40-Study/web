@@ -3,6 +3,8 @@
 import { Bell, Mail, Smartphone } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useNotificationSettings, useUpdateNotificationSettings } from "@/hooks/queries/use-notification-settings";
+import { useAuthStore } from "@/stores/auth.store";
+import { normalizeRole } from "@/lib/routes";
 
 // ─── Field mapping ───────────────────────────────────────────────────────────
 // Maps UI items to backend field names for email + push channels
@@ -13,6 +15,8 @@ interface NotificationItem {
   description: string;
   emailField: string | null;
   pushField: string | null;
+  /** N-05 (QA4 261123): chuỗi học, thành tích, bảng xếp hạng là của người học; phụ huynh không có (như P-05). */
+  hideForParent?: boolean;
 }
 
 const ITEMS: NotificationItem[] = [
@@ -22,6 +26,7 @@ const ITEMS: NotificationItem[] = [
     description: "Nhắc hàng ngày để duy trì chuỗi ngày học liên tiếp",
     emailField: "email_recommendations",
     pushField: "push_streak_reminders",
+    hideForParent: true,
   },
   {
     id: "achievements",
@@ -29,6 +34,7 @@ const ITEMS: NotificationItem[] = [
     description: "Khi bạn đạt được thành tích mới",
     emailField: null,
     pushField: "push_achievements",
+    hideForParent: true,
   },
   {
     id: "course-updates",
@@ -43,6 +49,7 @@ const ITEMS: NotificationItem[] = [
     description: "Thay đổi vị trí trong giải đấu của bạn",
     emailField: null,
     pushField: "push_quiz_reminders",
+    hideForParent: true,
   },
   {
     id: "marketing",
@@ -58,6 +65,8 @@ const ITEMS: NotificationItem[] = [
 export function NotificationSettings() {
   const { data: settings, isLoading } = useNotificationSettings();
   const { mutate: updateSetting } = useUpdateNotificationSettings();
+  const isParent = normalizeRole(useAuthStore((st) => st.activeRole)) === "PARENT";
+  const visibleItems = ITEMS.filter((item) => !(isParent && item.hideForParent));
 
   const getValue = (field: string | null): boolean => {
     if (!field || !settings) return false;
@@ -91,7 +100,7 @@ export function NotificationSettings() {
 
       {/* Settings list */}
       <div className="space-y-3">
-        {ITEMS.map((item) => (
+        {visibleItems.map((item) => (
           <div
             key={item.id}
             className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex items-center gap-4"
