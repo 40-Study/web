@@ -87,6 +87,9 @@ describe("CourseDetailSidebar — thanh mua mobile", () => {
 
     // Lúc tải trang: thẻ giá còn ở phía dưới (top 2000 > cao màn hình 800).
     expect(screen.queryByTestId("mobile-buy-bar")).not.toBeNull();
+    // QA4 S19: cùng động từ với thẻ giá.
+    expect(screen.getByTestId("mobile-buy-bar").textContent).toContain("Mua ngay");
+    expect(screen.getByTestId("mobile-buy-bar").textContent).not.toContain("Mua khoá học");
 
     scrollCardTo(300); // thẻ giá đang hiện
     expect(screen.queryByTestId("mobile-buy-bar")).toBeNull();

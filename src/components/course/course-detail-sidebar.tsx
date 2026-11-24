@@ -267,7 +267,8 @@ export function CourseDetailSidebar({
             onClick={handleBuyNowClick}
             isLoading={isSessionPending}
           >
-            Mua khoá học
+            {/* Cùng một động từ với nút ở thẻ giá ("Mua ngay"), không phải "Mua khoá học" (QA4 S19). */}
+            Mua ngay
           </Button>
         </div>
       )}
