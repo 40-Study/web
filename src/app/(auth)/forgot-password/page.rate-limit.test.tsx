@@ -15,15 +15,21 @@ import ForgotPasswordPage from "./page";
 import { mockApi, resetMockApi } from "@/test/mock-api";
 import { renderWithProviders } from "@/test/utils";
 import { RateLimitError } from "@/lib/errors";
+import { createAppQueryClient } from "@/lib/query-client";
+import { toast } from "sonner";
 
-beforeEach(() => resetMockApi());
+beforeEach(() => {
+  resetMockApi();
+  vi.mocked(toast.error).mockClear();
+});
 
 describe("ForgotPasswordPage — 429", () => {
   it("không để lỗi rơi thành unhandled rejection và không chuyển sang bước OTP", async () => {
     const unhandled = vi.fn();
     process.on("unhandledRejection", unhandled);
     mockApi.post.mockRejectedValue(new RateLimitError(100));
-    renderWithProviders(<ForgotPasswordPage />);
+    // Client THẬT của app: toast 429 duy nhất đến từ mutations.onError mặc định (hook không có onError riêng).
+    renderWithProviders(<ForgotPasswordPage />, { queryClient: createAppQueryClient() });
 
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "a@b.vn" } });
     fireEvent.click(screen.getByRole("button", { name: "Gửi mã xác thực" }));
@@ -33,5 +39,10 @@ describe("ForgotPasswordPage — 429", () => {
     process.off("unhandledRejection", unhandled);
     expect(unhandled).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "Gửi mã xác thực" })).toBeTruthy();
+    // Người dùng PHẢI thấy vì sao không đi tiếp được, đúng một lần, kèm số giây chờ (review M2).
+    expect(toast.error).toHaveBeenCalledTimes(1);
+    expect(toast.error).toHaveBeenCalledWith("Không thể thực hiện thao tác", {
+      description: "Bạn thao tác quá nhiều lần, vui lòng thử lại sau 100 giây",
+    });
   });
 });

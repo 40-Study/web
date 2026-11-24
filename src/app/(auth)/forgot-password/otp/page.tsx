@@ -7,7 +7,7 @@ import { AuthIconHeader } from "@/components/auth/auth-icon-header";
 import { OtpInput } from "@/components/auth/otp-input";
 import { MailIcon } from "@/components/icons";
 import { AUTH_ROUTES } from "@/lib/routes";
-import { RESET_OTP_ERROR_KEY, useResetPasswordRequest } from "@/hooks/queries/use-auth";
+import { useResetPasswordRequest } from "@/hooks/queries/use-auth";
 import { useFlowGuard } from "@/hooks/use-flow-guard";
 import { STORAGE_KEYS } from "@/lib/constants";
 
@@ -24,9 +24,9 @@ export default function ForgotPasswordOtpPage() {
   // một lần). Câu hiện dưới 6 ô và mất đi khi họ gõ mã mới hoặc xin mã khác.
   const [errorMessage, setErrorMessage] = useState("");
   useEffect(() => {
-    const stored = sessionStorage.getItem(RESET_OTP_ERROR_KEY);
+    const stored = sessionStorage.getItem(STORAGE_KEYS.RESET_PASSWORD_OTP_ERROR);
     if (!stored) return;
-    sessionStorage.removeItem(RESET_OTP_ERROR_KEY);
+    sessionStorage.removeItem(STORAGE_KEYS.RESET_PASSWORD_OTP_ERROR);
     setErrorMessage(stored);
   }, []);
 
@@ -43,7 +43,7 @@ export default function ForgotPasswordOtpPage() {
     // gửi cùng mật khẩu mới ở reset-password/page.tsx (1 API check-otp+set-
     // password gộp lại). Lỗi "sai OTP" hiện ở bước đó (xem useResetPassword's
     // onError, QA khách P1, 260927).
-    sessionStorage.setItem("reset_password_otp", otpCode);
+    sessionStorage.setItem(STORAGE_KEYS.RESET_PASSWORD_OTP, otpCode);
     router.push(AUTH_ROUTES.RESET_PASSWORD);
   };
 

@@ -464,12 +464,18 @@ export function useResetPasswordRequest() {
   });
 }
 
-/** Khoá sessionStorage mang câu lỗi OTP sang bước nhập OTP (đọc một lần, xem forgot-password/otp/page.tsx). */
-export const RESET_OTP_ERROR_KEY = "reset_password_otp_error";
-
 /** Backend gộp kiểm OTP và đặt mật khẩu mới vào một lần gọi; lỗi OTP luôn có chữ "OTP" trong message. */
 export function isResetOtpError(error: unknown): boolean {
   return error instanceof ApiError && /\bOTP\b/i.test(error.message);
+}
+
+/**
+ * Mã đã CHẾT, không thử lại được: backend đã xoá khoá OTP (auth_service.go ~1451-1482: "OTP not found or expired",
+ * "OTP has expired", "too many failed attempts, please request a new OTP"). Khác "invalid OTP, N attempts
+ * remaining" (mã sai nhưng còn sống). Người dùng phải xin mã MỚI, không có gì để nhập lại.
+ */
+export function isResetOtpGoneError(error: unknown): boolean {
+  return error instanceof ApiError && /OTP not found or expired|OTP has expired|too many failed attempts/i.test(error.message);
 }
 
 /** POST /auth/reset-password */
@@ -489,10 +495,27 @@ export function useResetPassword() {
       );
       // Q5-PG-05: OTP chỉ được kiểm ở bước cuối này. Trước đây chỉ có toast và trang vẫn giữ mã sai trong
       // sessionStorage: người dùng không có chỗ nhập lại, bấm gửi lại thì gửi cùng mã sai và tốn lượt thử.
-      // Xoá mã sai rồi đưa về bước nhập OTP, câu lỗi hiện ngay dưới 6 ô (không toast thêm lần nữa, như N-06).
+      // Mã đã CHẾT (review M1): về /forgot-password giữ email, người dùng bấm gửi mã mới ngay. KHÔNG đưa về
+      // bước OTP: ở đó nút "Gửi lại mã" bị ẩn 90 giây và mã gõ vào lại bị từ chối tiếp.
+      if (isResetOtpGoneError(error)) {
+        const email = sessionStorage.getItem(STORAGE_KEYS.RESET_PASSWORD_EMAIL);
+        sessionStorage.removeItem(STORAGE_KEYS.RESET_PASSWORD_OTP);
+        sessionStorage.removeItem(STORAGE_KEYS.RESET_PASSWORD_EMAIL);
+        if (email) sessionStorage.setItem(STORAGE_KEYS.RESET_PASSWORD_PREFILL_EMAIL, email);
+        sessionStorage.setItem(
+          STORAGE_KEYS.RESET_PASSWORD_GONE_NOTICE,
+          /too many failed attempts/i.test((error as ApiError).message)
+            ? "Bạn đã nhập sai quá nhiều lần nên mã đã bị huỷ. Vui lòng nhận mã mới."
+            : "Mã OTP đã hết hạn. Vui lòng nhận mã mới.",
+        );
+        router.push(AUTH_ROUTES.FORGOT_PASSWORD);
+        return;
+      }
+      // Mã SAI nhưng còn lượt: xoá mã sai rồi đưa về bước nhập OTP, câu lỗi hiện ngay dưới 6 ô (không toast thêm
+      // lần nữa, như N-06).
       if (isResetOtpError(error)) {
-        sessionStorage.removeItem("reset_password_otp");
-        sessionStorage.setItem(RESET_OTP_ERROR_KEY, message);
+        sessionStorage.removeItem(STORAGE_KEYS.RESET_PASSWORD_OTP);
+        sessionStorage.setItem(STORAGE_KEYS.RESET_PASSWORD_OTP_ERROR, message);
         router.push(AUTH_ROUTES.FORGOT_PASSWORD_OTP);
         return;
       }
