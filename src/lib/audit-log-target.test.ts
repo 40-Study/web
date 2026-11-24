@@ -18,7 +18,7 @@ const log = (over: Partial<AuditLogItem>): AuditLogItem => ({
 const orgMeta = {
   organization_id: "o1",
   organization_name: "QA3 Org 261104",
-  role_code: "ORG_TEACHER",
+  role_code: "3f2a9c1e-7b4d-4e0a-9d51-0c8f6a2b1e34",
   role_name: "ORG_TEACHER",
   target_user_id: "52ed9bd3-0000-4000-8000-000000000000",
   target_user_name: "Đặng Bá Quân",
@@ -40,12 +40,19 @@ describe("auditTargetText (QA4-A02)", () => {
 });
 
 describe("auditContextText (QA4-A02)", () => {
-  it("nêu tổ chức và vai trò (nhãn tiếng Việt từ role_code)", () => {
-    expect(auditContextText(log({ metadata: orgMeta }))).toBe("Tổ chức QA3 Org 261104 · Vai trò Giảng viên");
+  it("nêu tổ chức và vai trò từ role_name, không bao giờ in role_code (UUID của vai)", () => {
+    const text = auditContextText(log({ metadata: orgMeta }));
+    expect(text).toBe("Tổ chức QA3 Org 261104 · Vai trò Giảng viên");
+    expect(text).not.toContain("3f2a9c1e");
   });
 
-  it("không có role_code thì dùng role_name; thiếu cả hai trường thì null", () => {
-    expect(auditContextText(log({ metadata: { role_name: "Trợ giảng" } }))).toBe("Vai trò Trợ giảng");
+  it("gán nhiều vai một lần: role_name nối bằng ', ' thì hiện từng vai", () => {
+    const meta = { ...orgMeta, role_code: "id-1, id-2", role_name: "ORG_TEACHER, QA3_STUDENT" };
+    expect(auditContextText(log({ metadata: meta }))).toBe("Tổ chức QA3 Org 261104 · Vai trò Giảng viên, Qa3 Student");
+  });
+
+  it("chỉ có role_code (UUID) mà không có role_name: không hiện vai trò; thiếu cả hai thì null", () => {
+    expect(auditContextText(log({ metadata: { role_code: "3f2a9c1e-7b4d" } }))).toBeNull();
     expect(auditContextText(log({ metadata: null }))).toBeNull();
     expect(auditContextText(log({ metadata: { old: "0", new: "10" } }))).toBeNull();
   });

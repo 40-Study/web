@@ -85,7 +85,7 @@ describe("AdminAuditLogsPage", () => {
       log({
         action: "user.org_role_revoke",
         target_id: "52ed9bd3",
-        metadata: { organization_name: "QA3 Org 261104", role_code: "QA3_TEACHER", target_user_name: "Đặng Bá Quân" },
+        metadata: { organization_name: "QA3 Org 261104", role_code: "9b1c0d2e-role-uuid", role_name: "QA3_TEACHER", target_user_name: "Đặng Bá Quân" },
       }),
     ]);
     render(<AdminAuditLogsPage />);
@@ -93,6 +93,7 @@ describe("AdminAuditLogsPage", () => {
     const row = screen.getByText("Người dùng: Đặng Bá Quân").closest("tr")!;
     expect(within(row).getByText("Tổ chức QA3 Org 261104 · Vai trò Qa3 Teacher")).toBeTruthy();
     expect(within(row).queryByText(/52ed9bd3/)).toBeNull();
+    expect(within(row).queryByText(/9b1c0d2e/)).toBeNull();
   });
 
   // ADM-L9 (smoke 2): ở 390px bảng 7 cột cuộn ngang, cột "Hành động" bị cắt/rớt nhiều dòng. Dưới sm mỗi dòng

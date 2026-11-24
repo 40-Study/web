@@ -3,7 +3,9 @@
  * ("user: 52ed9bd3-…"): kiểu tiếng Anh + UUID, không biết tổ chức hay vai trò nào.
  *
  * Contract 6 (backend): thao tác thêm/đổi/xoá thành viên tổ chức ghi metadata
- * `{ organization_id, organization_name, role_code, role_name, target_user_id, target_user_name }`.
+ * `{ organization_id, organization_name, role_code, role_name, target_user_id, target_user_name }`
+ * (trên user.org_role_assign / user.org_role_revoke). Vai trò tổ chức không có cột mã nên `role_code` là UUID của
+ * vai: chỉ hiển thị `role_name`. Gán nhiều vai một lần thì các giá trị nối bằng ", ".
  * Dòng cũ (metadata null) vẫn hiện được: rơi về nhãn kiểu + ID.
  */
 
@@ -47,8 +49,8 @@ export function auditContextText(log: AuditLogItem): string | null {
   const parts: string[] = [];
   const org = metaText(log, "organization_name");
   if (org) parts.push(`Tổ chức ${org}`);
-  const roleCode = metaText(log, "role_code");
-  const role = roleCode ? getOrgRoleLabel(roleCode) : metaText(log, "role_name");
-  if (role) parts.push(`Vai trò ${role}`);
+  // Tên vai qua getOrgRoleLabel như danh sách thành viên ("QA3_TEACHER" -> "Qa3 Teacher"), từng tên một.
+  const roleNames = metaText(log, "role_name")?.split(",").map((n) => n.trim()).filter(Boolean) ?? [];
+  if (roleNames.length > 0) parts.push(`Vai trò ${roleNames.map(getOrgRoleLabel).join(", ")}`);
   return parts.length > 0 ? parts.join(" · ") : null;
 }

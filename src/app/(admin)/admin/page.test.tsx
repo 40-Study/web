@@ -119,7 +119,7 @@ describe("/admin dashboard — A-P2-2", () => {
         {
           id: "a3", created_at: "2026-11-23T03:15:00Z", actor: { id: "u1", name: "Quản trị A", email: "a@x.vn" },
           action: "user.org_role_assign", target_type: "user", target_id: "52ed9bd3", status_code: 200, ip: null,
-          metadata: { organization_name: "QA3 Org 261104", role_code: "ORG_STUDENT", target_user_name: "Đặng Bá Quân" },
+          metadata: { organization_name: "QA3 Org 261104", role_code: "9b1c0d2e-role-uuid", role_name: "ORG_STUDENT", target_user_name: "Đặng Bá Quân" },
         },
       ],
       total: 1, page: 1, page_size: 5,

@@ -131,7 +131,7 @@ describe("AdminOrderDetailPage — refund dialog", () => {
     expect(screen.getByText("b@demo.com")).toBeTruthy();
   });
 
-  it("QA4-A08: backend chưa trả buyer thì không có dòng người mua, trang vẫn hiện bình thường", () => {
+  it("QA4-A08: đơn không có buyer (backend cũ / chưa triển khai) thì không có dòng người mua, trang vẫn hiện bình thường", () => {
     render(<AdminOrderDetailPage />);
     expect(screen.queryByText("Người mua")).toBeNull();
     expect(screen.getByText("Hoàn tất")).toBeTruthy();

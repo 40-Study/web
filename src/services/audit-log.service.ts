@@ -119,6 +119,11 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "contest.cancel": "Huỷ cuộc thi",
   "contest.prizes_update": "Cập nhật giải thưởng cuộc thi",
   "contest.finalize": "Chốt kết quả cuộc thi",
+  // QA4-A09: tag và xoá khoá học (admin) giờ cũng được ghi nhật ký.
+  "tag.create": "Tạo tag",
+  "tag.update": "Cập nhật tag",
+  "tag.delete": "Xoá tag",
+  "course.delete": "Xoá khoá học",
 };
 
 export function auditActionLabel(code: string): string {
