@@ -43,15 +43,24 @@ export function handleMutationError(error: unknown): void {
   toast.error("Không thể thực hiện thao tác", { description: describeAuthFailure(getErrorMessage(error), hasSession) });
 }
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: shouldRetryQuery,
-      staleTime: 30_000, // 30 seconds
-      refetchOnWindowFocus: false,
+/**
+ * Client mới với ĐÚNG mặc định của app (retry, staleTime, toast lỗi mutation mặc định). Test hook/component
+ * dùng hàm này thay vì `new QueryClient()` trần: client trần không có `mutations.onError` nên không thấy được
+ * toast trùng do mặc định của app gây ra (QA4 review #124, S14).
+ */
+export function createAppQueryClient(): QueryClient {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: shouldRetryQuery,
+        staleTime: 30_000, // 30 seconds
+        refetchOnWindowFocus: false,
+      },
+      mutations: {
+        onError: handleMutationError,
+      },
     },
-    mutations: {
-      onError: handleMutationError,
-    },
-  },
-});
+  });
+}
+
+export const queryClient = createAppQueryClient();

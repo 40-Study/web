@@ -1,7 +1,8 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { VoucherInput } from "./voucher-input";
+import { createAppQueryClient } from "@/lib/query-client";
 import { CheckoutModal } from "./checkout-modal";
 import { voucherService, type Voucher } from "@/services/voucher.service";
 import { ApiError, NotFoundError } from "@/lib/errors";
@@ -24,8 +25,10 @@ const summer50k: Voucher = {
   is_active: true,
 };
 
+// Client có ĐÚNG mặc định của app: client trần bỏ qua `mutations.onError` mặc định nên không bắt được toast
+// trùng của S14 (review #124).
 function wrap(ui: React.ReactElement) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  const qc = createAppQueryClient();
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={qc}>{children}</QueryClientProvider>
   );

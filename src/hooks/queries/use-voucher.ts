@@ -95,11 +95,13 @@ export function voucherLookupErrorMessage(error: unknown): string {
 
 /**
  * Look up a voucher by code (mutation-style for form submission). Không toast: ô nhập voucher đã hiện lý do
- * ngay dưới ô, toast cùng câu là báo lỗi hai lần (QA4 S14).
+ * ngay dưới ô, toast cùng câu là báo lỗi hai lần (QA4 S14). `onError` riêng (dù rỗng) là bắt buộc: thiếu nó thì
+ * `mutations.onError` mặc định của app (lib/query-client.ts) vẫn toast "Không thể thực hiện thao tác".
  */
 export function useVoucherLookup() {
   return useMutation({
     mutationFn: (code: string) => voucherService.getVoucherByCode(code),
+    onError: () => undefined,
   });
 }
 
