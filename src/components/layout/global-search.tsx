@@ -192,8 +192,8 @@ export function GlobalSearch({
             setActiveIndex(-1);
           }}
           onKeyDown={handleInputKeyDown}
-          placeholder="Tìm khoá học, bài tập, hỏi đáp..."
-          aria-label="Tìm khoá học, bài tập, hỏi đáp"
+          placeholder="Tìm khoá học..."
+          aria-label="Tìm khoá học"
           // Khung ngoài đã có vòng focus; tắt box-shadow focus-visible toàn cục của input để không hiện vòng thứ hai khi click.
           className="flex-1 min-w-0 p-0 bg-transparent border-none outline-none shadow-none focus:ring-0 focus-visible:shadow-none text-sm text-foreground placeholder:text-muted-foreground"
         />
