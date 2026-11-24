@@ -55,3 +55,19 @@ describe("ContestQuestion — không lộ đáp án", () => {
     expect(screen.getAllByRole("checkbox")).toHaveLength(2);
   });
 });
+
+// QA4 S11: đề "Lệnh nào để `git clone`?" in nguyên dấu backtick.
+describe("ContestQuestion — mã inline", () => {
+  it("`mã` trong đề và đáp án hiện thành <code>, không còn dấu backtick", () => {
+    const q = {
+      ...leaked,
+      question_text: "Lệnh `git clone` dùng để làm gì?",
+      answers: [{ id: "a1", answer_text: "Sao chép repo bằng `git clone <url>`", display_order: 1 }],
+    } as unknown as ContestAttemptQuestion;
+    const { container } = render(<ContestQuestion index={0} question={q} draft={undefined} onChange={() => {}} />);
+    expect(container.textContent).not.toContain("`");
+    const codes = Array.from(container.querySelectorAll("code")).map((c) => c.textContent);
+    expect(codes).toEqual(["git clone", "git clone <url>"]);
+  });
+});
+
