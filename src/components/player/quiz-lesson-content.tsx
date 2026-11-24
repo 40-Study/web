@@ -10,6 +10,7 @@ import {
   countUnsure,
 } from "@/components/quiz/unsure-toggle";
 import type { StartQuizResponse, AttemptQuestion } from "@/services/quiz.service";
+import { QuizSubmitConfirmDialog } from "./quiz-submit-confirm-dialog";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -181,6 +182,7 @@ export function QuizLessonContent({
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
   const [timeLeft, setTimeLeft] = useState(timeLimitMins * 60);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const totalQuestions = questions.length;
   const currentQuestion = questions[currentIndex];
@@ -258,6 +260,17 @@ export function QuizLessonContent({
       submittingRef.current = false;
     }
   }, [timeLeft, timeLimitMins, onSubmit, isSubmitted, isSubmitting, isApiMode]);
+
+  // Nộp tay khi còn câu bỏ trống phải xác nhận trước (QA4 S2); hết giờ thì nộp thẳng.
+  const unansweredCount = totalQuestions - answeredCount;
+  const handleSubmitClick = () => {
+    if (unansweredCount > 0) setConfirmOpen(true);
+    else void handleSubmit();
+  };
+  const handleConfirmSubmit = () => {
+    setConfirmOpen(false);
+    void handleSubmit();
+  };
 
   useEffect(() => {
     if (timeLeft === 0 && !autoSubmittedRef.current && !isSubmitted) {
@@ -497,7 +510,7 @@ export function QuizLessonContent({
             </p>
           )}
           <button
-            onClick={() => void handleSubmit()}
+            onClick={handleSubmitClick}
             disabled={isSubmitted || isSubmitting}
             className={cn(
               "mt-auto w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors",
@@ -520,6 +533,13 @@ export function QuizLessonContent({
           </button>
         </div>
       </div>
+      <QuizSubmitConfirmDialog
+        open={confirmOpen}
+        unansweredCount={unansweredCount}
+        totalQuestions={totalQuestions}
+        onOpenChange={setConfirmOpen}
+        onConfirm={handleConfirmSubmit}
+      />
     </div>
   );
 }

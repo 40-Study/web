@@ -31,6 +31,7 @@ import type { LessonProgressResponse } from "@/services/enrollment.service";
 import type { LessonContent } from "@/services/lesson-content.service";
 import type { Quiz } from "@/services/quiz.service";
 import { QuizAttemptReview } from "@/components/quiz";
+import { summarizeAttempt } from "@/lib/quiz-attempt-summary";
 import { useCourseBySlug } from "@/hooks/queries/use-courses";
 import { useMyEnrollments } from "@/hooks/queries/use-enrollments";
 import { useSections } from "@/hooks/queries/use-sections";
@@ -686,6 +687,7 @@ export default function CourseLessonPage() {
           );
         }
         const percentage = submittedAttempt.percentage ?? 0;
+        const attemptSummary = summarizeAttempt(submittedAttempt.answers, activeQuiz?.questions);
         return (
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
             <div className="bg-white rounded-2xl shadow-sm p-6 space-y-1">
@@ -693,7 +695,7 @@ export default function CourseLessonPage() {
                 {submittedAttempt.is_passed ? "Bạn đã đạt bài kiểm tra này" : "Bạn chưa đạt bài kiểm tra này"}
               </h2>
               <p className="text-sm text-gray-500">
-                Điểm: {Math.round(percentage)}% · Đúng {submittedAttempt.answers.filter((a) => a.is_correct === true).length}/{submittedAttempt.answers.length} câu
+                Điểm: {Math.round(percentage)}% · Đúng {attemptSummary.correct}/{attemptSummary.total} câu
               </p>
               <button
                 onClick={handleRetryQuiz}
@@ -702,7 +704,11 @@ export default function CourseLessonPage() {
                 Làm lại
               </button>
             </div>
-            <QuizAttemptReview answers={submittedAttempt.answers} answerText={quizAnswerText} />
+            <QuizAttemptReview
+              answers={submittedAttempt.answers}
+              answerText={quizAnswerText}
+              questions={activeQuiz?.questions}
+            />
           </div>
         );
       }

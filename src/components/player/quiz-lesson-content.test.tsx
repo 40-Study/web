@@ -144,3 +144,39 @@ describe("QuizLessonContent — bố cục mobile (Q3)", () => {
     expect(screen.getByRole("button", { name: /Tiếp theo/ })).toBeTruthy();
   });
 });
+
+// QA4 S2: nộp tay khi còn câu bỏ trống phải xác nhận, không nộp ngay.
+describe("QuizLessonContent — xác nhận khi còn câu chưa trả lời (S2)", () => {
+  const QUIZ3: QuizData = {
+    ...QUIZ,
+    timeLimitMinutes: 10,
+    questions: [QUIZ.questions[0], { ...QUIZ.questions[0], id: "qst-2" }, { ...QUIZ.questions[0], id: "qst-3" }],
+  };
+
+  it("0/3 đã trả lời: bấm Nộp bài mở hộp xác nhận, chưa gọi onSubmit", async () => {
+    const onSubmit = vi.fn();
+    render(<QuizLessonContent quiz={QUIZ3} onSubmit={onSubmit} />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /nộp bài/i }));
+    });
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText(/Còn 3\/3 câu chưa trả lời/)).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Làm tiếp" }));
+    });
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("xác nhận 'Vẫn nộp bài' thì nộp đúng một lần", async () => {
+    const onSubmit = vi.fn();
+    render(<QuizLessonContent quiz={QUIZ3} onSubmit={onSubmit} />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /nộp bài/i }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Vẫn nộp bài" }));
+    });
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+});
