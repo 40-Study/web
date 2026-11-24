@@ -70,11 +70,21 @@ describe("getNotificationHref — thông báo của giảng viên (Q4-T12)", () 
   });
 
   it("người nhiều vai đang dùng vai giảng viên: thông báo phía học viên KHÔNG dẫn về trang khoá của giảng viên", () => {
-    for (const type of ["new_lesson", "quiz_reminder", "certificate_earned", "promotion"]) {
+    for (const type of ["new_lesson", "certificate_earned", "promotion"]) {
       expect(getNotificationHref({ notification_type: type, reference_type: "course", reference_id: "c9" }, "TEACHER")).not.toBe(
         "/teacher/courses/c9",
       );
     }
+  });
+
+  // Q5-T10: "Nhắc chuẩn bị bài kiểm tra chương mới" của giảng viên là quiz_reminder + course; trước đây không có đích.
+  it("Q5-T10: quiz_reminder của giảng viên mở trang khoá của giảng viên; thiếu reference_id thì không dựng đường dẫn", () => {
+    expect(
+      getNotificationHref({ notification_type: "quiz_reminder", reference_type: "course", reference_id: "c3" }, "TEACHER"),
+    ).toBe("/teacher/courses/c3");
+    expect(getNotificationHref({ notification_type: "quiz_reminder", reference_type: "course", reference_id: null }, "TEACHER")).toBeNull();
+    // Học viên vẫn không có đích cho cùng loại thông báo.
+    expect(getNotificationHref({ notification_type: "quiz_reminder", reference_type: "course", reference_id: "c3" }, "STUDENT")).toBeNull();
   });
 
   it("vai khác giữ cách cũ", () => {

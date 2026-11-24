@@ -86,8 +86,8 @@ export function ClassManagePanel({ classId, initialTab = "members" }: { classId:
                   {cls.max_students ? ` / ${cls.max_students}` : ""} học viên · {cls.teacher_count ?? 0} giảng viên
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant={getClassDisplayBadge(cls).variant}>{getClassDisplayBadge(cls).label}</Badge>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={getClassDisplayBadge(cls).variant} className="whitespace-nowrap">{getClassDisplayBadge(cls).label}</Badge>
                 <ClassSourceBadge organizationId={cls.organization_id} />
                 {canManage && cls.status === "draft" && (
                   <Button onClick={() => actions.update.mutate({ status: "active" })} disabled={actions.update.isPending}>

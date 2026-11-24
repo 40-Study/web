@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarPlus, Wand2 } from "lucide-react";
+import { Ban, CalendarPlus, Wand2 } from "lucide-react";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { QueryState } from "@/components/common/query-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useClassSessions } from "@/hooks/queries/use-sessions";
+import { useCancelSession, useClassSessions } from "@/hooks/queries/use-sessions";
 import { toTimeOfDay } from "@/lib/class-schedule-validation";
 import { formatVnDateOnly } from "@/lib/vn-datetime";
-import type { SessionStatus } from "@/services/session.service";
+import type { ClassSession, SessionStatus } from "@/services/session.service";
 
 const PAGE_SIZE = 20;
 
@@ -36,6 +37,9 @@ export function ClassSessionList({
 }) {
   const [page, setPage] = useState(1);
   const query = useClassSessions(classId, { page, page_size: PAGE_SIZE });
+  const cancel = useCancelSession(classId);
+  // Q5-T02: buổi đang chờ xác nhận huỷ (null = đóng hộp thoại).
+  const [cancelling, setCancelling] = useState<ClassSession | null>(null);
   const sessions = query.data?.sessions ?? [];
   const total = query.data?.total ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -82,7 +86,19 @@ export function ClassSessionList({
                     </p>
                     {s.topic && <p className="truncate text-xs text-muted-foreground">{s.topic}</p>}
                   </div>
-                  <Badge variant={meta.variant}>{meta.label}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={meta.variant}>{meta.label}</Badge>
+                    {canWrite && s.status === "scheduled" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                        onClick={() => setCancelling(s)}
+                      >
+                        <Ban className="mr-1 h-4 w-4" aria-hidden="true" /> Huỷ buổi
+                      </Button>
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -100,6 +116,26 @@ export function ClassSessionList({
           </div>
         )}
       </CardContent>
+      <ConfirmDialog
+        open={cancelling !== null}
+        onOpenChange={(next) => {
+          if (!next && !cancel.isPending) setCancelling(null);
+        }}
+        title="Huỷ buổi học?"
+        description={
+          cancelling
+            ? `Buổi học ${formatVnDateOnly(cancelling.date)} · ${toTimeOfDay(cancelling.start_time)}–${toTimeOfDay(cancelling.end_time)} sẽ chuyển sang "Đã huỷ" và lịch nhắc học của buổi cũng ngừng. Học viên sẽ không điểm danh được buổi này.`
+            : undefined
+        }
+        confirmLabel="Huỷ buổi học"
+        cancelLabel="Giữ lại"
+        destructive
+        pending={cancel.isPending}
+        onConfirm={() => {
+          if (!cancelling) return;
+          cancel.mutate({ sessionId: cancelling.id }, { onSettled: () => setCancelling(null) });
+        }}
+      />
     </Card>
   );
 }

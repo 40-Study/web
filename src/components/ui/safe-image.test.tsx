@@ -45,4 +45,21 @@ describe("SafeImage", () => {
     rerender(<SafeImage src="http://172.18.0.4:9000/b.png" alt="Bìa" width={80} height={48} />);
     expect(screen.getByAltText("Bìa").getAttribute("src")).toBe("http://172.18.0.4:9000/b.png");
   });
+
+  // Q5-T16: ảnh đầu danh sách là LCP; next/image cảnh báo thiếu `priority`.
+  it("priority: next/image tải ngay (fetchpriority=high, không lazy); mặc định vẫn lazy", () => {
+    const { unmount } = render(<SafeImage src="https://cdn.example.com/cover.png" alt="Bìa" width={80} height={48} priority />);
+    const img = screen.getByAltText("Bìa");
+    expect(img.getAttribute("fetchpriority")).toBe("high");
+    expect(img.getAttribute("loading")).not.toBe("lazy");
+    unmount();
+
+    render(<SafeImage src="https://cdn.example.com/cover.png" alt="Bìa" width={80} height={48} />);
+    expect(screen.getByAltText("Bìa").getAttribute("loading")).toBe("lazy");
+  });
+
+  it("priority: <img> thường (host chưa cấu hình) cũng không lazy", () => {
+    render(<SafeImage src="http://172.18.0.4:9000/bucket/cover.png" alt="Bìa" width={80} height={48} priority />);
+    expect(screen.getByAltText("Bìa").getAttribute("loading")).toBe("eager");
+  });
 });

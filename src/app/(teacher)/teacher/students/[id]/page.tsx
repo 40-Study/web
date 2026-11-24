@@ -73,13 +73,21 @@ export default function TeacherStudentProfilePage() {
                 Phụ huynh liên hệ
               </div>
               <p className="font-medium">{student.parentName ?? "—"}</p>
-              <a
-                href={student.parentPhone ? `tel:${student.parentPhone}` : undefined}
-                className="inline-flex items-center gap-2 text-sm text-primary-600 hover:underline"
-              >
-                <Phone className="h-4 w-4" />
-                {student.parentPhone ?? "Chưa cập nhật"}
-              </a>
+              {student.parentPhone ? (
+                <a
+                  href={`tel:${student.parentPhone}`}
+                  className="inline-flex items-center gap-2 text-sm text-primary-600 hover:underline"
+                >
+                  <Phone className="h-4 w-4" />
+                  {student.parentPhone}
+                </a>
+              ) : (
+                // Q5-T06: không có số thì không phải liên kết (trước đây là <a> không href, tô xanh + gạch chân khi rê).
+                <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                  <Phone className="h-4 w-4" />
+                  Chưa cập nhật
+                </span>
+              )}
             </div>
 
             <div className="rounded-lg border p-4">
@@ -93,8 +101,18 @@ export default function TeacherStudentProfilePage() {
                 <ul className="space-y-2">
                   {student.courses.map((c) => (
                     <li key={`${c.courseId ?? c.courseName}-${c.className ?? ""}`}>
-                      <p className="font-medium">{c.className ?? "Chưa có lớp"}</p>
-                      <p className="text-sm text-muted-foreground">{c.courseName}</p>
+                      {c.className ? (
+                        <>
+                          <p className="font-medium">{c.className}</p>
+                          <p className="text-sm text-muted-foreground">{c.courseName}</p>
+                        </>
+                      ) : (
+                        // Q5-T06: khoá chưa xếp lớp lấy tên khoá làm tiêu đề, "Chưa có lớp" chỉ là chú thích.
+                        <>
+                          <p className="font-medium">{c.courseName}</p>
+                          <p className="text-sm text-muted-foreground">Chưa có lớp</p>
+                        </>
+                      )}
                     </li>
                   ))}
                 </ul>

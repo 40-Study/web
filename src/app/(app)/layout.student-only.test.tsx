@@ -59,3 +59,23 @@ describe("(app)/layout: /livestream và /my-grades chỉ dành cho học viên",
     });
   }
 });
+
+// Q5-T15: /my-courses, /schedule của học viên không còn render trong khung giảng viên.
+describe("(app)/layout: giảng viên gõ thẳng /my-courses hoặc /schedule", () => {
+  beforeEach(() => replace.mockClear());
+  afterEach(() => {
+    useAuthStore.setState({ isAuthenticated: false, activeRole: null, hasHydrated: false, sessionStatus: "checking" });
+  });
+
+  for (const [path, target] of [["/my-courses", "/teacher/courses"], ["/schedule", "/teacher/schedule"]] as const) {
+    it(`giảng viên vào ${path} -> không render, về ${target}`, () => {
+      expect(renderAs("TEACHER", path)).toBeNull();
+      expect(replace).toHaveBeenCalledWith(target);
+    });
+
+    it(`học viên vào ${path} -> render, không chuyển hướng`, () => {
+      expect(renderAs("STUDENT", path)).not.toBeNull();
+      expect(replace).not.toHaveBeenCalled();
+    });
+  }
+});

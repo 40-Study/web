@@ -5,6 +5,7 @@
 
 import { api } from "@/lib/api-client";
 import type { SkippedSession } from "@/lib/generate-sessions-summary";
+import type { ScheduleOverlapWarning } from "@/lib/schedule-overlap-warnings";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -19,6 +20,8 @@ export interface ClassSchedule {
   effective_from?: string;
   effective_until?: string;
   created_at?: string;
+  /** Q5-T14 (C5): chỉ có ở phản hồi tạo/sửa; trùng giờ với lớp khác của giảng viên. Backend cũ không trả. */
+  warnings?: ScheduleOverlapWarning[];
 }
 
 export interface CreateClassScheduleDTO {

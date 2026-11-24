@@ -35,6 +35,11 @@ export function getNotificationHref(n: NotificationTarget, role?: string | null)
       return `/teacher/courses/${n.reference_id}`;
     }
     if (n.notification_type === "payment_success") return "/teacher/wallet";
+    // Q5-T10: "Nhắc chuẩn bị bài kiểm tra chương mới" gửi cho giảng viên cùng loại quiz_reminder với học viên;
+    // vai giảng viên mở trang quản lý khoá, học viên vẫn không có đích (xử lý ở nơi gọi).
+    if (n.notification_type === "quiz_reminder" && n.reference_type === "course" && n.reference_id) {
+      return `/teacher/courses/${n.reference_id}`;
+    }
   }
   switch (n.notification_type) {
     case "friend_request":

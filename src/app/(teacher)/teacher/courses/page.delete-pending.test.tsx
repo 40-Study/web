@@ -14,6 +14,10 @@ vi.mock("@/hooks/queries/use-courses", () => ({
     data: [
       { id: "c-pending", title: "QA-Khoa cho duyet", status: "pending_review", total_students: 0 },
       { id: "c-draft", title: "QA-Khoa nhap", status: "draft", total_students: 0 },
+      ...[1, 2, 3, 4].map((n) => ({
+        id: `c-pub-${n}`, title: `QA-Khoa dang ${n}`, status: "published", total_students: 1,
+        thumbnail_url: `https://cdn.example.com/c${n}.png`,
+      })),
     ],
     isLoading: false,
   }),
@@ -57,3 +61,16 @@ describe("/teacher/courses — nút xoá theo trạng thái", () => {
     expect(deleteMutate).toHaveBeenCalledWith("c-draft", expect.anything());
   });
 });
+
+// Q5-T16: ảnh bìa đầu danh sách là LCP -> `priority`; các thẻ phía dưới vẫn lazy.
+describe("/teacher/courses — ảnh LCP", () => {
+  it("3 thẻ đầu tải ngay (fetchpriority=high), thẻ thứ 4 vẫn lazy", () => {
+    render(<TeacherCoursesPage />);
+    fireEvent.click(screen.getByText(/^Đã xuất bản \(4\)/));
+    const imgs = [1, 2, 3, 4].map((n) => screen.getByAltText(`QA-Khoa dang ${n}`));
+    expect(imgs.slice(0, 3).map((i) => i.getAttribute("fetchpriority"))).toEqual(["high", "high", "high"]);
+    expect(imgs[3].getAttribute("fetchpriority")).not.toBe("high");
+    expect(imgs[3].getAttribute("loading")).toBe("lazy");
+  });
+});
+

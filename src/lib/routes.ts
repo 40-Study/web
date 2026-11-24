@@ -92,6 +92,8 @@ interface RoleScopedRoute {
   roles: NavRole[];
   /** Chỉ vai THẬT là STUDENT (TEACHER bị loại dù resolveNavRole quy về STUDENT) — nguồn của requiresRealStudentRole. */
   realStudentOnly?: true;
+  /** Q5-T15: nơi đưa giảng viên (vai THẬT) về khi gõ thẳng route học viên này, thay cho trang chủ của vai. */
+  teacherFallback?: string;
 }
 
 /**
@@ -104,8 +106,9 @@ export const ROLE_SCOPED_ROUTES: RoleScopedRoute[] = [
   // Cuộc thi (contract §7, chủ dự án 28/09): phụ huynh XEM được danh sách + chi tiết (chỉ đọc).
   // Ba route con làm bài/kết quả/chứng nhận do ROLE_SCOPED_PATTERNS bên dưới chặn riêng.
   { href: "/contests", roles: ["GUEST", "STUDENT", "PARENT"] },
-  { href: "/my-courses", roles: ["STUDENT"] },
-  { href: "/schedule", roles: ["STUDENT"] },
+  // Q5-T15: giảng viên gõ thẳng URL từng thấy trang học viên ("Bạn chưa đăng ký khoá học nào") trong khung giảng viên.
+  { href: "/my-courses", roles: ["STUDENT"], realStudentOnly: true, teacherFallback: "/teacher/courses" },
+  { href: "/schedule", roles: ["STUDENT"], realStudentOnly: true, teacherFallback: "/teacher/schedule" },
   // Bài tập là của học viên (QA P3): phụ huynh gõ thẳng URL từng thấy nav học sinh +
   // "Bạn có 0 bài tập" — cùng lớp bug role-leak với /friends. Menu cũng đọc bảng này.
   { href: "/my-assignments", roles: ["STUDENT"] },
@@ -225,5 +228,10 @@ export function getRoleRestrictedNotice(
 /** Đích chuyển hướng khi route bị chặn theo vai trò: pattern có đích riêng, còn lại về home. */
 export function getRoleRestrictedRedirect(pathname: string, role?: string | null): string {
   const scopedPattern = ROLE_SCOPED_PATTERNS.find((p) => p.pattern.test(pathname));
-  return scopedPattern ? scopedPattern.fallback(pathname) : getRoleHomeRoute(role);
+  if (scopedPattern) return scopedPattern.fallback(pathname);
+  if (normalizeRole(role) === "TEACHER") {
+    const entry = ROLE_SCOPED_ROUTES.find((r) => pathname === r.href || pathname.startsWith(`${r.href}/`));
+    if (entry?.teacherFallback) return entry.teacherFallback;
+  }
+  return getRoleHomeRoute(role);
 }

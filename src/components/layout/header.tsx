@@ -129,6 +129,8 @@ export function Header() {
 
   // Students: Bài tập + Đơn hàng + Cài đặt; Parents: Đơn hàng + Cài đặt; Teachers/Admins: only Cài đặt
   const userMenuItems = [
+    // Q5-T13: hồ sơ giảng viên có trang riêng nhưng trước đây chỉ vào được bằng cách gõ URL.
+    ...(normalizedRole === "TEACHER" && user?.id ? [{ label: "Hồ sơ giảng viên", href: `/profile/${user.id}`, icon: UserCircle }] : []),
     ...(normalizedRole === "TEACHER" ? [{ label: "AI Studio", href: "/teacher/ai", icon: Sparkles }] : []),
     ...(isStudent ? studentMenuItems : []),
     ...(canSeeOrders ? [ordersMenuItem] : []),

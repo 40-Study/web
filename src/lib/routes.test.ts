@@ -103,7 +103,21 @@ describe("isRouteAllowedForRole — ma trận role x route (ROLE_SCOPED_ROUTES)"
     }
     expect(canAccessStudentOnlyRoute("/my-grades-old", "TEACHER")).toBe(true);
     expect(canAccessStudentOnlyRoute("/messages", "TEACHER")).toBe(true);
-    expect(canAccessStudentOnlyRoute("/schedule", "TEACHER")).toBe(true);
+  });
+
+  // Q5-T15: giảng viên gõ thẳng /my-courses, /schedule từng thấy trang học viên trong khung giảng viên.
+  it("Q5-T15: /my-courses và /schedule chỉ vai STUDENT thật; giảng viên được đưa về trang giảng viên tương ứng", () => {
+    for (const [href, target] of [["/my-courses", "/teacher/courses"], ["/schedule", "/teacher/schedule"]] as const) {
+      expect(canAccessStudentOnlyRoute(href, "STUDENT")).toBe(true);
+      expect(canAccessStudentOnlyRoute(href, "TEACHER")).toBe(false);
+      expect(canAccessStudentOnlyRoute(`${href}/x`, "TEACHER")).toBe(false);
+      expect(getRoleRestrictedRedirect(href, "TEACHER")).toBe(target);
+      // Vai khác không đổi đích: phụ huynh vẫn về /home.
+      expect(getRoleRestrictedRedirect(href, "PARENT")).toBe("/home");
+    }
+    // Trang giảng viên tên gần giống không bị chặn.
+    expect(canAccessStudentOnlyRoute("/teacher/schedule", "TEACHER")).toBe(true);
+    expect(canAccessStudentOnlyRoute("/schedule-old", "TEACHER")).toBe(true);
   });
 
   it("/settings/family và /messages cho cả STUDENT lẫn PARENT (không phải route học sinh-only)", () => {

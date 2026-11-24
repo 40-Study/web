@@ -86,6 +86,8 @@ export default function TeacherAssignmentsPage() {
   const [type, setType] = useState<AssignmentType>("live_coding");
   const [difficulty, setDifficulty] = useState<DifficultyLevel>("medium");
   const [language, setLanguage] = useState("python");
+  // Q5-T11: ngôn ngữ chỉ bắt buộc với bài lập trình; bài về nhà / dự án không có trình chấm code.
+  const languageRequired = type === "live_coding";
   const [dueAt, setDueAt] = useState("");
   const [instructions, setInstructions] = useState("");
   const [pendingDelete, setPendingDelete] = useState<AssignmentResponseDTO | null>(null);
@@ -395,7 +397,9 @@ export default function TeacherAssignmentsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="assignment-language">Ngôn ngữ (phân cách bởi dấu phẩy) *</Label>
+                <Label htmlFor="assignment-language">
+                  {languageRequired ? "Ngôn ngữ (phân cách bởi dấu phẩy) *" : "Ngôn ngữ (không bắt buộc, phân cách bởi dấu phẩy)"}
+                </Label>
                 <Input
                   id="assignment-language"
                   value={language}
@@ -445,7 +449,7 @@ export default function TeacherAssignmentsPage() {
                     !selectedSessionId ||
                     !title.trim() ||
                     !instructions.trim() ||
-                    !language.trim() ||
+                    (languageRequired && !language.trim()) ||
                     dueInPast ||
                     createMutation.isPending
                   }
@@ -468,7 +472,7 @@ export default function TeacherAssignmentsPage() {
             <CardContent className="space-y-3">
               {!selectedSessionId && (
                 <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                  Chọn một buổi học ở cột giữa để xem bài tập.
+                  Chọn một buổi học ở phía trên để xem bài tập.
                 </p>
               )}
 

@@ -17,13 +17,15 @@ interface SafeImageProps {
   height?: number;
   /** Thay cho biểu tượng mặc định khi không có ảnh / ảnh lỗi. */
   fallback?: ReactNode;
+  /** Ảnh LCP phía trên màn hình: tải ngay, không lazy (chỉ áp cho nhánh next/image; <img> thường vẫn lazy). */
+  priority?: boolean;
 }
 
 /**
  * Ảnh không bao giờ làm sập trang: URL host chưa cấu hình cho `next/image` thì vẽ `<img>` thường
  * (không tối ưu hoá), còn ảnh thiếu hoặc tải lỗi (onError) thì vẽ khung thay thế.
  */
-export function SafeImage({ src, alt, className, fill, sizes, width, height, fallback }: SafeImageProps) {
+export function SafeImage({ src, alt, className, fill, sizes, width, height, fallback, priority }: SafeImageProps) {
   // Nhớ src đã lỗi (không phải cờ boolean) để đổi sang ảnh mới thì tự thử lại.
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
@@ -51,7 +53,7 @@ export function SafeImage({ src, alt, className, fill, sizes, width, height, fal
       <img
         src={src}
         alt={alt}
-        loading="lazy"
+        loading={priority ? "eager" : "lazy"}
         onError={onError}
         width={fill ? undefined : width}
         height={fill ? undefined : height}
@@ -61,8 +63,8 @@ export function SafeImage({ src, alt, className, fill, sizes, width, height, fal
   }
 
   return fill ? (
-    <Image src={src} alt={alt} fill sizes={sizes} className={className} onError={onError} />
+    <Image src={src} alt={alt} fill sizes={sizes} className={className} onError={onError} priority={priority} />
   ) : (
-    <Image src={src} alt={alt} width={width ?? 80} height={height ?? 48} sizes={sizes} className={className} onError={onError} />
+    <Image src={src} alt={alt} width={width ?? 80} height={height ?? 48} sizes={sizes} className={className} onError={onError} priority={priority} />
   );
 }

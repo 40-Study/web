@@ -63,7 +63,7 @@ vi.mock("@/components/teacher/add-content-modal", () => ({ AddContentModal: () =
 vi.mock("@/components/teacher/quiz-duplicate-button", () => ({ QuizDuplicateButton: () => null }));
 
 // Editor tự nạp quiz bằng react-query (đã có test riêng); ở đây chỉ kiểm hộp thoại sửa gắn nó và lưu đúng.
-let mockEditorState: { payload: Record<string, number> | null; blocked: boolean } = { payload: null, blocked: false };
+let mockEditorState: { payload: Record<string, number> | null; blocked: boolean; unsavedQuestions?: number } = { payload: null, blocked: false };
 vi.mock("@/components/teacher/quiz-settings-editor", async () => {
   const React = await import("react");
   return {
@@ -134,3 +134,71 @@ describe("/teacher/courses/[id] — sửa điểm đạt / số lần làm của
     expect(updateQuiz).not.toHaveBeenCalled();
   });
 });
+
+// Q5-T03: nút lưu đã khoá khi còn câu chưa lưu (Q4-T03) nhưng Huỷ / Esc / bấm nền đóng thẳng và mất chỉnh sửa.
+describe("/teacher/courses/[id] — đóng hộp thoại sửa quiz khi còn câu hỏi chưa lưu (Q5-T03)", () => {
+  beforeEach(() => {
+    mockEditorState = { payload: null, blocked: true, unsavedQuestions: 2 };
+  });
+
+  const editDialogOpen = () => screen.queryByText("Chỉnh sửa nội dung") !== null;
+
+  it("bấm Huỷ: hỏi 'Bỏ chỉnh sửa chưa lưu?' và hộp thoại sửa vẫn mở", async () => {
+    openEditFor("Kiểm tra Git");
+    fireEvent.click(screen.getByRole("button", { name: "Huỷ" }));
+
+    expect(await screen.findByText("Bỏ chỉnh sửa chưa lưu?")).toBeTruthy();
+    expect(screen.getByText(/Đóng bây giờ sẽ mất các chỉnh sửa đó/)).toBeTruthy();
+    expect(editDialogOpen()).toBe(true);
+  });
+
+  it("Esc cũng bị chặn bằng hộp xác nhận (cùng đường onOpenChange với bấm nền)", async () => {
+    openEditFor("Kiểm tra Git");
+    fireEvent.keyDown(screen.getByText("Chỉnh sửa nội dung"), { key: "Escape" });
+
+    expect(await screen.findByText("Bỏ chỉnh sửa chưa lưu?")).toBeTruthy();
+    expect(editDialogOpen()).toBe(true);
+  });
+
+  it("'Tiếp tục chỉnh sửa': giữ nguyên hộp thoại sửa, đóng hộp xác nhận", async () => {
+    openEditFor("Kiểm tra Git");
+    fireEvent.click(screen.getByRole("button", { name: "Huỷ" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Tiếp tục chỉnh sửa" }));
+
+    await waitFor(() => expect(screen.queryByText("Bỏ chỉnh sửa chưa lưu?")).toBeNull());
+    expect(editDialogOpen()).toBe(true);
+  });
+
+  it("'Bỏ chỉnh sửa': đóng cả hộp thoại sửa", async () => {
+    openEditFor("Kiểm tra Git");
+    fireEvent.click(screen.getByRole("button", { name: "Huỷ" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Bỏ chỉnh sửa" }));
+
+    await waitFor(() => expect(editDialogOpen()).toBe(false));
+  });
+
+  it("không còn câu chưa lưu: Huỷ đóng thẳng, không hỏi", async () => {
+    mockEditorState = { payload: null, blocked: false, unsavedQuestions: 0 };
+    openEditFor("Kiểm tra Git");
+    fireEvent.click(screen.getByRole("button", { name: "Huỷ" }));
+
+    await waitFor(() => expect(editDialogOpen()).toBe(false));
+    expect(screen.queryByText("Bỏ chỉnh sửa chưa lưu?")).toBeNull();
+  });
+});
+
+// Q5-T09: nút mũi tên mở/đóng bài học chỉ có icon, không có tên cho trình đọc màn hình.
+describe("/teacher/courses/[id] — nút mở rộng bài học có tên (Q5-T09)", () => {
+  it("tên đổi theo trạng thái và aria-expanded khớp", () => {
+    mockCourse = { id: "course-1", title: "Khoá test", instructor_id: OWNER_ID, status: "draft" };
+    render(<TeacherCourseDetailPage />);
+
+    const toggle = screen.getByRole("button", { name: "Mở rộng bài học" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(toggle);
+
+    const opened = screen.getByRole("button", { name: "Thu gọn bài học" });
+    expect(opened.getAttribute("aria-expanded")).toBe("true");
+  });
+});
+

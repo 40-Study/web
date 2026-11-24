@@ -95,7 +95,7 @@ function mapApiCourse(c: { id: string; title: string; short_description?: string
   };
 }
 
-function CourseCard({ course, onDelete }: { course: Course; onDelete: (course: Course) => void }) {
+function CourseCard({ course, onDelete, priority }: { course: Course; onDelete: (course: Course) => void; priority?: boolean }) {
   const isDraft = course.status === "draft";
   // Nháp + bị từ chối là 2 trạng thái giáo viên còn phải sửa rồi (gửi) duyệt.
   const needsWork = isDraft || course.status === "rejected";
@@ -118,7 +118,7 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (course: C
       {/* Thumbnail */}
       <div className="relative aspect-video bg-gray-100">
         {course.thumbnail ? (
-          <SafeImage src={course.thumbnail} alt={course.title} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
+          <SafeImage src={course.thumbnail} alt={course.title} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" priority={priority} />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
             <FileEdit className="w-8 h-8 text-gray-200" />
@@ -312,8 +312,8 @@ export default function TeacherCoursesPage() {
           <TabsContent key={tab} value={tab} className="mt-6">
             {filteredCourses.length > 0 ? (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredCourses.map((course) => (
-                  <CourseCard key={course.id} course={course} onDelete={setPendingDelete} />
+                {filteredCourses.map((course, index) => (
+                  <CourseCard key={course.id} course={course} onDelete={setPendingDelete} priority={index < 3} />
                 ))}
               </div>
             ) : (

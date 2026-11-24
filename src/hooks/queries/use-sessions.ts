@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/error-messages";
 import { describeScheduleError } from "@/lib/class-schedule-errors";
 import { ApiError } from "@/lib/errors";
+import { scheduleOverlapSummary, scheduleWarningsFrom } from "@/lib/schedule-overlap-warnings";
 import { allSkippedSummary, generateSessionsSummary, skippedFromErrorPayload } from "@/lib/generate-sessions-summary";
 import {
   sessionService,
@@ -42,13 +43,20 @@ export function useClassSchedules(classId: string) {
   });
 }
 
+/** Q5-T14: lưu thành công nhưng trùng giờ lớp khác -> toast cảnh báo (không chặn) thay cho toast thành công trơn. */
+function notifyScheduleSaved(message: string, rawWarnings: unknown) {
+  const warnings = scheduleWarningsFrom(rawWarnings);
+  if (warnings.length > 0) toast.warning(message, { description: scheduleOverlapSummary(warnings), duration: 10000 });
+  else toast.success(message);
+}
+
 export function useCreateSchedule(classId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateClassScheduleDTO) => sessionService.createSchedule(classId, data),
-    onSuccess: () => {
+    onSuccess: (schedule) => {
       queryClient.invalidateQueries({ queryKey: sessionKeys.schedules(classId) });
-      toast.success("Đã tạo lịch học");
+      notifyScheduleSaved("Đã tạo lịch học", schedule?.warnings);
     },
     onError: (err) => toast.error("Không thể tạo lịch học", { description: describeScheduleError(err, "schedule") }),
   });
@@ -59,9 +67,9 @@ export function useUpdateSchedule(classId: string) {
   return useMutation({
     mutationFn: ({ scheduleId, data }: { scheduleId: string; data: UpdateClassScheduleDTO }) =>
       sessionService.updateSchedule(classId, scheduleId, data),
-    onSuccess: () => {
+    onSuccess: (schedule) => {
       queryClient.invalidateQueries({ queryKey: sessionKeys.schedules(classId) });
-      toast.success("Đã cập nhật lịch học");
+      notifyScheduleSaved("Đã cập nhật lịch học", schedule?.warnings);
     },
     onError: (err) => toast.error("Không thể cập nhật lịch học", { description: describeScheduleError(err, "schedule") }),
   });
