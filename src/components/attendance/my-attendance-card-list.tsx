@@ -6,14 +6,18 @@
  */
 
 import { AttendanceStatusBadge } from "./attendance-status-badge";
+import { attendanceSessionLabel } from "@/lib/attendance-session-label";
 import { formatVnDateThenTime } from "@/lib/vn-datetime";
 import type { SessionAttendance } from "@/services/session.service";
 
 export function MyAttendanceCardList({ attendances }: { attendances: SessionAttendance[] }) {
   return (
     <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200" data-testid="my-attendance-cards">
-      {attendances.map((a) => (
+      {attendances.map((a) => {
+        const sessionLabel = attendanceSessionLabel(a);
+        return (
         <li key={a.id} className="space-y-1.5 px-4 py-3 text-sm">
+          {sessionLabel && <p className="break-words font-medium text-gray-900">{sessionLabel}</p>}
           <div className="flex items-center justify-between gap-3">
             <span className="text-gray-700">{formatVnDateThenTime(a.check_in_time ?? a.created_at)}</span>
             <AttendanceStatusBadge status={a.status} />
@@ -21,7 +25,8 @@ export function MyAttendanceCardList({ attendances }: { attendances: SessionAtte
           {a.late_minutes ? <p className="text-gray-600">Trễ {a.late_minutes} phút</p> : null}
           {a.note ? <p className="break-words text-gray-600">Ghi chú: {a.note}</p> : null}
         </li>
-      ))}
+        );
+      })}
     </ul>
   );
 }

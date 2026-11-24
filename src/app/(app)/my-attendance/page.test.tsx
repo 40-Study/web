@@ -43,3 +43,21 @@ describe("MyAttendancePage — màn hẹp (S18)", () => {
     expect(cards.textContent).toContain("Ghi chú: Xin nghỉ có giấy phép của giáo viên chủ nhiệm");
   });
 });
+
+// QA5 S5-14: bảng và thẻ phải nói điểm danh của lớp/buổi nào (khi backend trả class_name/session_title).
+describe("MyAttendancePage — lớp/buổi (S5-14)", () => {
+  it("có class_name: cột 'Lớp' ở bảng và dòng tên lớp ở thẻ", () => {
+    attendance.class_name = "Python cơ bản K12";
+    attendance.session_title = "Buổi 3";
+    render(<MyAttendancePage />);
+    expect(screen.getByRole("columnheader", { name: "Lớp" })).toBeTruthy();
+    expect(screen.getAllByText("Python cơ bản K12 · Buổi 3")).toHaveLength(2);
+  });
+
+  it("backend cũ không có tên lớp: không dựng cột 'Lớp'", () => {
+    delete attendance.class_name;
+    delete attendance.session_title;
+    render(<MyAttendancePage />);
+    expect(screen.queryByRole("columnheader", { name: "Lớp" })).toBeNull();
+  });
+});
