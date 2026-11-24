@@ -98,4 +98,20 @@ describe("QuizQuestionsEditor", () => {
     await waitFor(() => expect(mockApi.put).toHaveBeenCalledTimes(1));
     expect(mockApi.put).toHaveBeenCalledWith("/quizzes/q1/questions/qq2", { question_text: "Viết số 6 bằng chữ", explanation: "" });
   });
+
+  it("Q4-T03: báo số câu còn sửa dở để hộp thoại chặn nút lưu chung", async () => {
+    const onUnsaved = vi.fn();
+    renderWithProviders(<QuizQuestionsEditor quizId="q1" onUnsavedChange={onUnsaved} />);
+    await screen.findByDisplayValue("1 + 1 = ?");
+    expect(onUnsaved).toHaveBeenLastCalledWith(0);
+
+    fireEvent.change(screen.getByLabelText("Nội dung câu hỏi 2"), { target: { value: "Đã sửa" } });
+    expect(onUnsaved).toHaveBeenLastCalledWith(1);
+    fireEvent.change(screen.getByLabelText("Nội dung câu hỏi 1"), { target: { value: "Cũng sửa" } });
+    expect(onUnsaved).toHaveBeenLastCalledWith(2);
+
+    // Hoàn tác về nội dung đang lưu thì không còn tính là sửa dở.
+    fireEvent.change(screen.getByLabelText("Nội dung câu hỏi 1"), { target: { value: "1 + 1 = ?" } });
+    expect(onUnsaved).toHaveBeenLastCalledWith(1);
+  });
 });

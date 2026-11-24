@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useQuiz } from "@/hooks/queries/use-quiz";
 import { validateQuizSettings } from "@/lib/quiz-settings";
@@ -16,6 +16,8 @@ import type { UpdateQuizDTO } from "@/services/quiz.service";
 export interface QuizSettingsEditState {
   payload: Pick<UpdateQuizDTO, "pass_percentage" | "max_attempts" | "time_limit_minutes"> | null;
   blocked: boolean;
+  /** Q4-T03: số câu hỏi còn sửa dở (chưa bấm "Lưu câu"); > 0 thì `blocked` cũng là true. */
+  unsavedQuestions?: number;
 }
 
 interface QuizSettingsEditorProps {
@@ -41,6 +43,8 @@ export function QuizSettingsEditor({ quizId, onChange }: QuizSettingsEditorProps
   const [passPercentage, setPassPercentage] = useState("");
   const [maxAttempts, setMaxAttempts] = useState("");
   const [timeLimit, setTimeLimit] = useState("");
+  const [unsavedQuestions, setUnsavedQuestions] = useState(0);
+  const handleUnsavedChange = useCallback((count: number) => setUnsavedQuestions(count), []);
 
   const initialPass = toFieldText(quiz?.pass_percentage);
   const initialAttempts = toFieldText(quiz?.max_attempts);
@@ -76,9 +80,13 @@ export function QuizSettingsEditor({ quizId, onChange }: QuizSettingsEditorProps
 
   const payloadKey = JSON.stringify(state.payload);
   useEffect(() => {
-    onChange({ payload: state.payload, blocked: state.blocked });
+    onChange({
+      payload: state.payload,
+      blocked: state.blocked || unsavedQuestions > 0,
+      ...(unsavedQuestions > 0 ? { unsavedQuestions } : {}),
+    });
     // payloadKey đại diện cho nội dung payload (object mới mỗi lần tính).
-  }, [payloadKey, state.blocked]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [payloadKey, state.blocked, unsavedQuestions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Gỡ editor (đóng hộp thoại / đổi sang nội dung khác) thì xoá trạng thái cũ để không chặn lưu nhầm.
   useEffect(() => () => onChange({ payload: null, blocked: false }), []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -133,7 +141,7 @@ export function QuizSettingsEditor({ quizId, onChange }: QuizSettingsEditorProps
       />
     </div>
     {/* Câu hỏi và đáp án của quiz đã tạo: mỗi câu có nút lưu riêng (PUT /quizzes/:id/questions/:id). */}
-    <QuizQuestionsEditor quizId={quizId} />
+    <QuizQuestionsEditor quizId={quizId} onUnsavedChange={handleUnsavedChange} />
     </div>
   );
 }

@@ -1774,6 +1774,12 @@ function EditContentModal({
           )}
         </div>
 
+        {(quizSettings.unsavedQuestions ?? 0) > 0 && (
+          <p role="alert" className="text-sm text-amber-700">
+            Còn {quizSettings.unsavedQuestions} câu hỏi chưa lưu. Hãy bấm &ldquo;Lưu câu&rdquo; ở từng câu (hoặc hoàn tác
+            chỉnh sửa) trước khi lưu thay đổi.
+          </p>
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Huỷ</Button>
           <Button onClick={handleSave} disabled={!title.trim() || isSaving || saveBlocked}>
