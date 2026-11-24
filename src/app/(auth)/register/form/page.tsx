@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/auth-card";
 import { AuthFooterLink } from "@/components/auth/auth-footer-link";
@@ -30,6 +30,16 @@ export default function RegisterFormPage() {
   // không dùng react-hook-form/zod nên validate bằng object errors thủ công.
   const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({});
   const [formError, setFormError] = useState("");
+
+  // Đăng ký đang chờ đã hết hạn (/otp nhận 410 khi gửi lại mã): điền sẵn email một lần. Đọc trong effect vì
+  // sessionStorage chỉ có ở client.
+  useEffect(() => {
+    sessionStorage.removeItem(STORAGE_KEYS.LEGACY_REGISTER_PAYLOAD);
+    const prefill = sessionStorage.getItem(STORAGE_KEYS.REGISTER_PREFILL_EMAIL);
+    if (!prefill) return;
+    sessionStorage.removeItem(STORAGE_KEYS.REGISTER_PREFILL_EMAIL);
+    setFormData((prev) => ({ ...prev, email: prefill }));
+  }, []);
 
   const handleChange = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));

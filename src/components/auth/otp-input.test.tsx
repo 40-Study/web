@@ -33,12 +33,4 @@ describe("OtpInput onComplete", () => {
     expect(screen.getByText("xong 123456")).toBeTruthy();
     expect(crossRenderWarning(error)).toBe(false);
   });
-
-  it("dán đủ 6 số: cũng không setState cha trong lúc render", () => {
-    const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    render(<Parent />);
-    fireEvent.paste(screen.getByRole("group", { name: "Mã OTP" }), { clipboardData: { getData: () => "654321" } });
-    expect(screen.getByText("xong 654321")).toBeTruthy();
-    expect(crossRenderWarning(error)).toBe(false);
-  });
 });

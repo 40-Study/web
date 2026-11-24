@@ -99,4 +99,18 @@ describe("/register/form — gửi đăng ký", () => {
     expect(await screen.findByText("Email này đã được đăng ký")).toBeTruthy();
     expect(push).not.toHaveBeenCalled();
   });
+
+  // Contract 8: /otp nhận 410 (đăng ký đang chờ đã hết hạn) thì quay về đây với email điền sẵn, một lần.
+  it("điền sẵn email từ đăng ký hết hạn rồi xoá khoá tạm", async () => {
+    sessionStorage.setItem(STORAGE_KEYS.REGISTER_PREFILL_EMAIL, "qa@example.com");
+    renderWithProviders(<RegisterFormPage />);
+    await waitFor(() => expect((screen.getByLabelText("Email") as HTMLInputElement).value).toBe("qa@example.com"));
+    expect(sessionStorage.getItem(STORAGE_KEYS.REGISTER_PREFILL_EMAIL)).toBeNull();
+  });
+
+  it("mở trang: xoá khoá cũ register_payload (review web#123 #4)", async () => {
+    sessionStorage.setItem("register_payload", '{"password":"x"}');
+    renderWithProviders(<RegisterFormPage />);
+    await waitFor(() => expect(sessionStorage.getItem("register_payload")).toBeNull());
+  });
 });

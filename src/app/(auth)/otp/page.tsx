@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AuthCard } from "@/components/auth/auth-card";
 import { AuthIconHeader } from "@/components/auth/auth-icon-header";
@@ -13,6 +13,8 @@ import {
   useRegister,
   useRegisterResendOtp,
   authErrorMessage,
+  isRegistrationExpiredError,
+  REGISTRATION_EXPIRED_MESSAGE,
   translateOtpErrorMessage,
 } from "@/hooks/queries/use-auth";
 import { markOneShotPage } from "@/hooks/use-one-shot-page";
@@ -26,6 +28,10 @@ export default function OtpPage() {
     AUTH_ROUTES.REGISTER,
     "Chưa có yêu cầu đăng ký nào cần xác thực. Vui lòng đăng ký trước.",
   );
+  // Dọn mật khẩu dạng rõ mà bản cũ để lại trong sessionStorage (review web#123 #4).
+  useEffect(() => {
+    sessionStorage.removeItem(STORAGE_KEYS.LEGACY_REGISTER_PAYLOAD);
+  }, []);
   const register = useRegister();
   const resendOtp = useRegisterResendOtp();
   const [otp, setOtp] = useState("");
@@ -77,6 +83,15 @@ export default function OtpPage() {
       await resendOtp.mutateAsync({ email });
       setErrorMessage("");
     } catch (error) {
+      if (isRegistrationExpiredError(error)) {
+        // Không còn đăng ký đang chờ: quay lại form, điền sẵn email, người dùng nhập lại phần còn lại.
+        sessionStorage.removeItem(STORAGE_KEYS.REGISTER_EMAIL);
+        sessionStorage.setItem(STORAGE_KEYS.REGISTER_PREFILL_EMAIL, email);
+        toast.error(REGISTRATION_EXPIRED_MESSAGE);
+        router.push(AUTH_ROUTES.REGISTER_FORM);
+        return;
+      }
+      // 429 (3 lần / 5 phút / email, chung bucket với register/request): RateLimitError đã mang câu kèm số giây.
       toast.error(authErrorMessage(error, "Không thể gửi lại mã, vui lòng thử lại sau"));
     }
   };

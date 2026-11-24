@@ -266,6 +266,15 @@ export function useRegisterRequest() {
   });
 }
 
+/** Contract 8: resend-otp trả 410 mã này khi không còn đăng ký đang chờ (quá 5 phút, đã xác thực, chưa từng gửi). */
+export const REGISTRATION_EXPIRED_CODE = "ERR_REGISTRATION_EXPIRED";
+export const REGISTRATION_EXPIRED_MESSAGE = "Phiên đăng ký đã hết hạn. Vui lòng đăng ký lại.";
+
+/** Nhận theo `code` (không theo câu chữ): api-client ưu tiên field `error` của body hơn `message`. */
+export function isRegistrationExpiredError(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 410 && error.code === REGISTRATION_EXPIRED_CODE;
+}
+
 /** POST /auth/register/resend-otp - Gửi lại OTP đăng ký chỉ bằng email (N-07); trang gọi tự báo lỗi. */
 export function useRegisterResendOtp() {
   return useMutation({
