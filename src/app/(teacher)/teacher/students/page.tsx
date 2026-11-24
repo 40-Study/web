@@ -2,12 +2,11 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Bell, Download, Loader2, Search } from "lucide-react";
+import { Download, Loader2, Search } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -24,20 +23,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import TeacherNotificationDialog from "@/components/teacher/teacher-notification-dialog";
 import { useMyStudents } from "@/hooks/queries/use-classes";
 import { buildCsv, downloadCsv } from "@/lib/csv-export";
 import { withClassPrefix } from "@/lib/class-label";
 import { StudentMobileCard } from "./student-mobile-card";
+import { ParentContact } from "./parent-contact";
 import { courseFilterOptions, groupStudents, STUDENT_STATUS_LABEL } from "./group-students";
 
 export default function TeacherStudentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [courseFilter, setCourseFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false);
   const pageSize = 10;
 
   const { data: rows = [], isLoading } = useMyStudents();
@@ -63,18 +60,6 @@ export default function TeacherStudentsPage() {
   const totalPages = Math.max(1, Math.ceil(totalStudents / pageSize));
   const pagedStudents = filteredStudents.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const toggleSelectAll = () => {
-    if (selectedIds.length === filteredStudents.length) {
-      setSelectedIds([]);
-      return;
-    }
-    setSelectedIds(filteredStudents.map((s) => s.id));
-  };
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
-  };
-
   const handleExportStudents = () => {
     const rowsCsv = [
       ["Mã học viên", "Họ tên", "Phụ huynh", "Số điện thoại", "Khoá học", "Trạng thái"],
@@ -90,11 +75,6 @@ export default function TeacherStudentsPage() {
     downloadCsv("teacher-students.csv", buildCsv(rowsCsv));
   };
 
-  const handleNotifySelected = () => {
-    if (selectedIds.length === 0) return;
-    setIsNotifyDialogOpen(true);
-  };
-
   return (
     <div className="space-y-6">
       {/* D8 (QA vòng 2): tiêu đề + 2 nút trên 1 hàng tràn 3px ở 390px — cho xuống dòng. */}
@@ -104,10 +84,6 @@ export default function TeacherStudentsPage() {
           <Button variant="outline" onClick={handleExportStudents} disabled={isLoading}>
             <Download className="mr-2 h-4 w-4" />
             Xuất CSV
-          </Button>
-          <Button disabled={selectedIds.length === 0} onClick={handleNotifySelected}>
-            <Bell className="mr-2 h-4 w-4" />
-            Gửi thông báo {selectedIds.length > 0 && `(${selectedIds.length})`}
           </Button>
         </div>
       </div>
@@ -184,12 +160,7 @@ export default function TeacherStudentsPage() {
               </li>
             ) : (
               pagedStudents.map((student) => (
-                <StudentMobileCard
-                  key={student.id}
-                  student={student}
-                  selected={selectedIds.includes(student.id)}
-                  onToggle={() => toggleSelect(student.id)}
-                />
+                <StudentMobileCard key={student.id} student={student} />
               ))
             )}
           </ul>
@@ -197,13 +168,6 @@ export default function TeacherStudentsPage() {
             <Table className="min-w-[760px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">
-                    <Checkbox
-                      checked={selectedIds.length === filteredStudents.length && filteredStudents.length > 0}
-                      onCheckedChange={toggleSelectAll}
-                      aria-label="Chọn tất cả học viên"
-                    />
-                  </TableHead>
                   <TableHead>HỌC VIÊN</TableHead>
                   <TableHead>PHỤ HUYNH LIÊN HỆ</TableHead>
                   <TableHead>KHOÁ HỌC</TableHead>
@@ -214,20 +178,13 @@ export default function TeacherStudentsPage() {
               <TableBody>
                 {pagedStudents.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                    <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
                       {students.length === 0 ? "Chưa có học viên nào ghi danh khoá học của bạn." : "Không tìm thấy học viên phù hợp."}
                     </TableCell>
                   </TableRow>
                 ) : (
                   pagedStudents.map((student) => (
                     <TableRow key={student.id} data-testid="student-row">
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedIds.includes(student.id)}
-                          onCheckedChange={() => toggleSelect(student.id)}
-                          aria-label={`Chọn ${student.name}`}
-                        />
-                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar fallback={student.name.charAt(0)} size="sm" className="bg-primary-100 text-primary-700" />
@@ -239,12 +196,9 @@ export default function TeacherStudentsPage() {
                       </TableCell>
                       <TableCell>
                         {student.parentName ? (
-                          <a
-                            href={student.parentPhone ? `tel:${student.parentPhone}` : undefined}
-                            className="text-sm text-primary-600 hover:underline"
-                          >
-                            {student.parentName}
-                          </a>
+                          <span className="text-sm">
+                            <ParentContact name={student.parentName} phone={student.parentPhone} />
+                          </span>
                         ) : (
                           <span className="text-sm text-muted-foreground">—</span>
                         )}
@@ -309,15 +263,6 @@ export default function TeacherStudentsPage() {
           </Button>
         </div>
       </div>
-
-      <TeacherNotificationDialog
-        open={isNotifyDialogOpen}
-        onOpenChange={setIsNotifyDialogOpen}
-        recipients={students
-          .filter((s) => selectedIds.includes(s.id))
-          .map((s) => ({ id: s.id, name: s.name, phone: s.parentPhone }))}
-        contextLabel="Quản lý học viên"
-      />
     </div>
   );
 }
