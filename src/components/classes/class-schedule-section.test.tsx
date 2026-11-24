@@ -55,7 +55,8 @@ describe("ClassScheduleSection", () => {
   it("liệt kê lịch hằng tuần (nhãn thứ tiếng Việt, giờ, phòng) và các buổi học đã có", async () => {
     serve({
       schedules: [SCHEDULE],
-      sessions: [{ id: "s1", class_id: CLASS_ID, date: "2026-11-02", start_time: "18:00", end_time: "20:00", status: "scheduled", topic: "Giới thiệu" }],
+      // Buổi ở tương lai xa: buổi đã qua giờ hiện "Đã diễn ra" (Q6-T04), nên ngày cố định trong quá khứ làm test này trôi theo đồng hồ.
+      sessions: [{ id: "s1", class_id: CLASS_ID, date: "2099-01-05", start_time: "18:00", end_time: "20:00", status: "scheduled", topic: "Giới thiệu" }],
     });
     renderWithProviders(<ClassScheduleSection classId={CLASS_ID} canWrite />);
 

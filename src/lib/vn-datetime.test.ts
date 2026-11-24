@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { courseLevelLabel } from "./course-level";
-import { formatVnDateOnly, formatVnDateTime, formatVnDateThenTime, isVnSessionUpcoming } from "./vn-datetime";
+import { formatVnDateOnly, formatVnDateTime, formatVnDateThenTime, hasVnSessionEnded, isVnSessionUpcoming } from "./vn-datetime";
 
 describe("courseLevelLabel", () => {
   it("dịch mã trình độ sang tiếng Việt", () => {
@@ -91,5 +91,28 @@ describe("isVnSessionUpcoming (Q5-T02, M1)", () => {
     expect(isVnSessionUpcoming("24/11/2026", "18:00", now)).toBe(false);
     expect(isVnSessionUpcoming("2026-11-24", "6pm", now)).toBe(false);
     expect(isVnSessionUpcoming("2026-13-45", "18:00", now)).toBe(false);
+  });
+});
+
+describe("hasVnSessionEnded (Q6-T04)", () => {
+  // 12:00 giờ VN = 05:00 UTC.
+  const now = new Date("2026-11-24T05:00:00Z");
+
+  it("buổi có giờ kết thúc trước hoặc đúng lúc này (giờ VN) là đã kết thúc", () => {
+    expect(hasVnSessionEnded("2026-11-24", "11:59", now)).toBe(true);
+    expect(hasVnSessionEnded("2026-11-24", "12:00", now)).toBe(true);
+    expect(hasVnSessionEnded("2026-11-23", "23:59:00", now)).toBe(true);
+    expect(hasVnSessionEnded("2026-11-24T00:00:00Z", "10:00:00", now)).toBe(true);
+  });
+
+  it("buổi chưa tới giờ kết thúc (đang diễn ra hoặc ở tương lai) chưa kết thúc", () => {
+    expect(hasVnSessionEnded("2026-11-24", "12:01", now)).toBe(false);
+    expect(hasVnSessionEnded("2026-11-25", "08:00", now)).toBe(false);
+  });
+
+  it("thiếu hoặc sai định dạng thì false", () => {
+    expect(hasVnSessionEnded(undefined, "10:00", now)).toBe(false);
+    expect(hasVnSessionEnded("2026-11-24", "", now)).toBe(false);
+    expect(hasVnSessionEnded("2026-13-45", "10:00", now)).toBe(false);
   });
 });
