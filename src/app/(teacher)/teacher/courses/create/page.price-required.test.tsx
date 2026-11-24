@@ -16,12 +16,20 @@ vi.mock("@/hooks/queries/use-courses", () => ({
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 vi.mock("../_components/course-basic-info-step", () => ({
-  FORMATS: [{ id: "hybrid", label: "Kết hợp" }],
   CourseBasicInfoStep: ({ update }: { update: (k: "title", v: string) => void }) => (
     <input aria-label="Tên khoá học" onChange={(e) => update("title", e.target.value)} />
   ),
 }));
-vi.mock("../_components/course-media-step", () => ({ CourseMediaStep: () => <div>media</div> }));
+vi.mock("../_components/course-media-step", () => ({
+  CourseMediaStep: ({ update }: { update: (k: string, v: string) => void }) => (
+    <>
+      <button type="button" onClick={() => update("thumbnail_url", "https://cdn.example/cover.png")}>
+        có ảnh bìa
+      </button>
+      <input aria-label="Mô tả chi tiết" onChange={(e) => update("description", e.target.value)} />
+    </>
+  ),
+}));
 
 // eslint-disable-next-line import/first
 import CreateCoursePage from "./page";
@@ -32,8 +40,14 @@ function goToPricingStep() {
   render(<CreateCoursePage />);
   fireEvent.change(screen.getByLabelText("Tên khoá học"), { target: { value: "Khoá test" } });
   fireEvent.click(next()); // -> bước 2
+  fillMedia();
   fireEvent.click(next()); // -> bước 3
   expect(screen.getByRole("heading", { name: "Cài đặt giá" })).toBeTruthy();
+}
+
+function fillMedia() {
+  fireEvent.click(screen.getByRole("button", { name: "có ảnh bìa" }));
+  fireEvent.change(screen.getByLabelText("Mô tả chi tiết"), { target: { value: "Mô tả" } });
 }
 
 describe("wizard tạo khoá — giá bán (Q3-09)", () => {
@@ -73,5 +87,32 @@ describe("wizard tạo khoá — giá bán (Q3-09)", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Lưu nháp" })[0]);
     await waitFor(() => expect(createCourse).toHaveBeenCalledTimes(1));
     expect(createCourse.mock.calls[0][0]).toMatchObject({ level: "all_levels", price: 500000, is_free: false });
+  });
+});
+
+describe("wizard tạo khoá — bước ảnh bìa & mô tả (Q4-T14)", () => {
+  function goToMediaStep() {
+    render(<CreateCoursePage />);
+    fireEvent.change(screen.getByLabelText("Tên khoá học"), { target: { value: "Khoá test" } });
+    fireEvent.click(next());
+  }
+
+  it("thiếu ảnh bìa và mô tả: khoá Tiếp tục và nói rõ thiếu gì", () => {
+    goToMediaStep();
+    expect(next().disabled).toBe(true);
+    expect(screen.getByRole("status").textContent).toContain("ảnh bìa và mô tả chi tiết");
+  });
+
+  it("chỉ thiếu mô tả: vẫn khoá, chỉ nhắc mô tả", () => {
+    goToMediaStep();
+    fireEvent.click(screen.getByRole("button", { name: "có ảnh bìa" }));
+    expect(next().disabled).toBe(true);
+    expect(screen.getByRole("status").textContent).not.toContain("ảnh bìa");
+  });
+
+  it("đủ ảnh bìa và mô tả thì mở Tiếp tục", () => {
+    goToMediaStep();
+    fillMedia();
+    expect(next().disabled).toBe(false);
   });
 });

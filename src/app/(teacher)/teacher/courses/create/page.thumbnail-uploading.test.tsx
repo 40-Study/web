@@ -20,7 +20,6 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.f
 
 type Update = (k: string, v: unknown) => void;
 vi.mock("../_components/course-basic-info-step", () => ({
-  FORMATS: [{ id: "hybrid", label: "Kết hợp" }],
   CourseBasicInfoStep: ({ update }: { update: Update }) => (
     <>
       <input aria-label="Tên khoá học" onChange={(e) => update("title", e.target.value)} />
@@ -34,10 +33,22 @@ vi.mock("../_components/course-basic-info-step", () => ({
 // Bước 2 giả: bấm "bắt đầu tải" để báo đang tải, giữ hàm báo lại để kết thúc upload sau khi bước đã unmount.
 let reportUploading: ((uploading: boolean) => void) | undefined;
 vi.mock("../_components/course-media-step", () => ({
-  CourseMediaStep: ({ onThumbnailUploadingChange }: { onThumbnailUploadingChange?: (u: boolean) => void }) => {
+  CourseMediaStep: ({
+    onThumbnailUploadingChange,
+    update,
+  }: {
+    onThumbnailUploadingChange?: (u: boolean) => void;
+    update: (k: string, v: string) => void;
+  }) => {
     reportUploading = onThumbnailUploadingChange;
     return (
-      <button type="button" onClick={() => onThumbnailUploadingChange?.(true)}>
+      <button
+        type="button"
+        onClick={() => {
+          update("description", "Mô tả chi tiết");
+          onThumbnailUploadingChange?.(true);
+        }}
+      >
         bắt đầu tải
       </button>
     );

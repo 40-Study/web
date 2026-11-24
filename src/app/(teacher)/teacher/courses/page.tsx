@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { SafeImage } from "@/components/ui/safe-image";
-import { Search, Plus, Users, Star, Play, Radio, Layers, FileEdit, Loader2, Trash2 } from "lucide-react";
+import { Search, Plus, Users, Star, FileEdit, Loader2, Trash2 } from "lucide-react";
 import { useMyCourses, useDeleteCourse } from "@/hooks/queries/use-courses";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,7 +25,6 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog";
 // Phase 3: đủ 5 trạng thái backend + "other" cho giá trị lạ. Trước đây mọi status không phải
 // published/archived bị ép thành "draft" — khoá chờ duyệt/bị từ chối sẽ hiện sai là bản nháp.
 type CourseStatus = ApiCourseStatus | "other";
-type CourseType = "video" | "livestream" | "hybrid";
 
 // Thứ tự tab: việc cần giáo viên xử lý (bị từ chối, nháp) đứng gần tab mặc định.
 const TAB_ORDER: ApiCourseStatus[] = ["published", "pending_review", "rejected", "draft", "archived"];
@@ -50,7 +49,6 @@ interface Course {
   id: string;
   title: string;
   thumbnail?: string;
-  type: CourseType;
   status: CourseStatus;
   students: number;
   rating: number;
@@ -86,7 +84,6 @@ function mapApiCourse(c: { id: string; title: string; short_description?: string
     id: c.id,
     title: c.title,
     thumbnail: c.thumbnail_url,
-    type: "video",
     status,
     students: c.total_students || 0,
     rating: Number(c.average_rating) || 0,
@@ -96,22 +93,6 @@ function mapApiCourse(c: { id: string; title: string; short_description?: string
     progress,
     missingItems: missing.length > 0 ? `Thiếu: ${missing.join(", ")}` : undefined,
   };
-}
-
-const TYPE_CONFIG: Record<CourseType, { label: string; icon: React.ReactNode; color: string }> = {
-  video: { label: "VIDEO", icon: <Play className="w-3 h-3" />, color: "bg-green-500" },
-  livestream: { label: "LIVESTREAM", icon: <Radio className="w-3 h-3" />, color: "bg-red-500" },
-  hybrid: { label: "HYBRID", icon: <Layers className="w-3 h-3" />, color: "bg-blue-600" },
-};
-
-function CourseTypeBadge({ type }: { type: CourseType }) {
-  const config = TYPE_CONFIG[type];
-  return (
-    <Badge className={cn("gap-1 text-white text-[10px]", config.color)}>
-      {config.icon}
-      {config.label}
-    </Badge>
-  );
 }
 
 function CourseCard({ course, onDelete }: { course: Course; onDelete: (course: Course) => void }) {
@@ -143,9 +124,6 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (course: C
             <FileEdit className="w-8 h-8 text-gray-200" />
           </div>
         )}
-        <div className="absolute top-2 left-2">
-          <CourseTypeBadge type={course.type} />
-        </div>
         {statusBadge && (
           <Badge className={cn("absolute top-2 right-2 text-[10px]", statusBadge.className)}>
             {statusBadge.label}
@@ -231,7 +209,6 @@ function CourseCard({ course, onDelete }: { course: Course; onDelete: (course: C
 export default function TeacherCoursesPage() {
   const [activeTab, setActiveTab] = useState<CourseStatus>("published");
   const [searchQuery, setSearchQuery] = useState("");
-  const [formatFilter, setFormatFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
 
   const { data: apiCourses, isLoading } = useMyCourses();
@@ -249,10 +226,9 @@ export default function TeacherCoursesPage() {
     return courses.filter((course) => {
       const matchesTab = course.status === activeTab;
       const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesFormat = formatFilter === "all" || course.type === formatFilter;
-      return matchesTab && matchesSearch && matchesFormat;
+      return matchesTab && matchesSearch;
     });
-  }, [courses, activeTab, searchQuery, formatFilter]);
+  }, [courses, activeTab, searchQuery]);
 
   const counts = useMemo(() => {
     const result: Record<CourseStatus, number> = {
@@ -317,18 +293,6 @@ export default function TeacherCoursesPage() {
           </div>
 
           <div className="flex gap-2">
-            <Select value={formatFilter} onValueChange={setFormatFilter}>
-              <SelectTrigger className="w-[180px] whitespace-nowrap">
-                {formatFilter === "all" ? "Tất cả định dạng" : <SelectValue />}
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả định dạng</SelectItem>
-                <SelectItem value="video">Video</SelectItem>
-                <SelectItem value="livestream">Livestream</SelectItem>
-                <SelectItem value="hybrid">Kết hợp</SelectItem>
-              </SelectContent>
-            </Select>
-
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[140px] whitespace-nowrap">
                 {sortBy === "newest" ? "Mới nhất" : <SelectValue />}

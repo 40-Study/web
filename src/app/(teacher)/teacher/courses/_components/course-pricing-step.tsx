@@ -4,21 +4,15 @@ import { Check } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { validateDiscountPrice, validatePrice, type CourseFormData, type UpdateCourseFormField } from "./course-form-model";
 
-/** Bước "Cài đặt giá" — dùng chung trang tạo và trang sửa khoá. */
-export function CoursePricingStep({
-  formData,
-  update,
-  showFeatured = true,
-}: {
-  formData: CourseFormData;
-  update: UpdateCourseFormField;
-  // Công tắc "nổi bật" chưa được gửi lên backend ở trang tạo — trang sửa ẩn để không hứa suông.
-  showFeatured?: boolean;
-}) {
+/**
+ * Bước "Cài đặt giá" — dùng chung trang tạo và trang sửa khoá.
+ * Q4-T05: bỏ công tắc "Khoá học nổi bật": giá trị không được gửi lên backend (khoá luôn lưu is_featured=false);
+ * đánh dấu nổi bật là việc của quản trị viên.
+ */
+export function CoursePricingStep({ formData, update }: { formData: CourseFormData; update: UpdateCourseFormField }) {
   const price = parseFloat(formData.price) || 0;
   const salePrice = parseFloat(formData.discount_price) || 0;
   const discount = price > 0 && salePrice > 0 && salePrice < price
@@ -133,25 +127,6 @@ export function CoursePricingStep({
         </CardContent>
       </Card>
 
-      {/* Featured */}
-      {showFeatured && (
-      <Card>
-        <CardContent className="p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Khoá học nổi bật</p>
-              <p className="text-sm text-muted-foreground">
-                Hiển thị trên trang chủ để tăng tiếp cận
-              </p>
-            </div>
-            <Switch
-              checked={formData.is_featured}
-              onCheckedChange={(v) => update("is_featured", v)}
-            />
-          </div>
-        </CardContent>
-      </Card>
-      )}
     </div>
   );
 }
