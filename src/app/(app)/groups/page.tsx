@@ -49,14 +49,15 @@ function GroupCard({ group, showJoin = false }: { group: Group; showJoin?: boole
     <Card className="group overflow-hidden hover:shadow-md transition-all">
       <div className="p-4 space-y-3">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
               <Users className="h-6 w-6 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
+              {/* Hai dòng thay vì một: ở 390px huy hiệu vai trò chiếm chỗ, tên nhóm bị cắt "Đồ án tốt nghiệp..." (QA4 S18). */}
               <Link
                 href={`/groups/${group.slug}`}
-                className="font-semibold hover:text-primary transition-colors line-clamp-1"
+                className="font-semibold hover:text-primary transition-colors line-clamp-2 break-words"
               >
                 {group.name}
               </Link>
@@ -174,7 +175,8 @@ export default function GroupsPage() {
 
   return (
     <div className="page-container py-6 space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Dưới sm: tiêu đề trên, nút "Tạo nhóm" dưới, để phụ đề không bị ép xuống dòng cạnh nút (QA4 S18). */}
+      <div data-testid="groups-header" className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Users className="h-7 w-7 text-primary" />
