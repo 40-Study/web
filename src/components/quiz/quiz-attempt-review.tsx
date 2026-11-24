@@ -44,7 +44,12 @@ function labelFor(id: string, answerText?: Map<string, string>): string {
 }
 
 export function QuizAttemptReview({ answers: attemptAnswers, answerText, questions, className }: QuizAttemptReviewProps) {
-  const answers = mergeAnswersWithQuestions(attemptAnswers, questions);
+  // Round 2 (R1, S5-11): sau khi nộp backend trả cả câu bỏ trống kèm đáp án đúng; slice rỗng của Go có thể về dạng
+  // `null`, nên chuẩn hoá để "Bạn chọn: —" và "Đáp án đúng" vẫn hiện thay vì làm hỏng cả màn xem lại.
+  const answers = mergeAnswersWithQuestions(attemptAnswers, questions).map((a) => ({
+    ...a,
+    selected_answer_ids: a.selected_answer_ids ?? [],
+  }));
   if (answers.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">Chưa có dữ liệu chi tiết cho lần làm này.</p>

@@ -42,6 +42,7 @@ import Link from "next/link";
 import { QueryState } from "@/components/common/query-state";
 import type { CoinPurchase, CoinTransaction } from "@/services/coin.service";
 import { CoinPaymentDialog } from "@/components/coins/coin-payment-dialog";
+import { coinBonusLabel } from "@/lib/coin-package-label";
 
 function formatNumber(n: number) {
   return new Intl.NumberFormat("vi-VN").format(n);
@@ -337,9 +338,7 @@ export default function CoinsPage() {
                         {formatNumber(pkg.total_coins)} <small>xu</small>
                       </strong>
                       <span className="coin-bonus">
-                        {pkg.bonus_amount > 0
-                          ? `Tặng thêm ${formatNumber(pkg.bonus_amount)} xu`
-                          : "Gói xu tiêu chuẩn"}
+                        {coinBonusLabel(pkg.bonus_amount, formatNumber)}
                       </span>
                       <div className="coin-package-price">
                         {formatNumber(Number(pkg.price))} ₫{" "}
