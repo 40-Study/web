@@ -402,6 +402,10 @@ export const authService = {
   registerRequest: (data: RegisterRequestDTO) =>
     api.post<{ message: string }>("/auth/register/request", data).then((r) => r.data),
 
+  /** POST /auth/register/resend-otp - Gửi lại OTP đăng ký từ đăng ký đang chờ phía server (N-07) */
+  registerResendOtp: (data: { email: string }) =>
+    api.post<{ message: string }>("/auth/register/resend-otp", data).then((r) => r.data),
+
   /** POST /auth/register - Complete registration with OTP */
   register: (data: RegisterDTO) =>
     api

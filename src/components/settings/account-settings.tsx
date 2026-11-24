@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuthStore, type UnifiedRole } from "@/stores/auth.store";
 import { ApplyTeacherButton } from "@/components/teacher-application/apply-teacher-button";
-import { ApiError } from "@/lib/errors";
+import { isIncorrectCurrentPasswordError } from "@/hooks/queries/use-auth";
 import { getErrorMessage } from "@/lib/error-messages";
 import { validateNewPassword } from "@/lib/password-policy";
 import { PasswordChecklist } from "@/components/auth/password-checklist";
@@ -112,9 +112,9 @@ export function AccountSettings({
       setPasswordDialogOpen(false);
       passwordForm.reset();
     } catch (error) {
-      // Toast do useChangePassword hiện. Sai mật khẩu hiện tại (backend 400 "incorrect current
-      // password") thì gắn thêm lỗi ngay dưới ô nhập để người dùng biết sửa ô nào (P-N1).
-      if (error instanceof ApiError && /incorrect current password/i.test(error.message)) {
+      // Sai mật khẩu hiện tại: lỗi CHỈ hiện dưới ô nhập (P-N1); useChangePassword bỏ toast cho đúng lỗi
+      // này (N-06). Các lỗi khác vẫn do toast của hook báo.
+      if (isIncorrectCurrentPasswordError(error)) {
         passwordForm.setError("currentPassword", { message: getErrorMessage(error) });
       }
     } finally { setIsLoading(false); }

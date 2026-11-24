@@ -6,6 +6,7 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { AuthFooterLink } from "@/components/auth/auth-footer-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordChecklist } from "@/components/auth/password-checklist";
 import { AUTH_ROUTES } from "@/lib/routes";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { authErrorMessage, useRegisterRequest } from "@/hooks/queries/use-auth";
@@ -53,9 +54,8 @@ export default function RegisterFormPage() {
         full_name: `${formData.lastName} ${formData.firstName}`.trim() || undefined,
       };
       await registerRequest.mutateAsync({ email: formData.email, ...payload });
+      // Chỉ lưu email: "Gửi lại mã" không cần mật khẩu nữa (N-07).
       sessionStorage.setItem(STORAGE_KEYS.REGISTER_EMAIL, formData.email);
-      // Lưu payload (không kèm OTP) để trang /otp gọi lại được khi "Gửi lại mã".
-      sessionStorage.setItem(STORAGE_KEYS.REGISTER_PAYLOAD, JSON.stringify(payload));
       router.push(AUTH_ROUTES.OTP);
     } catch (err) {
       console.error("Failed to request OTP:", err);
@@ -119,13 +119,15 @@ export default function RegisterFormPage() {
         <Input
           type="password"
           label="Mật khẩu"
-          placeholder="Tạo mật khẩu (ít nhất 8 ký tự)"
+          placeholder="Tạo mật khẩu"
           value={formData.password}
           onChange={handleChange("password")}
           error={fieldErrors.password}
           className="h-12"
           required
         />
+        {/* N-01 (QA4 261123): luật mật khẩu hiện ngay khi gõ, như đặt lại / đổi mật khẩu. */}
+        <PasswordChecklist password={formData.password} />
         <Input
           type="password"
           label="Xác nhận mật khẩu"

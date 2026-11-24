@@ -16,13 +16,13 @@ export const ROLE_NAME_MAP: Record<string, string> = {
 
 export const STORAGE_KEYS = {
   DEVICE_ID: "device_id",
+  // Chỉ lưu email: "Gửi lại mã" gọi POST /auth/register/resend-otp {email}, backend giữ phần còn lại của đăng
+  // ký đang chờ. Trước đây lưu cả mật khẩu dạng rõ trong sessionStorage (N-07, QA4 261123 / P-08 QA3).
   REGISTER_EMAIL: "register_email",
-  // Lưu tạm password/confirm_password/user_name/full_name (KHÔNG lưu OTP) để
-  // trang /otp gọi lại POST /auth/register/request khi người dùng bấm "Gửi
-  // lại mã" — backend không có endpoint resend riêng, chỉ có request lại với
-  // đầy đủ payload (QA khách P1, 260927).
-  REGISTER_PAYLOAD: "register_payload",
   RESET_PASSWORD_EMAIL: "reset_password_email",
+  // Cờ dùng một lần do bước trước đặt; trang thành công chỉ hiện khi có cờ, mở thẳng URL thì về /login (N-11).
+  REGISTER_SUCCESS_FLAG: "register_success",
+  RESET_PASSWORD_SUCCESS_FLAG: "reset_password_success",
 } as const;
 
 // ─── App Config ──────────────────────────────────────────────────────────────

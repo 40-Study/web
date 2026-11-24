@@ -19,6 +19,7 @@ import { SocialLoginButton } from "@/components/auth/social-login-button";
 import { RoleCard, roleNameToRoleType } from "@/components/auth/role-card";
 
 import { OtpInput } from "@/components/auth/otp-input";
+import { PasswordChecklist } from "@/components/auth/password-checklist";
 import { AuthIconHeader } from "@/components/auth/auth-icon-header";
 import { MailIcon } from "@/components/icons";
 import type { RoleType } from "@/components/auth/role-card";
@@ -770,13 +771,15 @@ function RegisterFormView({
                 <Input
                     type="password"
                     label="Mật khẩu"
-                    placeholder="Tạo mật khẩu (ít nhất 8 ký tự)"
+                    placeholder="Tạo mật khẩu"
                     value={formData.password}
                     onChange={handleChange("password")}
                     error={fieldErrors.password}
                     className="h-12"
                     required
                 />
+                {/* N-01 (QA4 261123): luật mật khẩu hiện ngay khi gõ, như trang /register/form. */}
+                <PasswordChecklist password={formData.password} />
                 <Input
                     type="password"
                     label="Xác nhận mật khẩu"

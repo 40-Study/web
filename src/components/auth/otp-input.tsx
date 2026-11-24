@@ -38,27 +38,26 @@ export function OtpInput({
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
+  // N-14 (QA4 261123): tính mã mới từ state hiện tại rồi gọi `onComplete` NGOÀI hàm cập nhật của setOtp. Gọi bên
+  // trong thì React chạy nó lúc render OtpInput, setState của trang cha thành "update while rendering".
   const handleChange = useCallback(
     (index: number, value: string) => {
       if (!/^\d*$/.test(value)) return;
 
-      setOtp((prev) => {
-        const newOtp = [...prev];
-        newOtp[index] = value.slice(-1);
+      const newOtp = [...otp];
+      newOtp[index] = value.slice(-1);
+      setOtp(newOtp);
 
-        if (value && index < length - 1) {
-          inputRefs.current[index + 1]?.focus();
-        }
+      if (value && index < length - 1) {
+        inputRefs.current[index + 1]?.focus();
+      }
 
-        const joined = newOtp.join("");
-        if (joined.length === length) {
-          onCompleteRef.current?.(joined);
-        }
-
-        return newOtp;
-      });
+      const joined = newOtp.join("");
+      if (joined.length === length) {
+        onCompleteRef.current?.(joined);
+      }
     },
-    [length]
+    [length, otp]
   );
 
   const handleKeyDown = useCallback(
@@ -81,21 +80,18 @@ export function OtpInput({
       const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, length);
       if (!pastedData) return;
 
-      setOtp(() => {
-        const newOtp = Array(length).fill("");
-        for (let i = 0; i < pastedData.length; i++) {
-          newOtp[i] = pastedData[i];
-        }
+      const newOtp = Array(length).fill("");
+      for (let i = 0; i < pastedData.length; i++) {
+        newOtp[i] = pastedData[i];
+      }
+      setOtp(newOtp);
 
-        const focusIndex = Math.min(pastedData.length, length - 1);
-        inputRefs.current[focusIndex]?.focus();
+      const focusIndex = Math.min(pastedData.length, length - 1);
+      inputRefs.current[focusIndex]?.focus();
 
-        if (pastedData.length === length) {
-          onCompleteRef.current?.(pastedData);
-        }
-
-        return newOtp;
-      });
+      if (pastedData.length === length) {
+        onCompleteRef.current?.(pastedData);
+      }
     },
     [length]
   );

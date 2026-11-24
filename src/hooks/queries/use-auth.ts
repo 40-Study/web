@@ -14,6 +14,9 @@ import { bootstrapAuthSession } from "@/components/providers/auth-session";
 import { ApiError, AuthError, RateLimitError } from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-messages";
 import { sanitizeRedirect } from "@/lib/safe-redirect";
+import { AUTH_ROUTES } from "@/lib/routes";
+import { STORAGE_KEYS } from "@/lib/constants";
+import { markOneShotPage } from "@/hooks/use-one-shot-page";
 
 /**
  * Ưu tiên message thật từ backend (ApiError), rơi về fallback khi không có.
@@ -263,6 +266,17 @@ export function useRegisterRequest() {
   });
 }
 
+/** POST /auth/register/resend-otp - Gửi lại OTP đăng ký chỉ bằng email (N-07); trang gọi tự báo lỗi. */
+export function useRegisterResendOtp() {
+  return useMutation({
+    mutationFn: authService.registerResendOtp,
+    onSuccess: () => {
+      toast.success("Mã OTP mới đã được gửi");
+    },
+    onError: () => {},
+  });
+}
+
 /** POST /auth/register - Complete registration */
 export function useRegister() {
   return useMutation({
@@ -449,7 +463,8 @@ export function useResetPassword() {
     mutationFn: authService.resetPassword,
     onSuccess: () => {
       toast.success("Đặt lại mật khẩu thành công");
-      router.push("/reset-password/success");
+      markOneShotPage(STORAGE_KEYS.RESET_PASSWORD_SUCCESS_FLAG);
+      router.push(AUTH_ROUTES.RESET_PASSWORD_SUCCESS);
     },
     onError: (error: unknown) => {
       // Trước đây KHÔNG có onError — OTP sai/hết hạn khi đặt lại mật khẩu rơi
@@ -465,6 +480,14 @@ export function useResetPassword() {
   });
 }
 
+/**
+ * Backend trả 400 "incorrect current password" khi sai mật khẩu hiện tại. Lỗi này gắn được vào đúng ô nhập
+ * (account-settings.tsx), nên hook KHÔNG toast thêm (N-06, QA4 261123: từng hiện cả inline lẫn toast).
+ */
+export function isIncorrectCurrentPasswordError(error: unknown): boolean {
+  return error instanceof ApiError && /incorrect current password/i.test(error.message);
+}
+
 /** PUT /auth/change-password */
 export function useChangePassword() {
   return useMutation({
@@ -475,6 +498,7 @@ export function useChangePassword() {
     // N9 / P-N1: trước đây không có onError → rơi vào toast mặc định "Error / incorrect current
     // password". Form (account-settings.tsx) còn gắn lỗi ngay dưới ô "Mật khẩu hiện tại".
     onError: (error: unknown) => {
+      if (isIncorrectCurrentPasswordError(error)) return;
       toast.error("Đổi mật khẩu thất bại", {
         description: getErrorMessage(error, "Không thể đổi mật khẩu, vui lòng thử lại"),
       });

@@ -40,7 +40,6 @@ beforeEach(() => {
 describe("/otp — hoàn tất đăng ký", () => {
   it("nhập đủ 6 số gọi POST /auth/register đúng một lần rồi sang trang thành công", async () => {
     sessionStorage.setItem(STORAGE_KEYS.REGISTER_EMAIL, "qa@example.com");
-    sessionStorage.setItem(STORAGE_KEYS.REGISTER_PAYLOAD, "{}");
     mockApi.post.mockResolvedValue({ data: { message: "User registered successfully", data: { id: "u1" } } });
     renderWithProviders(<OtpPage />);
 
@@ -50,7 +49,8 @@ describe("/otp — hoàn tất đăng ký", () => {
     expect(mockApi.post).toHaveBeenCalledTimes(1);
     expect(mockApi.post).toHaveBeenCalledWith("/auth/register", { email: "qa@example.com", otp: "123456" });
     expect(sessionStorage.getItem(STORAGE_KEYS.REGISTER_EMAIL)).toBeNull();
-    expect(sessionStorage.getItem(STORAGE_KEYS.REGISTER_PAYLOAD)).toBeNull();
+    // N-11: trang thành công chỉ mở được ngay sau bước này.
+    expect(sessionStorage.getItem(STORAGE_KEYS.REGISTER_SUCCESS_FLAG)).toBe("1");
   });
 
   it("OTP sai: hiện lỗi tiếng Việt, không chuyển trang", async () => {
@@ -72,5 +72,22 @@ describe("/otp — hoàn tất đăng ký", () => {
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/register"));
     expect(screen.queryByLabelText("Chữ số OTP 1")).toBeNull();
     expect(mockApi.post).not.toHaveBeenCalled();
+  });
+
+  // N-07 (QA4 261123): "Gửi lại mã" chỉ gửi email (contract 8); trước đây gửi lại cả mật khẩu lưu trong sessionStorage.
+  it("Gửi lại mã gọi POST /auth/register/resend-otp chỉ với email", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      sessionStorage.setItem(STORAGE_KEYS.REGISTER_EMAIL, "qa@example.com");
+      mockApi.post.mockResolvedValue({ data: { message: "OTP sent" } });
+      renderWithProviders(<OtpPage />);
+      await screen.findByLabelText("Chữ số OTP 1");
+      vi.advanceTimersByTime(91_000);
+      fireEvent.click(await screen.findByRole("button", { name: "Gửi lại mã" }));
+      await waitFor(() => expect(mockApi.post).toHaveBeenCalledTimes(1));
+      expect(mockApi.post).toHaveBeenCalledWith("/auth/register/resend-otp", { email: "qa@example.com" });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -61,6 +61,19 @@ describe("/register/form — gửi đăng ký", () => {
     });
     await waitFor(() => expect(push).toHaveBeenCalledWith("/otp"));
     expect(sessionStorage.getItem(STORAGE_KEYS.REGISTER_EMAIL)).toBe("qaguest86464@example.com");
+    // N-07 (QA4 261123): không còn mật khẩu dạng rõ nào nằm lại trong sessionStorage.
+    for (let i = 0; i < sessionStorage.length; i++) {
+      expect(sessionStorage.getItem(sessionStorage.key(i)!)).not.toContain("Abcdef12#");
+    }
+  });
+
+  // N-01 (QA4 261123): luật mật khẩu từng chỉ hiện thành một câu lỗi chung sau khi bấm gửi.
+  it("hiện danh sách luật mật khẩu và đánh dấu từng luật khi gõ", () => {
+    renderWithProviders(<RegisterFormPage />);
+    expect(screen.getByText("Có ít nhất 1 chữ in hoa").className).toContain("text-muted-foreground");
+    fill("Mật khẩu", "Abcdefgh");
+    expect(screen.getByText("Có ít nhất 1 chữ in hoa").className).toContain("text-green-700");
+    expect(screen.getByText("Có ít nhất 1 chữ số").className).toContain("text-muted-foreground");
   });
 
   it("form sai vẫn bị chặn: không gọi API và hiện lỗi từng ô", async () => {

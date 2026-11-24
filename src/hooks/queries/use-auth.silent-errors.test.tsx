@@ -12,7 +12,7 @@ import { queryClient } from "@/lib/query-client";
 import { ApiError } from "@/lib/errors";
 import { authService } from "@/services/auth.service";
 import { parentLinkService } from "@/services/parent-link.service";
-import { useRegister, useRegisterRequest } from "./use-auth";
+import { useChangePassword, useRegister, useRegisterRequest } from "./use-auth";
 import { useCreateLinkRequest } from "./use-parent-link";
 
 const wrapper = ({ children }: { children: ReactNode }) => (
@@ -49,5 +49,20 @@ describe("mutation tự hiện lỗi inline không toast chung thêm một lần
     result.current.mutate({ student_email: "ghost@example.com", relationship: "parent" }, { onError });
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
     expect(toastError).not.toHaveBeenCalled();
+  });
+
+  // N-06 (QA4 261123): sai mật khẩu hiện tại từng hiện cả lỗi dưới ô lẫn toast "Đổi mật khẩu thất bại".
+  it("useChangePassword: sai mật khẩu hiện tại không toast; lỗi khác vẫn toast", async () => {
+    const toastError = vi.spyOn(toast, "error").mockImplementation(() => "" as never);
+    const spy = vi.spyOn(authService, "changePassword");
+    const { result } = renderHook(() => useChangePassword(), { wrapper });
+
+    spy.mockRejectedValueOnce(new ApiError(400, "X", "incorrect current password"));
+    await expect(result.current.mutateAsync({ current_password: "a", new_password: "b" } as never)).rejects.toBeInstanceOf(ApiError);
+    expect(toastError).not.toHaveBeenCalled();
+
+    spy.mockRejectedValueOnce(new ApiError(500, "X", "boom"));
+    await expect(result.current.mutateAsync({ current_password: "a", new_password: "b" } as never)).rejects.toBeInstanceOf(ApiError);
+    await waitFor(() => expect(toastError).toHaveBeenCalledTimes(1));
   });
 });
