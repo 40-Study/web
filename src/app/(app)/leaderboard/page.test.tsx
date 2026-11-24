@@ -181,3 +181,40 @@ describe("LeaderboardPage — nhãn theo kỳ, không lặp banner (Q11)", () =>
     expect(screen.queryByText("Giữ nguyên hạng")).toBeNull();
   });
 });
+
+// QA4 S10: tab Toàn thời gian in "+1.850 XP trong kỳ này" và dòng "+3.0K" (chữ K tiếng Anh, dấu + cho tổng).
+describe("LeaderboardPage — định dạng XP tích luỹ (S10)", () => {
+  function mockBig() {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/leaderboard/classes") return Promise.resolve(envelope([]));
+      const me = { rank: 2, user_id: ME, display_name: "Tôi", points: 1850, is_me: true };
+      if (url === "/leaderboard/me") return Promise.resolve(envelope({ period_type: "all_time", period: "all_time", entry: me }));
+      return Promise.resolve(
+        envelope({
+          period_type: "all_time",
+          period: "all_time",
+          total: 2,
+          entries: [{ rank: 1, user_id: "22222222-2222-4222-8222-222222222222", display_name: "Bình Công Khai", points: 3000 }, me],
+        }),
+      );
+    });
+  }
+
+  it("Toàn thời gian: số đầy đủ kiểu Việt, không K, không dấu +, không 'trong kỳ này'", async () => {
+    mockBig();
+    renderWithProviders(<LeaderboardPage />);
+    await screen.findByText("Bình Công Khai");
+    fireEvent.click(screen.getByRole("button", { name: "Toàn thời gian" }));
+    await waitFor(() => expect(screen.getByText("3.000")).toBeTruthy());
+    expect(screen.getByText("1.850 XP tích luỹ")).toBeTruthy();
+    expect(screen.queryByText(/\dK\b/)).toBeNull();
+    expect(screen.queryByText(/^\+/)).toBeNull();
+    expect(screen.queryByText(/trong kỳ này/)).toBeNull();
+  });
+
+  it("Tuần: XP kiếm thêm có dấu +", async () => {
+    mockBig();
+    renderWithProviders(<LeaderboardPage />);
+    expect(await screen.findByText("+3.000")).toBeTruthy();
+  });
+});
