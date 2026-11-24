@@ -61,6 +61,9 @@ export interface SubmissionSnapshot {
 }
 
 export interface SubmissionResult {
+  /** `POST /submissions/run-custom` trả `output` (+ `verdict`); `stdout` là tên cũ, chỉ còn để đọc dữ liệu cũ. */
+  output?: string;
+  verdict?: string;
   stdout?: string;
   stderr?: string;
   error?: string;

@@ -34,6 +34,9 @@ export function getDayOfWeek(date: Date): number {
   return (date.getDay() + 6) % 7;
 }
 
+/** Số tuần tối thiểu một tháng phải chiếm để có đủ bề ngang cho nhãn "Tháng N". */
+const MIN_WEEKS_FOR_MONTH_LABEL = 3;
+
 export function ActivityHeatmap({
   data,
   startDate,
@@ -95,20 +98,25 @@ export function ActivityHeatmap({
     <div className={cn("overflow-x-auto", className)}>
       {/* Month labels */}
       <div className="flex mb-1 ml-8">
-        {monthLabels.map((month, idx) => (
-          <div
-            key={`${month.label}-${idx}`}
-            className="text-xs text-muted-foreground"
-            style={{
-              marginLeft: idx === 0 ? `${month.weekIndex * 14}px` : undefined,
-              width: idx < monthLabels.length - 1
-                ? `${(monthLabels[idx + 1].weekIndex - month.weekIndex) * 14}px`
-                : "auto",
-            }}
-          >
-            {month.label}
-          </div>
-        ))}
+        {monthLabels.map((month, idx) => {
+          // Mỗi tuần rộng 14px: tháng chỉ chiếm 1-2 tuần (đầu/cuối dải) không đủ chỗ cho "Tháng 7" nên nhãn bị bẻ
+          // dòng ("Tháng / 7", QA5 S5-09). Giữ ô để cột không lệch, bỏ chữ khi quá hẹp. Nhãn cuối (tháng hiện tại,
+          // width auto, có chỗ tràn) luôn giữ chữ: đầu tháng nó mới chiếm 1-2 tuần mà vẫn là mốc người dùng cần.
+          const isLast = idx === monthLabels.length - 1;
+          const span = (monthLabels[idx + 1]?.weekIndex ?? weeksData.length) - month.weekIndex;
+          return (
+            <div
+              key={`${month.label}-${idx}`}
+              className="text-xs text-muted-foreground whitespace-nowrap"
+              style={{
+                marginLeft: idx === 0 ? `${month.weekIndex * 14}px` : undefined,
+                width: idx < monthLabels.length - 1 ? `${span * 14}px` : "auto",
+              }}
+            >
+              {isLast || span >= MIN_WEEKS_FOR_MONTH_LABEL ? month.label : null}
+            </div>
+          );
+        })}
       </div>
 
       <div className="flex gap-0.5">

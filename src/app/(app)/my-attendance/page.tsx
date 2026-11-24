@@ -8,6 +8,7 @@ import {
 import { AttendanceStatusBadge } from "@/components/attendance/attendance-status-badge";
 import { MyAttendanceCardList } from "@/components/attendance/my-attendance-card-list";
 import { useAllMyAttendances, useMyAttendances } from "@/hooks/queries/use-sessions";
+import { attendanceSessionLabel } from "@/lib/attendance-session-label";
 import { formatVnDateThenTime } from "@/lib/vn-datetime";
 
 /** Backend ép page_size tối đa 50 (schedule_service.go GetMyAttendances) */
@@ -27,6 +28,9 @@ export default function MyAttendancePage() {
     () => summarizeAttendances(allAttendances ?? []),
     [allAttendances]
   );
+
+  // S5-14: cột "Lớp" chỉ khi backend có trả tên lớp/buổi; backend cũ không có thì bảng giữ 4 cột như trước.
+  const showSessionColumn = attendances.some((a) => attendanceSessionLabel(a) !== null);
 
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -65,6 +69,7 @@ export default function MyAttendancePage() {
             <table className="w-full min-w-[560px] text-sm">
               <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
                 <tr>
+                  {showSessionColumn && <th className="px-4 py-3 font-medium">Lớp</th>}
                   <th className="px-4 py-3 font-medium">Thời gian</th>
                   <th className="px-4 py-3 font-medium">Trạng thái</th>
                   <th className="px-4 py-3 font-medium">Trễ</th>
@@ -74,6 +79,9 @@ export default function MyAttendancePage() {
               <tbody className="divide-y divide-gray-100">
                 {attendances.map((a) => (
                   <tr key={a.id} className="hover:bg-gray-50/60">
+                    {showSessionColumn && (
+                      <td className="px-4 py-3 font-medium text-gray-900">{attendanceSessionLabel(a) ?? "—"}</td>
+                    )}
                     {/* S11: formatter chung (giờ VN, bỏ giây); F-18: ngày trước, giờ sau. */}
                     <td className="px-4 py-3 text-gray-700">
                       {formatVnDateThenTime(a.check_in_time ?? a.created_at)}

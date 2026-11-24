@@ -102,6 +102,12 @@ export type AttendanceStatus = "present" | "absent" | "late" | "excused";
 export interface SessionAttendance {
   id: string;
   session_id: string;
+  /**
+   * Buổi học mà bản ghi thuộc về (QA5 S5-14): `GET /me/attendances` trả thêm hai trường này. Backend cũ không trả:
+   * trang không dựng cột "Lớp" khi không dòng nào có.
+   */
+  class_name?: string;
+  session_title?: string;
   student_id: string;
   status: AttendanceStatus;
   note?: string;

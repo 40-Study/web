@@ -20,9 +20,10 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { livestreamClassroomService, type Assignment } from "@/services/livestream-classroom.service";
 import { classifyAssignment, isPastDue, type AssignmentStatus } from "@/lib/assignment-status";
+import { hasSubmitted, submissionLabel } from "@/lib/assignment-submission";
 import { useAuthStore } from "@/stores/auth.store";
 
 // A-02: nơi làm bài (code / tự luận / trắc nghiệm, chạy thử, nộp) đã có sẵn ở phòng livestream. Dùng lại đúng
@@ -51,7 +52,7 @@ type TabKey = "all" | AssignmentStatus;
 const TABS: { key: TabKey; label: string }[] = [
   { key: "all", label: "Tất cả" },
   { key: "active", label: "Đang mở" },
-  { key: "upcoming", label: "Sắp tới" },
+  { key: "upcoming", label: "Chưa mở" },
   { key: "ended", label: "Đã đóng" },
 ];
 
@@ -69,6 +70,7 @@ function AssignmentCard({
   onStart: (item: Assignment) => void;
 }) {
   const active = status === "active";
+  const submittedLabel = submissionLabel(item.my_submission);
 
   const borderCls =
     status === "ended"
@@ -107,6 +109,9 @@ function AssignmentCard({
 
         {/* Status info */}
         <div className="flex items-center gap-1 text-xs">
+          {submittedLabel && (
+            <span className="rounded-full bg-green-50 px-2 py-0.5 font-medium text-green-700">{submittedLabel}</span>
+          )}
           {!item.is_published && (
             <span className="text-gray-400">Chưa công bố</span>
           )}
@@ -136,7 +141,7 @@ function AssignmentCard({
             onClick={() => onStart(item)}
             className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
           >
-            Làm bài ngay
+            {submittedLabel ? "Xem bài nộp" : "Làm bài ngay"}
           </button>
         ) : (
           <button
@@ -166,9 +171,11 @@ function EmptyState() {
 
 // ---- Aggregate assignments hook ----
 
+const ASSIGNMENTS_QUERY_KEY = ["my-assignments-aggregated"] as const;
+
 function useAllAssignments() {
   return useQuery({
-    queryKey: ["my-assignments-aggregated"],
+    queryKey: ASSIGNMENTS_QUERY_KEY,
     queryFn: async () => {
       // Step 1: fetch all sessions
       const sessions = await livestreamClassroomService.listSessions();
@@ -198,6 +205,10 @@ export default function MyAssignmentsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [working, setWorking] = useState<Assignment | null>(null);
   const userId = useAuthStore((s) => s.user?.id);
+  const queryClient = useQueryClient();
+  // staleTime 30 s và không tải lại khi focus: nộp bài xong mà không làm mới thì danh sách vẫn ghi "Làm bài ngay"
+  // và đếm bài đó là "đang mở" (QA5 review #127, mục 3). Làm mới ngay khi nộp và khi đóng màn làm bài.
+  const refreshAssignments = () => queryClient.invalidateQueries({ queryKey: ASSIGNMENTS_QUERY_KEY });
 
   const { data: assignments = [], isLoading } = useAllAssignments();
   // Một mốc "bây giờ" cho cả lượt render để tab và thẻ không lệch nhau.
@@ -212,7 +223,8 @@ export default function MyAssignmentsPage() {
     (c) => activeTab === "all" || c.status === activeTab
   );
 
-  const activeCount = classified.filter((c) => c.status === "active").length;
+  // Bài đã nộp/đã chấm không còn là việc phải làm: không tính vào số "đang mở".
+  const activeCount = classified.filter((c) => c.status === "active" && !hasSubmitted(c.item)).length;
 
   return (
     <div className="page-container py-4 sm:py-8">
@@ -313,7 +325,11 @@ export default function MyAssignmentsPage() {
           assignmentId={working.id}
           title={working.title}
           userId={userId}
-          onClose={() => setWorking(null)}
+          onSubmitted={refreshAssignments}
+          onClose={() => {
+            setWorking(null);
+            refreshAssignments();
+          }}
         />
       )}
 

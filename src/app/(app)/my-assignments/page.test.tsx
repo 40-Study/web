@@ -11,11 +11,14 @@ const past = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
 
 const ASSIGNMENTS = [
   { id: "a-open", title: "Bài đang mở", description: "", language: ["python"], time_limit: 2, is_published: true, end_time: future, allow_late_submission: false, max_late_days: 0, grace_period_minutes: 0 },
+  { id: "a-graded", title: "Bài đã chấm", description: "", language: ["python"], is_published: true, end_time: future, allow_late_submission: false, max_late_days: 0, grace_period_minutes: 0, my_submission: { id: "s1", status: "graded", score: 9, max_score: 10 } },
+  { id: "a-sent", title: "Bài đã nộp", description: "", language: ["python"], is_published: true, end_time: future, allow_late_submission: false, max_late_days: 0, grace_period_minutes: 0, my_submission: { id: "s2", status: "submitted", score: null, max_score: null } },
   { id: "a-closed", title: "Bài đã đóng", description: "", language: ["python"], is_published: true, end_time: past, allow_late_submission: false, max_late_days: 0, grace_period_minutes: 0 },
 ];
 
 vi.mock("@tanstack/react-query", () => ({
   useQuery: () => ({ data: ASSIGNMENTS, isLoading: false }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
 vi.mock("@/stores/auth.store", () => ({
@@ -85,5 +88,20 @@ describe("/my-assignments — làm bài và điểm", () => {
     render(<MyAssignmentsPage />);
     expect(screen.getByText("Giới hạn 2s/test")).toBeTruthy();
     expect(screen.queryByText("2s")).toBeNull();
+  });
+
+  it("S5-02: bài đã nộp/đã chấm hiện nhãn trạng thái và không tính vào số 'đang mở'", () => {
+    render(<MyAssignmentsPage />);
+    expect(screen.getByText("Đã chấm 9/10")).toBeTruthy();
+    expect(screen.getByText("Đã nộp")).toBeTruthy();
+    // 3 bài đang trong hạn, 2 trong đó đã nộp: chỉ 1 bài còn phải làm.
+    expect(screen.getByText("Bạn có 1 bài tập đang mở.")).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "Xem bài nộp" })).toHaveLength(2);
+  });
+
+  it("tab 'Sắp tới' đổi tên thành 'Chưa mở'", () => {
+    render(<MyAssignmentsPage />);
+    expect(screen.getByRole("button", { name: "Chưa mở" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Sắp tới" })).toBeNull();
   });
 });

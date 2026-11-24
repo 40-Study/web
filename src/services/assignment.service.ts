@@ -12,6 +12,15 @@ export type ProgrammingLanguage = string;
 
 export type AssignmentType = "live_coding" | "homework" | "project";
 
+/** Bài nộp mới nhất của người gọi (QA5 C1). Backend cũ không trả trường này: vắng/null = chưa nộp. */
+export interface MySubmissionSummary {
+  id: string;
+  status: string;
+  score?: number | null;
+  max_score?: number | null;
+  submitted_at?: string;
+}
+
 export interface AssignmentResponseDTO {
   id: string;
   session_id?: string;
@@ -35,6 +44,7 @@ export interface AssignmentResponseDTO {
   max_late_days: number;
   grace_period_minutes: number;
   created_at: string;
+  my_submission?: MySubmissionSummary | null;
 }
 
 /** Envelope thật của GET /assignments?session_id= — không bọc thêm {message,data} */

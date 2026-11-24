@@ -53,7 +53,9 @@ function ConversationItem({
     (p) => p.user_id !== currentUserId
   );
   const displayName = conversationDisplayName(conversation, currentUserId);
-  const isOnline = otherParticipant?.is_online ?? false;
+  // S5-13: "người kia" của nhóm chỉ là thành viên đầu tiên tìm thấy; chấm trực tuyến và ảnh của họ không phải của nhóm.
+  const isDirect = conversation.type === "DIRECT";
+  const isOnline = isDirect && (otherParticipant?.is_online ?? false);
   const timeLabel = conversationTimeLabel(conversation.last_message_at);
 
   return (
@@ -66,7 +68,7 @@ function ConversationItem({
     >
       <div className="relative">
         <Avatar
-          src={otherParticipant?.avatar_url ?? undefined}
+          src={isDirect ? (otherParticipant?.avatar_url ?? undefined) : undefined}
           fallback={displayName[0]?.toUpperCase() ?? "?"}
           size="md"
           status={isOnline ? "online" : undefined}

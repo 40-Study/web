@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { contestService } from "@/services/contest.service";
 import { contestErrorMessage } from "@/lib/contest/contest-errors";
+import { useAuthStore } from "@/stores/auth.store";
 import type { ContestListParams, ContestSubmitRequest } from "@/types/contest";
 
 export const contestKeys = {
@@ -29,12 +30,22 @@ export function useMyContests(params?: { page?: number; limit?: number }, enable
   });
 }
 
+/**
+ * `GET /contests/:slug` là OptionalAuth: `viewer` (can_join, join_block_reason) phụ thuộc người gọi. Tải lại trang
+ * thì token chưa có cho tới khi phiên khôi phục xong; lượt tải đầu khi đó trả `LOGIN_REQUIRED` và nút hiện
+ * "Đăng nhập để tham gia" vài giây rồi mới đổi (QA5 S5-10). Nên chờ phiên có kết quả (báo `isLoading` trong lúc
+ * chờ), và đưa trạng thái đăng nhập vào khoá để đăng nhập/xuất phiên tải lại đúng `viewer`.
+ */
 export function useContestDetail(slug: string) {
-  return useQuery({
-    queryKey: contestKeys.detail(slug),
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
+  const sessionStatus = useAuthStore((s) => s.sessionStatus);
+  const sessionResolved = hasHydrated && sessionStatus !== "checking";
+  const query = useQuery({
+    queryKey: [...contestKeys.detail(slug), sessionStatus === "authenticated"],
     queryFn: () => contestService.getBySlug(slug),
-    enabled: !!slug,
+    enabled: !!slug && sessionResolved,
   });
+  return sessionResolved ? query : { ...query, isLoading: true };
 }
 
 export function useContestLeaderboard(contestId: string | undefined, page: number, enabled: boolean) {

@@ -125,6 +125,19 @@ describe("AssignmentWorkOverlay — verdict bài nộp code (chấm nền)", () 
     expect(verdictText()).toBe("Kết quả: Đạt toàn bộ test · 3/3 test đạt");
   });
 
+  it("bấm 'Chạy thử' khi bài vẫn pending: verdict cuối về sau đó vẫn hiện (chưa từng được hiển thị)", async () => {
+    mockBackend({ mine: [sub("pending")], byId: [sub("accepted", { test_cases_passed: 3, total_test_cases: 3 })] });
+    render(<AssignmentWorkOverlay assignmentId="a1" title="T" userId="u1" onClose={() => {}} />);
+    await flush();
+    post.mockResolvedValue({ output: "1\n", verdict: "accepted" });
+    fireEvent.click(screen.getByRole("button", { name: "Chạy thử" }));
+    await flush();
+    expect(verdictText()).toBeUndefined(); // đang chạy thử: kết quả nộp cũ bị ẩn
+
+    await flush(1_500);
+    expect(verdictText()).toBe("Kết quả: Đạt toàn bộ test · 3/3 test đạt");
+  });
+
   it("đóng màn (unmount) thì dừng hỏi", async () => {
     mockBackend({ byId: [sub("pending")] });
     const { unmount } = await renderAndSubmit();

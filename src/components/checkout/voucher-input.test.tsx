@@ -116,6 +116,24 @@ describe("CheckoutModal — voucher có đơn tối thiểu áp được theo gi
     expect(screen.getByText(/- 50\.000/)).toBeTruthy();
   });
 
+  it("S5-04: khoá đang giảm giá — dòng tổng gọi là 'Giá khoá học' (giá bán), không phải 'Giá gốc'", () => {
+    const onSale = { ...course, price: 469700, originalPrice: 671000 } as unknown as CourseDetail;
+    wrap(<CheckoutModal open onOpenChange={vi.fn()} course={onSale} />);
+    expect(screen.queryByText("Giá gốc")).toBeNull();
+    // Giá niêm yết 671.000 chỉ xuất hiện gạch ngang ở thẻ khoá; dòng "Giá khoá học" in giá bán 469.700.
+    const row = screen.getByText("Giá khoá học").parentElement as HTMLElement;
+    expect(row.textContent).toContain("469.700");
+    expect(row.textContent).not.toContain("671.000");
+  });
+
+  it("S5-15: chip voucher đã áp không dùng dấu '—' đầu dòng; 'Giảm …' không bị bẻ dòng", async () => {
+    wrap(<CheckoutModal open onOpenChange={vi.fn()} course={course} />);
+    await applyCode();
+    const discount = screen.getByText(/Giảm 50\.000/);
+    expect(discount.textContent).not.toContain("—");
+    expect(discount.className).toContain("whitespace-nowrap");
+  });
+
   it("chỉ còn chuyển khoản ngân hàng, không có lựa chọn Thẻ/MoMo giả (A-18)", () => {
     wrap(<CheckoutModal open onOpenChange={vi.fn()} course={course} />);
     expect(screen.getByText("Chuyển khoản ngân hàng")).toBeTruthy();

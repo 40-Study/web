@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Settings } from "lucide-react";
 import {
   SettingsSidebar,
@@ -18,8 +19,25 @@ import { useMe, useChangePassword, useDeleteAccount, useSwitchRole } from "@/hoo
 import { getDeviceInfo } from "@/services/auth.service";
 import { appearanceStorage } from "@/lib/appearance-storage";
 
+const SECTIONS: readonly SettingsSection[] = ["account", "profile", "notifications", "appearance", "privacy", "devices", "linked"];
+
+// `useSearchParams` cần ranh giới Suspense (trang bị tạo tĩnh); vỏ này chỉ bọc phần nội dung.
 export default function SettingsPage() {
-  const [activeSection, setActiveSection] = useState<SettingsSection>("account");
+  return (
+    <Suspense fallback={null}>
+      <SettingsPageContent />
+    </Suspense>
+  );
+}
+
+function SettingsPageContent() {
+  // Liên kết sâu `/settings?section=profile` (nút "Chỉnh sửa hồ sơ" ở trang hồ sơ). Đọc ngay ở lần render đầu
+  // (không qua effect) nên không có một khung hình hiện "Tài khoản" trước khi nhảy sang "Hồ sơ"; giá trị lạ bị
+  // bỏ qua, ở lại mục mặc định.
+  const wanted = useSearchParams().get("section");
+  const [activeSection, setActiveSection] = useState<SettingsSection>(
+    () => SECTIONS.find((s) => s === wanted) ?? "account",
+  );
   const { user } = useAuthStore();
   const { data: meData } = useMe();
   const changePassword = useChangePassword();

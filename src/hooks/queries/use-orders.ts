@@ -46,6 +46,22 @@ export function isPaymentVerifyingError(error: unknown): error is ApiError {
 }
 
 /**
+ * QA5 S5-03: 409 ERR_PAYMENT_VERIFYING của đơn ĐÃ HUỶ kèm `retry_after_at` (RFC3339, backend QA5 C2): thời điểm
+ * mua lại được. Trả câu "Có thể mua lại sau HH:mm"; thiếu/không hợp lệ (backend cũ) -> `null`, dùng câu backend.
+ */
+export function rebuyRetryMessage(error: unknown, now: Date = new Date()): string | null {
+  if (!isPaymentVerifyingError(error)) return null;
+  const raw = error.responseBody?.retry_after_at;
+  if (typeof raw !== "string") return null;
+  const at = new Date(raw);
+  if (Number.isNaN(at.getTime())) return null;
+  const time = at.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false });
+  const sameDay = at.toDateString() === now.toDateString();
+  const when = sameDay ? time : `${time} ngày ${at.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}`;
+  return `Đơn trước của bạn đã huỷ. Có thể mua lại sau ${when}.`;
+}
+
+/**
  * 503 ERR_PAYMENT_PROVIDER_UNAVAILABLE khi huỷ đơn: ngân hàng không trả lời VÀ chủ đơn đã bấm "Tôi đã chuyển
  * khoản" (backend#143 Q8). Ngân hàng không trả lời mà chủ đơn chưa từng báo chuyển khoản thì huỷ được (200).
  */
@@ -190,7 +206,7 @@ export function useCreateOrder() {
         error.status === 409 &&
         (error.code === ORDER_IN_PROGRESS_CODE || error.code === PAYMENT_VERIFYING_CODE)
       ) {
-        toast.error(error.message, {
+        toast.error(rebuyRetryMessage(error) ?? error.message, {
           action: { label: "Xem đơn hàng", onClick: () => window.location.assign("/orders") },
         });
         return;

@@ -1,5 +1,5 @@
 /**
- * Phân loại bài tập buổi live cho trang "Bài tập của tôi" (tab Sắp tới / Đang mở / Đã đóng).
+ * Phân loại bài tập buổi live cho trang "Bài tập của tôi" (tab Chưa mở / Đang mở / Đã đóng).
  *
  * Dữ liệu thật (`GET /assignments?session_id=`, seed demo 2026-10-01): mỗi bài có `end_time`
  * (ISO, có múi giờ), `allow_late_submission`, `max_late_days`, `grace_period_minutes`;

@@ -6,9 +6,10 @@
 
 import type { ReactNode } from "react";
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/errors";
+import { createAppQueryClient } from "@/lib/query-client";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn(), info: vi.fn() } }));
 vi.mock("@/services/order.service", () => ({
@@ -31,7 +32,8 @@ import {
 } from "./use-orders";
 
 function setup() {
-  const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+  // Mặc định thật của app (có mutations.onError chung): client trần không thấy được toast trùng.
+  const qc = createAppQueryClient();
   const invalidate = vi.spyOn(qc, "invalidateQueries");
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={qc}>{children}</QueryClientProvider>
@@ -93,6 +95,24 @@ describe("useCreateOrder — lỗi 409", () => {
     await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
     const [message, options] = vi.mocked(toast.error).mock.calls[0] as [string, { action?: { label: string } }];
     expect(message).toBe(msg);
+    expect(options?.action?.label).toBe("Xem đơn hàng");
+  });
+
+  it("S5-03: 409 kèm retry_after_at -> toast 'Có thể mua lại sau HH:mm'", async () => {
+    const at = new Date(Date.now() + 20 * 60 * 1000);
+    const hhmm = at.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false });
+    const err = new ApiError(409, "ERR_PAYMENT_VERIFYING", "đang được đối chiếu với ngân hàng", undefined, {
+      retry_after_at: at.toISOString(),
+    });
+    vi.mocked(orderService.createOrder).mockRejectedValue(err);
+    const { wrapper } = setup();
+    const { result } = renderHook(() => useCreateOrder(), { wrapper });
+
+    act(() => result.current.mutate({ source: "buy_now", course_ids: ["c1"], idempotency_key: "k" }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
+    const [message, options] = vi.mocked(toast.error).mock.calls[0] as [string, { action?: { label: string } }];
+    expect(message).toContain("Có thể mua lại sau");
+    expect(message).toContain(hhmm);
     expect(options?.action?.label).toBe("Xem đơn hàng");
   });
 
