@@ -172,7 +172,7 @@ export function GroupSettingsForm({ group }: { group: Group }) {
             destructive
             requireText={group.name}
             pending={del.isPending}
-            onConfirm={() => del.mutate(group.id, { onSuccess: () => router.push("/groups") })}
+            onConfirm={() => del.mutate({ id: group.id, slug: group.slug }, { onSuccess: () => router.push("/groups") })}
           />
         </Card>
       )}
