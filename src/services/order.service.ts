@@ -72,7 +72,6 @@ export interface LateRefundItem {
   flagged_at: string;
   refunded: boolean;
   refunded_at?: string | null;
-  buyer?: OrderBuyer | null;
 }
 
 /** Các khoản tiền về muộn của đơn: backend chỉ trả cho admin, nil khi đơn chưa từng nhận tiền về muộn. */
@@ -130,6 +129,7 @@ export interface Order {
   refund_reason?: string | null;
   refund_transaction_ref?: string | null;
   refunded_at?: string | null;
+  buyer?: OrderBuyer | null;
 }
 
 export interface OrderListResponse {
