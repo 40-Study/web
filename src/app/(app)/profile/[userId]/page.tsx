@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { usePublicProfile } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth.store";
 import { normalizeRole } from "@/lib/routes";
+import { formatCompletedMonth } from "@/lib/format-completed-month";
 
 interface CompletedCourse {
   id: string;
@@ -253,12 +254,7 @@ export default function PublicProfilePage() {
                                 {course.title}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                Hoàn thành{" "}
-                                {course.completedAt.toLocaleDateString("vi-VN", {
-                                  day: "numeric",
-                                  month: "long",
-                                  year: "numeric",
-                                })}
+                                {formatCompletedMonth(course.completedAt)}
                               </p>
                             </div>
                           </div>

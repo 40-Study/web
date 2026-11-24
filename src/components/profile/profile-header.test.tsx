@@ -38,7 +38,7 @@ describe("ProfileHeader — hồ sơ của chính mình (Q5-T01, S5-07)", () => 
   it("'Chỉnh sửa hồ sơ' và nút máy ảnh trên avatar dẫn tới Cài đặt > Hồ sơ", () => {
     render(<ProfileHeader user={USER} stats={STATS} isOwnProfile />);
     const edit = screen.getByRole("link", { name: /Chỉnh sửa hồ sơ/ });
-    const camera = screen.getByRole("link", { name: "Tải ảnh đại diện" });
+    const camera = screen.getByRole("link", { name: "Đổi ảnh đại diện trong Cài đặt" });
     expect(edit.getAttribute("href")).toBe("/settings?section=profile");
     expect(camera.getAttribute("href")).toBe("/settings?section=profile");
   });
@@ -46,7 +46,7 @@ describe("ProfileHeader — hồ sơ của chính mình (Q5-T01, S5-07)", () => 
   it("hồ sơ người khác không có lối chỉnh sửa", () => {
     render(<ProfileHeader user={USER} stats={STATS} isOwnProfile={false} />);
     expect(screen.queryByRole("link", { name: /Chỉnh sửa hồ sơ/ })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Tải ảnh đại diện" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Đổi ảnh đại diện trong Cài đặt" })).toBeNull();
   });
 
   it("XP viết đầy đủ theo vi-VN ('1.850 XP'), không rút gọn '1.9K'", () => {

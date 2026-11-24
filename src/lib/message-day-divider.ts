@@ -25,13 +25,16 @@ export function messageDayLabel(iso: string, now: Date = new Date()): string {
   return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-/** Nhãn vạch ngày cho từng tin (theo thứ tự cũ -> mới): chỉ tin đầu tiên của mỗi ngày có nhãn, còn lại `null`. */
+/**
+ * Nhãn vạch ngày cho từng tin (theo thứ tự cũ -> mới): chỉ tin đầu tiên của mỗi ngày có nhãn, còn lại `null`.
+ * Mỗi ngày chỉ một vạch dù tin lạc thứ tự (tin tạm/realtime chen vào) làm ngày đó xuất hiện lại.
+ */
 export function dayDividerLabels(createdAts: ReadonlyArray<string>, now: Date = new Date()): Array<string | null> {
-  let previous: string | null = null;
+  const seen = new Set<string>();
   return createdAts.map((iso) => {
     const key = messageDayKey(iso);
-    if (key === null || key === previous) return null;
-    previous = key;
+    if (key === null || seen.has(key)) return null;
+    seen.add(key);
     return messageDayLabel(iso, now);
   });
 }

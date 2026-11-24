@@ -20,6 +20,20 @@ describe("ActivityHeatmap — nhãn tiếng Việt (Q12)", () => {
   });
 });
 
+describe("ActivityHeatmap — nhãn tháng hiện tại (review #127 mục 8)", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("đầu tháng (tháng hiện tại mới chiếm 1-2 tuần) vẫn có nhãn tháng hiện tại", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 10, 5)); // 05/11/2026 (thứ Năm): tháng 11 mới chiếm 2 tuần
+    const { container } = render(<ActivityHeatmap data={[]} startDate={new Date(2026, 7, 31)} />);
+    const texts = Array.from(container.querySelectorAll("div.text-xs.text-muted-foreground.whitespace-nowrap")).map(
+      (l) => l.textContent
+    );
+    expect(texts[texts.length - 1]).toBe("Tháng 11");
+  });
+});
+
 describe("ActivityHeatmap — nhãn tháng không bị bẻ dòng (QA5 S5-09)", () => {
   afterEach(() => vi.useRealTimers());
 

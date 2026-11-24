@@ -100,7 +100,9 @@ export function ActivityHeatmap({
       <div className="flex mb-1 ml-8">
         {monthLabels.map((month, idx) => {
           // Mỗi tuần rộng 14px: tháng chỉ chiếm 1-2 tuần (đầu/cuối dải) không đủ chỗ cho "Tháng 7" nên nhãn bị bẻ
-          // dòng ("Tháng / 7", QA5 S5-09). Giữ ô để cột không lệch, bỏ chữ khi quá hẹp.
+          // dòng ("Tháng / 7", QA5 S5-09). Giữ ô để cột không lệch, bỏ chữ khi quá hẹp. Nhãn cuối (tháng hiện tại,
+          // width auto, có chỗ tràn) luôn giữ chữ: đầu tháng nó mới chiếm 1-2 tuần mà vẫn là mốc người dùng cần.
+          const isLast = idx === monthLabels.length - 1;
           const span = (monthLabels[idx + 1]?.weekIndex ?? weeksData.length) - month.weekIndex;
           return (
             <div
@@ -111,7 +113,7 @@ export function ActivityHeatmap({
                 width: idx < monthLabels.length - 1 ? `${span * 14}px` : "auto",
               }}
             >
-              {span >= MIN_WEEKS_FOR_MONTH_LABEL ? month.label : null}
+              {isLast || span >= MIN_WEEKS_FOR_MONTH_LABEL ? month.label : null}
             </div>
           );
         })}

@@ -82,7 +82,7 @@ export function ProfileHeader({
               <Link
                 href={EDIT_PROFILE_HREF}
                 className="absolute bottom-0 right-0 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors"
-                aria-label="Tải ảnh đại diện"
+                aria-label="Đổi ảnh đại diện trong Cài đặt"
               >
                 <Camera className="h-4 w-4 text-gray-600" />
               </Link>

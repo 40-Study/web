@@ -21,6 +21,14 @@ describe("dayDividerLabels", () => {
     expect(labels).toEqual(["08/10/2026", null, "Hôm nay", null]);
   });
 
+  it("tin lạc thứ tự (tin tạm/realtime) không sinh vạch thứ hai cho cùng một ngày", () => {
+    const labels = dayDividerLabels(
+      [local(11, 24, 9), local(11, 23, 20), local(11, 24, 10), local(11, 24, 11)],
+      NOW
+    );
+    expect(labels).toEqual(["Hôm nay", "Hôm qua", null, null]);
+  });
+
   it("mốc thời gian hỏng không chèn vạch và không làm hỏng ngày sau", () => {
     expect(dayDividerLabels(["không phải ngày", local(11, 24, 9)], NOW)).toEqual([null, "Hôm nay"]);
     expect(messageDayKey("không phải ngày")).toBeNull();
