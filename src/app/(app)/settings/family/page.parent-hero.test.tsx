@@ -6,7 +6,11 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/components/parent", () => {
-  const stub = (name: string) => () => <div data-testid={name} />;
+  const stub = (name: string) => {
+    const Stub = () => <div data-testid={name} />;
+    Stub.displayName = `Stub(${name})`;
+    return Stub;
+  };
   return {
     InviteParentModal: stub("invite"), SentInvitationsList: stub("sent"), PendingInvitationsCard: stub("pending"),
     LinkChildForm: stub("link-child-form"), SentLinkRequests: stub("sent-requests"), LinkedChildrenList: stub("children"),
