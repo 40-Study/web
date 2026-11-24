@@ -122,8 +122,9 @@ export function MyOrderCard({
       {isReconciling && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-gray-500">
-            Hệ thống đang đối chiếu thanh toán của đơn này với ngân hàng nên chưa thể huỷ hay tạo đơn mới.
-            Nếu bạn đã chuyển khoản, đừng chuyển lại.
+            {/* Việc giữ chỗ chỉ áp dụng cho các khoá trong đơn này, không chặn mua khoá khác (QA4 S13). */}
+            Hệ thống đang đối chiếu thanh toán của đơn này với ngân hàng nên chưa thể huỷ đơn hay mua lại
+            các khoá trong đơn. Nếu bạn đã chuyển khoản, đừng chuyển lại. Bấm &quot;Kiểm tra thanh toán&quot; để cập nhật.
           </p>
           <Button variant="outline" className="shrink-0" isLoading={isCheckingPayment} onClick={() => onCheckPayment(order)}>
             Kiểm tra thanh toán
