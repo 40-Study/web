@@ -195,6 +195,8 @@ interface AddContentModalProps {
   uploadProgress?: number; // 0-100, undefined = not uploading
   uploadStatus?: string; // status message
   onVideoFileSelect?: (file: File) => void; // Called immediately when video file is selected
+  /** Q4-T09: huỷ lượt upload đang chạy (nút "Huỷ tải lên" cạnh thanh tiến độ). */
+  onCancelUpload?: () => void;
   uploadedVideoUrl?: string; // URL of uploaded video (set by parent after upload completes)
 }
 
@@ -248,6 +250,7 @@ export function AddContentModal({
   uploadProgress,
   uploadStatus,
   onVideoFileSelect,
+  onCancelUpload,
   uploadedVideoUrl,
 }: AddContentModalProps) {
   // Step: null = choose type, otherwise editing that type
@@ -377,6 +380,8 @@ export function AddContentModal({
           ? exQuiz
           : [];
   const formErrors = validateContentForm(formTitle, formQuestions);
+  // Ô tiêu đề luôn nằm ở tab "Nội dung" (form không có tab cũng giữ activeTab = "content").
+  const footerErrorSummary = contentFormErrorSummary(formErrors, { includeTitle: activeTab !== "content" });
   const visibleErrors = submitAttempted ? formErrors : { questions: {} };
   // Q2-04: điểm đạt / số lần làm chỉ có ở bài trắc nghiệm (exercise); các nhánh khác không có hai ô này.
   const isQuizExercise = contentType === "exercise" && exerciseType === "quiz";
@@ -624,7 +629,7 @@ export function AddContentModal({
                           <p className="text-xs text-muted-foreground">{formatFileSize(videoFile.size)}</p>
                         </div>
                         {!isLoading && (
-                          <Button variant="ghost" size="icon" onClick={() => setVideoFile(null)}>
+                          <Button variant="ghost" size="icon" aria-label="Bỏ video đã chọn" onClick={() => setVideoFile(null)}>
                             <X className="w-4 h-4" />
                           </Button>
                         )}
@@ -642,6 +647,11 @@ export function AddContentModal({
                               style={{ width: `${uploadProgress}%` }}
                             />
                           </div>
+                          {isLoading && onCancelUpload && (
+                            <Button type="button" variant="outline" size="sm" onClick={onCancelUpload}>
+                              Huỷ tải lên
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1083,9 +1093,10 @@ export function AddContentModal({
               </p>
             )}
             {/* T3/T4: lý do không lưu được nằm ngay cạnh nút, kể cả khi lỗi ở tab đang ẩn. */}
-            {submitAttempted && hasContentFormErrors(formErrors) && (
+            {/* Q4-T21: lỗi tiêu đề đã hiện ngay dưới ô tiêu đề; chỉ nhắc lại ở đây khi ô đó nằm ở tab đang ẩn. */}
+            {submitAttempted && hasContentFormErrors(formErrors) && footerErrorSummary && (
               <p role="alert" data-testid="add-content-validation-error" className="text-xs text-destructive sm:mr-auto sm:text-left">
-                {contentFormErrorSummary(formErrors)}
+                {footerErrorSummary}
               </p>
             )}
             {submitError && (
@@ -1150,7 +1161,7 @@ function DocumentsPanel({
                 <p className="text-sm truncate">{f.name}</p>
                 <p className="text-xs text-muted-foreground">{formatFileSize(f.size)}</p>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => onRemove(idx)}>
+              <Button variant="ghost" size="icon" aria-label={`Bỏ tệp ${f.name}`} onClick={() => onRemove(idx)}>
                 <X className="w-4 h-4" />
               </Button>
             </div>

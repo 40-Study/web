@@ -7,7 +7,9 @@ export class ApiError extends Error {
     public status: number,
     public code: string,
     message: string,
-    public details?: Record<string, string[]>
+    public details?: Record<string, string[]>,
+    /** Nguyên body của lỗi 4xx (vd. 409 sinh buổi kèm `skipped[]`); không có với 5xx. */
+    public responseBody?: Record<string, unknown>
   ) {
     super(message);
     this.name = "ApiError";

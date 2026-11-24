@@ -6,6 +6,8 @@ import { Bell, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QueryState } from "@/components/common/query-state";
 import { getNotificationHref } from "@/lib/notification-route";
+import { normalizeRole } from "@/lib/routes";
+import { useAuthStore } from "@/stores/auth.store";
 import {
   useNotifications,
   useMarkNotificationRead,
@@ -27,6 +29,7 @@ function timeAgo(dateStr: string): string {
  */
 export default function NotificationsPage() {
   const router = useRouter();
+  const role = normalizeRole(useAuthStore((s) => s.activeRole));
   const [page, setPage] = useState(1);
   const { data, isLoading, isError, error, refetch } = useNotifications(page);
   const markReadMutation = useMarkNotificationRead();
@@ -81,7 +84,7 @@ export default function NotificationsPage() {
                 onClick={() => {
                   if (!item.is_read) markReadMutation.mutate(item.id);
                   // Thông báo bạn bè/nhóm mở thẳng màn liên quan (lib/notification-route).
-                  const href = getNotificationHref(item);
+                  const href = getNotificationHref(item, role);
                   if (href) router.push(href);
                 }}
               >

@@ -47,7 +47,7 @@ type DeleteAccountData = z.infer<typeof deleteAccountSchema>;
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: string }> = {
   STUDENT: { label: "Học sinh", color: "text-blue-600", bgColor: "bg-blue-100", icon: "🎓" },
-  TEACHER: { label: "Giáo viên", color: "text-emerald-600", bgColor: "bg-emerald-100", icon: "👨‍🏫" },
+  TEACHER: { label: "Giảng viên", color: "text-emerald-600", bgColor: "bg-emerald-100", icon: "👨‍🏫" },
   PARENT: { label: "Phụ huynh", color: "text-violet-600", bgColor: "bg-violet-100", icon: "👨‍👩‍👧" },
   ORG_OWNER: { label: "Quản lý tổ chức", color: "text-amber-600", bgColor: "bg-amber-100", icon: "🏢" },
   SYSTEM_ADMIN: { label: "Quản trị hệ thống", color: "text-red-600", bgColor: "bg-red-100", icon: "⚙️" },

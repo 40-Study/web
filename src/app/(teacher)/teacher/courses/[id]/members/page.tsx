@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Bell, Loader2, Search, Users } from "lucide-react";
+import { ArrowLeft, Loader2, Search, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import TeacherNotificationDialog from "@/components/teacher/teacher-notification-dialog";
 import { useMyStudents } from "@/hooks/queries/use-classes";
 import { useCourse } from "@/hooks/queries/use-courses";
 import { useAuthStore } from "@/stores/auth.store";
@@ -26,7 +25,6 @@ export default function TeacherCourseMembersPage() {
   const params = useParams<{ id: string }>();
   const courseId = params.id;
   const [searchQuery, setSearchQuery] = useState("");
-  const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false);
 
   const { data: allStudents = [], isLoading } = useMyStudents();
   // B-18: danh sách thành viên lọc từ "học viên của tôi" nên khoá không tồn tại hay của giảng viên khác
@@ -85,23 +83,16 @@ export default function TeacherCourseMembersPage() {
       {courseError && <StaleDataNotice resourceLabel="khoá học" onRetry={() => void refetchCourse()} />}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/teacher/courses">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/teacher/courses" aria-label="Quay lại danh sách khoá học">
+              <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+            </Link>
+          </Button>
           <div>
             <h1 className="text-2xl font-bold">Thành viên khoá học</h1>
             <p className="text-sm text-muted-foreground">{courseTitle}</p>
           </div>
         </div>
-        <Button
-          onClick={() => setIsNotifyDialogOpen(true)}
-          disabled={filteredMembers.length === 0}
-        >
-          <Bell className="mr-2 h-4 w-4" />
-          Gửi thông báo ({filteredMembers.length})
-        </Button>
       </div>
 
       <Card>
@@ -176,16 +167,6 @@ export default function TeacherCourseMembersPage() {
         </CardContent>
       </Card>
 
-      <TeacherNotificationDialog
-        open={isNotifyDialogOpen}
-        onOpenChange={setIsNotifyDialogOpen}
-        recipients={filteredMembers.map((member) => ({
-          id: member.id,
-          name: member.name,
-          phone: member.parent_phone,
-        }))}
-        contextLabel={`Khoá học: ${courseTitle}`}
-      />
     </div>
   );
 }

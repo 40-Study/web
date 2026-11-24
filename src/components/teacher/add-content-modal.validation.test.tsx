@@ -319,3 +319,12 @@ describe("AddContentModal — bài viết (T1/T7)", () => {
     expect((body() as HTMLTextAreaElement).value).toBe("<p>Nội dung dài</p>");
   });
 });
+
+describe("AddContentModal — không lặp lỗi tiêu đề (Q4-T21)", () => {
+  it("tiêu đề trống: câu 'Vui lòng nhập tiêu đề' chỉ hiện một lần (dưới ô tiêu đề)", async () => {
+    renderModal(vi.fn());
+    await openVideoForm();
+    await click(saveVideo());
+    expect(screen.getAllByText("Vui lòng nhập tiêu đề.")).toHaveLength(1);
+  });
+});

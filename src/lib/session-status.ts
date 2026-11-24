@@ -10,7 +10,22 @@ const SESSION_STATUS_LABELS: Record<string, string> = {
   cancelled: "Đã huỷ",
 };
 
-export function sessionStatusLabel(status: string | undefined | null): string {
-  if (!status) return SESSION_STATUS_LABELS.scheduled;
-  return SESSION_STATUS_LABELS[status] ?? "Chưa rõ";
+/** Buổi "scheduled" mà giờ hẹn đã qua (chưa ai mở phòng): không còn là "Đã lên lịch". */
+export const SESSION_OVERDUE_LABEL = "Quá giờ, chưa diễn ra";
+
+/**
+ * Q4-T21: buổi "Live hỏi đáp" ngày 11/10 vẫn hiện "Đã lên lịch" sang tháng sau. Truyền `scheduledAt` để buổi đã
+ * quá giờ mà backend vẫn để "scheduled" hiện đúng tình trạng.
+ */
+export function sessionStatusLabel(
+  status: string | undefined | null,
+  scheduledAt?: string | null,
+  now: Date = new Date(),
+): string {
+  const effective = status || "scheduled";
+  if (effective === "scheduled" && scheduledAt) {
+    const at = new Date(scheduledAt).getTime();
+    if (!Number.isNaN(at) && at < now.getTime()) return SESSION_OVERDUE_LABEL;
+  }
+  return SESSION_STATUS_LABELS[effective] ?? "Chưa rõ";
 }

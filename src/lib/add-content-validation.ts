@@ -64,9 +64,12 @@ export function validateContentForm(
 }
 
 /** Câu lỗi tóm tắt cạnh nút lưu: lỗi THẬT của tiêu đề, rồi của câu hỏi đầu tiên sai (không câu cố định). */
-export function contentFormErrorSummary(errors: ContentFormErrors): string {
+export function contentFormErrorSummary(
+  errors: ContentFormErrors,
+  { includeTitle = true }: { includeTitle?: boolean } = {},
+): string {
   const firstQuestionError = Object.values(errors.questions)[0];
-  return [errors.title, firstQuestionError].filter(Boolean).join(" ");
+  return [includeTitle ? errors.title : undefined, firstQuestionError].filter(Boolean).join(" ");
 }
 
 export function hasContentFormErrors(errors: ContentFormErrors): boolean {

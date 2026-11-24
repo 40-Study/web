@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/error-messages";
 import { describeScheduleError } from "@/lib/class-schedule-errors";
+import { ApiError } from "@/lib/errors";
+import { allSkippedSummary, generateSessionsSummary, skippedFromErrorPayload } from "@/lib/generate-sessions-summary";
 import {
   sessionService,
   CreateClassScheduleDTO,
@@ -119,11 +121,19 @@ export function useGenerateSessions(classId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: GenerateSessionsDTO) => sessionService.generateSessions(classId, data),
-    onSuccess: (sessions) => {
+    onSuccess: ({ sessions, skipped }) => {
       queryClient.invalidateQueries({ queryKey: sessionKeys.sessions(classId) });
-      toast.success(`Đã tạo ${sessions.length} buổi học`);
+      const summary = generateSessionsSummary(sessions.length, skipped);
+      // Có buổi bị bỏ qua thì dùng toast cảnh báo để giảng viên không tưởng đã đủ lịch.
+      if (skipped.length > 0) toast.warning(summary);
+      else toast.success(summary);
     },
-    onError: (err) => toast.error("Không thể sinh buổi học", { description: describeScheduleError(err, "generate") }),
+    onError: (err) => {
+      // backend#149: mọi ngày đều bị bỏ qua -> 409 kèm skipped[]; nói rõ lý do thay cho câu 409 chung.
+      const skipped = err instanceof ApiError && err.status === 409 ? skippedFromErrorPayload(err.responseBody) : null;
+      const description = skipped ? allSkippedSummary(skipped) : describeScheduleError(err, "generate");
+      toast.error("Không thể sinh buổi học", { description });
+    },
   });
 }
 
@@ -181,7 +191,8 @@ export function useBulkMarkAttendance(sessionId: string) {
     mutationFn: (data: BulkAttendanceDTO) => sessionService.bulkMarkAttendance(sessionId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: sessionKeys.attendances(sessionId) });
-      toast.success("Đã điểm danh hàng loạt");
+      // Q4-T21: lưu điểm danh của một học viên cũng đi qua bulk, nên không nói "hàng loạt".
+      toast.success("Đã lưu điểm danh");
     },
     onError: (err) => toast.error("Không thể điểm danh", { description: getErrorMessage(err) }),
   });

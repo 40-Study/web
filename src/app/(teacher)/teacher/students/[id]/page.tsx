@@ -3,18 +3,16 @@
 import Link from "next/link";
 import { useState } from "react";
 import { notFound, useParams } from "next/navigation";
-import { ArrowLeft, Bell, BookOpen, Loader2, Phone, UserRound } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, Phone, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import TeacherNotificationDialog from "@/components/teacher/teacher-notification-dialog";
 import { useMyStudents } from "@/hooks/queries/use-classes";
 import { buildStudentProfile } from "./student-profile-aggregate";
 
 export default function TeacherStudentProfilePage() {
   const params = useParams<{ id: string }>();
-  const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false);
 
   const { data: students = [], isLoading } = useMyStudents();
 
@@ -38,17 +36,13 @@ export default function TeacherStudentProfilePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/teacher/students">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/teacher/students" aria-label="Quay lại danh sách học viên">
+              <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+            </Link>
+          </Button>
           <h1 className="text-2xl font-bold">Hồ sơ học viên</h1>
         </div>
-        <Button onClick={() => setIsNotifyDialogOpen(true)}>
-          <Bell className="mr-2 h-4 w-4" />
-          Gửi thông báo
-        </Button>
       </div>
 
       <Card>
@@ -133,15 +127,6 @@ export default function TeacherStudentProfilePage() {
         </CardContent>
       </Card>
 
-      <TeacherNotificationDialog
-        open={isNotifyDialogOpen}
-        onOpenChange={setIsNotifyDialogOpen}
-        recipients={[
-          { id: student.id, name: student.name, phone: student.parentPhone },
-          ...classmates.map((mate) => ({ id: mate.id, name: mate.name, phone: mate.parentPhone })),
-        ]}
-        contextLabel={`Hồ sơ học viên: ${student.name}`}
-      />
     </div>
   );
 }

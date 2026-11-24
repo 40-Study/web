@@ -10,6 +10,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SubtitleUploadField } from "@/components/teacher/subtitle-upload-field";
 import { ArticleContentForm, type ArticleFormValue } from "@/components/teacher/article-content-form";
 import { useSections } from "@/hooks/queries/use-sections";
+import { useCourse } from "@/hooks/queries/use-courses";
+import { sanitizeHtml } from "@/lib/sanitize-html";
 import { useLessons, useUpdateLesson } from "@/hooks/queries/use-lessons";
 import {
   useCreateLessonContent,
@@ -57,10 +59,13 @@ function LessonDetailContent({
   courseId,
   lessonId,
   sections,
+  readOnly,
 }: {
   courseId: string;
   lessonId: string;
   sections: Section[];
+  /** Q4-T13: khoá đang chờ duyệt bị backend khoá sửa (409 COURSE_PENDING_REVIEW), trang chỉ còn xem. */
+  readOnly: boolean;
 }) {
   // Load lessons for each section in parallel via individual hooks.
   // This is safe because hooks run in a stable order (sections order is stable).
@@ -140,11 +145,11 @@ function LessonDetailContent({
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Link href={`/teacher/courses/${courseId}`}>
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
+          <Button variant="ghost" size="icon" asChild>
+            <Link href={`/teacher/courses/${courseId}`} aria-label="Quay lại khoá học">
+              <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+            </Link>
+          </Button>
           <div>
             <h1 className="text-xl font-semibold">{lesson.title}</h1>
             <p className="text-sm text-muted-foreground">{section.title}</p>
@@ -156,6 +161,12 @@ function LessonDetailContent({
           </Link>
         </Button>
       </div>
+
+      {readOnly && (
+        <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          Khoá học đang chờ duyệt nên bài học chỉ xem được. Muốn chỉnh sửa, hãy rút yêu cầu duyệt ở trang khoá học.
+        </p>
+      )}
 
       {/* Lesson info card */}
       <Card>
@@ -190,6 +201,18 @@ function LessonDetailContent({
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Đang tải nội dung...
             </div>
+          ) : readOnly ? (
+            article ? (
+              <div className="space-y-2">
+                <p className="font-medium">{article.title}</p>
+                <div
+                  className="prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(article.article_body ?? "") }}
+                />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Bài học này chưa có bài viết.</p>
+            )
           ) : article ? (
             <ArticleContentForm
               // Nạp lại form khi bản lưu đổi (vd sau khi lưu, hoặc nội dung đổi từ nơi khác).
@@ -218,7 +241,7 @@ function LessonDetailContent({
       </Card>
 
       {/* Phụ đề bài giảng (contract §4) — upload ngay cạnh thông tin video */}
-      {lesson.type === "video" && (
+      {lesson.type === "video" && !readOnly && (
         <Card>
           <CardContent className="p-6">
             <SubtitleUploadField
@@ -258,6 +281,7 @@ export default function TeacherLessonDetailPage() {
   const lessonId = params.lessonId;
 
   const { data: sections, isLoading: sectionsLoading } = useSections(courseId);
+  const { data: course } = useCourse(courseId);
 
   if (sectionsLoading || !sections) {
     return (
@@ -268,6 +292,11 @@ export default function TeacherLessonDetailPage() {
   }
 
   return (
-    <LessonDetailContent courseId={courseId} lessonId={lessonId} sections={sections} />
+    <LessonDetailContent
+      courseId={courseId}
+      lessonId={lessonId}
+      sections={sections}
+      readOnly={course?.status === "pending_review"}
+    />
   );
 }

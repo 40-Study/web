@@ -97,6 +97,13 @@ const CODE_MESSAGES: Record<string, string> = {
   FRIEND_LIMIT_REACHED: "Một trong hai bạn đã đạt số lượng bạn bè tối đa",
   FRIEND_DAILY_LIMIT_REACHED: "Hôm nay bạn đã gửi đủ lời mời, hãy thử lại vào ngày mai.",
   FRIEND_PENDING_LIMIT_REACHED: "Bạn đang có quá nhiều lời mời chờ phản hồi. Hãy đợi hoặc huỷ bớt lời mời cũ.",
+  // ── QA4 giảng viên (hợp đồng backend 1-3, plans/reports/qa4-fix-plan-261124.md) ──
+  ERR_ASSIGNMENT_HAS_SUBMISSIONS:
+    "Bài tập đã có học viên nộp bài nên không thể xoá. Hãy huỷ công bố nếu muốn ẩn bài tập.",
+  ERR_SESSION_NOT_STARTED: "Buổi học chưa diễn ra nên chưa thể điểm danh. Hãy điểm danh từ ngày học trở đi.",
+  ERR_DUE_DATE_IN_PAST: "Hạn nộp phải ở tương lai. Hãy chọn lại hạn nộp.",
+  // Q4-T13: thêm/sửa nội dung khi khoá đang chờ duyệt (409); message backend là tiếng Anh.
+  COURSE_PENDING_REVIEW: "Khoá học đang chờ duyệt nên không thể chỉnh sửa. Hãy rút yêu cầu duyệt trước.",
 };
 
 // Code chỉ nói LOẠI lỗi, message mới nói lý do (vd. ERR_NOT_FOUND + "Voucher not found",

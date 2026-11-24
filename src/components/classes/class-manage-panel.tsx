@@ -228,7 +228,12 @@ export function ClassManagePanel({ classId, initialTab = "members" }: { classId:
                       isPicking={actions.enrollStudent.isPending}
                       placeholder="Tìm học viên để ghi danh"
                       addLabel="Ghi danh"
-                      emptyText="Không có học viên phù hợp."
+                      // Q4-T16: lớp gắn khoá chỉ ghi danh được học viên đã ghi danh khoá đó (backend SearchEnrollable).
+                      emptyText={
+                        cls?.course_id
+                          ? "Không có học viên phù hợp. Chỉ thêm được học viên đã ghi danh khoá học của lớp này."
+                          : "Không có học viên phù hợp."
+                      }
                     />
                   )}
                 </CardContent>

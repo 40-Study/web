@@ -129,4 +129,30 @@ describe("QuizSettingsEditor", () => {
     expect((screen.getByLabelText("Thời gian làm bài (phút)") as HTMLInputElement).value).toBe("");
     expect(lastState(onChange)).toEqual({ payload: null, blocked: false });
   });
+
+  it("Q4-T03: còn câu hỏi sửa dở thì chặn nút lưu chung và báo số câu", async () => {
+    mockApi.get.mockImplementation((url: string) =>
+      Promise.resolve(
+        url.endsWith("/questions")
+          ? envelope([
+              {
+                id: "qq1",
+                quiz_id: "q1",
+                question_text: "Câu một",
+                question_type: "short_answer",
+                points: 1,
+                display_order: 1,
+                answers: [{ answer_text: "x", is_correct: true, display_order: 1 }],
+              },
+            ])
+          : envelope({ id: "q1", title: "Git", pass_percentage: 70, max_attempts: 3 }),
+      ),
+    );
+    const onChange = vi.fn();
+    renderWithProviders(<QuizSettingsEditor quizId="q1" onChange={onChange} />);
+    await screen.findByDisplayValue("Câu một");
+
+    fireEvent.change(screen.getByLabelText("Nội dung câu hỏi 1"), { target: { value: "Câu một đã sửa" } });
+    await waitFor(() => expect(lastState(onChange)).toEqual({ payload: null, blocked: true, unsavedQuestions: 1 }));
+  });
 });

@@ -30,7 +30,6 @@ vi.mock("@/hooks/queries/use-classes", () => ({
     isLoading: false,
   }),
 }));
-vi.mock("@/components/teacher/teacher-notification-dialog", () => ({ default: () => null }));
 
 import TeacherCourseMembersPage from "./page";
 
@@ -104,5 +103,14 @@ describe("TeacherCourseMembersPage — quyền và tồn tại của khoá", () 
     expect(screen.getByRole("status").textContent).toContain("Không làm mới được");
     fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
     expect(state.refetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("TeacherCourseMembersPage — Q4-T11", () => {
+  it("không còn nút 'Gửi thông báo' (giảng viên chưa có API gửi thông báo)", () => {
+    state.course = { id: "course-1", title: "React + Next.js", instructor_id: "t1" };
+    render(<TeacherCourseMembersPage />);
+    expect(screen.getByText("Lê Văn C")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Gửi thông báo/ })).toBeNull();
   });
 });

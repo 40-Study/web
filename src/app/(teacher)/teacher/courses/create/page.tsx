@@ -13,12 +13,13 @@ import { toast } from "sonner";
 import {
   LEVELS,
   initialCourseFormData as initialFormData,
+  missingMediaItems,
   toApiLevel,
   validateDiscountPrice,
   validatePrice,
   type CourseFormData,
 } from "../_components/course-form-model";
-import { CourseBasicInfoStep, FORMATS } from "../_components/course-basic-info-step";
+import { CourseBasicInfoStep } from "../_components/course-basic-info-step";
 import { CourseMediaStep } from "../_components/course-media-step";
 import { CoursePricingStep } from "../_components/course-pricing-step";
 
@@ -49,8 +50,11 @@ export default function CreateCoursePage() {
     setFormData((prev) => ({ ...prev, [key]: value }));
   }, []);
 
+  const mediaMissing = currentStep === 2 ? missingMediaItems(formData, thumbnailUploading) : [];
+
   const canGoNext = () => {
     if (currentStep === 1) return formData.title.trim().length > 0;
+    if (currentStep === 2) return mediaMissing.length === 0;
     // Bước "Cài đặt giá": khoá "Có phí" phải có giá > 0 và giá khuyến mãi hợp lệ (lý do hiện ngay dưới ô nhập).
     if (currentStep === 3) return validatePrice(formData) === null && validateDiscountPrice(formData) === null;
     return true;
@@ -231,6 +235,12 @@ export default function CreateCoursePage() {
           {currentStep === 3 && <CoursePricingStep formData={formData} update={update} />}
           {currentStep === 4 && <Step4Review formData={formData} />}
 
+          {mediaMissing.length > 0 && (
+            <p role="status" className="mt-6 text-sm text-amber-700">
+              Cần thêm {mediaMissing.join(" và ")} để sang bước tiếp theo. Bạn vẫn có thể lưu nháp.
+            </p>
+          )}
+
           {thumbnailUploading && (
             <p role="status" className="mt-6 flex items-center gap-2 text-sm text-amber-700">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -278,7 +288,6 @@ export default function CreateCoursePage() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function Step4Review({ formData }: { formData: CourseFormData }) {
-  const formatLabel = FORMATS.find((f) => f.id === formData.format)?.label ?? formData.format;
   const levelLabel = LEVELS.find((l) => l.value === formData.level)?.label ?? formData.level;
   // QA-B-22: bước 4 từng không hiện danh mục đã chọn. Cùng query với bước 1 nên đọc từ cache, không gọi lại.
   const { data: categoriesRaw } = useCategoryList();
@@ -302,10 +311,6 @@ function Step4Review({ formData }: { formData: CourseFormData }) {
           <h3 className="font-medium text-lg">{formData.title || "(Chưa đặt tên)"}</h3>
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-            <div>
-              <span className="text-muted-foreground">Định dạng:</span>
-              <span className="ml-2 font-medium">{formatLabel}</span>
-            </div>
             <div>
               <span className="text-muted-foreground">Danh mục:</span>
               <span className="ml-2 font-medium">{categoryLabel}</span>

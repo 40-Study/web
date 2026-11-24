@@ -4,7 +4,7 @@
  * rỗng) cho vai trò tổ chức. Nhãn phải là tiếng Việt từ lib/role-labels.ts.
  */
 
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/api-client", async () => {
@@ -89,7 +89,8 @@ describe("/login/role — chỉ 3 giao diện (Q3-05) và không mời giảng v
         ],
       })
     );
-    useAuthStore.setState({ roles: TEACHER_ROLES, sessionToken: "session-1" });
+    // Hai vai hiển thị được: một vai duy nhất thì trang tự vào luôn (Q4-T15), không còn bước chọn.
+    useAuthStore.setState({ roles: [...TEACHER_ROLES, ROLES[1]], sessionToken: "session-1" });
     renderWithProviders(<LoginRolePage />);
     fireEvent.click(screen.getByRole("button", { name: "+ Thêm vai trò mới" }));
 
@@ -107,5 +108,23 @@ describe("/login/role — chỉ 3 giao diện (Q3-05) và không mời giảng v
     fireEvent.click(screen.getByRole("button", { name: "+ Thêm vai trò mới" }));
 
     expect(await screen.findByText("Đăng ký làm giảng viên")).toBeTruthy();
+  });
+});
+
+describe("/login/role — một vai hiển thị được thì vào luôn (Q4-T15)", () => {
+  it("giảng viên có thêm vai tuỳ biến của tổ chức: tự chọn vai Giảng viên, không chờ bấm Tiếp tục", async () => {
+    mockApi.post.mockResolvedValue(envelope({ access_token: "a", refresh_token: "r" }));
+    useAuthStore.setState({ roles: TEACHER_ROLES, sessionToken: "session-1" });
+    renderWithProviders(<LoginRolePage />);
+
+    await waitFor(() => expect(mockApi.post).toHaveBeenCalledTimes(1));
+    expect(JSON.stringify(mockApi.post.mock.calls[0])).toContain("sr-teacher");
+  });
+
+  it("hai vai hiển thị được: vẫn để người dùng chọn", async () => {
+    useAuthStore.setState({ roles: ROLES, sessionToken: "session-1" });
+    renderWithProviders(<LoginRolePage />);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(mockApi.post).not.toHaveBeenCalled();
   });
 });

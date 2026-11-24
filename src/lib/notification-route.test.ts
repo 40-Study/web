@@ -57,3 +57,28 @@ it("nhắc học mở đúng lịch và không cho phụ huynh link vào phòng"
  expect(getNotificationHref({ notification_type: "lesson_reminder", reference_type: "student_schedule" })).toBe("/schedule");
  expect(getNotificationHref({ notification_type: "lesson_reminder", reference_type: "livestream", reference_id: "session-1" })).toBe("/rooms/session-1");
 });
+
+describe("getNotificationHref — thông báo của giảng viên (Q4-T12)", () => {
+  it("ghi danh mới / đánh giá mới (course_update + course) -> trang khoá của giảng viên", () => {
+    expect(
+      getNotificationHref({ notification_type: "course_update", reference_type: "course", reference_id: "c1" }, "TEACHER"),
+    ).toBe("/teacher/courses/c1");
+  });
+
+  it("doanh thu (payment_success) -> ví giảng viên", () => {
+    expect(getNotificationHref({ notification_type: "payment_success" }, "TEACHER")).toBe("/teacher/wallet");
+  });
+
+  it("người nhiều vai đang dùng vai giảng viên: thông báo phía học viên KHÔNG dẫn về trang khoá của giảng viên", () => {
+    for (const type of ["new_lesson", "quiz_reminder", "certificate_earned", "promotion"]) {
+      expect(getNotificationHref({ notification_type: type, reference_type: "course", reference_id: "c9" }, "TEACHER")).not.toBe(
+        "/teacher/courses/c9",
+      );
+    }
+  });
+
+  it("vai khác giữ cách cũ", () => {
+    expect(getNotificationHref({ notification_type: "payment_success" }, "STUDENT")).toBeNull();
+    expect(getNotificationHref({ notification_type: "course_update", reference_type: "course", reference_id: "c1" })).toBeNull();
+  });
+});

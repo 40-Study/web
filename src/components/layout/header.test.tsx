@@ -71,6 +71,16 @@ describe("Header — menu tài khoản", () => {
     expect(screen.getAllByRole("link", { name: /Đơn hàng của tôi/ }).length).toBeGreaterThan(0);
   });
 
+  it("Q4-T21: huy hiệu vai giảng viên ghi 'Giảng viên', không phải 'Giáo viên'", () => {
+    authState.activeRole = "TEACHER";
+    authState.activeUnifiedRole = { id: "sr-teacher", type: "system", role_name: "TEACHER" } as never;
+    authState.roles = [{ id: "sr-teacher", type: "system", role_name: "TEACHER", display_name: "TEACHER" }] as never;
+    render(<Header />);
+    openMenu();
+    expect(screen.getAllByText("Giảng viên").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Giáo viên")).toBeNull();
+  });
+
   it("giảng viên KHÔNG thấy 'Đơn hàng của tôi'", () => {
     authState.activeRole = "TEACHER";
     render(<Header />);

@@ -37,6 +37,7 @@ import {
 } from "@/lib/submission-grading";
 import type { Grade } from "@/services/grade.service";
 import { SubmissionGradeDialog, formatDateTime } from "./submission-grade-dialog";
+import { SubmissionCardList } from "./submission-card-list";
 
 type StatusFilter = "all" | "ungraded" | "graded" | "late";
 
@@ -206,8 +207,12 @@ export function SubmissionGradingPanel({ assignmentId }: SubmissionGradingPanelP
         </p>
       )}
 
-      {/* Bảng bài nộp */}
-      <div className="overflow-x-auto rounded-xl border">
+      {/* Bảng bài nộp: thẻ xếp dọc dưới md (Q4-T18), bảng từ md trở lên. */}
+      <div className="rounded-xl border">
+        <div className="md:hidden">
+          <SubmissionCardList rows={filtered} canGrade={canGrade} onOpen={setOpenStudentId} />
+        </div>
+        <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[720px]">
           <thead className="bg-muted/50">
             <tr>
@@ -273,6 +278,7 @@ export function SubmissionGradingPanel({ assignmentId }: SubmissionGradingPanelP
             ))}
           </tbody>
         </table>
+        </div>
 
         {filtered.length === 0 && (
           <div className="p-8 text-center text-muted-foreground">

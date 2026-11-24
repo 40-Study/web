@@ -8,3 +8,4 @@ export * from "./teacher-sidebar";
 export * from "./student-header";
 export * from "./student-sidebar";
 export * from "./student-layout";
+export * from "./teacher-frame";

@@ -34,7 +34,8 @@ interface MenuItem {
 const ROLE_BADGE_CLASS = "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300";
 const ROLE_CONFIG: Record<string, { label: string; icon: LucideIcon }> = {
   STUDENT: { label: "Học sinh", icon: GraduationCap },
-  TEACHER: { label: "Giáo viên", icon: Presentation },
+  // Q4-T21: cả ứng dụng gọi là "Giảng viên"; huy hiệu menu tài khoản từng ghi "Giáo viên".
+  TEACHER: { label: "Giảng viên", icon: Presentation },
   PARENT: { label: "Phụ huynh", icon: Users },
   ORG_OWNER: { label: "Quản lý", icon: Building2 },
   SYSTEM_ADMIN: { label: "Admin", icon: ShieldCheck },
@@ -256,7 +257,7 @@ export function Header() {
                           onClick={() => {
                             if (!item.is_read) markReadMutation.mutate(item.id);
                             setIsNotificationOpen(false);
-                            const href = getNotificationHref(item);
+                            const href = getNotificationHref(item, normalizedRole);
                             if (href) router.push(href);
                           }}
                         >

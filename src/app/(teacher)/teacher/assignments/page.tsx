@@ -34,6 +34,9 @@ import {
   useDeleteAssignment,
 } from "@/hooks/queries/use-assignments";
 import { AssignmentListItem } from "./assignment-list-item";
+import { DeleteAssignmentDialog } from "./delete-assignment-dialog";
+import { DUE_DATE_IN_PAST_MESSAGE, isDueDateInPast } from "./assignment-due-date";
+import { toast } from "sonner";
 import { orderAssignmentCourses } from "./assignment-course-order";
 import { COURSE_STATUS_LABEL, isCourseStatus } from "@/types/approval";
 import type { ApiCourse } from "@/services/course.service";
@@ -85,6 +88,8 @@ export default function TeacherAssignmentsPage() {
   const [language, setLanguage] = useState("python");
   const [dueAt, setDueAt] = useState("");
   const [instructions, setInstructions] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<AssignmentResponseDTO | null>(null);
+  const dueInPast = isDueDateInPast(dueAt);
 
   // Set initial course from URL params once courses load
   useEffect(() => {
@@ -163,7 +168,7 @@ export default function TeacherAssignmentsPage() {
   };
 
   const handleCreateAssignment = () => {
-    if (!selectedSessionId || !title.trim() || !instructions.trim()) return;
+    if (!selectedSessionId || !title.trim() || !instructions.trim() || dueInPast) return;
     createMutation.mutate(
       {
         sessionId: selectedSessionId,
@@ -192,14 +197,24 @@ export default function TeacherAssignmentsPage() {
   const handleTogglePublish = (assignment: AssignmentResponseDTO) => {
     if (assignment.is_published) {
       unpublishMutation.mutate({ id: assignment.id, sessionId: selectedSessionId });
+    } else if (isDueDateInPast(assignment.end_time)) {
+      // Q4-T08: công bố bài đã quá hạn nộp -> học viên nhận bài quá hạn ngay; backend cũng chặn (ERR_DUE_DATE_IN_PAST).
+      toast.error(`${DUE_DATE_IN_PAST_MESSAGE} Bài tập này đã quá hạn nộp nên không thể công bố.`);
     } else {
       publishMutation.mutate({ id: assignment.id, sessionId: selectedSessionId });
     }
   };
 
-  const handleDelete = (assignmentId: string) => {
-    deleteMutation.mutate({ id: assignmentId, sessionId: selectedSessionId });
-    if (selectedAssignmentId === assignmentId) setSelectedAssignmentId("");
+  const handleConfirmDelete = (assignment: AssignmentResponseDTO) => {
+    deleteMutation.mutate(
+      { id: assignment.id, sessionId: selectedSessionId },
+      {
+        onSuccess: () => {
+          if (selectedAssignmentId === assignment.id) setSelectedAssignmentId("");
+        },
+        onSettled: () => setPendingDelete(null),
+      }
+    );
   };
 
   return (
@@ -292,7 +307,7 @@ export default function TeacherAssignmentsPage() {
                     {session.title}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {sessionStatusLabel(session.status)}
+                    {sessionStatusLabel(session.status, session.scheduled_at)}
                     {session.scheduled_at ? ` · ${formatVnDateThenTime(session.scheduled_at)}` : ""}
                   </p>
                 </button>
@@ -398,7 +413,14 @@ export default function TeacherAssignmentsPage() {
                   value={dueAt}
                   onChange={(e) => setDueAt(e.target.value)}
                   disabled={!selectedSessionId}
+                  aria-invalid={dueInPast || undefined}
+                  aria-describedby={dueInPast ? "assignment-due-error" : undefined}
                 />
+                {dueInPast && (
+                  <p id="assignment-due-error" role="alert" className="text-xs text-red-600">
+                    {DUE_DATE_IN_PAST_MESSAGE}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2 md:col-span-2">
@@ -424,6 +446,7 @@ export default function TeacherAssignmentsPage() {
                     !title.trim() ||
                     !instructions.trim() ||
                     !language.trim() ||
+                    dueInPast ||
                     createMutation.isPending
                   }
                 >
@@ -471,7 +494,7 @@ export default function TeacherAssignmentsPage() {
                     selected={assignment.id === selectedAssignmentId}
                     onSelect={() => setSelectedAssignmentId(assignment.id)}
                     onTogglePublish={() => handleTogglePublish(assignment)}
-                    onDelete={() => handleDelete(assignment.id)}
+                    onDelete={() => setPendingDelete(assignment)}
                     togglePending={publishMutation.isPending || unpublishMutation.isPending}
                     deletePending={deleteMutation.isPending}
                   />
@@ -496,6 +519,12 @@ export default function TeacherAssignmentsPage() {
           </Card>
         </div>
       </div>
+      <DeleteAssignmentDialog
+        assignment={pendingDelete}
+        pending={deleteMutation.isPending}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

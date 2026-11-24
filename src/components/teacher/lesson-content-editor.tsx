@@ -315,14 +315,14 @@ function ContentItemRow({ item, onEdit, onRemove }: ContentItemRowProps) {
       </div>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         {onEdit && (
-          <Button variant="ghost" size="icon" onClick={onEdit}>
+          <Button variant="ghost" size="icon" aria-label="Chỉnh sửa" onClick={onEdit}>
             <Edit2 className="h-4 w-4" />
           </Button>
         )}
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" aria-label="Xem">
           <Eye className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={onRemove}>
+        <Button variant="ghost" size="icon" aria-label="Xoá" onClick={onRemove}>
           <Trash2 className="h-4 w-4 text-destructive" />
         </Button>
       </div>

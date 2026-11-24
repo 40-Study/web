@@ -69,9 +69,10 @@ export function ClassCreateForm({
         <Input type="number" value={maxStudents} onChange={(e) => setMaxStudents(e.target.value)} placeholder="30" className="w-32" />
       </div>
       <ClassOrganizationField value={organizationId} onChange={setOrganizationId} />
-      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+      {/* Q4-T20: ClassSourceBadge là <div>; <div> trong <p> làm React báo lỗi hydration. */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         Lớp sẽ được tạo là <ClassSourceBadge organizationId={organizationId || null} />
-      </p>
+      </div>
       <div className="flex gap-2 pt-2">
         {onCancel && (
           <Button variant="outline" onClick={onCancel}>Huỷ</Button>

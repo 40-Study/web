@@ -5,6 +5,7 @@ import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 import { Footer } from "./footer";
 import { BottomNav } from "./bottom-nav";
+import { TeacherFrame } from "./teacher-frame";
 import { useSidebarStore } from "@/stores/sidebar.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { normalizeRole } from "@/lib/routes";
@@ -12,9 +13,14 @@ import { cn } from "@/lib/utils";
 
 interface AppShellLayoutProps {
   children: React.ReactNode;
+  /**
+   * Chỉ layout của trang ứng dụng đã đăng nhập ((app), (dashboard)) bật cờ này. Trang công khai ((main): /courses,
+   * /help, /terms, /privacy, /teachers, /discussions...) giữ khung chung + Footer (liên kết pháp lý) cho cả giảng viên.
+   */
+  allowTeacherFrame?: boolean;
 }
 
-export function AppShellLayout({ children }: AppShellLayoutProps) {
+export function AppShellLayout({ children, allowTeacherFrame = false }: AppShellLayoutProps) {
   const pathname = usePathname();
   const contestFocus = /^\/contests\/[^/]+\/(play|result)$/.test(pathname);
   // Đang làm bài quiz: thanh tab dưới đè lên "Câu trước / Tiếp theo" ở mobile (QA4 S18). Trang kết quả giữ thanh tab.
@@ -37,6 +43,11 @@ export function AppShellLayout({ children }: AppShellLayoutProps) {
         : normalizedRole === "TEACHER"
           ? "teacher" // B-11: giảng viên ghé trang dùng chung vẫn thấy tab giảng viên
           : "student";
+
+  // Q4-T19: giảng viên ghé trang dùng chung (thông báo, tin nhắn, hồ sơ) vẫn ở trong khung giảng viên.
+  if (allowTeacherFrame && isAuthenticated && normalizedRole === "TEACHER" && !contestFocus) {
+    return <TeacherFrame>{children}</TeacherFrame>;
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

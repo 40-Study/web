@@ -14,7 +14,6 @@ export const LEVELS = [
 
 export interface CourseFormData {
   title: string;
-  format: string;
   category_id: string;
   level: string;
   short_description: string;
@@ -34,7 +33,6 @@ export interface CourseFormData {
   price: string;
   discount_price: string;
   discount_expires_at: string;
-  is_featured: boolean;
   // Khác
   language: string;
   tag_ids: string[];
@@ -42,7 +40,6 @@ export interface CourseFormData {
 
 export const initialCourseFormData: CourseFormData = {
   title: "",
-  format: "hybrid",
   category_id: "",
   level: "all",
   short_description: "",
@@ -60,7 +57,6 @@ export const initialCourseFormData: CourseFormData = {
   price: "",
   discount_price: "",
   discount_expires_at: "",
-  is_featured: false,
   language: "vi",
   tag_ids: [],
 };
@@ -201,4 +197,15 @@ export function buildCourseUpdatePayload(form: CourseFormData, original: ApiCour
   // Đang xoá khuyến mãi thì bỏ luôn hạn (backend xoá cả hai); hạn không gắn với giá nào vô nghĩa.
   if (form.discount_expires_at && !clearDiscount) payload.discount_expires_at = new Date(form.discount_expires_at).toISOString();
   return { payload };
+}
+
+/**
+ * Q4-T14: bước 2 đánh dấu "Ảnh bìa *" và "Mô tả chi tiết *" bắt buộc nhưng vẫn cho đi tiếp khi trống (chỉ bị chặn
+ * lúc gửi duyệt, 422 COURSE_INCOMPLETE). Trả danh sách mục còn thiếu; ảnh đang tải lên được tính là đã có.
+ */
+export function missingMediaItems(formData: Pick<CourseFormData, "thumbnail_url" | "description">, thumbnailUploading: boolean): string[] {
+  const missing: string[] = [];
+  if (!formData.thumbnail_url && !thumbnailUploading) missing.push("ảnh bìa");
+  if (!formData.description.trim()) missing.push("mô tả chi tiết");
+  return missing;
 }

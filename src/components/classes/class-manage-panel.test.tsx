@@ -187,4 +187,14 @@ describe("ClassManagePanel", () => {
     expect(await screen.findByText("Tổ chức")).toBeTruthy();
     expect(screen.queryByText("Cá nhân")).toBeNull();
   });
+
+  it("Q4-T16: lớp gắn khoá, ô chọn học viên rỗng: nói rõ chỉ thêm được học viên đã ghi danh khoá", async () => {
+    serve({ status: "active", can_manage: true, course_id: "course-1" });
+    const base = mockApi.get.getMockImplementation()!;
+    mockApi.get.mockImplementation((url: string) =>
+      url.endsWith("/enrollable-students") ? Promise.resolve(envelope({ students: [] })) : base(url),
+    );
+    renderWithProviders(<ClassManagePanel classId={CLASS_ID} />);
+    expect(await screen.findByText(/Chỉ thêm được học viên đã ghi danh khoá học của lớp này/)).toBeTruthy();
+  });
 });

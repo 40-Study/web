@@ -333,7 +333,7 @@ export function CourseMediaStep({
               onChange={(e) => updateList("objectives", i, e.target.value)}
             />
             {formData.objectives.length > 1 && (
-              <Button variant="ghost" size="icon" onClick={() => removeFromList("objectives", i)}>
+              <Button variant="ghost" size="icon" aria-label={`Xoá mục tiêu ${i + 1}`} onClick={() => removeFromList("objectives", i)}>
                 <Trash2 className="w-4 h-4 text-red-400" />
               </Button>
             )}
@@ -355,7 +355,7 @@ export function CourseMediaStep({
               onChange={(e) => updateList("requirements", i, e.target.value)}
             />
             {formData.requirements.length > 1 && (
-              <Button variant="ghost" size="icon" onClick={() => removeFromList("requirements", i)}>
+              <Button variant="ghost" size="icon" aria-label={`Xoá yêu cầu ${i + 1}`} onClick={() => removeFromList("requirements", i)}>
                 <Trash2 className="w-4 h-4 text-red-400" />
               </Button>
             )}
@@ -377,7 +377,7 @@ export function CourseMediaStep({
               onChange={(e) => updateList("target_audience", i, e.target.value)}
             />
             {formData.target_audience.length > 1 && (
-              <Button variant="ghost" size="icon" onClick={() => removeFromList("target_audience", i)}>
+              <Button variant="ghost" size="icon" aria-label={`Xoá đối tượng ${i + 1}`} onClick={() => removeFromList("target_audience", i)}>
                 <Trash2 className="w-4 h-4 text-red-400" />
               </Button>
             )}

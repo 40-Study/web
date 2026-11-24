@@ -3,22 +3,16 @@
 import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { withClassPrefix } from "@/lib/class-label";
 import { STUDENT_STATUS_LABEL, type GroupedStudent } from "./group-students";
+import { ParentContact } from "./parent-contact";
 
-interface StudentMobileCardProps {
-  student: GroupedStudent;
-  selected: boolean;
-  onToggle: () => void;
-}
 
 /** Thẻ học viên cho màn hình < md (Q3-21): đủ trạng thái + thao tác mà bảng 6 cột làm bị cắt. */
-export function StudentMobileCard({ student, selected, onToggle }: StudentMobileCardProps) {
+export function StudentMobileCard({ student }: { student: GroupedStudent }) {
   return (
     <li className="space-y-2 p-4" data-testid="student-card">
       <div className="flex items-start gap-3">
-        <Checkbox checked={selected} onCheckedChange={onToggle} aria-label={`Chọn ${student.name}`} className="mt-1" />
         <Avatar fallback={student.name.charAt(0)} size="sm" className="bg-primary-100 text-primary-700" />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{student.name}</p>
@@ -40,12 +34,7 @@ export function StudentMobileCard({ student, selected, onToggle }: StudentMobile
       </ul>
       <div className="flex items-center justify-between text-sm">
         {student.parentName ? (
-          <a
-            href={student.parentPhone ? `tel:${student.parentPhone}` : undefined}
-            className="text-primary-600 hover:underline"
-          >
-            PH: {student.parentName}
-          </a>
+          <ParentContact name={student.parentName} phone={student.parentPhone} prefix="PH: " />
         ) : (
           <span className="text-muted-foreground">PH: —</span>
         )}

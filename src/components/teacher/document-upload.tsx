@@ -287,6 +287,7 @@ export function DocumentUpload({
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label={`Xoá tài liệu ${doc.name}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleRemove(doc.id);

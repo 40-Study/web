@@ -52,12 +52,21 @@ vi.mock("@/components/editor/tiptap-editor", () => ({
   ),
 }));
 
+let mockCourseStatus = "draft";
+vi.mock("@/hooks/queries/use-courses", () => ({
+  useCourse: () => ({ data: { id: "course-1", status: mockCourseStatus } }),
+}));
+
 vi.mock("@/components/teacher/subtitle-upload-field", () => ({ SubtitleUploadField: () => null }));
 
 // eslint-disable-next-line import/first
 import TeacherLessonDetailPage from "./page";
 
 describe("/teacher/courses/[id]/lessons/[lessonId] (T8/T9)", () => {
+  beforeEach(() => {
+    mockCourseStatus = "draft";
+  });
+
   beforeEach(() => {
     mockContents = [];
     mockCreateContent.mockReset().mockResolvedValue({ id: "new" });
@@ -97,6 +106,7 @@ describe("/teacher/courses/[id]/lessons/[lessonId] (T8/T9)", () => {
 // QA 261008 T1 — trang bài học từng không có chỗ nào để soạn nội dung bài viết.
 describe("/teacher/courses/[id]/lessons/[lessonId] — soạn bài viết (T1)", () => {
   beforeEach(() => {
+    mockCourseStatus = "draft";
     mockContents = [];
     mockCreateContent.mockReset().mockResolvedValue({ id: "new" });
     mockUpdateContent.mockReset().mockResolvedValue({ id: "c-art" });
@@ -180,5 +190,26 @@ describe("/teacher/courses/[id]/lessons/[lessonId] — soạn bài viết (T1)",
     expect(screen.queryByLabelText("Tiêu đề bài viết")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Thêm bài viết" }));
     expect(screen.getByLabelText("Tiêu đề bài viết")).toBeTruthy();
+  });
+});
+
+describe("/teacher/courses/[id]/lessons/[lessonId] — khoá đang chờ duyệt (Q4-T13)", () => {
+  beforeEach(() => {
+    mockCourseStatus = "pending_review";
+    mockContents = [];
+  });
+
+  it("không mở trình soạn bài viết, báo khoá đang chờ duyệt", () => {
+    render(<TeacherLessonDetailPage />);
+    expect(screen.getByRole("status").textContent).toContain("đang chờ duyệt");
+    expect(screen.queryByRole("button", { name: "Tạo bài viết" })).toBeNull();
+    expect(screen.queryByLabelText("Tiêu đề bài viết")).toBeNull();
+  });
+
+  it("bài viết đã có chỉ hiển thị để đọc, không có nút lưu", () => {
+    mockContents = [{ id: "c1", type: "article", title: "Bài đọc", article_body: "<p>Nội dung</p>" }];
+    render(<TeacherLessonDetailPage />);
+    expect(screen.getByText("Bài đọc")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Lưu thay đổi" })).toBeNull();
   });
 });

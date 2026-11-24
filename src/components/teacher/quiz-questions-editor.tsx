@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,14 @@ import {
 import { cn } from "@/lib/utils";
 import type { QuizQuestion } from "@/services/quiz.service";
 
-function QuestionRow({ quizId, question, index }: { quizId: string; question: QuizQuestion; index: number }) {
+interface QuestionRowProps {
+  quizId: string;
+  question: QuizQuestion;
+  index: number;
+  onDirtyChange: (questionId: string, dirty: boolean) => void;
+}
+
+function QuestionRow({ quizId, question, index, onDirtyChange }: QuestionRowProps) {
   const original = questionToDraft(question);
   const [draft, setDraft] = useState<QuestionEditDraft>(original);
   const update = useUpdateQuizQuestion(quizId);
@@ -28,6 +35,12 @@ function QuestionRow({ quizId, question, index }: { quizId: string; question: Qu
   const error = validateQuestionDraft(question.question_type, draft);
   const changed = isDraftChanged(original, draft);
   const n = index + 1;
+
+  // Q4-T03: báo lên hộp thoại câu nào còn sửa dở, để nút "Lưu thay đổi" không âm thầm bỏ mất chỉnh sửa.
+  useEffect(() => {
+    onDirtyChange(question.id, changed);
+  }, [question.id, changed, onDirtyChange]);
+  useEffect(() => () => onDirtyChange(question.id, false), [question.id, onDirtyChange]);
 
   const setCorrect = (i: number) =>
     setDraft((d) => ({
@@ -110,9 +123,30 @@ function QuestionRow({ quizId, question, index }: { quizId: string; question: Qu
  * Câu hỏi của quiz ĐÃ TẠO (Q3-16): sửa nội dung, đáp án và giải thích; mỗi câu lưu riêng. Thêm/xoá/sắp xếp lại
  * câu hỏi chưa có ở đây.
  */
-export function QuizQuestionsEditor({ quizId }: { quizId: string }) {
+export function QuizQuestionsEditor({
+  quizId,
+  onUnsavedChange,
+}: {
+  quizId: string;
+  /** Q4-T03: số câu còn chỉnh sửa chưa lưu (0 = không còn). */
+  onUnsavedChange?: (count: number) => void;
+}) {
   const { data, isLoading, isError } = useQuizQuestions(quizId);
   const questions = Array.isArray(data) ? [...data].sort((a, b) => a.display_order - b.display_order) : [];
+  const [dirtyIds, setDirtyIds] = useState<ReadonlySet<string>>(() => new Set());
+  const handleDirtyChange = useCallback((questionId: string, dirty: boolean) => {
+    setDirtyIds((prev) => {
+      if (prev.has(questionId) === dirty) return prev;
+      const next = new Set(prev);
+      if (dirty) next.add(questionId);
+      else next.delete(questionId);
+      return next;
+    });
+  }, []);
+  const unsaved = dirtyIds.size;
+  useEffect(() => {
+    onUnsavedChange?.(unsaved);
+  }, [unsaved, onUnsavedChange]);
 
   if (isLoading) {
     return (
@@ -137,7 +171,7 @@ export function QuizQuestionsEditor({ quizId }: { quizId: string }) {
         Mỗi câu lưu riêng bằng nút &ldquo;Lưu câu&rdquo;. Thêm, xoá hoặc sắp xếp lại câu hỏi chưa hỗ trợ ở đây.
       </p>
       {questions.map((q, i) => (
-        <QuestionRow key={q.id} quizId={quizId} question={q} index={i} />
+        <QuestionRow key={q.id} quizId={quizId} question={q} index={i} onDirtyChange={handleDirtyChange} />
       ))}
     </section>
   );

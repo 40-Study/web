@@ -135,3 +135,20 @@ describe("ClassAttendancePage — Q3-21 / Q3-04", () => {
     expect(screen.getByRole("group", { name: "Trạng thái của Bé Minh" })).toBeTruthy();
   });
 });
+
+describe("ClassAttendancePage — buổi chưa diễn ra (Q4-T07)", () => {
+  it("chọn buổi sau hôm nay: báo chưa điểm danh được, khoá nút và bảng", () => {
+    state.hasChanges = true;
+    state.rows = [{ studentId: "u1" }];
+    state.sessions = {
+      data: { sessions: [{ id: "s-future", date: "2099-01-05", start_time: "18:00", end_time: "20:00", status: "scheduled" }] },
+      isLoading: false,
+    };
+    render(<ClassAttendancePage />);
+
+    expect(screen.getByRole("status").textContent).toContain("chưa diễn ra nên chưa thể điểm danh");
+    expect((screen.getByRole("button", { name: "Lưu điểm danh" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Đánh dấu tất cả có mặt" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByTestId("table").getAttribute("data-disabled")).toBe("true");
+  });
+});

@@ -61,7 +61,7 @@ export function CourseEditForm({ course }: { course: ApiCourse }) {
     <div className="space-y-6" data-testid="course-edit-form">
       <Card>
         <CardContent className="p-4 sm:p-6">
-          <CourseBasicInfoStep formData={formData} update={update} showFormat={false} />
+          <CourseBasicInfoStep formData={formData} update={update} />
         </CardContent>
       </Card>
       <Card>
@@ -74,7 +74,7 @@ export function CourseEditForm({ course }: { course: ApiCourse }) {
           />
         </CardContent>
       </Card>
-      <CoursePricingStep formData={formData} update={update} showFeatured={false} />
+      <CoursePricingStep formData={formData} update={update} />
 
       {error && (
         <div

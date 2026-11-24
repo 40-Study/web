@@ -64,9 +64,12 @@ export default function ClassAttendancePage() {
   // Lớp lưu trữ chỉ đọc: backend từ chối ghi điểm danh (409 CLASS_ARCHIVED).
   const { data: classInfo } = useClassById(classId);
   const archived = isClassArchived(classInfo?.status);
+  // Q4-T07: buổi sau hôm nay (giờ Việt Nam) chưa được điểm danh; backend cũng chặn (422 ERR_SESSION_NOT_STARTED).
+  const notStarted = groups.upcoming.some((s) => s.id === sessionId);
+  const readOnly = archived || notStarted;
 
   async function handleSave() {
-    if (archived) return;
+    if (readOnly) return;
     const { toCreate, toUpdate } = changes;
 
     try {
@@ -142,7 +145,7 @@ export default function ClassAttendancePage() {
                   </optgroup>
                 )}
                 {groups.upcoming.length > 0 && (
-                  <optgroup label="Sắp tới">
+                  <optgroup label="Sắp tới (chưa điểm danh được)">
                     {groups.upcoming.map((s) => (
                       <SessionOption key={s.id} session={s} />
                     ))}
@@ -154,7 +157,7 @@ export default function ClassAttendancePage() {
             <button
               type="button"
               onClick={markAllPresent}
-              disabled={archived || saving || rows.length === 0}
+              disabled={readOnly || saving || rows.length === 0}
               className="rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               Đánh dấu tất cả có mặt
@@ -163,7 +166,7 @@ export default function ClassAttendancePage() {
             <button
               type="button"
               onClick={handleSave}
-              disabled={archived || !hasChanges || saving}
+              disabled={readOnly || !hasChanges || saving}
               className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
             >
               {saving ? "Đang lưu…" : "Lưu điểm danh"}
@@ -173,6 +176,13 @@ export default function ClassAttendancePage() {
           {archived && (
             <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
               Lớp đã lưu trữ: chỉ xem điểm danh. Hãy mở lại lớp ở trang quản lý lớp để điểm danh tiếp.
+            </p>
+          )}
+
+          {notStarted && selectedSession && (
+            <p role="status" className="mb-4 rounded-md bg-sky-50 px-3 py-2 text-sm text-sky-800">
+              Buổi học ngày {formatVnDateOnly(selectedSession.date)} chưa diễn ra nên chưa thể điểm danh. Bạn có thể
+              điểm danh từ ngày học trở đi.
             </p>
           )}
 
@@ -193,10 +203,10 @@ export default function ClassAttendancePage() {
             <>
               {/* Dưới md bảng 720px cắt nút trạng thái (Q3-21): dùng thẻ xếp dọc. */}
               <div className="md:hidden">
-                <AttendanceCardList rows={rows} onStatusChange={setStatus} onNoteChange={setNote} disabled={archived || saving} />
+                <AttendanceCardList rows={rows} onStatusChange={setStatus} onNoteChange={setNote} disabled={readOnly || saving} />
               </div>
               <div className="hidden md:block">
-                <AttendanceTable rows={rows} onStatusChange={setStatus} onNoteChange={setNote} disabled={archived || saving} />
+                <AttendanceTable rows={rows} onStatusChange={setStatus} onNoteChange={setNote} disabled={readOnly || saving} />
               </div>
             </>
           )}

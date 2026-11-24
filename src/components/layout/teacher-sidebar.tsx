@@ -74,7 +74,7 @@ export function TeacherSidebar({ className }: TeacherSidebarProps) {
                     {!isCollapsed && (
                         <div className="flex flex-col overflow-hidden">
                             <span className="text-sm font-medium truncate">
-                                {user?.name || "Giáo viên"}
+                                {user?.name || "Giảng viên"}
                             </span>
                             <span className="text-xs text-muted-foreground truncate">
                                 Giảng viên

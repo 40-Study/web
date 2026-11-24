@@ -1,6 +1,5 @@
 "use client";
 
-import { Check, Layers, Play, Radio } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,27 +10,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import { useCategoryList } from "@/hooks/queries/use-categories";
 import { LEVELS, type CourseFormData, type UpdateCourseFormField } from "./course-form-model";
 
-export const FORMATS = [
-  { id: "video", label: "Video Quay Sẵn", description: "Học qua video bài giảng", icon: Play },
-  { id: "livestream", label: "Livestream", description: "Học trực tiếp qua Zoom/Meet", icon: Radio },
-  { id: "hybrid", label: "Hybrid (Kết hợp)", description: "Video & Buổi học trực tiếp", icon: Layers },
-];
-
-/** Bước "Thông tin cơ bản" — dùng chung trang tạo và trang sửa khoá. */
-export function CourseBasicInfoStep({
-  formData,
-  update,
-  showFormat = true,
-}: {
-  formData: CourseFormData;
-  update: UpdateCourseFormField;
-  // Định dạng giảng dạy chưa được lưu ở backend — chỉ hiện ở trang tạo (giữ hành vi cũ).
-  showFormat?: boolean;
-}) {
+/**
+ * Bước "Thông tin cơ bản" — dùng chung trang tạo và trang sửa khoá.
+ * Q4-T04: bỏ ô "Định dạng giảng dạy" (Video/Livestream/Kết hợp): backend không có trường này nên lựa chọn không
+ * được lưu. Buổi học trực tiếp là tính năng riêng (lịch dạy, nội dung livestream trong bài học).
+ */
+export function CourseBasicInfoStep({ formData, update }: { formData: CourseFormData; update: UpdateCourseFormField }) {
   const { data: categoriesRaw } = useCategoryList();
   const categories = Array.isArray(categoriesRaw) ? categoriesRaw : [];
 
@@ -60,50 +47,6 @@ export function CourseBasicInfoStep({
           Đường dẫn khoá học (slug) sẽ được tạo tự động từ tên này.
         </p>
       </div>
-
-      {/* Format */}
-      {showFormat && (
-      <div className="space-y-3">
-        <Label>
-          Định dạng giảng dạy <span className="text-red-500">*</span>
-        </Label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {FORMATS.map((format) => {
-            const Icon = format.icon;
-            const selected = formData.format === format.id;
-            return (
-              <button
-                key={format.id}
-                type="button"
-                onClick={() => update("format", format.id)}
-                className={cn(
-                  "relative flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all text-center",
-                  selected
-                    ? "border-primary-500 bg-primary-50 shadow-sm"
-                    : "border-gray-200 hover:border-gray-300 bg-white"
-                )}
-              >
-                <div
-                  className={cn(
-                    "w-11 h-11 rounded-full flex items-center justify-center",
-                    selected ? "bg-primary-100 text-primary-600" : "bg-gray-100 text-gray-400"
-                  )}
-                >
-                  <Icon className="w-5 h-5" />
-                </div>
-                <p className="font-medium text-sm">{format.label}</p>
-                <p className="text-xs text-muted-foreground leading-tight">{format.description}</p>
-                {selected && (
-                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary-600 flex items-center justify-center">
-                    <Check className="w-3 h-3 text-white" />
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      )}
 
       {/* Category + Level */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

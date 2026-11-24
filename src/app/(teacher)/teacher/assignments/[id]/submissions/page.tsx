@@ -37,11 +37,11 @@ export default function AssignmentSubmissionsPage() {
   return (
     <div className="container max-w-6xl space-y-6 py-6">
       <div className="flex items-center gap-3">
-        <Link href="/teacher/assignments" aria-label="Quay lại danh sách bài tập">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
+        <Button variant="ghost" size="icon" asChild>
+          <Link href="/teacher/assignments" aria-label="Quay lại danh sách bài tập">
+            <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+          </Link>
+        </Button>
         {assignment ? (
           <div className="flex items-center gap-3">
             <div

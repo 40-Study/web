@@ -126,7 +126,9 @@ describe("ScheduleEventFormDialog — lưu bất đồng bộ", () => {
     render(<ScheduleEventFormDialog open onOpenChange={onOpenChange} event={event()} onSave={onSave} onDelete={onDelete} />);
     fireEvent.click(screen.getByRole("button", { name: "Huỷ buổi học" }));
     expect(onDelete).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Huỷ" }));
+    // Q4-T21: nút đóng form cạnh "Huỷ buổi học" ghi "Đóng", không phải "Huỷ".
+    expect(screen.queryByRole("button", { name: "Huỷ" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
     expect(onDelete).not.toHaveBeenCalled(); expect(onSave).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Xác nhận huỷ buổi" }));
     await waitFor(() => expect(onDelete).toHaveBeenCalledTimes(1));
