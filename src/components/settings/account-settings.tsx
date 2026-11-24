@@ -17,7 +17,7 @@ import { isIncorrectCurrentPasswordError } from "@/hooks/queries/use-auth";
 import { getErrorMessage } from "@/lib/error-messages";
 import { validateNewPassword } from "@/lib/password-policy";
 import { PasswordChecklist } from "@/components/auth/password-checklist";
-import { getSystemRoleLabel } from "@/lib/role-labels";
+import { getOrgRoleLabel, getSystemRoleLabel } from "@/lib/role-labels";
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
 
@@ -56,10 +56,18 @@ const ROLE_CONFIG: Record<string, { label: string; color: string; bgColor: strin
 
 // QA-C-09: nhãn lấy từ bảng chung `getSystemRoleLabel` (màn chọn vai lúc login, danh sách thành viên cũng dùng) để
 // cùng một vai không lúc là "Quản lý tổ chức", lúc là "Chủ tổ chức". ROLE_CONFIG chỉ còn giữ màu và icon.
-function getRoleConfig(role: string) {
-  const base = ROLE_CONFIG[role] || { label: role, color: "text-gray-600", bgColor: "bg-gray-100", icon: "👤" };
-  return { ...base, label: getSystemRoleLabel(role) };
+// QA5 S5-05: vai TRONG tổ chức (ORG_STUDENT, ORG_TEACHER, mã tuỳ biến) không có trong bảng vai hệ thống nên lộ
+// nguyên mã; dùng `getOrgRoleLabel` khi vai thuộc tổ chức, và mượn màu/icon của vai hệ thống tương ứng.
+function getRoleConfig(role: string, inOrganization = false) {
+  const base =
+    ROLE_CONFIG[role] ||
+    ROLE_CONFIG[role.replace(/^ORG_/, "")] ||
+    { label: role, color: "text-gray-600", bgColor: "bg-gray-100", icon: "👤" };
+  return { ...base, label: inOrganization ? getOrgRoleLabel(role) : getSystemRoleLabel(role) };
 }
+
+const isOrgRole = (r: Pick<UnifiedRole, "type" | "organization_id"> | null | undefined) =>
+  !!r && (r.type === "organization" || !!r.organization_id);
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
@@ -153,7 +161,7 @@ export function AccountSettings({
               <p className="text-sm text-gray-500">
                 {activeUnifiedRole ? (
                   <>
-                    Đang dùng: <span className={getRoleConfig(activeRole || "").color}>{getRoleConfig(activeRole || "").label}</span>
+                    Đang dùng: <span className={getRoleConfig(activeRole || "", isOrgRole(activeUnifiedRole)).color}>{getRoleConfig(activeRole || "", isOrgRole(activeUnifiedRole)).label}</span>
                     {activeOrg && <span className="text-gray-400"> • {activeOrg.name}</span>}
                   </>
                 ) : (
@@ -301,7 +309,7 @@ export function AccountSettings({
             <p className="px-3 py-2 text-xs font-medium text-gray-500 uppercase">Vai trò của bạn</p>
             <div className="space-y-1">
               {roles.map((role, idx) => {
-                const config = getRoleConfig(role.role_name);
+                const config = getRoleConfig(role.role_name, isOrgRole(role));
                 const isActive = role.role_name === activeRole && role.organization_id === activeOrg?.id;
                 return (
                   <button

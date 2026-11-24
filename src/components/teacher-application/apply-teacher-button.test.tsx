@@ -169,4 +169,14 @@ describe("ApplyTeacherButton", () => {
     render(<ApplyTeacherButton />);
     expect(screen.queryByTestId("apply-teacher-button")).not.toBeNull();
   });
+
+  it("S5-06: thẻ xếp dọc ở màn nhỏ (flex-col), nút full-width, chữ không bị ép cột hẹp", () => {
+    render(<ApplyTeacherButton />);
+    const button = screen.getByTestId("apply-teacher-button");
+    expect(button.className).toContain("w-full");
+    expect(button.className).toContain("sm:w-auto");
+    const row = button.parentElement as HTMLElement;
+    expect(row.className).toContain("flex-col");
+    expect(row.className).toContain("sm:flex-row");
+  });
 });

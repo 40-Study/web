@@ -131,12 +131,13 @@ export function ApplyTeacherButton() {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="p-2.5 bg-emerald-50 rounded-xl">
+      {/* S5-06: ở 390px nút chiếm cả hàng nên chữ bị ép thành một cột một-từ-một-dòng; xếp dọc rồi mới ngang từ sm. */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="p-2.5 bg-emerald-50 rounded-xl shrink-0">
             <GraduationCap className="h-5 w-5 text-emerald-600" />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="font-medium text-gray-900">Giảng dạy trên {siteConfig.name}</p>
             <p className="text-sm text-gray-500">
               {applicantRole
@@ -147,7 +148,7 @@ export function ApplyTeacherButton() {
         </div>
         <Button
           size="sm"
-          className="rounded-xl shrink-0"
+          className="rounded-xl shrink-0 w-full sm:w-auto"
           onClick={handleClick}
           isLoading={isWorking}
           data-testid="apply-teacher-button"
