@@ -135,3 +135,45 @@ describe("(app)/layout: toast chuyển hướng của giảng viên khỏi /my-c
     expect(options?.description).toContain("trang chủ");
   });
 });
+
+// Q6-T02/T03: các route học viên-only còn lại cũng đưa giảng viên đi, không đá học viên (kể cả vai tổ chức) và phụ huynh.
+describe("(app)/layout: Q6-T02/T03 route học viên-only cho giảng viên", () => {
+  const SYSTEM_ROLE = (name: string) => ({ id: `sr-${name}`, type: "system" as const, role_name: name, display_name: name });
+  const ORG_ROLE = (name: string) => ({ id: `or-${name}`, type: "organization" as const, role_name: name, display_name: name });
+
+  beforeEach(() => replace.mockClear());
+  afterEach(() => {
+    useAuthStore.setState({ isAuthenticated: false, activeRole: null, roles: [], hasHydrated: false, sessionStatus: "checking" });
+  });
+
+  for (const [path, target] of [
+    ["/my-assignments", "/teacher/assignments"],
+    ["/my-attendance", "/teacher/classes"],
+    ["/certificates", "/teacher/schedule"],
+    ["/wishlist", "/teacher/schedule"],
+    ["/groups", "/teacher/schedule"],
+    ["/coins", "/teacher/schedule"],
+    ["/achievements", "/teacher/schedule"],
+    ["/leaderboard", "/teacher/schedule"],
+    ["/settings/family", "/teacher/schedule"],
+  ] as const) {
+    it(`giảng viên vào ${path} -> không render, về ${target}`, () => {
+      expect(renderAs("TEACHER", path)).toBeNull();
+      expect(replace).toHaveBeenCalledWith(target);
+    });
+
+    it(`QA3_STUDENT tải lần đầu ${path} -> render, không bị đá (vai tổ chức quy về STUDENT)`, () => {
+      if (path === "/settings/family") return; // học viên vào được: cùng kiểm ở test bên dưới
+      useAuthStore.setState({ roles: [SYSTEM_ROLE("STUDENT"), ORG_ROLE("QA3_STUDENT")] });
+      expect(renderAs("QA3_STUDENT", path)).not.toBeNull();
+      expect(replace).not.toHaveBeenCalled();
+    });
+  }
+
+  for (const role of ["STUDENT", "PARENT"]) {
+    it(`/settings/family: ${role} vẫn vào được`, () => {
+      expect(renderAs(role, "/settings/family")).not.toBeNull();
+      expect(replace).not.toHaveBeenCalled();
+    });
+  }
+});

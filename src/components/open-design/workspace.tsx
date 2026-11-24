@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useAuthStore } from "@/stores/auth.store";
 import { cn } from "@/lib/utils";
+import { normalizeRole } from "@/lib/routes";
+import { aiNotConfiguredHint } from "@/lib/open-design/ai-unavailable-copy";
 import {
   activeArtifact,
   artifactSchema,
@@ -56,6 +58,7 @@ const field = "w-full rounded-lg border border-input bg-background px-3 py-2 tex
 export function OpenDesignWorkspace() {
   const { user, activeRole, sessionStatus } = useAuthStore();
   const userID = user?.id;
+  const isAdmin = normalizeRole(activeRole) === "SYSTEM_ADMIN";
   const [projects, setProjects] = useState<DesignProject[]>([]);
   const projectsRef = useRef<DesignProject[]>([]);
   const [selectedID, setSelectedID] = useState<string | null>(null);
@@ -513,6 +516,7 @@ export function OpenDesignWorkspace() {
       onCancel={() => void cancel()}
       error={error}
       compact={hasChat}
+      isAdmin={isAdmin}
     />
   );
   return (
@@ -672,7 +676,7 @@ export function OpenDesignWorkspace() {
                     ? "Đang kiểm tra kết nối…"
                     : status.isError
                       ? "Chưa kết nối được máy chủ AI."
-                      : "Cấu hình API key, base URL và model Viettel AI trong env backend để bắt đầu."}
+                      : aiNotConfiguredHint(isAdmin)}
                   <button disabled={status.isFetching} onClick={() => void status.refetch()}>
                     Kiểm tra lại
                   </button>

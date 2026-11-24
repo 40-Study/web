@@ -78,3 +78,34 @@ describe("AI chat composer", () => {
     expect(sent).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("AI chat composer: AI chưa cấu hình (Q6-T09)", () => {
+  const base = {
+    prompt: "",
+    onPrompt: () => {},
+    documents: [],
+    onRemove: () => {},
+    onUpload: () => {},
+    skill: BUILTIN_SKILLS[0],
+    onSkills: () => {},
+    count: 3,
+    onCount: () => {},
+    busy: false,
+    uploading: false,
+    configured: false,
+    onSend: () => {},
+    onCancel: () => {},
+    error: "",
+  };
+
+  it("mặc định / giảng viên: câu liên hệ quản trị viên, không lộ chữ cấu hình", () => {
+    render(<StudioComposer {...base} />);
+    expect(screen.getByText("Tính năng AI chưa được bật, vui lòng liên hệ quản trị viên.")).toBeTruthy();
+    expect(screen.queryByText(/hoàn tất cấu hình/)).toBeNull();
+  });
+
+  it("quản trị hệ thống: thấy câu cấu hình", () => {
+    render(<StudioComposer {...base} isAdmin />);
+    expect(screen.getByText(/Chưa kết nối Viettel AI\. Cần hoàn tất cấu hình/)).toBeTruthy();
+  });
+});

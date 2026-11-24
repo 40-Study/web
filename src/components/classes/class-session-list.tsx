@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCancelSession, useClassSessions } from "@/hooks/queries/use-sessions";
 import { toTimeOfDay } from "@/lib/class-schedule-validation";
-import { formatVnDateOnly, isVnSessionUpcoming } from "@/lib/vn-datetime";
+import { formatVnDateOnly, hasVnSessionEnded, isVnSessionUpcoming } from "@/lib/vn-datetime";
 import type { ClassSession, SessionStatus } from "@/services/session.service";
 
 const PAGE_SIZE = 20;
@@ -20,6 +20,21 @@ const STATUS_META: Record<SessionStatus, { label: string; variant: "default" | "
   completed: { label: "Đã kết thúc", variant: "success" },
   cancelled: { label: "Đã huỷ", variant: "destructive" },
 };
+
+/**
+ * Q6-T04: backend không bao giờ chuyển buổi sang "Đã kết thúc" lúc chạy nên buổi đã qua vẫn là `scheduled` và hiện
+ * "Đã lên lịch" cạnh buổi sắp tới. Suy trạng thái hiển thị từ giờ VN: đã qua giờ kết thúc -> "Đã diễn ra"; đã bắt đầu
+ * mà chưa kết thúc -> "Đang diễn ra". Chỉ áp cho `scheduled`; trạng thái backend khác giữ nguyên.
+ */
+export const SESSION_HELD_META = { label: "Đã diễn ra", variant: "outline" } as const;
+
+export function sessionDisplayMeta(s: ClassSession, now: Date = new Date()) {
+  if (s.status === "scheduled") {
+    if (hasVnSessionEnded(s.date, s.end_time, now)) return SESSION_HELD_META;
+    if (!isVnSessionUpcoming(s.date, s.start_time, now)) return STATUS_META.in_progress;
+  }
+  return STATUS_META[s.status] ?? STATUS_META.scheduled;
+}
 
 /** Các buổi học cụ thể của lớp (theo ngày tăng dần, 20 buổi/trang) kèm nút sinh buổi và thêm buổi lẻ khi `canWrite`. */
 export function ClassSessionList({
@@ -77,7 +92,7 @@ export function ClassSessionList({
         >
           <ul className="divide-y divide-border">
             {sessions.map((s) => {
-              const meta = STATUS_META[s.status] ?? STATUS_META.scheduled;
+              const meta = sessionDisplayMeta(s);
               return (
                 <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
                   <div className="min-w-0">
@@ -87,17 +102,22 @@ export function ClassSessionList({
                     {s.topic && <p className="truncate text-xs text-muted-foreground">{s.topic}</p>}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={meta.variant}>{meta.label}</Badge>
+                    <Badge variant={meta.variant} className="whitespace-nowrap">{meta.label}</Badge>
                     {/* Q5-T02 (M1): backend không tự chuyển buổi sang "Đã kết thúc" nên chỉ buổi CHƯA bắt đầu mới huỷ được. */}
-                    {canWrite && s.status === "scheduled" && isVnSessionUpcoming(s.date, s.start_time) && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                        onClick={() => setCancelling(s)}
-                      >
-                        <Ban className="mr-1 h-4 w-4" aria-hidden="true" /> Huỷ buổi
-                      </Button>
+                    {/* Q6-T04: chỗ nút luôn được giữ (kể cả khi trống) để huy hiệu các dòng thẳng hàng. */}
+                    {canWrite && (
+                      <span className="inline-flex min-w-[6.5rem] justify-end">
+                        {s.status === "scheduled" && isVnSessionUpcoming(s.date, s.start_time) && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                            onClick={() => setCancelling(s)}
+                          >
+                            <Ban className="mr-1 h-4 w-4" aria-hidden="true" /> Huỷ buổi
+                          </Button>
+                        )}
+                      </span>
                     )}
                   </div>
                 </li>

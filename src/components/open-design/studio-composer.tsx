@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { SourceDocument } from "@/lib/open-design/project";
 import type { TeachingSkill } from "@/lib/open-design/skills";
+import { aiNotConfiguredNotice } from "@/lib/open-design/ai-unavailable-copy";
 export function StudioComposer({
   prompt,
   onPrompt,
@@ -30,6 +31,7 @@ export function StudioComposer({
   onCancel,
   error,
   compact = false,
+  isAdmin = false,
 }: {
   prompt: string;
   onPrompt: (s: string) => void;
@@ -47,6 +49,8 @@ export function StudioComposer({
   onCancel: () => void;
   error: string;
   compact?: boolean;
+  /** Chỉ quản trị hệ thống thấy chỉ dẫn cấu hình; mặc định giảng viên (xem ai-unavailable-copy). */
+  isAdmin?: boolean;
 }) {
   const file = useRef<HTMLInputElement>(null);
   const [menu, setMenu] = useState(false);
@@ -230,7 +234,7 @@ export function StudioComposer({
       </div>
       {!configured && (
         <p role="status" className="border-t px-4 py-2 text-xs text-muted-foreground">
-          Chưa kết nối Viettel AI. Cần hoàn tất cấu hình để tạo nội dung.
+          {aiNotConfiguredNotice(isAdmin)}
         </p>
       )}
       {error && (

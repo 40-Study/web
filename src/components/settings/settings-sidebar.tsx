@@ -14,7 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { normalizeRole } from "@/lib/routes";
+import { canAccessStudentOnlyRoute, normalizeRole } from "@/lib/routes";
 import { useAuthStore } from "@/stores/auth.store";
 
 export type SettingsSection =
@@ -55,7 +55,10 @@ export function SettingsSidebar({
   className,
 }: SettingsSidebarProps) {
   const logoutMutation = useLogout();
-  const isParent = normalizeRole(useAuthStore((s) => s.activeRole)) === "PARENT";
+  const activeRole = useAuthStore((s) => s.activeRole);
+  const isParent = normalizeRole(activeRole) === "PARENT";
+  // Q6-T03: giảng viên không có liên kết phụ huynh; cùng hàm với route guard nên mục menu và route không lệch nhau.
+  const showFamily = canAccessStudentOnlyRoute("/settings/family", activeRole);
 
   return (
     <nav className={cn("w-full md:w-72 shrink-0", className)}>
@@ -101,19 +104,21 @@ export function SettingsSidebar({
         </div>
 
         <div className="mt-2 pt-2 border-t border-gray-100 space-y-1">
-          <Link
-            href="/settings/family"
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-600 hover:bg-primary-50 hover:text-primary-700 transition-colors"
-          >
-            <div className="p-2 bg-primary-50 rounded-lg">
-              <Users className="h-4 w-4 text-primary-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="font-medium">Gia đình</p>
-              {/* E7 (QA vòng 2): phụ huynh thấy "Liên kết phụ huynh" là copy của học sinh. */}
-              <p className="text-xs text-gray-400">{isParent ? "Con của tôi" : "Liên kết phụ huynh"}</p>
-            </div>
-          </Link>
+          {showFamily && (
+            <Link
+              href="/settings/family"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-600 hover:bg-primary-50 hover:text-primary-700 transition-colors"
+            >
+              <div className="p-2 bg-primary-50 rounded-lg">
+                <Users className="h-4 w-4 text-primary-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-medium">Gia đình</p>
+                {/* E7 (QA vòng 2): phụ huynh thấy "Liên kết phụ huynh" là copy của học sinh. */}
+                <p className="text-xs text-gray-400">{isParent ? "Con của tôi" : "Liên kết phụ huynh"}</p>
+              </div>
+            </Link>
+          )}
           <Link
             href="/help"
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-500 hover:bg-gray-50 transition-colors"

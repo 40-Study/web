@@ -2,19 +2,20 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { notFound, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { ArrowLeft, BookOpen, Loader2, Phone, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { useMyStudents } from "@/hooks/queries/use-classes";
+import { ResourceLoadError, ResourceUnavailable } from "@/components/common/resource-unavailable";
 import { buildStudentProfile } from "./student-profile-aggregate";
 
 export default function TeacherStudentProfilePage() {
   const params = useParams<{ id: string }>();
 
-  const { data: students = [], isLoading } = useMyStudents();
+  const { data: students = [], isLoading, isError, refetch } = useMyStudents();
 
   if (isLoading) {
     return (
@@ -24,10 +25,19 @@ export default function TeacherStudentProfilePage() {
     );
   }
 
+  // Tải danh sách lỗi (5xx/mạng) khác "không có học viên này": cho thử lại, không báo học viên không tồn tại.
+  if (isError) {
+    return <ResourceLoadError resourceLabel="học viên" onRetry={() => void refetch()} />;
+  }
+
   const student = buildStudentProfile(students, params.id);
 
+  // Q6-T08: notFound() ném ra trang 404 toàn cục không có thanh bên giảng viên và nút "Về trang chủ"; khoá/lớp/cuộc thi
+  // đã hiện trạng thái "Không tìm thấy" ngay trong khung, học viên cũng vậy.
   if (!student) {
-    notFound();
+    return (
+      <ResourceUnavailable resourceLabel="học viên" backHref="/teacher/students" backLabel="Về Quản lý học viên" />
+    );
   }
 
   const { classmates } = student;
@@ -49,7 +59,7 @@ export default function TeacherStudentProfilePage() {
         <CardContent className="p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
-              <Avatar fallback={student.name.charAt(0)} size="lg" className="bg-primary-100 text-primary-700" />
+              <Avatar fallback={student.name.charAt(0)} size="lg" tone="soft" />
               <div>
                 <p className="text-xl font-semibold">{student.name}</p>
                 <p className="text-sm text-muted-foreground">

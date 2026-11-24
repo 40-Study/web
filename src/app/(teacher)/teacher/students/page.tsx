@@ -187,7 +187,7 @@ export default function TeacherStudentsPage() {
                     <TableRow key={student.id} data-testid="student-row">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <Avatar fallback={student.name.charAt(0)} size="sm" className="bg-primary-100 text-primary-700" />
+                          <Avatar fallback={student.name.charAt(0)} size="sm" tone="soft" />
                           <div>
                             <p className="font-medium">{student.name}</p>
                             <p className="text-xs text-muted-foreground">Mã HS: {student.studentId ?? "—"}</p>

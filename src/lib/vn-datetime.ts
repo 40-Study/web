@@ -68,9 +68,28 @@ export function isVnSessionUpcoming(
   startTime: string | null | undefined,
   now: Date = new Date()
 ): boolean {
+  const start = vnSessionInstant(date, startTime);
+  return start !== null && start > now.getTime();
+}
+
+/**
+ * Buổi học đã KẾT THÚC (giờ kết thúc, giờ VN, không còn sau `now`) chưa (Q6-T04). Cùng cách đọc `date`/giờ với
+ * `isVnSessionUpcoming`. Thiếu/sai định dạng thì false: không chứng minh được buổi đã qua thì không tuyên bố "đã diễn ra".
+ */
+export function hasVnSessionEnded(
+  date: string | null | undefined,
+  endTime: string | null | undefined,
+  now: Date = new Date()
+): boolean {
+  const end = vnSessionInstant(date, endTime);
+  return end !== null && end <= now.getTime();
+}
+
+/** Mốc (epoch ms) của `date` + `time` theo giờ VN; null khi thiếu hoặc sai định dạng. */
+function vnSessionInstant(date: string | null | undefined, time: string | null | undefined): number | null {
   const day = date ? SESSION_DAY_PATTERN.exec(date)?.[1] : undefined;
-  const time = startTime ? SESSION_TIME_PATTERN.exec(startTime)?.[1] : undefined;
-  if (!day || !time) return false;
-  const start = new Date(`${day}T${time}:00+07:00`);
-  return !Number.isNaN(start.getTime()) && start.getTime() > now.getTime();
+  const hhmm = time ? SESSION_TIME_PATTERN.exec(time)?.[1] : undefined;
+  if (!day || !hhmm) return null;
+  const at = new Date(`${day}T${hhmm}:00+07:00`).getTime();
+  return Number.isNaN(at) ? null : at;
 }

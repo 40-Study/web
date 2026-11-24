@@ -1,8 +1,7 @@
 /**
- * Định dạng tiền VNĐ dùng chung "438.200đ" (chấm phân cách nghìn, hậu tố "đ" dính liền) — QA-C-12.
+ * Định dạng tiền VNĐ cho khu admin: cùng `formatCurrency` (lib/utils) như toàn web, "438.200 ₫" (QA-C-12, Q6-T06).
  *
- * Trước đây khu admin vừa có "699.000 ₫" (`formatCurrency` của lib/utils, Intl style currency) vừa có "250.000đ"
- * (rút tiền, voucher). Ví giảng viên và luồng rút tiền đã chốt kiểu "đ" (withdrawal-contract.md), nên các màn
- * admin dùng chung đúng hàm đó. Không đổi `formatCurrency` vì nhiều trang ngoài admin còn phụ thuộc định dạng cũ.
+ * Trước đây admin dùng kiểu "438.200đ" riêng của luồng rút tiền trong khi giỏ hàng/voucher dùng "₫"; chủ dự án chốt
+ * một định dạng duy nhất là `formatCurrency` nên cả hai nguồn giờ trỏ về nó (xem lib/withdrawal-format.ts).
  */
 export { formatWithdrawalAmount as formatVnd } from "./withdrawal-format";

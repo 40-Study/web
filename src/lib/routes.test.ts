@@ -149,4 +149,31 @@ describe("isRouteAllowedForRole — ma trận role x route (ROLE_SCOPED_ROUTES)"
     expect(isRouteAllowedForRole("/messages", "STUDENT")).toBe(true);
     expect(isRouteAllowedForRole("/messages", "PARENT")).toBe(true);
   });
+
+  // Q6-T02: bỏ realStudentOnly khỏi một entry làm test này ĐỎ: giảng viên gõ thẳng URL lại thấy trang học viên.
+  it("Q6-T02: mọi route học viên-only còn lại chặn giảng viên; học viên vào được; đích có trang giảng viên tương ứng", () => {
+    const hrefs = ["/my-assignments", "/my-attendance", "/certificates", "/wishlist", "/groups", "/coins", "/achievements", "/leaderboard"];
+    for (const href of hrefs) {
+      expect(canAccessStudentOnlyRoute(href, "STUDENT")).toBe(true);
+      expect(canAccessStudentOnlyRoute(`${href}/x`, "TEACHER")).toBe(false);
+      expect(canAccessStudentOnlyRoute(href, "TEACHER")).toBe(false);
+      expect(canAccessStudentOnlyRoute(href, "PARENT")).toBe(false);
+    }
+    expect(getRoleRestrictedRedirect("/my-assignments", "TEACHER")).toBe("/teacher/assignments");
+    expect(getRoleRestrictedRedirect("/my-attendance", "TEACHER")).toBe("/teacher/classes");
+    // Không có trang giảng viên tương ứng: về trang chủ giảng viên, và lời nhắn nói đúng như vậy.
+    expect(getRoleRestrictedRedirect("/coins", "TEACHER")).toBe("/teacher/schedule");
+    expect(getRoleRestrictedNotice("/coins", "TEACHER", "Giảng viên").description).toContain("trang chủ");
+    expect(getRoleRestrictedRedirect("/my-assignments", "PARENT")).toBe("/home");
+  });
+
+  // Q6-T03: /settings/family mở cho học viên VÀ phụ huynh, chỉ giảng viên bị chặn (realStudentOnly sẽ đá cả phụ huynh).
+  it("Q6-T03: /settings/family chặn giảng viên, giữ nguyên cho học viên và phụ huynh", () => {
+    expect(canAccessStudentOnlyRoute("/settings/family", "TEACHER")).toBe(false);
+    expect(canAccessStudentOnlyRoute("/settings/family", "STUDENT")).toBe(true);
+    expect(canAccessStudentOnlyRoute("/settings/family", "PARENT")).toBe(true);
+    expect(isRouteAllowedForRole("/settings/family", "PARENT")).toBe(true);
+    expect(canAccessStudentOnlyRoute("/settings", "TEACHER")).toBe(true);
+    expect(getRoleRestrictedRedirect("/settings/family", "TEACHER")).toBe("/teacher/schedule");
+  });
 });
