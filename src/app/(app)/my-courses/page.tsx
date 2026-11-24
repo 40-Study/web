@@ -20,6 +20,7 @@ import { EnrolledCourseCard } from "@/components/student/enrolled-course-card";
 import { AchievementSidebar } from "@/components/student/achievement-sidebar";
 import { SupportCard } from "@/components/student/support-card";
 import { compareByRecentAccess, pickContinueCourse } from "@/lib/continue-course";
+import { formatCompletedMonth } from "@/lib/format-completed-month";
 
 function LoadingSkeleton() {
   return (
@@ -117,12 +118,7 @@ export default function MyCoursesPage() {
       title: cert.course_name || "Chứng chỉ",
       description: "",
       icon: "🏆",
-      earnedAt: cert.issued_at
-        ? `Hoàn thành: ${new Date(cert.issued_at).toLocaleDateString("vi-VN", {
-            month: "short",
-            year: "numeric",
-          })}`
-        : "",
+      earnedAt: formatCompletedMonth(cert.issued_at),
       color: "bg-yellow-100",
     }));
   }, [certificatesData]);
