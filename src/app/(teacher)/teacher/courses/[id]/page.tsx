@@ -64,6 +64,8 @@ import { cn } from "@/lib/utils";
 import { isUuid } from "@/lib/uuid";
 import { useCourse } from "@/hooks/queries/use-courses";
 import { CourseReviewPanel, CourseStatusBadge } from "@/components/teacher/course-review-status";
+import { DeleteLessonContentDialog } from "@/components/teacher/delete-lesson-content-dialog";
+import { putVideoChunk, videoUploadErrorMessage } from "@/lib/video-chunk-upload";
 import { useSections, useCreateSection, useReorderSections, useDeleteSection, sectionKeys } from "@/hooks/queries/use-sections";
 import { useCreateLesson, useReorderLessons, useDeleteLesson } from "@/hooks/queries/use-lessons";
 import {
@@ -405,6 +407,7 @@ function LessonContentsPanel({
   const deleteContent = useDeleteLessonContent(lessonId);
   // Bài code đang mở danh sách bài nộp của học viên (null = đóng).
   const [submissionsFor, setSubmissionsFor] = useState<LessonContent | null>(null);
+  const [contentToDelete, setContentToDelete] = useState<LessonContent | null>(null);
 
   return (
     <div className="ml-10 mr-2 mb-2 border-l-2 border-gray-100 pl-4">
@@ -485,6 +488,7 @@ function LessonContentsPanel({
                           onClick={handleViewContent}
                           className="p-0.5 text-gray-400 hover:text-primary-600"
                           title="Xem video"
+                          aria-label={`Xem video: ${c.title}`}
                         >
                           <Eye className="w-3 h-3" />
                         </button>
@@ -508,13 +512,15 @@ function LessonContentsPanel({
                             onClick={() => onEditContent?.(c)}
                             className="p-0.5 text-gray-400 hover:text-primary-600"
                             title="Chỉnh sửa"
+                            aria-label={`Chỉnh sửa: ${c.title}`}
                           >
                             <Pencil className="w-3 h-3" />
                           </button>
                           <button
-                            onClick={() => deleteContent.mutate(c.id)}
+                            onClick={() => setContentToDelete(c)}
                             className="p-0.5 text-gray-300 hover:text-red-500"
                             title="Xoá"
+                            aria-label={`Xoá: ${c.title}`}
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -550,6 +556,12 @@ function LessonContentsPanel({
           onOpenChange={(open) => !open && setSubmissionsFor(null)}
         />
       )}
+      <DeleteLessonContentDialog
+        content={contentToDelete}
+        pending={deleteContent.isPending}
+        onCancel={() => setContentToDelete(null)}
+        onConfirm={(content) => deleteContent.mutate(content.id, { onSettled: () => setContentToDelete(null) })}
+      />
     </div>
   );
 }
@@ -795,32 +807,13 @@ export default function CourseDetailPage() {
           throw new Error("Không lấy được presigned URL");
         }
 
-        console.log(`Uploading chunk ${chunkNum + 1} to:`, presignedUrl.url);
-
-        try {
-          const response = await fetch(presignedUrl.url, {
-            method: "PUT",
-            body: chunk,
-          });
-
-          if (!response.ok) {
-            console.error("Upload chunk failed:", response.status, response.statusText);
-            throw new Error(`Upload chunk thất bại: ${response.status}`);
-          }
-
-          const etag = response.headers.get("ETag") || `"chunk-${chunkNum + 1}"`;
-          console.log(`Chunk ${chunkNum + 1} uploaded, ETag:`, etag);
-
-          await videoUploadService.chunkComplete({
-            upload_id: uploadInit.upload_id,
-            chunk_number: chunkNum + 1,
-            etag,
-            size: chunk.size,
-          });
-        } catch (fetchErr) {
-          console.error("Fetch error:", fetchErr);
-          throw fetchErr;
-        }
+        const etag = await putVideoChunk(presignedUrl.url, chunk, chunkNum + 1);
+        await videoUploadService.chunkComplete({
+          upload_id: uploadInit.upload_id,
+          chunk_number: chunkNum + 1,
+          etag,
+          size: chunk.size,
+        });
 
         setUploadProgress(Math.round(((chunkNum + 1) / totalChunks) * 100));
       }
@@ -834,9 +827,9 @@ export default function CourseDetailPage() {
       setUploadProgress(100);
       setUploadStatus("Upload thành công!");
       toast.success("Upload video thành công!");
-    } catch (err: any) {
+    } catch (err) {
       console.error("Upload error:", err);
-      const errorMsg = err?.message || "Upload video thất bại";
+      const errorMsg = videoUploadErrorMessage(err);
       toast.error(errorMsg);
       setUploadProgress(undefined);
       setUploadStatus(`Lỗi: ${errorMsg}`);
@@ -1118,11 +1111,11 @@ export default function CourseDetailPage() {
       {courseError && <StaleDataNotice resourceLabel="khoá học" onRetry={() => void refetchCourse()} />}
       {/* Header */}
       <div className="flex items-start gap-4">
-        <Link href="/teacher/courses">
-          <Button variant="ghost" size="icon" className="mt-0.5">
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-        </Link>
+        <Button variant="ghost" size="icon" className="mt-0.5" asChild>
+          <Link href="/teacher/courses" aria-label="Quay lại danh sách khoá học">
+            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+          </Link>
+        </Button>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">

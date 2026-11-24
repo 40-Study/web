@@ -85,11 +85,11 @@ export default function TeacherCourseMembersPage() {
       {courseError && <StaleDataNotice resourceLabel="khoá học" onRetry={() => void refetchCourse()} />}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/teacher/courses">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/teacher/courses" aria-label="Quay lại danh sách khoá học">
+              <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+            </Link>
+          </Button>
           <div>
             <h1 className="text-2xl font-bold">Thành viên khoá học</h1>
             <p className="text-sm text-muted-foreground">{courseTitle}</p>

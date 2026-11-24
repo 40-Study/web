@@ -38,11 +38,11 @@ export default function TeacherStudentProfilePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/teacher/students">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/teacher/students" aria-label="Quay lại danh sách học viên">
+              <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+            </Link>
+          </Button>
           <h1 className="text-2xl font-bold">Hồ sơ học viên</h1>
         </div>
         <Button onClick={() => setIsNotifyDialogOpen(true)}>
