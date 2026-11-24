@@ -66,7 +66,7 @@ function isUnfinishedSubmission(state: ChildAssignmentState): boolean {
  * P-02 (QA3 261104) + QA-B-23 + N-04 (QA4 261123): tách bài cần con làm theo hạn nộp.
  * - `upcoming`: con còn phải làm (chưa nộp, hoặc nộp chưa xong), hạn >= now, gần hạn nhất trước.
  * - `overdue`: trạng thái `overdue` (chưa nộp, hạn < now), vừa quá hạn gần đây nhất trước.
- * - `retry`: đã nộp nhưng chưa xong (chưa đạt / lỗi chấm) và hạn đã qua, vừa quá hạn gần nhất trước. Trước đây
+ * - `retry` (tiêu đề "Cần chú ý"): đã nộp nhưng chưa xong (chưa đạt / lỗi chấm) và hạn đã qua, vừa quá hạn gần nhất trước. Trước đây
  *   nhóm này không nằm ở đâu trên phần tóm tắt nên phụ huynh chỉ thấy một phần bài còn dở.
  * Bài đã hoàn thành, đang chờ chấm, không có hạn hoặc hạn không đọc được bị bỏ qua.
  */

@@ -72,9 +72,10 @@ export function ChildOverviewTab({
         </Section>
       )}
 
-      {/* N-04 (QA4 261123): bài đã nộp, chưa xong, đã qua hạn từng không hiện ở đâu trên phần tóm tắt. */}
+      {/* N-04 (QA4 261123): bài đã nộp, chưa xong, đã qua hạn từng không hiện ở đâu trên phần tóm tắt. "Cần chú ý"
+          chứ không "Cần làm lại": nhóm có cả bài lỗi chấm, con không phải làm lại. */}
       {retry.length > 0 && (
-        <Section icon={ClipboardList} title={`Cần làm lại (${retryAll.length})`} empty={null}>
+        <Section icon={ClipboardList} title={`Cần chú ý (${retryAll.length})`} empty={null}>
           {retry.map((a) => (
             <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
               <span className="truncate text-gray-700">{a.title}</span>

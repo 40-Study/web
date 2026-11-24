@@ -94,4 +94,24 @@ describe("ChildOverviewTab — bài tập theo hạn", () => {
     );
     expect(screen.queryByRole("heading", { name: /Quá hạn/ })).toBeNull();
   });
+
+  // N-04 + review web#123 #8: bài đã nộp chưa xong, quá hạn nằm ở "Cần chú ý", gồm cả bài lỗi chấm.
+  it("bài nộp chưa đạt / lỗi chấm đã quá hạn: mục 'Cần chú ý' với nhãn đúng", () => {
+    render(
+      <ChildOverviewTab
+        overview={overview}
+        courses={[]}
+        attendance={[]}
+        assignments={[
+          { ...make("Bài sai", "2026-10-10T00:00:00Z"), submission_count: 2, best_verdict: "wrong_answer" },
+          { ...make("Top 5 sản phẩm", "2026-10-12T00:00:00Z"), submission_count: 3, best_verdict: "system_error" },
+        ]}
+      />,
+    );
+    const attention = within(section(/^Cần chú ý \(2\)$/));
+    expect(attention.getByText("Bài sai")).toBeTruthy();
+    expect(attention.getByText("Đã nộp, chưa đạt")).toBeTruthy();
+    expect(attention.getByText("Lỗi chấm, đang xử lý lại")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: /Quá hạn/ })).toBeNull();
+  });
 });

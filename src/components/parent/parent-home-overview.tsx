@@ -52,7 +52,8 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
   const { upcoming, overdue, retry } = splitAssignmentsByDeadline(assignmentsData?.assignments ?? []);
   const upcomingAssignments = upcoming.slice(0, 3);
   const overdueAssignments = overdue.slice(0, 3);
-  // N-04 (QA4 261123): bài đã nộp nhưng chưa xong, hạn đã qua: trước đây không nằm trong nhóm nào.
+  // N-04 (QA4 261123): bài đã nộp nhưng chưa xong, hạn đã qua: trước đây không nằm trong nhóm nào. Tiêu đề
+  // "Cần chú ý" vì nhóm có cả bài lỗi chấm (con không phải làm lại).
   const retryAssignments = retry.slice(0, 3);
 
   const recentAttendance = attendanceData?.records ?? [];
@@ -133,7 +134,7 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
           )}
           {!loadingAssignments && retryAssignments.length > 0 && (
             <div className="mt-3" data-testid="retry-assignments">
-              <p className="text-xs font-semibold text-amber-700 mb-1.5">Cần làm lại ({retry.length})</p>
+              <p className="text-xs font-semibold text-amber-700 mb-1.5">Cần chú ý ({retry.length})</p>
               <ul className="space-y-1.5">
                 {retryAssignments.map((a) => (
                   <li key={a.id} className="text-xs text-gray-600 flex items-center justify-between gap-2">
