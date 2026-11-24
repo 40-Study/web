@@ -39,6 +39,19 @@ vi.mock("@/hooks/queries/use-courses", () => ({
   }),
 }));
 
+// Học viên h1 học cả 2 khoá -> 2 dòng cùng id; /teacher/students gộp còn 2 học viên (không phải 3, cũng không phải 32).
+vi.mock("@/hooks/queries/use-classes", () => ({
+  useMyStudents: () => ({
+    data: [
+      { id: "h1", name: "An", course_name: "React + Next.js", status: "active" },
+      { id: "h1", name: "An", course_name: "Go cơ bản", status: "active" },
+      { id: "h2", name: "Bình", course_name: "Go cơ bản", status: "active" },
+    ],
+    isLoading: false,
+    isError: false,
+  }),
+}));
+
 // eslint-disable-next-line import/first
 import PublicProfilePage from "./page";
 
@@ -51,7 +64,8 @@ describe("PublicProfilePage — hồ sơ của chính giảng viên", () => {
   it("hiện thông tin giảng dạy, không có cấp/XP/thành tích học viên", () => {
     render(<PublicProfilePage />);
     expect(screen.getByRole("region", { name: "Thông tin giảng dạy" })).toBeTruthy();
-    expect(screen.getByText("32")).toBeTruthy(); // tổng học viên
+    const studentTile = screen.getByText("Học viên").parentElement;
+    expect(studentTile?.querySelector("p")?.textContent).toBe("2"); // học viên duy nhất, khớp /teacher/students
     expect(screen.getByText("3.8")).toBeTruthy(); // (4.5*10 + 3*10) / 20
     expect(screen.getByRole("link", { name: "React + Next.js" }).getAttribute("href")).toBe("/teacher/courses/c1");
     expect(screen.queryByText("Tổng XP")).toBeNull();

@@ -6,7 +6,7 @@ const course = (over: Partial<ApiCourse>) => ({ id: "c", title: "x", ...over }) 
 
 describe("teachingStats (Q4-T10)", () => {
   it("không có khoá: 0 và chưa có đánh giá", () => {
-    expect(teachingStats([])).toEqual({ courseCount: 0, publishedCount: 0, studentCount: 0, averageRating: null, reviewCount: 0 });
+    expect(teachingStats([])).toEqual({ courseCount: 0, publishedCount: 0, averageRating: null, reviewCount: 0 });
   });
 
   it("điểm trung bình theo số lượt đánh giá; khoá chưa có đánh giá không kéo điểm về 0", () => {
@@ -17,7 +17,6 @@ describe("teachingStats (Q4-T10)", () => {
     ]);
     expect(s.courseCount).toBe(3);
     expect(s.publishedCount).toBe(2);
-    expect(s.studentCount).toBe(10);
     expect(s.reviewCount).toBe(4);
     expect(s.averageRating).toBeCloseTo(4.25);
   });

@@ -4,26 +4,28 @@ import Link from "next/link";
 import { BookOpen, Loader2, Star, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { useMyStudents } from "@/hooks/queries/use-classes";
 import { useMyCourses } from "@/hooks/queries/use-courses";
+import { groupStudents } from "@/app/(teacher)/teacher/students/group-students";
 import { COURSE_STATUS_LABEL, isCourseStatus } from "@/types/approval";
 import type { ApiCourse } from "@/services/course.service";
 
 export interface TeachingStats {
   courseCount: number;
   publishedCount: number;
-  studentCount: number;
   /** Điểm trung bình có trọng số theo số lượt đánh giá; `null` khi chưa có đánh giá nào. */
   averageRating: number | null;
   reviewCount: number;
 }
 
-/** Số liệu giảng dạy từ danh sách khoá của giảng viên (GET /courses/my). */
+/**
+ * Số liệu giảng dạy từ danh sách khoá của giảng viên (GET /courses/my). Số học viên KHÔNG lấy ở đây: cộng
+ * `total_students` đếm trùng người học 2 khoá và bỏ sót học viên chỉ ở lớp (review #125).
+ */
 export function teachingStats(courses: readonly ApiCourse[]): TeachingStats {
-  let studentCount = 0;
   let reviewCount = 0;
   let weighted = 0;
   for (const c of courses) {
-    studentCount += c.total_students ?? 0;
     const reviews = c.total_reviews ?? 0;
     const rating = Number(c.average_rating);
     if (reviews > 0 && Number.isFinite(rating)) {
@@ -34,7 +36,6 @@ export function teachingStats(courses: readonly ApiCourse[]): TeachingStats {
   return {
     courseCount: courses.length,
     publishedCount: courses.filter((c) => c.status === "published").length,
-    studentCount,
     averageRating: reviewCount > 0 ? weighted / reviewCount : null,
     reviewCount,
   };
@@ -62,6 +63,13 @@ export function TeacherProfileSummary() {
   const { data, isLoading, isError } = useMyCourses();
   const courses = Array.isArray(data) ? (data as ApiCourse[]) : [];
   const stats = teachingStats(courses);
+  // Cùng nguồn + cách gộp với /teacher/students: mỗi học viên đếm một lần dù học nhiều khoá/lớp.
+  const students = useMyStudents();
+  const studentValue = students.isLoading
+    ? "…"
+    : students.isError
+      ? "—"
+      : groupStudents(students.data ?? []).length.toLocaleString("vi-VN");
 
   if (isLoading) {
     return (
@@ -86,7 +94,7 @@ export function TeacherProfileSummary() {
           label={`Khoá học (${stats.publishedCount} đã xuất bản)`}
           value={stats.courseCount.toLocaleString("vi-VN")}
         />
-        <StatTile icon={<Users className="h-5 w-5" />} label="Học viên" value={stats.studentCount.toLocaleString("vi-VN")} />
+        <StatTile icon={<Users className="h-5 w-5" />} label="Học viên" value={studentValue} />
         <StatTile
           icon={<Star className="h-5 w-5" />}
           label={stats.reviewCount > 0 ? `Đánh giá trung bình (${stats.reviewCount} lượt)` : "Đánh giá trung bình"}
