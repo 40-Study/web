@@ -10,6 +10,11 @@ import { isJudgeUnavailableVerdict } from '@/lib/live-submission-verdict';
 import type { SubmissionResponseDTO } from '@/services/submission.service';
 import { useLiveSubmissionVerdictPoll } from './use-live-submission-verdict-poll';
 import LiveSubmissionVerdictBanner from './live-submission-verdict-banner';
+import {
+  hasUnsubmittedChanges,
+  savedContentFromSubmission,
+  type SavedContent,
+} from './assignment-work-unsaved-changes';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
@@ -45,9 +50,15 @@ interface Props {
   userId: string;
   isHost?: boolean;
   onClose: (wasSubmitted?: boolean) => void;
+  /** Gọi sau mỗi lần nộp thành công (để trang nền làm mới danh sách bài tập). */
+  onSubmitted?: () => void;
 }
 
-export default function AssignmentWorkOverlay({ assignmentId, title, userId, isHost = false, onClose }: Props) {
+const EXIT_CONFIRM_UNSUBMITTED = 'Bạn chưa nộp bài. Nếu thoát bây giờ, tiến trình làm bài sẽ không được lưu lại.';
+const EXIT_CONFIRM_CHANGED =
+  'Bạn có thay đổi chưa nộp lại. Nếu thoát bây giờ, các thay đổi này sẽ mất; bài đã nộp trước đó vẫn được giữ.';
+
+export default function AssignmentWorkOverlay({ assignmentId, title, userId, isHost = false, onClose, onSubmitted }: Props) {
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [sampleTests, setSampleTests] = useState<TestCase[]>([]);
   const [code, setCode] = useState('');
@@ -62,6 +73,8 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
   const [mcAnswers, setMcAnswers] = useState<number[]>([]); // Selected answer index for each question
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [mySubmission, setMySubmission] = useState<any>(null);
+  // Nội dung của lần nộp gần nhất: để biết sau khi nộp học viên có sửa gì chưa nộp lại không.
+  const [savedContent, setSavedContent] = useState<SavedContent | null>(null);
   const [alertModal, setAlertModal] = useState<{ title: string; message: string } | null>(null);
   const [customInput, setCustomInput] = useState(''); // Input để test thử
   // Sau "Chạy thử", kết quả cũ của lần nộp trước không còn đúng với code đang chạy: ẩn tới khi nộp lại.
@@ -69,7 +82,12 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
   const [timeStatus, setTimeStatus] = useState<'waiting' | 'active'>('active');
   const [countdown, setCountdown] = useState('');
   // Bài nộp code chấm nền: hỏi lại tới khi có verdict (cả khi mở lại màn và bài mới nhất còn `pending`).
-  const { timedOut: verdictPollTimedOut } = useLiveSubmissionVerdictPoll(mySubmission, setMySubmission);
+  // Verdict cuối của bài đang chấm về SAU khi học viên bấm "Chạy thử" thì phải hiện ra: nó chưa từng được hiển thị.
+  const onVerdictFinal = useCallback((final: SubmissionResponseDTO) => {
+    setMySubmission(final);
+    setVerdictStale(false);
+  }, []);
+  const { timedOut: verdictPollTimedOut } = useLiveSubmissionVerdictPoll(mySubmission, onVerdictFinal);
   // `system_error` = máy chấm không chấm được, bài KHÔNG được tính: không coi là "Đã nộp".
   const submissionCounted = !!mySubmission && !isJudgeUnavailableVerdict(mySubmission.verdict);
 
@@ -113,25 +131,6 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
     return () => clearInterval(interval);
   }, [assignment, isHost]);
 
-  const handleRequestClose = useCallback(() => {
-    if (submissionCounted) {
-      onClose(true);
-    } else {
-      setShowExitConfirm(true);
-    }
-  }, [submissionCounted, onClose]);
-
-  // Esc đóng màn làm bài (hoặc đóng hộp xác nhận thoát nếu đang mở), như mọi hộp thoại khác.
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || alertModal) return;
-      if (showExitConfirm) setShowExitConfirm(false);
-      else handleRequestClose();
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [alertModal, showExitConfirm, handleRequestClose]);
-
   // Detect assignment type from starter_code or code state
   const assignmentType = useMemo((): 'code' | 'essay' | 'multiple_choice' => {
     // Try assignment.starter_code first, then code state
@@ -150,6 +149,28 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
     }
     return 'code';
   }, [assignment?.starter_code, code]);
+
+  // Sau khi đã nộp, sửa bài mà chưa nộp lại: đóng màn sẽ mất phần sửa nên cũng phải hỏi xác nhận.
+  const hasUnsubmitted = submissionCounted && hasUnsubmittedChanges(savedContent, { type: assignmentType, code, essayAnswer, mcAnswers });
+
+  const handleRequestClose = useCallback(() => {
+    if (submissionCounted && !hasUnsubmitted) {
+      onClose(true);
+    } else {
+      setShowExitConfirm(true);
+    }
+  }, [submissionCounted, hasUnsubmitted, onClose]);
+
+  // Esc đóng màn làm bài (hoặc đóng hộp xác nhận thoát nếu đang mở), như mọi hộp thoại khác.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || alertModal) return;
+      if (showExitConfirm) setShowExitConfirm(false);
+      else handleRequestClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [alertModal, showExitConfirm, handleRequestClose]);
 
   // Parse essay config
   const essayConfig = useMemo(() => {
@@ -226,6 +247,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
         if (subRes.data && subRes.data.length > 0) {
           const latestSub = subRes.data[0];
           setMySubmission(latestSub);
+          setSavedContent(savedContentFromSubmission(latestSub));
           // Load submitted code/answer
           if (latestSub.code) {
             if (latestSub.language === 'text') {
@@ -276,12 +298,14 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
         code,
       });
       setMySubmission(res.data);
+      setSavedContent((prev) => ({ ...prev, code }));
+      onSubmitted?.();
     } catch (err: any) {
       setResults({ error: codeJudgeErrorMessage(err, 'Lỗi khi nộp bài') } as any);
     } finally {
       setSubmitting(false);
     }
-  }, [assignmentId, userId, code, language]);
+  }, [assignmentId, userId, code, language, onSubmitted]);
 
   // Handle image upload for essay editor
   const handleImageUpload = useCallback(async (file: File): Promise<string> => {
@@ -313,12 +337,14 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
         code: essayAnswer,
       });
       setMySubmission(res);
+      setSavedContent((prev) => ({ ...prev, essay: essayAnswer }));
+      onSubmitted?.();
     } catch (err: any) {
       setAlertModal({ title: 'Lỗi', message: meetErrorMessage(err, 'Lỗi khi nộp bài') });
     } finally {
       setSubmitting(false);
     }
-  }, [assignmentId, userId, essayAnswer, essayConfig, wordCount]);
+  }, [assignmentId, userId, essayAnswer, essayConfig, wordCount, onSubmitted]);
 
   // Handle multiple choice submission
   const handleSubmitMC = useCallback(async () => {
@@ -344,6 +370,9 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
         code: JSON.stringify({ answers: mcAnswers }),
       });
 
+      setSavedContent((prev) => ({ ...prev, mc: JSON.stringify(mcAnswers) }));
+      onSubmitted?.();
+
       // Wait a bit for backend to process and calculate score
       await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -363,7 +392,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
     } finally {
       setSubmitting(false);
     }
-  }, [assignmentId, userId, mcConfig, mcAnswers]);
+  }, [assignmentId, userId, mcConfig, mcAnswers, onSubmitted]);
 
   const handleLangChange = (langId: string) => {
     setLanguage(langId);
@@ -456,7 +485,9 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
       <div
         className="awo-modal"
         role="dialog"
-        aria-modal="true"
+        // Hộp xác nhận/cảnh báo là phần tử anh em nằm ngoài khung này: khi chúng mở, khung chính không được
+        // khai báo aria-modal, nếu không trình đọc màn hình coi chúng là vùng bị vô hiệu hoá.
+        aria-modal={showExitConfirm || alertModal ? undefined : 'true'}
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -1207,6 +1238,10 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
           }}
         >
           <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="awo-exit-confirm-title"
+            aria-describedby="awo-exit-confirm-desc"
             onClick={(e) => e.stopPropagation()}
             style={{
               background: 'linear-gradient(145deg, #1e1e1e, #161616)',
@@ -1240,7 +1275,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
                 <line x1="12" y1="17" x2="12.01" y2="17"/>
               </svg>
             </div>
-            <h3 style={{
+            <h3 id="awo-exit-confirm-title" style={{
               margin: '0 0 8px',
               fontSize: '17px',
               fontWeight: 700,
@@ -1248,16 +1283,17 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
             }}>
               Xác nhận thoát
             </h3>
-            <p style={{
+            <p id="awo-exit-confirm-desc" style={{
               margin: '0 0 24px',
               fontSize: '13px',
               color: 'rgba(255,255,255,0.5)',
               lineHeight: 1.6,
             }}>
-              Bạn chưa nộp bài. Nếu thoát bây giờ, tiến trình làm bài sẽ không được lưu lại.
+              {hasUnsubmitted ? EXIT_CONFIRM_CHANGED : EXIT_CONFIRM_UNSUBMITTED}
             </p>
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
+                autoFocus
                 onClick={() => setShowExitConfirm(false)}
                 style={{
                   flex: 1,
@@ -1281,7 +1317,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
                 Tiếp tục làm
               </button>
               <button
-                onClick={() => onClose(false)}
+                onClick={() => onClose(submissionCounted)}
                 style={{
                   flex: 1,
                   padding: '12px',
@@ -1328,6 +1364,10 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
           }}
         >
           <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="awo-alert-title"
+            aria-describedby="awo-alert-desc"
             onClick={(e) => e.stopPropagation()}
             style={{
               background: 'linear-gradient(145deg, #1e1e1e, #161616)',
@@ -1355,7 +1395,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
                 <line x1="12" y1="16" x2="12.01" y2="16"/>
               </svg>
             </div>
-            <h3 style={{
+            <h3 id="awo-alert-title" style={{
               margin: '0 0 8px',
               fontSize: '17px',
               fontWeight: 700,
@@ -1363,7 +1403,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
             }}>
               {alertModal.title}
             </h3>
-            <p style={{
+            <p id="awo-alert-desc" style={{
               margin: '0 0 24px',
               fontSize: '13px',
               color: 'rgba(255,255,255,0.5)',
@@ -1372,6 +1412,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
               {alertModal.message}
             </p>
             <button
+              autoFocus
               onClick={() => setAlertModal(null)}
               style={{
                 width: '100%',

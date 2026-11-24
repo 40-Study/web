@@ -20,7 +20,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { livestreamClassroomService, type Assignment } from "@/services/livestream-classroom.service";
 import { classifyAssignment, isPastDue, type AssignmentStatus } from "@/lib/assignment-status";
 import { hasSubmitted, submissionLabel } from "@/lib/assignment-submission";
@@ -171,9 +171,11 @@ function EmptyState() {
 
 // ---- Aggregate assignments hook ----
 
+const ASSIGNMENTS_QUERY_KEY = ["my-assignments-aggregated"] as const;
+
 function useAllAssignments() {
   return useQuery({
-    queryKey: ["my-assignments-aggregated"],
+    queryKey: ASSIGNMENTS_QUERY_KEY,
     queryFn: async () => {
       // Step 1: fetch all sessions
       const sessions = await livestreamClassroomService.listSessions();
@@ -203,6 +205,10 @@ export default function MyAssignmentsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [working, setWorking] = useState<Assignment | null>(null);
   const userId = useAuthStore((s) => s.user?.id);
+  const queryClient = useQueryClient();
+  // staleTime 30 s và không tải lại khi focus: nộp bài xong mà không làm mới thì danh sách vẫn ghi "Làm bài ngay"
+  // và đếm bài đó là "đang mở" (QA5 review #127, mục 3). Làm mới ngay khi nộp và khi đóng màn làm bài.
+  const refreshAssignments = () => queryClient.invalidateQueries({ queryKey: ASSIGNMENTS_QUERY_KEY });
 
   const { data: assignments = [], isLoading } = useAllAssignments();
   // Một mốc "bây giờ" cho cả lượt render để tab và thẻ không lệch nhau.
@@ -319,7 +325,11 @@ export default function MyAssignmentsPage() {
           assignmentId={working.id}
           title={working.title}
           userId={userId}
-          onClose={() => setWorking(null)}
+          onSubmitted={refreshAssignments}
+          onClose={() => {
+            setWorking(null);
+            refreshAssignments();
+          }}
         />
       )}
 

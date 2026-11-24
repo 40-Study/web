@@ -18,6 +18,7 @@ const ASSIGNMENTS = [
 
 vi.mock("@tanstack/react-query", () => ({
   useQuery: () => ({ data: ASSIGNMENTS, isLoading: false }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
 vi.mock("@/stores/auth.store", () => ({
