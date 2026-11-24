@@ -92,6 +92,11 @@ interface RoleScopedRoute {
   roles: NavRole[];
   /** Chỉ vai THẬT là STUDENT (TEACHER bị loại dù resolveNavRole quy về STUDENT) — nguồn của requiresRealStudentRole. */
   realStudentOnly?: true;
+  /**
+   * Q6-T03: route mở cho học viên VÀ phụ huynh nhưng không có nghĩa với giảng viên (vd /settings/family). Không dùng được
+   * `realStudentOnly` vì cờ đó đòi vai thật là STUDENT nên sẽ đá cả phụ huynh; cờ này chỉ chặn vai THẬT là giảng viên.
+   */
+  blocksTeacher?: true;
   /** Q5-T15: nơi đưa giảng viên (vai THẬT) về khi gõ thẳng route học viên này, thay cho trang chủ của vai. */
   teacherFallback?: string;
 }
@@ -111,22 +116,25 @@ export const ROLE_SCOPED_ROUTES: RoleScopedRoute[] = [
   { href: "/schedule", roles: ["STUDENT"], realStudentOnly: true, teacherFallback: "/teacher/schedule" },
   // Bài tập là của học viên (QA P3): phụ huynh gõ thẳng URL từng thấy nav học sinh +
   // "Bạn có 0 bài tập" — cùng lớp bug role-leak với /friends. Menu cũng đọc bảng này.
-  { href: "/my-assignments", roles: ["STUDENT"] },
+  // Q6-T02: cùng nhóm /my-courses: giảng viên gõ thẳng URL từng thấy trang học viên liệt kê CHÍNH buổi của mình như bài
+  // đang làm ("Làm bài ngay"). Chỉ vai STUDENT thật; giảng viên về trang giảng viên tương ứng (hoặc trang chủ nếu không có).
+  { href: "/my-assignments", roles: ["STUDENT"], realStudentOnly: true, teacherFallback: "/teacher/assignments" },
   // Danh sách khoá học yêu thích (QA2 F-10): của học viên; phụ huynh/admin không có wishlist.
-  { href: "/wishlist", roles: ["STUDENT"] },
+  { href: "/wishlist", roles: ["STUDENT"], realStudentOnly: true },
   // Buổi livestream và sổ điểm là của học viên (A-08, A-07); sidebar/bottom-nav đọc roles từ đây.
   { href: "/livestream", roles: ["STUDENT"], realStudentOnly: true },
   { href: "/my-grades", roles: ["STUDENT"], realStudentOnly: true },
-  { href: "/my-attendance", roles: ["STUDENT"] },
-  { href: "/certificates", roles: ["STUDENT"] },
-  { href: "/groups", roles: ["STUDENT"] },
-  { href: "/coins", roles: ["STUDENT"] },
-  { href: "/achievements", roles: ["STUDENT"] },
-  { href: "/leaderboard", roles: ["STUDENT"] },
+  { href: "/my-attendance", roles: ["STUDENT"], realStudentOnly: true, teacherFallback: "/teacher/classes" },
+  { href: "/certificates", roles: ["STUDENT"], realStudentOnly: true },
+  { href: "/groups", roles: ["STUDENT"], realStudentOnly: true },
+  { href: "/coins", roles: ["STUDENT"], realStudentOnly: true },
+  { href: "/achievements", roles: ["STUDENT"], realStudentOnly: true },
+  { href: "/leaderboard", roles: ["STUDENT"], realStudentOnly: true },
   // Bạn bè (QA vòng 2): trang xã hội của học sinh, phụ huynh không có lý do vào. Menu đã bỏ mục này
   // (sidebar.tsx) nhưng gõ thẳng URL vẫn mở được — (app)/layout.tsx đọc bảng này để chuyển về home.
   { href: "/friends", roles: ["STUDENT"] },
-  { href: "/settings/family", roles: ["STUDENT", "PARENT"] },
+  // Q6-T03: giảng viên không có liên kết phụ huynh; phụ huynh vẫn vào (nên không dùng realStudentOnly).
+  { href: "/settings/family", roles: ["STUDENT", "PARENT"], blocksTeacher: true },
   { href: "/messages", roles: ["STUDENT", "PARENT"] },
 ];
 
@@ -182,13 +190,23 @@ export function isRouteAllowedForRole(pathname: string, role: NavRole): boolean 
  */
 const STUDENT_REAL_ROLE_ROUTES = ROLE_SCOPED_ROUTES.filter((r) => r.realStudentOnly).map((r) => r.href);
 
+const TEACHER_BLOCKED_ROUTES = ROLE_SCOPED_ROUTES.filter((r) => r.blocksTeacher).map((r) => r.href);
+
 export function requiresRealStudentRole(pathname: string): boolean {
   return STUDENT_REAL_ROLE_ROUTES.some((href) => pathname === href || pathname.startsWith(`${href}/`));
 }
 
-/** Route học viên-only có mở được với vai ĐANG DÙNG không (route không thuộc nhóm này luôn true). */
+/**
+ * Route học viên-only có mở được với vai ĐANG DÙNG không (route không thuộc nhóm này luôn true). Truyền vai ĐÃ quy đổi
+ * (`systemRole ?? normalizeRole(activeRole)`): vai tuỳ biến của tổ chức chưa quy về STUDENT sẽ bị coi là không phải học viên.
+ */
 export function canAccessStudentOnlyRoute(pathname: string, activeRole?: string | null): boolean {
-  return !requiresRealStudentRole(pathname) || normalizeRole(activeRole) === "STUDENT";
+  const role = normalizeRole(activeRole);
+  if (requiresRealStudentRole(pathname) && role !== "STUDENT") return false;
+  if (role === "TEACHER" && TEACHER_BLOCKED_ROUTES.some((href) => pathname === href || pathname.startsWith(`${href}/`))) {
+    return false;
+  }
+  return true;
 }
 
 /**
