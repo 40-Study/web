@@ -106,3 +106,43 @@ describe("QuizAttemptReview — câu bỏ trống có đáp án từ backend (S5
     expect(screen.getByText("Sáu")).toBeTruthy();
   });
 });
+
+// QA6 C10: giảng viên tắt hiện đáp án -> backend trả null + answers_hidden; web không được hiện dấu đúng/sai.
+describe("QuizAttemptReview — giảng viên ẩn đáp án (C10)", () => {
+  const hidden = [
+    {
+      question_id: "q1",
+      question_text: "1 + 1 = ?",
+      selected_answer_ids: ["a1"],
+      correct_answer_ids: null,
+      explanation: null,
+      is_correct: true,
+      points_earned: 1,
+    },
+    {
+      question_id: "q2",
+      question_text: "2 + 2 = ?",
+      selected_answer_ids: [],
+      correct_answer_ids: null,
+      explanation: null,
+      points_earned: 0,
+    },
+  ];
+  const text = new Map([["a1", "Hai"]]);
+
+  it("hiện thông báo, không có 'Đáp án đúng', không có kết luận đúng/sai", () => {
+    const { container } = render(<QuizAttemptReview answers={hidden} answerText={text} answersHidden />);
+    expect(screen.getByText("Giảng viên đã ẩn đáp án của bài này")).toBeTruthy();
+    expect(screen.queryByText("Đáp án đúng:")).toBeNull();
+    expect(container.textContent).not.toMatch(/Đúng —|Chưa đúng/);
+    expect(container.querySelector(".text-emerald-600, .text-rose-600")).toBeNull();
+    expect(screen.getByText("Hai")).toBeTruthy();
+    expect(screen.getByText("Chưa trả lời.")).toBeTruthy();
+  });
+
+  it("không có cờ answersHidden thì vẫn hiện đúng/sai như trước", () => {
+    const { container } = render(<QuizAttemptReview answers={hidden} answerText={text} />);
+    expect(screen.queryByText("Giảng viên đã ẩn đáp án của bài này")).toBeNull();
+    expect(container.textContent).toMatch(/Đúng — 1 điểm/);
+  });
+});

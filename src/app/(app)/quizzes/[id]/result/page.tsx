@@ -134,7 +134,12 @@ export default function QuizResultPage() {
 
       <div>
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Chi tiết từng câu</h2>
-        <QuizAttemptReview answers={attempt.answers} answerText={answerText} questions={questions} />
+        <QuizAttemptReview
+          answers={attempt.answers}
+          answerText={answerText}
+          questions={questions}
+          answersHidden={attempt.answers_hidden === true}
+        />
       </div>
     </div>
   );

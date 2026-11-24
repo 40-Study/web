@@ -11,10 +11,10 @@ export interface AttemptAnswerLike {
   question_id: string;
   question_text: string;
   selected_answer_ids: string[];
-  correct_answer_ids?: string[];
+  correct_answer_ids?: string[] | null;
   is_correct?: boolean;
   points_earned: number;
-  explanation?: string;
+  explanation?: string | null;
 }
 
 export interface QuestionLike {
