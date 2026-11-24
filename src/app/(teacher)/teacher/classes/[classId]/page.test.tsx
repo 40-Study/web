@@ -5,14 +5,14 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const state = vi.hoisted(() => ({ search: "", courseId: undefined as string | undefined, panelTab: "" }));
+const state = vi.hoisted(() => ({ search: "", courseId: undefined as string | undefined, panelTab: "", noClass: false }));
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ classId: "class-1" }),
   useSearchParams: () => new URLSearchParams(state.search),
 }));
 vi.mock("@/hooks/queries/use-class-manage", () => ({
-  useClassById: () => ({ data: { id: "class-1", course_id: state.courseId } }),
+  useClassById: () => ({ data: state.noClass ? undefined : { id: "class-1", course_id: state.courseId } }),
 }));
 vi.mock("@/components/classes/class-manage-panel", () => ({
   ClassManagePanel: ({ initialTab }: { initialTab?: string }) => <div data-testid="panel" data-tab={initialTab} />,
@@ -30,6 +30,7 @@ import TeacherClassManagePage from "./page";
 beforeEach(() => {
   state.search = "";
   state.courseId = "course-9";
+  state.noClass = false;
 });
 
 describe("TeacherClassManagePage", () => {
@@ -66,5 +67,22 @@ describe("TeacherClassManagePage", () => {
     state.search = "tab=schedule";
     render(<TeacherClassManagePage />);
     expect(screen.getByTestId("panel").getAttribute("data-tab")).toBe("schedule");
+  });
+});
+
+// Q6-T07: lớp không tồn tại chỉ có thẻ "Không tìm thấy lớp" (từ ClassManagePanel), không kèm nút Điểm danh sống tới
+// /teacher/classes/<id lạ>/attendance hay danh sách bài tập của lớp đó.
+describe("TeacherClassManagePage: lớp chưa tải được (Q6-T07)", () => {
+  it("không có dữ liệu lớp -> không có link Điểm danh và không có danh sách bài tập, vẫn có nút quay lại", () => {
+    state.noClass = true;
+    render(<TeacherClassManagePage />);
+    expect(screen.queryByRole("link", { name: /Điểm danh/ })).toBeNull();
+    expect(screen.queryByTestId("assignments")).toBeNull();
+    expect(screen.getByRole("link", { name: /Lớp học của tôi/ })).toBeTruthy();
+  });
+
+  it("có dữ liệu lớp -> link Điểm danh trỏ tới đúng lớp", () => {
+    render(<TeacherClassManagePage />);
+    expect(screen.getByRole("link", { name: /Điểm danh/ }).getAttribute("href")).toBe("/teacher/classes/class-1/attendance");
   });
 });

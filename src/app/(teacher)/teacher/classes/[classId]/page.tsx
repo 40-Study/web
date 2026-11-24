@@ -28,32 +28,37 @@ export default function TeacherClassManagePage() {
         <Link href={backHref} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {backLabel}
         </Link>
-        <Link
-          href={`/teacher/classes/${classId}/attendance`}
-          className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm font-medium hover:border-primary-300 hover:text-primary-600"
-        >
-          <ClipboardCheck className="h-4 w-4" aria-hidden="true" /> Điểm danh
-        </Link>
+        {/* Q6-T07: lớp không tồn tại / không xem được chỉ có thẻ "Không tìm thấy lớp", không kèm nút Điểm danh sống. */}
+        {cls && (
+          <Link
+            href={`/teacher/classes/${classId}/attendance`}
+            className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm font-medium hover:border-primary-300 hover:text-primary-600"
+          >
+            <ClipboardCheck className="h-4 w-4" aria-hidden="true" /> Điểm danh
+          </Link>
+        )}
       </div>
       <ClassManagePanel classId={classId} initialTab={searchParams.get("tab") === "schedule" ? "schedule" : "members"} />
       {/* QA-B-08: bài tập gắn với lớp đã có trong DB nhưng trang lớp không có lối vào; mỗi bài dẫn tới trang bài nộp. */}
-      <ClassAssignmentsList
-        classId={classId}
-        hrefFor={(id) => `/teacher/assignments/${id}/submissions`}
-        emptyTitle="Chưa có bài tập nào cho lớp này."
-        emptyDescription={
-          <>
-            Giao bài trong{" "}
-            <Link
-              href={cls?.course_id ? `/teacher/assignments?courseId=${cls.course_id}` : "/teacher/assignments"}
-              className="font-medium text-primary-600 hover:underline"
-            >
-              Quản lý bài tập
-            </Link>
-            .
-          </>
-        }
-      />
+      {cls && (
+        <ClassAssignmentsList
+          classId={classId}
+          hrefFor={(id) => `/teacher/assignments/${id}/submissions`}
+          emptyTitle="Chưa có bài tập nào cho lớp này."
+          emptyDescription={
+            <>
+              Giao bài trong{" "}
+              <Link
+                href={cls.course_id ? `/teacher/assignments?courseId=${cls.course_id}` : "/teacher/assignments"}
+                className="font-medium text-primary-600 hover:underline"
+              >
+                Quản lý bài tập
+              </Link>
+              .
+            </>
+          }
+        />
+      )}
     </div>
   );
 }
