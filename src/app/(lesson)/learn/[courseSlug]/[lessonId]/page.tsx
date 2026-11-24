@@ -721,6 +721,8 @@ export default function CourseLessonPage() {
             onSubmit={handleQuizSubmitApi}
             onSaveAnswer={handleSaveAnswer}
             isSubmitting={submitQuizMutation.isPending}
+            // Bài học bắt đầu không gửi mode, backend mặc định "official".
+            mode={activeQuiz.mode ?? "official"}
           />
         );
       }

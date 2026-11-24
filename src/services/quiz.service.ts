@@ -123,6 +123,8 @@ export interface StartQuizResponse {
   time_limit_minutes?: number;
   questions: AttemptQuestion[];
   started_at: string;
+  /** Chế độ backend đã bắt đầu (mặc định "official" khi không gửi mode). */
+  mode?: QuizMode;
 }
 
 export interface AttemptQuestion {

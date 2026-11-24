@@ -35,6 +35,8 @@ export default function StandaloneQuizPage() {
 
   const [activeQuiz, setActiveQuiz] = useState<StartQuizResponse | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  // Chế độ đã chọn, dự phòng khi phản hồi bắt đầu chưa kèm `mode` (để hộp xác nhận nói đúng có tính lượt không).
+  const [selectedMode, setSelectedMode] = useState<QuizMode>("official");
 
   const startQuizMutation = useStartQuiz();
   const submitQuizMutation = useSubmitQuiz();
@@ -42,6 +44,7 @@ export default function StandaloneQuizPage() {
 
   const handleSelectMode = async (mode: QuizMode) => {
     setActionError(null);
+    setSelectedMode(mode);
     try {
       const response = await startQuizMutation.mutateAsync({ quizId, mode });
       setActiveQuiz(response);
@@ -112,6 +115,7 @@ export default function StandaloneQuizPage() {
           onSubmit={handleSubmit}
           onSaveAnswer={handleSaveAnswer}
           isSubmitting={submitQuizMutation.isPending}
+          mode={activeQuiz.mode ?? selectedMode}
         />
         {actionError && <p className="mt-3 text-sm text-red-600">{actionError}</p>}
       </div>

@@ -9,7 +9,7 @@ import {
   toggleUnsure,
   countUnsure,
 } from "@/components/quiz/unsure-toggle";
-import type { StartQuizResponse, AttemptQuestion } from "@/services/quiz.service";
+import type { StartQuizResponse, AttemptQuestion, QuizMode } from "@/services/quiz.service";
 import { QuizSubmitConfirmDialog } from "./quiz-submit-confirm-dialog";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -59,6 +59,11 @@ interface QuizLessonContentProps {
   onBack?: () => void;
   /** Is submitting */
   isSubmitting?: boolean;
+  /**
+   * Chế độ lượt làm. "official" luôn hỏi lại trước khi nộp (tính vào số lần làm bài); "practice" hoặc không
+   * truyền (dữ liệu demo) chỉ hỏi khi còn câu bỏ trống.
+   */
+  mode?: QuizMode;
 }
 
 // ─── Helper: Format time ─────────────────────────────────────────────────────
@@ -166,6 +171,7 @@ export function QuizLessonContent({
   onSaveAnswer,
   onBack,
   isSubmitting,
+  mode,
 }: QuizLessonContentProps) {
   const isApiMode = !!apiQuiz;
   const title = apiQuiz?.title || quiz?.title || "Quiz";
@@ -261,10 +267,11 @@ export function QuizLessonContent({
     }
   }, [timeLeft, timeLimitMins, onSubmit, isSubmitted, isSubmitting, isApiMode]);
 
-  // Nộp tay khi còn câu bỏ trống phải xác nhận trước (QA4 S2); hết giờ thì nộp thẳng.
+  // Nộp tay phải xác nhận khi còn câu bỏ trống hoặc là lượt chính thức (QA4 S2, review #124); hết giờ nộp thẳng.
   const unansweredCount = totalQuestions - answeredCount;
+  const isOfficial = mode === "official";
   const handleSubmitClick = () => {
-    if (unansweredCount > 0) setConfirmOpen(true);
+    if (unansweredCount > 0 || isOfficial) setConfirmOpen(true);
     else void handleSubmit();
   };
   const handleConfirmSubmit = () => {
@@ -537,6 +544,7 @@ export function QuizLessonContent({
         open={confirmOpen}
         unansweredCount={unansweredCount}
         totalQuestions={totalQuestions}
+        countsTowardAttempts={isOfficial}
         onOpenChange={setConfirmOpen}
         onConfirm={handleConfirmSubmit}
       />

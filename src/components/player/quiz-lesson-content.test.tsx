@@ -6,7 +6,7 @@
  * is true.
  */
 
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QuizLessonContent, type QuizData } from "./quiz-lesson-content";
 
@@ -180,3 +180,43 @@ describe("QuizLessonContent — xác nhận khi còn câu chưa trả lời (S2)
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 });
+
+// Review #124: lượt chính thức luôn hỏi lại (kể cả trả lời đủ) và nói rõ tính vào số lần làm; luyện tập
+// thì không có câu đó và trả lời đủ thì nộp thẳng.
+describe("QuizLessonContent — xác nhận theo chế độ lượt làm", () => {
+  it("official, đã trả lời đủ: vẫn hỏi, có câu tính vào số lần làm bài", async () => {
+    const onSubmit = vi.fn();
+    render(<QuizLessonContent quiz={QUIZ} mode="official" onSubmit={onSubmit} />);
+    fireEvent.click(screen.getByText("2"));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /nộp bài/i }));
+    });
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText(/tính vào số lần làm bài/)).toBeTruthy();
+    await act(async () => {
+      fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Nộp bài" }));
+    });
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it("practice còn câu bỏ trống: hỏi nhưng KHÔNG nói tính vào số lần làm", async () => {
+    const QUIZ2: QuizData = { ...QUIZ, questions: [QUIZ.questions[0], { ...QUIZ.questions[0], id: "qst-2" }] };
+    render(<QuizLessonContent quiz={QUIZ2} mode="practice" onSubmit={vi.fn()} />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /nộp bài/i }));
+    });
+    expect(screen.getByText(/Còn 2\/2 câu chưa trả lời/)).toBeTruthy();
+    expect(screen.queryByText(/số lần làm bài/)).toBeNull();
+  });
+
+  it("practice, đã trả lời đủ: nộp thẳng không hỏi", async () => {
+    const onSubmit = vi.fn();
+    render(<QuizLessonContent quiz={QUIZ} mode="practice" onSubmit={onSubmit} />);
+    fireEvent.click(screen.getByText("2"));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /nộp bài/i }));
+    });
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+});
+
