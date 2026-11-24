@@ -113,6 +113,23 @@ describe("/admin dashboard — A-P2-2", () => {
     expect(call?.[1]).toEqual({ params: { page_size: 5 } });
   });
 
+  it("QA4-A02: dòng gán vai trò tổ chức nêu tên người dùng, tổ chức và vai trò thay vì 'user: <uuid>'", async () => {
+    AUDIT_PAGE = {
+      items: [
+        {
+          id: "a3", created_at: "2026-11-23T03:15:00Z", actor: { id: "u1", name: "Quản trị A", email: "a@x.vn" },
+          action: "user.org_role_assign", target_type: "user", target_id: "52ed9bd3", status_code: 200, ip: null,
+          metadata: { organization_name: "QA3 Org 261104", role_code: "ORG_STUDENT", target_user_name: "Đặng Bá Quân" },
+        },
+      ],
+      total: 1, page: 1, page_size: 5,
+    };
+    renderWithProviders(<AdminIndexPage />);
+
+    expect(await screen.findByText("Người dùng: Đặng Bá Quân · Tổ chức QA3 Org 261104 · Vai trò Học viên")).toBeTruthy();
+    expect(screen.queryByText(/52ed9bd3/)).toBeNull();
+  });
+
   it("admin thiếu quyền nhật ký (403): chỉ khối Hoạt động gần đây báo lỗi, các số liệu khác vẫn hiện", async () => {
     const base = mockApi.get.getMockImplementation();
     mockApi.get.mockImplementation(async (url: string, ...rest: unknown[]) => {

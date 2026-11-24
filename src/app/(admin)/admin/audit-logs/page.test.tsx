@@ -71,13 +71,28 @@ describe("AdminAuditLogsPage", () => {
     const row = screen.getByText("Quản Trị Viên").closest("tr")!;
     expect(within(row).getByText("admin@40study.test")).toBeTruthy();
     expect(within(row).getByText("Khoá tài khoản")).toBeTruthy();
-    expect(within(row).getByText("user: u-123")).toBeTruthy();
+    expect(within(row).getByText("Người dùng: u-123")).toBeTruthy();
     expect(within(row).getByText("203.0.113.7")).toBeTruthy();
     expect(within(row).getByText("10:00 03/10/2026")).toBeTruthy(); // giờ Việt Nam
 
     const unknown = screen.getByText("future.action").closest("tr")!; // mã lạ hiện nguyên mã
     expect(within(unknown).getByText("Tài khoản không còn")).toBeTruthy();
     expect(screen.queryByText(/chưa ghi nhận nhật ký/i)).toBeNull();
+  });
+
+  it("QA4-A02: thao tác vai trò tổ chức hiện tên người dùng và dòng phụ tổ chức + vai trò", () => {
+    ok([
+      log({
+        action: "user.org_role_revoke",
+        target_id: "52ed9bd3",
+        metadata: { organization_name: "QA3 Org 261104", role_code: "QA3_TEACHER", target_user_name: "Đặng Bá Quân" },
+      }),
+    ]);
+    render(<AdminAuditLogsPage />);
+
+    const row = screen.getByText("Người dùng: Đặng Bá Quân").closest("tr")!;
+    expect(within(row).getByText("Tổ chức QA3 Org 261104 · Vai trò Qa3 Teacher")).toBeTruthy();
+    expect(within(row).queryByText(/52ed9bd3/)).toBeNull();
   });
 
   // ADM-L9 (smoke 2): ở 390px bảng 7 cột cuộn ngang, cột "Hành động" bị cắt/rớt nhiều dòng. Dưới sm mỗi dòng

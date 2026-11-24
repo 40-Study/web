@@ -4,7 +4,8 @@ import { Fragment, Suspense, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuditLogActions, useAuditLogs } from "@/hooks/queries/use-audit-logs";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { auditActionLabel, type AuditLogItem } from "@/services/audit-log.service";
+import { auditActionLabel } from "@/services/audit-log.service";
+import { auditContextText, auditTargetText } from "@/lib/audit-log-target";
 import { QueryState } from "@/components/common/query-state";
 import { isUuid } from "@/lib/uuid";
 import { Badge } from "@/components/ui/badge";
@@ -33,11 +34,6 @@ const INPUT_CLASS =
 function parsePage(value: string | null): number {
   const n = Number(value);
   return Number.isInteger(n) && n >= 1 ? n : 1;
-}
-
-function targetText(log: AuditLogItem): string {
-  if (!log.target_type && !log.target_id) return "—";
-  return [log.target_type, log.target_id].filter(Boolean).join(": ");
 }
 
 export default function AdminAuditLogsPage() {
@@ -226,7 +222,10 @@ function AuditLogsContent() {
                       {auditActionLabel(log.action)}
                     </td>
                     <td data-label={COL.target} className={`${CELL_CLASS} break-all text-gray-600 dark:text-gray-300 sm:break-normal`}>
-                      {targetText(log)}
+                      <div>
+                        <p>{auditTargetText(log)}</p>
+                        {auditContextText(log) && <p className="text-xs text-gray-500">{auditContextText(log)}</p>}
+                      </div>
                     </td>
                     <td data-label={COL.result} className={CELL_CLASS}>
                       <Badge variant="success">{log.status_code}</Badge>

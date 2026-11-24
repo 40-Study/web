@@ -29,7 +29,13 @@ function setupApi(opts: { previewCount?: number | ((body: { roles?: string[] }) 
       return {
         data: {
           message: "ok",
-          data: { roles: [{ id: "r1", name: "STUDENT" }, { id: "r2", name: "TEACHER" }] },
+          data: {
+            roles: [
+              { id: "r1", name: "STUDENT" },
+              { id: "r2", name: "TEACHER" },
+              { id: "r3", name: "ORG_OWNER" },
+            ],
+          },
         },
       };
     }
@@ -99,6 +105,17 @@ describe("AdminBroadcastNotificationsPage", () => {
     await user.click(screen.getByLabelText("Học viên")); // bỏ chọn -> lại không gửi được
     expect(await screen.findByText("Chọn ít nhất một vai trò để xem số người nhận.")).toBeTruthy();
     expect((submitButton() as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("không cho chọn 'Chủ tổ chức' làm đối tượng (vai trò tổ chức, không đếm được theo vai trò hệ thống)", async () => {
+    setupApi();
+    const user = userEvent.setup();
+    renderWithProviders(<AdminBroadcastNotificationsPage />);
+
+    await user.click(screen.getByLabelText("Theo vai trò"));
+    const group = await screen.findByRole("group", { name: "Vai trò nhận thông báo" });
+    expect(await within(group).findByLabelText("Học viên")).toBeTruthy();
+    expect(within(group).queryByLabelText("Chủ tổ chức")).toBeNull();
   });
 
   it("0 người nhận: hiện thông báo và khoá nút gửi", async () => {
