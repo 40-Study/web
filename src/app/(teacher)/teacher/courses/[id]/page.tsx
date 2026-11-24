@@ -1454,6 +1454,7 @@ function ClassManagementDialog({
                   variant="ghost"
                   size="icon"
                   className="text-muted-foreground hover:text-destructive"
+                  aria-label={`Xoá lớp ${cls.name}`}
                   onClick={() => handleDelete(cls.id)}
                   disabled={deleting === cls.id}
                 >

@@ -342,6 +342,7 @@ export function ExerciseModal({
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={`Xoá câu hỏi ${qIdx + 1}`}
                             onClick={() => removeQuestion(q.id)}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -476,6 +477,7 @@ export function ExerciseModal({
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label="Xoá test case"
                           onClick={() => removeTestCase(tc.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />

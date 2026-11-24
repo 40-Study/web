@@ -624,7 +624,7 @@ export function AddContentModal({
                           <p className="text-xs text-muted-foreground">{formatFileSize(videoFile.size)}</p>
                         </div>
                         {!isLoading && (
-                          <Button variant="ghost" size="icon" onClick={() => setVideoFile(null)}>
+                          <Button variant="ghost" size="icon" aria-label="Bỏ video đã chọn" onClick={() => setVideoFile(null)}>
                             <X className="w-4 h-4" />
                           </Button>
                         )}
@@ -1150,7 +1150,7 @@ function DocumentsPanel({
                 <p className="text-sm truncate">{f.name}</p>
                 <p className="text-xs text-muted-foreground">{formatFileSize(f.size)}</p>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => onRemove(idx)}>
+              <Button variant="ghost" size="icon" aria-label={`Bỏ tệp ${f.name}`} onClick={() => onRemove(idx)}>
                 <X className="w-4 h-4" />
               </Button>
             </div>

@@ -95,4 +95,11 @@ describe("ClassCreateForm", () => {
     // Trong ô chọn cũng có <option> cùng tên, nên chỉ tính phần tử không phải <option>.
     expect(screen.getAllByText("Trung tâm A").some((el) => el.tagName !== "OPTION")).toBe(true);
   });
+
+  it("Q4-T20: huy hiệu nguồn lớp không nằm trong <p> (div trong p làm React báo lỗi hydration)", () => {
+    renderForm();
+    const line = screen.getByText(/Lớp sẽ được tạo là/);
+    expect(line.tagName).not.toBe("P");
+    expect(line.closest("p")).toBeNull();
+  });
 });
