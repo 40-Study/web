@@ -5,6 +5,7 @@ import { Monitor, Moon, Sun, Check } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { FONT_SIZE_DEFAULT, FONT_SIZE_MAX, FONT_SIZE_MIN } from "@/lib/appearance-storage";
 
 type Theme = "light" | "dark" | "system";
 type Language = "vi" | "en";
@@ -37,9 +38,9 @@ const themes: Array<{
 ];
 
 /** Thang cỡ chữ: nhãn "Bình thường" phải nằm đúng vị trí 100% trên thanh trượt, không phải giữa thanh (QA3 Q13). */
-const FONT_MIN = 80;
-const FONT_MAX = 150;
-const FONT_NORMAL = 100;
+const FONT_MIN = FONT_SIZE_MIN;
+const FONT_MAX = FONT_SIZE_MAX;
+const FONT_NORMAL = FONT_SIZE_DEFAULT;
 const FONT_NORMAL_PCT = ((FONT_NORMAL - FONT_MIN) / (FONT_MAX - FONT_MIN)) * 100;
 
 const languages = [

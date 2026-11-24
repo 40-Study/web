@@ -5,9 +5,17 @@
 /** Key localStorage lưu theme đã chọn — export để dùng lại trong script chống FOUC (layout.tsx). */
 export const THEME_STORAGE_KEY = "app_theme";
 
+/** Key localStorage lưu cỡ chữ (%) — dùng lại trong script chống FOUC (layout.tsx). */
+export const FONT_SIZE_STORAGE_KEY = "app_font_size";
+
+/** Thang cỡ chữ của thanh trượt Cài đặt > Giao diện (% của cỡ chữ gốc 16px). */
+export const FONT_SIZE_MIN = 80;
+export const FONT_SIZE_MAX = 150;
+export const FONT_SIZE_DEFAULT = 100;
+
 const KEYS = {
   theme: THEME_STORAGE_KEY,
-  fontSize: "app_font_size",
+  fontSize: FONT_SIZE_STORAGE_KEY,
   language: "app_language",
 } as const;
 
@@ -31,6 +39,24 @@ export function applyTheme(theme: string): void {
   document.documentElement.classList.toggle("dark", theme === "dark");
 }
 
+/**
+ * Áp cỡ chữ (%) lên `<html>`: mọi kích thước rem của Tailwind co giãn theo. Giá trị ngoài thang bị kẹp lại;
+ * 100% gỡ style inline để trở về cỡ mặc định của trình duyệt/CSS.
+ */
+export function applyFontSize(percent: number): void {
+  if (typeof document === "undefined") return;
+  const clamped = Math.min(FONT_SIZE_MAX, Math.max(FONT_SIZE_MIN, percent));
+  document.documentElement.style.fontSize = clamped === FONT_SIZE_DEFAULT ? "" : `${clamped}%`;
+}
+
+/**
+ * Script chạy TRƯỚC hydrate (layout.tsx) để cỡ chữ đã lưu có hiệu lực ngay khung hình đầu, không nháy.
+ * Cùng quy tắc kẹp với `applyFontSize`; giá trị hỏng thì bỏ qua.
+ */
+export function fontSizeBootScript(): string {
+  return `var f=parseFloat(localStorage.getItem(${JSON.stringify(FONT_SIZE_STORAGE_KEY)}));if(f>=${FONT_SIZE_MIN}&&f<=${FONT_SIZE_MAX}&&f!==${FONT_SIZE_DEFAULT}){document.documentElement.style.fontSize=f+"%";}`;
+}
+
 export const appearanceStorage = {
   getTheme: (): string => safeGet(KEYS.theme) ?? "system",
   setTheme: (t: string): void => {
@@ -38,8 +64,11 @@ export const appearanceStorage = {
     applyTheme(t);
   },
 
-  getFontSize: (): number => Number(safeGet(KEYS.fontSize)) || 100,
-  setFontSize: (s: number): void => localStorage.setItem(KEYS.fontSize, String(s)),
+  getFontSize: (): number => Number(safeGet(KEYS.fontSize)) || FONT_SIZE_DEFAULT,
+  setFontSize: (s: number): void => {
+    localStorage.setItem(KEYS.fontSize, String(s));
+    applyFontSize(s);
+  },
 
   getLanguage: (): string => safeGet(KEYS.language) ?? "vi",
   setLanguage: (l: string): void => localStorage.setItem(KEYS.language, l),
