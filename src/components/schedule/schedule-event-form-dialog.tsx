@@ -361,7 +361,8 @@ export default function ScheduleEventFormDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Huỷ
+              {/* Q4-T21: cạnh nút "Huỷ buổi học" mà ghi "Huỷ" thì dễ bấm nhầm hai nghĩa "huỷ". */}
+              {isEditing && onDelete ? "Đóng" : "Huỷ"}
             </Button>
             <Button type="submit" disabled={!title || !dateStr || (!isEditing && !classId)}>
               {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{isEditing ? "Lưu thay đổi" : "Tạo buổi học"}

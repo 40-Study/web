@@ -479,7 +479,8 @@ function LessonContentsPanel({
                       <p className="text-xs font-medium truncate hover:text-primary-600">{c.title}</p>
                       <p className="text-[10px] text-muted-foreground">
                         {cfg.label}
-                        {c.duration ? ` · ${Math.round(c.duration / 60)} phút` : ""}
+                        {/* Q4-T21: video 3:33 từng hiện "4 phút" (làm tròn); hiện đúng phút:giây. */}
+                        {c.duration ? ` · ${formatLessonDuration(c.duration)}` : ""}
                       </p>
                     </button>
                     <div className="flex items-center gap-1 opacity-0 group-hover/content:opacity-100 transition-all">

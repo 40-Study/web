@@ -307,7 +307,7 @@ export default function TeacherAssignmentsPage() {
                     {session.title}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {sessionStatusLabel(session.status)}
+                    {sessionStatusLabel(session.status, session.scheduled_at)}
                     {session.scheduled_at ? ` · ${formatVnDateThenTime(session.scheduled_at)}` : ""}
                   </p>
                 </button>

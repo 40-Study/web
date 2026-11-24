@@ -377,6 +377,8 @@ export function AddContentModal({
           ? exQuiz
           : [];
   const formErrors = validateContentForm(formTitle, formQuestions);
+  // Ô tiêu đề luôn nằm ở tab "Nội dung" (form không có tab cũng giữ activeTab = "content").
+  const footerErrorSummary = contentFormErrorSummary(formErrors, { includeTitle: activeTab !== "content" });
   const visibleErrors = submitAttempted ? formErrors : { questions: {} };
   // Q2-04: điểm đạt / số lần làm chỉ có ở bài trắc nghiệm (exercise); các nhánh khác không có hai ô này.
   const isQuizExercise = contentType === "exercise" && exerciseType === "quiz";
@@ -1083,9 +1085,10 @@ export function AddContentModal({
               </p>
             )}
             {/* T3/T4: lý do không lưu được nằm ngay cạnh nút, kể cả khi lỗi ở tab đang ẩn. */}
-            {submitAttempted && hasContentFormErrors(formErrors) && (
+            {/* Q4-T21: lỗi tiêu đề đã hiện ngay dưới ô tiêu đề; chỉ nhắc lại ở đây khi ô đó nằm ở tab đang ẩn. */}
+            {submitAttempted && hasContentFormErrors(formErrors) && footerErrorSummary && (
               <p role="alert" data-testid="add-content-validation-error" className="text-xs text-destructive sm:mr-auto sm:text-left">
-                {contentFormErrorSummary(formErrors)}
+                {footerErrorSummary}
               </p>
             )}
             {submitError && (
