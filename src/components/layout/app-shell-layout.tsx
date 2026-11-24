@@ -13,9 +13,14 @@ import { cn } from "@/lib/utils";
 
 interface AppShellLayoutProps {
   children: React.ReactNode;
+  /**
+   * Chỉ layout của trang ứng dụng đã đăng nhập ((app), (dashboard)) bật cờ này. Trang công khai ((main): /courses,
+   * /help, /terms, /privacy, /teachers, /discussions...) giữ khung chung + Footer (liên kết pháp lý) cho cả giảng viên.
+   */
+  allowTeacherFrame?: boolean;
 }
 
-export function AppShellLayout({ children }: AppShellLayoutProps) {
+export function AppShellLayout({ children, allowTeacherFrame = false }: AppShellLayoutProps) {
   const pathname = usePathname();
   const contestFocus = /^\/contests\/[^/]+\/(play|result)$/.test(pathname);
   const { isCollapsed } = useSidebarStore();
@@ -38,7 +43,7 @@ export function AppShellLayout({ children }: AppShellLayoutProps) {
           : "student";
 
   // Q4-T19: giảng viên ghé trang dùng chung (thông báo, tin nhắn, hồ sơ) vẫn ở trong khung giảng viên.
-  if (isAuthenticated && normalizedRole === "TEACHER" && !contestFocus) {
+  if (allowTeacherFrame && isAuthenticated && normalizedRole === "TEACHER" && !contestFocus) {
     return <TeacherFrame>{children}</TeacherFrame>;
   }
 

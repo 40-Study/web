@@ -20,12 +20,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       roles={["PARENT"]}
       returnToCurrentPath
       pendingFallback={
-        <AppShellLayout>
+        <AppShellLayout allowTeacherFrame>
           <SessionPendingSkeleton className="page-container py-6" />
         </AppShellLayout>
       }
     >
-      <AppShellLayout>{children}</AppShellLayout>
+      <AppShellLayout allowTeacherFrame>{children}</AppShellLayout>
     </RoleGuard>
   );
 }

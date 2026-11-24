@@ -171,7 +171,7 @@ export default function AppLayout({
 
   // Public routes don't need auth
   if (isPublicRoute) {
-    return <AppShellLayout>{children}</AppShellLayout>;
+    return <AppShellLayout allowTeacherFrame>{children}</AppShellLayout>;
   }
 
   // Wait for hydration
@@ -198,7 +198,7 @@ export default function AppLayout({
 
   return (
     <RoleGuard roles={allowedRoles}>
-      <AppShellLayout>{children}</AppShellLayout>
+      <AppShellLayout allowTeacherFrame>{children}</AppShellLayout>
     </RoleGuard>
   );
 }

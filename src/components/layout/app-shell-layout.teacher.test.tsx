@@ -25,7 +25,7 @@ describe("AppShellLayout — khung theo vai", () => {
 
   it("giảng viên: sidebar giảng viên, không có footer trang học viên", () => {
     useAuthStore.setState({ isAuthenticated: true, activeRole: "TEACHER" });
-    render(<AppShellLayout>nội dung</AppShellLayout>);
+    render(<AppShellLayout allowTeacherFrame>nội dung</AppShellLayout>);
     expect(screen.getByTestId("teacher-sidebar")).toBeTruthy();
     expect(screen.getByTestId("bottom-nav-teacher")).toBeTruthy();
     expect(screen.queryByTestId("student-sidebar")).toBeNull();
@@ -33,9 +33,20 @@ describe("AppShellLayout — khung theo vai", () => {
     expect(screen.getByText("nội dung")).toBeTruthy();
   });
 
+  it("trang công khai ((main) không bật allowTeacherFrame): giảng viên giữ khung chung và Footer", () => {
+    useAuthStore.setState({ isAuthenticated: true, activeRole: "TEACHER" });
+    for (const p of ["/courses", "/help", "/terms", "/privacy", "/teachers", "/discussions"]) {
+      path.value = p;
+      const { unmount } = render(<AppShellLayout>nội dung</AppShellLayout>);
+      expect(screen.getByTestId("footer")).toBeTruthy();
+      expect(screen.queryByTestId("teacher-sidebar")).toBeNull();
+      unmount();
+    }
+  });
+
   it("học viên: giữ khung học viên", () => {
     useAuthStore.setState({ isAuthenticated: true, activeRole: "STUDENT" });
-    render(<AppShellLayout>nội dung</AppShellLayout>);
+    render(<AppShellLayout allowTeacherFrame>nội dung</AppShellLayout>);
     expect(screen.getByTestId("student-sidebar")).toBeTruthy();
     expect(screen.getByTestId("footer")).toBeTruthy();
     expect(screen.queryByTestId("teacher-sidebar")).toBeNull();
