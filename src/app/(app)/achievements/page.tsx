@@ -119,20 +119,21 @@ function ProfileBanner({
   const progressPercent = Math.min(100, Math.max(0, levelProgress));
 
   return (
-    <div className="relative bg-gradient-to-r from-slate-800 via-slate-900 to-indigo-900 rounded-3xl p-8 overflow-hidden">
+    <div className="relative bg-gradient-to-r from-slate-800 via-slate-900 to-indigo-900 rounded-3xl p-5 sm:p-8 overflow-hidden">
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl" />
       <div className="absolute bottom-0 left-1/2 w-96 h-32 bg-cyan-500/10 rounded-full blur-3xl" />
 
-      <div className="relative flex items-center gap-8">
+      {/* Dưới sm xếp dọc: hàng ngang cố định đẩy "HUY HIỆU" và cột Cấp/XP ra ngoài màn 390px (QA4 S6). */}
+      <div data-testid="achievements-hero-row" className="relative flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:gap-8">
         {/* Avatar */}
         <div className="relative">
-          <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 p-1 rotate-3">
+          <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 p-1 rotate-3">
             <div className="w-full h-full rounded-xl bg-slate-800 flex items-center justify-center overflow-hidden -rotate-3">
               {user.avatar ? (
                 <img src={user.avatar} alt="" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-4xl font-bold text-white">
+                <span className="text-2xl sm:text-4xl font-bold text-white">
                   {user.name?.[0] || user.email?.[0]?.toUpperCase() || "?"}
                 </span>
               )}
@@ -144,8 +145,8 @@ function ProfileBanner({
         </div>
 
         {/* User Info */}
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-white mb-1">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 break-words">
             {user.name || "Học viên"}
           </h1>
           <div className="flex items-center gap-2 mb-4">
@@ -155,7 +156,7 @@ function ProfileBanner({
             </span>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <div className="flex items-center gap-2">
               <Flame className="w-5 h-5 text-orange-400" />
               <span className="text-white font-semibold">{streakDays}</span>
@@ -170,20 +171,20 @@ function ProfileBanner({
         </div>
 
         {/* Level & XP */}
-        <div className="text-right">
+        <div data-testid="achievements-hero-level" className="w-full text-left sm:w-auto sm:text-right">
           <div className="mb-2">
             <span className="text-cyan-400 text-sm font-medium tracking-wider">CẤP</span>
           </div>
-          <div className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 leading-none mb-4">
+          <div className="text-5xl sm:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 leading-none mb-4">
             {displayLevel}
           </div>
 
-          <div className="text-right mb-2">
+          <div className="mb-2 sm:text-right">
             <span className="text-gray-400 text-xs">ĐIỂM KINH NGHIỆM</span>
             <span className="text-white ml-2 font-semibold">{totalXp.toLocaleString("vi-VN")} XP</span>
           </div>
           <div
-            className="w-64 h-2 bg-slate-700 rounded-full overflow-hidden"
+            className="w-full sm:w-64 h-2 bg-slate-700 rounded-full overflow-hidden"
             role="progressbar"
             aria-label={`Tiến độ cấp ${displayLevel}`}
             aria-valuemin={0}
@@ -195,7 +196,7 @@ function ProfileBanner({
               style={{ width: `${progressPercent}%` }}
             />
           </div>
-          <p className="mt-1 text-right text-xs text-gray-400">Đã đạt {progressPercent}% để lên cấp {displayLevel + 1}</p>
+          <p className="mt-1 text-xs text-gray-400 sm:text-right">Đã đạt {progressPercent}% để lên cấp {displayLevel + 1}</p>
         </div>
       </div>
     </div>
