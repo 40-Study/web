@@ -116,7 +116,7 @@ export default function AdminIndexPage() {
           refetchPerms();
         }}
       >
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
             <p className="text-sm text-gray-500">Tổng tổ chức</p>
             <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
@@ -148,8 +148,9 @@ export default function AdminIndexPage() {
           </div>
         </section>
 
-        <section className="mt-6 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+        {/* QA6-A04: cột `auto` giãn theo tên tổ chức dài trong "Hoạt động gần đây" (597px ở 390); cần cột `minmax(0,…)` + `min-w-0`. */}
+        <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="min-w-0 rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Vai trò có nhiều người dùng nhất</h3>
             <div className="mt-4 space-y-3">
               {topRoles.length === 0 ? (
@@ -178,7 +179,7 @@ export default function AdminIndexPage() {
           </div>
 
           <Can permission={PERMISSIONS.SYSTEM_SETTINGS_MANAGE}>
-            <div className="rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+            <div className="min-w-0 rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Hoạt động gần đây</h3>
               <RecentActivity />
             </div>

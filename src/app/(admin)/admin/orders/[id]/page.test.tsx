@@ -39,6 +39,7 @@ let mockOrder: Record<string, unknown> = COMPLETED_ORDER;
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: "order-1" }),
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
 vi.mock("@/hooks/queries/use-admin-orders", () => ({

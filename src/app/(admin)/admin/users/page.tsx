@@ -13,6 +13,7 @@ import { getSystemRoleLabel } from "@/lib/role-labels";
 import { useAuthStore } from "@/stores/auth.store";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { getUserActiveLabel } from "../_lib/user-status-label";
+import { parseRoleParam } from "../_lib/role-param";
 import { nextSort, sortAdminUsers, type SortDirection, type UserSortKey } from "../_lib/user-sort";
 import type { AdminUserListItem, AdminUserStatusFilter } from "@/types/user";
 import { QueryState } from "@/components/common/query-state";
@@ -79,7 +80,12 @@ export default function AdminUsersPage() {
   // không phải nguồn cập nhật ngược cho state.
   const [keyword, setKeyword] = useState(() => searchParams.get("keyword") ?? "");
   const debouncedKeyword = useDebouncedValue(keyword, 300);
-  const [roleFilter, setRoleFilter] = useState(() => searchParams.get("role") ?? "ALL");
+  const [rawRoleFilter, setRoleFilter] = useState(() => searchParams.get("role") ?? "ALL");
+  // QA6-A11: danh sách vai trò tải bất đồng bộ nên `?role=` chỉ kiểm được sau khi có danh sách; trước đó giữ nguyên giá trị URL.
+  const { data: systemRoles = [], isSuccess: rolesLoaded } = useSystemRoles();
+  const roleFilter = rolesLoaded
+    ? parseRoleParam(rawRoleFilter, systemRoles.map((role) => role.name))
+    : rawRoleFilter;
   const [statusFilter, setStatusFilter] = useState<"ALL" | AdminUserStatusFilter>(() =>
     parseStatusParam(searchParams.get("status"))
   );
@@ -109,7 +115,6 @@ export default function AdminUsersPage() {
   }, [debouncedKeyword, roleFilter, statusFilter, page, pathname, router]);
 
   const { data, isLoading, isError, error, refetch } = useAdminUsers(params);
-  const { data: systemRoles = [] } = useSystemRoles();
   const updateStatus = useUpdateUserStatus();
 
   // ADM-L2: backend chưa có tham số sort -> sắp xếp trong trang đang xem (xem _lib/user-sort.ts).
@@ -166,6 +171,7 @@ export default function AdminUsersPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Input
           placeholder="Tìm theo email, tên đăng nhập, họ tên…"
+          aria-label="Tìm người dùng"
           value={keyword}
           onChange={(e) => {
             setKeyword(e.target.value);
@@ -302,14 +308,27 @@ export default function AdminUsersPage() {
             Trang {data?.page ?? page}/{totalPages} · {data?.total_count ?? 0} người dùng
           </p>
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-              <ChevronLeft className="h-4 w-4" />
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Trang trước"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </Button>
-            <Button variant="default" size="sm">
+            {/* QA6-A07: trang hiện tại là nhãn, không phải nút bấm không làm gì. */}
+            <span aria-current="page" className="inline-flex h-9 min-w-9 items-center justify-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground">
               {page}
-            </Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-              <ChevronRight className="h-4 w-4" />
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Trang sau"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </div>

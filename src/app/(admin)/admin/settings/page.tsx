@@ -6,6 +6,7 @@ import { useUpdatePlatformFeeSetting } from "@/hooks/queries/use-admin-reports";
 import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
 import { QueryState } from "@/components/common/query-state";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatVnDateTime } from "@/lib/vn-datetime";
@@ -32,6 +33,8 @@ function parseFeePercent(raw: string): { value: number } | { error: string } {
   return { value };
 }
 
+const formatPercent = (value: number) => `${value.toLocaleString("vi-VN")}%`;
+
 function UpdatedBy({ settings }: { settings: AdminSettings }) {
   if (!settings.updated_at) {
     return (
@@ -53,6 +56,8 @@ function PlatformFeeCard({ settings }: { settings: AdminSettings }) {
   const updateMutation = useUpdatePlatformFeeSetting();
   const [draft, setDraft] = useState(String(settings.platform_fee_percent));
   const [error, setError] = useState<string | undefined>();
+  // Giá trị đã kiểm hợp lệ đang chờ admin xác nhận; null = hộp thoại đóng.
+  const [pendingValue, setPendingValue] = useState<number | null>(null);
 
   const onSave = () => {
     const parsed = parseFeePercent(draft);
@@ -61,7 +66,13 @@ function PlatformFeeCard({ settings }: { settings: AdminSettings }) {
       return;
     }
     setError(undefined);
-    updateMutation.mutate(parsed.value);
+    // QA6: phí nền tảng là cấu hình tiền bạc, ảnh hưởng mọi đơn sau đó nên không lưu ngay khi bấm "Lưu".
+    setPendingValue(parsed.value);
+  };
+
+  const onConfirm = () => {
+    if (pendingValue === null) return;
+    updateMutation.mutate(pendingValue, { onSettled: () => setPendingValue(null) });
   };
 
   return (
@@ -93,6 +104,22 @@ function PlatformFeeCard({ settings }: { settings: AdminSettings }) {
       <div className="mt-3">
         <UpdatedBy settings={settings} />
       </div>
+
+      <ConfirmDialog
+        open={pendingValue !== null}
+        onOpenChange={(open) => !open && !updateMutation.isPending && setPendingValue(null)}
+        title="Đổi phí nền tảng?"
+        description={
+          <>
+            Phí nền tảng sẽ đổi từ <strong>{formatPercent(settings.platform_fee_percent)}</strong> thành{" "}
+            <strong>{pendingValue === null ? "" : formatPercent(pendingValue)}</strong>. Mức mới áp dụng cho mọi đơn thanh toán sau
+            thời điểm lưu; đơn đã hoàn tất trước đó giữ nguyên.
+          </>
+        }
+        confirmLabel="Xác nhận đổi phí"
+        pending={updateMutation.isPending}
+        onConfirm={onConfirm}
+      />
     </section>
   );
 }

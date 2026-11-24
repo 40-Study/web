@@ -36,7 +36,7 @@ vi.mock("@/hooks/queries/use-contest-manage", () => ({
   }),
 }));
 
-vi.mock("next/navigation", () => ({ useParams: () => ({ id: "c-1" }) }));
+vi.mock("next/navigation", () => ({ useParams: () => ({ id: "c-1" }), useRouter: () => ({ push: vi.fn() }) }));
 
 const authState = { user: { id: "admin-1" } };
 vi.mock("@/stores/auth.store", () => ({

@@ -352,18 +352,20 @@ function AdminWithdrawalsContent() {
               <Button
                 variant="outline"
                 size="sm"
+                aria-label="Trang trước"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
+                aria-label="Trang sau"
                 disabled={page >= data.total_pages}
                 onClick={() => setPage((p) => p + 1)}
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
           </div>

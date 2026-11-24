@@ -26,15 +26,15 @@ export function OrganizationDetail({ org }: { org: Organization }) {
   const owners = (members.data ?? []).filter((m) => m.roles.includes("ORG_OWNER"));
 
   return (
-    <dl className="mt-3 grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[8rem_1fr]">
+    <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]">
       <dt className="text-muted-foreground">Tên</dt>
-      <dd className="font-medium text-foreground">{org.name}</dd>
+      <dd className="break-words font-medium text-foreground">{org.name}</dd>
       <dt className="text-muted-foreground">Trạng thái</dt>
       <dd>
         <OrgStatusBadge status={org.status} />
       </dd>
       <dt className="text-muted-foreground">Mô tả</dt>
-      <dd className="whitespace-pre-line text-foreground">{org.description?.trim() || "Chưa có mô tả"}</dd>
+      <dd className="whitespace-pre-line break-words text-foreground">{org.description?.trim() || "Chưa có mô tả"}</dd>
       <dt className="text-muted-foreground">Chủ tổ chức</dt>
       <dd className="text-foreground">
         {members.isLoading

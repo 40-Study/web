@@ -5,6 +5,7 @@ import { usePermissions, useUpdatePermission } from "@/hooks/queries/use-admin";
 import { QueryState } from "@/components/common/query-state";
 import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
+import { useRevealForm } from "../_lib/use-reveal-form";
 
 const FLAT_LIST_TITLE = "Tất cả quyền";
 
@@ -29,6 +30,7 @@ export default function AdminPermissionsPage() {
   const updatePermission = useUpdatePermission();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [form, setForm] = useState<PermissionForm | null>(null);
+  const { ref: formRef, reveal: revealForm } = useRevealForm<HTMLFormElement>();
 
   useEffect(() => {
     if (permissions.length > 0 && !selectedId) {
@@ -57,6 +59,7 @@ export default function AdminPermissionsPage() {
 
   const startEdit = (item: PermissionState) => {
     setForm({ id: item.id, description: item.description || "" });
+    revealForm();
   };
 
   const onSubmit = (e: React.FormEvent) => {
@@ -78,8 +81,8 @@ export default function AdminPermissionsPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
-        <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-4">
           <QueryState
             isLoading={isLoading}
             isError={isError}
@@ -118,14 +121,16 @@ export default function AdminPermissionsPage() {
           </QueryState>
         </div>
 
-        <div className="space-y-4">
+        {/* QA6-A01: từ xl cột phải ghim theo màn cuộn để form sửa luôn trong tầm nhìn khi sửa quyền ở cuối danh sách 28 dòng. */}
+        <div className="min-w-0 space-y-4 xl:sticky xl:top-4 xl:self-start">
           <Can permission={PERMISSIONS.MANAGE_ROLES}>
             {form && (
-              <form onSubmit={onSubmit} className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+              <form ref={formRef} onSubmit={onSubmit} className="scroll-mt-4 rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
                 <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Sửa mô tả quyền</h2>
                 <div className="mt-3 space-y-2">
                   <textarea
                     placeholder="Mô tả"
+                    aria-label="Mô tả quyền"
                     value={form.description}
                     onChange={(e) => setForm((prev) => (prev ? { ...prev, description: e.target.value } : prev))}
                     className="h-24 w-full rounded border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"

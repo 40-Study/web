@@ -205,7 +205,7 @@ export function DialogTitle({ children, className, ...props }: DialogTitleProps)
   return (
     <h2
       id={titleId}
-      className={cn("font-heading text-lg font-semibold text-slate-900 dark:text-white", className)}
+      className={cn("break-words font-heading text-lg font-semibold text-slate-900 dark:text-white", className)}
       {...props}
     >
       {children}

@@ -19,6 +19,7 @@ import type { Category } from "@/services/category.service";
 import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import { useRevealForm } from "../_lib/use-reveal-form";
 
 // Danh mục khoá học: backend đã có CRUD đầy đủ (GET/POST/PUT/DELETE /api/categories) và hook
 // react-query có sẵn ở src/hooks/queries/use-categories.ts (dùng cho trang này nguyên trạng,
@@ -54,6 +55,7 @@ export default function AdminCategoriesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
+  const { ref: formRef, reveal: revealForm } = useRevealForm<HTMLFormElement>();
 
   const selected = useMemo(() => data.find((c) => c.id === selectedId) || null, [data, selectedId]);
   const confirmDeleteCategory = useMemo(
@@ -111,6 +113,7 @@ export default function AdminCategoriesPage() {
 
   const startEdit = (c: Category) => {
     setForm({ id: c.id, name: c.name, description: c.description || "" });
+    revealForm();
   };
 
   return (
@@ -122,8 +125,9 @@ export default function AdminCategoriesPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
-        <div className="space-y-3">
+      {/* QA6-A03: `break-words` không hạ min-content nên cột `auto` vẫn giãn theo chuỗi dài; cần `minmax(0,…)` + `min-w-0`. */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-3">
           <QueryState
             isLoading={isLoading}
             isError={isError}
@@ -165,8 +169,9 @@ export default function AdminCategoriesPage() {
           </QueryState>
         </div>
 
-        <div className="space-y-4">
-          <form onSubmit={onSubmit} className="rounded-xl bg-white p-4 shadow-sm">
+        {/* QA6-A01: từ xl ghim cột phải để form "Sửa" luôn trong tầm nhìn khi sửa danh mục ở cuối danh sách. */}
+        <div className="min-w-0 space-y-4 xl:sticky xl:top-4 xl:self-start">
+          <form ref={formRef} onSubmit={onSubmit} className="scroll-mt-4 rounded-xl bg-white p-4 shadow-sm">
             <h2 className="text-base font-semibold text-gray-900">
               {form.id ? "Cập nhật danh mục" : "Tạo danh mục mới"}
             </h2>
@@ -190,6 +195,7 @@ export default function AdminCategoriesPage() {
               )}
               <input
                 placeholder="Mô tả (tuỳ chọn)"
+                aria-label="Mô tả danh mục"
                 value={form.description}
                 onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                 className="h-10 w-full rounded border border-gray-200 px-3 text-sm"

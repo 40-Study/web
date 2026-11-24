@@ -115,6 +115,9 @@ export function groupOrgMembers(rows: OrgMemberRow[]): OrgMember[] {
 
 type R<T> = { message: string; data: T };
 
+/** Số dòng gán vai trò xin mỗi lần khi tải thành viên tổ chức. */
+const ORG_MEMBERS_PAGE_SIZE = 100;
+
 // ─── Service ────────────────────────────────────────────────────────────────
 
 export const organizationService = {
@@ -166,13 +169,30 @@ export const organizationService = {
     return res.data.data;
   },
 
-  /** GET /organizations/:orgId/members */
-  getMembers: (orgId: string) =>
-    api
-      .get<R<{ user_organization_roles: OrgMemberRow[]; total: number }>>(`/organizations/${orgId}/members`, {
-        params: { page: 1, page_size: 100, status: "active" },
-      })
-      .then((r) => groupOrgMembers(r.data.data.user_organization_roles)),
+  /**
+   * GET /organizations/:orgId/members — mọi trang. QA6-A14: trước đây chỉ đọc trang đầu 100 dòng gán vai trò và bỏ
+   * `total`, nên tổ chức lớn bị cắt im lặng và "Thành viên (N)" đếm thiếu. `total` đếm DÒNG GÁN VAI TRÒ (một người
+   * nhiều vai chiếm nhiều dòng) nên kết quả vẫn được gộp theo người ở `groupOrgMembers`.
+   */
+  getMembers: async (orgId: string): Promise<OrgMember[]> => {
+    const fetchPage = (page: number) =>
+      api
+        .get<R<{ user_organization_roles: OrgMemberRow[]; total: number }>>(`/organizations/${orgId}/members`, {
+          params: { page, page_size: ORG_MEMBERS_PAGE_SIZE, status: "active" },
+        })
+        .then((r) => r.data.data);
+
+    const first = await fetchPage(1);
+    const rows = [...first.user_organization_roles];
+    // Cỡ trang thật là số dòng backend trả (nó có thể chặn trần thấp hơn page_size đã xin).
+    const pageSize = first.user_organization_roles.length;
+    if (pageSize > 0 && first.total > pageSize) {
+      const pageCount = Math.ceil(first.total / pageSize);
+      const rest = await Promise.all(Array.from({ length: pageCount - 1 }, (_, i) => fetchPage(i + 2)));
+      for (const page of rest) rows.push(...page.user_organization_roles);
+    }
+    return groupOrgMembers(rows);
+  },
 
   /** GET /organizations/:orgId/classes — lớp thuộc tổ chức (chủ/quản trị tổ chức). */
   getClasses: (orgId: string, params: { page?: number; page_size?: number; keyword?: string; status?: string } = {}) =>

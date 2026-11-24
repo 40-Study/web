@@ -8,9 +8,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
+import { AdminNotFound, isMissingResourceError } from "@/components/admin/admin-not-found";
 import { ApproveConfirmDialog } from "@/components/admin/review-dialogs";
 import { QueryState } from "@/components/common/query-state";
 import { ContestSummary } from "@/components/contest-manage/contest-summary";
@@ -235,6 +236,7 @@ function AdminContestActionsPanel({ contest }: { contest: ContestManage }) {
 
 export default function AdminContestDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const { data: contest, isLoading, isError, error, refetch } = useManagedContest(id);
 
   return (
@@ -243,6 +245,15 @@ export default function AdminContestDetailPage() {
         <ArrowLeft className="h-4 w-4" />
         Danh sách cuộc thi
       </Link>
+      {/* QA6-A06: id không có thật (404) hoặc sai định dạng (400); câu "hoặc bạn không phải người tạo" chỉ đúng với giảng viên. */}
+      {isError && isMissingResourceError(error) ? (
+        <AdminNotFound
+          title="Không tìm thấy cuộc thi"
+          description="Cuộc thi này không tồn tại hoặc đã bị xoá."
+          backLabel="Về danh sách cuộc thi"
+          onBack={() => router.push("/admin/contests")}
+        />
+      ) : (
       <QueryState
         isLoading={isLoading}
         isError={isError}
@@ -262,6 +273,7 @@ export default function AdminContestDetailPage() {
           </>
         )}
       </QueryState>
+      )}
     </div>
   );
 }

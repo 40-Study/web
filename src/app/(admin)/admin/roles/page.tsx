@@ -188,8 +188,9 @@ export default function RolesPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
-        <div className="space-y-3">
+      {/* QA6-A02: cột `auto` giãn theo email dài trong person-picker (truncate không hạ min-content) → tràn 57px ở 390. */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-3">
           {rolesLoading ? (
             <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-200" />)}</div>
           ) : (
@@ -247,7 +248,7 @@ export default function RolesPage() {
           )}
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <Can permission={PERMISSIONS.MANAGE_ROLES}>
             <form onSubmit={submitRole} className="rounded-lg bg-white p-4 shadow-sm">
               <h2 className="text-base font-semibold text-gray-900">{roleForm.id ? "Cập nhật vai trò" : "Tạo vai trò mới"}</h2>
@@ -268,7 +269,7 @@ export default function RolesPage() {
                     {nameError}
                   </p>
                 )}
-                <input placeholder="Mô tả" value={roleForm.description} onChange={(e) => setRoleForm((prev) => ({ ...prev, description: e.target.value }))} className="h-10 w-full rounded border border-gray-200 px-3 text-sm" />
+                <input placeholder="Mô tả" aria-label="Mô tả vai trò" value={roleForm.description} onChange={(e) => setRoleForm((prev) => ({ ...prev, description: e.target.value }))} className="h-10 w-full rounded border border-gray-200 px-3 text-sm" />
                 <div className="max-h-32 space-y-1 overflow-auto rounded border border-gray-200 p-2">
                   {permsData.map((perm) => (
                     <label key={perm.id} className="flex items-center gap-2 text-sm">
