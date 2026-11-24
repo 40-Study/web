@@ -136,9 +136,10 @@ export default function AdminCategoriesPage() {
                 key={cat.id}
                 className={`rounded-xl bg-white p-4 shadow-sm ${selected?.id === cat.id ? "ring-2 ring-primary-200" : ""}`}
               >
-                <button className="w-full text-left" onClick={() => setSelectedId(cat.id)}>
-                  <h3 className="font-semibold text-gray-900">{cat.name}</h3>
-                  <p className="text-sm text-gray-500">{cat.description || "Không có mô tả"}</p>
+                <button className="w-full min-w-0 text-left" onClick={() => setSelectedId(cat.id)}>
+                  {/* QA5-A03: tên/mô tả dài không có khoảng trắng (cho phép 64/120 ký tự) làm tràn thẻ và cả trang. */}
+                  <h3 className="min-w-0 break-words font-semibold text-gray-900">{cat.name}</h3>
+                  <p className="min-w-0 break-words text-sm text-gray-500">{cat.description || "Không có mô tả"}</p>
                   {cat.is_active === false && (
                     <span className="mt-1 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-500">
                       Đã ẩn
@@ -219,9 +220,9 @@ export default function AdminCategoriesPage() {
             <h2 className="text-base font-semibold text-gray-900">Chi tiết danh mục</h2>
             {selected ? (
               <div className="mt-3 space-y-2 text-sm">
-                <p><span className="text-gray-500">ID:</span> {selected.id}</p>
-                <p><span className="text-gray-500">Tên:</span> {selected.name}</p>
-                <p><span className="text-gray-500">Mô tả:</span> {selected.description || "-"}</p>
+                <p className="break-words"><span className="text-gray-500">ID:</span> {selected.id}</p>
+                <p className="break-words"><span className="text-gray-500">Tên:</span> {selected.name}</p>
+                <p className="break-words"><span className="text-gray-500">Mô tả:</span> {selected.description || "-"}</p>
                 {selected.created_at && (
                   <p><span className="text-gray-500">Tạo lúc:</span> {new Date(selected.created_at).toLocaleString("vi-VN")}</p>
                 )}

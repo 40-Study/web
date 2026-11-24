@@ -19,7 +19,7 @@ export default function ResetPasswordPage() {
   const router = useRouter();
   // G-05: mở thẳng /reset-password khi chưa qua bước quên mật khẩu + OTP -> về /forgot-password ngay.
   const hasResetSession = useFlowGuard(
-    [STORAGE_KEYS.RESET_PASSWORD_EMAIL, "reset_password_otp"],
+    [STORAGE_KEYS.RESET_PASSWORD_EMAIL, STORAGE_KEYS.RESET_PASSWORD_OTP],
     AUTH_ROUTES.FORGOT_PASSWORD,
     "Phiên đặt lại mật khẩu chưa bắt đầu hoặc đã hết hạn. Vui lòng yêu cầu mã xác nhận.",
   );
@@ -52,7 +52,7 @@ export default function ResetPasswordPage() {
     }
 
     const email = sessionStorage.getItem("reset_password_email");
-    const otp = sessionStorage.getItem("reset_password_otp");
+    const otp = sessionStorage.getItem(STORAGE_KEYS.RESET_PASSWORD_OTP);
     if (!email || !otp) {
       toast.error("Phiên đặt lại mật khẩu đã hết hạn");
       router.push(AUTH_ROUTES.FORGOT_PASSWORD);
@@ -68,7 +68,7 @@ export default function ResetPasswordPage() {
         confirm_password: confirmPassword,
       });
       sessionStorage.removeItem("reset_password_email");
-      sessionStorage.removeItem("reset_password_otp");
+      sessionStorage.removeItem(STORAGE_KEYS.RESET_PASSWORD_OTP);
     } catch {
       /* toast shown in hook */
     }

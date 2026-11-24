@@ -8,6 +8,7 @@ import { useAdminOrder, useRefundOrder } from "@/hooks/queries/use-admin-orders"
 import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
 import { QueryState } from "@/components/common/query-state";
+import { paymentMethodLabel } from "@/app/(admin)/admin/_lib/payment-method-label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -131,7 +132,7 @@ export default function AdminOrderDetailPage() {
                       }
                     />
                   )}
-                  <Row label="Phương thức" value={PAYMENT_METHOD_LABEL[order.payment_method ?? ""] ?? order.payment_method ?? "-"} />
+                  <Row label="Phương thức" value={paymentMethodLabel(order.payment_method)} />
                   <Row label="Ngày tạo" value={formatOrderDateTime(order.created_at)} />
                   {order.paid_at && <Row label="Ngày thanh toán" value={formatOrderDateTime(order.paid_at)} />}
                   {order.notes && <Row label="Ghi chú" value={order.notes} />}
@@ -243,11 +244,6 @@ export default function AdminOrderDetailPage() {
     </div>
   );
 }
-
-const PAYMENT_METHOD_LABEL: Record<string, string> = {
-  bank_transfer: "Chuyển khoản ngân hàng",
-  qr_transfer: "Chuyển khoản QR",
-};
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (

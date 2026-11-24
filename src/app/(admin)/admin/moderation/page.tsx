@@ -143,7 +143,7 @@ export default function AdminModerationPage() {
                         <ReportTargetLabel report={r} />
                         <p className={MOBILE_SUMMARY} data-testid="report-mobile-summary">
                           <span>{STATUS_LABEL[r.status] ?? r.status}</span>
-                          <span>· Gửi lúc {formatDate(r.created_at)}</span>
+                          <span>Gửi lúc {formatDate(r.created_at)}</span>
                         </p>
                       </td>
                       <td className="px-4 py-3">{REASON_LABEL[r.reason] ?? r.reason}</td>

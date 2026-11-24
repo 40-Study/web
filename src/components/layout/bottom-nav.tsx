@@ -52,7 +52,7 @@ const navConfigs: Record<UserRole, NavItem[]> = {
   teacher: [
     { icon: <Calendar className="w-5 h-5" />, label: "Lịch", href: "/teacher/schedule" },
     { icon: <BookOpen className="w-5 h-5" />, label: "Khoá học", href: "/teacher/courses" },
-    { icon: <Users className="w-5 h-5" />, label: "Học sinh", href: "/teacher/students" },
+    { icon: <Users className="w-5 h-5" />, label: "Học viên", href: "/teacher/students" },
     // B-11: Tin nhắn là route dùng chung nhưng giảng viên cần vào được từ menu (trước chỉ gõ URL).
     { icon: <MessageSquare className="w-5 h-5" />, label: "Tin nhắn", href: "/messages" },
     { icon: <BarChart3 className="w-5 h-5" />, label: "Thống kê", href: "/teacher/analytics" },
@@ -61,6 +61,8 @@ const navConfigs: Record<UserRole, NavItem[]> = {
   parent: [
     { icon: <Home className="w-5 h-5" />, label: "Trang chủ", href: "/home" },
     { icon: <Users className="w-5 h-5" />, label: "Con của tôi", href: "/settings/family" },
+    // Q5-PG-09: phụ huynh chỉ tới được trả lời của giảng viên qua chuông hoặc nút "Nhắn giảng viên" (sidebar 1280 đã có).
+    { icon: <MessageSquare className="w-5 h-5" />, label: "Tin nhắn", href: "/messages" },
     { icon: <User className="w-5 h-5" />, label: "Cá nhân", href: "/profile" },
   ],
   // Khách chưa đăng nhập (QA guest P1): trước đây dùng chung bộ tab "student",
@@ -70,6 +72,8 @@ const navConfigs: Record<UserRole, NavItem[]> = {
   guest: [
     { icon: <Home className="w-5 h-5" />, label: "Trang chủ", href: "/" },
     { icon: <BookOpen className="w-5 h-5" />, label: "Khoá học", href: "/courses" },
+    // Q5-PG-09: /contests là trang công khai (sidebar 1280 của khách có), bottom-nav 390 từng thiếu.
+    { icon: <Trophy className="w-5 h-5" />, label: "Cuộc thi", href: "/contests" },
     { icon: <User className="w-5 h-5" />, label: "Đăng nhập", href: "/login" },
   ],
   // A-P2-4: admin chỉ ghé `(app)/**` cho vài trang tài khoản cá nhân

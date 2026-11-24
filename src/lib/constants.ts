@@ -23,6 +23,14 @@ export const STORAGE_KEYS = {
   // từ trước bản sửa (review web#123 #4). Bỏ khoá này khi không còn tab nào có thể giữ nó.
   LEGACY_REGISTER_PAYLOAD: "register_payload",
   RESET_PASSWORD_EMAIL: "reset_password_email",
+  // Mã OTP quên mật khẩu người dùng vừa gõ; chỉ được backend kiểm ở bước đặt mật khẩu mới (reset-password).
+  RESET_PASSWORD_OTP: "reset_password_otp",
+  // Câu lỗi "mã SAI" (còn lượt thử) bước đặt mật khẩu để lại cho /forgot-password/otp; đọc một lần.
+  RESET_PASSWORD_OTP_ERROR: "reset_password_otp_error",
+  // Mã đã CHẾT (hết hạn / hết lượt, backend đã xoá): /forgot-password điền sẵn email và hiện câu giải thích;
+  // cả hai đọc một lần (Q5-PG-05 review M1).
+  RESET_PASSWORD_PREFILL_EMAIL: "reset_password_prefill_email",
+  RESET_PASSWORD_GONE_NOTICE: "reset_password_gone_notice",
   // Email điền sẵn cho /register/form khi đăng ký đang chờ đã hết hạn (410 từ resend-otp); form đọc rồi xoá.
   REGISTER_PREFILL_EMAIL: "register_prefill_email",
   // Cờ dùng một lần do bước trước đặt; trang thành công chỉ hiện khi có cờ, mở thẳng URL thì về /login (N-11).

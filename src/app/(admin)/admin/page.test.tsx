@@ -154,4 +154,12 @@ describe("/admin dashboard — A-P2-2", () => {
     // Các số liệu khác của dashboard vẫn hiện.
     expect(screen.getByText("Vai trò có nhiều người dùng nhất")).toBeTruthy();
   });
+
+  // QA5-A01: 17 trang admin khác có đúng một h1; dashboard từng dùng h2 nên không có h1.
+  it("trang tổng quan có đúng một h1", async () => {
+    renderWithProviders(<AdminIndexPage />);
+    const h1s = await screen.findAllByRole("heading", { level: 1 });
+    expect(h1s).toHaveLength(1);
+    expect(h1s[0].textContent).toBe("Tổng quan vận hành");
+  });
 });

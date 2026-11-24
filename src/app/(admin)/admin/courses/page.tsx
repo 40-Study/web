@@ -132,9 +132,12 @@ export default function AdminCoursesPage() {
         isEmpty={!isLoading && !isError && courses.length === 0}
         emptyTitle="Không có khoá học nào"
         emptyDescription={
-          status === "pending_review"
-            ? "Hiện không có khoá học nào chờ duyệt."
-            : "Không có khoá học khớp bộ lọc hiện tại."
+          // QA5-A04: có từ khoá thì không có kết quả là "không khớp", không phải "hàng chờ trống".
+          debouncedKeyword
+            ? `Không có khoá học khớp “${debouncedKeyword}”.`
+            : status === "pending_review"
+              ? "Hiện không có khoá học nào chờ duyệt."
+              : "Không có khoá học khớp bộ lọc hiện tại."
         }
       >
         <section className="overflow-hidden rounded-xl border bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">

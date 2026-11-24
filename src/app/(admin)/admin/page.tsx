@@ -100,7 +100,8 @@ export default function AdminIndexPage() {
   return (
     <div className="space-y-6">
       <section>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Tổng quan vận hành</h2>
+        {/* QA5-A01: 17 trang admin khác đều có đúng một h1; dashboard từng là h2 nên không có h1 nào. */}
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Tổng quan vận hành</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Số tổ chức, vai trò, quyền và các thao tác quản trị gần đây.
         </p>

@@ -58,7 +58,7 @@ export function childAssignmentState(a: ChildAssignment, now: number = Date.now(
 }
 
 /** Con nộp rồi nhưng chưa xong: chưa đạt, hoặc hệ thống chấm lỗi. */
-function isUnfinishedSubmission(state: ChildAssignmentState): boolean {
+export function isUnfinishedSubmission(state: ChildAssignmentState): boolean {
   return state === "needs_retry" || state === "judge_error";
 }
 

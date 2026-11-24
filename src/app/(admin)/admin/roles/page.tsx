@@ -364,7 +364,7 @@ export default function RolesPage() {
         <DialogContent>
           <DialogTitle>Xoá vai trò &quot;{confirmDeleteRole?.name}&quot;?</DialogTitle>
           <DialogDescription>
-            Hành động này không thể hoàn tác. Toàn bộ user đang gán cho vai trò này sẽ mất liên kết.
+            Hành động này không thể hoàn tác. Toàn bộ người dùng đang được gán vai trò này sẽ mất liên kết.
           </DialogDescription>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDeleteRole(null)}>

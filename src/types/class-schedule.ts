@@ -65,6 +65,8 @@ export interface TimetableEntry {
   organization_id?: string | null;
   /** Tên tổ chức; vắng khi lớp cá nhân hoặc tổ chức đã bị xoá (vẫn còn organization_id). */
   organization_name?: string | null;
+  /** Tên giảng viên dạy buổi/lịch (phụ huynh xem lịch của con); backend chưa luôn trả, vắng thì không hiện. */
+  teacher_name?: string | null;
 }
 
 /**

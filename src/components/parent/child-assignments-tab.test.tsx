@@ -65,4 +65,35 @@ describe("ChildAssignmentsTab", () => {
     expect(screen.queryByText("Đang làm")).toBeNull();
     expect(screen.queryByText(/TC$/)).toBeNull();
   });
+
+  // Q5-PG-13: "Chờ chấm" (việc của giảng viên) không được đọc như con đang tụt lại.
+  // Review L4: ô tóm tắt theo đúng nhóm "Cần chú ý"; bài "Lỗi chấm" đếm ở đó, không đếm vào "Chờ chấm".
+  it("tách ô 'Chờ chấm' khỏi 'Cần chú ý' khi danh sách đủ bài", () => {
+    render(
+      <ChildAssignmentsTab
+        isLoading={false}
+        data={data([
+          make("Mini project", "2026-10-07T16:59:00Z", { status: "in_progress", submission_count: 1, best_verdict: "pending" }),
+          make("Lỗi chấm", "2026-10-07T16:59:00Z", { status: "in_progress", submission_count: 1, best_verdict: "system_error" }),
+          make("Làm lại", "2026-10-07T16:59:00Z", { status: "in_progress", submission_count: 1, best_verdict: "wrong_answer" }),
+        ])}
+      />,
+    );
+    const tile = (label: string) => screen.getByText(label).previousElementSibling?.textContent;
+    expect(tile("Chờ chấm")).toBe("1");
+    expect(tile("Cần chú ý")).toBe("2");
+    expect(screen.queryByText("Cần làm lại")).toBeNull();
+    expect(screen.queryByText("Đã nộp, chưa xong")).toBeNull();
+  });
+
+  it("danh sách chưa đủ bài thì giữ ô gộp của backend thay vì in số sai", () => {
+    const d = data([
+      make("Mini project", "2026-10-07T16:59:00Z", { status: "in_progress", submission_count: 1, best_verdict: "pending" }),
+    ]);
+    d.stats.total_assignments = 30;
+    d.stats.in_progress = 7;
+    render(<ChildAssignmentsTab isLoading={false} data={d} />);
+    expect(screen.getByText("Đã nộp, chưa xong").previousElementSibling?.textContent).toBe("7");
+    expect(screen.queryByText("Cần chú ý")).toBeNull();
+  });
 });

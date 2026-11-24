@@ -89,6 +89,23 @@ interface TimetableEventOptions {
   range?: { from: string; to: string };
   /** Buổi sinh từ lịch lặp đã bị huỷ: backend không trả chúng ở `entries`. */
   cancelled?: TimetableOccurrence[];
+  /**
+   * Người xem. Mặc định (giảng viên): "Bạn" + nhãn nguồn "Cá nhân"/tên tổ chức. `family` (phụ huynh, Q5-PG-08):
+   * "Cá nhân" và "Bạn" không có nghĩa với phụ huynh nên bỏ; hiện tên giảng viên và tên tổ chức khi backend trả,
+   * còn thiếu thì không in dòng đó.
+   */
+  audience?: "family";
+}
+
+/** `teacher` và `tag` của một mục lớp theo người xem (xem `TimetableEventOptions.audience`). */
+function classLabels(
+  e: Pick<TimetableEntry, "organization_id" | "organization_name" | "teacher_name">,
+  audience: TimetableEventOptions["audience"],
+): Pick<ScheduleEvent, "teacher" | "tag"> {
+  if (audience === "family") {
+    return { teacher: e.teacher_name || undefined, tag: e.organization_name || undefined };
+  }
+  return { teacher: "Bạn", tag: timetableSourceLabel(e) };
 }
 
 const dayKey = (date: Date) => format(date, "yyyy-MM-dd");
@@ -113,7 +130,7 @@ export function timetableSourceLabel(e: Pick<TimetableEntry, "organization_id" |
  * Giờ không đọc được thì bỏ mục, không vẽ khối ở toạ độ NaN.
  */
 export function timetableEntriesToEvents(entries: TimetableEntry[], options: TimetableEventOptions = {}): ScheduleEvent[] {
-  const { range, cancelled = [] } = options;
+  const { range, cancelled = [], audience } = options;
 
   // Ngày đã có buổi riêng hoặc đã huỷ, theo từng lịch lặp: lịch lặp không được vẽ lại ngày đó.
   const skipDates = new Map<string, Set<string>>();
@@ -149,7 +166,7 @@ export function timetableEntriesToEvents(entries: TimetableEntry[], options: Tim
 
     if (e.schedule_id && !e.session_id) {
       if (range) {
-        events.push(...expandWeekly(e, startHHmm, endHHmm, range, skipDates.get(e.schedule_id)));
+        events.push(...expandWeekly(e, startHHmm, endHHmm, range, skipDates.get(e.schedule_id), audience));
         continue;
       }
       // endRecur của FullCalendar loại trừ ngày cuối nên cộng 1 ngày để ngày hết hạn vẫn có buổi.
@@ -162,8 +179,7 @@ export function timetableEntriesToEvents(entries: TimetableEntry[], options: Tim
         type: "video",
         status: "upcoming",
         location: e.room || undefined,
-        teacher: "Bạn",
-        tag: timetableSourceLabel(e),
+        ...classLabels(e, audience),
         kind: "class-schedule",
         weekly: {
           daysOfWeek: [e.day_of_week],
@@ -186,8 +202,7 @@ export function timetableEntriesToEvents(entries: TimetableEntry[], options: Tim
         type: "video",
         status: e.status === "completed" ? "completed" : e.status === "in_progress" ? "ongoing" : "upcoming",
         location: e.room || undefined,
-        teacher: "Bạn",
-        tag: timetableSourceLabel(e),
+        ...classLabels(e, audience),
         kind: "class-session",
       });
     }
@@ -210,6 +225,7 @@ function expandWeekly(
   endHHmm: string,
   range: { from: string; to: string },
   skip?: Set<string>,
+  audience?: TimetableEventOptions["audience"],
 ): ScheduleEvent[] {
   const first = range.from > (e.effective_from ?? "") ? range.from : (e.effective_from ?? range.from);
   const last = e.effective_until && e.effective_until < range.to ? e.effective_until : range.to;
@@ -226,8 +242,7 @@ function expandWeekly(
       type: "video",
       status: "upcoming",
       location: e.room || undefined,
-      teacher: "Bạn",
-      tag: timetableSourceLabel(e),
+      ...classLabels(e, audience),
       kind: "class-schedule",
     });
   }

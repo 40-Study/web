@@ -30,7 +30,8 @@ export function validateRegisterForm(data: RegisterFormData): RegisterFieldError
   if (!data.firstName.trim()) errors.firstName = "Vui lòng nhập tên";
   const emailError = validateEmail(data.email);
   if (emailError) errors.email = emailError;
-  const passwordError = validateNewPassword(data.password);
+  // Q5-PG-12: ô trống nói "Vui lòng nhập ..." như mọi ô khác; câu chính sách dài chỉ dành cho mật khẩu đã gõ.
+  const passwordError = data.password ? validateNewPassword(data.password) : "Vui lòng nhập mật khẩu";
   if (passwordError) errors.password = passwordError;
   if (data.confirmPassword !== data.password) {
     errors.confirmPassword = "Mật khẩu không khớp";

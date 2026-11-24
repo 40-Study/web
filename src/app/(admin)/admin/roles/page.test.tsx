@@ -192,7 +192,11 @@ describe("/admin/roles — QA3-18: xoá role không bắn GET users của id đ�
     const deleteButtons = await screen.findAllByRole("button", { name: "Xoá vai trò" });
     fireEvent.click(deleteButtons[junkIndex]);
     // Nút trên thẻ (QA-C-11) và nút xác nhận trong hộp thoại cùng tên "Xoá vai trò": bấm nút trong hộp thoại.
-    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Xoá vai trò" }));
+    const confirmDialog = await screen.findByRole("dialog");
+    // QA5-A05: cả app gọi là "người dùng", không phải "user".
+    expect(confirmDialog.textContent).toContain("Toàn bộ người dùng đang được gán vai trò này");
+    expect(confirmDialog.textContent).not.toMatch(/\buser\b/);
+    fireEvent.click(within(confirmDialog).getByRole("button", { name: "Xoá vai trò" }));
 
     await waitFor(() => expect(mockApi.delete).toHaveBeenCalled());
     await waitFor(() => expect(screen.queryByText("QA3-JUNK", { selector: "span" })).toBeNull());

@@ -28,7 +28,7 @@ vi.mock("@/hooks/queries/use-friends", () => ({
 }));
 
 describe("BottomNav — bộ tab guest", () => {
-  it("guest: chỉ Trang chủ(/), Khoá học(/courses), Đăng nhập(/login)", () => {
+  it("guest: chỉ Trang chủ(/), Khoá học(/courses), Cuộc thi(/contests), Đăng nhập(/login)", () => {
     render(<BottomNav role="guest" />);
 
     const home = screen.getByRole("link", { name: /Trang chủ/i });
@@ -36,6 +36,10 @@ describe("BottomNav — bộ tab guest", () => {
 
     const courses = screen.getByRole("link", { name: /Khoá học/i });
     expect(courses.getAttribute("href")).toBe("/courses");
+
+    // Q5-PG-09: /contests là trang công khai.
+    const contests = screen.getByRole("link", { name: /Cuộc thi/i });
+    expect(contests.getAttribute("href")).toBe("/contests");
 
     const login = screen.getByRole("link", { name: /Đăng nhập/i });
     expect(login.getAttribute("href")).toBe("/login");
@@ -92,6 +96,19 @@ describe("BottomNav — bộ tab guest", () => {
 
     const family = screen.getByRole("link", { name: /Con của tôi/i });
     expect(family.getAttribute("href")).toBe("/settings/family");
+  });
+
+  // Q5-PG-09: phụ huynh phải vào được Tin nhắn từ bottom-nav ở 390px.
+  it("parent: có Tin nhắn trỏ /messages", () => {
+    render(<BottomNav role="parent" />);
+    expect(screen.getByRole("link", { name: /Tin nhắn/i }).getAttribute("href")).toBe("/messages");
+  });
+
+  // Q5-T12: phần còn lại của app gọi vai này là "Học viên".
+  it("teacher: tab danh sách người học ghi 'Học viên', không còn 'Học sinh'", () => {
+    render(<BottomNav role="teacher" />);
+    expect(screen.getByRole("link", { name: /Học viên/ }).getAttribute("href")).toBe("/teacher/students");
+    expect(screen.queryByText("Học sinh")).toBeNull();
   });
 });
 

@@ -8,7 +8,11 @@ interface OtpInputProps {
   onComplete?: (otp: string) => void;
   className?: string;
   countdown?: number;
-  onResend?: () => void;
+  /**
+   * Gửi lại mã. Trả `false` hoặc reject = gửi KHÔNG thành công: đồng hồ đếm ngược không được khởi động lại
+   * (Q5-PG-07: "Gửi lại mã sau 01:28" từng hiện dù yêu cầu vừa bị 429). Trả void/true = coi là thành công.
+   */
+  onResend?: () => void | boolean | Promise<void | boolean>;
 }
 
 export function OtpInput({
@@ -20,6 +24,7 @@ export function OtpInput({
 }: OtpInputProps) {
   const [otp, setOtp] = useState<string[]>(Array(length).fill(""));
   const [timeLeft, setTimeLeft] = useState(countdown);
+  const [resending, setResending] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
@@ -96,11 +101,21 @@ export function OtpInput({
     [length]
   );
 
-  const handleResend = () => {
+  const handleResend = async () => {
+    if (resending) return;
+    setResending(true);
+    let ok = true;
+    try {
+      ok = (await onResend?.()) !== false;
+    } catch {
+      ok = false;
+    } finally {
+      setResending(false);
+    }
+    if (!ok) return;
     setTimeLeft(countdown);
     setOtp(Array(length).fill(""));
     inputRefs.current[0]?.focus();
-    onResend?.();
   };
 
   return (
@@ -135,9 +150,10 @@ export function OtpInput({
           <button
             type="button"
             onClick={handleResend}
-            className="text-sm font-medium text-primary hover:text-primary"
+            disabled={resending}
+            className="text-sm font-medium text-primary hover:text-primary disabled:opacity-60"
           >
-            Gửi lại mã
+            {resending ? "Đang gửi..." : "Gửi lại mã"}
           </button>
         )}
       </div>

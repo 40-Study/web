@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { AuthCard } from "@/components/auth/auth-card";
 import { SocialLoginButton } from "@/components/auth/social-login-button";
 import { AuthFooterLink } from "@/components/auth/auth-footer-link";
@@ -14,6 +15,7 @@ import { getRoleFromToken } from "@/lib/jwt";
 import { validateEmail } from "@/lib/email-validation";
 import { sanitizeRedirect } from "@/lib/safe-redirect";
 import { isLoginForPendingCartIntent } from "@/lib/pending-cart-intent";
+import { oauthErrorMessage } from "@/lib/oauth-error-message";
 import { showComingSoon } from "@/lib/toast-helpers";
 import { useLogin } from "@/hooks/queries/use-auth";
 import { useRedirectIfAuthenticated } from "@/hooks/use-redirect-if-authenticated";
@@ -44,6 +46,17 @@ export default function LoginPage() {
     } else {
       sessionStorage.removeItem("auth_redirect");
     }
+  }, [searchParams]);
+
+  // Q5-PG-06: lỗi OAuth quay về dưới dạng `?error=`. Báo một lần bằng câu tiếng Việt rồi bỏ tham số khỏi URL
+  // (để tải lại trang không báo lại); `id` cố định để StrictMode/chạy lại effect không sinh toast thứ hai.
+  useEffect(() => {
+    const oauthError = searchParams.get("error");
+    if (!oauthError) return;
+    toast.error(oauthErrorMessage(oauthError), { id: "oauth-login-error" });
+    const url = new URL(window.location.href);
+    url.searchParams.delete("error");
+    window.history.replaceState(window.history.state, "", url.toString());
   }, [searchParams]);
 
   const handleSubmit = (e: React.FormEvent) => {

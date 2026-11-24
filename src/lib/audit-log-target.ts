@@ -40,7 +40,8 @@ function metaText(log: AuditLogItem, key: string): string | undefined {
 export function auditTargetText(log: AuditLogItem): string {
   if (!log.target_type && !log.target_id) return "—";
   const type = log.target_type ? (AUDIT_TARGET_TYPE_LABEL[log.target_type] ?? log.target_type) : "";
-  const name = metaText(log, "target_user_name") ?? metaText(log, "target_name");
+  // Contract C4 (QA5-A02): `target_name` trước, rồi nhãn cũ `target_user_name` (dòng vai trò tổ chức), rồi ID.
+  const name = metaText(log, "target_name") ?? metaText(log, "target_user_name");
   return [type, name ?? log.target_id].filter(Boolean).join(": ");
 }
 

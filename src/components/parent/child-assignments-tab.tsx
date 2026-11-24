@@ -8,6 +8,7 @@ import {
   CHILD_ASSIGNMENT_STATE_CLASS,
   CHILD_ASSIGNMENT_STATE_LABEL,
   childAssignmentState,
+  isUnfinishedSubmission,
 } from "./child-assignments";
 
 /** "3/3 TC" là số test case, phụ huynh không hiểu (QA-B-26): ghi thành câu. */
@@ -39,15 +40,25 @@ export function ChildAssignmentsTab({
   const stats = data?.stats;
   const assignments = data?.assignments ?? [];
   const now = Date.now();
+  const submitted = splitSubmitted(assignments, stats?.total_assignments, now);
 
   return (
     <div>
       {stats && (
         <>
           <p className="mb-2 text-sm text-gray-500">Tổng {stats.total_assignments} bài tập</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <div className={cn("grid grid-cols-2 gap-3 mb-6", submitted ? "md:grid-cols-5" : "md:grid-cols-4")}>
             <StatCell value={stats.completed} label="Hoàn thành" tone="bg-green-50 text-green-600" />
-            <StatCell value={stats.in_progress} label="Đã nộp, chưa xong" tone="bg-blue-50 text-blue-600" />
+            {/* Q5-PG-13: "Chờ chấm" là việc của giảng viên. "Cần chú ý" (không phải "Cần làm lại": có cả bài lỗi chấm)
+                là đúng tên và đúng nhóm trên tab Tổng quan / trang chủ. */}
+            {submitted ? (
+              <>
+                <StatCell value={submitted.awaiting} label="Chờ chấm" tone="bg-blue-50 text-blue-600" />
+                <StatCell value={submitted.retry} label="Cần chú ý" tone="bg-amber-50 text-amber-600" />
+              </>
+            ) : (
+              <StatCell value={stats.in_progress} label="Đã nộp, chưa xong" tone="bg-blue-50 text-blue-600" />
+            )}
             <StatCell value={stats.not_started} label="Chưa nộp" tone="bg-gray-50 text-gray-700" />
             <StatCell value={stats.overdue} label="Quá hạn, chưa nộp" tone="bg-red-50 text-red-600" />
           </div>
@@ -92,6 +103,30 @@ export function ChildAssignmentsTab({
       )}
     </div>
   );
+}
+
+/**
+ * Q5-PG-13: `stats.in_progress` của backend gộp "chờ giảng viên chấm" với "chưa đạt / lỗi chấm", nên ô
+ * "Đã nộp, chưa xong" đọc như con đang tụt lại. Tách hai nhóm theo cùng hàm trạng thái với danh sách. Chỉ
+ * tách được khi danh sách đã chứa TOÀN BỘ bài (danh sách là trang đầu); thiếu thì trả null và giữ ô gộp
+ * của backend thay vì in số sai.
+ */
+function splitSubmitted(
+  assignments: ChildAssignment[],
+  total: number | undefined,
+  now: number,
+): { awaiting: number; retry: number } | null {
+  if (total === undefined || assignments.length < total) return null;
+  let awaiting = 0;
+  let retry = 0;
+  for (const a of assignments) {
+    const state = childAssignmentState(a, now);
+    // Ô theo ĐÚNG nhóm "Cần chú ý" của splitAssignmentsByDeadline (cùng `isUnfinishedSubmission`): bài lỗi chấm
+    // nằm ở nhóm đó thì ô cũng đếm ở đó, không đếm vào "Chờ chấm" (review L4).
+    if (state === "awaiting_grade") awaiting++;
+    else if (isUnfinishedSubmission(state)) retry++;
+  }
+  return { awaiting, retry };
 }
 
 function StatCell({ value, label, tone }: { value: number; label: string; tone: string }) {

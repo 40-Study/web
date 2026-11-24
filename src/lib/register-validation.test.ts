@@ -22,7 +22,8 @@ describe("validateRegisterForm", () => {
     expect(errors.lastName).toBe("Vui lòng nhập họ");
     expect(errors.firstName).toBe("Vui lòng nhập tên");
     expect(errors.email).toBe("Vui lòng nhập email");
-    expect(errors.password).toBe(PASSWORD_POLICY_MESSAGE);
+    // Q5-PG-12: ô trống nói "Vui lòng nhập ..." như các ô khác, không in cả câu chính sách.
+    expect(errors.password).toBe("Vui lòng nhập mật khẩu");
     expect(errors.confirmPassword).toBe("Mật khẩu không khớp");
   });
 

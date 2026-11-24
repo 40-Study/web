@@ -17,6 +17,8 @@ interface ScheduleEventDetailDialogProps {
 
 const STATUS_CONFIG = {
   completed: { label: "ĐÃ HOÀN THÀNH", className: "bg-green-100 text-green-700" },
+  // Q5-PG-08: buổi đã kết thúc nhưng server vẫn để "sắp diễn ra" (chưa ai đánh dấu hoàn thành).
+  ended: { label: "ĐÃ DIỄN RA", className: "bg-gray-100 text-gray-700" },
   ongoing: { label: "ĐANG DIỄN RA", className: "bg-red-100 text-red-700" },
   upcoming: { label: "SẮP DIỄN RA", className: "bg-blue-100 text-blue-700" },
 } as const;
@@ -27,6 +29,16 @@ const TYPE_CONFIG = {
   hybrid: { label: "Kết hợp", icon: Layers },
 } as const;
 
+/**
+ * Q5-PG-08: trạng thái hiển thị. Buổi cụ thể còn "upcoming" theo server nhưng giờ kết thúc đã qua thì là "đã diễn
+ * ra", không phải "SẮP DIỄN RA". Lịch lặp tuần chưa trải thành ngày (`weekly`) giữ ngày giả 2000-01-01 nên bỏ qua.
+ */
+function displayStatus(event: ScheduleEvent, now: number): keyof typeof STATUS_CONFIG {
+  if (event.status !== "upcoming" || event.weekly) return event.status;
+  const end = parseISO(event.endTime).getTime();
+  return Number.isFinite(end) && end < now ? "ended" : "upcoming";
+}
+
 export default function ScheduleEventDetailDialog({
   event,
   open,
@@ -34,9 +46,11 @@ export default function ScheduleEventDetailDialog({
 }: ScheduleEventDetailDialogProps) {
   if (!event) return null;
 
-  const status = STATUS_CONFIG[event.status];
+  const status = STATUS_CONFIG[displayStatus(event, Date.now())];
   const type = TYPE_CONFIG[event.type];
   const TypeIcon = type.icon;
+  // Buổi học của lớp luôn mang `type: "video"` cố định nên chip "Video" sai nghĩa; chỉ livestream mới có loại thật.
+  const showType = !event.kind || event.kind === "livestream";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -47,10 +61,12 @@ export default function ScheduleEventDetailDialog({
           </div>
           <div className="flex items-center gap-2 mt-2">
             <Badge className={cn("text-[10px]", status.className)}>{status.label}</Badge>
-            <Badge variant="outline" className="text-[10px] gap-1">
-              <TypeIcon className="w-3 h-3" />
-              {type.label}
-            </Badge>
+            {showType && (
+              <Badge variant="outline" className="text-[10px] gap-1">
+                <TypeIcon className="w-3 h-3" />
+                {type.label}
+              </Badge>
+            )}
           </div>
         </DialogHeader>
 

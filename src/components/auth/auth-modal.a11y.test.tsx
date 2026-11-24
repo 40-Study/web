@@ -96,6 +96,7 @@ describe("AuthModal — validate tiếng Việt, không dùng tooltip trình duy
     expect(screen.getByText("Vui lòng nhập họ")).toBeTruthy();
     expect(screen.getByText("Vui lòng nhập tên")).toBeTruthy();
     expect(screen.getByText("Vui lòng nhập email")).toBeTruthy();
-    expect(screen.getByText(/ít nhất 8 ký tự/)).toBeTruthy();
+    // Q5-PG-12: ô mật khẩu trống nói "Vui lòng nhập ..." như các ô khác.
+    expect(screen.getByText("Vui lòng nhập mật khẩu")).toBeTruthy();
   });
 });
