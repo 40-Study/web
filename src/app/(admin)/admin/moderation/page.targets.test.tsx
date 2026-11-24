@@ -288,6 +288,8 @@ describe("/admin/moderation — độ bền của khối 'Xử lý đối tượ
     expect(summaries.length).toBeGreaterThan(0);
     expect(summaries[0].className).toContain("sm:hidden");
     expect(summaries[0].textContent).toContain("Gửi lúc");
+    // QA5-A07: dòng gộp từng có dấu "·" đứng đầu "Gửi lúc", xuống dòng ở 390px thành một dấu chấm lẻ.
+    for (const span of Array.from(summaries[0].children)) expect(span.textContent?.trim().startsWith("·")).toBe(false);
     expect(screen.getByRole("columnheader", { name: "Gửi lúc" }).className).toContain("hidden sm:table-cell");
   });
 });

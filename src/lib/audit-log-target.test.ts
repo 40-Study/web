@@ -57,3 +57,27 @@ describe("auditContextText (QA4-A02)", () => {
     expect(auditContextText(log({ metadata: { old: "0", new: "10" } }))).toBeNull();
   });
 });
+
+// QA5-A02 / contract C4: mọi đối tượng được audit mang `metadata.target_name`; web ưu tiên tên, rơi về ID.
+describe("auditTargetText: target_name (C4)", () => {
+  it.each([
+    ["tag", "Tag", "Lập trình"],
+    ["category", "Danh mục", "Toán nâng cao"],
+    ["system_role", "Vai trò hệ thống", "Kiểm duyệt viên"],
+    ["voucher", "Voucher", "GIAM50"],
+    ["course", "Khoá học", "ReactJS cơ bản"],
+  ])("%s: hiện tên thay vì UUID", (type, label, name) => {
+    const id = "534c6415-0000-4000-8000-000000000000";
+    const text = auditTargetText(log({ target_type: type, target_id: id, metadata: { target_name: name } }));
+    expect(text).toBe(`${label}: ${name}`);
+    expect(text).not.toContain(id);
+  });
+
+  it("dòng cũ không có tên: vẫn rơi về ID", () => {
+    expect(auditTargetText(log({ target_type: "tag", target_id: "t-1", metadata: null }))).toBe("Tag: t-1");
+  });
+
+  it("tên rỗng/khoảng trắng bị bỏ qua", () => {
+    expect(auditTargetText(log({ target_type: "tag", target_id: "t-1", metadata: { target_name: "  " } }))).toBe("Tag: t-1");
+  });
+});
