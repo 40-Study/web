@@ -30,6 +30,7 @@ afterAll(() => {
 });
 
 beforeEach(() => {
+  Element.prototype.scrollIntoView = vi.fn(); // jsdom không có scrollIntoView (QA4-A03 gọi khi chọn tổ chức)
   resetMockApi();
   mockApi.get.mockImplementation(async (url: string) => {
     if (url === "/organizations") return envelope({ organizations: [ORG] });
@@ -200,5 +201,42 @@ describe("/admin/organizations — QA3-04: thành viên của tổ chức", () =
     await screen.findByText("ForteX");
     expect(screen.queryByRole("button", { name: /Thêm thành viên/ })).toBeNull();
     expect(mockApi.get).not.toHaveBeenCalledWith("/organizations/org-1/members", expect.anything());
+  });
+});
+
+describe("/admin/organizations — QA4-A03: chọn tổ chức ở màn một cột cuộn tới chi tiết", () => {
+  const scrollIntoView = vi.fn();
+  const originalMatchMedia = window.matchMedia;
+  const setWide = (wide: boolean) => {
+    window.matchMedia = ((query: string) => ({
+      ...originalMatchMedia(query),
+      matches: query === "(min-width: 1280px)" ? wide : false,
+    })) as typeof window.matchMedia;
+  };
+  beforeEach(() => {
+    scrollIntoView.mockClear();
+    Element.prototype.scrollIntoView = scrollIntoView;
+  });
+  afterAll(() => {
+    window.matchMedia = originalMatchMedia;
+  });
+
+  it("dưới xl: bấm tổ chức thì khối 'Chi tiết tổ chức' được cuộn vào tầm nhìn", async () => {
+    setWide(false);
+    renderWithProviders(<OrganizationsPage />);
+    expect(scrollIntoView).not.toHaveBeenCalled(); // mở trang không tự cuộn
+    fireEvent.click(await screen.findByText("ForteX"));
+
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(1));
+    const target = scrollIntoView.mock.contexts[0] as HTMLElement;
+    expect(target.textContent).toContain("Chi tiết tổ chức");
+  });
+
+  it("từ xl (hai cột): không cuộn, chi tiết đã nằm cạnh danh sách", async () => {
+    setWide(true);
+    renderWithProviders(<OrganizationsPage />);
+    fireEvent.click(await screen.findByText("ForteX"));
+    expect(await screen.findByText("Giáo viên Hai")).toBeTruthy();
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 });

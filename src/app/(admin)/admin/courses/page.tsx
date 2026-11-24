@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   useAdminCourses,
   useApproveCourse,
@@ -39,8 +40,22 @@ const ACTION_BTN = "rounded px-2 py-1 text-xs font-medium disabled:opacity-50";
 export default function AdminCoursesPage() {
   // Mặc định "Chờ duyệt": việc chính của trang là xử lý hàng đợi duyệt.
   const [status, setStatus] = useState<CourseStatus>("pending_review");
-  const [keyword, setKeyword] = useState("");
+  // QA4-A16: từ khoá nằm trên URL (?keyword=, như /admin/users) để F5/quay lại/gửi link vẫn giữ tìm kiếm.
+  // Khởi tạo một lần từ URL; sau đó state ghi ngược ra URL (replace, không spam history).
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [keyword, setKeyword] = useState(() => searchParams.get("keyword") ?? "");
   const debouncedKeyword = useDebouncedValue(keyword.trim(), 300);
+  useEffect(() => {
+    if ((searchParams.get("keyword") ?? "") === debouncedKeyword) return;
+    const qs = new URLSearchParams(searchParams.toString());
+    if (debouncedKeyword) qs.set("keyword", debouncedKeyword);
+    else qs.delete("keyword");
+    const query = qs.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedKeyword]);
   const [page, setPage] = useState(1);
 
   const [detailId, setDetailId] = useState<string | null>(null);

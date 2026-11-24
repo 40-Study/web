@@ -123,6 +123,20 @@ describe("AdminOrderDetailPage — refund dialog", () => {
     expect(screen.queryByText("completed")).toBeNull();
   });
 
+  it("QA4-A08: hiện người mua (tên + email, link tới trang người dùng) khi backend trả buyer", () => {
+    mockOrder = { ...COMPLETED_ORDER, buyer: { id: "u-7", full_name: "Trần Thị B", email: "b@demo.com" } };
+    render(<AdminOrderDetailPage />);
+    expect(screen.getByText("Người mua")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Trần Thị B" }).getAttribute("href")).toBe("/admin/users/u-7");
+    expect(screen.getByText("b@demo.com")).toBeTruthy();
+  });
+
+  it("QA4-A08: đơn không có buyer (backend cũ / chưa triển khai) thì không có dòng người mua, trang vẫn hiện bình thường", () => {
+    render(<AdminOrderDetailPage />);
+    expect(screen.queryByText("Người mua")).toBeNull();
+    expect(screen.getByText("Hoàn tất")).toBeTruthy();
+  });
+
   it("does not show the refund button without PAYMENTS_MANAGE permission", () => {
     useAuthStore.setState({
       sessionStatus: "authenticated",

@@ -178,4 +178,26 @@ describe("OrgMembersPanel", () => {
     expect(screen.getByText(/liên hệ quản trị viên hệ thống/)).toBeTruthy();
     expect(screen.getAllByRole("button", { name: "Đổi vai trò" }).length).toBe(2);
   });
+
+  it("QA4-A07: tìm thành viên không dấu, không phân biệt hoa thường (cả 'đ')", async () => {
+    await renderPanel({ canAddMember: true });
+    const search = screen.getByLabelText("Tìm thành viên");
+    fireEvent.change(search, { target: { value: "giao vien" } });
+    expect(screen.getByText("Giáo viên Hai")).toBeTruthy();
+    expect(screen.queryByText("Chủ tổ chức", { selector: "p" })).toBeNull();
+
+    fireEvent.change(search, { target: { value: "CHU TO" } });
+    expect(screen.getByText("Chủ tổ chức", { selector: "p" })).toBeTruthy();
+    expect(screen.queryByText("Giáo viên Hai")).toBeNull();
+  });
+
+  it("QA4-A12: 'Đổi vai trò' không đưa ra vai trò duy nhất người đó đang giữ", async () => {
+    await renderPanel({ canAddMember: true });
+    const teacherRow = screen.getByText("Giáo viên Hai").closest("li") as HTMLElement;
+    fireEvent.click(within(teacherRow).getByRole("button", { name: "Đổi vai trò" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByLabelText("Vai trò"));
+    expect(within(dialog).getByTitle("QA3_STUDENT")).toBeTruthy();
+    expect(within(dialog).queryByTitle("QA3_TEACHER")).toBeNull();
+  });
 });

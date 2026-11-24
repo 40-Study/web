@@ -23,6 +23,10 @@ describe("getErrorMessage — ánh xạ lỗi backend sang tiếng Việt", () =
     expect(message).not.toMatch(/tải lại trang/);
   });
 
+  it("QA4-A15: tag trùng tên dùng cùng chữ 'tag' với trang /admin/tags", () => {
+    expect(getErrorMessage(new ApiError(409, "UNKNOWN", "tag with this name already exists"))).toBe("Tên tag đã tồn tại");
+  });
+
   it("message backend đã là tiếng Việt -> giữ nguyên (đó là lý do thật)", () => {
     expect(getErrorMessage(new ApiError(400, "UNKNOWN", "coupon_code đã hết hạn"))).toBe(
       "coupon_code đã hết hạn"

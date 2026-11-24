@@ -117,6 +117,20 @@ export default function AdminOrderDetailPage() {
                       </span>
                     }
                   />
+                  {/* QA4-A08: danh sách có email người mua mà chi tiết không có. Backend chưa trả `buyer` thì bỏ dòng. */}
+                  {order.buyer && (
+                    <Row
+                      label="Người mua"
+                      value={
+                        <span className="block">
+                          <Link href={`/admin/users/${order.buyer.id}`} className="text-primary-600 hover:underline">
+                            {order.buyer.full_name || order.buyer.email}
+                          </Link>
+                          <span className="block break-all text-xs font-normal text-gray-500">{order.buyer.email}</span>
+                        </span>
+                      }
+                    />
+                  )}
                   <Row label="Phương thức" value={PAYMENT_METHOD_LABEL[order.payment_method ?? ""] ?? order.payment_method ?? "-"} />
                   <Row label="Ngày tạo" value={formatOrderDateTime(order.created_at)} />
                   {order.paid_at && <Row label="Ngày thanh toán" value={formatOrderDateTime(order.paid_at)} />}

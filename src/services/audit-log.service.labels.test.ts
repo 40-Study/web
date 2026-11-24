@@ -56,6 +56,11 @@ const BACKEND_AUDIT_ACTIONS = [
   "contest.cancel",
   "contest.prizes_update",
   "contest.finalize",
+  // QA4-A09
+  "tag.create",
+  "tag.update",
+  "tag.delete",
+  "course.delete",
 ];
 
 describe("nhãn tiếng Việt cho mã hành động nhật ký", () => {

@@ -156,6 +156,16 @@ describe("/admin/contests/[id]", () => {
     expect(mockFinalize).toHaveBeenCalledWith("c-1", expect.anything());
   });
 
+  it("QA4-A13: cuộc thi đã kết thúc 0 người: lời trống đúng phase, thời lượng theo giờ", () => {
+    vi.setSystemTime(new Date("2026-10-01T10:05:00Z"));
+    withContest(buildContest({ phase: "FINALIZED", duration_minutes: 1440, participant_count: 0 }));
+    render(<AdminContestDetailPage />);
+    expect(screen.getByText("Không có ai tham gia")).toBeTruthy();
+    expect(screen.queryByText(/sau khi cuộc thi được công bố/)).toBeNull();
+    expect(screen.getByText("24 giờ")).toBeTruthy();
+    expect(screen.queryByText("1440 phút")).toBeNull();
+  });
+
   it("đang diễn ra: không có nút chốt", () => {
     vi.setSystemTime(new Date("2026-10-01T09:30:00Z"));
     withContest(buildContest({ phase: "ACTIVE" }));

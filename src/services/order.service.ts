@@ -82,6 +82,13 @@ export interface LateRefundSummary {
   items: LateRefundItem[];
 }
 
+/** Người mua của đơn (contract 5, QA4-A08): admin luôn nhận; chủ đơn nhận chính mình. Backend cũ không trả. */
+export interface OrderBuyer {
+  id: string;
+  full_name: string;
+  email: string;
+}
+
 export interface Order {
   id: string;
   order_number: string;
@@ -122,6 +129,7 @@ export interface Order {
   refund_reason?: string | null;
   refund_transaction_ref?: string | null;
   refunded_at?: string | null;
+  buyer?: OrderBuyer | null;
 }
 
 export interface OrderListResponse {

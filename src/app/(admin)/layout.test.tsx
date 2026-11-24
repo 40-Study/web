@@ -34,6 +34,21 @@ describe("(admin)/layout — RoleGuard", () => {
     await screen.findByText("NOI DUNG ADMIN");
   });
 
+  it("QA4-A14: khung admin không có h1 (h1 duy nhất là của trang con)", async () => {
+    useAuthStore.getState().setSessionStatus("authenticated");
+    useAuthStore.getState().setActiveRole("SYSTEM_ADMIN");
+
+    renderWithProviders(
+      <AdminLayout>
+        <h1>Tiêu đề trang</h1>
+      </AdminLayout>
+    );
+
+    await screen.findByText("Tiêu đề trang");
+    expect(screen.getAllByRole("heading", { level: 1 }).map((h) => h.textContent)).toEqual(["Tiêu đề trang"]);
+    expect(screen.getByText("Trang quản trị")).toBeTruthy();
+  });
+
   it("menu quản trị có mục \"Cuộc thi\" trỏ tới /admin/contests (contract contest-feature §7)", async () => {
     useAuthStore.getState().setSessionStatus("authenticated");
     useAuthStore.getState().setActiveRole("SYSTEM_ADMIN");

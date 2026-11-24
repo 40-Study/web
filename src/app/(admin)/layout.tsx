@@ -93,7 +93,8 @@ export default function AdminLayout({
           <header className="sticky top-0 z-40 border-b border-border bg-card">
             <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4 md:px-6">
               <div className="min-w-0">
-                <h1 className="font-heading text-base font-semibold text-foreground">Trang quản trị</h1>
+                {/* QA4-A14: mỗi trang admin có h1 riêng; tiêu đề chung của khung không được là h1 thứ hai. */}
+                <p className="font-heading text-base font-semibold text-foreground">Trang quản trị</p>
                 <p className="truncate text-xs text-muted-foreground">{pageSubtitle}</p>
               </div>
               <div className="flex shrink-0 items-center gap-2">

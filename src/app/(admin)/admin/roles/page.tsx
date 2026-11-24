@@ -67,20 +67,26 @@ export default function RolesPage() {
   const [confirmDeleteRole, setConfirmDeleteRole] = useState<SystemRole | null>(null);
   const [confirmRevoke, setConfirmRevoke] = useState<UserSystemRoleItem | null>(null);
 
+  // QA4-A04: chọn lại khi role đang chọn không còn trong danh sách (vừa xoá: hook gỡ nó khỏi cache NGAY khi xoá
+  // xong). Trước đây removeRole xoá lựa chọn trước khi mutation xong, rồi effect chọn lại role đầu tiên — mà role
+  // vừa tạo/đang xoá thường đứng đầu — và GET users của id đã xoá → 404.
   useEffect(() => {
-    setSelectedRoleId((prev) => prev || rolesWithCounts[0]?.id || null);
+    setSelectedRoleId((prev) =>
+      prev && rolesWithCounts.some((r) => r.id === prev) ? prev : rolesWithCounts[0]?.id || null
+    );
   }, [rolesWithCounts]);
 
   const selectedRole = useMemo(
     () => rolesWithCounts.find((item) => item.id === selectedRoleId) || null,
     [rolesWithCounts, selectedRoleId]
   );
+  // Chỉ tải người giữ vai trò cho id còn trong danh sách, kể cả ở lượt render trước khi effect trên chọn lại.
 
   const {
     data: roleUsersPage,
     isLoading: usersLoading,
     isError: usersError,
-  } = useSystemRoleUsers(selectedRoleId);
+  } = useSystemRoleUsers(selectedRole?.id ?? null);
   const roleUsers = roleUsersPage?.user_system_roles ?? [];
 
   const assignUser = useAssignSystemRoleToUser();
@@ -153,7 +159,6 @@ export default function RolesPage() {
 
   const removeRole = (roleId: string) => {
     deleteRole.mutate(roleId);
-    if (selectedRoleId === roleId) setSelectedRoleId(null);
     // Đang sửa chính role vừa xoá: bỏ form để không tải quyền của id không còn tồn tại.
     if (roleForm.id === roleId) resetRoleForm();
   };

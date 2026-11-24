@@ -160,9 +160,14 @@ describe("/admin/roles — QA3-03: tên vai trò rỗng/ngắn bị chặn có p
 });
 
 describe("/admin/roles — QA3-18: xoá role không bắn GET users của id đã xoá", () => {
-  it("sau khi xoá role đang chọn, không có GET /system-roles/<id đã xoá>/users", async () => {
-    const JUNK = { id: "role-junk", name: "QA3-JUNK", description: "" };
-    let roles = [ROLE, JUNK];
+  const JUNK = { id: "role-junk", name: "QA3-JUNK", description: "" };
+  // QA4-A04: role vừa tạo thường đứng ĐẦU danh sách; khi đó lượt chọn lại "role đầu tiên" chọn trúng chính role
+  // đang xoá (danh sách chưa refetch) và bắn GET users của nó → 404. Chạy cả hai thứ tự.
+  it.each([
+    { order: "role xoá đứng sau", initial: [ROLE, JUNK], junkIndex: 1 },
+    { order: "role xoá đứng đầu", initial: [JUNK, ROLE], junkIndex: 0 },
+  ])("sau khi xoá role đang chọn ($order), không có GET /system-roles/<id đã xoá>/users", async ({ initial, junkIndex }) => {
+    let roles = initial;
     mockApi.get.mockImplementation(async (url: string) => {
       if (url === "/system-roles") {
         // Có độ trễ như server thật: danh sách mới về SAU khi UI đã render lại một lượt.
@@ -185,7 +190,7 @@ describe("/admin/roles — QA3-18: xoá role không bắn GET users của id đ�
     renderWithProviders(<RolesPage />);
     fireEvent.click(await screen.findByText("QA3-JUNK", { selector: "span" }));
     const deleteButtons = await screen.findAllByRole("button", { name: "Xoá vai trò" });
-    fireEvent.click(deleteButtons[1]);
+    fireEvent.click(deleteButtons[junkIndex]);
     // Nút trên thẻ (QA-C-11) và nút xác nhận trong hộp thoại cùng tên "Xoá vai trò": bấm nút trong hộp thoại.
     fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Xoá vai trò" }));
 

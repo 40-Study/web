@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } f
 import { ReportActionDialog } from "./_components/report-action-dialog";
 import { ReportTargetLabel } from "./_components/report-target-label";
 import { REPORT_ACTION_SPECS, isKnownReportAction } from "./_lib/report-actions";
-import { STICKY_ACTION_CELL, STICKY_ACTION_HEAD } from "@/app/(admin)/admin/_lib/sticky-action-column";
+import { HIDDEN_BELOW_SM, MOBILE_SUMMARY, STICKY_ACTION_CELL, STICKY_ACTION_HEAD } from "@/app/(admin)/admin/_lib/sticky-action-column";
 
 // A-P2-5: trước đây có API nghiệp vụ report (POST/GET/PUT/DELETE /api/reports) nhưng KHÔNG có
 // trang admin nào để xử lý — chủ trường không có cách nào nhìn thấy report của học viên. Trang
@@ -130,8 +130,8 @@ export default function AdminModerationPage() {
                   <tr>
                     <th className="px-4 py-3 text-left">Đối tượng bị báo cáo</th>
                     <th className="px-4 py-3 text-left">Lý do</th>
-                    <th className="px-4 py-3 text-left">Trạng thái</th>
-                    <th className="px-4 py-3 text-left">Gửi lúc</th>
+                    <th className={`px-4 py-3 text-left ${HIDDEN_BELOW_SM}`}>Trạng thái</th>
+                    <th className={`px-4 py-3 text-left ${HIDDEN_BELOW_SM}`}>Gửi lúc</th>
                     <th className={`px-4 py-3 text-left ${STICKY_ACTION_HEAD}`}>Thao tác</th>
                   </tr>
                 </thead>
@@ -141,10 +141,14 @@ export default function AdminModerationPage() {
                       <td className="px-4 py-3">
                         <p className="font-medium">{REPORTED_TYPE_LABEL[r.reported_type] ?? r.reported_type}</p>
                         <ReportTargetLabel report={r} />
+                        <p className={MOBILE_SUMMARY} data-testid="report-mobile-summary">
+                          <span>{STATUS_LABEL[r.status] ?? r.status}</span>
+                          <span>· Gửi lúc {formatDate(r.created_at)}</span>
+                        </p>
                       </td>
                       <td className="px-4 py-3">{REASON_LABEL[r.reason] ?? r.reason}</td>
-                      <td className="px-4 py-3">{STATUS_LABEL[r.status] ?? r.status}</td>
-                      <td className="px-4 py-3">{formatDate(r.created_at)}</td>
+                      <td className={`px-4 py-3 ${HIDDEN_BELOW_SM}`}>{STATUS_LABEL[r.status] ?? r.status}</td>
+                      <td className={`px-4 py-3 ${HIDDEN_BELOW_SM}`}>{formatDate(r.created_at)}</td>
                       <td className={`px-4 py-3 ${STICKY_ACTION_CELL}`}>
                         <button
                           onClick={() => openReport(r)}

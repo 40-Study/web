@@ -281,4 +281,13 @@ describe("/admin/moderation — độ bền của khối 'Xử lý đối tượ
     fireEvent.click(screen.getByRole("button", { name: "Xem" }));
     expect(screen.queryByText("Xử lý đối tượng")).toBeNull();
   });
+
+  it("QA4-A10: dưới sm trạng thái + giờ gửi nằm ở ô đầu, cột 'Gửi lúc' ẩn để không bị cột ghim che", async () => {
+    await renderPage();
+    const summaries = screen.getAllByTestId("report-mobile-summary");
+    expect(summaries.length).toBeGreaterThan(0);
+    expect(summaries[0].className).toContain("sm:hidden");
+    expect(summaries[0].textContent).toContain("Gửi lúc");
+    expect(screen.getByRole("columnheader", { name: "Gửi lúc" }).className).toContain("hidden sm:table-cell");
+  });
 });

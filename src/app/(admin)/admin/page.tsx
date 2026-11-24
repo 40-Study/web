@@ -12,6 +12,7 @@ import { formatVnDateTime } from "@/lib/vn-datetime";
 import { getSystemRoleLabel } from "@/lib/role-labels";
 import { PERMISSIONS } from "@/lib/permissions";
 import { auditActionLabel } from "@/services/audit-log.service";
+import { auditContextText, auditTargetText } from "@/lib/audit-log-target";
 import { roleUserCountLabel } from "./_lib/org-scoped-role";
 
 const RECENT_ACTIVITY_SIZE = 5;
@@ -41,6 +42,11 @@ function RecentActivity() {
               {items.map((item) => (
                 <li key={item.id} className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{auditActionLabel(item.action)}</p>
+                  {item.target_type && (
+                    <p className="break-words text-xs text-gray-600 dark:text-gray-300">
+                      {[auditTargetText(item), auditContextText(item)].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
                   <p className="text-xs text-gray-500">
                     {item.actor?.name ?? "—"} · {formatVnDateTime(item.created_at)}
                   </p>

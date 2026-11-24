@@ -12,6 +12,7 @@ import { QueryState } from "@/components/common/query-state";
 import { Badge } from "@/components/ui/badge";
 import { useAdminContests } from "@/hooks/queries/use-contest-manage";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { contestListEmptyCopy } from "./_lib/contest-list-empty-copy";
 import { formatVnDateTime } from "@/lib/contest-manage/format";
 import { CONTEST_STATUS_LABEL, phaseLabel, phaseVariant } from "@/lib/contest-manage/labels";
 import { cn } from "@/lib/utils";
@@ -112,10 +113,8 @@ export default function AdminContestsPage() {
         error={error}
         onRetry={() => refetch()}
         isEmpty={!isLoading && !isError && contests.length === 0}
-        emptyTitle="Không có cuộc thi nào"
-        emptyDescription={
-          tab === "pending" ? "Hiện không có cuộc thi nào chờ duyệt." : "Không có cuộc thi khớp bộ lọc hiện tại."
-        }
+        emptyTitle={contestListEmptyCopy(tab, q).title}
+        emptyDescription={contestListEmptyCopy(tab, q).description}
       >
         <ul className="space-y-3" data-testid="admin-contest-list">
           {contests.map((c) => (

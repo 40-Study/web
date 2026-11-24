@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useOrganizationsPage } from "@/hooks/queries/use-admin";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Can } from "@/components/guards";
@@ -17,6 +17,8 @@ import { OrganizationDetail, OrgStatusBadge } from "./_components/organization-d
 import { DeleteOrganizationDialog } from "./_components/delete-organization-dialog";
 
 const PAGE_SIZE = 20;
+// Từ `xl` chi tiết nằm cột phải cạnh danh sách; dưới đó là một cột và chi tiết ở sau form tạo (QA4-A03).
+const TWO_COLUMN_QUERY = "(min-width: 1280px)";
 
 /**
  * Quản lý tổ chức. QA-C-06: có tìm kiếm + phân trang theo `total` của API (trước chỉ đọc trang đầu 20 tổ chức và
@@ -36,6 +38,20 @@ export default function OrganizationsPage() {
   const [selected, setSelected] = useState<Organization | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Organization | null>(null);
   const selectedFresh = (selected && data.find((o) => o.id === selected.id)) || selected;
+
+  // QA4-A03: ở 390px chọn tổ chức chỉ hiện viền, chi tiết render cách ~2000px bên dưới, trông như bấm hỏng.
+  // Một cột thì cuộn tới khối chi tiết sau khi chọn; hai cột (xl) đã thấy ngay nên không cuộn.
+  const detailRef = useRef<HTMLDivElement>(null);
+  const [scrollRequest, setScrollRequest] = useState(0);
+  useEffect(() => {
+    if (scrollRequest === 0 || window.matchMedia(TWO_COLUMN_QUERY).matches) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    detailRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  }, [scrollRequest]);
+  const selectOrg = (org: Organization) => {
+    setSelected(org);
+    setScrollRequest((n) => n + 1);
+  };
 
   return (
     <div className="space-y-6">
@@ -82,7 +98,7 @@ export default function OrganizationsPage() {
                 <button
                   className="w-full text-left"
                   aria-pressed={selectedFresh?.id === org.id}
-                  onClick={() => setSelected(org)}
+                  onClick={() => selectOrg(org)}
                 >
                   <span className="flex items-start justify-between gap-2">
                     <span className="min-w-0 font-semibold text-foreground">{org.name}</span>
@@ -119,7 +135,7 @@ export default function OrganizationsPage() {
             <OrganizationForm form={form} onChange={setForm} />
           </Can>
 
-          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <div ref={detailRef} className="scroll-mt-4 rounded-xl border border-border bg-card p-4 shadow-sm">
             <h2 className="text-base font-semibold text-foreground">Chi tiết tổ chức</h2>
             {selectedFresh ? (
               <OrganizationDetail org={selectedFresh} />

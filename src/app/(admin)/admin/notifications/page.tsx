@@ -20,6 +20,9 @@ import type { BroadcastAudience, BroadcastNotificationType } from "@/services/no
 const TITLE_MAX = 255;
 const CONTENT_MAX = 2000;
 
+// Chủ tổ chức nằm ở vai trò tổ chức, không phải vai trò hệ thống, nên phát thông báo theo vai trò không chạm tới họ (QA4-A01).
+const NON_BROADCAST_ROLES = new Set(["ORG_OWNER"]);
+
 const selectClass =
   "h-10 w-full rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900";
 
@@ -120,7 +123,7 @@ export default function AdminBroadcastNotificationsPage() {
                   </button>
                 </p>
               )}
-              {rolesQuery.data?.map((role) => (
+              {rolesQuery.data?.filter((role) => !NON_BROADCAST_ROLES.has(role.name)).map((role) => (
                 <label key={role.id} className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={roles.includes(role.name)} onChange={() => toggleRole(role.name)} />
                   {getSystemRoleLabel(role.name)}

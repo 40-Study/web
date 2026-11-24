@@ -257,7 +257,7 @@ export default function AdminContestDetailPage() {
             <AdminContestActionsPanel key={contest.updated_at} contest={contest} />
             <section className="space-y-3">
               <h2 className="text-lg font-semibold">Người tham gia</h2>
-              <ParticipantsTable contestId={contest.id} />
+              <ParticipantsTable contestId={contest.id} phase={contest.phase} />
             </section>
           </>
         )}
