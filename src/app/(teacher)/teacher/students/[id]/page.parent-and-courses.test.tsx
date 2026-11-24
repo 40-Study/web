@@ -62,3 +62,19 @@ describe("/teacher/students/[id] — SĐT phụ huynh và khoá chưa có lớp 
     expect(screen.getByText("Git & GitHub").className).toContain("text-muted-foreground");
   });
 });
+
+// Q6-T08: id học viên không tồn tại phải ra "Không tìm thấy học viên" TRONG khung giảng viên (như khoá/lớp/cuộc thi),
+// không ném notFound() ra trang 404 toàn cục không có thanh bên.
+describe("/teacher/students/[id] — học viên không tồn tại (Q6-T08)", () => {
+  beforeEach(() => {
+    rows = [];
+  });
+
+  it("id lạ: thẻ 'Không tìm thấy học viên' kèm link về Quản lý học viên, KHÔNG ném notFound()", () => {
+    rows = [row({ id: "other" })];
+    expect(() => render(<TeacherStudentProfilePage />)).not.toThrow();
+    expect(screen.getByText("Không tìm thấy học viên")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Về Quản lý học viên" }).getAttribute("href")).toBe("/teacher/students");
+    expect(screen.queryByText("Hồ sơ học viên")).toBeNull();
+  });
+});
