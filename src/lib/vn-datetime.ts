@@ -53,3 +53,24 @@ export function formatVnDateOnly(ymd: string | null | undefined): string {
   if (!match) return formatVnDateTime(ymd);
   return `${match[3]}/${match[2]}/${match[1]}`;
 }
+
+const SESSION_DAY_PATTERN = /^(\d{4}-\d{2}-\d{2})/;
+const SESSION_TIME_PATTERN = /^(\d{2}:\d{2})/;
+
+/**
+ * Buổi học (ngày + giờ bắt đầu, GIỜ VIỆT NAM UTC+7, không có giờ mùa hè) có BẮT ĐẦU SAU `now` không (Q5-T02, M1).
+ * `date` có thể là "2026-11-02" hoặc RFC3339 nửa đêm: chỉ lấy phần ngày, không qua `new Date(date)` vì phần giờ của
+ * nó không phải giờ bắt đầu buổi. Không dựng được mốc (thiếu/sai định dạng) thì trả false: không chứng minh được
+ * buổi còn ở tương lai thì không cho thao tác huỷ.
+ */
+export function isVnSessionUpcoming(
+  date: string | null | undefined,
+  startTime: string | null | undefined,
+  now: Date = new Date()
+): boolean {
+  const day = date ? SESSION_DAY_PATTERN.exec(date)?.[1] : undefined;
+  const time = startTime ? SESSION_TIME_PATTERN.exec(startTime)?.[1] : undefined;
+  if (!day || !time) return false;
+  const start = new Date(`${day}T${time}:00+07:00`);
+  return !Number.isNaN(start.getTime()) && start.getTime() > now.getTime();
+}

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCancelSession, useClassSessions } from "@/hooks/queries/use-sessions";
 import { toTimeOfDay } from "@/lib/class-schedule-validation";
-import { formatVnDateOnly } from "@/lib/vn-datetime";
+import { formatVnDateOnly, isVnSessionUpcoming } from "@/lib/vn-datetime";
 import type { ClassSession, SessionStatus } from "@/services/session.service";
 
 const PAGE_SIZE = 20;
@@ -88,7 +88,8 @@ export function ClassSessionList({
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={meta.variant}>{meta.label}</Badge>
-                    {canWrite && s.status === "scheduled" && (
+                    {/* Q5-T02 (M1): backend không tự chuyển buổi sang "Đã kết thúc" nên chỉ buổi CHƯA bắt đầu mới huỷ được. */}
+                    {canWrite && s.status === "scheduled" && isVnSessionUpcoming(s.date, s.start_time) && (
                       <Button
                         size="sm"
                         variant="ghost"
