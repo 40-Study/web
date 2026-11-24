@@ -93,13 +93,13 @@ export function voucherLookupErrorMessage(error: unknown): string {
   return getErrorMessage(error);
 }
 
-/** Look up a voucher by code (mutation-style for form submission) */
+/**
+ * Look up a voucher by code (mutation-style for form submission). Không toast: ô nhập voucher đã hiện lý do
+ * ngay dưới ô, toast cùng câu là báo lỗi hai lần (QA4 S14).
+ */
 export function useVoucherLookup() {
   return useMutation({
     mutationFn: (code: string) => voucherService.getVoucherByCode(code),
-    onError: (error) => {
-      toast.error(voucherLookupErrorMessage(error));
-    },
   });
 }
 
