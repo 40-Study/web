@@ -30,6 +30,8 @@ export interface AssignmentResponseDTO {
   description: string;
   difficulty: DifficultyLevel;
   language: ProgrammingLanguage[];
+  /** C11: `false` = giảng viên chấm thủ công (máy chấm không chạy được ngôn ngữ này). Vắng = chấm tự động. */
+  auto_grade?: boolean;
   starter_code: string;
   time_limit: number;
   memory_limit: number;
