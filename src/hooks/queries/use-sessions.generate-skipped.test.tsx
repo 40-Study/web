@@ -13,8 +13,13 @@ vi.mock("@/lib/api-client", async () => {
 });
 const toastSuccess = vi.fn();
 const toastWarning = vi.fn();
+const toastError = vi.fn();
 vi.mock("sonner", () => ({
-  toast: { success: (...a: unknown[]) => toastSuccess(...a), warning: (...a: unknown[]) => toastWarning(...a), error: vi.fn() },
+  toast: {
+    success: (...a: unknown[]) => toastSuccess(...a),
+    warning: (...a: unknown[]) => toastWarning(...a),
+    error: (...a: unknown[]) => toastError(...a),
+  },
 }));
 
 // eslint-disable-next-line import/first
@@ -23,6 +28,8 @@ import { useBulkMarkAttendance, useGenerateSessions } from "./use-sessions";
 import { mockApi, resetMockApi } from "@/test/mock-api";
 // eslint-disable-next-line import/first
 import { createTestQueryClient } from "@/test/utils";
+// eslint-disable-next-line import/first
+import { ApiError } from "@/lib/errors";
 
 function wrapper({ children }: { children: ReactNode }) {
   return <QueryClientProvider client={createTestQueryClient()}>{children}</QueryClientProvider>;
@@ -35,6 +42,7 @@ describe("useGenerateSessions", () => {
     resetMockApi();
     toastSuccess.mockReset();
     toastWarning.mockReset();
+    toastError.mockReset();
   });
 
   it("có buổi bị bỏ qua: cảnh báo kèm ngày", async () => {
@@ -52,6 +60,32 @@ describe("useGenerateSessions", () => {
     const { result } = renderHook(() => useGenerateSessions("c1"), { wrapper });
     await act(() => result.current.mutateAsync({ start_date: "2026-11-24", end_date: "2026-12-08" }));
     expect(toastSuccess).toHaveBeenCalledWith("Đã tạo 2 buổi học");
+  });
+
+  // backend#149: mọi ngày đều bị bỏ qua -> 409 kèm skipped[]; nêu đúng lý do, không phải câu 409 chung.
+  it("409 mọi ngày bị bỏ qua: toast lỗi nêu lý do cụ thể", async () => {
+    const skipped = [
+      { date: "2031-03-03", reason: "duplicate" },
+      { date: "2031-03-10", reason: "duplicate" },
+      { date: "2031-03-17", reason: "duplicate" },
+    ];
+    mockApi.post.mockRejectedValue(
+      new ApiError(409, "CONFLICT", "Buổi học bị trùng lịch", undefined, { message: "Buổi học bị trùng lịch", skipped }),
+    );
+    const { result } = renderHook(() => useGenerateSessions("c1"), { wrapper });
+    await act(() => result.current.mutateAsync({ start_date: "2031-03-03", end_date: "2031-03-17" }).catch(() => undefined));
+    expect(toastError).toHaveBeenCalledWith("Không thể sinh buổi học", {
+      description: "Tất cả 3 buổi đã tồn tại (03/03, 10/03, 17/03)",
+    });
+  });
+
+  it("409 không kèm skipped[] (backend cũ): giữ câu lỗi cũ", async () => {
+    mockApi.post.mockRejectedValue(new ApiError(409, "CONFLICT", "Buổi học bị trùng lịch"));
+    const { result } = renderHook(() => useGenerateSessions("c1"), { wrapper });
+    await act(() => result.current.mutateAsync({ start_date: "2031-03-03", end_date: "2031-03-17" }).catch(() => undefined));
+    const description = (toastError.mock.calls[0]?.[1] as { description: string }).description;
+    expect(description).not.toContain("Tất cả");
+    expect(description.length).toBeGreaterThan(0);
   });
 });
 

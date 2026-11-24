@@ -495,3 +495,23 @@ describe("API 422 — giữ code/message/payload nghiệp vụ (T6)", () => {
     });
   });
 });
+
+// backend#149: 409 sinh buổi mang `skipped[]` trong body; giữ nguyên body (responseBody) cho nơi gọi. 5xx thì không.
+describe("ApiError.responseBody", () => {
+  const SKIPPED_409 = { code: "CONFLICT", message: "Buổi học bị trùng lịch", skipped: [{ date: "2031-03-03", reason: "duplicate" }] };
+
+  it("4xx: giữ body lỗi trong responseBody", async () => {
+    const error = await api
+      .post("/classes/c1/sessions/generate", {}, { adapter: async (config) => { throw errorResponse(config, 409, SKIPPED_409); } })
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).responseBody).toEqual(SKIPPED_409);
+  });
+
+  it("5xx: không lộ body", async () => {
+    const error = await api
+      .get("/x", { adapter: async (config) => { throw errorResponse(config, 500, { message: "pq: secret" }); } })
+      .catch((e: unknown) => e);
+    expect((error as ApiError).responseBody).toBeUndefined();
+  });
+});

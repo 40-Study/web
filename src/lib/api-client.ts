@@ -275,7 +275,9 @@ api.interceptors.response.use(
           data?.code ?? "UNKNOWN",
           isClientError || isUserFacingServerErrorCode(data?.code)
             ? extractErrorMessage(data, "Something went wrong")
-            : GENERIC_SERVER_ERROR_MESSAGE
+            : GENERIC_SERVER_ERROR_MESSAGE,
+          undefined,
+          isClientError && data && typeof data === "object" ? (data as Record<string, unknown>) : undefined
         );
       }
     }
