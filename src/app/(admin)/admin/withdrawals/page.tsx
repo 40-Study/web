@@ -43,7 +43,7 @@ import {
   WITHDRAWAL_STATUS_LABELS,
 } from "@/lib/withdrawal-format";
 import type { AdminWithdrawalItem, WithdrawalStatus } from "@/services/wallet.service";
-import { ACTION_BUTTON_GROUP, STICKY_ACTION_CELL, STICKY_ACTION_HEAD } from "@/app/(admin)/admin/_lib/sticky-action-column";
+import { ACTION_BUTTON_GROUP, STICKY_ACTION_CELL, STICKY_ACTION_HEAD, HIDDEN_BELOW_SM, MOBILE_SUMMARY } from "@/app/(admin)/admin/_lib/sticky-action-column";
 
 const LIMIT = 20;
 // Lấy từ bảng nhãn (Record<WithdrawalStatus, …> bắt buộc đủ mọi trạng thái): danh sách cứng cũ thiếu
@@ -248,9 +248,9 @@ function AdminWithdrawalsContent() {
               <thead className="bg-gray-50 dark:bg-gray-900">
                 <tr>
                   <th className="px-4 py-3 text-left">Giảng viên</th>
-                  <th className="px-4 py-3 text-left">Số tiền</th>
+                  <th className={`px-4 py-3 text-left ${HIDDEN_BELOW_SM}`}>Số tiền</th>
                   <th className="px-4 py-3 text-left">Ngân hàng</th>
-                  <th className="px-4 py-3 text-left">Trạng thái</th>
+                  <th className={`px-4 py-3 text-left ${HIDDEN_BELOW_SM}`}>Trạng thái</th>
                   <th className="px-4 py-3 text-left">Ngày tạo</th>
                   <th className="px-4 py-3 text-left">Số dư hiện tại</th>
                   <th className={`px-4 py-3 text-left ${STICKY_ACTION_HEAD}`}>Hành động</th>
@@ -272,8 +272,12 @@ function AdminWithdrawalsContent() {
                           {w.teacher_name || w.teacher_email}
                         </button>
                         <div className="text-xs text-gray-500 dark:text-gray-400">{w.teacher_email}</div>
+                        <div className={MOBILE_SUMMARY} data-testid="withdrawal-mobile-summary">
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{formatWithdrawalAmount(w.amount)}</span>
+                          <Badge variant={getWithdrawalStatusVariant(w.status)}>{getWithdrawalStatusLabel(w.status)}</Badge>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 font-medium">{formatWithdrawalAmount(w.amount)}</td>
+                      <td className={`px-4 py-3 font-medium ${HIDDEN_BELOW_SM}`}>{formatWithdrawalAmount(w.amount)}</td>
                       <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
                         {w.bank_name ? (
                           <>
@@ -286,7 +290,7 @@ function AdminWithdrawalsContent() {
                           "-"
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className={`px-4 py-3 ${HIDDEN_BELOW_SM}`}>
                         <Badge variant={getWithdrawalStatusVariant(w.status)}>
                           {getWithdrawalStatusLabel(w.status)}
                         </Badge>

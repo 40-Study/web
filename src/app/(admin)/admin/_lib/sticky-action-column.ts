@@ -16,3 +16,11 @@ export const STICKY_ACTION_CELL = `${STICKY} bg-white dark:bg-gray-950`;
  * hết bảng; từ sm xếp ngang như cũ.
  */
 export const ACTION_BUTTON_GROUP = "flex min-w-[7.5rem] max-w-[8.5rem] flex-col items-stretch gap-2 sm:min-w-0 sm:max-w-none sm:flex-row sm:flex-wrap";
+
+/**
+ * QA4-A10: ở 390px cột ghim vẫn che các cột sát nó (Số tiền/Trạng thái ở Rút tiền, Gửi lúc ở Kiểm duyệt) — đúng
+ * những thứ admin cần xem trước khi bấm. Dưới sm, đưa các giá trị đó lên ô đầu (MOBILE_SUMMARY) và ẩn cột riêng
+ * của chúng (HIDDEN_BELOW_SM); từ sm trở lên bảng như cũ.
+ */
+export const HIDDEN_BELOW_SM = "hidden sm:table-cell";
+export const MOBILE_SUMMARY = "mt-1 flex flex-wrap items-center gap-2 text-xs sm:hidden";

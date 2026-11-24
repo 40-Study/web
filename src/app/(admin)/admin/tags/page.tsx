@@ -131,7 +131,8 @@ export default function AdminTagsPage() {
             {items.map((t) => (
               <li key={t.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-foreground">{t.name}</p>
+                  {/* QA4-A11: tên dài liền (tới 50 ký tự) không được đẩy trang tràn ngang ở 390px. */}
+                  <p className="break-all font-medium text-foreground">{t.name}</p>
                   {t.created_at && <p className="text-xs text-muted-foreground">Tạo lúc {formatVnDateTime(t.created_at)}</p>}
                 </div>
                 <Button

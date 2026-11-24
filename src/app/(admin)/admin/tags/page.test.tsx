@@ -38,4 +38,9 @@ describe("/admin/tags", () => {
     fireEvent.click(screen.getByRole("button", { name: "Tạo tag" }));
     await waitFor(() => expect(mockApi.post).toHaveBeenCalledWith("/tags", { name: "Go" }));
   });
+
+  it("QA4-A11: tên tag dài liền được ngắt dòng (không tràn ngang ở 390px)", async () => {
+    renderWithProviders(<AdminTagsPage />);
+    expect((await screen.findByText("Python")).className).toContain("break-all");
+  });
 });

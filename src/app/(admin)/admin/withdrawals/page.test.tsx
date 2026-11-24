@@ -215,4 +215,20 @@ describe("AdminWithdrawalsPage", () => {
     expect(screen.queryByRole("button", { name: "Duyệt" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Từ chối" })).toBeNull();
   });
+
+  // QA4-A10: jsdom không dàn trang nên kiểm bằng lớp responsive: dưới sm số tiền + trạng thái nằm ở ô đầu (không
+  // bị cột hành động ghim che), cột riêng của chúng chỉ hiện từ sm.
+  it("QA4-A10: dưới sm số tiền và trạng thái hiện ở ô đầu, cột riêng ẩn", () => {
+    mockItems = [itemFixture({ id: "wd-pending", status: "pending" })];
+    render(<AdminWithdrawalsPage />);
+
+    const summary = screen.getByTestId("withdrawal-mobile-summary");
+    expect(summary.className).toContain("sm:hidden");
+    expect(summary.textContent).toMatch(/500[.,]000/);
+    expect(summary.textContent).toContain("Chờ duyệt");
+    expect(summary.closest("td")?.textContent).toContain("Nguyễn Văn A");
+    for (const header of ["Số tiền", "Trạng thái"]) {
+      expect(screen.getByRole("columnheader", { name: header }).className).toContain("hidden sm:table-cell");
+    }
+  });
 });
