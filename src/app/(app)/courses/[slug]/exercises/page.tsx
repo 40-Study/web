@@ -14,7 +14,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useCourseBySlug } from "@/hooks/queries/use-courses";
+import { useCourseBySlug, useEnrolledCourses } from "@/hooks/queries/use-courses";
+import { useAuthStore } from "@/stores/auth.store";
 import { useSections } from "@/hooks/queries/use-sections";
 import { lessonContentKeys } from "@/hooks/queries/use-lesson-content";
 import { quizKeys } from "@/hooks/queries/use-quiz";
@@ -33,6 +34,20 @@ export default function CourseExercisesPage() {
 
   const { data: course, isLoading: courseLoading } = useCourseBySlug(slug);
   const { data: rawSections = [], isLoading: sectionsLoading } = useSections(course?.id ?? "");
+
+  // QA6 S6-13: nội dung bài học chỉ mở cho người đã ghi danh. Học viên chưa ghi danh mà vẫn hỏi từng bài thì nhận một
+  // loạt 403 rồi thấy "Khoá học chưa có bài tập nào" (sai: khoá có bài tập, chỉ là chưa được xem). Chặn trước khi gọi.
+  // Giảng viên/quản trị xem khoá của mình không qua ghi danh nên giữ nguyên. Không tải được danh sách ghi danh thì
+  // không chặn (để lỗi thật của từng bài hiện ra như trước) thay vì chặn nhầm người đã ghi danh.
+  const activeRole = useAuthStore((s) => s.activeRole);
+  const enrolledQuery = useEnrolledCourses();
+  const enrollmentGated = activeRole === "STUDENT" && !enrolledQuery.isError;
+  const enrollmentKnown = !enrollmentGated || !enrolledQuery.isLoading;
+  const isEnrolled = (enrolledQuery.data ?? []).some(
+    (c) => c.slug === slug || (course?.id !== undefined && String(c.id) === String(course.id))
+  );
+  const needsEnrollment = enrollmentGated && enrollmentKnown && !!course && !isEnrolled;
+  const contentEnabled = enrollmentKnown && !needsEnrollment;
   // GET /courses/:id/sections có kèm `lessons`, nhưng type của section.service chưa khai báo.
   const sections: Section[] = rawSections;
 
@@ -44,6 +59,7 @@ export default function CourseExercisesPage() {
       queryKey: lessonContentKeys.contents(id),
       queryFn: () => lessonContentService.getContents(id),
       staleTime: 30 * 1000,
+      enabled: contentEnabled,
     })),
   });
 
@@ -59,6 +75,7 @@ export default function CourseExercisesPage() {
       queryKey: quizKeys.byLesson(id),
       queryFn: () => quizService.getByLesson(id),
       staleTime: 30 * 1000,
+      enabled: contentEnabled,
     })),
   });
   const quizzesByLesson: Record<string, Quiz[] | undefined> = {};
@@ -84,6 +101,7 @@ export default function CourseExercisesPage() {
   const isLoading =
     courseLoading ||
     sectionsLoading ||
+    (enrollmentGated && enrolledQuery.isLoading) ||
     contentQueries.some((q) => q.isLoading) ||
     quizQueries.some((q) => q.isLoading) ||
     attemptQueries.some((q) => q.isLoading);
@@ -92,6 +110,33 @@ export default function CourseExercisesPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+      </div>
+    );
+  }
+
+  if (needsEnrollment) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          <Link
+            href={`/courses/${slug}`}
+            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Quay lại khoá học
+          </Link>
+          <div className="rounded-xl border border-gray-200 bg-white px-6 py-12 text-center">
+            <Lock className="mx-auto mb-3 h-8 w-8 text-gray-400" aria-hidden="true" />
+            <h1 className="text-xl font-bold text-gray-900">Đăng ký khoá học để xem bài tập</h1>
+            <p className="mt-1 text-gray-500">{course?.title ?? ""}</p>
+            <Link
+              href={`/courses/${slug}`}
+              className="mt-5 inline-flex rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+            >
+              Xem khoá học
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
