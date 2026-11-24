@@ -4,6 +4,7 @@ import { getErrorMessage } from "@/lib/error-messages";
 import { describeScheduleError } from "@/lib/class-schedule-errors";
 import { ApiError } from "@/lib/errors";
 import { scheduleOverlapSummary, scheduleWarningsFrom } from "@/lib/schedule-overlap-warnings";
+import { classScheduleKeys } from "@/hooks/queries/use-class-schedule";
 import { allSkippedSummary, generateSessionsSummary, skippedFromErrorPayload } from "@/lib/generate-sessions-summary";
 import {
   sessionService,
@@ -165,6 +166,8 @@ export function useCancelSession(classId: string) {
       sessionService.cancelSession(classId, sessionId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: sessionKeys.sessions(classId) });
+      // Lịch giảng dạy (/teacher/schedule) đọc buổi từ /me/timetable, không phải danh sách buổi của lớp.
+      queryClient.invalidateQueries({ queryKey: classScheduleKeys.all });
       toast.success("Đã huỷ buổi học");
     },
     onError: (err) => toast.error("Không thể huỷ buổi học", { description: describeScheduleError(err, "session") }),

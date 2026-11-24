@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Clock, User, MapPin, Building2, FileText, Users, Video, Radio, Layers } from "lucide-react";
+import { Ban, Clock, User, MapPin, Building2, FileText, Users, Video, Radio, Layers } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { isVnSessionUpcoming } from "@/lib/vn-datetime";
 import { cn } from "@/lib/utils";
 import type { ScheduleEvent } from "./week-calendar-grid";
 
@@ -13,6 +15,11 @@ interface ScheduleEventDetailDialogProps {
   event: ScheduleEvent | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /**
+   * Có thì buổi học cụ thể chưa bắt đầu (`event.cancelTarget`) hiện nút "Huỷ buổi". Trang giảng viên truyền vào; trang
+   * phụ huynh/học viên không truyền nên không có nút.
+   */
+  onCancelSession?: (event: ScheduleEvent) => void;
 }
 
 const STATUS_CONFIG = {
@@ -43,6 +50,7 @@ export default function ScheduleEventDetailDialog({
   event,
   open,
   onOpenChange,
+  onCancelSession,
 }: ScheduleEventDetailDialogProps) {
   if (!event) return null;
 
@@ -51,6 +59,10 @@ export default function ScheduleEventDetailDialog({
   const TypeIcon = type.icon;
   // Buổi học của lớp luôn mang `type: "video"` cố định nên chip "Video" sai nghĩa; chỉ livestream mới có loại thật.
   const showType = !event.kind || event.kind === "livestream";
+  // Backend không tự chuyển buổi sang "đã kết thúc" và từ chối huỷ buổi đã bắt đầu (422), nên chỉ mời huỷ khi CHỨNG
+  // MINH được buổi còn ở tương lai (cùng quy tắc `isVnSessionUpcoming` với danh sách buổi trong trang lớp).
+  const target = event.cancelTarget;
+  const canCancel = !!onCancelSession && !!target && isVnSessionUpcoming(target.date, target.startTime);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -115,6 +127,16 @@ export default function ScheduleEventDetailDialog({
             <DetailRow icon={FileText}>
               <span className="text-gray-600 dark:text-gray-300">{event.description}</span>
             </DetailRow>
+          )}
+          {canCancel && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+              onClick={() => onCancelSession?.(event)}
+            >
+              <Ban className="mr-1 h-4 w-4" aria-hidden="true" /> Huỷ buổi
+            </Button>
           )}
           {event.meetingUrl?.startsWith("/rooms/") && event.status === "ongoing" && <Link href={event.meetingUrl} prefetch={false} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white"><Radio className="h-4 w-4" />Vào lớp học</Link>}
         </div>

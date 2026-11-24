@@ -75,3 +75,34 @@ describe("QuizAttemptReview + summarizeAttempt — câu bỏ trống (S1)", () =
     expect(screen.getAllByText("Chưa trả lời.")).toHaveLength(3);
   });
 });
+
+// Round 2 (R1 / S5-11): backend trả câu bỏ trống KÈM đáp án đúng và giải thích sau khi nộp.
+describe("QuizAttemptReview — câu bỏ trống có đáp án từ backend (S5-11)", () => {
+  const questions = [{ id: "q3", question_text: "3 + 3 = ?", display_order: 0 }];
+  const answerText = new Map([["a-six", "Sáu"]]);
+  const skipped = {
+    question_id: "q3",
+    question_text: "3 + 3 = ?",
+    selected_answer_ids: [] as string[],
+    correct_answer_ids: ["a-six"],
+    is_correct: false,
+    points_earned: 0,
+    explanation: "3 + 3 = 6.",
+  };
+
+  it("hiện 'Đáp án đúng' và giải thích cho câu chưa trả lời, không để dòng bỏ trống tự dựng đè lên", () => {
+    render(<QuizAttemptReview answers={[skipped]} questions={questions} answerText={answerText} />);
+    expect(screen.getByText("Chưa trả lời.")).toBeTruthy();
+    expect(screen.getByText("Đáp án đúng:")).toBeTruthy();
+    expect(screen.getByText("Sáu")).toBeTruthy();
+    expect(screen.getByText("3 + 3 = 6.")).toBeTruthy();
+  });
+
+  it("`selected_answer_ids: null` (slice rỗng của Go) không làm hỏng màn xem lại", () => {
+    const withNull = { ...skipped, selected_answer_ids: null as unknown as string[] };
+    render(<QuizAttemptReview answers={[withNull]} answerText={answerText} />);
+    expect(screen.getByText("Chưa trả lời.")).toBeTruthy();
+    expect(screen.getByText("Bạn chọn:").nextSibling?.textContent).toBe("—");
+    expect(screen.getByText("Sáu")).toBeTruthy();
+  });
+});

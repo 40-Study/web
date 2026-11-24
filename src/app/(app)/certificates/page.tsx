@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 import { CertificateCard } from "@/components/certificate/certificate-card";
 import { useMyCertificates } from "@/hooks/queries/use-certificates";
+import { useRoleAwareHref } from "@/hooks/use-role-aware-href";
 
 const PAGE_SIZE = 12;
 
 export default function MyCertificatesPage() {
+  const roleAwareHref = useRoleAwareHref();
   const [page, setPage] = useState(1);
   const { data, isLoading } = useMyCertificates({
     page,
@@ -48,7 +50,7 @@ export default function MyCertificatesPage() {
             chỉ đầu tiên.
           </p>
           <Link
-            href="/my-courses"
+            href={roleAwareHref("/my-courses")}
             className="mt-4 inline-block rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
           >
             Tới khoá học của tôi

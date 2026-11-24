@@ -89,6 +89,16 @@ describe("timetableEntriesToEvents", () => {
     expect(hhmm(events[0].endTime)).toBe("20:30");
   });
 
+  it("buổi cụ thể đang 'scheduled' mang cancelTarget; buổi đã xong/đang học, hoặc lịch của phụ huynh thì không", () => {
+    const base = { session_id: "s1", date: "2026-10-05", start_time: "19:00", end_time: "20:30", class_id: "c9" };
+    const [scheduled] = timetableEntriesToEvents([entry({ ...base, status: "scheduled" })]);
+    expect(scheduled.cancelTarget).toEqual({ classId: "c9", sessionId: "s1", date: "2026-10-05", startTime: "19:00" });
+    for (const status of ["completed", "in_progress", "cancelled"]) {
+      expect(timetableEntriesToEvents([entry({ ...base, status })])[0].cancelTarget).toBeUndefined();
+    }
+    expect(timetableEntriesToEvents([entry({ ...base, status: "scheduled" })], { audience: "family" })[0].cancelTarget).toBeUndefined();
+  });
+
   it("nhận cả giờ dạng timestamp ISO (backend cũ) và bỏ mục không đọc được giờ", () => {
     const events = timetableEntriesToEvents([
       entry({ schedule_id: "a", start_time: "2026-09-02T19:00:00+07:00", end_time: "2026-09-02T21:00:00+07:00" }),

@@ -40,8 +40,12 @@ export function useContestDetail(slug: string) {
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
   const sessionStatus = useAuthStore((s) => s.sessionStatus);
   const sessionResolved = hasHydrated && sessionStatus !== "checking";
+  // Round 2 (QA5 S5 item 6): `viewer` còn phụ thuộc NGƯỜI và VAI đang dùng (học viên tham gia được, giảng viên thì không),
+  // nên khoá phải mang cả hai: đổi vai/đổi tài khoản không được dùng lại `viewer` của lượt trước trong 30 s staleTime.
+  const userId = useAuthStore((s) => s.user?.id ?? null);
+  const activeRole = useAuthStore((s) => s.activeRole);
   const query = useQuery({
-    queryKey: [...contestKeys.detail(slug), sessionStatus === "authenticated"],
+    queryKey: [...contestKeys.detail(slug), sessionStatus === "authenticated", userId, activeRole],
     queryFn: () => contestService.getBySlug(slug),
     enabled: !!slug && sessionResolved,
   });

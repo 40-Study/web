@@ -6,6 +6,7 @@ import { CalendarCheck, Clock, Plus } from "lucide-react";
 import { LiveSessionLaunch } from "@/components/teacher/live-session-launch";
 import { TeacherScheduleSourceFilter } from "@/components/teacher/teacher-schedule-source-filter";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import WeekCalendarGrid from "@/components/schedule/week-calendar-grid";
 import ScheduleEventDetailDialog from "@/components/schedule/schedule-event-detail-dialog";
 import ScheduleEventTooltip from "@/components/schedule/schedule-event-tooltip";
@@ -20,6 +21,7 @@ import {
   useDeleteLiveSession,
 } from "@/hooks/queries/use-live-sessions";
 import { useMyTimetableEntries } from "@/hooks/queries/use-class-schedule";
+import { useCancelSession } from "@/hooks/queries/use-sessions";
 import {
   liveSessionToEvent,
   timetableEntriesToEvents,
@@ -41,11 +43,14 @@ export default function TeacherSchedulePage() {
   const [defaultEndTime, setDefaultEndTime] = useState<string>();
   const [range, setRange] = useState<{ from: string; to: string } | undefined>();
   const [source, setSource] = useState<TimetableSourceFilter | undefined>();
+  // Round 2 (L3): buổi học cụ thể đang chờ xác nhận huỷ từ hộp thoại chi tiết (null = đóng).
+  const [cancelling, setCancelling] = useState<ScheduleEvent | null>(null);
 
   const { data: sessionsData, isLoading, isError, refetch } = useLiveSessions(
     user?.id ? { host_id: user.id, page_size: 100 } : undefined
   );
   const { data: timetableEntries, isError: timetableError, refetch: refetchTimetable } = useMyTimetableEntries(range, source);
+  const cancelSession = useCancelSession(cancelling?.cancelTarget?.classId ?? "");
   const createLiveSession = useCreateLiveSession();
   const updateLiveSession = useUpdateLiveSession();
   const deleteLiveSession = useDeleteLiveSession();
@@ -198,7 +203,31 @@ export default function TeacherSchedulePage() {
         stats={stats}
       />
 
-      <ScheduleEventDetailDialog event={detail} open={!!detail} onOpenChange={open => { if (!open) setDetail(null); }} />
+      <ScheduleEventDetailDialog
+        event={detail}
+        open={!!detail}
+        onOpenChange={open => { if (!open) setDetail(null); }}
+        onCancelSession={(event) => { setDetail(null); setCancelling(event); }}
+      />
+      <ConfirmDialog
+        open={cancelling !== null}
+        onOpenChange={(next) => { if (!next && !cancelSession.isPending) setCancelling(null); }}
+        title="Huỷ buổi học?"
+        description={
+          cancelling
+            ? `Buổi "${cancelling.title}" (${format(new Date(cancelling.startTime), "HH:mm")}–${format(new Date(cancelling.endTime), "HH:mm")}, ${format(new Date(cancelling.startTime), "dd/MM/yyyy")}) sẽ chuyển sang "Đã huỷ" và lịch nhắc học của buổi cũng ngừng. Học viên sẽ không điểm danh được buổi này.`
+            : undefined
+        }
+        confirmLabel="Huỷ buổi học"
+        cancelLabel="Giữ lại"
+        destructive
+        pending={cancelSession.isPending}
+        onConfirm={() => {
+          const target = cancelling?.cancelTarget;
+          if (!target) return;
+          cancelSession.mutate({ sessionId: target.sessionId }, { onSettled: () => setCancelling(null) });
+        }}
+      />
       <ScheduleEventFormDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}

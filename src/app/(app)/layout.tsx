@@ -91,7 +91,9 @@ export default function AppLayout({
     !isAdminRole &&
     !!normalizedRole &&
     (!isRouteAllowedForRole(pathname, navRole) ||
-      (isFriendsRoute && !canUseFriends(activeRole)) ||
+      // Round 2: vai ĐÃ quy đổi như hai cổng bên dưới; `activeRole` thô là mã tuỳ biến (vd QA3_STUDENT) ở lần render
+      // đầu nên học viên của tổ chức bị đá khỏi /friends kèm toast sai.
+      (isFriendsRoute && !canUseFriends(normalizedRole)) ||
       // /livestream, /my-grades: cùng lý do với Bạn bè, khoá theo vai THẬT (giáo viên không lọt qua NavRole STUDENT).
       // Q5-T15 (M3): dùng vai ĐÃ quy đổi (`normalizedRole`), không phải `activeRole` thô: vai tuỳ biến của tổ chức (vd
       // QA3_STUDENT) chưa kịp quy về STUDENT ở lần tải đầu sẽ bị đá khỏi /my-courses, /schedule kèm toast sai.

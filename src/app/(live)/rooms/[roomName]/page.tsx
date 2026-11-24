@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { BackToClassesLink } from './back-to-classes-link';
 import RoomClient from './RoomClient';
 import { joinLivestream } from './join-livestream';
 import { forbiddenFlagsFromCode } from '@/lib/meet/forbidden-code';
@@ -44,12 +44,7 @@ export default async function RoomPage({
         <div>
           <p className="text-lg font-medium">{heading}</p>
           <p className="mt-2 text-sm text-gray-400">{detail}</p>
-          <Link
-            href="/my-courses"
-            className="mt-6 inline-block rounded-lg bg-primary-600 px-6 py-2 text-sm font-medium text-white hover:bg-primary-700"
-          >
-            Quay lại danh sách lớp học
-          </Link>
+          <BackToClassesLink />
         </div>
       </div>
     );

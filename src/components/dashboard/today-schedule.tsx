@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { useRoleAwareHref } from "@/hooks/use-role-aware-href";
 import { cn } from "@/lib/utils";
 import { clockTimeToMinutes, formatClockTime } from "@/lib/schedule-time";
 import type { ClassSchedule } from "@/types/class-schedule";
@@ -70,6 +71,7 @@ interface TodayScheduleProps {
 }
 
 export function TodaySchedule({ items, className }: TodayScheduleProps) {
+  const roleAwareHref = useRoleAwareHref();
   if (items.length === 0) {
     return (
       <Card className={cn("flex items-center gap-3 p-4 md:p-5", className)}>
@@ -96,7 +98,7 @@ export function TodaySchedule({ items, className }: TodayScheduleProps) {
             </p>
             <div className="min-w-0 flex-1">
               <Link
-                href="/schedule"
+                href={roleAwareHref("/schedule")}
                 className="block truncate text-sm font-medium text-slate-900 after:absolute after:inset-0 after:content-[''] dark:text-slate-50"
               >
                 {item.title}
