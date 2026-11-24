@@ -9,6 +9,7 @@ import {
   ProfileHeader,
   ActivityHeatmap,
   FeaturedAchievements,
+  TeacherProfileSummary,
 } from "@/components/profile";
 import type { User, UserStats, FeaturedAchievement } from "@/components/profile";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -186,6 +187,18 @@ export default function PublicProfilePage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <ProfileHeader user={user} isOwnProfile stats={stats} showLearningStats={false} />
+      </div>
+    );
+  }
+
+  // Q4-T10: giảng viên xem hồ sơ của chính mình: thông tin giảng dạy thay cho cấp/XP/chuỗi ngày/huy hiệu học viên.
+  if (isOwnProfile && normalizeRole(activeRole) === "TEACHER") {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <ProfileHeader user={user} isOwnProfile stats={stats} showLearningStats={false} />
+        <div className="container max-w-6xl mx-auto px-4 py-8">
+          <TeacherProfileSummary />
+        </div>
       </div>
     );
   }

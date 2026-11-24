@@ -5,3 +5,4 @@ export { ActivityHeatmap } from "./activity-heatmap";
 
 export { FeaturedAchievements } from "./featured-achievements";
 export type { FeaturedAchievement } from "./featured-achievements";
+export { TeacherProfileSummary } from "./teacher-profile-summary";
