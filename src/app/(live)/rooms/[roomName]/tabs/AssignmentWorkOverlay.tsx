@@ -939,7 +939,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
                 cursor: 'pointer',
               }}
             >
-              {LANGUAGES.filter((l) => !assignment?.language || assignment.language.includes(l.id)).map((l) => (
+              {LANGUAGES.filter((l) => !assignment?.language?.length || assignment.language.includes(l.id)).map((l) => (
                 <option key={l.id} value={l.id}>{l.label}</option>
               ))}
             </select>
