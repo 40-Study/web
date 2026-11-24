@@ -1,11 +1,14 @@
-/** Q4-T09: PUT phần video có hạn chờ, lỗi mạng hiện câu tiếng Việt thay vì "Failed to fetch". */
-import { afterEach, describe, expect, it, vi } from "vitest";
+/** Q4-T09: PUT phần video dừng khi không có tiến độ, huỷ được, lỗi mạng hiện câu tiếng Việt thay vì "Failed to fetch". */
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { FakeXhr } from "@/test/fake-xhr";
 import { ApiError } from "./errors";
 import {
   putVideoChunk,
+  UPLOAD_CANCELLED_MESSAGE,
   UPLOAD_FAILED_MESSAGE,
   UPLOAD_TIMEOUT_MESSAGE,
   UPLOAD_UNREACHABLE_MESSAGE,
+  VideoUploadCancelledError,
   videoUploadErrorMessage,
 } from "./video-chunk-upload";
 
@@ -15,35 +18,68 @@ afterEach(() => {
 });
 
 describe("putVideoChunk", () => {
-  it("trả ETag của MinIO khi PUT thành công", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 200, headers: { ETag: '"abc"' } })));
-    await expect(putVideoChunk("http://x", new Blob(["a"]), 1)).resolves.toBe('"abc"');
+  beforeEach(() => {
+    FakeXhr.reset();
+    vi.stubGlobal("XMLHttpRequest", FakeXhr);
+  });
+  const lastXhr = () => FakeXhr.instances[FakeXhr.instances.length - 1];
+
+  it("PUT phần video, trả ETag của MinIO khi thành công", async () => {
+    const pending = putVideoChunk("http://x", new Blob(["a"]), 1);
+    expect(lastXhr().method).toBe("PUT");
+    lastXhr().respond(200, { ETag: '"abc"' });
+    await expect(pending).resolves.toBe('"abc"');
   });
 
-  it("huỷ PUT treo sau hạn chờ và báo bằng tiếng Việt", async () => {
+  it("không có tiến độ quá hạn chờ: huỷ PUT và báo bằng tiếng Việt", async () => {
     vi.useFakeTimers();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn((_url: string, init: RequestInit) =>
-        new Promise((_resolve, reject) => {
-          init.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
-        }),
-      ),
-    );
-    const pending = putVideoChunk("http://172.18.0.4:9000/x", new Blob(["a"]), 1, 1000);
+    const pending = putVideoChunk("http://172.18.0.4:9000/x", new Blob(["a"]), 1, { stallTimeoutMs: 1000 });
     const assertion = expect(pending).rejects.toThrow(UPLOAD_TIMEOUT_MESSAGE);
     await vi.advanceTimersByTimeAsync(1001);
     await assertion;
+    expect(lastXhr().aborted).toBe(true);
+  });
+
+  it("mạng chậm nhưng còn tiến độ: không bị cắt dù tổng thời gian vượt hạn chờ", async () => {
+    vi.useFakeTimers();
+    const pending = putVideoChunk("http://x", new Blob(["a"]), 1, { stallTimeoutMs: 1000 });
+    for (let i = 0; i < 5; i++) {
+      await vi.advanceTimersByTimeAsync(800);
+      lastXhr().progress();
+    }
+    lastXhr().respond(200, { ETag: '"slow"' });
+    await expect(pending).resolves.toBe('"slow"');
+    expect(lastXhr().aborted).toBe(false);
+  });
+
+  it("bấm huỷ: dừng PUT và trả lỗi huỷ (không phải lỗi mạng)", async () => {
+    const controller = new AbortController();
+    const pending = putVideoChunk("http://x", new Blob(["a"]), 1, { signal: controller.signal });
+    controller.abort();
+    await expect(pending).rejects.toBeInstanceOf(VideoUploadCancelledError);
+    await expect(pending).rejects.toThrow(UPLOAD_CANCELLED_MESSAGE);
+    expect(lastXhr().aborted).toBe(true);
+  });
+
+  it("đã huỷ từ trước: không gửi request nào", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    await expect(putVideoChunk("http://x", new Blob(["a"]), 1, { signal: controller.signal })).rejects.toBeInstanceOf(
+      VideoUploadCancelledError,
+    );
+    expect(FakeXhr.instances).toHaveLength(0);
   });
 
   it("không kết nối được máy chủ lưu trữ: câu tiếng Việt, không phải 'Failed to fetch'", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
-    await expect(putVideoChunk("http://x", new Blob(["a"]), 1)).rejects.toThrow(UPLOAD_UNREACHABLE_MESSAGE);
+    const pending = putVideoChunk("http://x", new Blob(["a"]), 1);
+    lastXhr().failNetwork();
+    await expect(pending).rejects.toThrow(UPLOAD_UNREACHABLE_MESSAGE);
   });
 
   it("MinIO trả lỗi HTTP: câu tiếng Việt kèm mã", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 403 })));
-    await expect(putVideoChunk("http://x", new Blob(["a"]), 1)).rejects.toThrow(`${UPLOAD_FAILED_MESSAGE} (mã 403)`);
+    const pending = putVideoChunk("http://x", new Blob(["a"]), 1);
+    lastXhr().respond(403);
+    await expect(pending).rejects.toThrow(`${UPLOAD_FAILED_MESSAGE} (mã 403)`);
   });
 });
 

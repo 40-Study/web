@@ -65,7 +65,12 @@ import { isUuid } from "@/lib/uuid";
 import { useCourse } from "@/hooks/queries/use-courses";
 import { CourseReviewPanel, CourseStatusBadge } from "@/components/teacher/course-review-status";
 import { DeleteLessonContentDialog } from "@/components/teacher/delete-lesson-content-dialog";
-import { putVideoChunk, videoUploadErrorMessage } from "@/lib/video-chunk-upload";
+import {
+  putVideoChunk,
+  throwIfUploadCancelled,
+  VideoUploadCancelledError,
+  videoUploadErrorMessage,
+} from "@/lib/video-chunk-upload";
 import { useSections, useCreateSection, useReorderSections, useDeleteSection, sectionKeys } from "@/hooks/queries/use-sections";
 import { useCreateLesson, useReorderLessons, useDeleteLesson } from "@/hooks/queries/use-lessons";
 import {
@@ -763,10 +768,18 @@ export default function CourseDetailPage() {
     setAddContentModal(true);
   };
 
+  // Q4-T09: nút "Huỷ tải lên" gọi abort() trên controller của lượt upload đang chạy.
+  const uploadAbortRef = useRef<AbortController | null>(null);
+  const handleCancelUpload = () => uploadAbortRef.current?.abort();
+
   // Handle video file selection - start upload immediately
   const handleVideoFileSelect = async (file: File) => {
     if (!currentLessonId) return;
 
+    const controller = new AbortController();
+    uploadAbortRef.current = controller;
+    const { signal } = controller;
+    let uploadId: string | undefined;
     setIsUploading(true);
     setUploadProgress(0);
     setUploadStatus("Đang khởi tạo upload...");
@@ -786,12 +799,14 @@ export default function CourseDetailPage() {
         file_size: file.size,
         chunk_size: CHUNK_SIZE,
       });
+      uploadId = uploadInit.upload_id;
 
       // Upload chunks with progress tracking
       for (let chunkNum = 0; chunkNum < totalChunks; chunkNum++) {
         const start = chunkNum * CHUNK_SIZE;
         const end = Math.min(start + CHUNK_SIZE, file.size);
         const chunk = file.slice(start, end);
+        throwIfUploadCancelled(signal);
 
         const progress = Math.round(((chunkNum + 0.5) / totalChunks) * 100);
         setUploadProgress(progress);
@@ -808,7 +823,7 @@ export default function CourseDetailPage() {
           throw new Error("Không lấy được presigned URL");
         }
 
-        const etag = await putVideoChunk(presignedUrl.url, chunk, chunkNum + 1);
+        const etag = await putVideoChunk(presignedUrl.url, chunk, chunkNum + 1, { signal });
         await videoUploadService.chunkComplete({
           upload_id: uploadInit.upload_id,
           chunk_number: chunkNum + 1,
@@ -819,6 +834,7 @@ export default function CourseDetailPage() {
         setUploadProgress(Math.round(((chunkNum + 1) / totalChunks) * 100));
       }
 
+      throwIfUploadCancelled(signal);
       setUploadStatus("Đang hoàn tất...");
       await videoUploadService.completeUpload(uploadInit.upload_id);
 
@@ -829,12 +845,24 @@ export default function CourseDetailPage() {
       setUploadStatus("Upload thành công!");
       toast.success("Upload video thành công!");
     } catch (err) {
+      if (err instanceof VideoUploadCancelledError) {
+        // Gỡ phiên upload dở trên server; lỗi gỡ chỉ ghi log, giảng viên đã chủ động huỷ.
+        if (uploadId) {
+          const { videoUploadService } = await import("@/services/video-upload.service");
+          videoUploadService.cancelUpload(uploadId, "user_cancelled").catch((e) => console.error("Cancel upload error:", e));
+        }
+        toast.info(err.message);
+        setUploadProgress(undefined);
+        setUploadStatus(err.message);
+        return;
+      }
       console.error("Upload error:", err);
       const errorMsg = videoUploadErrorMessage(err);
       toast.error(errorMsg);
       setUploadProgress(undefined);
       setUploadStatus(`Lỗi: ${errorMsg}`);
     } finally {
+      if (uploadAbortRef.current === controller) uploadAbortRef.current = null;
       setIsUploading(false);
     }
   };
@@ -1318,6 +1346,7 @@ export default function CourseDetailPage() {
         uploadProgress={uploadProgress}
         uploadStatus={uploadStatus}
         onVideoFileSelect={handleVideoFileSelect}
+        onCancelUpload={handleCancelUpload}
         uploadedVideoUrl={uploadedVideoUrl}
       />
 

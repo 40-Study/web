@@ -195,6 +195,8 @@ interface AddContentModalProps {
   uploadProgress?: number; // 0-100, undefined = not uploading
   uploadStatus?: string; // status message
   onVideoFileSelect?: (file: File) => void; // Called immediately when video file is selected
+  /** Q4-T09: huỷ lượt upload đang chạy (nút "Huỷ tải lên" cạnh thanh tiến độ). */
+  onCancelUpload?: () => void;
   uploadedVideoUrl?: string; // URL of uploaded video (set by parent after upload completes)
 }
 
@@ -248,6 +250,7 @@ export function AddContentModal({
   uploadProgress,
   uploadStatus,
   onVideoFileSelect,
+  onCancelUpload,
   uploadedVideoUrl,
 }: AddContentModalProps) {
   // Step: null = choose type, otherwise editing that type
@@ -644,6 +647,11 @@ export function AddContentModal({
                               style={{ width: `${uploadProgress}%` }}
                             />
                           </div>
+                          {isLoading && onCancelUpload && (
+                            <Button type="button" variant="outline" size="sm" onClick={onCancelUpload}>
+                              Huỷ tải lên
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
