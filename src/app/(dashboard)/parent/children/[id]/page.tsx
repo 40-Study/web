@@ -63,7 +63,7 @@ function ScheduleGrid({ entries }: { entries: TimetableEntry[] }) {
   const [detail, setDetail] = useState<ScheduleEvent | null>(null);
   const events = useMemo(() => timetableEntriesToEvents(entries).map(event => ({ ...event, teacher: undefined })), [entries]);
   return <>
-    <WeekCalendarGrid events={events} onEventClick={setDetail} />
+    <WeekCalendarGrid events={events} onEventClick={setDetail} railLabel="Lịch học của con" />
     <ScheduleEventDetailDialog event={detail} open={!!detail} onOpenChange={open => { if (!open) setDetail(null); }} />
   </>;
 }
