@@ -11,6 +11,7 @@ import { useAssignableOrgRoles } from "@/hooks/queries/use-org-member-roles";
 import { useOrgMembers } from "@/hooks/queries/use-org-area";
 import { getErrorMessage } from "@/lib/error-messages";
 import { getOrgRoleLabel } from "@/lib/role-labels";
+import { foldSearchText } from "@/lib/text-search";
 import { isUncertainOutcomeError, reconcileUncertainOutcome, uncertainOutcomeDescription } from "@/lib/uncertain-mutation";
 import type { OrgMember, OrgMemberAssignment } from "@/services/organization.service";
 import { AddMemberDialog } from "./add-member-dialog";
@@ -27,6 +28,14 @@ interface OrgMembersPanelProps {
    */
   memberLookup?: "directory" | "email";
   currentUserId?: string;
+}
+
+/**
+ * QA4-A12: "đổi" sang đúng vai trò duy nhất đang giữ không đổi gì mà hộp thoại vẫn đóng như đã đổi, nên không
+ * đưa vai trò đó vào ô chọn. Người giữ nhiều vai vẫn chọn được một vai đang có (giữ vai đó, gỡ các vai còn lại).
+ */
+function isOnlyRole(member: OrgMember | null, roleId: string): boolean {
+  return !!member && member.assignments.length === 1 && member.assignments[0].role_id === roleId;
 }
 
 type Confirm =
@@ -51,8 +60,9 @@ export function OrgMembersPanel({ orgId, canAddMember, memberLookup = "directory
   const data = useMemo(() => members.data ?? [], [members.data]);
   const orgRoles = useMemo(() => roles.data ?? [], [roles.data]);
   const filtered = useMemo(() => {
-    const q = keyword.trim().toLowerCase();
-    return q ? data.filter((m) => m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)) : data;
+    // QA4-A07: tìm không dấu như mọi ô tìm khác của admin ("dang" ra "Đặng Bá Quân").
+    const q = foldSearchText(keyword);
+    return q ? data.filter((m) => foldSearchText(`${m.name} ${m.email}`).includes(q)) : data;
   }, [data, keyword]);
   const memberIds = useMemo(() => new Set(data.map((m) => m.user_id)), [data]);
 
@@ -182,7 +192,7 @@ export function OrgMembersPanel({ orgId, canAddMember, memberLookup = "directory
         title={`Đổi vai trò của ${changeFor?.name ?? ""}`}
         description="Vai trò mới được gán trước, sau đó các vai trò hiện tại khác được gỡ."
         confirmLabel="Đổi vai trò"
-        roles={orgRoles}
+        roles={orgRoles.filter((r) => !isOnlyRole(changeFor, r.id))}
         onSubmit={(roleId) => actions.changeRole(changeFor as OrgMember, roleId)}
       />
       <ConfirmDialog
