@@ -60,6 +60,11 @@ export interface ScheduleEvent {
    * cần plugin rrule: `daysOfWeek` 0 = Chủ nhật; `startTime`/`endTime` dạng "HH:mm"; `startRecur`/
    * `endRecur` là ngày YYYY-MM-DD (endRecur loại trừ, nên truyền ngày sau ngày hết hạn).
    */
+  /**
+   * Buổi học cụ thể CHƯA bắt đầu (`status: "scheduled"`) mà người xem có thể huỷ: đủ để gọi
+   * `DELETE /classes/:classId/sessions/:sessionId` và kiểm tra lại giờ bắt đầu (giờ VN) lúc bấm. Chỉ có ở "class-session".
+   */
+  cancelTarget?: { classId: string; sessionId: string; date: string; startTime: string };
   weekly?: {
     daysOfWeek: number[];
     startTime: string;

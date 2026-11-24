@@ -101,6 +101,8 @@ const CODE_MESSAGES: Record<string, string> = {
   ERR_ASSIGNMENT_HAS_SUBMISSIONS:
     "Bài tập đã có học viên nộp bài nên không thể xoá. Hãy huỷ công bố nếu muốn ẩn bài tập.",
   ERR_SESSION_NOT_STARTED: "Buổi học chưa diễn ra nên chưa thể điểm danh. Hãy điểm danh từ ngày học trở đi.",
+  // Round 2 (R4): huỷ buổi đã bắt đầu (422); trước đó web đã ẩn nút, mã này chỉ gặp khi trang cũ hoặc giờ lệch.
+  ERR_SESSION_ALREADY_STARTED: "Buổi học đã bắt đầu nên không thể huỷ. Hãy tải lại lịch để xem trạng thái mới nhất.",
   ERR_DUE_DATE_IN_PAST: "Hạn nộp phải ở tương lai. Hãy chọn lại hạn nộp.",
   // Q4-T13: thêm/sửa nội dung khi khoá đang chờ duyệt (409); message backend là tiếng Anh.
   COURSE_PENDING_REVIEW: "Khoá học đang chờ duyệt nên không thể chỉnh sửa. Hãy rút yêu cầu duyệt trước.",

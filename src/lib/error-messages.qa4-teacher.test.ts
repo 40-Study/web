@@ -15,3 +15,11 @@ describe("getErrorMessage — mã lỗi QA4 giảng viên", () => {
     expect(message).not.toContain("English");
   });
 });
+
+describe("getErrorMessage — QA5 round 2", () => {
+  it("422 ERR_SESSION_ALREADY_STARTED: câu tiếng Việt, không lộ message tiếng Anh", () => {
+    const message = getErrorMessage(new ApiError(422, "ERR_SESSION_ALREADY_STARTED", "session already started"));
+    expect(message).toContain("đã bắt đầu");
+    expect(message).not.toContain("session already started");
+  });
+});

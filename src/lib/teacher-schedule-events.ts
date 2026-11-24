@@ -204,6 +204,9 @@ export function timetableEntriesToEvents(entries: TimetableEntry[], options: Tim
         location: e.room || undefined,
         ...classLabels(e, audience),
         kind: "class-session",
+        ...(audience !== "family" && e.status === "scheduled" && e.class_id
+          ? { cancelTarget: { classId: e.class_id, sessionId: e.session_id, date: day, startTime: startHHmm } }
+          : {}),
       });
     }
   }
