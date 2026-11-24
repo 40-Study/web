@@ -45,6 +45,7 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { ResourceLoadError, ResourceUnavailable, StaleDataNotice, isResourceUnavailableError, unavailableStatus } from "@/components/common/resource-unavailable";
 import { Card, CardContent } from "@/components/ui/card";
@@ -339,7 +340,13 @@ function SortableLessonRow({
             <GripVertical className="w-3.5 h-3.5" />
           </button>
         )}
-        <button onClick={() => setExpanded(!expanded)} className="p-0.5 text-gray-400 hover:text-gray-600">
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          aria-label={expanded ? "Thu gọn bài học" : "Mở rộng bài học"}
+          aria-expanded={expanded}
+          className="p-0.5 text-gray-400 hover:text-gray-600"
+        >
           <ChevronRight className={cn("w-3.5 h-3.5 transition-transform", expanded && "rotate-90")} />
         </button>
         <button
@@ -1672,6 +1679,17 @@ function EditContentModal({
   const quizSettingsId = content?.type === "quiz" ? content.quiz_id : undefined;
   const exerciseId = content?.type === "exercise" ? content.exercise_id : undefined;
   const saveBlocked = durationInvalid || quizSettings.blocked || exerciseSettings.blocked;
+  // Q5-T03: nút lưu đã bị khoá khi còn câu hỏi chưa lưu (Q4-T03) nhưng "Huỷ"/Esc/bấm nền vẫn đóng thẳng và mất
+  // chỉnh sửa không báo. Có câu chưa lưu thì hỏi trước khi đóng.
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const hasUnsavedQuestions = (quizSettings.unsavedQuestions ?? 0) > 0;
+  const requestOpenChange = (next: boolean) => {
+    if (!next && hasUnsavedQuestions && !isSaving) {
+      setConfirmDiscard(true);
+      return;
+    }
+    onOpenChange(next);
+  };
 
   const handleSave = async () => {
     if (!content || !title.trim() || saveBlocked || savingRef.current) return;
@@ -1742,7 +1760,8 @@ function EditContentModal({
   if (!content) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+    <Dialog open={open} onOpenChange={requestOpenChange}>
       <DialogContent className={cn(exerciseId || quizSettingsId ? "max-w-2xl max-h-[90vh] overflow-y-auto" : "max-w-md")}>
         <DialogHeader>
           <DialogTitle>Chỉnh sửa nội dung</DialogTitle>
@@ -1812,7 +1831,7 @@ function EditContentModal({
           </p>
         )}
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Huỷ</Button>
+          <Button variant="outline" onClick={() => requestOpenChange(false)}>Huỷ</Button>
           <Button onClick={handleSave} disabled={!title.trim() || isSaving || saveBlocked}>
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Lưu thay đổi
@@ -1820,5 +1839,19 @@ function EditContentModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <ConfirmDialog
+      open={confirmDiscard}
+      onOpenChange={setConfirmDiscard}
+      title="Bỏ chỉnh sửa chưa lưu?"
+      description={`Còn ${quizSettings.unsavedQuestions ?? 0} câu hỏi chưa lưu. Đóng bây giờ sẽ mất các chỉnh sửa đó.`}
+      confirmLabel="Bỏ chỉnh sửa"
+      cancelLabel="Tiếp tục chỉnh sửa"
+      destructive
+      onConfirm={() => {
+        setConfirmDiscard(false);
+        onOpenChange(false);
+      }}
+    />
+    </>
   );
 }

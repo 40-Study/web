@@ -16,6 +16,9 @@ import { useIsMobile } from '@/lib/meet/use-is-mobile';
 import { applyWhiteboardLock } from './whiteboard-lock';
 import { parseSessionSettings } from './session-settings';
 import { livestreamService } from '@/services/livestream.service';
+import { useAuthStore } from '@/stores/auth.store';
+import { resolveRoleAwareHref } from '@/lib/routes';
+import { mapOrgRoleToSystemRole } from '@/lib/role-resolution';
 
 interface AssignmentNotification {
   assignment_id: string;
@@ -45,6 +48,8 @@ export default function RoomClient({
   initialUser: { id: string; name: string };
 }) {
   const router = useRouter();
+  const activeRole = useAuthStore((s) => s.activeRole);
+  const roles = useAuthStore((s) => s.roles);
   // Layout dựng bằng inline style nên không dùng được breakpoint Tailwind — panel
   // Chat/Whiteboard/Sandbox chuyển sang gần full màn hình trên mobile (H-07).
   const isMobile = useIsMobile();
@@ -310,8 +315,9 @@ export default function RoomClient({
   // nhưng trước đây không có nhánh UI nào cho người bị đuổi giữa buổi.
   const handleKicked = useCallback(() => {
     window.alert('Bạn đã bị mời ra khỏi buổi học này bởi giáo viên.');
-    router.push('/my-courses');
-  }, [router]);
+    // Q5-T15 (L2): người bị mời ra có thể là giảng viên dự thính; /my-courses của họ sẽ bị guard đá lại kèm toast.
+    router.push(resolveRoleAwareHref('/my-courses', mapOrgRoleToSystemRole(activeRole, roles) ?? activeRole));
+  }, [router, activeRole, roles]);
 
   const handleWhiteboardEvent = useCallback((event: any) => {
     // Whiteboard events

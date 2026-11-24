@@ -10,7 +10,7 @@ import { siteConfig } from "@/lib/constants";
 
 type AuthState = {
   isAuthenticated: boolean;
-  user: { name: string; email: string } | null;
+  user: { id?: string; name: string; email: string } | null;
   activeRole: string | null;
   activeUnifiedRole: null;
   roles: never[];
@@ -79,6 +79,21 @@ describe("Header — menu tài khoản", () => {
     openMenu();
     expect(screen.getAllByText("Giảng viên").length).toBeGreaterThan(0);
     expect(screen.queryByText("Giáo viên")).toBeNull();
+  });
+
+  // Q5-T13: trang hồ sơ giảng viên có rồi nhưng menu tài khoản không có lối vào.
+  it("Q5-T13: giảng viên thấy 'Hồ sơ giảng viên' trỏ /profile/<id>; học viên thì không", () => {
+    authState.user = { id: "t-77", name: "GV", email: "gv@demo.com" };
+    authState.activeRole = "TEACHER";
+    const { unmount } = render(<Header />);
+    openMenu();
+    expect(screen.getAllByRole("link", { name: "Hồ sơ giảng viên" })[0].getAttribute("href")).toBe("/profile/t-77");
+    unmount();
+
+    authState.activeRole = "STUDENT";
+    render(<Header />);
+    openMenu();
+    expect(screen.queryByRole("link", { name: "Hồ sơ giảng viên" })).toBeNull();
   });
 
   it("giảng viên KHÔNG thấy 'Đơn hàng của tôi'", () => {

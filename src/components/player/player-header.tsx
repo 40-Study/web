@@ -4,6 +4,8 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore } from "@/stores/auth.store";
+import { resolveRoleAwareHref } from "@/lib/routes";
+import { mapOrgRoleToSystemRole } from "@/lib/role-resolution";
 
 interface PlayerHeaderProps {
   courseTitle?: string;
@@ -15,6 +17,11 @@ interface PlayerHeaderProps {
 export function PlayerHeader({ courseTitle, courseSlug, exerciseCount = 0 }: PlayerHeaderProps) {
   // A8 (QA vòng 2, N8): avatar trước đây ghi cứng "TK" cho mọi người học.
   const user = useAuthStore((s) => s.user);
+  // Q5-T15 (L2): giảng viên xem thử khoá (player) bấm "Khoá học của tôi" phải tới /teacher/courses, không bị guard đá lại.
+  // (lesson) không chạy useSystemRoleRemap nên tự quy vai tuỳ biến của tổ chức về vai hệ thống.
+  const activeRole = useAuthStore((s) => s.activeRole);
+  const roles = useAuthStore((s) => s.roles);
+  const role = mapOrgRoleToSystemRole(activeRole, roles) ?? activeRole;
 
   return (
     <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 shrink-0 z-20">
@@ -31,7 +38,7 @@ export function PlayerHeader({ courseTitle, courseSlug, exerciseCount = 0 }: Pla
       {/* Right: My courses link + Exercises + avatar */}
       <div className="flex items-center gap-4 sm:gap-5">
         <Link
-          href="/my-courses"
+          href={resolveRoleAwareHref("/my-courses", role)}
           className="text-sm text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
         >
           Khoá học của tôi

@@ -20,7 +20,7 @@ export function ClassSourceBadge({ organizationId }: { organizationId?: string |
   const Icon = organizationId ? Building2 : User;
 
   return (
-    <Badge variant={organizationId ? "secondary" : "outline"} className="gap-1">
+    <Badge variant={organizationId ? "secondary" : "outline"} className="gap-1 whitespace-nowrap">
       <Icon className="h-3 w-3" aria-hidden="true" />
       {classSourceLabel(organizationId, names)}
     </Badge>

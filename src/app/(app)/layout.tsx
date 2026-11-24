@@ -93,7 +93,9 @@ export default function AppLayout({
     (!isRouteAllowedForRole(pathname, navRole) ||
       (isFriendsRoute && !canUseFriends(activeRole)) ||
       // /livestream, /my-grades: cùng lý do với Bạn bè, khoá theo vai THẬT (giáo viên không lọt qua NavRole STUDENT).
-      !canAccessStudentOnlyRoute(pathname, activeRole));
+      // Q5-T15 (M3): dùng vai ĐÃ quy đổi (`normalizedRole`), không phải `activeRole` thô: vai tuỳ biến của tổ chức (vd
+      // QA3_STUDENT) chưa kịp quy về STUDENT ở lần tải đầu sẽ bị đá khỏi /my-courses, /schedule kèm toast sai.
+      !canAccessStudentOnlyRoute(pathname, normalizedRole));
 
   // N-08 (QA admin 260928, P1): mất phiên (bị khoá giữa phiên, token hết hạn) → bootstrap đặt
   // `anonymous` nhưng layout chỉ `return null` và KHÔNG có nhánh điều hướng nào — RoleGuard (nơi

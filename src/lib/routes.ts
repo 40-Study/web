@@ -92,6 +92,8 @@ interface RoleScopedRoute {
   roles: NavRole[];
   /** Chỉ vai THẬT là STUDENT (TEACHER bị loại dù resolveNavRole quy về STUDENT) — nguồn của requiresRealStudentRole. */
   realStudentOnly?: true;
+  /** Q5-T15: nơi đưa giảng viên (vai THẬT) về khi gõ thẳng route học viên này, thay cho trang chủ của vai. */
+  teacherFallback?: string;
 }
 
 /**
@@ -104,8 +106,9 @@ export const ROLE_SCOPED_ROUTES: RoleScopedRoute[] = [
   // Cuộc thi (contract §7, chủ dự án 28/09): phụ huynh XEM được danh sách + chi tiết (chỉ đọc).
   // Ba route con làm bài/kết quả/chứng nhận do ROLE_SCOPED_PATTERNS bên dưới chặn riêng.
   { href: "/contests", roles: ["GUEST", "STUDENT", "PARENT"] },
-  { href: "/my-courses", roles: ["STUDENT"] },
-  { href: "/schedule", roles: ["STUDENT"] },
+  // Q5-T15: giảng viên gõ thẳng URL từng thấy trang học viên ("Bạn chưa đăng ký khoá học nào") trong khung giảng viên.
+  { href: "/my-courses", roles: ["STUDENT"], realStudentOnly: true, teacherFallback: "/teacher/courses" },
+  { href: "/schedule", roles: ["STUDENT"], realStudentOnly: true, teacherFallback: "/teacher/schedule" },
   // Bài tập là của học viên (QA P3): phụ huynh gõ thẳng URL từng thấy nav học sinh +
   // "Bạn có 0 bài tập" — cùng lớp bug role-leak với /friends. Menu cũng đọc bảng này.
   { href: "/my-assignments", roles: ["STUDENT"] },
@@ -216,14 +219,36 @@ export function getRoleRestrictedNotice(
       description: "Trang /livestream là danh sách buổi học dành cho học viên nên bạn được đưa về Lịch giảng dạy.",
     };
   }
+  // Q5-T15 (L2): giảng viên mở /my-courses, /schedule được đưa tới trang giảng viên tương ứng, không phải trang chủ.
+  if (findTeacherFallback(pathname, role)) {
+    return {
+      title: `Trang này không dành cho ${roleLabel}.`,
+      description: "Bạn đã được đưa về trang tương ứng dành cho giảng viên.",
+    };
+  }
   return {
     title: `Trang này không dành cho ${roleLabel}.`,
     description: "Bạn đã được đưa về trang chủ phù hợp với vai trò của mình.",
   };
 }
 
+/** `teacherFallback` của route học viên mà `pathname` thuộc về; chỉ khi vai THẬT là giảng viên (nguồn: ROLE_SCOPED_ROUTES). */
+function findTeacherFallback(pathname: string, role?: string | null): string | undefined {
+  if (normalizeRole(role) !== "TEACHER") return undefined;
+  return ROLE_SCOPED_ROUTES.find((r) => pathname === r.href || pathname.startsWith(`${r.href}/`))?.teacherFallback;
+}
+
+/**
+ * Link nội bộ tới route học viên: giảng viên được trỏ thẳng tới trang giảng viên tương ứng, để bấm vào không bị
+ * guard của (app)/layout đá lại kèm toast cảnh báo. Vai khác giữ nguyên `href`.
+ */
+export function resolveRoleAwareHref(href: string, role?: string | null): string {
+  return findTeacherFallback(href, role) ?? href;
+}
+
 /** Đích chuyển hướng khi route bị chặn theo vai trò: pattern có đích riêng, còn lại về home. */
 export function getRoleRestrictedRedirect(pathname: string, role?: string | null): string {
   const scopedPattern = ROLE_SCOPED_PATTERNS.find((p) => p.pattern.test(pathname));
-  return scopedPattern ? scopedPattern.fallback(pathname) : getRoleHomeRoute(role);
+  if (scopedPattern) return scopedPattern.fallback(pathname);
+  return findTeacherFallback(pathname, role) ?? getRoleHomeRoute(role);
 }

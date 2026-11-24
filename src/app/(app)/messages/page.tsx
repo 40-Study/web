@@ -121,6 +121,10 @@ function MessagesContent() {
     refetch: refetchConversations,
   } = useConversations();
   const conversations = useMemo(() => convData?.conversations ?? [], [convData?.conversations]);
+  const visibleConversations = useMemo(
+    () => conversations.filter((c) => conversationMatchesQuery(c, searchQuery)),
+    [conversations, searchQuery],
+  );
   const currentUserId = user?.id ?? "";
 
   // MEDIUM (Phase 0 review #5): React Query v5 vẫn bật `isError` khi refetch nền
@@ -246,17 +250,21 @@ function MessagesContent() {
                     </button>
                   </div>
                 )}
-                {conversations
-                  .filter((c) => conversationMatchesQuery(c, searchQuery))
-                  .map((conv) => (
-                    <ConversationItem
-                      key={conv.id}
-                      conversation={conv}
-                      isSelected={conv.id === selectedConvId}
-                      onClick={() => setSelectedConvId(conv.id)}
-                      currentUserId={currentUserId}
-                    />
-                  ))}
+                {visibleConversations.map((conv) => (
+                  <ConversationItem
+                    key={conv.id}
+                    conversation={conv}
+                    isSelected={conv.id === selectedConvId}
+                    onClick={() => setSelectedConvId(conv.id)}
+                    currentUserId={currentUserId}
+                  />
+                ))}
+                {/* Q5-T04: gõ từ khoá không khớp cuộc trò chuyện nào từng ra danh sách trắng. */}
+                {conversations.length > 0 && visibleConversations.length === 0 && (
+                  <p role="status" className="px-3 py-6 text-center text-sm text-muted-foreground">
+                    Không tìm thấy cuộc trò chuyện
+                  </p>
+                )}
               </>
             )}
           </div>

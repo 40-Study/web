@@ -11,8 +11,10 @@ import {
   ROLE_SCOPED_PATTERNS,
   ROLE_SCOPED_ROUTES,
   canAccessStudentOnlyRoute,
+  getRoleRestrictedNotice,
   getRoleRestrictedRedirect,
   isRouteAllowedForRole,
+  resolveRoleAwareHref,
   type NavRole,
 } from "./routes";
 
@@ -103,7 +105,42 @@ describe("isRouteAllowedForRole — ma trận role x route (ROLE_SCOPED_ROUTES)"
     }
     expect(canAccessStudentOnlyRoute("/my-grades-old", "TEACHER")).toBe(true);
     expect(canAccessStudentOnlyRoute("/messages", "TEACHER")).toBe(true);
-    expect(canAccessStudentOnlyRoute("/schedule", "TEACHER")).toBe(true);
+  });
+
+  // Q5-T15: giảng viên gõ thẳng /my-courses, /schedule từng thấy trang học viên trong khung giảng viên.
+  it("Q5-T15: /my-courses và /schedule chỉ vai STUDENT thật; giảng viên được đưa về trang giảng viên tương ứng", () => {
+    for (const [href, target] of [["/my-courses", "/teacher/courses"], ["/schedule", "/teacher/schedule"]] as const) {
+      expect(canAccessStudentOnlyRoute(href, "STUDENT")).toBe(true);
+      expect(canAccessStudentOnlyRoute(href, "TEACHER")).toBe(false);
+      expect(canAccessStudentOnlyRoute(`${href}/x`, "TEACHER")).toBe(false);
+      expect(getRoleRestrictedRedirect(href, "TEACHER")).toBe(target);
+      // Vai khác không đổi đích: phụ huynh vẫn về /home.
+      expect(getRoleRestrictedRedirect(href, "PARENT")).toBe("/home");
+    }
+    // Trang giảng viên tên gần giống không bị chặn.
+    expect(canAccessStudentOnlyRoute("/teacher/schedule", "TEACHER")).toBe(true);
+    expect(canAccessStudentOnlyRoute("/schedule-old", "TEACHER")).toBe(true);
+  });
+
+  // L2: lời nhắn và link nội bộ của giảng viên không được dẫn tới trang chủ/guard sai.
+  it("Q5-T15 (L2): toast của giảng viên ở /my-courses, /schedule không nói 'trang chủ'; vai khác giữ lời nhắn cũ", () => {
+    for (const href of ["/my-courses", "/schedule/x"]) {
+      expect(getRoleRestrictedNotice(href, "TEACHER", "Giảng viên").description).not.toContain("trang chủ");
+      expect(getRoleRestrictedNotice(href, "TEACHER", "Giảng viên").description).toContain("giảng viên");
+      expect(getRoleRestrictedNotice(href, "PARENT", "Phụ huynh").description).toContain("trang chủ");
+    }
+    // /livestream giữ lời nhắn riêng của Q3-24.
+    expect(getRoleRestrictedNotice("/livestream", "TEACHER", "Giảng viên").title).toContain("Lịch giảng dạy");
+  });
+
+  it("Q5-T15 (L2): resolveRoleAwareHref trỏ giảng viên tới trang giảng viên, vai khác giữ nguyên link", () => {
+    expect(resolveRoleAwareHref("/my-courses", "TEACHER")).toBe("/teacher/courses");
+    expect(resolveRoleAwareHref("/schedule", "TEACHER")).toBe("/teacher/schedule");
+    expect(resolveRoleAwareHref("/my-courses", "STUDENT")).toBe("/my-courses");
+    expect(resolveRoleAwareHref("/my-courses", null)).toBe("/my-courses");
+    expect(resolveRoleAwareHref("/notifications", "TEACHER")).toBe("/notifications");
+    // Đích của link luôn được guard cho phép: không vòng lặp chuyển hướng.
+    expect(canAccessStudentOnlyRoute(resolveRoleAwareHref("/my-courses", "TEACHER"), "TEACHER")).toBe(true);
   });
 
   it("/settings/family và /messages cho cả STUDENT lẫn PARENT (không phải route học sinh-only)", () => {

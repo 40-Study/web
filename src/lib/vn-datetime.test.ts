@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { courseLevelLabel } from "./course-level";
-import { formatVnDateOnly, formatVnDateTime, formatVnDateThenTime } from "./vn-datetime";
+import { formatVnDateOnly, formatVnDateTime, formatVnDateThenTime, isVnSessionUpcoming } from "./vn-datetime";
 
 describe("courseLevelLabel", () => {
   it("dịch mã trình độ sang tiếng Việt", () => {
@@ -61,5 +61,35 @@ describe("formatter dùng chung (F-11 review)", () => {
     } finally {
       spy.mockRestore();
     }
+  });
+});
+
+describe("isVnSessionUpcoming (Q5-T02, M1)", () => {
+  // 12:00 giờ VN = 05:00 UTC; máy chạy test ở múi giờ nào cũng phải ra cùng kết quả.
+  const now = new Date("2026-11-24T05:00:00Z");
+
+  it("buổi bắt đầu sau bây giờ (giờ VN) là sắp tới", () => {
+    expect(isVnSessionUpcoming("2026-11-24", "18:00", now)).toBe(true);
+    expect(isVnSessionUpcoming("2026-11-24", "12:01", now)).toBe(true);
+    expect(isVnSessionUpcoming("2026-11-25", "00:00:00", now)).toBe(true);
+  });
+
+  it("buổi đã bắt đầu (kể cả hôm nay) hoặc bắt đầu đúng lúc này không còn là sắp tới", () => {
+    expect(isVnSessionUpcoming("2026-11-24", "08:00", now)).toBe(false);
+    expect(isVnSessionUpcoming("2026-11-24", "12:00", now)).toBe(false);
+    expect(isVnSessionUpcoming("2026-11-02", "18:00", now)).toBe(false);
+  });
+
+  it("date dạng RFC3339 nửa đêm vẫn lấy theo NGÀY, không theo giờ của chuỗi đó", () => {
+    expect(isVnSessionUpcoming("2026-11-24T00:00:00Z", "18:00:00", now)).toBe(true);
+    expect(isVnSessionUpcoming("2026-11-24T00:00:00Z", "09:00:00", now)).toBe(false);
+  });
+
+  it("thiếu hoặc sai định dạng thì false (không chứng minh được buổi còn ở tương lai)", () => {
+    expect(isVnSessionUpcoming(undefined, "18:00", now)).toBe(false);
+    expect(isVnSessionUpcoming("2026-11-24", null, now)).toBe(false);
+    expect(isVnSessionUpcoming("24/11/2026", "18:00", now)).toBe(false);
+    expect(isVnSessionUpcoming("2026-11-24", "6pm", now)).toBe(false);
+    expect(isVnSessionUpcoming("2026-13-45", "18:00", now)).toBe(false);
   });
 });
