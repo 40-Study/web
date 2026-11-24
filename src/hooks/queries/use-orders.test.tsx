@@ -96,6 +96,24 @@ describe("useCreateOrder — lỗi 409", () => {
     expect(options?.action?.label).toBe("Xem đơn hàng");
   });
 
+  it("S5-03: 409 kèm retry_after_at -> toast 'Có thể mua lại sau HH:mm'", async () => {
+    const at = new Date(Date.now() + 20 * 60 * 1000);
+    const hhmm = at.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false });
+    const err = new ApiError(409, "ERR_PAYMENT_VERIFYING", "đang được đối chiếu với ngân hàng", undefined, {
+      retry_after_at: at.toISOString(),
+    });
+    vi.mocked(orderService.createOrder).mockRejectedValue(err);
+    const { wrapper } = setup();
+    const { result } = renderHook(() => useCreateOrder(), { wrapper });
+
+    act(() => result.current.mutate({ source: "buy_now", course_ids: ["c1"], idempotency_key: "k" }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
+    const [message, options] = vi.mocked(toast.error).mock.calls[0] as [string, { action?: { label: string } }];
+    expect(message).toContain("Có thể mua lại sau");
+    expect(message).toContain(hhmm);
+    expect(options?.action?.label).toBe("Xem đơn hàng");
+  });
+
   it("lỗi khác: chỉ toast message, không có nút", async () => {
     vi.mocked(orderService.createOrder).mockRejectedValue(new ApiError(400, "ERR_CREATE_ORDER", "Khoá học không tồn tại"));
     const { wrapper } = setup();
