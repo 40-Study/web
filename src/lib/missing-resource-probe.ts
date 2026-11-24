@@ -82,6 +82,15 @@ const PROBE_RULES: readonly ProbeRule[] = [
     requiresSession: false,
     missingStatuses: [404],
   },
+  {
+    // Chi tiết cuộc thi (N-03, QA4 261123): slug sai trả 200 kèm "Không tìm thấy cuộc thi" (soft 404).
+    // GET /contests/:slug là OptionalAuth; cookie được chuyển tiếp nên cuộc thi chỉ người đăng nhập thấy vẫn mở
+    // được. Không khớp /contests/<slug>/play|result|certificate.
+    pattern: /^\/contests\/([^/]+)\/?$/,
+    endpoint: (slug) => `/contests/${slug}`,
+    requiresSession: false,
+    missingStatuses: [404],
+  },
 ];
 
 interface ProbeOptions {
