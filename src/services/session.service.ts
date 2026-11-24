@@ -4,6 +4,7 @@
  */
 
 import { api } from "@/lib/api-client";
+import type { SkippedSession } from "@/lib/generate-sessions-summary";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -87,6 +88,12 @@ export interface UpdateClassSessionDTO {
 export interface GenerateSessionsDTO {
   start_date: string;
   end_date: string;
+}
+
+export interface GenerateSessionsResult {
+  sessions: ClassSession[];
+  /** Buổi không sinh được (trùng giờ lớp khác, hoặc ngày đã có buổi). */
+  skipped: SkippedSession[];
 }
 
 // Session Attendance
@@ -195,11 +202,11 @@ export const sessionService = {
   createSession: (classId: string, data: CreateClassSessionDTO) =>
     api.post<R<ClassSession>>(`/classes/${classId}/sessions`, data).then((r) => r.data.data),
 
-  /** POST /classes/:classId/sessions/generate */
-  generateSessions: (classId: string, data: GenerateSessionsDTO) =>
+  /** POST /classes/:classId/sessions/generate — `skipped` nằm cạnh `data` (Q4-T06); backend cũ không gửi -> []. */
+  generateSessions: (classId: string, data: GenerateSessionsDTO): Promise<GenerateSessionsResult> =>
     api
-      .post<R<ClassSession[]>>(`/classes/${classId}/sessions/generate`, data)
-      .then((r) => r.data.data),
+      .post<R<ClassSession[]> & { skipped?: SkippedSession[] }>(`/classes/${classId}/sessions/generate`, data)
+      .then((r) => ({ sessions: r.data.data ?? [], skipped: r.data.skipped ?? [] })),
 
   /** GET /classes/:classId/sessions */
   getSessions: (classId: string, params?: { page?: number; page_size?: number }) =>
