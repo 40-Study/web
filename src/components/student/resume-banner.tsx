@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import type { CurrentCourse } from "@/types/student-dashboard";
+import { formatProgressPercent } from "@/lib/format-progress-percent";
 
 interface ResumeBannerProps {
   course: CurrentCourse;
@@ -32,7 +33,7 @@ export function ResumeBanner({ course }: ResumeBannerProps) {
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-gray-600">Tiến độ khoá học</span>
             <span className="text-sm font-semibold text-primary-600">
-              {course.progress}%
+              {formatProgressPercent(course.progress)}
             </span>
           </div>
 

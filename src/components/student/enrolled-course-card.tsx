@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import type { EnrolledCourse } from "@/types/course";
+import { formatProgressPercent } from "@/lib/format-progress-percent";
 
 interface EnrolledCourseCardProps {
   course: EnrolledCourse;
@@ -55,7 +56,7 @@ export function EnrolledCourseCard({ course, priority = false }: EnrolledCourseC
                   : "bg-primary-100 text-primary-700 border-0 text-xs"
               }
             >
-              {isEnrolled ? "Đã đăng ký" : `${course.progress}%`}
+              {isEnrolled ? "Đã đăng ký" : formatProgressPercent(course.progress)}
             </Badge>
           </div>
         </div>

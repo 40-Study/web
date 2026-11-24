@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { formatLessonProgress } from "@/lib/lesson-progress-label";
 import type { EnrolledCourse } from "@/types/course";
+import { formatProgressPercent } from "@/lib/format-progress-percent";
 
 interface CurrentCourseHeroProps {
   course: EnrolledCourse;
@@ -70,7 +71,7 @@ export function CurrentCourseHero({
         <div className="bg-white rounded-xl p-4 md:p-5 max-w-2xl flex flex-col md:flex-row md:items-center gap-4">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Tiến độ khoá học: {course.progress}%</span>
+              <span className="text-sm text-gray-600">Tiến độ khoá học: {formatProgressPercent(course.progress)}</span>
               <span className="text-sm font-semibold text-primary-600">
                 {formatLessonProgress(course.completedLessons, course.totalLessons)}
               </span>
