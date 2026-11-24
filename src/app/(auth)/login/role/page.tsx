@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AuthCard } from "@/components/auth/auth-card";
 import { RoleCard, roleNameToRoleType as toRoleType } from "@/components/auth/role-card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,17 @@ export default function LoginRolePage() {
   // phải đích riêng nên không đưa ra ở đây. Người chỉ có vai tuỳ biến được coi như chưa có vai để chọn vai hệ thống.
   const selectableRoles = roles.filter(isSelectableRole);
   const hasRoles = selectableRoles.length > 0;
+
+  // Q4-T15: chỉ có MỘT vai hiển thị được (vai tuỳ biến của tổ chức vẫn đếm ở backend nên đăng nhập không tự vào) thì
+  // vào luôn bằng vai đó thay vì bắt bấm thêm một lần mỗi lần đăng nhập. Thêm vai mới vẫn làm được trong ứng dụng.
+  const onlyRole = selectableRoles.length === 1 ? selectableRoles[0] : null;
+  const autoSelectedRef = useRef(false);
+  useEffect(() => {
+    if (!onlyRole || !sessionToken || autoSelectedRef.current) return;
+    autoSelectedRef.current = true;
+    setSelectedRole(onlyRole);
+    selectRole.mutate({ roleId: onlyRole.id, roleType: onlyRole.type, organizationId: onlyRole.organization_id });
+  }, [onlyRole, sessionToken, selectRole]);
 
   // Tự fetch system roles khi user chưa có role
   useEffect(() => {
