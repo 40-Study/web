@@ -256,7 +256,7 @@ export function Header() {
                           onClick={() => {
                             if (!item.is_read) markReadMutation.mutate(item.id);
                             setIsNotificationOpen(false);
-                            const href = getNotificationHref(item);
+                            const href = getNotificationHref(item, normalizedRole);
                             if (href) router.push(href);
                           }}
                         >

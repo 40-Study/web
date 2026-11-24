@@ -57,3 +57,20 @@ it("nhắc học mở đúng lịch và không cho phụ huynh link vào phòng"
  expect(getNotificationHref({ notification_type: "lesson_reminder", reference_type: "student_schedule" })).toBe("/schedule");
  expect(getNotificationHref({ notification_type: "lesson_reminder", reference_type: "livestream", reference_id: "session-1" })).toBe("/rooms/session-1");
 });
+
+describe("getNotificationHref — thông báo của giảng viên (Q4-T12)", () => {
+  it("ghi danh mới / đánh giá mới (course_update + course) -> trang khoá của giảng viên", () => {
+    expect(
+      getNotificationHref({ notification_type: "course_update", reference_type: "course", reference_id: "c1" }, "TEACHER"),
+    ).toBe("/teacher/courses/c1");
+  });
+
+  it("doanh thu (payment_success) -> ví giảng viên", () => {
+    expect(getNotificationHref({ notification_type: "payment_success" }, "TEACHER")).toBe("/teacher/wallet");
+  });
+
+  it("vai khác giữ cách cũ", () => {
+    expect(getNotificationHref({ notification_type: "payment_success" }, "STUDENT")).toBeNull();
+    expect(getNotificationHref({ notification_type: "course_update", reference_type: "course", reference_id: "c1" })).toBeNull();
+  });
+});

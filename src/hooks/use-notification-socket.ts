@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth.store";
 import { getWsUrl } from "@/lib/ws-url";
 import { getNotificationHref, isFriendNotification } from "@/lib/notification-route";
+import { normalizeRole } from "@/lib/routes";
 import { friendKeys } from "./queries/use-friends";
 import { liveSessionKeys } from "./queries/use-live-sessions";
 import { notificationKeys } from "./queries/use-notifications";
@@ -34,13 +35,16 @@ export function useNotificationSocket() {
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
 
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, activeRole } = useAuthStore();
+  // Đọc vai qua ref: đổi vai không được dựng lại callback (kéo theo kết nối lại WebSocket).
+  const roleRef = useRef(activeRole);
+  roleRef.current = activeRole;
   const queryClient = useQueryClient();
 
   const handleNotification = useCallback(
     (payload: NotificationPayload) => {
       // Thông báo bạn bè/nhóm có đích riêng (lib/notification-route); loại cũ dùng reference_type.
-      const href = getNotificationHref(payload);
+      const href = getNotificationHref(payload, normalizeRole(roleRef.current));
       // Show toast notification with icon based on type
       toast(payload.title, {
         description: payload.content,
