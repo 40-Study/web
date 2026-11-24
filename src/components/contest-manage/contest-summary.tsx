@@ -5,6 +5,7 @@
 import { Badge } from "@/components/ui/badge";
 import { formatVnDateTime } from "@/lib/contest-manage/format";
 import { phaseLabel, phaseVariant } from "@/lib/contest-manage/labels";
+import { formatStudyMinutes } from "@/lib/format-study-time";
 import type { ContestManage, ContestPrizeAdmin } from "@/types/contest";
 
 function prizeText(p: ContestPrizeAdmin): string {
@@ -38,7 +39,8 @@ export function ContestSummary({ contest }: { contest: ContestManage }) {
     ],
     ["Bắt đầu", formatVnDateTime(contest.start_time)],
     ["Kết thúc", formatVnDateTime(contest.end_time)],
-    ["Thời lượng", `${contest.duration_minutes} phút`],
+    // QA4-A13: "1440 phút" khó đọc; từ 60 phút hiện theo giờ/phút ("24 giờ", "1 giờ 30 phút").
+    ["Thời lượng", formatStudyMinutes(contest.duration_minutes)],
     [
       "Người tham gia",
       contest.max_participants > 0

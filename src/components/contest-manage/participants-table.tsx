@@ -8,6 +8,7 @@ import { QueryState } from "@/components/common/query-state";
 import { useContestParticipants } from "@/hooks/queries/use-contest-manage";
 import { formatVnDateTime } from "@/lib/contest-manage/format";
 import { ATTEMPT_STATUS_LABEL } from "@/lib/contest-manage/labels";
+import type { ContestPhase } from "@/types/contest";
 
 function formatSeconds(seconds: number | null): string {
   if (seconds === null) return "—";
@@ -16,7 +17,25 @@ function formatSeconds(seconds: number | null): string {
   return `${m} phút ${s} giây`;
 }
 
-export function ParticipantsTable({ contestId }: { contestId: string }) {
+/**
+ * QA4-A13: "Học viên đăng ký sau khi cuộc thi được công bố sẽ hiện ở đây." sai với cuộc thi đã kết thúc/huỷ.
+ * Lời trống theo phase; không truyền phase thì giữ lời cũ.
+ */
+export function participantsEmptyCopy(phase?: ContestPhase): { title: string; description: string } {
+  if (phase === "ENDED" || phase === "FINALIZED") {
+    return { title: "Không có ai tham gia", description: "Cuộc thi đã kết thúc mà không có học viên nào tham gia." };
+  }
+  if (phase === "CANCELLED") {
+    return { title: "Không có ai tham gia", description: "Cuộc thi đã huỷ, không có học viên nào tham gia." };
+  }
+  if (phase === "ACTIVE") {
+    return { title: "Chưa có người tham gia", description: "Học viên vào thi sẽ hiện ở đây." };
+  }
+  return { title: "Chưa có người tham gia", description: "Học viên đăng ký sau khi cuộc thi được công bố sẽ hiện ở đây." };
+}
+
+export function ParticipantsTable({ contestId, phase }: { contestId: string; phase?: ContestPhase }) {
+  const empty = participantsEmptyCopy(phase);
   const [page, setPage] = useState(1);
   const { data, isLoading, isError, error, refetch } = useContestParticipants(contestId, page);
   const rows = data?.items ?? [];
@@ -28,8 +47,8 @@ export function ParticipantsTable({ contestId }: { contestId: string }) {
       error={error}
       onRetry={() => refetch()}
       isEmpty={!isLoading && !isError && rows.length === 0}
-      emptyTitle="Chưa có người tham gia"
-      emptyDescription="Học viên đăng ký sau khi cuộc thi được công bố sẽ hiện ở đây."
+      emptyTitle={empty.title}
+      emptyDescription={empty.description}
     >
       <div className="overflow-x-auto rounded-xl border dark:border-gray-800">
         <table className="min-w-full text-sm" data-testid="participants-table">
