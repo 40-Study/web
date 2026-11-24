@@ -162,6 +162,22 @@ function nonNegative(text: string): number | null {
   return Number.isFinite(n) && n >= 0 ? n : NaN;
 }
 
+/** QA6-A05: backend lưu điểm và các số lượt dạng int32; vượt ngưỡng này nó trả 400 chung chung. */
+export const INT32_MAX = 2_147_483_647;
+export const VOUCHER_NAME_MAX = 255;
+
+/**
+ * Kiểm số nguyên không âm (VND không có đơn vị lẻ, điểm và lượt là số nguyên) và, khi `max` được cho, không vượt
+ * ngưỡng. Trả câu lỗi tiếng Việt hoặc null; ô trống hợp lệ (trường tuỳ chọn).
+ */
+function wholeNumberError(label: string, text: string, max?: number): string | null {
+  const n = nonNegative(text);
+  if (n === null) return null;
+  if (Number.isNaN(n) || !Number.isInteger(n)) return `${label} phải là số nguyên không âm.`;
+  if (max !== undefined && n > max) return `${label} tối đa ${max.toLocaleString("vi-VN")}.`;
+  return null;
+}
+
 export type VoucherBuildResult<T> = { payload: T; error?: undefined } | { payload?: undefined; error: string };
 
 /** Kiểm các trường dùng chung cho tạo và sửa; trả câu lỗi đầu tiên hoặc null. */
@@ -169,26 +185,34 @@ function validateShared(f: VoucherFormState, isCreate: boolean): string | null {
   if (isCreate && (f.code.trim().length < 3 || f.code.trim().length > 50)) return "Mã voucher dài 3-50 ký tự.";
   if (isCreate && !VOUCHER_CODE_PATTERN.test(f.code.trim().toUpperCase())) return VOUCHER_CODE_FORMAT_ERROR;
   if (f.name.trim().length < 3) return "Tên voucher tối thiểu 3 ký tự.";
+  if (f.name.trim().length > VOUCHER_NAME_MAX) return `Tên voucher tối đa ${VOUCHER_NAME_MAX} ký tự.`;
 
+  const isMoney = f.discount_unit === "MONEY";
+  // Điểm là int32 ở backend; tiền chỉ cần là số nguyên đồng (không có đơn vị lẻ).
+  const amountMax = isMoney ? undefined : INT32_MAX;
   if (f.discount_method === "PERCENT") {
     const p = Number(f.discount_percent);
     if (f.discount_percent.trim() === "" || !Number.isFinite(p) || p <= 0 || p > 100) {
       return "Phần trăm giảm phải lớn hơn 0 và không quá 100.";
     }
-    if (Number.isNaN(nonNegative(f.max_discount))) return "Mức giảm tối đa phải là số không âm.";
+    const capError = wholeNumberError(isMoney ? "Mức giảm tối đa" : "Mức giảm tối đa (điểm)", f.max_discount, amountMax);
+    if (capError) return capError;
   } else {
     const a = Number(f.discount_amount);
     if (f.discount_amount.trim() === "" || !Number.isFinite(a) || a <= 0) {
-      return f.discount_unit === "MONEY" ? "Số tiền giảm phải lớn hơn 0." : "Số điểm giảm phải lớn hơn 0.";
+      return isMoney ? "Số tiền giảm phải lớn hơn 0." : "Số điểm giảm phải lớn hơn 0.";
     }
+    const amountError = wholeNumberError(isMoney ? "Số tiền giảm (VND)" : "Số điểm giảm", f.discount_amount, amountMax);
+    if (amountError) return amountError;
   }
 
-  for (const [label, text] of [
-    ["Đơn tối thiểu", f.min_purchase_money],
-    ["Tổng số lượt dùng", f.usage_limit],
-    ["Số lượt mỗi người", f.usage_per_user],
+  for (const [label, text, max] of [
+    ["Đơn tối thiểu (VND)", f.min_purchase_money, undefined],
+    ["Tổng số lượt dùng", f.usage_limit, INT32_MAX],
+    ["Số lượt mỗi người", f.usage_per_user, INT32_MAX],
   ] as const) {
-    if (Number.isNaN(nonNegative(text))) return `${label} phải là số không âm.`;
+    const error = wholeNumberError(label, text, max);
+    if (error) return error;
   }
 
   if (f.start_date && f.end_date && new Date(f.end_date).getTime() <= new Date(f.start_date).getTime()) {

@@ -64,6 +64,46 @@ describe("organizationService", () => {
     expect(members[0].email).toBe("an@example.com");
   });
 
+  // QA6-A14: tổ chức có hơn 100 dòng gán vai trò bị cắt im lặng ở trang đầu và "Thành viên (N)" đếm thiếu.
+  it("getMembers đọc MỌI trang khi total vượt một trang và gộp theo người", async () => {
+    const owner = (n: number) =>
+      row({ id: `r${n}`, user_id: `u${n}`, user: { id: `u${n}`, user_name: `user${n}`, full_name: `Người ${n}`, email: `u${n}@example.com` } });
+    const pages: Record<number, unknown[]> = {
+      1: [owner(1), owner(2)],
+      2: [owner(3), owner(4)],
+      3: [owner(5)],
+    };
+    mockApi.get.mockImplementation(async (_url: string, config: { params: { page: number } }) =>
+      envelope({ user_organization_roles: pages[config.params.page], total: 5 })
+    );
+
+    const members = await organizationService.getMembers("org-1");
+
+    expect(members.map((m) => m.user_id)).toEqual(["u1", "u2", "u3", "u4", "u5"]);
+    expect(mockApi.get.mock.calls.map((call) => (call[1] as { params: { page: number } }).params.page).sort()).toEqual([1, 2, 3]);
+  });
+
+  it("getMembers: một người nhiều vai nằm ở hai trang vẫn là MỘT thành viên", async () => {
+    const pages: Record<number, unknown[]> = {
+      1: [row({ id: "a1" })],
+      2: [row({ id: "a2", role_id: "role2", role: { id: "role2", name: "GIANG_VIEN" } })],
+    };
+    mockApi.get.mockImplementation(async (_url: string, config: { params: { page: number } }) =>
+      envelope({ user_organization_roles: pages[config.params.page], total: 2 })
+    );
+
+    const members = await organizationService.getMembers("org-1");
+
+    expect(members).toHaveLength(1);
+    expect(members[0].roles).toEqual(["ORG_OWNER", "GIANG_VIEN"]);
+  });
+
+  it("getMembers: tổ chức rỗng không gọi thêm trang", async () => {
+    mockApi.get.mockResolvedValue(envelope({ user_organization_roles: [], total: 0 }));
+    expect(await organizationService.getMembers("org-1")).toEqual([]);
+    expect(mockApi.get).toHaveBeenCalledTimes(1);
+  });
+
   it("getClasses gọi /organizations/:id/classes kèm bộ lọc", async () => {
     mockApi.get.mockResolvedValue(envelope({ classes: [], total: 0, page: 1, page_size: 20 }));
     await organizationService.getClasses("org-1", { status: "draft", keyword: "toan" });

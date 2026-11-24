@@ -152,3 +152,47 @@ describe("QA3-11: định dạng mã voucher và dòng hiệu lực", () => {
     expect(voucherValidityText({})).toBe("Hiệu lực: không giới hạn thời gian");
   });
 });
+
+// QA6-A05: backend nhận điểm/lượt dạng int32 và tên <= 255; web phải chặn tại form với câu nói đúng trường,
+// không để mọi 400 cùng hiện một câu chung. VND không có đơn vị lẻ, điểm và lượt là số nguyên.
+describe("voucher-form-model — QA6-A05 số nguyên và giới hạn", () => {
+  const error = (over: Partial<VoucherFormState>) => buildCreateVoucherPayload(base(over)).error;
+
+  it.each([
+    ["số tiền giảm lẻ", { discount_amount: "1.5" }, /Số tiền giảm \(VND\) phải là số nguyên/],
+    ["số điểm giảm lẻ", { discount_unit: "POINT" as const, discount_amount: "1.5" }, /Số điểm giảm phải là số nguyên/],
+    ["đơn tối thiểu lẻ", { min_purchase_money: "1000.5" }, /Đơn tối thiểu \(VND\) phải là số nguyên/],
+    ["tổng lượt lẻ", { usage_limit: "2.5" }, /Tổng số lượt dùng phải là số nguyên/],
+    ["lượt mỗi người lẻ", { usage_per_user: "0.5" }, /Số lượt mỗi người phải là số nguyên/],
+    ["trần giảm lẻ (phần trăm, tiền)", { discount_method: "PERCENT" as const, discount_percent: "10", max_discount: "100.5" }, /Mức giảm tối đa phải là số nguyên/],
+  ])("%s -> báo lỗi đúng trường, không tạo payload", (_name, over, message) => {
+    expect(error(over)).toMatch(message);
+    expect(buildCreateVoucherPayload(base(over)).payload).toBeUndefined();
+  });
+
+  it.each([
+    ["tổng lượt 3 tỷ (vượt int32)", { usage_limit: "3000000000" }, /Tổng số lượt dùng tối đa 2\.147\.483\.647/],
+    ["lượt mỗi người vượt int32", { usage_per_user: "2147483648" }, /Số lượt mỗi người tối đa/],
+    ["điểm giảm vượt int32", { discount_unit: "POINT" as const, discount_amount: "2147483648" }, /Số điểm giảm tối đa/],
+  ])("%s -> báo ngưỡng int32", (_name, over, message) => {
+    expect(error(over)).toMatch(message);
+  });
+
+  it("đúng ngưỡng int32 vẫn hợp lệ", () => {
+    expect(error({ usage_limit: "2147483647" })).toBeUndefined();
+  });
+
+  it("số tiền VND lớn hơn int32 vẫn hợp lệ (backend lưu tiền dạng float64)", () => {
+    expect(error({ discount_amount: "3000000000" })).toBeUndefined();
+  });
+
+  it("tên 256 ký tự bị chặn, 255 ký tự qua", () => {
+    expect(error({ name: "a".repeat(256) })).toBe("Tên voucher tối đa 255 ký tự.");
+    expect(error({ name: "a".repeat(255) })).toBeUndefined();
+  });
+
+  it("sửa voucher cũng áp cùng luật (số lẻ bị chặn)", () => {
+    const res = buildUpdateVoucherPayload(base({ discount_amount: "2.5" }));
+    expect(res.error).toMatch(/phải là số nguyên/);
+  });
+});

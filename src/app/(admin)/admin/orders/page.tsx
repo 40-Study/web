@@ -113,10 +113,12 @@ function AdminOrdersContent() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm theo mã đơn, email hoặc tên người mua..."
+            aria-label="Tìm đơn hàng"
             className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
           />
           <select
             value={status}
+            aria-label="Lọc theo trạng thái đơn hàng"
             onChange={(e) => setStatus(e.target.value as StatusFilter)}
             className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
           >

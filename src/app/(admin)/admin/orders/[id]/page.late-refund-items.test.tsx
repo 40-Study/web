@@ -32,7 +32,7 @@ const BASE = {
 };
 let mockOrder: Record<string, unknown> = BASE;
 
-vi.mock("next/navigation", () => ({ useParams: () => ({ id: "order-1" }) }));
+vi.mock("next/navigation", () => ({ useParams: () => ({ id: "order-1" }), useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("@/hooks/queries/use-admin-orders", () => ({
   useAdminOrder: () => ({ data: mockOrder, isLoading: false, isError: false, error: null, refetch: vi.fn() }),
   useRefundOrder: () => ({ mutate: vi.fn(), isPending: false }),

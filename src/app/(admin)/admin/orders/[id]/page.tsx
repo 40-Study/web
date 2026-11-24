@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useAdminOrder, useRefundOrder } from "@/hooks/queries/use-admin-orders";
 import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
 import { QueryState } from "@/components/common/query-state";
+import { AdminNotFound, isMissingResourceError } from "@/components/admin/admin-not-found";
 import { paymentMethodLabel } from "@/app/(admin)/admin/_lib/payment-method-label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ const TRANSACTION_REF_MAX_LEN = 100;
 export default function AdminOrderDetailPage() {
   const params = useParams();
   const id = String(params.id ?? "");
+  const router = useRouter();
 
   const { data: order, isLoading, isError, error, refetch } = useAdminOrder(id);
   const refundMutation = useRefundOrder();
@@ -81,6 +83,15 @@ export default function AdminOrderDetailPage() {
         </div>
       </div>
 
+      {/* QA6-A06: id không có thật (404) hoặc sai định dạng (400) là kết quả cuối, không phải lỗi tạm. */}
+      {isError && isMissingResourceError(error) ? (
+        <AdminNotFound
+          title="Không tìm thấy đơn hàng"
+          description="Đơn hàng này không tồn tại hoặc mã đơn không hợp lệ."
+          backLabel="Về danh sách đơn hàng"
+          onBack={() => router.push("/admin/orders")}
+        />
+      ) : (
       <QueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
         {order && (
           <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
@@ -174,6 +185,7 @@ export default function AdminOrderDetailPage() {
           </div>
         )}
       </QueryState>
+      )}
 
       {/* Dialog hoàn tiền — bắt nhập lý do, chọn phương thức, hiển thị rõ số tiền TRƯỚC khi
           xác nhận (tiền thật, không hoàn tác được sau khi bấm — xem phase-02 "Rủi ro"). */}

@@ -17,7 +17,7 @@ import { PERMISSIONS, SYSTEM_ROLES } from "@/lib/permissions";
 import { getOrgRoleLabel, getSystemRoleLabel } from "@/lib/role-labels";
 import { useAuthStore } from "@/stores/auth.store";
 import { formatVnDateOnly, formatVnDateTime } from "@/lib/vn-datetime";
-import { ApiError } from "@/lib/errors";
+import { AdminNotFound, isMissingResourceError } from "@/components/admin/admin-not-found";
 import { getErrorMessage } from "@/lib/error-messages";
 import { getUserActiveLabel } from "../../_lib/user-status-label";
 import { QueryState } from "@/components/common/query-state";
@@ -57,7 +57,7 @@ export default function AdminUserDetailPage() {
   const [unlockOpen, setUnlockOpen] = useState(false);
   const [selectedNewRole, setSelectedNewRole] = useState("");
 
-  const isNotFound = isError && error instanceof ApiError && error.status === 404;
+  const isNotFound = isError && isMissingResourceError(error);
   const isSelf = !!currentUserId && !!user && user.id === currentUserId;
   // Vai trò chưa gán — nguồn cho dropdown "+ Thêm vai trò".
   const assignedRoleNames = useMemo(
@@ -117,13 +117,12 @@ export default function AdminUserDetailPage() {
       {/* QA3-20: id không tồn tại (404) là kết quả cuối cùng, không phải lỗi tạm: "Thử lại" vô nghĩa nên hiện
           trạng thái riêng kèm đường về danh sách, không dùng khối lỗi chung. */}
       {isNotFound ? (
-        <div role="status" className="rounded-xl border bg-white p-8 text-center shadow-sm dark:border-gray-800 dark:bg-gray-950">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Không tìm thấy người dùng</h2>
-          <p className="mt-1 text-sm text-gray-500">Tài khoản này không tồn tại hoặc đã bị xoá.</p>
-          <Button className="mt-4" variant="outline" onClick={() => router.push("/admin/users")}>
-            Về danh sách người dùng
-          </Button>
-        </div>
+        <AdminNotFound
+          title="Không tìm thấy người dùng"
+          description="Tài khoản này không tồn tại hoặc đã bị xoá."
+          backLabel="Về danh sách người dùng"
+          onBack={() => router.push("/admin/users")}
+        />
       ) : (
       <QueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
         {user && (

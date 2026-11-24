@@ -40,6 +40,20 @@ describe("/admin/users/[id] — không tìm thấy", () => {
     expect(push).toHaveBeenCalledWith("/admin/users");
   });
 
+  it("QA6-A06: 400 ERR_INVALID_ID (id sai định dạng, vd 'not-a-uuid') cũng là 'không tìm thấy', không phải khối lỗi + Thử lại", () => {
+    mockDetail.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: new ApiError(400, "ERR_INVALID_ID", "ID người dùng không hợp lệ"),
+      refetch: vi.fn(),
+    });
+    render(<AdminUserDetailPage />);
+
+    expect(screen.getByText("Không tìm thấy người dùng")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Thử lại/ })).toBeNull();
+  });
+
   it("lỗi khác (500): vẫn là khối lỗi chung có Thử lại", () => {
     mockDetail.mockReturnValue({
       data: undefined,

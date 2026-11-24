@@ -62,8 +62,9 @@ export default function OrganizationsPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
-        <div className="space-y-3">
+      {/* QA6-A04: dưới xl lưới chỉ có cột `auto` nên tên/mô tả không có khoảng trắng kéo cả trang rộng ra; `grid-cols-1` = minmax(0,1fr). */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
+        <div className="min-w-0 space-y-3">
           <Input
             value={keyword}
             onChange={(e) => {
@@ -101,10 +102,10 @@ export default function OrganizationsPage() {
                   onClick={() => selectOrg(org)}
                 >
                   <span className="flex items-start justify-between gap-2">
-                    <span className="min-w-0 font-semibold text-foreground">{org.name}</span>
+                    <span className="min-w-0 break-words font-semibold text-foreground">{org.name}</span>
                     <OrgStatusBadge status={org.status} />
                   </span>
-                  <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">
+                  <span className="mt-1 line-clamp-2 block break-words text-sm text-muted-foreground">
                     {org.description?.trim() || "Chưa có mô tả"}
                   </span>
                 </button>

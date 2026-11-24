@@ -125,6 +125,21 @@ export function useAdminVouchers(page = 1, pageSize = ADMIN_VOUCHER_PAGE_SIZE) {
   });
 }
 
+/** C9 (QA6-A05): mã voucher trùng trả 409 `ERR_VOUCHER_CODE_EXISTS` (backend cũ: 400 `ERR_CREATE_VOUCHER` + "voucher code already exists"). */
+export const VOUCHER_CODE_EXISTS_CODE = "ERR_VOUCHER_CODE_EXISTS";
+const VOUCHER_CODE_EXISTS_MESSAGE = "Mã voucher này đã tồn tại, hãy dùng mã khác.";
+
+/**
+ * Lý do thật của lỗi lưu voucher thay cho một câu chung cho mọi 400 (QA6-A05): mã trùng nói là mã trùng, lỗi
+ * validate dùng câu tiếng Việt backend nêu đúng trường (`getErrorMessage` giữ message có dấu), còn lại là câu chung.
+ */
+export function voucherSaveErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError && (error.code === VOUCHER_CODE_EXISTS_CODE || /code already exists/i.test(error.message))) {
+    return VOUCHER_CODE_EXISTS_MESSAGE;
+  }
+  return getErrorMessage(error, fallback);
+}
+
 /** Admin: tạo voucher. */
 export function useCreateVoucher() {
   const qc = useQueryClient();
@@ -134,7 +149,7 @@ export function useCreateVoucher() {
       qc.invalidateQueries({ queryKey: voucherKeys.all });
       toast.success("Đã tạo voucher");
     },
-    onError: () => toast.error("Không thể tạo voucher. Mã hoặc tên có thể đã tồn tại."),
+    onError: (error) => toast.error(voucherSaveErrorMessage(error, "Không thể tạo voucher, thử lại sau.")),
   });
 }
 
@@ -147,7 +162,7 @@ export function useUpdateVoucher() {
       qc.invalidateQueries({ queryKey: voucherKeys.all });
       toast.success("Đã cập nhật voucher");
     },
-    onError: () => toast.error("Không thể cập nhật voucher"),
+    onError: (error) => toast.error(voucherSaveErrorMessage(error, "Không thể cập nhật voucher, thử lại sau.")),
   });
 }
 

@@ -3,7 +3,7 @@
  * điểm cập nhật cuối, kiểm tra 0-100 trước khi gọi PUT. Hook dữ liệu được mock.
  */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/stores/auth.store";
 import type { AdminSettings } from "@/services/admin-report.service";
@@ -88,13 +88,41 @@ describe("AdminSettingsPage — cấu hình hệ thống", () => {
     ["0", 0],
     ["100", 100],
     ["7.25", 7.25],
-  ])("giá trị hợp lệ %j -> gọi PUT với số %d", (typed, expected) => {
+  ])("giá trị hợp lệ %j -> hỏi xác nhận, xác nhận xong mới gọi PUT với số %d", (typed, expected) => {
     render(<AdminSettingsPage />);
     fireEvent.change(feeInput(), { target: { value: typed } });
     fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
 
+    // Chưa gọi gì: phí nền tảng là cấu hình tiền bạc nên có bước xác nhận.
+    expect(mockUpdate).not.toHaveBeenCalled();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.textContent).toContain("Đổi phí nền tảng?");
+    expect(dialog.textContent).toContain("12,5%"); // giá trị hiện hành (mockSettings)
+    expect(dialog.textContent).toContain(`${expected.toLocaleString("vi-VN")}%`);
+
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận đổi phí" }));
     expect(mockUpdate).toHaveBeenCalledTimes(1);
     expect(mockUpdate.mock.calls[0][0]).toBe(expected);
+  });
+
+  it("Huỷ ở hộp thoại xác nhận -> đóng hộp thoại và KHÔNG gọi PUT", () => {
+    render(<AdminSettingsPage />);
+    fireEvent.change(feeInput(), { target: { value: "7" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Huỷ" }));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("xác nhận xong hộp thoại đóng khi lưu kết thúc (onSettled)", () => {
+    mockUpdate.mockImplementation((_value: number, options?: { onSettled?: () => void }) => options?.onSettled?.());
+    render(<AdminSettingsPage />);
+    fireEvent.change(feeInput(), { target: { value: "7" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận đổi phí" }));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("thiếu quyền SYSTEM_SETTINGS_MANAGE -> không hiện form", () => {

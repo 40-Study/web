@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { QueryState } from "@/components/common/query-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ const STATUS_FILTERS = [{ value: "", label: "Tất cả" }, ...Object.entries(CL
 
 function OrgClassesList() {
   const orgId = useActiveOrgId();
+  const router = useRouter();
+  const pathname = usePathname();
   const initialStatus = useSearchParams().get("status") ?? "";
   const [status, setStatus] = useState(initialStatus);
   const [keyword, setKeyword] = useState("");
@@ -56,6 +58,8 @@ function OrgClassesList() {
             onClick={() => {
               setStatus(f.value);
               setPage(1);
+              // QA6-A12: chip phải sống qua tải lại và chia sẻ được link (trang tổng quan đã link bằng ?status=).
+              router.replace(f.value ? `${pathname}?status=${encodeURIComponent(f.value)}` : pathname, { scroll: false });
             }}
             className={cn(
               "rounded-full border px-3 py-1 text-sm transition-colors",
