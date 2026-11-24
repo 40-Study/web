@@ -72,6 +72,7 @@ export interface LateRefundItem {
   flagged_at: string;
   refunded: boolean;
   refunded_at?: string | null;
+  buyer?: OrderBuyer | null;
 }
 
 /** Các khoản tiền về muộn của đơn: backend chỉ trả cho admin, nil khi đơn chưa từng nhận tiền về muộn. */
@@ -80,6 +81,13 @@ export interface LateRefundSummary {
   /** Tổng tiền các khoản còn chờ hoàn (decimal của backend, dạng chuỗi). */
   pending_amount: string | number;
   items: LateRefundItem[];
+}
+
+/** Người mua của đơn (contract 5, QA4-A08): admin luôn nhận; chủ đơn nhận chính mình. Backend cũ không trả. */
+export interface OrderBuyer {
+  id: string;
+  full_name: string;
+  email: string;
 }
 
 export interface Order {
