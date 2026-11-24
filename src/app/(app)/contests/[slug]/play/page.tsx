@@ -67,7 +67,7 @@ function PlayGate({ detail }: { detail: ContestDetail }) {
 }
 
 function PlayStarter({ detail, needsReady }: { detail: ContestDetail; needsReady: boolean }) {
-  const start = useStartContest();
+  const start = useStartContest(detail.slug);
   const startedRef = useRef(false);
   const [ready, setReady] = useState(!needsReady);
 

@@ -76,10 +76,18 @@ export function useJoinContest() {
   });
 }
 
-/** Lỗi hiển thị thành khối thông báo trên trang làm bài (không toast). */
-export function useStartContest() {
+/**
+ * Lỗi hiển thị thành khối thông báo trên trang làm bài (không toast). Bắt đầu xong thì làm mới chi tiết cuộc thi:
+ * trạng thái lượt làm đổi NOT_STARTED -> IN_PROGRESS, cache cũ (staleTime 30 s) sẽ cho bước "Sẵn sàng làm bài?"
+ * hiện lại khi quay lại trong lúc đồng hồ server đã chạy (review #124, S11).
+ */
+export function useStartContest(slug: string) {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (contestId: string) => contestService.start(contestId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: contestKeys.detail(slug) });
+    },
     onError: () => undefined,
   });
 }
