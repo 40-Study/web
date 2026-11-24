@@ -80,4 +80,15 @@ describe("auditTargetText: target_name (C4)", () => {
   it("tên rỗng/khoảng trắng bị bỏ qua", () => {
     expect(auditTargetText(log({ target_type: "tag", target_id: "t-1", metadata: { target_name: "  " } }))).toBe("Tag: t-1");
   });
+
+  // Review L3: contract C4 ghi "ưu tiên metadata.target_name, rồi nhãn cũ"; `target_user_name` là nhãn cũ.
+  it("có cả target_name lẫn target_user_name: target_name thắng (đúng thứ tự C4)", () => {
+    expect(
+      auditTargetText(log({ metadata: { target_name: "Tên theo C4", target_user_name: "Nhãn cũ" } })),
+    ).toBe("Người dùng: Tên theo C4");
+  });
+
+  it("chỉ có target_user_name (dòng vai trò tổ chức hiện nay): vẫn hiện tên đó", () => {
+    expect(auditTargetText(log({ metadata: { target_user_name: "Nhãn cũ" } }))).toBe("Người dùng: Nhãn cũ");
+  });
 });
