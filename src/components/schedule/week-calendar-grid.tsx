@@ -110,6 +110,11 @@ interface WeekCalendarGridProps {
   selectionHelp?: string;
   /** Tiêu đề nhóm bộ lọc ở cột trái. Lịch của con (phụ huynh xem) truyền câu riêng (N-09, QA4 261123). */
   railLabel?: string;
+  /**
+   * Cấp thẻ của tiêu đề "Lịch học" ở thanh công cụ. Mặc định h1 (trang lịch học viên/giảng viên không có h1 khác);
+   * trang đã có h1 riêng (tên con ở trang phụ huynh) truyền "h2" để mỗi trang chỉ có một h1 (Q6-PG-08).
+   */
+  headingLevel?: "h1" | "h2";
 }
 
 const DEFAULT_SELECTION_HELP = "Bấm hoặc kéo trên lịch để chọn giờ cho buổi học mới.";
@@ -187,7 +192,9 @@ export default function WeekCalendarGrid({
   stats,
   selectionHelp = DEFAULT_SELECTION_HELP,
   railLabel = "Lịch của tôi",
+  headingLevel = "h1",
 }: WeekCalendarGridProps) {
+  const Heading = headingLevel;
   const calendarRef = useRef<FullCalendar>(null);
   const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
   const [selection, setSelection] = useState<SelectionInfo | null>(null);
@@ -287,7 +294,14 @@ export default function WeekCalendarGrid({
 
   const handleEventClick = (arg: EventClickArg) => {
     const ev: ScheduleEvent = arg.event.extendedProps.scheduleEvent;
-    onEventClick?.({ ...ev, startTime: arg.event.start?.toISOString() ?? ev.startTime, endTime: arg.event.end?.toISOString() ?? ev.endTime });
+    // Lịch lặp tuần (`weekly`) đã được FullCalendar trải thành đúng lần xuất hiện được bấm, nên bản gửi đi là một buổi
+    // CỤ THỂ: bỏ `weekly` để hộp thoại tính được "ĐÃ DIỄN RA" cho các tuần đã qua (Q6-PG-04).
+    onEventClick?.({
+      ...ev,
+      weekly: undefined,
+      startTime: arg.event.start?.toISOString() ?? ev.startTime,
+      endTime: arg.event.end?.toISOString() ?? ev.endTime,
+    });
   };
 
   const handleEventMove = useCallback(async (arg: EventDropArg | EventResizeDoneArg) => {
@@ -353,7 +367,7 @@ export default function WeekCalendarGrid({
   return (
     <div className="school-calendar">
       <div className="calendar-toolbar">
-        <div className="calendar-heading"><CalendarDays className="h-5 w-5 text-blue-600" /><h1>Lịch học</h1></div>
+        <div className="calendar-heading"><CalendarDays className="h-5 w-5 text-blue-600" /><Heading>Lịch học</Heading></div>
         <button className="calendar-today" onClick={() => navigate(toVnWallClock(new Date()))}>Hôm nay</button>
         <div className="flex items-center">
           <button className="calendar-icon" aria-label="Khoảng trước" onClick={() => calendarRef.current?.getApi().prev()}><ChevronLeft className="h-4 w-4" /></button>

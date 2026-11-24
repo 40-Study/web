@@ -9,6 +9,7 @@ import {
   formatContestDateTime,
   formatContestPercent,
   formatContestScore,
+  formatContestWindowMinutes,
 } from "@/lib/contest/contest-format";
 import { cn } from "@/lib/utils";
 import type { ContestPhase, ContestSummary, MyParticipation } from "@/types/contest";
@@ -79,7 +80,7 @@ export function ContestCard({ contest, participation }: ContestCardProps) {
         <div className="flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <dt className="sr-only">Thời lượng</dt>
-          <dd>{contest.duration_minutes} phút làm bài</dd>
+          <dd>{formatContestWindowMinutes(contest.duration_minutes)} làm bài</dd>
         </div>
         <div className="flex items-center gap-1.5">
           <HelpCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />

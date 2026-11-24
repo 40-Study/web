@@ -28,6 +28,17 @@ describe("pickCalendarScrollTime", () => {
     expect(pickCalendarScrollTime([expired, weekly], WEEK)).toBe("18:30:00");
   });
 
+  // Q6-PG-18: một buổi lẻ 08:30 thứ Bảy kéo khung về 08:00, giấu 5 buổi 19:00 các ngày trong tuần.
+  it("Q6-PG-18: cụm buổi tối đông hơn một buổi sáng lẻ -> cuộn tới cụm tối", () => {
+    const weekly = ev("w", "", { weekly: { daysOfWeek: [1, 2, 3, 4, 5], startTime: "19:00", endTime: "21:30" } });
+    const saturday = ev("sat", at(14, 8, 30));
+    expect(pickCalendarScrollTime([weekly, saturday], WEEK, new Date(2026, 10, 12, 10))).toBe("18:30:00");
+  });
+
+  it("Q6-PG-18: hoà số buổi giữa hai khung -> khung sớm hơn", () => {
+    expect(pickCalendarScrollTime([ev("a", at(10, 8, 30)), ev("b", at(11, 19))], WEEK)).toBe("08:00:00");
+  });
+
   it("không có buổi, tuần đang xem chứa hôm nay: cuộn tới giờ hiện tại", () => {
     expect(pickCalendarScrollTime([], WEEK, new Date(2026, 10, 10, 20, 15))).toBe("19:45:00");
   });

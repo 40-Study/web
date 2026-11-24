@@ -1,4 +1,4 @@
-/** QA5 S5-05: hộp thoại "Chuyển tài khoản" hiện nhãn tiếng Việt cho vai trong tổ chức, không lộ "ORG_STUDENT". */
+/** QA5 S5-05: hộp thoại "Chuyển vai trò" hiện nhãn tiếng Việt cho vai trong tổ chức, không lộ "ORG_STUDENT". */
 import { fireEvent, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { renderWithQuery } from "@/test-utils/query-wrapper";

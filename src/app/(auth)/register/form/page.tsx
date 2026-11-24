@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordChecklist } from "@/components/auth/password-checklist";
 import { AUTH_ROUTES } from "@/lib/routes";
 import { STORAGE_KEYS } from "@/lib/constants";
+import { ApiError } from "@/lib/errors";
 import { authErrorMessage, useRegisterRequest } from "@/hooks/queries/use-auth";
 import { useRedirectIfAuthenticated } from "@/hooks/use-redirect-if-authenticated";
 import { validateRegisterForm, type RegisterFieldErrors, type RegisterFormData as FormData } from "@/lib/register-validation";
@@ -68,7 +69,8 @@ export default function RegisterFormPage() {
       sessionStorage.setItem(STORAGE_KEYS.REGISTER_EMAIL, formData.email);
       router.push(AUTH_ROUTES.OTP);
     } catch (err) {
-      console.error("Failed to request OTP:", err);
+      // Lỗi từ backend (email trùng, 429...) đã hiện trên form; chỉ log lỗi bất ngờ (Q6-PG-19).
+      if (!(err instanceof ApiError)) console.error("Failed to request OTP:", err);
       // Hiện lý do thật (email đã đăng ký, tên đăng nhập trùng, rate-limit...) thay vì một câu chung.
       setFormError(authErrorMessage(err, "Đăng ký thất bại. Vui lòng thử lại."));
     }

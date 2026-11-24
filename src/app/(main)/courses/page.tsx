@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CourseGrid } from "@/components/course/course-grid";
 import { CourseFiltersComponent } from "@/components/course/course-filters";
 import { CourseSearch } from "@/components/course/course-search";
@@ -10,18 +10,19 @@ import { Button } from "@/components/ui/button";
 import { useCourses, useCategories, useSearchSuggestions } from "@/hooks/use-courses";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { CourseFilters } from "@/types/course";
+import { applyCourseFiltersToParams, courseFilterKey, parseCourseFilterParams } from "@/lib/course-filter-query";
 
 /** Số card hiển thị mỗi lượt. Dữ liệu đã tải đủ một lần, "Tải thêm" chỉ mở rộng phần hiển thị. */
 const PAGE_SIZE = 12;
 
 export default function CoursesPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   // Pill Danh mục trên header điều hướng tới /courses?category=<slug> — đọc sẵn để pill tương ứng
   // được chọn từ đầu. Chỉ nhận slug có thật trong danh mục; slug lạ bỏ qua im lặng (không kẹt filter).
-  const initialCategory = searchParams.get("category") || undefined;
-
-  const [filters, setFilters] = useState<CourseFilters>({ category: initialCategory });
+  // Q6-PG-11: cả bộ lọc (danh mục, cấp độ, giá, sắp xếp) nằm trên URL để tải lại / chia sẻ link không mất.
+  const [filters, setFilters] = useState<CourseFilters>(() => parseCourseFilterParams(searchParams));
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   // Debounce 300ms: `useSearchSuggestions` gọi API gợi ý theo từng ký tự.
@@ -36,12 +37,23 @@ export default function CoursesPage() {
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: suggestions = [] } = useSearchSuggestions(debouncedSearchQuery);
 
-  // Đã ở /courses mà bấm Danh mục khác (cùng component, không remount) → đồng bộ lại filter theo URL.
-  const categoryParam = searchParams.get("category") || undefined;
+  // Đã ở /courses mà bấm Danh mục khác ở header, hoặc Back/Forward (cùng component, không remount) → đồng bộ lại
+  // bộ lọc theo URL. Chỉ chạy khi phần bộ lọc trên URL đổi, nên gõ từ khoá không ghi đè bộ lọc đang chọn.
+  const urlFilterKey = courseFilterKey(parseCourseFilterParams(searchParams));
   useEffect(() => {
-    setFilters((f) => (f.category === categoryParam ? f : { ...f, category: categoryParam }));
+    setFilters((f) => (courseFilterKey(f) === urlFilterKey ? f : parseCourseFilterParams(new URLSearchParams(urlFilterKey))));
     setVisibleCount(PAGE_SIZE);
-  }, [categoryParam]);
+  }, [urlFilterKey]);
+
+  /** Đổi bộ lọc: cập nhật state NGAY (không đợi router) rồi ghi lên URL, giữ nguyên `q`. */
+  const commitFilters = (next: CourseFilters, { dropQuery = false } = {}) => {
+    setFilters(next);
+    setVisibleCount(PAGE_SIZE);
+    const base = new URLSearchParams(searchParams.toString());
+    if (dropQuery) base.delete("q");
+    const params = applyCourseFiltersToParams(base, next).toString();
+    router.replace(params ? `/courses?${params}` : "/courses", { scroll: false });
+  };
 
   // Slug lạ từ URL (vd. dữ liệu test rác) bị bỏ qua để không kẹt filter 0 kết quả âm thầm —
   // chỉ clear MỘT LẦN khi danh mục đã tải xong và slug vẫn không khớp.
@@ -67,10 +79,7 @@ export default function CoursesPage() {
       filters.priceMax !== undefined
   );
 
-  const handleFilterChange = (newFilters: CourseFilters) => {
-    setFilters(newFilters);
-    setVisibleCount(PAGE_SIZE);
-  };
+  const handleFilterChange = (newFilters: CourseFilters) => commitFilters(newFilters);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -78,9 +87,8 @@ export default function CoursesPage() {
   };
 
   const clearAll = () => {
-    setFilters({ sortBy: filters.sortBy });
     setSearchQuery("");
-    setVisibleCount(PAGE_SIZE);
+    commitFilters({ sortBy: filters.sortBy }, { dropQuery: true });
   };
 
   return (

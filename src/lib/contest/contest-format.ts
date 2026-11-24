@@ -51,6 +51,24 @@ export function formatContestDuration(seconds: number | null | undefined): strin
   return s === 0 ? `${m} phút` : `${m} phút ${s} giây`;
 }
 
+/**
+ * Thời gian làm bài tính bằng PHÚT (`duration_minutes`) → "45 phút", "1 giờ 30 phút", "24 giờ", "11 ngày".
+ * 15840 phút từng hiện nguyên số, đọc như lỗi dữ liệu (Q6-PG-10). Từ 1 ngày trở lên bỏ phần phút lẻ.
+ */
+export function formatContestWindowMinutes(minutes: number | null | undefined): string {
+  if (minutes === null || minutes === undefined || !Number.isFinite(minutes) || minutes < 0) return "—";
+  const total = Math.round(minutes);
+  if (total < 60) return `${total} phút`;
+  if (total < 24 * 60) {
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+    return m === 0 ? `${h} giờ` : `${h} giờ ${m} phút`;
+  }
+  const d = Math.floor(total / (24 * 60));
+  const h = Math.floor((total % (24 * 60)) / 60);
+  return h === 0 ? `${d} ngày` : `${d} ngày ${h} giờ`;
+}
+
 /** Giờ Việt Nam cố định (người xem ở múi giờ khác vẫn thấy đúng giờ thi công bố). */
 export function formatContestDateTime(iso: string | null | undefined): string {
   if (!iso) return "—";

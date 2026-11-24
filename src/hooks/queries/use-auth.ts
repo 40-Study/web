@@ -226,7 +226,8 @@ export function useLogin() {
       }
     },
     onError: (error: unknown) => {
-      console.error("Login error:", error);
+      // Sai mật khẩu / 429 / khoá tài khoản là kết quả bình thường và có toast riêng; chỉ log lỗi bất ngờ (Q6-PG-19).
+      if (!(error instanceof ApiError)) console.error("Login error:", error);
       // A-P3-1 (verify-260927-student-admin.md): trước đây LUÔN hiện "Email
       // hoặc mật khẩu không đúng" bất kể lỗi thật là gì — bị rate-limit 429
       // (bucket 5 lần/phút/IP của /login, riêng với /refresh-token) cũng hiện y hệt

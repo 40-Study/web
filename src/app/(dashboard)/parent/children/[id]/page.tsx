@@ -63,7 +63,7 @@ function ScheduleGrid({ entries }: { entries: TimetableEntry[] }) {
   const [detail, setDetail] = useState<ScheduleEvent | null>(null);
   const events = useMemo(() => timetableEntriesToEvents(entries, { audience: "family" }), [entries]);
   return <>
-    <WeekCalendarGrid events={events} onEventClick={setDetail} railLabel="Lịch học của con" />
+    <WeekCalendarGrid events={events} onEventClick={setDetail} railLabel="Lịch học của con" headingLevel="h2" />
     <ScheduleEventDetailDialog event={detail} open={!!detail} onOpenChange={open => { if (!open) setDetail(null); }} />
   </>;
 }
@@ -108,7 +108,7 @@ export default function ChildDetailPage() {
   if (!overview) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Không tìm thấy thông tin học sinh</p>
+        <h1 className="text-base font-normal text-gray-500">Không tìm thấy thông tin học sinh</h1>
         <button onClick={() => router.back()} className="mt-4 text-primary-600 hover:underline">
           Quay lại
         </button>

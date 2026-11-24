@@ -8,7 +8,7 @@ import { TrendingUp, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLeaderboard } from "@/hooks/queries/use-leaderboard";
 import { leaderboardEntryKey, leaderboardEntryName } from "@/lib/leaderboard-display";
-import { DISCUSSION_CATEGORIES } from "./discussion-categories";
+import { DISCUSSION_CATEGORIES, GENERAL_DISCUSSION_CATEGORY, generalDiscussionCount } from "./discussion-categories";
 
 interface DiscussionSidebarProps {
   /** Tổng số bài theo API (không phải số bài đã tải). */
@@ -22,6 +22,10 @@ interface DiscussionSidebarProps {
 export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, onCategoryChange }: DiscussionSidebarProps) {
   const { data: leaderboard } = useLeaderboard({ limit: 5 });
   const members = leaderboard?.entries ?? [];
+  const categoryRows = [
+    ...DISCUSSION_CATEGORIES.map((cat) => ({ ...cat, count: categoryCounts[cat.value] })),
+    { ...GENERAL_DISCUSSION_CATEGORY, count: generalDiscussionCount(total, categoryCounts) },
+  ];
 
   return (
     <div className="space-y-5">
@@ -44,7 +48,7 @@ export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, 
             <span>Tất cả</span>
             <span className="text-xs text-slate-400">{total ?? "–"}</span>
           </button>
-          {DISCUSSION_CATEGORIES.map((cat) => (
+          {categoryRows.map((cat) => (
             <button
               key={cat.value}
               onClick={() => onCategoryChange(cat.value === activeCategory ? undefined : cat.value)}
@@ -58,7 +62,7 @@ export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, 
               <span>
                 {cat.emoji} {cat.label}
               </span>
-              <span className="text-xs text-slate-400">{categoryCounts[cat.value] ?? "–"}</span>
+              <span className="text-xs text-slate-400">{cat.count ?? "–"}</span>
             </button>
           ))}
         </div>

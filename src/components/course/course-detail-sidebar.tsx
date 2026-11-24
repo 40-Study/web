@@ -6,7 +6,7 @@
  * Contains video preview, price, CTAs, course includes, voucher input
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -17,6 +17,7 @@ import { CheckoutModal } from "@/components/checkout/checkout-modal";
 import { OrderPaymentDialog } from "@/components/checkout/order-payment-dialog";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
+import { normalizeRole } from "@/lib/routes";
 import { useAddToCart, useRemoveFromCart, useIsInCart } from "@/hooks/queries/use-cart";
 import { useResumePendingCartIntent } from "@/hooks/use-resume-pending-cart-intent";
 import { savePendingCartIntent } from "@/lib/pending-cart-intent";
@@ -59,6 +60,9 @@ export function CourseDetailSidebar({
 }: CourseDetailSidebarProps) {
   const router = useRouter();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  // Q6-PG-01: phụ huynh không học và không có giỏ/"Khoá học của tôi"/khu học, nên đăng ký hay mua khoá cho
+  // chính mình chỉ đẻ ra thứ không trang nào của họ mở được (backend cũng từ chối: ERR_PARENT_CANNOT_PURCHASE).
+  const isParent = useAuthStore((s) => normalizeRole(s.activeRole) === "PARENT");
   // UX-A-02: lúc còn kiểm phiên chưa biết là khách hay học viên. Trước đây bấm "Thêm vào giỏ" lúc này
   // bị nuốt im lặng (hoặc đẩy người đã đăng nhập sang /login), nên các nút mua tạm khoá kèm spinner.
   const isSessionPending = useAuthStore((s) => !s.isAuthenticated && s.sessionStatus === "checking");
@@ -111,7 +115,10 @@ export function CourseDetailSidebar({
   const removeFromCartMutation = useRemoveFromCart();
   const { data: inCartServer } = useIsInCart(courseId);
   const createOrderMutation = useCreateOrder();
-  useResumePendingCartIntent({ courseId, isEnrolled, addToCart: addToCartMutation.mutate });
+  const { mutate: addToCart } = addToCartMutation;
+  // Khách bấm "Thêm vào giỏ" rồi đăng nhập bằng vai Phụ huynh: ý định bị xoá nhưng không được tự thêm (Q6-PG-01).
+  const resumeAddToCart = useCallback((id: string) => { if (!isParent) addToCart(id); }, [isParent, addToCart]);
+  useResumePendingCartIntent({ courseId, isEnrolled, addToCart: resumeAddToCart });
 
   // Server là nguồn duy nhất cho trạng thái giỏ hàng — khách chưa đăng nhập
   // không có giỏ nào để đọc nên luôn coi là chưa thêm (S-P0-1).
@@ -130,7 +137,7 @@ export function CourseDetailSidebar({
   }
 
   function handleCartToggle() {
-    if (isSessionPending) return;
+    if (isSessionPending || isParent) return;
     if (!isAuthenticated) {
       // UX-A-03: giữ ý định thêm giỏ qua bước đăng nhập (xem lib/pending-cart-intent.ts).
       savePendingCartIntent(courseId, course.slug);
@@ -146,7 +153,7 @@ export function CourseDetailSidebar({
   }
 
   function handleBuyNowClick() {
-    if (isSessionPending) return;
+    if (isSessionPending || isParent) return;
     if (!isAuthenticated) {
       goToLoginWithReturn();
       return;
@@ -250,7 +257,7 @@ export function CourseDetailSidebar({
           QA-A-18: bản cũ (bottom-24, 2 dòng giá, py-3) cao 72px, cộng thanh điều hướng thành khối ~170px che
           nội dung ở 390px. Nay một dòng (giá + giá gốc cạnh nhau, nút size sm), sát ngay trên thanh điều hướng
           và cùng lề với nó để hai thanh đọc như một khối: tổng còn ~140px. */}
-      {!isEnrolled && !isFree && !isPurchaseCardVisible && (
+      {!isParent && !isEnrolled && !isFree && !isPurchaseCardVisible && (
         <div
           data-testid="mobile-buy-bar"
           className="fixed bottom-[5.5rem] left-2 right-2 z-40 flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-2 shadow-md sm:left-4 sm:right-4 lg:hidden"
@@ -287,7 +294,7 @@ export function CourseDetailSidebar({
                 <Play className="h-6 w-6 text-primary-600 ml-0.5" />
               </div>
             </div>
-            {courseHasTrial && !isEnrolled && (
+            {courseHasTrial && !isEnrolled && !isParent && (
               <button
                 onClick={onTrial}
                 className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-4 py-1.5 text-xs font-medium text-white backdrop-blur-sm hover:bg-black/75 transition-colors"
@@ -321,7 +328,14 @@ export function CourseDetailSidebar({
 
             {/* CTA buttons */}
             <div className="space-y-2.5">
-              {isEnrolled ? (
+              {isParent ? (
+                <p
+                  data-testid="parent-cannot-purchase"
+                  className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-600"
+                >
+                  Tài khoản Phụ huynh không đăng ký hay mua khoá học. Hãy dùng tài khoản học viên của con để đăng ký.
+                </p>
+              ) : isEnrolled ? (
                 /* State 4: Already enrolled */
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm text-gray-600">
@@ -388,7 +402,7 @@ export function CourseDetailSidebar({
 
             {/* B5 (QA vòng 2 N4, chủ dự án chốt Q9): bỏ cam kết "hoàn tiền trong 7 ngày" vì
                 không có chính sách/nút nào thực hiện nó; hoàn tiền là admin xử lý thủ công. */}
-            {!isEnrolled && !isFree && (
+            {!isParent && !isEnrolled && !isFree && (
               <p className="mt-3 text-center text-xs text-gray-500">
                 Cần hỗ trợ hoặc hoàn tiền? Vui lòng liên hệ bộ phận hỗ trợ.
               </p>
@@ -410,7 +424,7 @@ export function CourseDetailSidebar({
         </div>
 
         {/* Voucher - only for unenrolled paid courses */}
-        {!isEnrolled && !isFree && (
+        {!isParent && !isEnrolled && !isFree && (
           <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
             <h3 className="mb-3 font-semibold text-gray-900">Mã giảm giá</h3>
             {/* subtotal = giá khoá: thiếu thì mặc định 0 và voucher có đơn tối thiểu luôn bị từ chối (cùng lỗi A-05 ở

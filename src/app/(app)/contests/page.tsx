@@ -6,6 +6,7 @@
  * (#2) chỉ hiện với học viên vì chỉ học viên đăng ký được.
  */
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Search, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -24,11 +25,21 @@ import { ContestErrorState, ContestLoading } from "./_components/contest-states"
 type TabValue = "ALL" | PublicContestPhase | "MINE";
 const PAGE_SIZE = 12;
 
+/** `?tab=` hợp lệ -> tab; thiếu hoặc rác -> "Tất cả". Tab nằm trên URL để tải lại / Back giữ nguyên (Q6-PG-11). */
+function parseTabParam(value: string | null): TabValue {
+  if (value === "MINE") return "MINE";
+  return PUBLIC_CONTEST_PHASES.find((phase) => phase === value) ?? "ALL";
+}
+
 export default function ContestsPage() {
   const { isAuthenticated, activeRole } = useAuthStore();
   const isStudent = isAuthenticated && normalizeRole(activeRole) === "STUDENT";
 
-  const [tab, setTab] = useState<TabValue>("ALL");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // "Cuộc thi của tôi" chỉ có với học viên: người khác mở link ?tab=MINE thì rơi về "Tất cả".
+  const urlTab = parseTabParam(searchParams.get("tab"));
+  const tab: TabValue = urlTab === "MINE" && !isStudent ? "ALL" : urlTab;
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search.trim(), 400);
@@ -50,8 +61,8 @@ export default function ContestsPage() {
   ];
 
   const selectTab = (value: TabValue) => {
-    setTab(value);
     setPage(1);
+    router.replace(value === "ALL" ? "/contests" : `/contests?tab=${value}`, { scroll: false });
   };
 
   return (

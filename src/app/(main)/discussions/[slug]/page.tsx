@@ -24,6 +24,7 @@ import { useState } from "react";
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import { useAuthStore } from "@/stores/auth.store";
 import { LoginRequiredPrompt } from "@/components/auth/login-required-prompt";
+import { discussionCategoryLabel } from "../discussion-categories";
 
 interface PageProps {
   params: { slug: string };
@@ -34,13 +35,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   design: "bg-blue-100 text-blue-600",
   "learning-tips": "bg-green-100 text-green-600",
   project: "bg-purple-100 text-purple-600",
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  programming: "Lập trình",
-  design: "Thiết kế",
-  "learning-tips": "Mẹo học",
-  project: "Dự án",
+  qna: "bg-amber-100 text-amber-700",
 };
 
 function timeAgo(dateStr: string): string {
@@ -155,7 +150,7 @@ export default function DiscussionDetailPage({ params }: PageProps) {
         {/* Category + meta */}
         <div className="flex items-center gap-3 mb-4">
           <span className={cn("text-xs font-medium px-2.5 py-1 rounded-full", categoryColor)}>
-            {CATEGORY_LABELS[post.category] ?? post.category}
+            {discussionCategoryLabel(post.category)}
           </span>
           <span className="text-xs text-slate-400">{timeAgo(post.created_at)}</span>
         </div>

@@ -14,6 +14,7 @@ import {
   formatContestPercent,
   formatContestPrize,
   formatContestScore,
+  formatContestWindowMinutes,
   formatCountdown,
 } from "@/lib/contest/contest-format";
 import { normalizeRole } from "@/lib/routes";
@@ -80,7 +81,7 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
           <dl className="grid grid-cols-1 gap-3 rounded-2xl border border-gray-200 bg-white p-4 text-sm sm:grid-cols-2">
             <InfoRow icon={CalendarClock} label="Mở lúc" value={formatContestDateTime(detail.start_time)} />
             <InfoRow icon={CalendarClock} label="Đóng lúc" value={formatContestDateTime(detail.end_time)} />
-            <InfoRow icon={Clock} label="Thời gian làm bài" value={`${detail.duration_minutes} phút`} />
+            <InfoRow icon={Clock} label="Thời gian làm bài" value={formatContestWindowMinutes(detail.duration_minutes)} />
             <InfoRow icon={HelpCircle} label="Đề thi" value={`${detail.question_count} ${detail.type === "CODING" ? "bài code" : "câu"} · ${formatContestScore(detail.total_points)} điểm`} />
             <InfoRow icon={Users} label="Người tham gia" value={seats} />
             <InfoRow icon={User} label="Người tạo" value={detail.creator_name} />

@@ -6,8 +6,12 @@
 
 import { useState } from "react";
 import { useMemo } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { loginHref } from "@/lib/login-redirect";
+import { useAuthStore } from "@/stores/auth.store";
 import { useDiscussionPosts, useDiscussionCategoryTotals, useCreateDiscussionPost, useVoteDiscussion, useRemoveVoteDiscussion } from "@/hooks/queries/use-discussions";
 import { DiscussionPostCard } from "./discussion-post-card";
 import { DiscussionComposer } from "./discussion-composer";
@@ -18,6 +22,9 @@ import { DISCUSSION_CATEGORIES } from "./discussion-categories";
 const TOTAL_KEYS = ["", ...DISCUSSION_CATEGORIES.map((c) => c.value)];
 
 export default function DiscussionsPage() {
+  const router = useRouter();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isSessionPending = useAuthStore((s) => !s.isAuthenticated && s.sessionStatus === "checking");
   const [category, setCategory] = useState<string | undefined>(undefined);
 
   const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = useDiscussionPosts(category);
@@ -31,6 +38,11 @@ export default function DiscussionsPage() {
   const allTotal = categoryTotals[""] ?? (category ? undefined : feedTotal);
 
   const handleVote = (id: string, hasVoted: boolean) => {
+    // Q6-PG-12: khách bấm tim đi đăng nhập (như tim ở thẻ khoá học), không nhận toast lỗi 401.
+    if (!isAuthenticated) {
+      router.push(loginHref("/discussions"));
+      return;
+    }
     if (hasVoted) {
       removeVote.mutate({ id });
     } else {
@@ -48,10 +60,23 @@ export default function DiscussionsPage() {
       <div className="flex gap-6">
         {/* Main feed */}
         <div className="flex-1 min-w-0">
-          <DiscussionComposer
-            onSubmit={(data) => createPost.mutate(data)}
-            isSubmitting={createPost.isPending}
-          />
+          {/* Q6-PG-14: khách không có ô soạn bài đầy đủ rồi mới biết cần tài khoản lúc gửi. */}
+          {isAuthenticated ? (
+            <DiscussionComposer
+              onSubmit={(data) => createPost.mutate(data)}
+              isSubmitting={createPost.isPending}
+            />
+          ) : !isSessionPending ? (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6 flex items-center justify-between gap-3">
+              <p className="text-sm text-slate-500">Đăng nhập để bắt đầu một cuộc thảo luận.</p>
+              <Link
+                href={loginHref("/discussions")}
+                className="shrink-0 rounded-xl bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
+              >
+                Đăng nhập để đăng bài
+              </Link>
+            </div>
+          ) : null}
 
           {isLoading ? (
             <div className="space-y-4">
