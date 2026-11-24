@@ -464,6 +464,14 @@ export function useResetPasswordRequest() {
   });
 }
 
+/** Khoá sessionStorage mang câu lỗi OTP sang bước nhập OTP (đọc một lần, xem forgot-password/otp/page.tsx). */
+export const RESET_OTP_ERROR_KEY = "reset_password_otp_error";
+
+/** Backend gộp kiểm OTP và đặt mật khẩu mới vào một lần gọi; lỗi OTP luôn có chữ "OTP" trong message. */
+export function isResetOtpError(error: unknown): boolean {
+  return error instanceof ApiError && /\bOTP\b/i.test(error.message);
+}
+
 /** POST /auth/reset-password */
 export function useResetPassword() {
   const router = useRouter();
@@ -476,15 +484,21 @@ export function useResetPassword() {
       router.push(AUTH_ROUTES.RESET_PASSWORD_SUCCESS);
     },
     onError: (error: unknown) => {
-      // Trước đây KHÔNG có onError — OTP sai/hết hạn khi đặt lại mật khẩu rơi
-      // vào catch{} rỗng ở reset-password/page.tsx (comment cũ ghi nhầm "toast
-      // shown in hook"), người dùng bấm "Đặt lại mật khẩu" không thấy phản hồi
-      // gì (QA khách P1, 260927 — áp dụng cho luồng quên mật khẩu).
-      toast.error(
-        translateOtpErrorMessage(
-          authErrorMessage(error, "Mã OTP không đúng hoặc đã hết hạn, vui lòng thử lại")
-        )
+      const message = translateOtpErrorMessage(
+        authErrorMessage(error, "Mã OTP không đúng hoặc đã hết hạn, vui lòng thử lại")
       );
+      // Q5-PG-05: OTP chỉ được kiểm ở bước cuối này. Trước đây chỉ có toast và trang vẫn giữ mã sai trong
+      // sessionStorage: người dùng không có chỗ nhập lại, bấm gửi lại thì gửi cùng mã sai và tốn lượt thử.
+      // Xoá mã sai rồi đưa về bước nhập OTP, câu lỗi hiện ngay dưới 6 ô (không toast thêm lần nữa, như N-06).
+      if (isResetOtpError(error)) {
+        sessionStorage.removeItem("reset_password_otp");
+        sessionStorage.setItem(RESET_OTP_ERROR_KEY, message);
+        router.push(AUTH_ROUTES.FORGOT_PASSWORD_OTP);
+        return;
+      }
+      // Các lỗi khác (mật khẩu yếu, 429...) vẫn ở lại trang với toast. Trước đây KHÔNG có onError nên người
+      // dùng bấm "Đặt lại mật khẩu" không thấy phản hồi (QA khách P1, 260927).
+      toast.error(message);
     },
   });
 }

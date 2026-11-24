@@ -1,13 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AuthCard } from "@/components/auth/auth-card";
 import { AuthIconHeader } from "@/components/auth/auth-icon-header";
 import { OtpInput } from "@/components/auth/otp-input";
 import { MailIcon } from "@/components/icons";
 import { AUTH_ROUTES } from "@/lib/routes";
-import { useResetPasswordRequest } from "@/hooks/queries/use-auth";
+import { RESET_OTP_ERROR_KEY, useResetPasswordRequest } from "@/hooks/queries/use-auth";
 import { useFlowGuard } from "@/hooks/use-flow-guard";
 import { STORAGE_KEYS } from "@/lib/constants";
 
@@ -20,10 +20,18 @@ export default function ForgotPasswordOtpPage() {
     "Chưa có yêu cầu đặt lại mật khẩu nào. Vui lòng nhập email để nhận mã xác nhận.",
   );
   const resetPasswordRequest = useResetPasswordRequest();
-  const [, setOtp] = useState("");
+  // Q5-PG-05: mã sai bị backend từ chối ở bước đặt mật khẩu -> hook đưa người dùng về đây kèm câu lỗi (đọc
+  // một lần). Câu hiện dưới 6 ô và mất đi khi họ gõ mã mới hoặc xin mã khác.
+  const [errorMessage, setErrorMessage] = useState("");
+  useEffect(() => {
+    const stored = sessionStorage.getItem(RESET_OTP_ERROR_KEY);
+    if (!stored) return;
+    sessionStorage.removeItem(RESET_OTP_ERROR_KEY);
+    setErrorMessage(stored);
+  }, []);
 
   const handleComplete = (otpCode: string) => {
-    setOtp(otpCode);
+    setErrorMessage("");
 
     const email = sessionStorage.getItem(STORAGE_KEYS.RESET_PASSWORD_EMAIL);
     if (!email) {
@@ -39,14 +47,16 @@ export default function ForgotPasswordOtpPage() {
     router.push(AUTH_ROUTES.RESET_PASSWORD);
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     const email = sessionStorage.getItem(STORAGE_KEYS.RESET_PASSWORD_EMAIL);
     if (!email) {
       router.push(AUTH_ROUTES.FORGOT_PASSWORD);
-      return;
+      return false;
     }
-    // useResetPasswordRequest tự toast "Mã xác nhận đã được gửi" khi thành công.
-    resetPasswordRequest.mutate({ email });
+    // useResetPasswordRequest tự toast "Mã xác nhận đã được gửi" khi thành công; lỗi (429...) do toast mặc định
+    // của mutation. Reject để OtpInput biết lần gửi thất bại và KHÔNG khởi động lại đồng hồ (Q5-PG-07).
+    await resetPasswordRequest.mutateAsync({ email });
+    setErrorMessage("");
   };
 
   if (!hasResetRequest) return null;
@@ -61,6 +71,11 @@ export default function ForgotPasswordOtpPage() {
           className="mb-8"
         />
         <OtpInput onComplete={handleComplete} onResend={handleResend} countdown={90} />
+        {errorMessage && (
+          <p className="mt-4 text-sm font-medium text-red-500" role="alert">
+            {errorMessage}
+          </p>
+        )}
       </div>
     </AuthCard>
   );

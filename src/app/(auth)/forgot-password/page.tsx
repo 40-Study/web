@@ -26,7 +26,12 @@ export default function ForgotPasswordPage() {
     }
     const trimmed = email.trim();
     sessionStorage.setItem("reset_password_email", trimmed);
-    await resetPasswordRequest.mutateAsync({ email: trimmed });
+    try {
+      await resetPasswordRequest.mutateAsync({ email: trimmed });
+    } catch {
+      // Q5-PG-07: toast lỗi (429 kèm số giây chờ...) do mặc định của mutation hiện; nuốt ở đây để lỗi không
+      // thành "uncaught (in promise)" ở console.
+    }
   };
 
   return (

@@ -74,6 +74,20 @@ describe("/otp — hoàn tất đăng ký", () => {
     expect(push).not.toHaveBeenCalledWith("/register/success");
   });
 
+  // Q5-PG-11: nhập mã khi đăng ký đã hết hạn từng chỉ hiện câu chữ, 6 ô trống và đồng hồ vẫn chạy.
+  it("410 ERR_REGISTRATION_EXPIRED khi nhập mã: về /register/form với email điền sẵn", async () => {
+    sessionStorage.setItem(STORAGE_KEYS.REGISTER_EMAIL, "qa@example.com");
+    mockApi.post.mockRejectedValue(new ApiError(410, "ERR_REGISTRATION_EXPIRED", "registration expired"));
+    renderWithProviders(<OtpPage />);
+
+    typeOtp("123456");
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/register/form"));
+    expect(toast.error).toHaveBeenCalledWith("Phiên đăng ký đã hết hạn. Vui lòng đăng ký lại.");
+    expect(sessionStorage.getItem(STORAGE_KEYS.REGISTER_PREFILL_EMAIL)).toBe("qa@example.com");
+    expect(sessionStorage.getItem(STORAGE_KEYS.REGISTER_EMAIL)).toBeNull();
+  });
+
   // G-05 (QA3 261104): trước đây /otp mở thẳng vẫn hiện "gửi đến email của bạn" + đồng hồ đếm ngược, tới khi
   // gõ đủ 6 số mới bị đẩy đi. Giờ chặn ngay khi mở.
   it("thiếu email trong sessionStorage (mở thẳng /otp): chuyển về /register ngay, không vẽ form OTP", async () => {
