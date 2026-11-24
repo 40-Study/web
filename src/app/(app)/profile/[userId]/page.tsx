@@ -11,6 +11,7 @@ import {
   FeaturedAchievements,
   TeacherProfileSummary,
 } from "@/components/profile";
+import { AchievementGlyph } from "@/components/profile/achievement-glyph";
 import type { User, UserStats, FeaturedAchievement } from "@/components/profile";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { usePublicProfile } from "@/hooks/queries/use-auth";
@@ -255,7 +256,7 @@ export default function PublicProfilePage() {
                                 Hoàn thành{" "}
                                 {course.completedAt.toLocaleDateString("vi-VN", {
                                   day: "numeric",
-                                  month: "short",
+                                  month: "long",
                                   year: "numeric",
                                 })}
                               </p>
@@ -316,7 +317,7 @@ export default function PublicProfilePage() {
                           className="aspect-square rounded-xl bg-yellow-500 flex items-center justify-center text-2xl text-white"
                           title={achievement.name}
                         >
-                          {achievement.icon || achievement.name.slice(0, 1).toUpperCase()}
+                          <AchievementGlyph achievement={achievement} />
                         </div>
                       ))}
                     </div>
@@ -341,7 +342,7 @@ export default function PublicProfilePage() {
                       className="text-center p-4 rounded-2xl bg-gray-50 dark:bg-gray-800"
                     >
                       <div className="w-14 h-14 mx-auto rounded-xl bg-yellow-500 flex items-center justify-center text-2xl mb-2 shadow-lg text-white">
-                        {achievement.icon || achievement.name.slice(0, 1).toUpperCase()}
+                        <AchievementGlyph achievement={achievement} />
                       </div>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {achievement.name}

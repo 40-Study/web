@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Settings } from "lucide-react";
 import {
   SettingsSidebar,
@@ -18,8 +18,17 @@ import { useMe, useChangePassword, useDeleteAccount, useSwitchRole } from "@/hoo
 import { getDeviceInfo } from "@/services/auth.service";
 import { appearanceStorage } from "@/lib/appearance-storage";
 
+const SECTIONS: readonly SettingsSection[] = ["account", "profile", "notifications", "appearance", "privacy", "devices", "linked"];
+
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("account");
+  // Liên kết sâu `/settings?section=profile` (nút "Chỉnh sửa hồ sơ" ở trang hồ sơ). Đọc sau khi mount để SSR và
+  // lần render đầu của client giống nhau; giá trị lạ bị bỏ qua, ở lại mục mặc định.
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get("section");
+    const match = SECTIONS.find((s) => s === wanted);
+    if (match) setActiveSection(match);
+  }, []);
   const { user } = useAuthStore();
   const { data: meData } = useMe();
   const changePassword = useChangePassword();

@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { AchievementGlyph } from "./achievement-glyph";
 
 export interface FeaturedAchievement {
   id: string;
@@ -73,17 +73,7 @@ export function FeaturedAchievements({
                 rarityGradients[achievement.rarity]
               )}
             >
-              {achievement.badgeUrl || achievement.iconUrl ? (
-                <Image
-                  src={achievement.badgeUrl || achievement.iconUrl || ""}
-                  alt={achievement.name}
-                  width={64}
-                  height={64}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                achievement.icon || achievement.name.slice(0, 1).toUpperCase()
-              )}
+              <AchievementGlyph achievement={achievement} />
             </div>
             <p className="text-xs font-medium text-gray-700 dark:text-gray-300 line-clamp-2">
               {achievement.name}

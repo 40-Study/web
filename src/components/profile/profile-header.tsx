@@ -33,8 +33,6 @@ interface ProfileHeaderProps {
   user: User;
   isOwnProfile: boolean;
   stats: UserStats;
-  onEditProfile?: () => void;
-  onAvatarUpload?: () => void;
   /**
    * false: ẩn level/XP/streak và dải thống kê học tập. Phụ huynh không học nên các số 0 này vô nghĩa
    * (P-05, QA3 261104).
@@ -43,22 +41,18 @@ interface ProfileHeaderProps {
   className?: string;
 }
 
+/** Số đầy đủ theo vi-VN ("1.850"), cùng cách viết với bảng xếp hạng và banner XP; không rút gọn "1.9K" làm lệch số. */
 function formatNumber(num: number): string {
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + "M";
-  }
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1) + "K";
-  }
-  return num.toString();
+  return Math.round(num).toLocaleString("vi-VN");
 }
+
+/** Hồ sơ của chính mình: sửa thông tin và ảnh đại diện đều ở Cài đặt > Hồ sơ (QA5 Q5-T01). */
+export const EDIT_PROFILE_HREF = "/settings?section=profile";
 
 export function ProfileHeader({
   user,
   isOwnProfile,
   stats,
-  onEditProfile,
-  onAvatarUpload,
   showLearningStats = true,
   className,
 }: ProfileHeaderProps) {
@@ -77,7 +71,7 @@ export function ProfileHeader({
               size="xl"
               src={user.avatar}
               fallback={user.fullName}
-              className="w-28 h-28 border-4 border-white shadow-xl"
+              className="w-28 h-28 rounded-full border-4 border-white shadow-xl [&>div:first-child]:h-full [&>div:first-child]:w-full"
             />
             {showLearningStats && user.streak > 0 && (
               <div className="absolute -bottom-2 -right-2 bg-orange-500 rounded-full p-2 shadow-lg">
@@ -85,13 +79,13 @@ export function ProfileHeader({
               </div>
             )}
             {isOwnProfile && (
-              <button
+              <Link
+                href={EDIT_PROFILE_HREF}
                 className="absolute bottom-0 right-0 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors"
-                onClick={onAvatarUpload}
                 aria-label="Tải ảnh đại diện"
               >
                 <Camera className="h-4 w-4 text-gray-600" />
-              </button>
+              </Link>
             )}
           </div>
 
@@ -119,10 +113,12 @@ export function ProfileHeader({
             <Button
               variant="outline"
               className="bg-transparent text-white border-white hover:bg-white/20 hover:text-white dark:bg-transparent dark:text-white dark:hover:bg-white/20"
-              onClick={onEditProfile}
+              asChild
             >
-              <Pencil className="h-4 w-4 mr-2" />
-              Chỉnh sửa hồ sơ
+              <Link href={EDIT_PROFILE_HREF}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Chỉnh sửa hồ sơ
+              </Link>
             </Button>
           ) : (
             // Nút "Theo dõi" cũ không có hành vi nào (không có backend) nên đã thay bằng kết bạn thật.
