@@ -140,7 +140,7 @@ export function CheckoutModal({
         {/* Price breakdown */}
         <div className="rounded-xl bg-gray-50 p-3 space-y-1.5 text-sm">
           <div className="flex justify-between text-gray-600">
-            <span>Giá gốc</span>
+            <span>Giá khoá học</span>
             <span>{formatCurrency(course.price)}</span>
           </div>
           {voucherDiscount > 0 && (

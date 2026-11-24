@@ -136,10 +136,13 @@ export function VoucherInput({
   if (applied?.valid) {
     return (
       <div className={cn("flex items-center justify-between rounded-lg bg-green-50 border border-green-200 px-3 py-2", className)}>
-        <div className="flex items-center gap-2 text-green-700">
+        {/* S5-15: không dùng dấu gạch đầu dòng làm phân cách (bị bẻ dòng lẻ loi ở hàng sau); mỗi cụm không bẻ dòng. */}
+        <div className="flex min-w-0 items-center gap-2 text-green-700">
           <Tag className="h-4 w-4 shrink-0" />
-          <span className="text-sm font-medium">{applied.voucher?.code}</span>
-          <span className="text-sm">— Giảm {formatCurrency(applied.discount_amount)}</span>
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+            <span className="text-sm font-medium break-all">{applied.voucher?.code}</span>
+            <span className="text-sm whitespace-nowrap">Giảm {formatCurrency(applied.discount_amount)}</span>
+          </div>
         </div>
         <button onClick={handleRemove} className="p-1 hover:bg-green-100 rounded" aria-label="Xoá voucher">
           <X className="h-4 w-4 text-green-600" />
