@@ -64,6 +64,8 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
   const [mySubmission, setMySubmission] = useState<any>(null);
   const [alertModal, setAlertModal] = useState<{ title: string; message: string } | null>(null);
   const [customInput, setCustomInput] = useState(''); // Input để test thử
+  // Sau "Chạy thử", kết quả cũ của lần nộp trước không còn đúng với code đang chạy: ẩn tới khi nộp lại.
+  const [verdictStale, setVerdictStale] = useState(false);
   const [timeStatus, setTimeStatus] = useState<'waiting' | 'active'>('active');
   const [countdown, setCountdown] = useState('');
   // Bài nộp code chấm nền: hỏi lại tới khi có verdict (cả khi mở lại màn và bài mới nhất còn `pending`).
@@ -118,6 +120,17 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
       setShowExitConfirm(true);
     }
   }, [submissionCounted, onClose]);
+
+  // Esc đóng màn làm bài (hoặc đóng hộp xác nhận thoát nếu đang mở), như mọi hộp thoại khác.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || alertModal) return;
+      if (showExitConfirm) setShowExitConfirm(false);
+      else handleRequestClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [alertModal, showExitConfirm, handleRequestClose]);
 
   // Detect assignment type from starter_code or code state
   const assignmentType = useMemo((): 'code' | 'essay' | 'multiple_choice' => {
@@ -232,6 +245,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
   const handleRun = useCallback(async () => {
     setRunning(true);
     setResults(null);
+    setVerdictStale(true);
     setActiveResultTab('output');
     try {
       const res = await api.post<SubmissionResult>('/submissions/run-custom', {
@@ -252,6 +266,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
   const handleSubmit = useCallback(async () => {
     setSubmitting(true);
     setResults(null);
+    setVerdictStale(false);
     try {
       // 201 + dòng `pending`: verdict đến sau, do useLiveSubmissionVerdictPoll hỏi lại.
       const res = await api.post<{ data: SubmissionResponseDTO }>('/submissions', {
@@ -354,6 +369,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
     setLanguage(langId);
   };
 
+  const runOutput = results?.output ?? results?.stdout ?? '';
   const passedCount = results?.test_results?.filter((t) => t.passed).length ?? 0;
   const totalCount = results?.test_results?.length ?? 0;
 
@@ -439,6 +455,9 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
       {timeStatus === 'active' && (
       <div
         className="awo-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         onClick={(e) => e.stopPropagation()}
         style={{
         background: '#121212',
@@ -971,7 +990,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
             />
           </div>
 
-          <LiveSubmissionVerdictBanner submission={mySubmission} timedOut={verdictPollTimedOut} />
+          <LiveSubmissionVerdictBanner submission={verdictStale ? null : mySubmission} timedOut={verdictPollTimedOut} />
 
           {/* Results panel */}
           {results && (
@@ -1022,7 +1041,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
                   <pre style={{
                     margin: 0, fontSize: '0.78rem', fontFamily: 'monospace',
                     color: 'rgba(255,255,255,0.85)', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
-                  }}>{results.stdout || '(no output)'}</pre>
+                  }}>{runOutput || '(không có kết quả in ra)'}</pre>
                 ) : (
                   <div>
                     {results.test_results?.map((tc, i) => (
