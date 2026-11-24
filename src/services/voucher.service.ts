@@ -10,6 +10,7 @@
  */
 
 import { api } from "@/lib/api-client";
+import { formatCurrency } from "@/lib/utils";
 
 // ─── Types (khớp internal/model/payment.go#Voucher) ────────────────────────
 
@@ -277,7 +278,7 @@ export function calculateVoucherDiscount(voucher: Voucher, subtotal: number): Vo
     return {
       ok: false,
       discountAmount: 0,
-      errorMessage: `Đơn hàng cần tối thiểu ${minPurchase.toLocaleString("vi-VN")}đ để dùng mã này`,
+      errorMessage: `Đơn hàng cần tối thiểu ${formatCurrency(minPurchase)} để dùng mã này`,
     };
   }
 
@@ -308,7 +309,7 @@ export function formatVoucherDiscountLabel(voucher: Voucher): string {
   if (voucher.discount_method === "PERCENT") {
     const percent = Number(voucher.discount_percent ?? 0);
     const cap = Number(voucher.max_discount_money ?? 0);
-    return `Giảm ${percent}%${cap > 0 ? ` (tối đa ${cap.toLocaleString("vi-VN")}đ)` : ""}`;
+    return `Giảm ${percent}%${cap > 0 ? ` (tối đa ${formatCurrency(cap)})` : ""}`;
   }
-  return `Giảm ${Number(voucher.discount_amount_money ?? 0).toLocaleString("vi-VN")}đ`;
+  return `Giảm ${formatCurrency(Number(voucher.discount_amount_money ?? 0))}`;
 }

@@ -88,7 +88,7 @@ export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, 
                     <p className="text-sm font-medium text-slate-800 truncate">
                       {name}
                     </p>
-                    <p className="text-xs text-slate-400">{m.points} điểm</p>
+                    <p className="text-xs text-slate-400">{Number(m.points).toLocaleString("vi-VN")} điểm</p>
                   </div>
                   <span className="text-xs font-bold text-slate-400">#{m.rank}</span>
                 </div>

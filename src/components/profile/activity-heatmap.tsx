@@ -34,8 +34,11 @@ export function getDayOfWeek(date: Date): number {
   return (date.getDay() + 6) % 7;
 }
 
-/** Số tuần tối thiểu một tháng phải chiếm để có đủ bề ngang cho nhãn "Tháng N". */
-const MIN_WEEKS_FOR_MONTH_LABEL = 3;
+/**
+ * Số tuần tối thiểu một tháng phải chiếm để có đủ bề ngang cho nhãn "Tháng N". Mỗi tuần 14px: 3 tuần (42px) vẫn
+ * hẹp hơn chữ "Tháng 7" nên dính vào nhãn kế bên (QA6 S6-05); 4 tuần (56px) đủ chỗ.
+ */
+const MIN_WEEKS_FOR_MONTH_LABEL = 4;
 
 export function ActivityHeatmap({
   data,

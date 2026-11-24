@@ -156,6 +156,7 @@ export function VoucherInput({
       <div className="flex gap-2">
         <Input
           placeholder="Nhập mã voucher"
+          aria-label="Mã voucher"
           value={code}
           onChange={(e) => {
             setCode(e.target.value.toUpperCase());

@@ -110,14 +110,17 @@ function AssignmentCard({
         {/* Status info */}
         <div className="flex items-center gap-1 text-xs">
           {submittedLabel && (
-            <span className="rounded-full bg-green-50 px-2 py-0.5 font-medium text-green-700">{submittedLabel}</span>
+            <span className="shrink-0 whitespace-nowrap rounded-full bg-green-50 px-2 py-0.5 font-medium text-green-700">
+              {submittedLabel}
+            </span>
           )}
           {!item.is_published && (
             <span className="text-gray-400">Chưa công bố</span>
           )}
           {deadline && (
-            <span className={cn(pastDue ? "text-orange-600" : "text-gray-500")}>
-              {pastDue ? "Quá hạn, còn nộp muộn · " : "Hạn: "}
+            // Đã nộp/đã chấm thì không còn "nộp muộn" nào để nhắc (QA6 S6-06): chỉ ghi mốc hạn, không tô cam.
+            <span className={cn(pastDue && !submittedLabel ? "text-orange-600" : "text-gray-500")}>
+              {pastDue && !submittedLabel ? "Quá hạn, còn nộp muộn · " : "Hạn: "}
               {deadline}
             </span>
           )}
@@ -281,12 +284,18 @@ export default function MyAssignmentsPage() {
         {/* Ở 390px chế độ lưới/danh sách đều là một cột nên ẩn đi để đủ chỗ cho 4 tab */}
         <div className="hidden sm:flex border border-gray-100 rounded-xl overflow-hidden">
           <button
+            type="button"
+            aria-label="Xem dạng lưới"
+            aria-pressed={viewMode === "grid"}
             onClick={() => setViewMode("grid")}
             className={cn("p-1.5 transition-colors", viewMode === "grid" ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100")}
           >
             <LayoutGrid className="w-4 h-4" />
           </button>
           <button
+            type="button"
+            aria-label="Xem dạng danh sách"
+            aria-pressed={viewMode === "list"}
             onClick={() => setViewMode("list")}
             className={cn("p-1.5 transition-colors", viewMode === "list" ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100")}
           >
@@ -338,11 +347,11 @@ export default function MyAssignmentsPage() {
         <div className="flex items-center justify-between text-sm text-gray-500">
           <span>Hiển thị {filtered.length} trong số {assignments.length} bài tập</span>
           <div className="flex items-center gap-1">
-            <button className="p-1.5 rounded-xl border border-gray-100 hover:bg-gray-50 disabled:opacity-40" disabled>
+            <button type="button" aria-label="Trang trước" className="p-1.5 rounded-xl border border-gray-100 hover:bg-gray-50 disabled:opacity-40" disabled>
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-sm font-medium">1</button>
-            <button className="p-1.5 rounded-xl border border-gray-100 hover:bg-gray-50 disabled:opacity-40" disabled>
+            <button type="button" aria-label="Trang sau" className="p-1.5 rounded-xl border border-gray-100 hover:bg-gray-50 disabled:opacity-40" disabled>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>

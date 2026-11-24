@@ -276,7 +276,7 @@ function ExpandableLessonRow({
           "flex items-center justify-between border-t border-muted py-3 pl-8 pr-4 cursor-pointer hover:bg-muted/50"
         )}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <ChevronRight
             className={cn(
               "h-4 w-4 transition-transform text-muted-foreground",
@@ -295,7 +295,7 @@ function ExpandableLessonRow({
             <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
           )}
 
-          <div>
+          <div className="min-w-0">
             <span className={cn(lesson.completed && "text-muted-foreground")}>
               {lesson.title}
             </span>
@@ -307,7 +307,8 @@ function ExpandableLessonRow({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* shrink-0 + nowrap: tiêu đề dài không được ép "7 phút" / "Xem thử" xuống hai dòng (QA6 S6-12) */}
+        <div className="flex shrink-0 items-center gap-3 whitespace-nowrap pl-3" data-testid="lesson-meta">
           <span className="text-sm text-muted-foreground">
             {formatDuration(lesson.duration)}
           </span>

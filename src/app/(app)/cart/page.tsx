@@ -135,7 +135,7 @@ export default function CartPage() {
       )}
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Link href="/courses" className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
+        <Link href="/courses" aria-label="Quay lại danh sách khoá học" className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
           <ArrowLeft className="w-5 h-5 text-neutral-600" />
         </Link>
         <div>

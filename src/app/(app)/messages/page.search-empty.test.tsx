@@ -65,4 +65,9 @@ describe("Trang Tin nhắn — tìm cuộc trò chuyện (Q5-T04)", () => {
     expect(screen.getByText("Cô Lan")).toBeTruthy();
     expect(screen.queryByText(EMPTY_TEXT)).toBeNull();
   });
+
+  it("ô tìm có tên truy cập (QA6 S6-07)", () => {
+    render(<MessagesPage />);
+    expect(screen.getByRole("textbox", { name: "Tìm cuộc trò chuyện" })).toBeTruthy();
+  });
 });

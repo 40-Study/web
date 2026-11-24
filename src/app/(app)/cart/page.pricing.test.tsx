@@ -68,3 +68,10 @@ describe("CartPage — giá dòng và tạm tính theo giá bán", () => {
     expect(screen.getByTestId("cart-select-hint")).toBeTruthy();
   });
 });
+
+describe("CartPage — tên truy cập (QA6 S6-07)", () => {
+  it("nút quay lại (chỉ có icon) có tên", () => {
+    render(<CartPage />);
+    expect(screen.getByRole("link", { name: "Quay lại danh sách khoá học" }).getAttribute("href")).toBe("/courses");
+  });
+});

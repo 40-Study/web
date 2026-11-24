@@ -230,3 +230,10 @@ describe("VoucherInput — voucher 'đơn hàng đầu tiên' với khách chưa
     await waitFor(() => expect(screen.getByText(/Giảm/)).toBeTruthy());
   });
 });
+
+describe("VoucherInput — tên truy cập (QA6 S6-07)", () => {
+  it("ô nhập mã có tên truy cập, không chỉ placeholder", () => {
+    wrap(<VoucherInput courseIds={["a"]} subtotal={799000} onApplied={vi.fn()} />);
+    expect(screen.getByRole("textbox", { name: "Mã voucher" })).toBeTruthy();
+  });
+});

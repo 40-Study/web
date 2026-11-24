@@ -94,3 +94,16 @@ describe("CourseSyllabus — khách xem thử", () => {
     );
   });
 });
+
+describe("CourseSyllabus — thời lượng và 'Xem thử' không bị bẻ dòng (QA6 S6-12)", () => {
+  it("nhóm bên phải của hàng bài học không co lại và không xuống dòng", () => {
+    renderSyllabus();
+    const metas = screen.getAllByTestId("lesson-meta");
+    expect(metas.length).toBe(2);
+    for (const meta of metas) {
+      expect(meta.className).toContain("shrink-0");
+      expect(meta.className).toContain("whitespace-nowrap");
+    }
+    expect(metas[0].textContent).toContain("Xem thử");
+  });
+});
