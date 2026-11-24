@@ -8,6 +8,7 @@ import {
   CHILD_ASSIGNMENT_STATE_CLASS,
   CHILD_ASSIGNMENT_STATE_LABEL,
   childAssignmentState,
+  isUnfinishedSubmission,
 } from "./child-assignments";
 
 /** "3/3 TC" là số test case, phụ huynh không hiểu (QA-B-26): ghi thành câu. */
@@ -48,11 +49,12 @@ export function ChildAssignmentsTab({
           <p className="mb-2 text-sm text-gray-500">Tổng {stats.total_assignments} bài tập</p>
           <div className={cn("grid grid-cols-2 gap-3 mb-6", submitted ? "md:grid-cols-5" : "md:grid-cols-4")}>
             <StatCell value={stats.completed} label="Hoàn thành" tone="bg-green-50 text-green-600" />
-            {/* Q5-PG-13: "Chờ chấm" là việc của giảng viên, "Cần làm lại" mới là việc của con. */}
+            {/* Q5-PG-13: "Chờ chấm" là việc của giảng viên. "Cần chú ý" (không phải "Cần làm lại": có cả bài lỗi chấm)
+                là đúng tên và đúng nhóm trên tab Tổng quan / trang chủ. */}
             {submitted ? (
               <>
                 <StatCell value={submitted.awaiting} label="Chờ chấm" tone="bg-blue-50 text-blue-600" />
-                <StatCell value={submitted.retry} label="Cần làm lại" tone="bg-amber-50 text-amber-600" />
+                <StatCell value={submitted.retry} label="Cần chú ý" tone="bg-amber-50 text-amber-600" />
               </>
             ) : (
               <StatCell value={stats.in_progress} label="Đã nộp, chưa xong" tone="bg-blue-50 text-blue-600" />
@@ -119,9 +121,10 @@ function splitSubmitted(
   let retry = 0;
   for (const a of assignments) {
     const state = childAssignmentState(a, now);
-    // Lỗi chấm là việc của hệ thống, con không phải làm lại: tính vào "Chờ chấm" như nhãn trên dòng.
-    if (state === "awaiting_grade" || state === "judge_error") awaiting++;
-    else if (state === "needs_retry") retry++;
+    // Ô theo ĐÚNG nhóm "Cần chú ý" của splitAssignmentsByDeadline (cùng `isUnfinishedSubmission`): bài lỗi chấm
+    // nằm ở nhóm đó thì ô cũng đếm ở đó, không đếm vào "Chờ chấm" (review L4).
+    if (state === "awaiting_grade") awaiting++;
+    else if (isUnfinishedSubmission(state)) retry++;
   }
   return { awaiting, retry };
 }

@@ -6,6 +6,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createAppQueryClient } from "@/lib/query-client";
+import { ApiError } from "@/lib/errors";
 import type { ChildAttendance, ChildAttendanceResponse } from "@/services/parent-dashboard.service";
 
 const getChildAttendance = vi.fn();
@@ -80,5 +81,54 @@ describe("ChildAttendanceTab", () => {
     renderTab();
     expect(await screen.findByText("Chưa có dữ liệu điểm danh")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Xem thêm" })).toBeNull();
+  });
+
+  // Review L1: lỗi 4xx để react-query không tự retry (test chạy nhanh); lỗi mạng/5xx dùng cùng đường hiển thị.
+  const failure = () => new ApiError(400, "ERR_BAD_REQUEST", "boom");
+
+  it("trang 1 lỗi: chỉ hiện câu lỗi, không hiện thêm 'Chưa có dữ liệu điểm danh'", async () => {
+    getChildAttendance.mockRejectedValue(failure());
+    renderTab();
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    expect(screen.getByText(/Không tải được dữ liệu điểm danh/)).toBeTruthy();
+    expect(screen.queryByText("Chưa có dữ liệu điểm danh")).toBeNull();
+  });
+
+  it("trang sau lỗi: giữ nút, thành 'Thử lại', bấm thì tải lại đúng trang hỏng", async () => {
+    renderTab();
+    await screen.findByRole("button", { name: "Xem thêm" });
+    getChildAttendance.mockImplementation((_id: string, p: number) =>
+      p === 1 ? Promise.resolve(page(1, Array.from({ length: 20 }, (_, i) => rec(i + 1)))) : Promise.reject(failure()),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem thêm" }));
+    const retryButton = await screen.findByRole("button", { name: "Thử lại" });
+    expect(screen.getByRole("alert")).toBeTruthy();
+    expect(screen.getAllByRole("listitem")).toHaveLength(20);
+
+    getChildAttendance.mockImplementation((_id: string, p: number) =>
+      Promise.resolve(p === 1 ? page(1, Array.from({ length: 20 }, (_, i) => rec(i + 1))) : page(2, Array.from({ length: 5 }, (_, i) => rec(21 + i)))),
+    );
+    fireEvent.click(retryButton);
+    await waitFor(() => expect(screen.getAllByRole("listitem")).toHaveLength(25));
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  // Review L2: bản ghi mới thêm giữa hai lần "Xem thêm" đẩy r20 sang trang 2 -> không được lặp dòng.
+  it("bản ghi trùng giữa hai trang chỉ hiện một lần", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    getChildAttendance.mockImplementation((_id: string, p: number) =>
+      Promise.resolve(
+        p === 1
+          ? page(1, Array.from({ length: 20 }, (_, i) => rec(i + 1)))
+          : page(2, [rec(20), ...Array.from({ length: 4 }, (_, i) => rec(21 + i))]),
+      ),
+    );
+    renderTab();
+    fireEvent.click(await screen.findByRole("button", { name: "Xem thêm" }));
+    await waitFor(() => expect(screen.getAllByRole("listitem")).toHaveLength(24));
+    expect(screen.getAllByText("Lớp 20")).toHaveLength(1);
+    expect(errors.mock.calls.some((c) => String(c[0]).includes("same key"))).toBe(false);
+    errors.mockRestore();
   });
 });

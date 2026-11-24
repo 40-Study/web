@@ -67,7 +67,8 @@ describe("ChildAssignmentsTab", () => {
   });
 
   // Q5-PG-13: "Chờ chấm" (việc của giảng viên) không được đọc như con đang tụt lại.
-  it("tách ô 'Chờ chấm' khỏi 'Cần làm lại' khi danh sách đủ bài", () => {
+  // Review L4: ô tóm tắt theo đúng nhóm "Cần chú ý"; bài "Lỗi chấm" đếm ở đó, không đếm vào "Chờ chấm".
+  it("tách ô 'Chờ chấm' khỏi 'Cần chú ý' khi danh sách đủ bài", () => {
     render(
       <ChildAssignmentsTab
         isLoading={false}
@@ -79,8 +80,9 @@ describe("ChildAssignmentsTab", () => {
       />,
     );
     const tile = (label: string) => screen.getByText(label).previousElementSibling?.textContent;
-    expect(tile("Chờ chấm")).toBe("2");
-    expect(tile("Cần làm lại")).toBe("1");
+    expect(tile("Chờ chấm")).toBe("1");
+    expect(tile("Cần chú ý")).toBe("2");
+    expect(screen.queryByText("Cần làm lại")).toBeNull();
     expect(screen.queryByText("Đã nộp, chưa xong")).toBeNull();
   });
 
@@ -92,6 +94,6 @@ describe("ChildAssignmentsTab", () => {
     d.stats.in_progress = 7;
     render(<ChildAssignmentsTab isLoading={false} data={d} />);
     expect(screen.getByText("Đã nộp, chưa xong").previousElementSibling?.textContent).toBe("7");
-    expect(screen.queryByText("Cần làm lại")).toBeNull();
+    expect(screen.queryByText("Cần chú ý")).toBeNull();
   });
 });

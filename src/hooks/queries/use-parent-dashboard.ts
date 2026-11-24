@@ -74,10 +74,20 @@ export function useChildAttendancePages(childId: string, pageCount: number, page
     })),
   });
   const first = results[0]?.data;
+  // Phân trang theo offset trên danh sách mới nhất trước: bản ghi mới thêm giữa hai lần "Xem thêm" đẩy một dòng
+  // sang trang kế và lặp lại (key React trùng). Lọc theo id (review L2).
+  const seen = new Set<string>();
+  const records = results
+    .flatMap((r) => r.data?.records ?? [])
+    .filter((rec) => !seen.has(rec.id) && seen.add(rec.id));
   return {
     stats: first?.stats,
     total: first?.total ?? 0,
-    records: results.flatMap((r) => r.data?.records ?? []),
+    records,
+    /** Tải lại các trang bị lỗi (nút "Thử lại"). */
+    retry: () => {
+      results.filter((r) => r.isError).forEach((r) => void r.refetch());
+    },
     isLoading: results[0]?.isLoading ?? false,
     isFetchingMore: results.slice(1).some((r) => r.isFetching),
     isError: results.some((r) => r.isError),

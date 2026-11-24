@@ -15,7 +15,7 @@ const PAGE_SIZE = 20;
  */
 export function ChildAttendanceTab({ childId }: { childId: string }) {
   const [pageCount, setPageCount] = useState(1);
-  const { stats, total, records, isLoading, isFetchingMore, isError } = useChildAttendancePages(
+  const { stats, total, records, isLoading, isFetchingMore, isError, retry } = useChildAttendancePages(
     childId,
     pageCount,
     PAGE_SIZE,
@@ -29,7 +29,9 @@ export function ChildAttendanceTab({ childId }: { childId: string }) {
     );
   }
 
-  const canLoadMore = records.length < total && !isError;
+  // Trang sau lỗi vẫn giữ nút (thành "Thử lại" tải lại đúng trang hỏng); trang 1 lỗi thì không có total nên không
+  // có nút (review L1).
+  const canLoadMore = records.length < total;
 
   return (
     <div>
@@ -46,7 +48,8 @@ export function ChildAttendanceTab({ childId }: { childId: string }) {
       )}
 
       {records.length === 0 ? (
-        <p className="text-center text-gray-500 py-4">Chưa có dữ liệu điểm danh</p>
+        // Trang 1 lỗi không có nghĩa là "chưa có dữ liệu": chỉ hiện câu lỗi bên dưới, không hiện cả hai.
+        !isError && <p className="text-center text-gray-500 py-4">Chưa có dữ liệu điểm danh</p>
       ) : (
         <ul className="space-y-2" data-testid="child-attendance-list">
           {records.map((record) => {
@@ -84,11 +87,11 @@ export function ChildAttendanceTab({ childId }: { childId: string }) {
         <div className="mt-4 flex flex-col items-center gap-1">
           <button
             type="button"
-            onClick={() => setPageCount((n) => n + 1)}
+            onClick={() => (isError ? retry() : setPageCount((n) => n + 1))}
             disabled={isFetchingMore}
             className="rounded-lg border px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 disabled:opacity-60"
           >
-            {isFetchingMore ? "Đang tải..." : "Xem thêm"}
+            {isFetchingMore ? "Đang tải..." : isError ? "Thử lại" : "Xem thêm"}
           </button>
           <p className="text-xs text-gray-400">
             Đang hiện {records.length}/{total} buổi
