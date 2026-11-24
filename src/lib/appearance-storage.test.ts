@@ -46,11 +46,25 @@ describe("fontSizeBootScript (chạy trước hydrate)", () => {
     expect(rootSize()).toBe("120%");
   });
 
-  it("bỏ qua giá trị hỏng hoặc ngoài thang", () => {
-    for (const bad of ["abc", "5000", "0"]) {
+  it("bỏ qua giá trị hỏng hoặc 0 (về mặc định)", () => {
+    for (const bad of ["abc", "0", "", "120px"]) {
       localStorage.setItem(FONT_SIZE_STORAGE_KEY, bad);
       run();
       expect(rootSize()).toBe("");
+    }
+  });
+
+  // Review #131: boot script và ThemeProvider (getFontSize + applyFontSize) phải ra cùng kết quả, không nhảy sau hydrate.
+  it("giá trị ngoài thang bị kẹp như ThemeProvider", () => {
+    for (const [stored, expected] of [["5000", "150%"], ["10", "80%"], ["-5", "80%"]] as const) {
+      localStorage.setItem(FONT_SIZE_STORAGE_KEY, stored);
+      run();
+      const boot = rootSize();
+      document.documentElement.style.fontSize = "";
+      applyFontSize(appearanceStorage.getFontSize());
+      expect(boot).toBe(expected);
+      expect(rootSize()).toBe(boot);
+      document.documentElement.style.fontSize = "";
     }
   });
 });

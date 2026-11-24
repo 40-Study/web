@@ -51,10 +51,11 @@ export function applyFontSize(percent: number): void {
 
 /**
  * Script chạy TRƯỚC hydrate (layout.tsx) để cỡ chữ đã lưu có hiệu lực ngay khung hình đầu, không nháy.
- * Cùng quy tắc kẹp với `applyFontSize`; giá trị hỏng thì bỏ qua.
+ * Cùng quy tắc với `getFontSize` + `applyFontSize` của ThemeProvider: đọc bằng `Number()`, giá trị
+ * hỏng/0 → mặc định (bỏ qua), giá trị ngoài thang bị kẹp vào [MIN, MAX], nên không bị nhảy sau hydrate.
  */
 export function fontSizeBootScript(): string {
-  return `var f=parseFloat(localStorage.getItem(${JSON.stringify(FONT_SIZE_STORAGE_KEY)}));if(f>=${FONT_SIZE_MIN}&&f<=${FONT_SIZE_MAX}&&f!==${FONT_SIZE_DEFAULT}){document.documentElement.style.fontSize=f+"%";}`;
+  return `var f=Number(localStorage.getItem(${JSON.stringify(FONT_SIZE_STORAGE_KEY)}));if(f){f=Math.min(${FONT_SIZE_MAX},Math.max(${FONT_SIZE_MIN},f));if(f!==${FONT_SIZE_DEFAULT}){document.documentElement.style.fontSize=f+"%";}}`;
 }
 
 export const appearanceStorage = {
