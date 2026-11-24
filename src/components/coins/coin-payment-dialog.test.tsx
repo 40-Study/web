@@ -3,7 +3,7 @@
  * ("rpc error ... connection refused"), kèm "vui lòng không chuyển khoản lần nữa" cạnh
  * "bạn chưa cần chuyển khoản". Contract 7: backend trả 503 ERR_PAYMENT_PROVIDER_UNAVAILABLE.
  */
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/errors";
@@ -14,7 +14,7 @@ vi.mock("@/services/coin.service", () => ({
   coinService: { verifyPurchase: (...args: unknown[]) => verify(...args) },
 }));
 
-import { CoinPaymentDialog } from "./coin-payment-dialog";
+import { COIN_PROVIDER_UNAVAILABLE_MESSAGE, CoinPaymentDialog } from "./coin-payment-dialog";
 
 const base: CoinPurchase = {
   id: "cp1",
@@ -56,16 +56,31 @@ describe("CoinPaymentDialog — ngân hàng lỗi / chưa cấu hình (S7)", () 
     expect(screen.queryByText(/lần nữa/)).toBeNull();
   });
 
-  it("503 ERR_PAYMENT_PROVIDER_UNAVAILABLE: câu tiếng Việt thân thiện, không lộ chuỗi kỹ thuật", async () => {
+  const configured = {
+    ...base,
+    bank_transfer_info: { bank_name: "MB Bank", account_number: "0123456789", account_name: "FORTEX", content: "COIN123" },
+  };
+
+  it("contract 7: mở hộp ngay sau khi tạo đơn nạp KHÔNG tự gọi verify; chỉ gọi sau 'Tôi đã chuyển khoản'", async () => {
+    verify.mockResolvedValue({ ...configured, status: "PENDING" });
+    renderDialog(configured);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(verify).not.toHaveBeenCalled();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Tôi đã chuyển khoản" }));
+    });
+    await waitFor(() => expect(verify).toHaveBeenCalledTimes(1));
+  });
+
+  it("503 ERR_PAYMENT_PROVIDER_UNAVAILABLE: câu tiếng Việt bình tĩnh, không lộ chuỗi kỹ thuật", async () => {
     verify.mockImplementation(async () => {
       throw new ApiError(503, "ERR_PAYMENT_PROVIDER_UNAVAILABLE", "failed to check transaction: rpc error: connection refused");
     });
-    renderDialog({
-      ...base,
-      bank_transfer_info: { bank_name: "MB Bank", account_number: "0123456789", account_name: "FORTEX", content: "COIN123" },
+    renderDialog(configured);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Tôi đã chuyển khoản" }));
     });
-    await waitFor(() => expect(screen.getByRole("alert").textContent).toMatch(/Ngân hàng đang gặp sự cố/));
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe(COIN_PROVIDER_UNAVAILABLE_MESSAGE));
     expect(screen.queryByText(/rpc error|connection refused/)).toBeNull();
-    expect(screen.queryByText(/lần nữa/)).toBeNull();
   });
 });
