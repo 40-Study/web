@@ -216,22 +216,28 @@ export function BankTransferDialog({
           </div>
         ) : (
           <div className="space-y-5 px-6 pb-6">
-            <p className="text-sm text-muted-foreground">
-              Chuyển đúng số tiền và nội dung bên dưới từ ứng dụng ngân hàng của bạn. Khoá học hoặc
-              xu sẽ được cập nhật sau khi giao dịch được xác nhận.
-            </p>
+            {bankConfigured && (
+              <p className="text-sm text-muted-foreground">
+                Chuyển đúng số tiền và nội dung bên dưới từ ứng dụng ngân hàng của bạn. Khoá học hoặc
+                xu sẽ được cập nhật sau khi giao dịch được xác nhận.
+              </p>
+            )}
 
             <div className="rounded-lg bg-slate-50 px-4 py-5 text-center">
               <p className="text-xs text-muted-foreground">Số tiền cần chuyển</p>
               <p className="text-2xl font-bold text-slate-900">{formatCurrency(amount)}</p>
             </div>
 
-            <div className="space-y-2">
-              {bankName && <CopyRow label="Ngân hàng" value={bankName} />}
-              {accountNumber && <CopyRow label="Số tài khoản" value={accountNumber} />}
-              {accountName && <CopyRow label="Chủ tài khoản" value={accountName} />}
-              <CopyRow label="Nội dung chuyển khoản (bắt buộc)" value={paymentContent} />
-            </div>
+            {/* Chưa có tài khoản nhận tiền thì không hiện số tài khoản / nội dung / đồng hồ / "đang chờ":
+                học viên chưa thể chuyển khoản, chỉ có cảnh báo (QA4 S8). */}
+            {bankConfigured && (
+              <div className="space-y-2">
+                <CopyRow label="Ngân hàng" value={bankName as string} />
+                <CopyRow label="Số tài khoản" value={accountNumber as string} />
+                {accountName && <CopyRow label="Chủ tài khoản" value={accountName} />}
+                <CopyRow label="Nội dung chuyển khoản (bắt buộc)" value={paymentContent} />
+              </div>
+            )}
 
             {!bankConfigured && (
               <p className="text-xs text-amber-600">
@@ -248,7 +254,7 @@ export function BankTransferDialog({
                 {errorMessage}
               </p>
             )}
-            {isFinalChecking ? (
+            {!bankConfigured ? null : isFinalChecking ? (
               <p className="text-center text-xs text-amber-600">
                 Đã hết thời gian chuyển khoản. Hệ thống đang kiểm tra lần cuối các giao dịch đã
                 nhận, vui lòng không chuyển khoản lại.
@@ -261,10 +267,12 @@ export function BankTransferDialog({
               )
             )}
 
-            <div className="flex items-center justify-center gap-2 rounded-lg border border-dashed py-3 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Đang chờ xác nhận giao dịch...
-            </div>
+            {bankConfigured && (
+              <div className="flex items-center justify-center gap-2 rounded-lg border border-dashed py-3 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Đang chờ xác nhận giao dịch...
+              </div>
+            )}
 
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>

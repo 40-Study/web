@@ -17,6 +17,8 @@ interface AppShellLayoutProps {
 export function AppShellLayout({ children }: AppShellLayoutProps) {
   const pathname = usePathname();
   const contestFocus = /^\/contests\/[^/]+\/(play|result)$/.test(pathname);
+  // Đang làm bài quiz: thanh tab dưới đè lên "Câu trước / Tiếp theo" ở mobile (QA4 S18). Trang kết quả giữ thanh tab.
+  const hideBottomNav = contestFocus || /^\/quizzes\/[^/]+$/.test(pathname);
   const { isCollapsed } = useSidebarStore();
   const isExpanded = !isCollapsed; // sidebar.store.ts dùng chung 1 API isCollapsed (mục 14)
   const { activeRole, isAuthenticated } = useAuthStore();
@@ -52,17 +54,13 @@ export function AppShellLayout({ children }: AppShellLayoutProps) {
             id="main-content"
             className={cn(
               "flex-1",
-              !contestFocus && "pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-0"
+              !hideBottomNav && "pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-0"
             )}
           >
             {children}
           </main>
-          {!contestFocus && (
-            <>
-              <Footer />
-              <BottomNav role={bottomNavRole} />
-            </>
-          )}
+          {!contestFocus && <Footer />}
+          {!hideBottomNav && <BottomNav role={bottomNavRole} />}
         </div>
       </div>
     </div>

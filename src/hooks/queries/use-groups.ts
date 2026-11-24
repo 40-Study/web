@@ -106,12 +106,24 @@ export function useUpdateGroup() {
   });
 }
 
+/** Khớp các khoá query của một nhóm (chi tiết, thành viên mọi trang, yêu cầu) theo tiền tố khoá. */
+function deletedGroupKeyMatcher(id: string, slug: string) {
+  const prefixes = [groupKeys.detail(slug), groupKeys.members(id), groupKeys.requests(id)];
+  return (key: readonly unknown[]) =>
+    prefixes.some((prefix) => prefix.every((part, i) => key[i] === part));
+}
+
 export function useDeleteGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => groupService.delete(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: groupKeys.all });
+    mutationFn: ({ id }: { id: string; slug: string }) => groupService.delete(id),
+    onSuccess: (_data, { id, slug }) => {
+      // KHÔNG làm mới query của chính nhóm vừa xoá: trang chi tiết còn gắn query đó tới khi điều hướng xong,
+      // làm mới thì gọi lại GET /groups/:slug và nhận 404 (QA4 S17). Gỡ cache cũng không được: observer còn gắn
+      // sẽ tạo lại query và tải lại. Để nguyên, tự dọn khi trang rời đi (gcTime).
+      const isDeletedGroupKey = deletedGroupKeyMatcher(id, slug);
+      void qc.cancelQueries({ predicate: (q) => isDeletedGroupKey(q.queryKey) });
+      qc.invalidateQueries({ queryKey: groupKeys.all, predicate: (q) => !isDeletedGroupKey(q.queryKey) });
       // Backend đóng hội thoại của nhóm khi xoá nhóm (QA hồi quy A-03): làm mới danh sách tin nhắn để hội thoại
       // đó không còn hiện trong /messages.
       qc.invalidateQueries({ queryKey: conversationKeys.all });

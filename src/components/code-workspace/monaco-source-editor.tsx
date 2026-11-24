@@ -122,6 +122,9 @@ export function MonacoSourceEditor({
             insertSpaces: true,
             minimap: { enabled: false },
             scrollBeyondLastLine: false,
+            // Xuống dòng theo bề rộng khung: ở 390px dòng dài bị cuộn ngang, mất phần đầu dòng (QA4 S18).
+            wordWrap: "on",
+            wrappingIndent: "indent",
             padding: { top: 22, bottom: 20 },
             lineNumbersMinChars: 4,
             glyphMargin: false,

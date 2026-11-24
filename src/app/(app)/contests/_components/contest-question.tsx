@@ -6,6 +6,7 @@
  * hiện (có test kiểm).
  */
 import { cn } from "@/lib/utils";
+import { InlineCodeText } from "@/components/player/inline-code-text";
 import { formatContestScore } from "@/lib/contest/contest-format";
 import { toggleAnswer, type ContestAnswerDraft } from "@/lib/contest/contest-answers";
 import type { ContestAttemptQuestion } from "@/types/contest";
@@ -39,7 +40,10 @@ export function ContestQuestion({ index, question, draft, disabled, onChange }: 
         </p>
         <span className="text-xs text-gray-500">{formatContestScore(question.points)} điểm</span>
       </div>
-      <p className="whitespace-pre-line break-words text-gray-900">{question.question_text}</p>
+      {/* `mã inline` trong đề hiện thành <code>, không in nguyên dấu backtick (QA4 S11). */}
+      <p className="whitespace-pre-line break-words text-gray-900">
+        <InlineCodeText text={question.question_text} />
+      </p>
       {question.image_url && (
         // eslint-disable-next-line @next/next/no-img-element -- ảnh câu hỏi từ MinIO/URL tuỳ ý
         <img src={question.image_url} alt={`Hình minh hoạ câu ${index + 1}`} className="max-h-72 max-w-full rounded-lg" />
@@ -76,7 +80,9 @@ export function ContestQuestion({ index, question, draft, disabled, onChange }: 
                   onChange={() => onChange(toggleAnswer(question, draft, opt.id))}
                   className="mt-0.5 h-4 w-4 shrink-0 accent-primary-600"
                 />
-                <span className="min-w-0 break-words text-gray-800">{opt.answer_text}</span>
+                <span className="min-w-0 break-words text-gray-800">
+                  <InlineCodeText text={opt.answer_text} />
+                </span>
               </label>
             );
           })}

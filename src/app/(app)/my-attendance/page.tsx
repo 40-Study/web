@@ -6,6 +6,7 @@ import {
   summarizeAttendances,
 } from "@/components/attendance/attendance-stats";
 import { AttendanceStatusBadge } from "@/components/attendance/attendance-status-badge";
+import { MyAttendanceCardList } from "@/components/attendance/my-attendance-card-list";
 import { useAllMyAttendances, useMyAttendances } from "@/hooks/queries/use-sessions";
 import { formatVnDateThenTime } from "@/lib/vn-datetime";
 
@@ -57,7 +58,10 @@ export default function MyAttendancePage() {
             </p>
           )}
 
-          <div className="mt-5 overflow-x-auto rounded-lg border border-gray-200">
+          <div className="mt-5 md:hidden">
+            <MyAttendanceCardList attendances={attendances} />
+          </div>
+          <div className="mt-5 hidden overflow-x-auto rounded-lg border border-gray-200 md:block" data-testid="my-attendance-table">
             <table className="w-full min-w-[560px] text-sm">
               <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
                 <tr>

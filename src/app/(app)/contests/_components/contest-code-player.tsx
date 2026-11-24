@@ -242,7 +242,7 @@ export function ContestCodePlayer({
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div className="code-contest-title">
-          <small>FORTEX / CONTEST / LẬP TRÌNH</small>
+          <small>FORTEX / CUỘC THI / LẬP TRÌNH</small>
           <h1>{detail.title}</h1>
         </div>
         <div className="code-contest-score">

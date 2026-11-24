@@ -5,11 +5,11 @@
  * `start` (idempotent: tải lại trang nhận lại đúng attempt đang làm). Đồng hồ đếm tới
  * `deadline_at` theo giờ server; về 0 thì TỰ NỘP một lần (backend còn nhận thêm 30 giây ân hạn).
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useContestDetail, useStartContest } from "@/hooks/queries/use-contests";
 import { contestPath, resolveContestCta } from "@/lib/contest/contest-cta";
 import { contestErrorCode, contestErrorMessage } from "@/lib/contest/contest-errors";
@@ -61,18 +61,23 @@ function PlayGate({ detail }: { detail: ContestDetail }) {
     const message = detail.phase === "UPCOMING" ? "Cuộc thi chưa mở. Hãy quay lại khi đến giờ thi." : "Cuộc thi đã kết thúc.";
     return <PlayNotice title="Chưa thể làm bài" message={message} href={back} label="Về trang cuộc thi" />;
   }
-  return <PlayStarter detail={detail} />;
+  // Chưa bắt đầu: hỏi "Sẵn sàng?" trước, chỉ gọi start (đồng hồ chạy) khi thí sinh bấm (QA4 S11).
+  // Đang làm dở (tải lại trang) thì vào thẳng để tiếp tục.
+  return <PlayStarter detail={detail} needsReady={mine.attempt_status === "NOT_STARTED"} />;
 }
 
-function PlayStarter({ detail }: { detail: ContestDetail }) {
-  const start = useStartContest();
+function PlayStarter({ detail, needsReady }: { detail: ContestDetail; needsReady: boolean }) {
+  const start = useStartContest(detail.slug);
   const startedRef = useRef(false);
+  const [ready, setReady] = useState(!needsReady);
 
   useEffect(() => {
-    if (startedRef.current) return;
+    if (!ready || startedRef.current) return;
     startedRef.current = true;
     start.mutate(detail.id);
-  }, [detail.id, start]);
+  }, [ready, detail.id, start]);
+
+  if (!ready) return <PlayReady detail={detail} onStart={() => setReady(true)} />;
 
   if (start.error) {
     const code = contestErrorCode(start.error);
@@ -88,6 +93,25 @@ function PlayStarter({ detail }: { detail: ContestDetail }) {
   }
   if (!start.data) return <ContestLoading label="Đang chuẩn bị đề thi…" />;
   return <ContestPlayer detail={detail} session={start.data} />;
+}
+
+function PlayReady({ detail, onStart }: { detail: ContestDetail; onStart: () => void }) {
+  return (
+    <div className="mx-auto flex max-w-md flex-col items-center gap-3 px-4 py-12 text-center">
+      <h1 className="text-lg font-semibold text-gray-900">Sẵn sàng làm bài?</h1>
+      <p className="text-sm text-gray-600">
+        {detail.title} · {detail.question_count} câu · {detail.duration_minutes} phút. Đồng hồ bắt đầu chạy khi bạn bấm
+        &quot;Bắt đầu làm bài&quot;; hết giờ hệ thống tự nộp. Mỗi thí sinh chỉ nộp một lần.
+      </p>
+      <div className="flex flex-wrap justify-center gap-2">
+        <Link href={contestPath(detail.slug)} className={buttonVariants({ variant: "outline" })}>
+          <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden="true" />
+          Để sau
+        </Link>
+        <Button onClick={onStart}>Bắt đầu làm bài</Button>
+      </div>
+    </div>
+  );
 }
 
 function PlayNotice({ title, message, href, label }: { title: string; message: string; href: string; label: string }) {

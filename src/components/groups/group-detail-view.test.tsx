@@ -166,4 +166,15 @@ describe("GroupDetailView", () => {
     expect(screen.getByRole("button", { name: "Lưu thay đổi" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Xoá nhóm" })).toBeNull();
   });
+
+  // QA4 S18: ở 390px "Quản lý" rơi xuống dòng thứ hai. Một hàng cuộn ngang, không xuống dòng.
+  it("thanh tab một hàng cuộn ngang, không flex-wrap", async () => {
+    vi.spyOn(groupService, "getBySlug").mockResolvedValue(makeGroup());
+    renderWithQuery(<GroupDetailView slug="nhom-react" />);
+    const list = await screen.findByRole("tablist");
+    const classes = list.className.split(/\s+/);
+    expect(classes).not.toContain("flex-wrap");
+    expect(classes).toContain("overflow-x-auto");
+  });
 });
+

@@ -41,6 +41,9 @@ describe("MyOrderCard — đơn đang đối chiếu", () => {
 
     expect(screen.getByText("Đang đối chiếu")).toBeTruthy();
     expect(screen.getByText(/đang đối chiếu thanh toán của đơn này với ngân hàng/)).toBeTruthy();
+    // QA4 S13: việc giữ chỗ chỉ chặn các khoá trong đơn này, không chặn mọi đơn mới.
+    expect(screen.getByText(/mua lại\s+các khoá trong đơn/)).toBeTruthy();
+    expect(screen.queryByText(/hay tạo đơn mới/)).toBeNull();
     expect(screen.queryByRole("button", { name: "Huỷ đơn" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Tạo đơn mới" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Tiếp tục thanh toán" })).toBeNull();

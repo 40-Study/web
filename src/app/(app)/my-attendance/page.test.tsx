@@ -5,7 +5,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-const attendance = {
+const attendance: { note?: string; [k: string]: unknown } = {
   id: "a1",
   session_id: "s1",
   student_id: "u1",
@@ -24,7 +24,22 @@ import MyAttendancePage from "./page";
 describe("MyAttendancePage — định dạng ngày giờ", () => {
   it("hiện ngày trước, giờ sau", () => {
     render(<MyAttendancePage />);
-    expect(screen.getByText("07/10/2026 19:00")).toBeTruthy();
+    // Hiện ở cả bảng (≥ md) lẫn thẻ (< md).
+    expect(screen.getAllByText("07/10/2026 19:00")).toHaveLength(2);
     expect(screen.queryByText("19:00 07/10/2026")).toBeNull();
+  });
+});
+
+// QA4 S18: ở 390px bảng 4 cột cắt mất "Ghi chú". Dưới md dùng thẻ, bảng chỉ từ md.
+describe("MyAttendancePage — màn hẹp (S18)", () => {
+  it("có danh sách thẻ md:hidden và bảng hidden md:block, thẻ hiện ghi chú đầy đủ", () => {
+    attendance.note = "Xin nghỉ có giấy phép của giáo viên chủ nhiệm";
+    render(<MyAttendancePage />);
+    const cards = screen.getByTestId("my-attendance-cards");
+    expect(cards.parentElement?.className.split(/\s+/)).toContain("md:hidden");
+    const table = screen.getByTestId("my-attendance-table").className.split(/\s+/);
+    expect(table).toContain("hidden");
+    expect(table).toContain("md:block");
+    expect(cards.textContent).toContain("Ghi chú: Xin nghỉ có giấy phép của giáo viên chủ nhiệm");
   });
 });

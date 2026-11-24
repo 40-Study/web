@@ -21,6 +21,8 @@ interface LeaderboardCardProps {
   isCurrentUser?: boolean;
   /** Nhãn dưới số XP, theo kỳ đang xem ("XP tuần này", "XP tháng này", "XP tích luỹ"). */
   xpLabel?: string;
+  /** Số là XP tích luỹ (tab Toàn thời gian): không có dấu "+" như XP kiếm thêm trong kỳ (QA4 S10). */
+  cumulative?: boolean;
   className?: string;
 }
 
@@ -28,16 +30,12 @@ interface LeaderboardCardProps {
 export const DEFAULT_XP_LABEL = "XP tuần này";
 
 /**
- * Format number with K/M suffix for large values
+ * XP hiển thị như mọi nơi khác của trang ("1.850"), không rút gọn kiểu tiếng Anh "1.9K" (QA4 S10).
+ * Trong kỳ thì có "+" (XP kiếm thêm); tích luỹ thì không.
  */
-function formatNumber(num: number): string {
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + "M";
-  }
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1) + "K";
-  }
-  return num.toString();
+export function formatLeaderboardXP(points: number, cumulative = false): string {
+  const formatted = points.toLocaleString("vi-VN");
+  return cumulative ? formatted : `+${formatted}`;
 }
 
 /** Huy hiệu hạng 1-3: chữ số trong vòng tròn, màu phân biệt kèm số nên không chỉ dựa vào màu. */
@@ -56,6 +54,7 @@ export function LeaderboardCard({
   rank,
   isCurrentUser = false,
   xpLabel = DEFAULT_XP_LABEL,
+  cumulative = false,
   className,
 }: LeaderboardCardProps) {
   const TrendIcon = entry.trend > 0 ? ArrowUp : ArrowDown;
@@ -107,7 +106,7 @@ export function LeaderboardCard({
       {/* XP trong kỳ đang xem */}
       <div className="shrink-0 text-right">
         <p className="font-bold tabular-nums text-xp dark:text-xp-light">
-          +{formatNumber(entry.weeklyXP)}
+          {formatLeaderboardXP(entry.weeklyXP, cumulative)}
         </p>
         <p className="text-xs text-slate-600 dark:text-slate-400">{xpLabel}</p>
       </div>
@@ -137,6 +136,8 @@ interface LeaderboardListProps {
   currentUserEntry?: LeaderboardEntry & { rank: number };
   /** Nhãn XP theo kỳ, chuyển tiếp cho từng dòng. */
   xpLabel?: string;
+  /** Tab Toàn thời gian: số là XP tích luỹ, không có dấu "+". */
+  cumulative?: boolean;
   className?: string;
 }
 
@@ -149,6 +150,7 @@ export function LeaderboardList({
   currentUserId,
   currentUserEntry,
   xpLabel,
+  cumulative = false,
   className,
 }: LeaderboardListProps) {
   const isCurrentUserInTop = entries.some((e) => e.userId === currentUserId);
@@ -162,6 +164,7 @@ export function LeaderboardList({
           rank={idx + 1}
           isCurrentUser={entry.userId === currentUserId}
           xpLabel={xpLabel}
+          cumulative={cumulative}
         />
       ))}
 
@@ -176,6 +179,7 @@ export function LeaderboardList({
             rank={currentUserEntry.rank}
             isCurrentUser={true}
             xpLabel={xpLabel}
+            cumulative={cumulative}
             className="border-t-2 border-primary-200 dark:border-primary-800"
           />
         </>

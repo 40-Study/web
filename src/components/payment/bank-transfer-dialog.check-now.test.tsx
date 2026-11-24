@@ -46,3 +46,23 @@ describe("BankTransferDialog — nút 'Tôi đã chuyển khoản'", () => {
     expect(screen.queryByText(/Chưa cấu hình đầy đủ tài khoản nhận tiền/)).toBeNull();
   });
 });
+
+// QA4 S8: chưa có tài khoản nhận tiền mà vẫn hiện số TK để sao chép + "Đang chờ xác nhận..." quay vòng,
+// ngay cạnh "bạn chưa cần chuyển khoản".
+describe("BankTransferDialog — chưa cấu hình tài khoản nhận tiền (S8)", () => {
+  it("ẩn số tài khoản, nội dung chuyển khoản, đồng hồ và vòng chờ; chỉ còn cảnh báo", () => {
+    renderDialog({ bankName: "MB Bank", accountNumber: "", expiresAt: new Date(Date.now() + 600_000).toISOString() });
+    expect(screen.queryByText("FTX123")).toBeNull();
+    expect(screen.queryByText(/Đang chờ xác nhận giao dịch/)).toBeNull();
+    expect(screen.queryByText(/Hết hạn sau/)).toBeNull();
+    expect(screen.queryByRole("button", { name: /Sao chép/ })).toBeNull();
+    expect(screen.getByText(/bạn chưa cần chuyển khoản/)).toBeTruthy();
+  });
+
+  it("đủ tài khoản: vẫn hiện nội dung chuyển khoản và vòng chờ", () => {
+    renderDialog({ bankName: "MB Bank", accountNumber: "0123456789" });
+    expect(screen.getByText("FTX123")).toBeTruthy();
+    expect(screen.getByText(/Đang chờ xác nhận giao dịch/)).toBeTruthy();
+  });
+});
+

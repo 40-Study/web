@@ -17,4 +17,12 @@ describe("CurrentCourseHero", () => {
     render(<CurrentCourseHero course={course} />);
     expect(screen.getByText("4/10 bài học")).toBeTruthy();
   });
+
+  // QA4 S12: backend trả "55.56"; hero phải hiện 56% như /home.
+  it("làm tròn tiến độ thập phân", () => {
+    const course = { slug: "x", title: "Khoá X", progress: 55.56, completedLessons: 5, totalLessons: 9 } as EnrolledCourse;
+    render(<CurrentCourseHero course={course} />);
+    expect(screen.getByText("Tiến độ khoá học: 56%")).toBeTruthy();
+    expect(screen.queryByText(/55\.56/)).toBeNull();
+  });
 });

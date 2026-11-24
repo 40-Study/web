@@ -71,7 +71,8 @@ export function GroupDetailView({ slug }: { slug: string }) {
       <GroupHeader group={group} onLeft={() => router.push("/groups")} />
 
       <Tabs value={active} onValueChange={(v) => setTab(v as TabId)}>
-        <TabsList className="h-auto max-w-full flex-wrap justify-start">
+        {/* Một hàng cuộn ngang thay vì xuống dòng: ở 390px "Quản lý" rơi xuống dòng thứ hai (QA4 S18). */}
+        <TabsList className="h-auto max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="overview">Tổng quan</TabsTrigger>
           {showMembers && <TabsTrigger value="members">Thành viên</TabsTrigger>}
           {showChat && <TabsTrigger value="chat">Trò chuyện</TabsTrigger>}

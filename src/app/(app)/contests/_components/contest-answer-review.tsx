@@ -14,6 +14,7 @@
 import { CheckCircle, Lightbulb, MinusCircle, XCircle } from "lucide-react";
 import { formatContestScore } from "@/lib/contest/contest-format";
 import { cn } from "@/lib/utils";
+import { InlineCodeText } from "@/components/player/inline-code-text";
 import type { ContestReviewAnswer } from "@/types/contest";
 
 /** Lựa chọn không có trong `options` (dữ liệu lệch): nói thật thay vì in id. */
@@ -52,7 +53,7 @@ export function ContestAnswerReview({ answers }: { answers: ContestReviewAnswer[
             <p className="flex items-start gap-2 font-medium text-gray-900">
               <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", tone)} aria-hidden="true" />
               <span className="min-w-0 break-words">
-                Câu {i + 1}. {a.question_text}
+                Câu {i + 1}. <InlineCodeText text={a.question_text} />
               </span>
             </p>
             <p className="pl-6 text-xs text-gray-500">

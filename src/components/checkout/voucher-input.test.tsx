@@ -1,7 +1,8 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { VoucherInput } from "./voucher-input";
+import { createAppQueryClient } from "@/lib/query-client";
 import { CheckoutModal } from "./checkout-modal";
 import { voucherService, type Voucher } from "@/services/voucher.service";
 import { ApiError, NotFoundError } from "@/lib/errors";
@@ -24,8 +25,10 @@ const summer50k: Voucher = {
   is_active: true,
 };
 
+// Client có ĐÚNG mặc định của app: client trần bỏ qua `mutations.onError` mặc định nên không bắt được toast
+// trùng của S14 (review #124).
 function wrap(ui: React.ReactElement) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  const qc = createAppQueryClient();
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={qc}>{children}</QueryClientProvider>
   );
@@ -130,7 +133,8 @@ describe("VoucherInput — hiện lý do thật khi tra mã lỗi (F-02 smoke 3)
     fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
   }
 
-  it("409 VOUCHER_FIRST_ORDER_ONLY: hiện câu của backend, cả inline lẫn toast", async () => {
+  // QA4 S14: chỉ báo inline; toast cùng câu là báo lỗi hai lần.
+  it("409 VOUCHER_FIRST_ORDER_ONLY: hiện câu của backend inline, không toast trùng", async () => {
     vi.spyOn(voucherService, "getVoucherByCode").mockRejectedValue(
       new ApiError(409, "VOUCHER_FIRST_ORDER_ONLY", FIRST_ORDER_MESSAGE)
     );
@@ -138,7 +142,7 @@ describe("VoucherInput — hiện lý do thật khi tra mã lỗi (F-02 smoke 3)
     applyCodeOnly();
     expect(await screen.findByText(FIRST_ORDER_MESSAGE)).toBeTruthy();
     expect(screen.queryByText("Không tìm thấy voucher hoặc mã không hợp lệ")).toBeNull();
-    expect(toast.error).toHaveBeenCalledWith(FIRST_ORDER_MESSAGE);
+    expect(toast.error).not.toHaveBeenCalled();
   });
 
   it("409 mà message không phải tiếng Việt: dịch theo code, không in tiếng Anh", async () => {
@@ -155,7 +159,7 @@ describe("VoucherInput — hiện lý do thật khi tra mã lỗi (F-02 smoke 3)
     wrap(<VoucherInput courseIds={["c1"]} onApplied={vi.fn()} />);
     applyCodeOnly();
     expect(await screen.findByText("Không tìm thấy voucher hoặc mã không hợp lệ")).toBeTruthy();
-    expect(toast.error).toHaveBeenCalledWith("Không tìm thấy voucher hoặc mã không hợp lệ");
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });
 

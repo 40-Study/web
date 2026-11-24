@@ -49,3 +49,19 @@ describe("AchievementsPage — cấp và XP", () => {
     expect(text).toContain("9 ngày");
   });
 });
+// QA4 S6: ở 390px hàng hero cố định `flex items-center gap-8` + avatar 128px làm "HUY HIỆU" bị cắt và cột
+// Cấp/XP ra ngoài màn. jsdom không tính layout nên khoá hợp đồng lớp CSS: dọc dưới sm, ngang từ sm.
+describe("AchievementsPage — hero ở màn hẹp (S6)", () => {
+  it("xếp dọc dưới sm, cột cấp/XP rộng hết hàng ở mobile, thanh tiến độ không cố định w-64", () => {
+    render(<AchievementsPage />);
+    const row = screen.getByTestId("achievements-hero-row").className.split(/\s+/);
+    expect(row).toContain("flex-col");
+    expect(row).toContain("sm:flex-row");
+    const level = screen.getByTestId("achievements-hero-level").className.split(/\s+/);
+    expect(level).toContain("w-full");
+    expect(level).toContain("sm:w-auto");
+    const bar = screen.getByRole("progressbar").className.split(/\s+/);
+    expect(bar).not.toContain("w-64");
+    expect(bar).toContain("sm:w-64");
+  });
+});

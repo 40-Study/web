@@ -13,12 +13,13 @@ import {
   LEAGUES,
   getLeagueByXP,
   nextLeagueRequirement,
+  formatLeaderboardXP,
 } from "@/components/gamification";
 import type { LeaderboardEntry, LeagueType } from "@/components/gamification";
 import { cn } from "@/lib/utils";
 import { useLeaderboard, useMyClassBoards, useMyRank } from "@/hooks/queries/use-leaderboard";
 import type { LeaderboardEntryDTO, PeriodType } from "@/services/leaderboard.service";
-import { leaderboardEntryKey, leaderboardEntryName } from "@/lib/leaderboard-display";
+import { leaderboardEntryKey, leaderboardEntryName, secondsUntilWeeklyReset } from "@/lib/leaderboard-display";
 
 /**
  * Map period của backend sang lựa chọn hiển thị trên UI
@@ -55,7 +56,7 @@ function mapToUiEntry(dto: LeaderboardEntryDTO, index: number): LeaderboardEntry
 }
 
 /**
- * Định dạng thời gian còn lại tới lúc reset hàng tuần (nửa đêm Chủ nhật)
+ * Định dạng thời gian còn lại tới lúc reset hàng tuần (00:00 UTC thứ Hai, xem secondsUntilWeeklyReset)
  */
 function formatTimeRemaining(seconds: number): string {
   const days = Math.floor(seconds / 86400);
@@ -64,17 +65,6 @@ function formatTimeRemaining(seconds: number): string {
   if (days > 0) return `${days} ngày ${hours} giờ`;
   if (hours > 0) return `${hours} giờ ${minutes} phút`;
   return `${minutes} phút`;
-}
-
-/**
- * Compute seconds until next Sunday midnight (UTC)
- */
-function secondsUntilWeeklyReset(): number {
-  const now = new Date();
-  const nextSunday = new Date(now);
-  nextSunday.setUTCDate(now.getUTCDate() + (7 - now.getUTCDay()));
-  nextSunday.setUTCHours(0, 0, 0, 0);
-  return Math.max(0, Math.floor((nextSunday.getTime() - now.getTime()) / 1000));
 }
 
 export default function LeaderboardPage() {
@@ -290,7 +280,8 @@ export default function LeaderboardPage() {
               <div>
                 <p className="font-semibold text-gray-900 dark:text-white">Vị trí của bạn</p>
                 <p className="text-sm text-muted-foreground">
-                  +{myEntry.weeklyXP.toLocaleString("vi-VN")} XP trong kỳ này
+                  {/* Toàn thời gian là XP tích luỹ, không phải "trong kỳ này" (QA4 S10). */}
+                  {formatLeaderboardXP(myEntry.weeklyXP, periodType === "all_time")} {XP_LABEL_BY_PERIOD[periodType]}
                 </p>
               </div>
             </div>
@@ -326,6 +317,7 @@ export default function LeaderboardPage() {
           currentUserId={myUserId}
           currentUserEntry={myEntry ?? undefined}
           xpLabel={XP_LABEL_BY_PERIOD[periodType]}
+          cumulative={periodType === "all_time"}
         />
       </QueryState>
 

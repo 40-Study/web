@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { X, Mail, Users, Heart, Send, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Mail, Users, Heart, Send, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useInviteParent, useSentInvitations, invitationKeys } from "@/hooks/queries/use-invitation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -96,38 +97,24 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
     setErrorMessage("");
   };
 
-  if (!isOpen) return null;
-
+  // Dialog dùng chung (QA4 S15): role="dialog" + aria-modal, nhãn từ tiêu đề, bẫy focus, Esc để đóng và trả
+  // focus về nút đã mở. Trước đây là div thường nên trình đọc màn hình không biết đây là hộp thoại.
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
-
-      {/* Modal */}
-      <div className="relative w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h2 className="text-lg font-medium text-slate-900">Mời phụ huynh</h2>
-          <button
-            onClick={handleClose}
-            className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-          >
-            <X className="w-5 h-5 text-slate-500" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-6">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="max-w-md">
+        <DialogTitle className="mb-5 pr-8 text-lg font-medium">Mời phụ huynh</DialogTitle>
+        <div>
           {step === "form" && (
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email input */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label htmlFor="invite-parent-email" className="block text-sm font-medium text-slate-700 mb-2">
                   Email phụ huynh
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <Input
+                    id="invite-parent-email"
                     type="email"
                     placeholder="email@example.com"
                     value={email}
@@ -261,7 +248,7 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

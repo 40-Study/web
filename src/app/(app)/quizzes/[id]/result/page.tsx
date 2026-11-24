@@ -15,6 +15,7 @@ import { CheckCircle2, XCircle, Clock, Target, Loader2 } from "lucide-react";
 import { QuizAttemptReview } from "@/components/quiz";
 import { useQuiz, useQuizAttemptDetail, useQuizQuestions } from "@/hooks/queries/use-quiz";
 import { buildAnswerTextMap } from "@/lib/quiz-answer-text";
+import { summarizeAttempt } from "@/lib/quiz-attempt-summary";
 import { cn } from "@/lib/utils";
 
 function formatTime(seconds: number): string {
@@ -61,10 +62,8 @@ export default function QuizResultPage() {
   const { data: questions } = useQuizQuestions(quizId);
   const answerText = useMemo(() => buildAnswerTextMap(questions), [questions]);
 
-  const correctCount = useMemo(
-    () => attempt?.answers.filter((a) => a.is_correct === true).length ?? 0,
-    [attempt]
-  );
+  // Mẫu số là số câu của đề, không phải số câu đã trả lời (QA4 S1).
+  const summary = useMemo(() => summarizeAttempt(attempt?.answers ?? [], questions), [attempt, questions]);
 
   if (!attemptId) {
     return (
@@ -115,7 +114,7 @@ export default function QuizResultPage() {
           value={`${Math.round(percentage)}%`}
           tone={passed ? "pass" : "fail"}
         />
-        <StatCard icon={CheckCircle2} label="Câu đúng" value={`${correctCount}/${attempt.answers.length}`} />
+        <StatCard icon={CheckCircle2} label="Câu đúng" value={`${summary.correct}/${summary.total}`} />
         <StatCard icon={Clock} label="Thời gian" value={formatTime(attempt.time_spent_seconds ?? 0)} />
         <StatCard
           icon={Target}
@@ -135,7 +134,7 @@ export default function QuizResultPage() {
 
       <div>
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Chi tiết từng câu</h2>
-        <QuizAttemptReview answers={attempt.answers} answerText={answerText} />
+        <QuizAttemptReview answers={attempt.answers} answerText={answerText} questions={questions} />
       </div>
     </div>
   );

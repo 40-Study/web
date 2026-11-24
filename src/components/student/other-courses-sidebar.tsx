@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import type { EnrolledCourse } from "@/types/course";
+import { formatProgressPercent } from "@/lib/format-progress-percent";
 
 interface OtherCoursesSidebarProps {
   courses: EnrolledCourse[];
@@ -59,7 +60,7 @@ export function OtherCoursesSidebar({ courses, maxItems = 3 }: OtherCoursesSideb
               </p>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-xs text-gray-500 uppercase">Tiến độ</span>
-                <span className="text-xs font-medium text-gray-700">{course.progress}%</span>
+                <span className="text-xs font-medium text-gray-700">{formatProgressPercent(course.progress)}</span>
               </div>
             </div>
           </Link>

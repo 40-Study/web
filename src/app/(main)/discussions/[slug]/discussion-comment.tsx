@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { TiptapEditor } from "@/components/editor/tiptap-editor";
 import type { ForumComment } from "@/types/discussion";
 import { sanitizeHtml } from "@/lib/sanitize-html";
+import { DiscussionDeleteButton } from "./discussion-delete-button";
 
 interface DiscussionCommentProps {
   comment: ForumComment;
@@ -19,6 +20,10 @@ interface DiscussionCommentProps {
   isReplying?: boolean;
   /** Khách (chưa đăng nhập) không trả lời được (API 401) nên ẩn nút "Trả lời" (G-03). */
   canReply?: boolean;
+  /** Người đang xem; trùng `author_id` thì hiện nút "Xoá bình luận" (QA4 S5). */
+  currentUserId?: string;
+  onDelete?: (id: string) => Promise<unknown>;
+  isDeleting?: boolean;
 }
 
 function timeAgo(dateStr: string): string {
@@ -39,7 +44,11 @@ export function DiscussionComment({
   onReply,
   isReplying = false,
   canReply = true,
+  currentUserId,
+  onDelete,
+  isDeleting = false,
 }: DiscussionCommentProps) {
+  const isAuthor = !!currentUserId && currentUserId === comment.author_id;
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [replyContent, setReplyContent] = useState("");
   const hasVoted = comment.user_vote === "upvote";
@@ -100,6 +109,14 @@ export function DiscussionComment({
                 Trả lời
               </button>
             )}
+
+            {isAuthor && onDelete && (
+              <DiscussionDeleteButton
+                target="bình luận"
+                onConfirm={() => onDelete(comment.id)}
+                isPending={isDeleting}
+              />
+            )}
           </div>
 
           {/* Inline reply box */}
@@ -141,6 +158,9 @@ export function DiscussionComment({
           onReply={onReply}
           isReplying={isReplying}
           canReply={canReply}
+          currentUserId={currentUserId}
+          onDelete={onDelete}
+          isDeleting={isDeleting}
         />
       ))}
     </div>

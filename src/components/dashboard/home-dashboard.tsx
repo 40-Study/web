@@ -59,9 +59,10 @@ const ICONS: Record<HomeWidgetId, LucideIcon> = {
   recommended: Sparkles,
 };
 
-const SHORTCUTS = [
+// Sản phẩm không có AI: ô "Trợ lý AI" trỏ /ai-chat (redirect về /home) là ô chết (QA4 S3).
+export const SHORTCUTS = [
   { title: "Khoá học", description: "Không gian học của bạn", href: "/my-courses", icon: BookOpen },
-  { title: "Trợ lý AI", description: "Cùng giải đáp thắc mắc", href: "/ai-chat", icon: Sparkles },
+  { title: "Lịch học", description: "Buổi học sắp tới của bạn", href: "/schedule", icon: CalendarDays },
   { title: "Cuộc thi", description: "Thử sức và tiến bộ", href: "/contests", icon: Trophy },
   { title: "Chứng chỉ", description: "Ghi dấu thành tích", href: "/certificates", icon: Award },
 ];

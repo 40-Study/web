@@ -13,7 +13,7 @@ export {
 } from "./achievement-unlock-toast";
 
 // Leaderboard
-export { LeaderboardCard, LeaderboardList } from "./leaderboard-card";
+export { LeaderboardCard, LeaderboardList, formatLeaderboardXP } from "./leaderboard-card";
 export type { LeaderboardEntry } from "./leaderboard-card";
 
 // League

@@ -15,6 +15,7 @@
 
 import { CheckCircle, XCircle, MinusCircle, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { mergeAnswersWithQuestions, type QuestionLike } from "@/lib/quiz-attempt-summary";
 
 export interface QuizReviewAnswer {
   question_id: string;
@@ -30,6 +31,8 @@ interface QuizAttemptReviewProps {
   answers: QuizReviewAnswer[];
   /** id đáp án → chữ của đáp án; thiếu thì hiển thị nhãn trung tính. */
   answerText?: Map<string, string>;
+  /** Đề của bài: có thì câu bỏ trống (không có trong `answers`) vẫn được liệt kê (QA4 S1). */
+  questions?: ReadonlyArray<QuestionLike>;
   className?: string;
 }
 
@@ -40,7 +43,8 @@ function labelFor(id: string, answerText?: Map<string, string>): string {
   return answerText?.get(id) ?? UNKNOWN_ANSWER_LABEL;
 }
 
-export function QuizAttemptReview({ answers, answerText, className }: QuizAttemptReviewProps) {
+export function QuizAttemptReview({ answers: attemptAnswers, answerText, questions, className }: QuizAttemptReviewProps) {
+  const answers = mergeAnswersWithQuestions(attemptAnswers, questions);
   if (answers.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">Chưa có dữ liệu chi tiết cho lần làm này.</p>
@@ -73,7 +77,7 @@ export function QuizAttemptReview({ answers, answerText, className }: QuizAttemp
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {isSkipped
-                    ? "Bạn bỏ trống câu này."
+                    ? "Chưa trả lời."
                     : isCorrect
                       ? `Đúng — ${answer.points_earned} điểm.`
                       : `Chưa đúng — ${answer.points_earned} điểm.`}
