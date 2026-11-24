@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { parentDashboardService } from "@/services/parent-dashboard.service";
 
 export const parentDashboardKeys = {
@@ -58,6 +58,30 @@ export function useChildAttendance(childId: string, page = 1, pageSize = 20) {
     queryFn: () => parentDashboardService.getChildAttendance(childId, page, pageSize),
     enabled: !!childId,
   });
+}
+
+/**
+ * Q5-PG-01: tab Điểm danh cần "Xem thêm". Mỗi trang dùng CÙNG khoá với `useChildAttendance(childId, p, size)`,
+ * nên trang 1 dùng chung cache với tab Tổng quan và không bắn thêm request. `stats`/`total` lấy từ trang 1
+ * (backend tính trên toàn bộ bản ghi của con, không phải trang).
+ */
+export function useChildAttendancePages(childId: string, pageCount: number, pageSize = 20) {
+  const results = useQueries({
+    queries: Array.from({ length: pageCount }, (_, i) => ({
+      queryKey: [...parentDashboardKeys.attendance(childId), i + 1, pageSize],
+      queryFn: () => parentDashboardService.getChildAttendance(childId, i + 1, pageSize),
+      enabled: !!childId,
+    })),
+  });
+  const first = results[0]?.data;
+  return {
+    stats: first?.stats,
+    total: first?.total ?? 0,
+    records: results.flatMap((r) => r.data?.records ?? []),
+    isLoading: results[0]?.isLoading ?? false,
+    isFetchingMore: results.slice(1).some((r) => r.isFetching),
+    isError: results.some((r) => r.isError),
+  };
 }
 
 export function useChildAssignments(childId: string, page = 1, pageSize = 20) {

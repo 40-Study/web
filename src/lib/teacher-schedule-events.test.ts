@@ -240,3 +240,31 @@ describe("nhãn nguồn lớp (cá nhân / tổ chức)", () => {
     expect(session.map((e) => e.tag)).toEqual(["Trung tâm A"]);
   });
 });
+
+// Q5-PG-08: "Cá nhân" và "Bạn" không có nghĩa với phụ huynh xem lịch của con.
+describe("audience: family", () => {
+  it("không in 'Cá nhân'/'Bạn'; hiện tên giảng viên và tổ chức khi backend trả", () => {
+    const [plain] = timetableEntriesToEvents([entry({ session_id: "x1", date: "2026-10-06" })], { audience: "family" });
+    expect(plain.tag).toBeUndefined();
+    expect(plain.teacher).toBeUndefined();
+
+    const rich = entry({ session_id: "x2", date: "2026-10-06", organization_id: "o1", organization_name: "Trung tâm A", teacher_name: "Cô Lan" });
+    const [withNames] = timetableEntriesToEvents([rich], { audience: "family" });
+    expect(withNames.tag).toBe("Trung tâm A");
+    expect(withNames.teacher).toBe("Cô Lan");
+  });
+
+  it("áp cho cả lịch lặp và buổi trải theo khoảng ngày; giảng viên vẫn thấy 'Bạn'", () => {
+    const recurring = entry({ schedule_id: "s1", effective_from: "2026-10-01", teacher_name: "Cô Lan" });
+    const [weekly] = timetableEntriesToEvents([recurring], { audience: "family" });
+    expect(weekly.tag).toBeUndefined();
+    expect(weekly.teacher).toBe("Cô Lan");
+    const expanded = timetableEntriesToEvents([recurring], { audience: "family", range: { from: "2026-10-05", to: "2026-10-11" } });
+    expect(expanded.length).toBeGreaterThan(0);
+    expect(expanded.every((e) => e.tag === undefined && e.teacher === "Cô Lan")).toBe(true);
+
+    const [teacherView] = timetableEntriesToEvents([recurring]);
+    expect(teacherView.teacher).toBe("Bạn");
+    expect(teacherView.tag).toBe("Cá nhân");
+  });
+});

@@ -168,6 +168,9 @@ export interface TimetableEntry {
   room?: string;
   topic?: string;
   status: string;
+  organization_id?: string | null;
+  organization_name?: string | null;
+  teacher_name?: string | null;
 }
 
 export interface TimetableResponse {
