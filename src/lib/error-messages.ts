@@ -204,7 +204,7 @@ const EXACT_MESSAGES: Record<string, string> = {
   "organization role already inactive for this user": "Vai trò này đã được gỡ khỏi người dùng trước đó",
   "organization role assignment not found": "Không tìm thấy vai trò cần gỡ, có thể đã được gỡ trước đó",
   "organization with this name already exists": "Tên tổ chức đã tồn tại",
-  "tag with this name already exists": "Tên thẻ đã tồn tại",
+  "tag with this name already exists": "Tên tag đã tồn tại",
   "voucher code already exists": "Mã voucher đã tồn tại",
   "voucher name already exists": "Tên voucher đã tồn tại",
   "file type not allowed": "Định dạng tệp không được hỗ trợ",
