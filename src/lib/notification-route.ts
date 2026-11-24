@@ -27,9 +27,13 @@ export function getNotificationHref(n: NotificationTarget, role?: string | null)
     return n.reference_id ? `/teacher/courses/${n.reference_id}` : null;
   }
   // Q4-T12: thông báo của giảng viên ("Có học viên mới ghi danh", "Khoá học của bạn có đánh giá mới", "Doanh thu ...")
-  // là loại chung (course_update + reference_type "course", payment_success) nên đích tuỳ vai đang dùng.
+  // là loại chung (course_update + reference_type "course", payment_success) nên đích tuỳ vai đang dùng. Chỉ các
+  // loại phía giảng viên: thông báo KHÔNG lọc theo vai, nên người nhiều vai đang dùng vai giảng viên vẫn nhận thông
+  // báo học viên (new_lesson, quiz_reminder, certificate_earned...) cũng mang reference_type "course" của khoá họ HỌC.
   if (role === "TEACHER") {
-    if (n.reference_type === "course" && n.reference_id) return `/teacher/courses/${n.reference_id}`;
+    if (n.notification_type === "course_update" && n.reference_type === "course" && n.reference_id) {
+      return `/teacher/courses/${n.reference_id}`;
+    }
     if (n.notification_type === "payment_success") return "/teacher/wallet";
   }
   switch (n.notification_type) {

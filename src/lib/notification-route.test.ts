@@ -69,6 +69,14 @@ describe("getNotificationHref — thông báo của giảng viên (Q4-T12)", () 
     expect(getNotificationHref({ notification_type: "payment_success" }, "TEACHER")).toBe("/teacher/wallet");
   });
 
+  it("người nhiều vai đang dùng vai giảng viên: thông báo phía học viên KHÔNG dẫn về trang khoá của giảng viên", () => {
+    for (const type of ["new_lesson", "quiz_reminder", "certificate_earned", "promotion"]) {
+      expect(getNotificationHref({ notification_type: type, reference_type: "course", reference_id: "c9" }, "TEACHER")).not.toBe(
+        "/teacher/courses/c9",
+      );
+    }
+  });
+
   it("vai khác giữ cách cũ", () => {
     expect(getNotificationHref({ notification_type: "payment_success" }, "STUDENT")).toBeNull();
     expect(getNotificationHref({ notification_type: "course_update", reference_type: "course", reference_id: "c1" })).toBeNull();
