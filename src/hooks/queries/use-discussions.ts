@@ -116,3 +116,23 @@ export function useRemoveVoteDiscussion() {
     },
   });
 }
+
+/**
+ * Tác giả xoá bài viết hoặc bình luận của mình (QA4 S5). Backend dùng chung `DELETE /discussions/:id`
+ * cho cả bài gốc lẫn trả lời (chỉ chủ sở hữu, đếm lại reply_count). Xoá bài gốc thì gỡ cache chi tiết
+ * trước khi rời trang để không refetch một bài đã mất (404).
+ */
+export function useDeleteDiscussion(slug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id }: { id: string; isRootPost: boolean }) => discussionService.deletePost(id),
+    onSuccess: (_data, { isRootPost }) => {
+      if (isRootPost) {
+        queryClient.removeQueries({ queryKey: discussionKeys.detail(slug) });
+      } else {
+        queryClient.invalidateQueries({ queryKey: discussionKeys.detail(slug) });
+      }
+      queryClient.invalidateQueries({ queryKey: discussionKeys.all });
+    },
+  });
+}

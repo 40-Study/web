@@ -5,6 +5,8 @@
  */
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { ArrowLeft, Heart, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -12,7 +14,10 @@ import {
   useAddDiscussionComment,
   useVoteDiscussion,
   useRemoveVoteDiscussion,
+  useDeleteDiscussion,
 } from "@/hooks/queries/use-discussions";
+import { getErrorMessage } from "@/lib/error-messages";
+import { DiscussionDeleteButton } from "./discussion-delete-button";
 import { TiptapEditor } from "@/components/editor/tiptap-editor";
 import { DiscussionComment } from "./discussion-comment";
 import { useState } from "react";
@@ -55,6 +60,9 @@ export default function DiscussionDetailPage({ params }: PageProps) {
   const addComment = useAddDiscussionComment(slug);
   const votePost = useVoteDiscussion();
   const removeVote = useRemoveVoteDiscussion();
+  const deleteDiscussion = useDeleteDiscussion(slug);
+  const router = useRouter();
+  const currentUserId = useAuthStore((s) => s.user?.id);
 
   const [commentContent, setCommentContent] = useState("");
   // Khách không bình luận được (API 401): thay ô soạn bằng lời mời đăng nhập (G-03, QA3 261104).
@@ -91,6 +99,23 @@ export default function DiscussionDetailPage({ params }: PageProps) {
   const handleReply = (parentId: string, content: string) => {
     addComment.mutate({ content, parent_id: parentId });
   };
+
+  // Tác giả xoá bài / bình luận của mình (QA4 S5). Lỗi: báo toast và ném lại để hộp xác nhận vẫn mở.
+  const handleDelete = async (id: string, isRootPost: boolean) => {
+    try {
+      await deleteDiscussion.mutateAsync({ id, isRootPost });
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Không xoá được, vui lòng thử lại"));
+      throw error;
+    }
+    if (isRootPost) {
+      toast.success("Đã xoá bài viết");
+      router.replace("/discussions");
+    } else {
+      toast.success("Đã xoá bình luận");
+    }
+  };
+  const isPostAuthor = !!currentUserId && currentUserId === post?.author_id;
 
   if (isLoading) {
     return (
@@ -172,6 +197,14 @@ export default function DiscussionDetailPage({ params }: PageProps) {
             <MessageSquare className="w-4 h-4" />
             <span>{post.reply_count} bình luận</span>
           </div>
+          {isPostAuthor && (
+            <DiscussionDeleteButton
+              target="bài viết"
+              className="ml-auto text-sm"
+              onConfirm={() => handleDelete(post.id, true)}
+              isPending={deleteDiscussion.isPending}
+            />
+          )}
         </div>
       </div>
 
@@ -213,6 +246,9 @@ export default function DiscussionDetailPage({ params }: PageProps) {
               onReply={handleReply}
               canReply={sessionStatus === "authenticated"}
               isReplying={addComment.isPending}
+              currentUserId={currentUserId}
+              onDelete={(id) => handleDelete(id, false)}
+              isDeleting={deleteDiscussion.isPending}
             />
           ))}
         </div>

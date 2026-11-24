@@ -28,6 +28,7 @@ vi.mock("@/hooks/queries/use-discussions", () => ({
   useAddDiscussionComment: () => ({ mutate: vi.fn(), isPending: false }),
   useVoteDiscussion: () => ({ mutate: vi.fn() }),
   useRemoveVoteDiscussion: () => ({ mutate: vi.fn() }),
+  useDeleteDiscussion: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 vi.mock("@/components/editor/tiptap-editor", () => ({
   TiptapEditor: () => <div data-testid="comment-editor" />,
