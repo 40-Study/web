@@ -70,6 +70,7 @@ vi.mock("@/hooks/queries/use-lesson-content", () => ({
 }));
 vi.mock("@/hooks/use-hls", () => ({ useHlsInfo: () => ({ data: undefined, isLoading: false, error: null }) }));
 
+let mockAttemptDetail: Record<string, unknown> | undefined;
 const mockUseQuiz = vi.fn();
 const mockStartQuiz = vi.fn();
 const mockSubmitQuiz = vi.fn();
@@ -81,9 +82,8 @@ vi.mock("@/hooks/queries/use-quiz", () => ({
   useStartQuiz: () => ({ mutateAsync: mockStartQuiz, isPending: false }),
   useSubmitQuiz: (courseId?: string) => {mockSubmitCourse(courseId);return { mutateAsync: mockSubmitQuiz, isPending: false }},
   useSaveQuizAnswer: () => ({ mutate: vi.fn() }),
-  useQuizAttemptDetail: () => ({ data: undefined, isLoading: false, isError: false }),
+  useQuizAttemptDetail: () => ({ data: mockAttemptDetail, isLoading: false, isError: false }),
 }));
-vi.mock("@/components/quiz", () => ({ QuizAttemptReview: () => null }));
 vi.mock("@/services/enrollment.service", () => ({ enrollmentService: { updateProgress: vi.fn() } }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -139,6 +139,7 @@ describe("/learn/[courseSlug]/[lessonId] — bài viết và trắc nghiệm", (
     mockExerciseID = "";
     mockContents = [];
     mockLessonQuizzes = [];
+    mockAttemptDetail = undefined;
     mockUseQuiz.mockReset().mockReturnValue({ data: undefined, isError: false });
     mockStartQuiz.mockReset();
     mockSubmitQuiz.mockReset();
@@ -304,5 +305,39 @@ describe("/learn/[courseSlug]/[lessonId] — bài viết và trắc nghiệm", (
 
     await waitFor(() => expect(mockSubmitQuiz).toHaveBeenCalledTimes(1));
     expect(invalidate).not.toHaveBeenCalled();
+  });
+
+  // QA6 C10 (review #131): `answers_hidden` phải đi từ trang bài học tới màn xem lại; bỏ prop ở trang thì test này đỏ.
+  it("C10: nộp xong mà giảng viên ẩn đáp án -> thông báo ẩn, không dấu đúng/sai, không 'Đáp án đúng'", async () => {
+    mockContents = [{ id: "c2", type: "quiz", title: "Kiểm tra", display_order: 0, quiz_id: "q-b" }];
+    mockUseQuiz.mockReturnValue({ data: { id: "q-b", title: "Kiểm tra", max_attempts: 3 }, isError: false });
+    mockStartQuiz.mockResolvedValue({ attempt_id: "att-1", quiz_id: "q-b", title: "Kiểm tra", questions: [] });
+    mockSubmitQuiz.mockResolvedValue({ id: "att-1", quiz_id: "q-b", is_passed: false });
+    mockAttemptDetail = {
+      id: "att-1",
+      percentage: 50,
+      is_passed: false,
+      answers_hidden: true,
+      answers: [
+        {
+          question_id: "qq",
+          question_text: "1 + 1 = ?",
+          selected_answer_ids: ["aa"],
+          correct_answer_ids: null,
+          explanation: null,
+          is_correct: true,
+          points_earned: 1,
+        },
+      ],
+    };
+    const { container } = renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Bắt đầu làm bài" }));
+    fireEvent.click(await screen.findByRole("button", { name: "nộp-quiz" }));
+
+    expect(await screen.findByText("Giảng viên đã ẩn đáp án của bài này")).toBeTruthy();
+    expect(screen.queryByText("Đáp án đúng:")).toBeNull();
+    expect(container.textContent).not.toMatch(/Đúng —|Chưa đúng —/);
+    expect(container.querySelector(".text-emerald-600, .text-rose-600")).toBeNull();
   });
 });

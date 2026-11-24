@@ -140,6 +140,13 @@ describe("QuizAttemptReview — giảng viên ẩn đáp án (C10)", () => {
     expect(screen.getByText("Chưa trả lời.")).toBeTruthy();
   });
 
+  it("không hiện điểm từng câu (1 điểm / 0 điểm cũng là dấu đúng/sai)", () => {
+    const { container } = render(<QuizAttemptReview answers={hidden} answerText={text} answersHidden />);
+    expect(container.textContent).not.toMatch(/điểm/);
+    // Câu bỏ trống vẫn nói rõ chưa trả lời; đó là việc có chọn hay chưa, không phải đúng/sai.
+    expect(screen.getAllByText("Chưa trả lời.")).toHaveLength(1);
+  });
+
   it("không có cờ answersHidden thì vẫn hiện đúng/sai như trước", () => {
     const { container } = render(<QuizAttemptReview answers={hidden} answerText={text} />);
     expect(screen.queryByText("Giảng viên đã ẩn đáp án của bài này")).toBeNull();

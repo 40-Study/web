@@ -32,7 +32,7 @@ interface QuizAttemptReviewProps {
   /**
    * Hợp đồng C10: giảng viên tắt "hiện đáp án" (`show_correct_answers=false`) thì backend trả
    * `answers_hidden: true`, `correct_answer_ids`/`explanation` = null. Khi đó không hiện dấu đúng/sai,
-   * đáp án đúng hay giải thích, chỉ hiện việc có chọn hay chưa.
+   * điểm từng câu, đáp án đúng hay giải thích, chỉ hiện việc có chọn hay chưa.
    */
   answersHidden?: boolean;
   /** id đáp án → chữ của đáp án; thiếu thì hiển thị nhãn trung tính. */
@@ -107,15 +107,16 @@ export function QuizAttemptReview({
                     <span className="text-muted-foreground">Câu {index + 1}. </span>
                     {answer.question_text}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {isSkipped
-                      ? "Chưa trả lời."
-                      : answersHidden
-                        ? `${answer.points_earned} điểm.`
+                  {/* Ẩn đáp án thì điểm từng câu cũng ẩn: "1 điểm" / "0 điểm" chính là dấu đúng/sai (C10). */}
+                  {(isSkipped || !answersHidden) && (
+                    <p className="text-xs text-muted-foreground">
+                      {isSkipped
+                        ? "Chưa trả lời."
                         : isCorrect
                           ? `Đúng — ${answer.points_earned} điểm.`
                           : `Chưa đúng — ${answer.points_earned} điểm.`}
-                  </p>
+                    </p>
+                  )}
                 </div>
               </div>
 

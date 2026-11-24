@@ -9,6 +9,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams("attempt=att-1"),
 }));
 vi.mock("next/link", () => ({ default: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }));
+let mockAnswersHidden = false;
 vi.mock("@/hooks/queries/use-quiz", () => ({
   useQuiz: () => ({ data: { title: "Đề thử", pass_percentage: 50 } }),
   useQuizAttemptDetail: () => ({
@@ -17,6 +18,7 @@ vi.mock("@/hooks/queries/use-quiz", () => ({
     data: {
       percentage: 0,
       is_passed: false,
+      answers_hidden: mockAnswersHidden,
       time_spent_seconds: 5,
       answers: [
         {
@@ -50,5 +52,20 @@ describe("QuizResultPage — chữ đáp án (QA3 Q4)", () => {
     expect(screen.getByText("Huế")).toBeTruthy();
     expect(screen.getByText("Hà Nội")).toBeTruthy();
     expect(container.textContent).not.toMatch(/c1000000/);
+  });
+
+  // QA6 C10 (review #131): `answers_hidden` phải đi từ trang tới màn xem lại; bỏ prop ở trang thì test này đỏ.
+  it("answers_hidden: màn xem lại hiện thông báo ẩn, không có dấu đúng/sai, điểm từng câu hay phụ đề 'phần chưa đúng'", () => {
+    mockAnswersHidden = true;
+    try {
+      const { container } = render(<QuizResultPage />);
+      expect(screen.getByText("Giảng viên đã ẩn đáp án của bài này")).toBeTruthy();
+      expect(screen.queryByText("Đáp án đúng:")).toBeNull();
+      expect(container.textContent).not.toMatch(/Chưa đúng —|Đúng —|xem lại phần chưa đúng/);
+      expect(container.querySelector("ol .text-emerald-600, ol .text-rose-600")).toBeNull();
+      expect(screen.getByText(/Bạn chưa đạt bài kiểm tra này\.$/)).toBeTruthy();
+    } finally {
+      mockAnswersHidden = false;
+    }
   });
 });
