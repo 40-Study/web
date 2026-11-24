@@ -47,3 +47,14 @@ export function MessageBubble({ message, isOwn }: { message: Message; isOwn: boo
     </div>
   );
 }
+
+/** Vạch ngăn ngày giữa các nhóm tin (nhãn từ `dayDividerLabels`). */
+export function MessageDayDivider({ label }: { label: string }) {
+  return (
+    <div role="separator" aria-label={label} className="my-3 flex items-center gap-3 text-xs text-muted-foreground">
+      <span className="h-px flex-1 bg-border" aria-hidden="true" />
+      <span className="shrink-0 rounded-full bg-muted px-2.5 py-0.5">{label}</span>
+      <span className="h-px flex-1 bg-border" aria-hidden="true" />
+    </div>
+  );
+}

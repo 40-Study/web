@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Send, WifiOff } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,8 @@ import { useConversationSocket } from "@/hooks/use-conversation-socket";
 import type { Conversation } from "@/services/conversation.service";
 import { useMarkConversationRead } from "@/app/(app)/messages/use-mark-conversation-read";
 import { readDraft, writeDraft } from "@/lib/chat-draft";
-import { MessageBubble } from "./message-bubble";
+import { MessageBubble, MessageDayDivider } from "./message-bubble";
+import { dayDividerLabels } from "@/lib/message-day-divider";
 import {
   prependMessage,
   removeMessage,
@@ -213,9 +214,16 @@ function ConversationChatInner({ conversationId, currentUserId, className, isDir
                 Chưa có tin nhắn nào. Hãy gửi lời chào đầu tiên.
               </p>
             )}
-            {[...messages].reverse().map((msg) => (
-              <MessageBubble key={msg.id} message={msg} isOwn={msg.sender_id === currentUserId} />
-            ))}
+            {(() => {
+              const ordered = [...messages].reverse();
+              const dividers = dayDividerLabels(ordered.map((m) => m.created_at));
+              return ordered.map((msg, i) => (
+                <Fragment key={msg.id}>
+                  {dividers[i] && <MessageDayDivider label={dividers[i]} />}
+                  <MessageBubble message={msg} isOwn={msg.sender_id === currentUserId} />
+                </Fragment>
+              ));
+            })()}
           </>
         )}
         <div ref={messagesEndRef} />

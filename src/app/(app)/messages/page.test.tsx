@@ -32,6 +32,30 @@ vi.mock("@/hooks/queries/use-conversations", () => ({
             { user_id: "u2", user_name: "Cô Lan", is_online: false },
           ],
         },
+        {
+          id: "c2",
+          type: "GROUP",
+          name: "Nhóm QA",
+          unread_count: 0,
+          last_message: null,
+          last_message_at: null,
+          participants: [
+            { user_id: "u1", user_name: "Tôi" },
+            { user_id: "u3", user_name: "Bạn Nam", is_online: true },
+          ],
+        },
+        {
+          id: "c3",
+          type: "DIRECT",
+          name: null,
+          unread_count: 0,
+          last_message: null,
+          last_message_at: null,
+          participants: [
+            { user_id: "u1", user_name: "Tôi" },
+            { user_id: "u4", user_name: "Cô Hoa", is_online: true },
+          ],
+        },
       ],
     },
     isLoading: false,
@@ -152,5 +176,12 @@ describe("Trang Tin nhắn — deep-link và chiều cao", () => {
     expect(cls).toContain("h-[calc(100dvh-250px)]");
     expect(cls).toContain("lg:h-[calc(100dvh-200px)]");
     expect(cls).not.toMatch(/\bmd:h-/);
+  });
+
+  it("S5-13: chấm trực tuyến chỉ có ở hội thoại 1-1, không có ở nhóm dù một thành viên đang online", () => {
+    render(<MessagesPage />);
+    const row = (name: string) => screen.getByText(name).closest("button") as HTMLElement;
+    expect(row("Cô Hoa").querySelector(".bg-green-500")).not.toBeNull();
+    expect(row("Nhóm QA").querySelector(".bg-green-500")).toBeNull();
   });
 });

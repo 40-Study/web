@@ -640,4 +640,20 @@ describe("ConversationChat — chặn/bỏ chặn realtime (conversation_blocked
     expect(screen.queryByRole("alert")).toBeNull();
     expect(input().disabled).toBe(false);
   });
+
+  it("Q5-T05: vạch ngăn ngày khi tin sang ngày khác, mỗi ngày một vạch", async () => {
+    const at = (iso: string) => ({ created_at: iso });
+    vi.spyOn(conversationService, "getMessages").mockResolvedValue({
+      messages: [
+        { ...msg("m3", "tin hôm nay"), ...at(new Date().toISOString()) },
+        { ...msg("m2", "tin cũ thứ hai"), ...at("2026-10-08T11:00:00") },
+        { ...msg("m1", "tin cũ đầu"), ...at("2026-10-08T09:00:00") },
+      ],
+      total_count: 3,
+    });
+    renderWithQuery(<ConversationChat conversationId="c1" currentUserId="me" />);
+    await screen.findByText("tin hôm nay");
+    const separators = screen.getAllByRole("separator").map((el) => el.getAttribute("aria-label"));
+    expect(separators).toEqual(["08/10/2026", "Hôm nay"]);
+  });
 });
