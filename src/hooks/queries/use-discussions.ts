@@ -119,20 +119,30 @@ export function useRemoveVoteDiscussion() {
 
 /**
  * Tác giả xoá bài viết hoặc bình luận của mình (QA4 S5). Backend dùng chung `DELETE /discussions/:id`
- * cho cả bài gốc lẫn trả lời (chỉ chủ sở hữu, đếm lại reply_count). Xoá bài gốc thì gỡ cache chi tiết
- * trước khi rời trang để không refetch một bài đã mất (404).
+ * cho cả bài gốc lẫn trả lời (chỉ chủ sở hữu, đếm lại reply_count).
+ *
+ * Xoá BÀI GỐC: KHÔNG làm mới và KHÔNG gỡ query chi tiết. Trang còn gắn query đó tới khi điều hướng xong;
+ * làm mới thì GET lại bài đã xoá (404), gỡ cache thì observer tạo lại query và cũng GET lại (cùng lớp lỗi
+ * với S17, use-groups.ts). Chỉ huỷ request đang bay và làm mới các danh sách. Xoá BÌNH LUẬN thì làm mới
+ * chi tiết bài để bình luận biến mất.
+ *
+ * `onError` rỗng: trang tự toast lỗi xoá; thiếu nó thì toast mặc định của app hiện thêm cái thứ hai.
  */
 export function useDeleteDiscussion(slug: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id }: { id: string; isRootPost: boolean }) => discussionService.deletePost(id),
     onSuccess: (_data, { isRootPost }) => {
+      const detailKey = discussionKeys.detail(slug);
       if (isRootPost) {
-        queryClient.removeQueries({ queryKey: discussionKeys.detail(slug) });
+        void queryClient.cancelQueries({ queryKey: detailKey, exact: true });
       } else {
-        queryClient.invalidateQueries({ queryKey: discussionKeys.detail(slug) });
+        queryClient.invalidateQueries({ queryKey: detailKey, exact: true });
       }
+      // discussionKeys.all = ["discussions"] (danh sách, tổng theo danh mục); khoá chi tiết là ["discussion", slug]
+      // nên không nằm trong tiền tố này.
       queryClient.invalidateQueries({ queryKey: discussionKeys.all });
     },
+    onError: () => undefined,
   });
 }
