@@ -20,7 +20,8 @@ function settledCount(by_status: Record<string, number>): number {
  */
 export function successRateValue(report: SuccessRateInput): string {
   if (settledCount(report.by_status) === 0) return "—";
-  return `${report.success_rate.toFixed(1)}%`;
+  // QA7-A07: dấu phẩy thập phân kiểu vi-VN ("23,1%"), cùng cách các màn khác ("Giảm 1,5đ").
+  return `${report.success_rate.toLocaleString("vi-VN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
 }
 
 export function successRateHint(report: {
