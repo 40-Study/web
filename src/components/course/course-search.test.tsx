@@ -48,6 +48,25 @@ describe("CourseSearch — đồng bộ với URL", () => {
     expect(input().value).toBe("");
   });
 
+  // Q6 #133 R2: mở /courses?q=toan, chọn hết, gõ "h": < 2 ký tự báo rỗng, trang cha bỏ `?q=`; ô không được tự xoá "h".
+  it("gõ 1 ký tự thay từ khoá: URL bỏ `q` do chính ô báo ra thì KHÔNG xoá ký tự đang gõ", () => {
+    const onSearch = vi.fn();
+    currentParams = new URLSearchParams("q=toan");
+    const { rerender } = render(<CourseSearch onSearch={onSearch} />);
+    fireEvent.change(input(), { target: { value: "h" } });
+    act(() => void vi.advanceTimersByTime(300));
+    expect(onSearch).toHaveBeenLastCalledWith("");
+
+    currentParams = new URLSearchParams(); // trang cha đã bỏ q
+    rerender(<CourseSearch onSearch={onSearch} />);
+    expect(input().value).toBe("h");
+
+    // Back/Forward tới một q khác vẫn cập nhật ô như cũ.
+    currentParams = new URLSearchParams("q=python");
+    rerender(<CourseSearch onSearch={onSearch} />);
+    expect(input().value).toBe("python");
+  });
+
   it("URL đổi thì báo trang cha từ khoá mới (sau 300ms) để danh sách lọc theo", () => {
     const onSearch = vi.fn();
     currentParams = new URLSearchParams("q=react");

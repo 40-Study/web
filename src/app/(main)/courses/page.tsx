@@ -15,6 +15,9 @@ import { applyCourseFiltersToParams, courseFilterKey, parseCourseFilterParams } 
 /** Số card hiển thị mỗi lượt. Dữ liệu đã tải đủ một lần, "Tải thêm" chỉ mở rộng phần hiển thị. */
 const PAGE_SIZE = 12;
 
+/** Quá thời gian này mà URL chưa báo lại thì coi một lần ghi bộ lọc là không bao giờ hạ cánh (xem sổ `writtenKeysRef`). */
+const WRITTEN_KEY_TTL_MS = 3000;
+
 export default function CoursesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -40,15 +43,26 @@ export default function CoursesPage() {
   // Khoá bộ lọc mà CHÍNH trang này vừa ghi lên URL (theo thứ tự ghi) và chưa thấy URL báo lại. Mỗi lần router.replace
   // hoàn tất là một lần `urlFilterKey` đổi; khi kéo thanh giá nhanh, URL cũ có thể báo về SAU state mới. Không có sổ
   // này, effect bên dưới coi nó là điều hướng ngoài và kéo bộ lọc (kể cả thanh trượt) giật về giá trị cũ (Q6-PG-11, M4).
-  const writtenKeysRef = useRef<string[]>([]);
+  const writtenKeysRef = useRef<{ key: string; at: number }[]>([]);
+  // Q6 #133 R3: đã ghi một lần bỏ `?q=` nhưng `searchParams` (đọc ở lần render trước) có thể còn `q` cũ. Chọn chip lúc đó mà
+  // copy `searchParams` sẽ đưa `q` đã xoá trở lại URL. Cờ này nhớ "q đã bị bỏ" tới khi URL báo lại hoặc `q` đổi từ ngoài.
+  const queryDroppedRef = useRef(false);
+  const urlQuery = searchParams.get("q");
+  useEffect(() => {
+    queryDroppedRef.current = false;
+  }, [urlQuery]);
 
   // Bấm Danh mục khác ở header (push một mục lịch sử mới), hoặc Back/Forward giữa các mục đó (cùng component, không
   // remount) → đồng bộ lại bộ lọc theo URL. Ghi bộ lọc ở đây dùng replace nên KHÔNG tạo mục lịch sử. Chỉ chạy khi phần
   // bộ lọc trên URL đổi, nên gõ từ khoá không ghi đè bộ lọc đang chọn.
   const urlFilterKey = courseFilterKey(parseCourseFilterParams(searchParams));
   useEffect(() => {
+    // Q6 #133 R3: một lần ghi mà URL không bao giờ báo lại (ghi rồi ghi ngược về khoá cũ trong một nhịp router) không được nằm
+    // trong sổ mãi và nuốt một điều hướng ngoài về đúng khoá đó về sau: bỏ các mục quá hạn trước khi đối chiếu.
+    const now = Date.now();
+    writtenKeysRef.current = writtenKeysRef.current.filter((entry) => now - entry.at < WRITTEN_KEY_TTL_MS);
     const written = writtenKeysRef.current;
-    const landed = written.indexOf(urlFilterKey);
+    const landed = written.findIndex((entry) => entry.key === urlFilterKey);
     if (landed >= 0) {
       // URL do chính trang ghi (có thể là bản cũ): bỏ qua, và bỏ luôn các lần ghi cũ hơn đã bị gộp/vượt qua.
       written.splice(0, landed + 1);
@@ -62,10 +76,11 @@ export default function CoursesPage() {
   /** Ghi bộ lọc lên URL (replace), giữ nguyên `q` trừ khi `dropQuery`. Ghi nhớ khoá đã ghi cho effect đồng bộ. */
   const writeFiltersToUrl = (next: CourseFilters, dropQuery: boolean) => {
     const base = new URLSearchParams(searchParams.toString());
-    if (dropQuery) base.delete("q");
+    if (dropQuery) queryDroppedRef.current = true;
+    if (queryDroppedRef.current) base.delete("q");
     const key = courseFilterKey(next);
     const written = writtenKeysRef.current;
-    if (key !== urlFilterKey && written[written.length - 1] !== key) written.push(key);
+    if (key !== urlFilterKey && written[written.length - 1]?.key !== key) written.push({ key, at: Date.now() });
     const params = applyCourseFiltersToParams(base, next).toString();
     router.replace(params ? `/courses?${params}` : "/courses", { scroll: false });
   };

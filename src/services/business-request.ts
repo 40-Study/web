@@ -13,15 +13,13 @@
 import type { AxiosRequestConfig } from "axios";
 import { api } from "@/lib/api-client";
 import { ApiError, RateLimitError } from "@/lib/errors";
+import { extractErrorMessage, type ErrorResponseBody } from "@/lib/extract-error-message";
 
 const BUSINESS_ERROR_STATUSES = new Set([400, 403, 404, 409, 429]);
 
-interface ErrorBody {
-  message?: string;
-  code?: string;
+interface ErrorBody extends ErrorResponseBody {
   /** Dữ liệu đi kèm lỗi, vd. `InviteMembersResult` của 403 GROUP_INVITE_NOT_ALLOWED (contract §2). */
   data?: unknown;
-  retry_after?: number;
 }
 
 type Envelope<T> = { message: string; data: T };
@@ -72,7 +70,9 @@ async function sendKeepingBusinessErrors(config: AxiosRequestConfig): Promise<un
     throw new BusinessApiError(
       res.status,
       body?.code ?? "UNKNOWN",
-      body?.message ?? "",
+      // Q6 #133 R1: cùng quy tắc với interceptor (`error` > `errors[0].message` > `message`), không chỉ `message`: enroll 400
+      // trả `{message:"Failed to enroll", error:"already enrolled in this course"}`. Mọi status ở đây là 4xx nên an toàn hiển thị.
+      extractErrorMessage(body, ""),
       body?.data,
       retryAfter,
       body && typeof body === "object" ? (body as Record<string, unknown>) : undefined
