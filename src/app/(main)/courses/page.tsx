@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CourseGrid } from "@/components/course/course-grid";
 import { CourseFiltersComponent } from "@/components/course/course-filters";
 import { CourseSearch } from "@/components/course/course-search";
@@ -10,18 +10,19 @@ import { Button } from "@/components/ui/button";
 import { useCourses, useCategories, useSearchSuggestions } from "@/hooks/use-courses";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { CourseFilters } from "@/types/course";
+import { applyCourseFiltersToParams, courseFilterKey, parseCourseFilterParams } from "@/lib/course-filter-query";
 
 /** Số card hiển thị mỗi lượt. Dữ liệu đã tải đủ một lần, "Tải thêm" chỉ mở rộng phần hiển thị. */
 const PAGE_SIZE = 12;
 
 export default function CoursesPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   // Pill Danh mục trên header điều hướng tới /courses?category=<slug> — đọc sẵn để pill tương ứng
   // được chọn từ đầu. Chỉ nhận slug có thật trong danh mục; slug lạ bỏ qua im lặng (không kẹt filter).
-  const initialCategory = searchParams.get("category") || undefined;
-
-  const [filters, setFilters] = useState<CourseFilters>({ category: initialCategory });
+  // Q6-PG-11: cả bộ lọc (danh mục, cấp độ, giá, sắp xếp) nằm trên URL để tải lại / chia sẻ link không mất.
+  const [filters, setFilters] = useState<CourseFilters>(() => parseCourseFilterParams(searchParams));
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   // Debounce 300ms: `useSearchSuggestions` gọi API gợi ý theo từng ký tự.
@@ -36,12 +37,45 @@ export default function CoursesPage() {
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: suggestions = [] } = useSearchSuggestions(debouncedSearchQuery);
 
-  // Đã ở /courses mà bấm Danh mục khác (cùng component, không remount) → đồng bộ lại filter theo URL.
-  const categoryParam = searchParams.get("category") || undefined;
+  // Khoá bộ lọc mà CHÍNH trang này vừa ghi lên URL (theo thứ tự ghi) và chưa thấy URL báo lại. Mỗi lần router.replace
+  // hoàn tất là một lần `urlFilterKey` đổi; khi kéo thanh giá nhanh, URL cũ có thể báo về SAU state mới. Không có sổ
+  // này, effect bên dưới coi nó là điều hướng ngoài và kéo bộ lọc (kể cả thanh trượt) giật về giá trị cũ (Q6-PG-11, M4).
+  const writtenKeysRef = useRef<string[]>([]);
+
+  // Bấm Danh mục khác ở header (push một mục lịch sử mới), hoặc Back/Forward giữa các mục đó (cùng component, không
+  // remount) → đồng bộ lại bộ lọc theo URL. Ghi bộ lọc ở đây dùng replace nên KHÔNG tạo mục lịch sử. Chỉ chạy khi phần
+  // bộ lọc trên URL đổi, nên gõ từ khoá không ghi đè bộ lọc đang chọn.
+  const urlFilterKey = courseFilterKey(parseCourseFilterParams(searchParams));
   useEffect(() => {
-    setFilters((f) => (f.category === categoryParam ? f : { ...f, category: categoryParam }));
+    const written = writtenKeysRef.current;
+    const landed = written.indexOf(urlFilterKey);
+    if (landed >= 0) {
+      // URL do chính trang ghi (có thể là bản cũ): bỏ qua, và bỏ luôn các lần ghi cũ hơn đã bị gộp/vượt qua.
+      written.splice(0, landed + 1);
+      return;
+    }
+    written.length = 0;
+    setFilters((f) => (courseFilterKey(f) === urlFilterKey ? f : parseCourseFilterParams(new URLSearchParams(urlFilterKey))));
     setVisibleCount(PAGE_SIZE);
-  }, [categoryParam]);
+  }, [urlFilterKey]);
+
+  /** Ghi bộ lọc lên URL (replace), giữ nguyên `q` trừ khi `dropQuery`. Ghi nhớ khoá đã ghi cho effect đồng bộ. */
+  const writeFiltersToUrl = (next: CourseFilters, dropQuery: boolean) => {
+    const base = new URLSearchParams(searchParams.toString());
+    if (dropQuery) base.delete("q");
+    const key = courseFilterKey(next);
+    const written = writtenKeysRef.current;
+    if (key !== urlFilterKey && written[written.length - 1] !== key) written.push(key);
+    const params = applyCourseFiltersToParams(base, next).toString();
+    router.replace(params ? `/courses?${params}` : "/courses", { scroll: false });
+  };
+
+  /** Đổi bộ lọc: cập nhật state NGAY (không đợi router) rồi ghi lên URL, giữ nguyên `q`. */
+  const commitFilters = (next: CourseFilters, { dropQuery = false } = {}) => {
+    setFilters(next);
+    setVisibleCount(PAGE_SIZE);
+    writeFiltersToUrl(next, dropQuery);
+  };
 
   // Slug lạ từ URL (vd. dữ liệu test rác) bị bỏ qua để không kẹt filter 0 kết quả âm thầm —
   // chỉ clear MỘT LẦN khi danh mục đã tải xong và slug vẫn không khớp.
@@ -67,20 +101,19 @@ export default function CoursesPage() {
       filters.priceMax !== undefined
   );
 
-  const handleFilterChange = (newFilters: CourseFilters) => {
-    setFilters(newFilters);
-    setVisibleCount(PAGE_SIZE);
-  };
+  const handleFilterChange = (newFilters: CourseFilters) => commitFilters(newFilters);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setVisibleCount(PAGE_SIZE);
+    // Xoá ô tìm kiếm thì bỏ luôn `?q=` cũ, nếu không chọn chip rồi tải lại sẽ hiện lại từ khoá đã xoá (Q6-PG-11, L3).
+    // Ghi theo state `filters` (không theo `searchParams` có thể cũ hơn) để không đè lên một lần đổi bộ lọc chưa hạ cánh.
+    if (!query && searchParams.has("q")) writeFiltersToUrl(filters, true);
   };
 
   const clearAll = () => {
-    setFilters({ sortBy: filters.sortBy });
     setSearchQuery("");
-    setVisibleCount(PAGE_SIZE);
+    commitFilters({ sortBy: filters.sortBy }, { dropQuery: true });
   };
 
   return (

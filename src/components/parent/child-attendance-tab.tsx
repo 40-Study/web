@@ -55,14 +55,15 @@ export function ChildAttendanceTab({ childId }: { childId: string }) {
           {records.map((record) => {
             const checkIn = formatCheckInTime(record.check_in_time);
             return (
-              <li key={record.id} className="flex items-center justify-between p-3 rounded-lg border">
-                <div>
+              <li key={record.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border">
+                <div className="min-w-0">
                   <p className="font-medium">{record.class_name}</p>
                   <p className="text-sm text-gray-500">
                     Buổi {record.session_number} - {new Date(record.date).toLocaleDateString("vi-VN")}
                   </p>
                 </div>
-                <div className="text-right">
+                {/* Q6-PG-09: cột phải không co/không bẻ dòng ("Vào lúc 08:30", "Trễ 12 phút" ở 390px); tên lớp bên trái là phần xuống dòng. */}
+                <div className="shrink-0 whitespace-nowrap text-right" data-testid="attendance-status-block">
                   <ChildAttendanceStatus
                     status={record.status}
                     lateMinutes={record.late_minutes}

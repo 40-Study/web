@@ -1,7 +1,7 @@
 .school-calendar { color: #1f2937; background: #fff; border: 1px solid #e5e7eb; border-radius: 18px; overflow: hidden; }
 .calendar-toolbar { display: flex; gap: 12px; align-items: center; min-height: 76px; padding: 16px 20px; border-bottom: 1px solid #edf0f4; }
 .calendar-heading { display: flex; align-items: center; gap: 9px; margin-right: 8px; }
-.calendar-heading h1 { font-size: 18px; font-weight: 600; white-space: nowrap; }
+.calendar-heading :is(h1, h2) { font-size: 18px; font-weight: 600; white-space: nowrap; }
 .calendar-icon { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; flex-shrink: 0; }
 .calendar-icon:hover { background: #f1f5f9; }
 .calendar-today, .calendar-view { border: 1px solid #e1e5eb; border-radius: 8px; padding: 8px 12px; font-size: 12px; background: white; white-space: nowrap; }

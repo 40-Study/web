@@ -52,6 +52,8 @@ describe("ChildDetailPage — id học sinh không thuộc phụ huynh", () => {
     renderWithProviders(<ChildDetailPage />);
 
     expect(await screen.findByText("Không tìm thấy thông tin học sinh")).toBeTruthy();
+    // Q6-PG-08: trang không tìm thấy từng không có h1 nào.
+    expect(screen.getByRole("heading", { level: 1, name: "Không tìm thấy thông tin học sinh" })).toBeTruthy();
     expect(svc.getChildOverview).toHaveBeenCalledTimes(1);
     for (const name of OTHER_QUERIES) expect(svc[name], name).not.toHaveBeenCalled();
   });
@@ -71,5 +73,8 @@ describe("ChildDetailPage — id học sinh không thuộc phụ huynh", () => {
     svc.getChildTimetable.mockResolvedValue({ entries: [] });
     fireEvent.click(screen.getByRole("tab", { name: "Lịch học" }));
     await waitFor(() => expect(svc.getChildTimetable).toHaveBeenCalledTimes(1));
+    // Q6-PG-08: tên con là h1 duy nhất; tiêu đề "Lịch học" của lịch là h2.
+    await screen.findByRole("heading", { level: 2, name: "Lịch học" });
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   });
 });

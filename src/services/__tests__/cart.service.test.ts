@@ -3,9 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const get = vi.fn();
 const post = vi.fn();
 const del = vi.fn();
+const request = vi.fn();
 
 vi.mock("@/lib/api-client", () => ({
-  api: { get: (...a: unknown[]) => get(...a), post: (...a: unknown[]) => post(...a), delete: (...a: unknown[]) => del(...a) },
+  api: {
+    get: (...a: unknown[]) => get(...a),
+    post: (...a: unknown[]) => post(...a),
+    delete: (...a: unknown[]) => del(...a),
+    request: (...a: unknown[]) => request(...a),
+  },
 }));
 
 import { cartService } from "../cart.service";
@@ -16,6 +22,7 @@ describe("cartService — không dùng gạch chéo cuối để tránh 308", ()
   beforeEach(() => {
     get.mockResolvedValue({ data: { data: {} } });
     post.mockResolvedValue({ data: { data: {} } });
+    request.mockResolvedValue({ status: 200, data: { data: {} }, headers: {} });
     del.mockResolvedValue({ data: {} });
   });
 
@@ -24,7 +31,8 @@ describe("cartService — không dùng gạch chéo cuối để tránh 308", ()
     await cartService.addToCart("c1");
     await cartService.removeFromCart(["c1"]);
     expect(get).toHaveBeenCalledWith("/cart");
-    expect(post).toHaveBeenCalledWith("/cart", { course_id: "c1" });
+    // addToCart đi qua businessRequest (giữ `code` của 403 ERR_PARENT_CANNOT_PURCHASE) nên là api.request.
+    expect(request).toHaveBeenCalledWith(expect.objectContaining({ method: "POST", url: "/cart", data: { course_id: "c1" } }));
     expect(del).toHaveBeenCalledWith("/cart", { data: { course_ids: ["c1"] } });
   });
 });

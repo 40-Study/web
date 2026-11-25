@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { X, ArrowLeft, Mail, UserCheck, FileText, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { validateEmail } from "@/lib/email-validation";
@@ -25,6 +26,8 @@ import { MailIcon } from "@/components/icons";
 import type { RoleType } from "@/components/auth/role-card";
 import {
     authErrorMessage,
+    isRegistrationExpiredError,
+    REGISTRATION_EXPIRED_MESSAGE,
     translateOtpErrorMessage,
     useLogin,
     useRegisterRequest,
@@ -35,6 +38,7 @@ import { authService, getDeviceInfo } from "@/services/auth.service";
 import type { UnifiedRole, SystemRoleOption } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { AUTH_ROUTES, getRoleHomeRoute, normalizeRole } from "@/lib/routes";
+import { ApiError } from "@/lib/errors";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -327,6 +331,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                         <RegisterOtpView
                             email={registerEmail}
                             onSuccess={() => setView("register-success")}
+                            onExpired={() => setView("register-form")}
                         />
                     )}
                     {view === "register-success" && (
@@ -688,6 +693,14 @@ function RegisterFormView({
     const [error, setError] = useState("");
     const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({});
 
+    // Đăng ký chờ hết hạn (RegisterOtpView nhận 410): điền sẵn email một lần, như trang /register/form.
+    useEffect(() => {
+        const prefill = sessionStorage.getItem(STORAGE_KEYS.REGISTER_PREFILL_EMAIL);
+        if (!prefill) return;
+        sessionStorage.removeItem(STORAGE_KEYS.REGISTER_PREFILL_EMAIL);
+        setFormData((prev) => ({ ...prev, email: prefill }));
+    }, []);
+
     const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData((prev) => ({ ...prev, [field]: e.target.value }));
         setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -715,7 +728,8 @@ function RegisterFormView({
             sessionStorage.setItem(STORAGE_KEYS.REGISTER_EMAIL, formData.email);
             onNext(formData.email);
         } catch (err) {
-            console.error("Failed to request OTP:", err);
+            // Lỗi từ backend (email trùng, 429...) đã hiện trên form; chỉ log lỗi bất ngờ (Q6-PG-19).
+            if (!(err instanceof ApiError)) console.error("Failed to request OTP:", err);
             // Lý do thật (email trùng, rate-limit...) như trang /register/form; toast mặc định đã tắt ở hook (G-08).
             setError(authErrorMessage(err, "Đăng ký thất bại. Vui lòng thử lại."));
         }
@@ -810,7 +824,15 @@ function RegisterFormView({
 
 // ─── REGISTER OTP VIEW ──────────────────────────────────────────────────────
 
-function RegisterOtpView({ email, onSuccess }: { email: string; onSuccess: () => void }) {
+function RegisterOtpView({
+    email,
+    onSuccess,
+    onExpired,
+}: {
+    email: string;
+    onSuccess: () => void;
+    onExpired: () => void;
+}) {
     const register = useRegister();
     const [errorMessage, setErrorMessage] = useState("");
     // Đổi key để remount OtpInput, xoá 6 ô cũ sau khi OTP sai (như trang /otp).
@@ -826,6 +848,14 @@ function RegisterOtpView({ email, onSuccess }: { email: string; onSuccess: () =>
             sessionStorage.removeItem(STORAGE_KEYS.REGISTER_EMAIL);
             onSuccess();
         } catch (error) {
+            // Q6-PG-02: đăng ký đang chờ đã hết hạn (410): quay lại form với email điền sẵn, như trang /otp.
+            if (isRegistrationExpiredError(error)) {
+                sessionStorage.removeItem(STORAGE_KEYS.REGISTER_EMAIL);
+                sessionStorage.setItem(STORAGE_KEYS.REGISTER_PREFILL_EMAIL, storedEmail);
+                toast.error(REGISTRATION_EXPIRED_MESSAGE);
+                onExpired();
+                return;
+            }
             // Hiện lỗi cụ thể ngay dưới ô OTP; toast mặc định đã tắt ở useRegister (G-08).
             setErrorMessage(
                 translateOtpErrorMessage(

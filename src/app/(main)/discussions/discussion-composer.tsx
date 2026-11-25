@@ -8,13 +8,7 @@ import { useState } from "react";
 import { Send } from "lucide-react";
 import { TiptapEditor } from "@/components/editor/tiptap-editor";
 import { cn } from "@/lib/utils";
-
-const CATEGORIES = [
-  { value: "programming", label: "Lập trình" },
-  { value: "design", label: "Thiết kế" },
-  { value: "learning-tips", label: "Mẹo học" },
-  { value: "project", label: "Dự án" },
-];
+import { DISCUSSION_CATEGORIES } from "./discussion-categories";
 
 interface DiscussionComposerProps {
   onSubmit: (data: { title: string; content: string; category: string }) => void;
@@ -59,7 +53,7 @@ export function DiscussionComposer({ onSubmit, isSubmitting }: DiscussionCompose
 
           {/* Category selector */}
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((cat) => (
+            {DISCUSSION_CATEGORIES.map((cat) => (
               <button
                 key={cat.value}
                 onClick={() => setCategory(cat.value)}

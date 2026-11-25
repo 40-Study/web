@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuthStore, type UnifiedRole } from "@/stores/auth.store";
 import { ApplyTeacherButton } from "@/components/teacher-application/apply-teacher-button";
-import { isIncorrectCurrentPasswordError } from "@/hooks/queries/use-auth";
+import { isIncorrectCurrentPasswordError, useMyRoles } from "@/hooks/queries/use-auth";
+import { isSelectableRole } from "@/lib/role-resolution";
 import { getErrorMessage } from "@/lib/error-messages";
 import { validateNewPassword } from "@/lib/password-policy";
 import { PasswordChecklist } from "@/components/auth/password-checklist";
@@ -42,6 +43,9 @@ const deleteAccountSchema = z.object({
 
 type ChangePasswordData = z.infer<typeof changePasswordSchema>;
 type DeleteAccountData = z.infer<typeof deleteAccountSchema>;
+
+/** Một tên cho tính năng đổi vai: dùng ở menu avatar (header) và Cài đặt (Q6-T10). */
+const SWITCH_ROLE_LABEL = "Chuyển vai trò";
 
 // ─── Role Helpers ──────────────────────────────────────────────────────────
 
@@ -97,6 +101,10 @@ export function AccountSettings({
 
   // Get roles from store
   const { roles, activeRole, activeUnifiedRole, activeOrg, user: sessionUser } = useAuthStore();
+  // L1: cùng nguồn đếm với menu avatar ở header (header.tsx): chỉ vai web có khu vực thật (`isSelectableRole`), nên
+  // một vai Phụ huynh + một vai tuỳ biến của tổ chức không hiện hàng "Chuyển vai trò" ở đây mà ẩn ở header.
+  const { data: myRolesData } = useMyRoles();
+  const switchableRoleCount = (myRolesData?.roles ?? roles ?? []).filter(isSelectableRole).length;
   // QA-C-09: trang Cài đặt không truyền name/avatar nên header hộp thoại từng ghi "Người dùng"; lấy từ phiên.
   const displayName = user.name?.trim() || sessionUser?.name?.trim() || "";
   const displayAvatar = user.avatar || sessionUser?.avatar;
@@ -151,31 +159,34 @@ export function AccountSettings({
         <p className="text-sm text-gray-500 mt-1">Quản lý thông tin đăng nhập và bảo mật</p>
       </div>
 
-      {/* Switch Account */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-2.5 bg-indigo-50 rounded-xl"><Users className="h-5 w-5 text-indigo-500" /></div>
-            <div>
-              <p className="font-medium text-gray-900">Chuyển tài khoản</p>
-              <p className="text-sm text-gray-500">
-                {activeUnifiedRole ? (
-                  <>
-                    Đang dùng: <span className={getRoleConfig(activeRole || "", isOrgRole(activeUnifiedRole)).color}>{getRoleConfig(activeRole || "", isOrgRole(activeUnifiedRole)).label}</span>
-                    {activeOrg && <span className="text-gray-400"> • {activeOrg.name}</span>}
-                  </>
-                ) : (
-                  `${roles.length} vai trò khả dụng`
-                )}
-              </p>
+      {/* Switch Account. Q6-PG-16: chỉ một vai thì hộp thoại chỉ có đúng vai đang dùng, không có gì để chuyển. */}
+      {switchableRoleCount > 1 && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="shrink-0 p-2.5 bg-indigo-50 rounded-xl"><Users className="h-5 w-5 text-indigo-500" /></div>
+              <div className="min-w-0">
+                {/* Q6-T10: cùng một tên "Chuyển vai trò" với menu avatar ở header. */}
+                <p className="font-medium text-gray-900">{SWITCH_ROLE_LABEL}</p>
+                <p className="text-sm text-gray-500">
+                  {activeUnifiedRole ? (
+                    <>
+                      Đang dùng: <span className={getRoleConfig(activeRole || "", isOrgRole(activeUnifiedRole)).color}>{getRoleConfig(activeRole || "", isOrgRole(activeUnifiedRole)).label}</span>
+                      {activeOrg && <span className="text-gray-400"> • {activeOrg.name}</span>}
+                    </>
+                  ) : (
+                    `${switchableRoleCount} vai trò khả dụng`
+                  )}
+                </p>
+              </div>
             </div>
+            <Button variant="outline" size="sm" className="shrink-0 rounded-xl gap-1" onClick={() => setSwitchAccountOpen(true)}>
+              Chuyển
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-          <Button variant="outline" size="sm" className="rounded-xl gap-1" onClick={() => setSwitchAccountOpen(true)}>
-            Chuyển
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
-      </div>
+      )}
 
       {/* Phase 3: lối vào nộp hồ sơ giảng viên cho user đã có vai trò (tự ẩn khi đã là TEACHER). */}
       <ApplyTeacherButton />
@@ -209,18 +220,19 @@ export function AccountSettings({
 
       {/* 2FA — coming soon */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm opacity-70">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-2.5 bg-green-50 rounded-xl"><ShieldCheck className="h-5 w-5 text-green-500" /></div>
-            <div>
-              <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="shrink-0 p-2.5 bg-green-50 rounded-xl"><ShieldCheck className="h-5 w-5 text-green-500" /></div>
+            <div className="min-w-0">
+              {/* Q6-T10: ở 390px huy hiệu tự xuống dòng nguyên khối, không bị bẻ thành "Sắp ra / mắt". */}
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <p className="font-medium text-gray-900">Xác thực hai lớp (2FA)</p>
-                <Badge variant="secondary" className="text-xs">Sắp ra mắt</Badge>
+                <Badge variant="secondary" className="shrink-0 whitespace-nowrap text-xs">Sắp ra mắt</Badge>
               </div>
               <p className="text-sm text-gray-500">Bảo vệ tài khoản an toàn hơn</p>
             </div>
           </div>
-          <Switch checked={false} disabled aria-label="2FA — chưa khả dụng" />
+          <Switch className="shrink-0" checked={false} disabled aria-label="2FA — chưa khả dụng" />
         </div>
       </div>
 
@@ -278,7 +290,7 @@ export function AccountSettings({
       <Dialog open={switchAccountOpen} onOpenChange={setSwitchAccountOpen}>
         {/* QA-C-09: nút X mặc định (icon xám) chìm trên nền gradient; tự vẽ nút trắng trong header. */}
         <DialogContent className="rounded-2xl max-w-sm p-0 overflow-hidden" showCloseButton={false}>
-          <DialogTitle className="sr-only">Chuyển tài khoản</DialogTitle>
+          <DialogTitle className="sr-only">{SWITCH_ROLE_LABEL}</DialogTitle>
           {/* Current user header */}
           <div className="relative p-5 pr-12 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl">
             <button

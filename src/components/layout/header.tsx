@@ -95,10 +95,17 @@ export function Header() {
   const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
   // Q3-05: vai tuỳ biến của tổ chức không phải giao diện riêng -> không đưa vào danh sách chuyển vai trò.
   const availableRoles = (myRolesData?.roles ?? roles ?? []).filter(isSelectableRole);
+  // Q6-PG-16: một vai thì không có gì để chuyển; hàng "Chuyển vai trò" chỉ hiện khi có từ hai vai trở lên.
+  const canSwitchRole = availableRoles.length > 1;
 
   // Notification hooks — only fetch when authenticated
   const { data: unreadData } = useUnreadCount();
-  const { data: notifData } = useNotifications(1, isNotificationOpen);
+  const {
+    data: notifData,
+    isLoading: notifLoading,
+    isError: notifError,
+    refetch: refetchNotifications,
+  } = useNotifications(1, isNotificationOpen);
   const markReadMutation = useMarkNotificationRead();
   const markAllReadMutation = useMarkAllNotificationsRead();
 
@@ -169,8 +176,11 @@ export function Header() {
     <>
       <header className="fixed top-0 left-0 right-0 h-16 bg-background/90 border-b border-border backdrop-blur-md z-50 px-4 lg:px-8">
         {/* 3 cột: logo trái — pill search căn giữa — hành động phải; hàng thẳng, cao đều (h-16). */}
-        <div className="h-full grid grid-cols-[1fr_minmax(0,600px)_1fr] items-center gap-4">
-          <div className="flex items-center min-w-0">
+        {/* Q6-PG-03: dưới lg cột logo/hành động theo nội dung (auto), pill search lấp phần giữa. Với 1fr hai bên, cột
+            phải (Đăng nhập + Đăng ký, hoặc chuông + vai + avatar) đòi hết chỗ ở 768–900px nên cột logo co về 0 và pill
+            che mất logo. Từ lg mới đủ rộng để giữ pill căn giữa đối xứng. */}
+        <div className="h-full grid grid-cols-[auto_minmax(0,1fr)_auto] lg:grid-cols-[1fr_minmax(0,600px)_1fr] items-center gap-4">
+          <div className="flex items-center">
             <Link href={homeHref} className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
               <ForteXLogoIcon size={32} className="text-foreground" />
               <span className="font-heading text-xl font-bold text-foreground tracking-tight">{siteConfig.name}</span>
@@ -179,7 +189,7 @@ export function Header() {
 
           <div className="flex justify-center w-full min-w-0">
             <GlobalSearch
-              className="w-full"
+              className="w-full max-w-[600px]"
               leadingSlot={<CategoryMenu />}
             />
           </div>
@@ -244,7 +254,28 @@ export function Header() {
                     )}
                   </div>
                   <div className="max-h-96 overflow-y-auto">
-                    {notifications.length === 0 ? (
+                    {notifications.length === 0 && notifLoading ? (
+                      // Q6-PG-06: chờ danh sách thì hiện khung chờ, không nói "Không có thông báo nào" trong khi vẫn báo "N mới".
+                      <div role="status" aria-label="Đang tải thông báo" className="animate-pulse space-y-4 px-5 py-4">
+                        {[0, 1, 2].map((i) => (
+                          <div key={i} className="space-y-2">
+                            <div className="h-3 w-2/3 rounded bg-muted" />
+                            <div className="h-3 w-full rounded bg-muted" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : notifications.length === 0 && notifError ? (
+                      <div role="alert" className="py-10 text-center">
+                        <p className="text-sm text-muted-foreground">Không tải được thông báo</p>
+                        <button
+                          type="button"
+                          className="mt-2 text-sm font-medium text-primary-600 hover:text-primary-700"
+                          onClick={() => void refetchNotifications()}
+                        >
+                          Thử lại
+                        </button>
+                      </div>
+                    ) : notifications.length === 0 ? (
                       <div className="py-12 text-center">
                         <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
                           <Bell className="w-8 h-8 text-muted-foreground" />
@@ -322,7 +353,7 @@ export function Header() {
                     </div>
 
                     {/* Role Switcher */}
-                    {availableRoles.length > 0 && (
+                    {canSwitchRole && (
                       <div className="border-b">
                         <button
                           onClick={() => setShowRoleSwitcher((v) => !v)}

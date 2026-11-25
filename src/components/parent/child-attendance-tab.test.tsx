@@ -76,6 +76,14 @@ describe("ChildAttendanceTab", () => {
     expect(screen.getAllByText(/Vào lúc/)).toHaveLength(1);
   });
 
+  // Q6-PG-09: ở 390px cột phải bị ép nên "Vào lúc 08:30" / "Trễ 12 phút" gãy thành 2-3 dòng.
+  it("cột trạng thái không co và không bẻ dòng", async () => {
+    renderTab();
+    const block = (await screen.findAllByTestId("attendance-status-block"))[0];
+    expect(block.className).toContain("shrink-0");
+    expect(block.className).toContain("whitespace-nowrap");
+  });
+
   it("không có bản ghi: hiện câu rỗng, không có nút", async () => {
     getChildAttendance.mockResolvedValue({ ...page(1, []), total: 0 });
     renderTab();

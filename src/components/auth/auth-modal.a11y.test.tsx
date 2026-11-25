@@ -12,6 +12,8 @@ vi.mock("@/hooks/queries/use-auth", () => ({
   useRegister: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useSelectRole: () => ({ mutate: vi.fn(), isPending: false }),
   authErrorMessage: (_e: unknown, fallback: string) => fallback,
+  isRegistrationExpiredError: () => false,
+  REGISTRATION_EXPIRED_MESSAGE: "Phiên đăng ký đã hết hạn. Vui lòng đăng ký lại.",
   translateOtpErrorMessage: (m: string) => m,
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }));

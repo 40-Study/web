@@ -4,7 +4,7 @@
  * "undefined"), không lỗi khi thiếu id, không trùng khoá React giữa nhiều người ẩn danh, và không rò tên khác.
  */
 
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/api-client", async () => {
@@ -63,8 +63,32 @@ describe("DiscussionSidebar — thành viên tích cực", () => {
     expect(screen.getByText("77")).toBeTruthy();
     expect(screen.getByText("30")).toBeTruthy();
     expect(screen.getByText("12")).toBeTruthy();
-    // danh mục chưa có số liệu hiện "–", không phải số 0 giả
-    expect(screen.getAllByText("–")).toHaveLength(2);
+    // danh mục chưa có số liệu hiện "–", không phải số 0 giả; "Chung" cũng chưa biết khi còn thiếu số của một danh mục
+    expect(screen.getAllByText("–")).toHaveLength(4);
+    await screen.findByText("Bình Công Khai");
+  });
+
+  // Q6-PG-13: "Tất cả 77" trong khi các chip chỉ cộng được 9; còn thiếu "Hỏi đáp" và bài `general`/không danh mục.
+  it("có chip 'Hỏi đáp' và 'Chung'; số các chip cộng lại đúng bằng 'Tất cả'", async () => {
+    mockMembers();
+    const counts = { programming: 2, design: 2, "learning-tips": 3, project: 2, qna: 5 };
+    renderWithProviders(<DiscussionSidebar total={77} categoryCounts={counts} onCategoryChange={() => {}} />);
+    expect(screen.getByRole("button", { name: /Hỏi đáp/ }).textContent).toContain("5");
+    const chung = screen.getByRole("button", { name: /Chung/ });
+    expect(chung.textContent).toContain("63"); // 77 - (2+2+3+2+5)
+    const chipSum = [...Object.values(counts), 63].reduce((a, b) => a + b, 0);
+    expect(chipSum).toBe(77);
+    await screen.findByText("Bình Công Khai");
+  });
+
+  it("bấm 'Chung' lọc theo general; bấm 'Hỏi đáp' lọc theo qna", async () => {
+    mockMembers();
+    const onChange = vi.fn();
+    renderWithProviders(<DiscussionSidebar total={10} categoryCounts={{ programming: 1, design: 1, "learning-tips": 1, project: 1, qna: 1 }} onCategoryChange={onChange} />);
+    fireEvent.click(screen.getByRole("button", { name: /Chung/ }));
+    expect(onChange).toHaveBeenLastCalledWith("general");
+    fireEvent.click(screen.getByRole("button", { name: /Hỏi đáp/ }));
+    expect(onChange).toHaveBeenLastCalledWith("qna");
     await screen.findByText("Bình Công Khai");
   });
 });

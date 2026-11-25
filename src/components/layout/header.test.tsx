@@ -26,8 +26,9 @@ vi.mock("@/hooks/queries/use-auth", () => ({
 }));
 vi.mock("@/hooks/queries/use-coins", () => ({ useCoinWallet: () => ({ data: { balance: 0 } }) }));
 let unreadCountData: { unread_count: number } | undefined;
+let notificationsState: { data?: unknown; isLoading?: boolean; isError?: boolean; refetch?: () => void } = { data: undefined };
 vi.mock("@/hooks/queries/use-notifications", () => ({
-  useNotifications: () => ({ data: undefined }),
+  useNotifications: () => notificationsState,
   useUnreadCount: () => ({ data: unreadCountData }),
   useMarkNotificationRead: () => ({ mutate: vi.fn() }),
   useMarkAllNotificationsRead: () => ({ mutate: vi.fn(), isPending: false }),
@@ -45,6 +46,10 @@ import { useCartStore } from "@/stores/cart.store";
 function openMenu() {
   fireEvent.click(screen.getByRole("button", { name: /Menu tài khoản/ }));
 }
+
+beforeEach(() => {
+  notificationsState = { data: undefined };
+});
 
 describe("Header — menu tài khoản", () => {
   beforeEach(() => {
@@ -74,7 +79,10 @@ describe("Header — menu tài khoản", () => {
   it("Q4-T21: huy hiệu vai giảng viên ghi 'Giảng viên', không phải 'Giáo viên'", () => {
     authState.activeRole = "TEACHER";
     authState.activeUnifiedRole = { id: "sr-teacher", type: "system", role_name: "TEACHER" } as never;
-    authState.roles = [{ id: "sr-teacher", type: "system", role_name: "TEACHER", display_name: "TEACHER" }] as never;
+    authState.roles = [
+      { id: "sr-teacher", type: "system", role_name: "TEACHER", display_name: "TEACHER" },
+      { id: "sr-student", type: "system", role_name: "STUDENT", display_name: "STUDENT" },
+    ] as never;
     render(<Header />);
     openMenu();
     expect(screen.getAllByText("Giảng viên").length).toBeGreaterThan(0);
@@ -115,6 +123,67 @@ describe("Header — menu tài khoản", () => {
     render(<Header />);
     openMenu();
     expect(screen.queryByRole("link", { name: /Khoá học yêu thích/ })).toBeNull();
+  });
+
+  // Q6-PG-16: một vai thì danh sách chỉ có đúng vai đang dùng, hàng "Chuyển vai trò" vô nghĩa.
+  it("Q6-PG-16: một vai -> không có hàng 'Chuyển vai trò'; từ hai vai -> có", () => {
+    authState.activeRole = "PARENT";
+    authState.activeUnifiedRole = { id: "sr-parent", type: "system", role_name: "PARENT" } as never;
+    authState.roles = [{ id: "sr-parent", type: "system", role_name: "PARENT", display_name: "PARENT" }] as never;
+    const { unmount } = render(<Header />);
+    openMenu();
+    expect(screen.queryByText("Chuyển vai trò")).toBeNull();
+    unmount();
+
+    authState.roles = [
+      { id: "sr-parent", type: "system", role_name: "PARENT", display_name: "PARENT" },
+      { id: "sr-student", type: "system", role_name: "STUDENT", display_name: "STUDENT" },
+    ] as never;
+    render(<Header />);
+    openMenu();
+    expect(screen.getByText("Chuyển vai trò")).toBeTruthy();
+  });
+
+  // Q6-PG-03: ở 768–900px cột 1fr của logo co về 0 và pill search che logo + tên thương hiệu.
+  it("Q6-PG-03: dưới lg cột logo là auto (không co về 0); từ lg mới là lưới đối xứng 1fr/600/1fr", () => {
+    const { container } = render(<Header />);
+    const grid = container.querySelector("header > div") as HTMLElement;
+    expect(grid.className).toContain("grid-cols-[auto_minmax(0,1fr)_auto]");
+    expect(grid.className).toContain("lg:grid-cols-[1fr_minmax(0,600px)_1fr]");
+    expect(grid.className).not.toMatch(/(^|\s)grid-cols-\[1fr_/);
+    expect((grid.firstElementChild as HTMLElement).className).not.toContain("min-w-0");
+  });
+
+  // Q6-PG-06: chuông mở lúc danh sách còn đang tải nói "Không có thông báo nào" trong khi tiêu đề báo "N mới".
+  describe("chuông thông báo", () => {
+    const openBell = () => fireEvent.click(screen.getByRole("button", { name: /^Thông báo/ }));
+
+    it("đang tải: khung chờ, không có câu 'Không có thông báo nào'", () => {
+      unreadCountData = { unread_count: 3 };
+      notificationsState = { data: undefined, isLoading: true };
+      render(<Header />);
+      openBell();
+      expect(screen.getByRole("status", { name: "Đang tải thông báo" })).toBeTruthy();
+      expect(screen.queryByText("Không có thông báo nào")).toBeNull();
+    });
+
+    it("lỗi: báo không tải được và có nút Thử lại gọi refetch", () => {
+      const refetch = vi.fn();
+      notificationsState = { data: undefined, isError: true, refetch };
+      render(<Header />);
+      openBell();
+      expect(screen.queryByText("Không có thông báo nào")).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("tải xong và rỗng: 'Không có thông báo nào'", () => {
+      unreadCountData = { unread_count: 0 };
+      notificationsState = { data: { notifications: [] } };
+      render(<Header />);
+      openBell();
+      expect(screen.getByText("Không có thông báo nào")).toBeTruthy();
+    });
   });
 
   it("logo dùng siteConfig.name", () => {

@@ -7,6 +7,7 @@ import {
   formatContestPercent,
   formatContestPrize,
   formatContestScore,
+  formatContestWindowMinutes,
   formatCountdown,
   msUntil,
   serverClockOffset,
@@ -84,5 +85,29 @@ describe("formatContestPrize", () => {
       "Hạng 1–3: Chứng nhận + Voucher Giảm 50k"
     );
     expect(formatContestPrize({ id: "p", rank_from: 1, rank_to: 1, grant_certificate: true, voucher: null })).toBe("Hạng 1: Chứng nhận");
+  });
+});
+
+// Q6-PG-10: "15840 phút làm bài" đọc như lỗi dữ liệu.
+describe("formatContestWindowMinutes", () => {
+  it("dưới 1 giờ: phút", () => {
+    expect(formatContestWindowMinutes(45)).toBe("45 phút");
+    expect(formatContestWindowMinutes(0)).toBe("0 phút");
+  });
+  it("từ 1 giờ đến dưới 1 ngày: giờ (kèm phút lẻ)", () => {
+    expect(formatContestWindowMinutes(60)).toBe("1 giờ");
+    expect(formatContestWindowMinutes(90)).toBe("1 giờ 30 phút");
+    expect(formatContestWindowMinutes(1439)).toBe("23 giờ 59 phút");
+  });
+  it("từ 1 ngày: ngày (kèm giờ lẻ, bỏ phút lẻ)", () => {
+    expect(formatContestWindowMinutes(1440)).toBe("1 ngày");
+    expect(formatContestWindowMinutes(2880)).toBe("2 ngày");
+    expect(formatContestWindowMinutes(15840)).toBe("11 ngày");
+    expect(formatContestWindowMinutes(1440 + 150)).toBe("1 ngày 2 giờ");
+  });
+  it("thiếu / âm / NaN -> gạch ngang", () => {
+    expect(formatContestWindowMinutes(null)).toBe("—");
+    expect(formatContestWindowMinutes(-1)).toBe("—");
+    expect(formatContestWindowMinutes(Number.NaN)).toBe("—");
   });
 });

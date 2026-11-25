@@ -54,19 +54,20 @@ function ParentFamilyView() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-primary-50 via-white to-blue-50">
-        <div className="max-w-4xl mx-auto px-6 py-10 lg:py-12">
-          <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+        {/* Q6-PG-17: ở 390px hero từng cao ~500px và đẩy form "Liên kết thêm con" ra ngoài màn đầu: bớt đệm, bỏ tranh minh hoạ dưới md. */}
+        <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 sm:py-10 lg:py-12">
+          <div className="flex flex-col lg:flex-row items-center gap-4 md:gap-8 lg:gap-12">
             <div className="flex-1 text-center lg:text-left">
-              <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
+              <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-2 sm:mb-4">
                 Con của tôi
               </h1>
-              <p className="text-slate-600 text-lg leading-relaxed mb-6">
+              <p className="text-slate-600 text-base sm:text-lg leading-relaxed mb-4 sm:mb-6">
                 Theo dõi tiến độ học tập, điểm số và chuyên cần của con — kết nối cùng
                 hành trình học tập tại {siteConfig.name}.
               </p>
             </div>
 
-            <div className="w-full max-w-sm lg:max-w-md flex-shrink-0">
+            <div className="hidden w-full max-w-sm md:block lg:max-w-md flex-shrink-0" data-testid="family-hero-visual">
               <div
                 role="img"
                 aria-label="Phụ huynh theo dõi tiến độ học tập của con"
@@ -85,7 +86,7 @@ function ParentFamilyView() {
 
       {/* Lời mời từ con đang chờ chấp nhận — PendingInvitationsCard tự chỉ fetch
           khi vai trò là PARENT (usePendingInvitations), giữ nguyên như cũ. */}
-      <div className="max-w-4xl mx-auto px-6 pt-10 lg:pt-12 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 sm:pt-10 lg:pt-12 space-y-6">
         <PendingInvitationsCard />
         {/* Q4 (QA vòng 2): phụ huynh tự gửi yêu cầu liên kết, con xác nhận. */}
         <LinkChildForm />

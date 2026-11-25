@@ -5,10 +5,12 @@
  */
 
 import Link from "next/link";
+import { toast } from "sonner";
 import { Heart, MessageSquare, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import type { ForumPost } from "@/types/discussion";
+import { discussionCategoryLabel } from "./discussion-categories";
 
 interface DiscussionPostCardProps {
   post: ForumPost;
@@ -21,13 +23,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   design: "bg-blue-100 text-blue-600",
   "learning-tips": "bg-green-100 text-green-600",
   project: "bg-purple-100 text-purple-600",
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  programming: "Lập trình",
-  design: "Thiết kế",
-  "learning-tips": "Mẹo học",
-  project: "Dự án",
+  qna: "bg-amber-100 text-amber-700",
 };
 
 function timeAgo(dateStr: string): string {
@@ -51,8 +47,14 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
   const categoryColor = CATEGORY_COLORS[post.category] ?? "bg-slate-100 text-slate-600";
   const initials = post.author_name?.slice(0, 2).toUpperCase() ?? "??";
 
-  const handleShare = () => {
-    navigator.clipboard?.writeText(window.location.origin + `/discussions/${post.slug}`);
+  // Q6-PG-12: sao chép phải báo kết quả; trình duyệt từ chối quyền clipboard (hoặc không có) từng ném lỗi chưa bắt.
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.origin + `/discussions/${post.slug}`);
+      toast.success("Đã sao chép liên kết");
+    } catch {
+      toast.error("Không sao chép được liên kết");
+    }
   };
 
   return (
@@ -72,7 +74,7 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
             <p className="text-xs text-slate-400">{timeAgo(post.created_at)}</p>
           </div>
           <span className={cn("ml-auto text-xs font-medium px-2.5 py-1 rounded-full", categoryColor)}>
-            {CATEGORY_LABELS[post.category] ?? post.category}
+            {discussionCategoryLabel(post.category)}
           </span>
         </div>
 
@@ -87,26 +89,31 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
         {/* Actions */}
         <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-50">
           <button
+            type="button"
             onClick={() => onVote(post.id, hasVoted)}
+            aria-label={`${hasVoted ? "Bỏ thích" : "Thích"} bài viết (${post.upvote_count})`}
+            aria-pressed={hasVoted}
             className={cn(
               "flex items-center gap-1.5 text-sm transition-colors",
               hasVoted ? "text-rose-500" : "text-slate-400 hover:text-rose-400"
             )}
           >
-            <Heart className={cn("w-4 h-4", hasVoted && "fill-rose-500")} />
+            <Heart className={cn("w-4 h-4", hasVoted && "fill-rose-500")} aria-hidden="true" />
             <span>{post.upvote_count}</span>
           </button>
 
           <Link
             href={`/discussions/${post.slug}`}
+            aria-label={`Xem ${post.reply_count} phản hồi`}
             className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-primary-500 transition-colors"
           >
-            <MessageSquare className="w-4 h-4" />
+            <MessageSquare className="w-4 h-4" aria-hidden="true" />
             <span>{post.reply_count}</span>
           </Link>
 
           <button
-            onClick={handleShare}
+            type="button"
+            onClick={() => void handleShare()}
             className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-600 transition-colors ml-auto"
           >
             <Share2 className="w-4 h-4" />
