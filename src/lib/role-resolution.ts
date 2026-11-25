@@ -100,7 +100,7 @@ const ROLE_PICKER_ORDER = ["STUDENT", "PARENT", "TEACHER", APPLICANT_ROLE] as co
  */
 export function sortSystemRolesForPicker<T extends { name: string }>(options: readonly T[]): T[] {
   const rank = (name: string) => {
-    const i = (ROLE_PICKER_ORDER as readonly string[]).indexOf(normalizeRole(name));
+    const i = (ROLE_PICKER_ORDER as readonly string[]).indexOf(normalizeRole(name) ?? "");
     return i === -1 ? ROLE_PICKER_ORDER.length : i;
   };
   return [...options].sort((a, b) => rank(a.name) - rank(b.name));
