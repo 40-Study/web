@@ -33,12 +33,18 @@ export default function SettingsPage() {
 function SettingsPageContent() {
   // Liên kết sâu `/settings?section=profile` (nút "Chỉnh sửa hồ sơ" ở trang hồ sơ). Đọc ngay ở lần render đầu
   // (không qua effect) nên không có một khung hình hiện "Tài khoản" trước khi nhảy sang "Hồ sơ"; giá trị lạ bị
-  // bỏ qua, ở lại mục mặc định.
+  // bỏ qua, ở lại mục mặc định. L-2: URL đổi sau đó (điều hướng mềm cùng route, vd header "Cài đặt tài khoản" khi đang
+  // ở ?section=notifications) cũng được theo: so với giá trị URL lần trước ngay trong lúc render (không effect, không
+  // khung hình cũ). Chỉ theo chiều URL -> state; chọn mục tay ghi URL bằng replace, URL về cùng giá trị nên không lặp.
   const router = useRouter();
   const wanted = useSearchParams().get("section");
-  const [activeSection, setActiveSection] = useState<SettingsSection>(
-    () => SECTIONS.find((s) => s === wanted) ?? "account",
-  );
+  const urlSection: SettingsSection = SECTIONS.find((s) => s === wanted) ?? "account";
+  const [activeSection, setActiveSection] = useState<SettingsSection>(urlSection);
+  const [seenUrlSection, setSeenUrlSection] = useState<SettingsSection>(urlSection);
+  if (urlSection !== seenUrlSection) {
+    setSeenUrlSection(urlSection);
+    setActiveSection(urlSection);
+  }
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Q7-PG-01/02: chọn mục thì (1) ghi `?section=` lên URL bằng replace (tải lại không về "Tài khoản", không thêm mục lịch

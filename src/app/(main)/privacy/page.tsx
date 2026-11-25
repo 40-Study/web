@@ -51,10 +51,12 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">5. Dữ liệu của học viên khi liên kết với phụ huynh</h2>
           <p className="mt-2">
-            Khi học viên liên kết với một tài khoản phụ huynh, phụ huynh đó xem được tiến độ khoá học, điểm số, điểm
-            danh và bài tập của học viên. Chúng tôi chỉ chia sẻ dữ liệu này với tài khoản đã liên kết, không chia sẻ
-            với phụ huynh khác. Học viên hoặc phụ huynh có thể huỷ liên kết bất cứ lúc nào trong Cài đặt, mục Gia đình;
-            từ lúc đó phụ huynh không còn xem được dữ liệu của học viên.
+            Khi học viên liên kết với một tài khoản phụ huynh, phụ huynh đó xem được tiến độ khoá học, lịch học, điểm
+            số, điểm danh, bài tập và thống kê học tập (XP, chuỗi ngày học, thời gian học) của học viên. Chúng tôi
+            không chia sẻ dữ liệu này với tài khoản phụ huynh nào khác ngoài tài khoản đã liên kết. Giáo viên và quản
+            trị viên của tổ chức phụ trách các lớp mà học viên tham gia cũng xem được điểm số của học viên trong các
+            lớp đó. Học viên hoặc phụ huynh có thể huỷ liên kết bất cứ lúc nào trong Cài đặt, mục Gia đình; từ lúc đó
+            phụ huynh không còn xem được dữ liệu của học viên.
           </p>
         </section>
         <section>

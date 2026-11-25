@@ -32,13 +32,19 @@ export default function DiscussionsPage() {
 function DiscussionsPageContent() {
   const router = useRouter();
   // Q7-PG-02: chip danh mục nằm trên URL (`?category=`, như /courses và /contests) để tải lại / chia sẻ link không mất.
-  // Đọc ngay ở lần render đầu; giá trị lạ bị bỏ qua (về "Tất cả").
+  // Đọc ngay ở lần render đầu; giá trị lạ bị bỏ qua (về "Tất cả"). L-2: URL đổi sau đó (điều hướng mềm cùng route, vd
+  // footer "/discussions" khi đang ở ?category=qna) cũng được theo: so với giá trị URL lần trước ngay trong lúc render.
+  // Chỉ chiều URL -> state; bấm chip ghi URL bằng replace, URL về cùng giá trị nên không lặp.
   const wantedCategory = useSearchParams().get("category");
+  const urlCategory = DISCUSSION_CATEGORIES.find((c) => c.value === wantedCategory)?.value;
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isSessionPending = useAuthStore((s) => !s.isAuthenticated && s.sessionStatus === "checking");
-  const [category, setCategory] = useState<string | undefined>(
-    () => DISCUSSION_CATEGORIES.find((c) => c.value === wantedCategory)?.value,
-  );
+  const [category, setCategory] = useState<string | undefined>(urlCategory);
+  const [seenUrlCategory, setSeenUrlCategory] = useState<string | undefined>(urlCategory);
+  if (urlCategory !== seenUrlCategory) {
+    setSeenUrlCategory(urlCategory);
+    setCategory(urlCategory);
+  }
   const handleCategoryChange = (next: string | undefined) => {
     setCategory(next);
     router.replace(next ? `/discussions?category=${encodeURIComponent(next)}` : "/discussions", { scroll: false });

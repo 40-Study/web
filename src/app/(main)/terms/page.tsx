@@ -52,7 +52,8 @@ export default function TermsPage() {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">5. Liên kết phụ huynh và học viên</h2>
           <p className="mt-2">
             Khi tài khoản phụ huynh và tài khoản học viên được liên kết, phụ huynh có thể xem dữ liệu học tập của học
-            viên đó: tiến độ khoá học, điểm số, điểm danh và bài tập. Chỉ liên kết với người mà bạn có quyền giám hộ
+            viên đó: tiến độ khoá học, lịch học, điểm số, điểm danh, bài tập và thống kê học tập (XP, chuỗi ngày học, thời
+            gian học). Chỉ liên kết với người mà bạn có quyền giám hộ
             hoặc được họ đồng ý. Phụ huynh không được dùng dữ liệu này vào mục đích khác, và cả hai bên có thể huỷ
             liên kết bất cứ lúc nào trong Cài đặt, mục Gia đình.
           </p>

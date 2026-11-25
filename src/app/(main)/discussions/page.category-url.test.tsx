@@ -58,4 +58,22 @@ describe("DiscussionsPage — chip danh mục trên URL (Q7-PG-02)", () => {
     await waitFor(() => expect(categoryParamsSent().length).toBeGreaterThan(0));
     expect(categoryParamsSent().every((c) => c === undefined)).toBe(true);
   });
+
+  // L-2: URL đổi sau lần tải đầu (footer "/discussions" khi đang ở ?category=qna) thì chip và danh sách theo URL.
+  it("?category=qna -> /discussions: bỏ lọc; sang ?category=programming: lọc theo programming; không ghi ngược lên URL", async () => {
+    currentParams = new URLSearchParams("category=qna");
+    const { rerender } = renderWithProviders(<DiscussionsPage />);
+    await waitFor(() => expect(categoryParamsSent()).toContain("qna"));
+
+    mockApi.get.mockClear();
+    currentParams = new URLSearchParams();
+    rerender(<DiscussionsPage />);
+    await waitFor(() => expect(categoryParamsSent()).toContain(undefined));
+
+    mockApi.get.mockClear();
+    currentParams = new URLSearchParams("category=programming");
+    rerender(<DiscussionsPage />);
+    await waitFor(() => expect(categoryParamsSent()).toContain("programming"));
+    expect(replace).not.toHaveBeenCalled();
+  });
 });

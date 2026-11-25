@@ -86,14 +86,43 @@ describe("/settings — chọn mục", () => {
     Element.prototype.scrollIntoView = scrollIntoView;
     vi.stubGlobal("requestAnimationFrame", (cb: () => void) => cb());
 
-    vi.stubGlobal("matchMedia", () => ({ matches: true }));
+    // L-3: chỉ truy vấn đúng `(max-width: 767px)` mới khớp; sai chuỗi truy vấn (vd min-width) thì test đỏ.
+    vi.stubGlobal("matchMedia", (query: string) => ({ matches: query === "(max-width: 767px)" }));
     render(<SettingsPage />);
     fireEvent.click(screen.getByText("chon-thong-bao"));
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
 
     scrollIntoView.mockClear();
-    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    vi.stubGlobal("matchMedia", (query: string) => ({ matches: query !== "(max-width: 767px)" }));
     fireEvent.click(screen.getByText("chon-tai-khoan"));
     expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+});
+
+// L-2: URL đổi sau lần tải đầu (điều hướng mềm cùng route: header "Cài đặt tài khoản" -> /settings) thì mục hiện theo URL.
+describe("/settings — URL đổi sau lần tải đầu", () => {
+  it("?section=notifications -> /settings (không tham số): về Tài khoản; sang ?section=devices: hiện Thiết bị", () => {
+    window.history.replaceState({}, "", "/settings?section=notifications");
+    const { rerender } = render(<SettingsPage />);
+    expect(screen.getByTestId("active").textContent).toBe("notifications");
+
+    window.history.replaceState({}, "", "/settings");
+    rerender(<SettingsPage />);
+    expect(screen.getByTestId("active").textContent).toBe("account");
+
+    window.history.replaceState({}, "", "/settings?section=devices");
+    rerender(<SettingsPage />);
+    expect(screen.getByTestId("active").textContent).toBe("devices");
+    // URL -> state không ghi ngược lên URL: không có vòng lặp.
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("chọn mục bằng tay rồi URL cập nhật theo: giữ mục đã chọn, chỉ một lần router.replace", () => {
+    const { rerender } = render(<SettingsPage />);
+    fireEvent.click(screen.getByText("chon-thong-bao"));
+    window.history.replaceState({}, "", "/settings?section=notifications");
+    rerender(<SettingsPage />);
+    expect(screen.getByTestId("active").textContent).toBe("notifications");
+    expect(replace).toHaveBeenCalledTimes(1);
   });
 });
