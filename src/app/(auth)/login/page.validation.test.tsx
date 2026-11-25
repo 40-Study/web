@@ -20,6 +20,15 @@ const typeInto = (label: string, value: string) =>
 
 beforeEach(() => login.mutate.mockReset());
 
+describe("LoginPage — heading (Q7-PG-05)", () => {
+  it("h1 duy nhất là 'Đăng nhập', không phải thương hiệu 'ForteX'", () => {
+    render(<LoginPage />);
+    const h1 = screen.getAllByRole("heading", { level: 1 });
+    expect(h1).toHaveLength(1);
+    expect(h1[0].textContent).toBe("Đăng nhập");
+  });
+});
+
 describe("LoginPage — validate tiếng Việt", () => {
   it("form tắt validate native của trình duyệt", () => {
     render(<LoginPage />);

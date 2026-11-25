@@ -36,6 +36,8 @@ import { ChildAssignmentsTab } from "@/components/parent/child-assignments-tab";
 import { ChildAttendanceTab } from "@/components/parent/child-attendance-tab";
 import { assignmentTypeLabel, difficultyLabel, gradeTypeLabel, roomLabel } from "@/lib/display-labels";
 import { formatStudyMinutes } from "@/lib/format-study-time";
+import { ApiError } from "@/lib/errors";
+import { ResourceLoadError } from "@/components/common/resource-unavailable";
 
 type TabType = "overview" | "courses" | "grades" | "schedule" | "attendance" | "assignments";
 
@@ -68,6 +70,11 @@ function ScheduleGrid({ entries }: { entries: TimetableEntry[] }) {
   </>;
 }
 
+/** Lỗi "con này không có/không xem được" (khác sự cố tải tạm thời). Xem Q7-PG-03. */
+function isChildNotFoundError(error: unknown): boolean {
+  return error instanceof ApiError && (error.status === 400 || error.status === 403 || error.status === 404);
+}
+
 export default function ChildDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -87,7 +94,7 @@ export default function ChildDetailPage() {
     window.history.replaceState(window.history.state, "", url.toString());
   };
 
-  const { data: overview, isLoading: loadingOverview } = useChildOverview(childId);
+  const { data: overview, isLoading: loadingOverview, error: overviewError, refetch: refetchOverview } = useChildOverview(childId);
   // PG-L2: chỉ chạy các query còn lại SAU khi overview xác nhận đây là con của phụ huynh. Id lạ thì overview
   // 403 và trước đây 5 query kia vẫn bắn song song (6 × 403). Id rỗng làm hook tự tắt qua `enabled: !!childId`.
   const dataChildId = overview ? childId : "";
@@ -103,6 +110,13 @@ export default function ChildDetailPage() {
         <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
       </div>
     );
+  }
+
+  // Q7-PG-03 (C17): chỉ 400 (id sai định dạng), 403 (không liên kết, `ERR_CHILD_NOT_LINKED`) và 404 là "không tìm thấy".
+  // Lỗi khác (5xx `ERR_INTERNAL`, mất mạng) là sự cố tạm: hiện "Thử lại", không nói "không tìm thấy" như thể con không tồn tại.
+  // Backend cũ trả 403 cho MỌI lỗi nên vẫn rơi về "không tìm thấy" như trước.
+  if (!overview && overviewError && !isChildNotFoundError(overviewError)) {
+    return <ResourceLoadError resourceLabel="thông tin học sinh" onRetry={() => void refetchOverview()} />;
   }
 
   if (!overview) {

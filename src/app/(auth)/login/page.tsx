@@ -123,7 +123,7 @@ export default function LoginPage() {
 
   return (
     <AuthCard>
-      <h2 className="mb-1 text-center text-xl font-semibold text-foreground">Đăng nhập</h2>
+      <h1 className="mb-1 text-center text-xl font-semibold text-foreground">Đăng nhập</h1>
       <p className="mb-6 text-center text-sm text-muted-foreground">
         {/* UX-A-03: khách vừa bấm "Thêm vào giỏ" thì nói rõ vì sao phải đăng nhập. */}
         {isForCartIntent ? "Đăng nhập để thêm vào giỏ" : "Chào mừng bạn quay trở lại"}

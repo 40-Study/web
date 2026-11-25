@@ -263,7 +263,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                 <div className="px-10 pb-8 pt-2">
                     {/* Logo */}
                     <div className={cn("text-center", isRegisterFlow ? "mb-4" : "mb-6")}>
-                        <h1 className="text-3xl font-bold text-primary">ForteX</h1>
+                        <p className="text-3xl font-bold text-primary">ForteX</p>
                         <p className="text-xs tracking-[0.2em] text-slate-600 dark:text-slate-400 mt-1 uppercase">
                             Learn · Leap · Lead
                         </p>
@@ -409,7 +409,7 @@ function LoginView({
 
     return (
         <>
-            <h2 className="mb-1 text-center text-xl font-semibold text-foreground">Đăng nhập</h2>
+            <h1 className="mb-1 text-center text-xl font-semibold text-foreground">Đăng nhập</h1>
             <p className="mb-6 text-center text-sm text-muted-foreground">Chào mừng bạn quay trở lại</p>
 
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -554,7 +554,7 @@ function LoginRoleView({ onNext: _onNext, onComplete }: { onNext: () => void; on
 
     return (
         <>
-            <h2 className="mb-1 text-center text-xl font-semibold text-foreground">{title}</h2>
+            <h1 className="mb-1 text-center text-xl font-semibold text-foreground">{title}</h1>
             <p className="mb-6 text-center text-sm text-muted-foreground">{subtitle}</p>
 
             <div className="space-y-3" role="radiogroup" aria-label="Chọn vai trò">
@@ -649,9 +649,9 @@ function RegisterMethodView({
 }) {
     return (
         <>
-            <h2 className="mb-1 text-center text-xl font-semibold text-foreground">
+            <h1 className="mb-1 text-center text-xl font-semibold text-foreground">
                 Đăng ký tài khoản
-            </h2>
+            </h1>
             <p className="mb-6 text-center text-sm text-muted-foreground">Chọn phương thức đăng ký</p>
 
             <div className="space-y-3">
@@ -737,9 +737,9 @@ function RegisterFormView({
 
     return (
         <>
-            <h2 className="mb-1 text-center text-xl font-semibold text-foreground">
+            <h1 className="mb-1 text-center text-xl font-semibold text-foreground">
                 Đăng ký tài khoản
-            </h2>
+            </h1>
             <p className="mb-6 text-center text-sm text-muted-foreground">Điền thông tin của bạn</p>
 
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -897,7 +897,7 @@ function RegisterSuccessView({ onLogin, onClose }: { onLogin: () => void; onClos
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
             </div>
-            <h2 className="mb-1 text-xl font-semibold text-foreground">Đăng ký thành công!</h2>
+            <h1 className="mb-1 text-xl font-semibold text-foreground">Đăng ký thành công!</h1>
             <p className="mb-6 text-center text-sm text-muted-foreground">
                 Tài khoản của bạn đã được tạo. Hãy đăng nhập để bắt đầu.
             </p>

@@ -5,7 +5,7 @@
  */
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ForbiddenError } from "@/lib/errors";
+import { ApiError, ForbiddenError } from "@/lib/errors";
 import { renderWithProviders } from "@/test/utils";
 
 const svc = vi.hoisted(() => ({
@@ -56,6 +56,29 @@ describe("ChildDetailPage — id học sinh không thuộc phụ huynh", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Không tìm thấy thông tin học sinh" })).toBeTruthy();
     expect(svc.getChildOverview).toHaveBeenCalledTimes(1);
     for (const name of OTHER_QUERIES) expect(svc[name], name).not.toHaveBeenCalled();
+  });
+
+  // Q7-PG-03 (C17): 400 ERR_INVALID_ID / 403 ERR_CHILD_NOT_LINKED là "không tìm thấy"; 500 là sự cố tạm có "Thử lại".
+  it.each([
+    [400, "ERR_INVALID_ID"],
+    [403, "ERR_CHILD_NOT_LINKED"],
+    [404, "ERR_NOT_FOUND"],
+  ])("overview %i %s: 'Không tìm thấy thông tin học sinh', không có 'Thử lại'", async (status, code) => {
+    svc.getChildOverview.mockRejectedValue(new ApiError(status, code, "x"));
+    renderWithProviders(<ChildDetailPage />);
+    expect(await screen.findByText("Không tìm thấy thông tin học sinh")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Thử lại" })).toBeNull();
+  });
+
+  it("overview 500 ERR_INTERNAL: trạng thái lỗi tải kèm 'Thử lại', KHÔNG nói không tìm thấy; thử lại tải lại overview", async () => {
+    svc.getChildOverview.mockRejectedValue(new ApiError(500, "ERR_INTERNAL", "Đã có lỗi xảy ra, vui lòng thử lại"));
+    renderWithProviders(<ChildDetailPage />);
+    expect(await screen.findByRole("heading", { level: 1, name: "Không tải được thông tin học sinh" }, { timeout: 8000 })).toBeTruthy();
+    expect(screen.queryByText("Không tìm thấy thông tin học sinh")).toBeNull();
+
+    const calls = svc.getChildOverview.mock.calls.length;
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    await waitFor(() => expect(svc.getChildOverview.mock.calls.length).toBeGreaterThan(calls));
   });
 
   it("id hợp lệ: tải dữ liệu cần cho overview; lịch và điểm chỉ tải khi mở tab", async () => {

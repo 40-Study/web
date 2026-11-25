@@ -86,3 +86,22 @@ export function filterAddableSystemRoles<T extends { name: string }>(
     return !(isTeacher && name === APPLICANT_ROLE);
   });
 }
+
+/**
+ * Thứ tự HIỂN THỊ ở màn chọn vai trò (Q7 role-select): Học viên, Phụ huynh, rồi các vai còn lại, và "Đăng ký làm giảng
+ * viên" (`TEACHER_APPLICANT`) cuối cùng, vì phần lớn người đăng ký mới là học viên/phụ huynh, không phải giảng viên.
+ * Khác `SYSTEM_ROLE_FALLBACK_ORDER` (thứ tự ưu tiên khi quy vai tuỳ biến).
+ */
+const ROLE_PICKER_ORDER = ["STUDENT", "PARENT", "TEACHER", APPLICANT_ROLE] as const;
+
+/**
+ * Sắp các vai hệ thống để hiện ở màn chọn vai trò theo `ROLE_PICKER_ORDER`; vai không có trong danh sách xếp sau cùng,
+ * giữ nguyên thứ tự gốc giữa chúng (sắp ổn định). Không sửa mảng đầu vào.
+ */
+export function sortSystemRolesForPicker<T extends { name: string }>(options: readonly T[]): T[] {
+  const rank = (name: string) => {
+    const i = (ROLE_PICKER_ORDER as readonly string[]).indexOf(normalizeRole(name));
+    return i === -1 ? ROLE_PICKER_ORDER.length : i;
+  };
+  return [...options].sort((a, b) => rank(a.name) - rank(b.name));
+}

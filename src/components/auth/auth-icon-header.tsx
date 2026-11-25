@@ -25,7 +25,7 @@ export function AuthIconHeader({
       >
         {icon}
       </div>
-      <h2 className="mb-1 text-xl font-semibold text-foreground">{title}</h2>
+      <h1 className="mb-1 text-xl font-semibold text-foreground">{title}</h1>
       <p className="text-center text-sm text-muted-foreground">{description}</p>
     </div>
   );
