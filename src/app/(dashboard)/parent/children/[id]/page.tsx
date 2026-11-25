@@ -172,41 +172,44 @@ export default function ChildDetailPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <div className="flex items-center gap-2 text-orange-500 mb-2">
-            <Flame className="w-5 h-5" />
-            <span className="text-sm font-medium">Chuỗi ngày học</span>
+      {/* Stats Cards. Q7-PG-07: ở tab Lịch học ẩn đi: bốn thẻ này đẩy lịch xuống y~570 nên các buổi 19:00 nằm ngoài
+          màn 1280x800 (chỉ thấy các hàng trống 15:00-18:00); các tab khác vẫn hiện. */}
+      {activeTab !== "schedule" && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-xl p-4 shadow-sm border">
+            <div className="flex items-center gap-2 text-orange-500 mb-2">
+              <Flame className="w-5 h-5" />
+              <span className="text-sm font-medium">Chuỗi ngày học</span>
+            </div>
+            <p className="text-2xl font-bold">{overview.current_streak} ngày</p>
           </div>
-          <p className="text-2xl font-bold">{overview.current_streak} ngày</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <div className="flex items-center gap-2 text-purple-500 mb-2">
-            <Trophy className="w-5 h-5" />
-            <span className="text-sm font-medium">Tổng XP</span>
+          <div className="bg-white rounded-xl p-4 shadow-sm border">
+            <div className="flex items-center gap-2 text-purple-500 mb-2">
+              <Trophy className="w-5 h-5" />
+              <span className="text-sm font-medium">Tổng XP</span>
+            </div>
+            {/* QA-B-26: toLocaleString() không truyền locale ra "1,850" trên máy tiếng Anh; app dùng dấu chấm. */}
+            <p className="text-2xl font-bold">{overview.total_xp.toLocaleString("vi-VN")}</p>
           </div>
-          {/* QA-B-26: toLocaleString() không truyền locale ra "1,850" trên máy tiếng Anh; app dùng dấu chấm. */}
-          <p className="text-2xl font-bold">{overview.total_xp.toLocaleString("vi-VN")}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <div className="flex items-center gap-2 text-blue-500 mb-2">
-            <BookOpen className="w-5 h-5" />
-            <span className="text-sm font-medium">Khoá học</span>
+          <div className="bg-white rounded-xl p-4 shadow-sm border">
+            <div className="flex items-center gap-2 text-blue-500 mb-2">
+              <BookOpen className="w-5 h-5" />
+              <span className="text-sm font-medium">Khoá học</span>
+            </div>
+            <p className="text-2xl font-bold">
+              {overview.completed_courses}/{overview.enrolled_courses}
+            </p>
+            <p className="text-xs text-gray-500">hoàn thành</p>
           </div>
-          <p className="text-2xl font-bold">
-            {overview.completed_courses}/{overview.enrolled_courses}
-          </p>
-          <p className="text-xs text-gray-500">hoàn thành</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <div className="flex items-center gap-2 text-green-500 mb-2">
-            <Clock className="w-5 h-5" />
-            <span className="text-sm font-medium">Thời gian học</span>
+          <div className="bg-white rounded-xl p-4 shadow-sm border">
+            <div className="flex items-center gap-2 text-green-500 mb-2">
+              <Clock className="w-5 h-5" />
+              <span className="text-sm font-medium">Thời gian học</span>
+            </div>
+            <p className="text-2xl font-bold">{formatStudyMinutes(overview.total_study_minutes)}</p>
           </div>
-          <p className="text-2xl font-bold">{formatStudyMinutes(overview.total_study_minutes)}</p>
         </div>
-      </div>
+      )}
 
       {/* Tabs */}
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">

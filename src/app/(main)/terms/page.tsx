@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { siteConfig } from "@/lib/constants";
+import { LEGAL_PAGES_LAST_UPDATED, siteConfig } from "@/lib/constants";
 import { buildPageMetadata } from "@/lib/page-metadata";
 
 export const metadata: Metadata = buildPageMetadata({
@@ -17,7 +17,7 @@ export default function TermsPage() {
   return (
     <div className="container mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Điều khoản dịch vụ</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Cập nhật lần cuối: 2026</p>
+      <p className="mt-2 text-sm text-muted-foreground">Cập nhật lần cuối: {LEGAL_PAGES_LAST_UPDATED}</p>
 
       <div className="mt-8 space-y-6 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
         <section>
@@ -49,7 +49,16 @@ export default function TermsPage() {
           </p>
         </section>
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">5. Liên hệ</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">5. Liên kết phụ huynh và học viên</h2>
+          <p className="mt-2">
+            Khi tài khoản phụ huynh và tài khoản học viên được liên kết, phụ huynh có thể xem dữ liệu học tập của học
+            viên đó: tiến độ khoá học, điểm số, điểm danh và bài tập. Chỉ liên kết với người mà bạn có quyền giám hộ
+            hoặc được họ đồng ý. Phụ huynh không được dùng dữ liệu này vào mục đích khác, và cả hai bên có thể huỷ
+            liên kết bất cứ lúc nào trong Cài đặt, mục Gia đình.
+          </p>
+        </section>
+        <section>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">6. Liên hệ</h2>
           <p className="mt-2">
             Mọi thắc mắc về điều khoản dịch vụ vui lòng liên hệ{" "}
             <a href={`mailto:${siteConfig.supportEmail}`} className="text-primary-600 hover:underline">

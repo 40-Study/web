@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { siteConfig } from "@/lib/constants";
+import { LEGAL_PAGES_LAST_UPDATED, siteConfig } from "@/lib/constants";
 import { buildPageMetadata } from "@/lib/page-metadata";
 
 export const metadata: Metadata = buildPageMetadata({
@@ -17,7 +17,7 @@ export default function PrivacyPage() {
   return (
     <div className="container mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Chính sách bảo mật</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Cập nhật lần cuối: 2026</p>
+      <p className="mt-2 text-sm text-muted-foreground">Cập nhật lần cuối: {LEGAL_PAGES_LAST_UPDATED}</p>
 
       <div className="mt-8 space-y-6 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
         <section>
@@ -49,7 +49,16 @@ export default function PrivacyPage() {
           </p>
         </section>
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">5. Liên hệ</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">5. Dữ liệu của học viên khi liên kết với phụ huynh</h2>
+          <p className="mt-2">
+            Khi học viên liên kết với một tài khoản phụ huynh, phụ huynh đó xem được tiến độ khoá học, điểm số, điểm
+            danh và bài tập của học viên. Chúng tôi chỉ chia sẻ dữ liệu này với tài khoản đã liên kết, không chia sẻ
+            với phụ huynh khác. Học viên hoặc phụ huynh có thể huỷ liên kết bất cứ lúc nào trong Cài đặt, mục Gia đình;
+            từ lúc đó phụ huynh không còn xem được dữ liệu của học viên.
+          </p>
+        </section>
+        <section>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">6. Liên hệ</h2>
           <p className="mt-2">
             Mọi thắc mắc về chính sách bảo mật vui lòng liên hệ{" "}
             <a href={`mailto:${siteConfig.supportEmail}`} className="text-primary-600 hover:underline">

@@ -94,7 +94,10 @@ describe("ChildDetailPage — id học sinh không thuộc phụ huynh", () => {
     expect(svc.getChildGrades).not.toHaveBeenCalled();
     expect(svc.getChildTimetable).not.toHaveBeenCalled();
     svc.getChildTimetable.mockResolvedValue({ entries: [] });
+    // Q7-PG-07: bốn thẻ thống kê hiện ở các tab khác nhưng ẩn ở tab Lịch học để lịch lên trên màn hình đầu.
+    expect(screen.getByText("Chuỗi ngày học")).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: "Lịch học" }));
+    expect(screen.queryByText("Chuỗi ngày học")).toBeNull();
     await waitFor(() => expect(svc.getChildTimetable).toHaveBeenCalledTimes(1));
     // Q6-PG-08: tên con là h1 duy nhất; tiêu đề "Lịch học" của lịch là h2.
     await screen.findByRole("heading", { level: 2, name: "Lịch học" });
