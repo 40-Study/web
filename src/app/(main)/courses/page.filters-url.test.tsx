@@ -9,6 +9,7 @@ import type { CourseFilters } from "@/types/course";
 let currentParams = new URLSearchParams();
 const replace = vi.fn();
 let latestOnFilterChange: (f: CourseFilters) => void = () => {};
+let latestOnSearch: (q: string) => void = () => {};
 const useCoursesMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
@@ -24,7 +25,12 @@ vi.mock("@/components/course/course-filters", () => ({
     return <div data-testid="filters" data-category={filters.category ?? ""} data-sort={filters.sortBy ?? ""} />;
   },
 }));
-vi.mock("@/components/course/course-search", () => ({ CourseSearch: () => null }));
+vi.mock("@/components/course/course-search", () => ({
+  CourseSearch: ({ onSearch }: { onSearch: (q: string) => void }) => {
+    latestOnSearch = onSearch;
+    return null;
+  },
+}));
 vi.mock("@/components/course/course-banner-carousel", () => ({ CourseBannerCarousel: () => null }));
 vi.mock("@/hooks/use-courses", () => ({
   useCourses: (f: unknown) => useCoursesMock(f),
@@ -83,5 +89,67 @@ describe("CoursesPage — bộ lọc trên URL", () => {
     currentParams = new URLSearchParams("category=lap-trinh-web");
     rerender(<CoursesPage />);
     expect(screen.getByTestId("filters").getAttribute("data-category")).toBe("lap-trinh-web");
+  });
+
+  // M4: kéo nhanh thanh giá/chip — mỗi lần là một router.replace; URL của lần cũ có thể báo về SAU state mới.
+  it("URL cũ do chính trang ghi báo về muộn KHÔNG kéo bộ lọc giật lại (M4)", () => {
+    const { rerender } = render(<CoursesPage />);
+    act(() => latestOnFilterChange({ sortBy: "newest" }));
+    act(() => latestOnFilterChange({ sortBy: "rating" }));
+    expect(screen.getByTestId("filters").getAttribute("data-sort")).toBe("rating");
+
+    currentParams = new URLSearchParams("sort=newest"); // lần ghi cũ hạ cánh trước
+    rerender(<CoursesPage />);
+    expect(screen.getByTestId("filters").getAttribute("data-sort")).toBe("rating");
+
+    currentParams = new URLSearchParams("sort=rating"); // rồi lần ghi mới nhất
+    rerender(<CoursesPage />);
+    expect(screen.getByTestId("filters").getAttribute("data-sort")).toBe("rating");
+  });
+
+  it("các lần ghi bị gộp (URL nhảy thẳng tới bản mới) không để sót sổ ghi: điều hướng ngoài sau đó vẫn đồng bộ", () => {
+    const { rerender } = render(<CoursesPage />);
+    act(() => latestOnFilterChange({ sortBy: "newest" }));
+    act(() => latestOnFilterChange({ sortBy: "rating" }));
+    currentParams = new URLSearchParams("sort=rating");
+    rerender(<CoursesPage />);
+
+    currentParams = new URLSearchParams("sort=newest"); // bấm Danh mục/Back từ ngoài, cùng khoá với một lần ghi cũ
+    rerender(<CoursesPage />);
+    expect(screen.getByTestId("filters").getAttribute("data-sort")).toBe("newest");
+  });
+
+  it("điều hướng ngoài (header/Back) vẫn đồng bộ dù trang đã tự ghi trước đó", () => {
+    const { rerender } = render(<CoursesPage />);
+    act(() => latestOnFilterChange({ category: "lap-trinh-web" }));
+    currentParams = new URLSearchParams("category=lap-trinh-web");
+    rerender(<CoursesPage />);
+    currentParams = new URLSearchParams("category=thiet-ke");
+    rerender(<CoursesPage />);
+    expect(screen.getByTestId("filters").getAttribute("data-category")).toBe("thiet-ke");
+  });
+
+  // L3: xoá ô tìm kiếm phải bỏ luôn ?q= cũ, nếu không chọn chip rồi tải lại sẽ hiện lại từ khoá đã xoá.
+  it("xoá ô tìm kiếm bỏ ?q= khỏi URL và giữ bộ lọc (L3)", () => {
+    currentParams = new URLSearchParams("q=python&category=thiet-ke");
+    render(<CoursesPage />);
+    act(() => latestOnSearch(""));
+    expect(replace).toHaveBeenCalledWith("/courses?category=thiet-ke", { scroll: false });
+  });
+
+  it("chọn chip sau khi xoá ô tìm kiếm không đưa ?q= cũ trở lại (L3)", () => {
+    currentParams = new URLSearchParams("q=python");
+    const { rerender } = render(<CoursesPage />);
+    act(() => latestOnSearch(""));
+    currentParams = new URLSearchParams(); // URL đã bỏ q
+    rerender(<CoursesPage />);
+    act(() => latestOnFilterChange({ category: "thiet-ke" }));
+    expect(replace).toHaveBeenLastCalledWith("/courses?category=thiet-ke", { scroll: false });
+  });
+
+  it("không có ?q= thì tìm kiếm rỗng không ghi URL", () => {
+    render(<CoursesPage />);
+    act(() => latestOnSearch(""));
+    expect(replace).not.toHaveBeenCalled();
   });
 });
