@@ -123,7 +123,7 @@ describe("CartPage — voucher sống sót khi chọn khoá (A-04)", () => {
     fireEvent.click(screen.getAllByRole("checkbox")[1]);
 
     await waitFor(() => expect(screen.queryByLabelText("Xoá voucher")).toBeNull());
-    expect(screen.getByText(/tối thiểu 500\.000đ/)).toBeTruthy();
+    expect(screen.getByText(/tối thiểu 500\.000\s₫/)).toBeTruthy();
     expect(screen.queryByText(/Giảm giá/)).toBeNull();
     expect(checkoutHref()).not.toContain("voucher=");
   });

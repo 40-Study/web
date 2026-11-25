@@ -708,6 +708,7 @@ export default function CourseLessonPage() {
               answers={submittedAttempt.answers}
               answerText={quizAnswerText}
               questions={activeQuiz?.questions}
+              answersHidden={submittedAttempt.answers_hidden === true}
             />
           </div>
         );

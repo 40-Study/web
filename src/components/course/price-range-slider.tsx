@@ -17,9 +17,14 @@ interface PriceRangeSliderProps {
   className?: string;
 }
 
-/** Format a price value as VND (abbreviated) */
-function formatPrice(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}tr`;
+/**
+ * Format a price value as VND (abbreviated). Triệu: "2tr" khi tròn, dấu phẩy thập phân kiểu Việt khi lẻ ("1,5tr"),
+ * không dùng "2.0tr" (QA6 S6-10).
+ */
+export function formatPrice(value: number): string {
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toLocaleString("vi-VN", { maximumFractionDigits: 2 })}tr`;
+  }
   if (value >= 1_000) return `${Math.round(value / 1_000)}k`;
   return value === 0 ? "Miễn phí" : `${value}`;
 }

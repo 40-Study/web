@@ -18,6 +18,8 @@ interface Props {
   } | null;
   /** Hết thời gian hỏi trạng thái mà backend vẫn đang chấm. */
   timedOut: boolean;
+  /** C11: bài chấm thủ công, `pending` nghĩa là chờ giảng viên chứ không phải máy chấm. */
+  manualGrading?: boolean;
 }
 
 const TONES = {
@@ -27,8 +29,11 @@ const TONES = {
   danger: { color: '#ff6352', background: 'rgba(255,99,82,0.1)' },
 } as const;
 
-function describe(submission: NonNullable<Props['submission']>, timedOut: boolean): { text: string; tone: keyof typeof TONES } {
+function describe(submission: NonNullable<Props['submission']>, timedOut: boolean, manualGrading: boolean): { text: string; tone: keyof typeof TONES } {
   const verdict = String(submission.verdict);
+  if (manualGrading && isGradingVerdict(verdict)) {
+    return { text: 'Đã nộp. Bài đang chờ giảng viên chấm thủ công.', tone: 'neutral' };
+  }
   if (isGradingVerdict(verdict)) {
     return timedOut
       ? { text: 'Đang chấm, kiểm tra lại sau.', tone: 'neutral' }
@@ -45,9 +50,9 @@ function describe(submission: NonNullable<Props['submission']>, timedOut: boolea
   };
 }
 
-export default function LiveSubmissionVerdictBanner({ submission, timedOut }: Props) {
+export default function LiveSubmissionVerdictBanner({ submission, timedOut, manualGrading = false }: Props) {
   if (!submission || typeof submission.verdict !== 'string') return null;
-  const { text, tone } = describe(submission, timedOut);
+  const { text, tone } = describe(submission, timedOut, manualGrading);
   return (
     <div
       role="status"

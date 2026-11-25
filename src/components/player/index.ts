@@ -9,8 +9,6 @@ export { FloatingSandbox } from "./floating-sandbox";
 export { VideoQuizOverlay } from "./video-quiz-overlay";
 export { QuizLessonContent } from "./quiz-lesson-content";
 export type { QuizData, QuizQuestion, ApiQuizData } from "./quiz-lesson-content";
-export { QuizResultContent } from "./quiz-result-content";
-export type { QuizResultData, QuizResultAnswer } from "./quiz-result-content";
 export { ExerciseLessonContent } from "./exercise-lesson-content";
 export type { ExerciseData, ExerciseExample, ExerciseTestCase, TestResult, SubmitResult } from "./exercise-lesson-content";
 export { HeartbeatVideo } from "./heartbeat-video";

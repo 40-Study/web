@@ -97,13 +97,18 @@ export default function QuizResultPage() {
 
   const percentage = attempt.percentage ?? 0;
   const passed = attempt.is_passed === true;
+  const answersHidden = attempt.answers_hidden === true;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
       <div>
         <h1 className="text-xl font-semibold">{quiz?.title ?? "Kết quả bài kiểm tra"}</h1>
         <p className="text-sm text-muted-foreground">
-          {passed ? "Bạn đã đạt bài kiểm tra này." : "Bạn chưa đạt bài kiểm tra này — xem lại phần chưa đúng bên dưới."}
+          {passed
+            ? "Bạn đã đạt bài kiểm tra này."
+            : answersHidden
+              ? "Bạn chưa đạt bài kiểm tra này."
+              : "Bạn chưa đạt bài kiểm tra này — xem lại phần chưa đúng bên dưới."}
         </p>
       </div>
 
@@ -134,7 +139,12 @@ export default function QuizResultPage() {
 
       <div>
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Chi tiết từng câu</h2>
-        <QuizAttemptReview answers={attempt.answers} answerText={answerText} questions={questions} />
+        <QuizAttemptReview
+          answers={attempt.answers}
+          answerText={answerText}
+          questions={questions}
+          answersHidden={answersHidden}
+        />
       </div>
     </div>
   );

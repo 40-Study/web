@@ -41,6 +41,7 @@ export function DiscussionComposer({ onSubmit, isSubmitting }: DiscussionCompose
       <input
         type="text"
         placeholder="Bắt đầu một cuộc thảo luận..."
+        aria-label="Tiêu đề thảo luận"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onFocus={() => setExpanded(true)}

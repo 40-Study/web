@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SkipLink } from "@/components/ui";
 import { SITE_URL } from "@/lib/seo";
 import { SITE_OG_IMAGES } from "@/lib/page-metadata";
-import { THEME_STORAGE_KEY } from "@/lib/appearance-storage";
+import { THEME_STORAGE_KEY, fontSizeBootScript } from "@/lib/appearance-storage";
 
 export const metadata: Metadata = {
   // Bắt buộc có: thiếu metadataBase thì mọi URL ảnh OG tương đối sẽ hỏng
@@ -55,7 +55,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem(${JSON.stringify(
               THEME_STORAGE_KEY
-            )});document.documentElement.classList.toggle("dark",t==="dark");}catch(e){}})();`,
+            )});document.documentElement.classList.toggle("dark",t==="dark");${fontSizeBootScript()}}catch(e){}})();`,
           }}
         />
         <ThemeProvider />

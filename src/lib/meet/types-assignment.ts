@@ -5,6 +5,8 @@ export interface Assignment {
   description: string;
   difficulty: 'easy' | 'medium' | 'hard';
   language: string[];
+  /** C11: `false` = ngôn ngữ máy chấm không chạy được, giảng viên chấm thủ công. Vắng = chấm tự động. */
+  auto_grade?: boolean;
   starter_code: string;
   time_limit: number;
   memory_limit: number;

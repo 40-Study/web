@@ -158,6 +158,8 @@ export interface SaveAnswerDTO {
 }
 
 export interface QuizAttemptDetail extends QuizAttempt {
+  /** C10: true khi giảng viên tắt hiện đáp án; `correct_answer_ids`/`explanation` khi đó là null. */
+  answers_hidden?: boolean;
   answers: Array<{
     id: string;
     question_id: string;
@@ -166,8 +168,8 @@ export interface QuizAttemptDetail extends QuizAttempt {
     text_answer?: string;
     is_correct?: boolean;
     points_earned: number;
-    correct_answer_ids?: string[];
-    explanation?: string;
+    correct_answer_ids?: string[] | null;
+    explanation?: string | null;
   }>;
 }
 

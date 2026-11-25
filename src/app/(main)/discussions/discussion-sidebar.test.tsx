@@ -68,3 +68,24 @@ describe("DiscussionSidebar — thành viên tích cực", () => {
     await screen.findByText("Bình Công Khai");
   });
 });
+
+// QA6 S6-11: bảng xếp hạng in "3.000 điểm", sidebar in "3000 điểm".
+describe("DiscussionSidebar — điểm có dấu phân cách nghìn (S6-11)", () => {
+  it("điểm >= 1000 dùng cách viết Việt Nam, điểm nhỏ giữ nguyên", async () => {
+    mockApi.get.mockResolvedValue(
+      envelope({
+        period_type: "all_time",
+        period: "all",
+        total: 2,
+        entries: [
+          { rank: 1, user_id: "11111111-1111-4111-8111-111111111111", user_name: "an", full_name: "An", display_name: "An", points: 3000 },
+          { rank: 2, user_id: "22222222-2222-4222-8222-222222222222", user_name: "binh", full_name: "Bình", display_name: "Bình", points: 2964 },
+        ],
+      }),
+    );
+    renderWithProviders(<DiscussionSidebar total={0} onCategoryChange={() => {}} />);
+    expect(await screen.findByText("3.000 điểm")).toBeTruthy();
+    expect(screen.getByText("2.964 điểm")).toBeTruthy();
+    expect(screen.queryByText("3000 điểm")).toBeNull();
+  });
+});

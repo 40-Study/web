@@ -47,11 +47,26 @@ describe("ActivityHeatmap — nhãn tháng không bị bẻ dòng (QA5 S5-09)", 
     expect(labels.length).toBeGreaterThan(0);
     expect(texts).toContain("Tháng 10");
     expect(texts).not.toContain("Tháng 9");
-    // Mọi nhãn còn chữ đều rộng >= 3 tuần (42px) hoặc là nhãn cuối (width auto).
+    // Mọi nhãn còn chữ đều rộng >= 4 tuần (56px) hoặc là nhãn cuối (width auto).
     labels.forEach((l) => {
       if (!l.textContent) return;
       const w = (l as HTMLElement).style.width;
-      expect(w === "auto" || parseInt(w, 10) >= 42).toBe(true);
+      expect(w === "auto" || parseInt(w, 10) >= 56).toBe(true);
     });
+  });
+});
+
+describe("ActivityHeatmap — tháng đầu dải chỉ 3 tuần (QA6 S6-05)", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("không in 'Tháng 7' vào ô 42px làm dính với 'Tháng 8'", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 10, 24)); // 24/11/2026, 20 tuần mặc định: tháng 7 chỉ còn 3 tuần đầu dải
+    const { container } = render(<ActivityHeatmap data={[]} />);
+    const labels = Array.from(container.querySelectorAll("div.text-xs.text-muted-foreground.whitespace-nowrap"));
+    const july = labels.find((l) => (l as HTMLElement).style.width === "42px");
+    expect(july).toBeTruthy();
+    expect(july!.textContent).toBe("");
+    expect(labels.map((l) => l.textContent)).toContain("Tháng 8");
   });
 });

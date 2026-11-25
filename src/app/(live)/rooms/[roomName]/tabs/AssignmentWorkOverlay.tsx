@@ -34,10 +34,25 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   hard: '#ff6352',
 };
 
+/** Hiện thay cho "Chạy thử" khi `auto_grade === false` (C11). */
+export const MANUAL_GRADING_NOTICE = 'Bài này được giảng viên chấm thủ công';
+const LANGUAGE_UNSUPPORTED_MESSAGE = 'Ngôn ngữ này chưa hỗ trợ chạy thử và chấm tự động.';
+
+/** Ngôn ngữ của bài mà máy chấm không có trong `LANGUAGES` (vd. Dart) vẫn phải có trong dropdown. */
+function languageOptions(assigned: string[] | undefined) {
+  if (!assigned?.length) return LANGUAGES;
+  return assigned.map(
+    (id) => LANGUAGES.find((l) => l.id === id) ?? { id, label: id.charAt(0).toUpperCase() + id.slice(1), monaco: 'plaintext' },
+  );
+}
+
 const JUDGE_UNAVAILABLE_MESSAGE = 'Máy chấm đang không sẵn sàng. Bài nộp chưa được tính, hãy thử lại.';
 
 /** Lỗi khi chạy/nộp code: 503 máy chấm (JUDGE_UNAVAILABLE) hiện câu tiếng Việt thay vì "HTTP 503". */
 function codeJudgeErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof MeetApiError && err.bodyCode === 'ERR_LANGUAGE_UNSUPPORTED') {
+    return LANGUAGE_UNSUPPORTED_MESSAGE;
+  }
   if (err instanceof MeetApiError && (err.status === 503 || err.bodyCode === 'JUDGE_UNAVAILABLE')) {
     return err.code || JUDGE_UNAVAILABLE_MESSAGE;
   }
@@ -87,7 +102,9 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
     setMySubmission(final);
     setVerdictStale(false);
   }, []);
-  const { timedOut: verdictPollTimedOut } = useLiveSubmissionVerdictPoll(mySubmission, onVerdictFinal);
+  // C11: bài chấm thủ công giữ `pending` tới khi giảng viên chấm, không có verdict tự động để chờ.
+  const manualGrading = assignment?.auto_grade === false;
+  const { timedOut: verdictPollTimedOut } = useLiveSubmissionVerdictPoll(manualGrading ? null : mySubmission, onVerdictFinal);
   // `system_error` = máy chấm không chấm được, bài KHÔNG được tính: không coi là "Đã nộp".
   const submissionCounted = !!mySubmission && !isJudgeUnavailableVerdict(mySubmission.verdict);
 
@@ -939,11 +956,16 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
                 cursor: 'pointer',
               }}
             >
-              {LANGUAGES.filter((l) => !assignment?.language?.length || assignment.language.includes(l.id)).map((l) => (
+              {languageOptions(assignment?.language).map((l) => (
                 <option key={l.id} value={l.id}>{l.label}</option>
               ))}
             </select>
 
+            {manualGrading ? (
+              <span data-testid="manual-grading-notice" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)' }}>
+                {MANUAL_GRADING_NOTICE}
+              </span>
+            ) : (
             <button
               onClick={handleRun}
               disabled={running || submitting}
@@ -962,6 +984,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
             >
               {running ? 'Đang chạy...' : 'Chạy thử'}
             </button>
+            )}
 
             <button
               onClick={handleSubmit}
@@ -1002,7 +1025,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
           <div style={{ flex: 1, minHeight: 0 }}>
             <MonacoEditor
               height="100%"
-              language={LANGUAGES.find((l) => l.id === language)?.monaco ?? 'python'}
+              language={LANGUAGES.find((l) => l.id === language)?.monaco ?? 'plaintext'}
               value={code}
               onChange={(val) => setCode(val ?? '')}
               theme="vs-dark"
@@ -1021,7 +1044,7 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
             />
           </div>
 
-          <LiveSubmissionVerdictBanner submission={verdictStale ? null : mySubmission} timedOut={verdictPollTimedOut} />
+          <LiveSubmissionVerdictBanner submission={verdictStale ? null : mySubmission} timedOut={verdictPollTimedOut} manualGrading={manualGrading} />
 
           {/* Results panel */}
           {results && (
