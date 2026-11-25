@@ -4,10 +4,9 @@
  * Discussion forum list page — social feed with composer, post cards, and sidebar
  */
 
-import { useState } from "react";
-import { useMemo } from "react";
+import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { loginHref } from "@/lib/login-redirect";
@@ -21,11 +20,29 @@ import { DISCUSSION_CATEGORIES } from "./discussion-categories";
 // "" = toàn diễn đàn, để "Tất cả" luôn là tổng thật kể cả khi đang lọc một danh mục.
 const TOTAL_KEYS = ["", ...DISCUSSION_CATEGORIES.map((c) => c.value)];
 
+// `useSearchParams` cần ranh giới Suspense (trang bị tạo tĩnh); vỏ này chỉ bọc phần nội dung.
 export default function DiscussionsPage() {
+  return (
+    <Suspense fallback={null}>
+      <DiscussionsPageContent />
+    </Suspense>
+  );
+}
+
+function DiscussionsPageContent() {
   const router = useRouter();
+  // Q7-PG-02: chip danh mục nằm trên URL (`?category=`, như /courses và /contests) để tải lại / chia sẻ link không mất.
+  // Đọc ngay ở lần render đầu; giá trị lạ bị bỏ qua (về "Tất cả").
+  const wantedCategory = useSearchParams().get("category");
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isSessionPending = useAuthStore((s) => !s.isAuthenticated && s.sessionStatus === "checking");
-  const [category, setCategory] = useState<string | undefined>(undefined);
+  const [category, setCategory] = useState<string | undefined>(
+    () => DISCUSSION_CATEGORIES.find((c) => c.value === wantedCategory)?.value,
+  );
+  const handleCategoryChange = (next: string | undefined) => {
+    setCategory(next);
+    router.replace(next ? `/discussions?category=${encodeURIComponent(next)}` : "/discussions", { scroll: false });
+  };
 
   const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = useDiscussionPosts(category);
   const categoryTotals = useDiscussionCategoryTotals(TOTAL_KEYS);
@@ -136,7 +153,7 @@ export default function DiscussionsPage() {
             total={allTotal}
             categoryCounts={categoryTotals}
             activeCategory={category}
-            onCategoryChange={setCategory}
+            onCategoryChange={handleCategoryChange}
           />
         </aside>
       </div>
