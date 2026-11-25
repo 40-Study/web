@@ -78,12 +78,25 @@ export function toApiLevel(formLevel: string): string {
 /** Câu báo lỗi khi khoá "Có phí" chưa có giá bán hợp lệ. */
 export const PRICE_REQUIRED_ERROR = "Vui lòng nhập giá bán lớn hơn 0 hoặc chọn Miễn phí.";
 
-/** Khoá "Có phí" phải có giá bán > 0 (khoá miễn phí luôn hợp lệ). Trả câu lỗi hoặc null. */
+/** Trần giá (VNĐ), khớp hợp đồng C13: backend trả 400 `ERR_VALIDATION` ngoài 0..1.000.000.000. */
+export const MAX_COURSE_PRICE = 1_000_000_000;
+
+/** Giá phải là số VNĐ nguyên (Q7-T02/T03): không phần thập phân, không "1e3", không số âm, không quá trần. */
+export const PRICE_FORMAT_ERROR = "Giá phải là số tiền VNĐ nguyên, tối đa 1.000.000.000.";
+
+/** `text` (đã trim) là số nguyên không âm trong 0..MAX_COURSE_PRICE. Chỉ nhận chữ số: loại "1e3", "-3", "1000.5". */
+function isWholeVnd(text: string): boolean {
+  return /^\d+$/.test(text) && Number(text) <= MAX_COURSE_PRICE;
+}
+
+/** Khoá "Có phí" phải có giá bán nguyên > 0 và <= trần (khoá miễn phí luôn hợp lệ). Trả câu lỗi hoặc null. */
 export function validatePrice(form: Pick<CourseFormData, "is_free" | "price">): string | null {
   if (form.is_free) return null;
   const text = form.price.trim();
+  if (text === "") return PRICE_REQUIRED_ERROR;
   const price = Number(text);
-  return text === "" || !Number.isFinite(price) || price <= 0 ? PRICE_REQUIRED_ERROR : null;
+  if (!Number.isFinite(price) || price <= 0) return PRICE_REQUIRED_ERROR;
+  return isWholeVnd(text) ? null : PRICE_FORMAT_ERROR;
 }
 
 /** Câu báo lỗi giá khuyến mãi — khớp quy tắc backend: 0 < discount_price < price (DISCOUNT_PRICE_INVALID). */
@@ -100,6 +113,7 @@ export function validateDiscountPrice(form: Pick<CourseFormData, "is_free" | "pr
   if (form.is_free || text === "") return null;
   const discount = Number(text);
   const price = Number(form.price);
+  if (Number.isFinite(discount) && discount > 0 && !isWholeVnd(text)) return PRICE_FORMAT_ERROR;
   if (!Number.isFinite(discount) || discount <= 0) return DISCOUNT_PRICE_ERROR;
   if (!Number.isFinite(price) || discount >= price) return DISCOUNT_PRICE_ERROR;
   return null;

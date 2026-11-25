@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { validateDiscountPrice, validatePrice, type CourseFormData, type UpdateCourseFormField } from "./course-form-model";
+import { MAX_COURSE_PRICE, validateDiscountPrice, validatePrice, type CourseFormData, type UpdateCourseFormField } from "./course-form-model";
 
 /**
  * Bước "Cài đặt giá" — dùng chung trang tạo và trang sửa khoá.
@@ -77,6 +77,10 @@ export function CoursePricingStep({ formData, update }: { formData: CourseFormDa
                 <Label>Giá bán (VNĐ)</Label>
                 <Input
                   type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={MAX_COURSE_PRICE}
+                  step={1}
                   placeholder="1200000"
                   value={formData.price}
                   onChange={(e) => update("price", e.target.value)}
@@ -94,6 +98,10 @@ export function CoursePricingStep({ formData, update }: { formData: CourseFormDa
                 <Label>Giá khuyến mãi (VNĐ)</Label>
                 <Input
                   type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={MAX_COURSE_PRICE}
+                  step={1}
                   placeholder="890000"
                   value={formData.discount_price}
                   onChange={(e) => update("discount_price", e.target.value)}

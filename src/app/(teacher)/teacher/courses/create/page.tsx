@@ -45,12 +45,24 @@ export default function CreateCoursePage() {
   // QA-B-04: cờ nằm ở trang (không ở bước 2) vì bước 2 unmount khi chuyển bước mà upload vẫn chạy tiếp.
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
   const submitDisabled = createCourse.isPending || thumbnailUploading;
+  // Q7-T04: "Lưu nháp" thiếu giá không còn nhảy sang bước 3; ở yên bước hiện tại và hiện lý do (tính lại theo form,
+  // nên tự mất khi giá được sửa đúng).
+  const [draftBlocked, setDraftBlocked] = useState(false);
 
   const update = useCallback(<K extends keyof CourseFormData>(key: K, value: CourseFormData[K]) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   }, []);
 
   const mediaMissing = currentStep === 2 ? missingMediaItems(formData, thumbnailUploading) : [];
+
+  /** Bước `id` đã đủ điều kiện chưa: dấu tick của thanh bước dựa trên cái này, không dựa vào vị trí bước hiện tại. */
+  const isStepValid = (id: number) => {
+    if (id === 1) return formData.title.trim().length > 0;
+    if (id === 2) return missingMediaItems(formData, false).length === 0;
+    if (id === 3) return validatePrice(formData) === null && validateDiscountPrice(formData) === null;
+    return true;
+  };
+  const priceBlockError = validatePrice(formData) ?? validateDiscountPrice(formData);
 
   const canGoNext = () => {
     if (currentStep === 1) return formData.title.trim().length > 0;
@@ -61,18 +73,16 @@ export default function CreateCoursePage() {
   };
 
   /**
-   * Lưu/tạo khoá chỉ khi ảnh bìa đã tải xong và giá bán, giá khuyến mãi hợp lệ; giá sai thì quay lại bước giá
-   * và báo lý do.
+   * Lưu/tạo khoá chỉ khi ảnh bìa đã tải xong và giá bán, giá khuyến mãi hợp lệ; giá sai thì giữ nguyên bước hiện
+   * tại, hiện lý do kèm nút sang bước giá (Q7-T04).
    */
   const canSubmit = () => {
     if (thumbnailUploading) {
       toast.info(THUMBNAIL_UPLOADING_NOTE);
       return false;
     }
-    const discountError = validatePrice(formData) ?? validateDiscountPrice(formData);
-    if (discountError === null) return true;
-    toast.error(discountError);
-    setCurrentStep(3);
+    if (priceBlockError === null) return true;
+    setDraftBlocked(true);
     return false;
   };
 
@@ -170,12 +180,13 @@ export default function CreateCoursePage() {
         <aside className="hidden lg:block w-52 shrink-0">
           <div className="sticky top-24 space-y-1">
             {STEPS.map((step) => {
-              const isCompleted = step.id < currentStep;
+              const isCompleted = step.id < currentStep && isStepValid(step.id);
               const isCurrent = step.id === currentStep;
 
               return (
                 <button
                   key={step.id}
+                  data-step-state={isCurrent ? "current" : isCompleted ? "completed" : "todo"}
                   onClick={() => step.id <= currentStep && setCurrentStep(step.id)}
                   className={cn(
                     "flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-sm transition-colors text-left",
@@ -239,6 +250,15 @@ export default function CreateCoursePage() {
             <p role="status" className="mt-6 text-sm text-amber-700">
               Cần thêm {mediaMissing.join(" và ")} để sang bước tiếp theo. Bạn vẫn có thể lưu nháp.
             </p>
+          )}
+
+          {draftBlocked && priceBlockError !== null && currentStep !== 3 && (
+            <div role="alert" className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-red-600">
+              <span>Chưa thể lưu nháp: {priceBlockError}</span>
+              <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setCurrentStep(3)}>
+                Đến bước Cài đặt giá
+              </Button>
+            </div>
           )}
 
           {thumbnailUploading && (

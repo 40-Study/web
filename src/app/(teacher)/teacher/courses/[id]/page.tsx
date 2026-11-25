@@ -104,6 +104,7 @@ import { submitLivestreamContent } from "@/lib/livestream";
 import { getErrorMessage } from "@/lib/error-messages";
 import { LIVESTREAM_NOT_READY_HINT, resolveLivestreamRoomHref } from "@/lib/lesson-content-link";
 import { formatLessonDuration, parseLessonDuration } from "@/lib/lesson-duration";
+import { parseLessonMinutes } from "@/lib/lesson-minutes";
 import { VideoDurationField } from "@/components/teacher/video-duration-field";
 import { ClassCreateForm } from "@/components/teacher/class-create-form";
 import { QuizDuplicateButton } from "@/components/teacher/quiz-duplicate-button";
@@ -655,6 +656,8 @@ export default function CourseDetailPage() {
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonDesc, setLessonDesc] = useState("");
   const [lessonDuration, setLessonDuration] = useState("");
+  // Q7-T01 (C12): số phút nguyên 0..1440; sai thì báo ngay dưới ô và khoá nút tạo.
+  const lessonMinutes = parseLessonMinutes(lessonDuration);
   const [lessonPreview, setLessonPreview] = useState(false);
   const [lessonMandatory, setLessonMandatory] = useState(true);
 
@@ -723,14 +726,14 @@ export default function CourseDetailPage() {
 
   const handleCreateLesson = async () => {
     const title = lessonTitle.trim();
-    if (!lessonDialog || !title || lessonBusy) return;
+    if (!lessonDialog || !title || lessonBusy || lessonMinutes.kind === "invalid") return;
     const sectionId = lessonDialog;
     const before = countCached(title, sectionId);
     try {
       await createLessonMutation.mutateAsync({
         title,
         description: lessonDesc.trim() || undefined,
-        duration_minutes: lessonDuration ? parseInt(lessonDuration) : undefined,
+        duration_minutes: lessonMinutes.kind === "valid" ? lessonMinutes.minutes : undefined,
         is_preview: lessonPreview,
         is_mandatory: lessonMandatory,
       });
@@ -1309,8 +1312,26 @@ export default function CourseDetailPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="new-lesson-duration">Thời lượng (phút)</Label>
                 {/* B-18: placeholder "15" trông như giá trị mặc định nhưng để trống thì không gửi gì (lưu 0 phút). */}
-                <Input id="new-lesson-duration" type="number" min={0} value={lessonDuration} onChange={(e) => setLessonDuration(e.target.value)} placeholder="Không bắt buộc" />
-                <p className="text-xs text-muted-foreground">Để trống nếu chưa rõ.</p>
+                <Input
+                  id="new-lesson-duration"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={1440}
+                  step={1}
+                  value={lessonDuration}
+                  onChange={(e) => setLessonDuration(e.target.value)}
+                  placeholder="Không bắt buộc"
+                  aria-invalid={lessonMinutes.kind === "invalid"}
+                  aria-describedby="new-lesson-duration-hint"
+                />
+                {lessonMinutes.kind === "invalid" ? (
+                  <p id="new-lesson-duration-hint" role="alert" className="text-xs text-red-600">
+                    {lessonMinutes.message}
+                  </p>
+                ) : (
+                  <p id="new-lesson-duration-hint" className="text-xs text-muted-foreground">Để trống nếu chưa rõ.</p>
+                )}
               </div>
               <div className="space-y-3 pt-6">
                 <div className="flex items-center justify-between">
@@ -1326,7 +1347,7 @@ export default function CourseDetailPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setLessonDialog(null)} disabled={lessonBusy}>Huỷ</Button>
-            <Button onClick={handleCreateLesson} disabled={!lessonTitle.trim() || lessonBusy}>
+            <Button onClick={handleCreateLesson} disabled={!lessonTitle.trim() || lessonBusy || lessonMinutes.kind === "invalid"}>
               {lessonBusy && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
               Tạo bài học
             </Button>

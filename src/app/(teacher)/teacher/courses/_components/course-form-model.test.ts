@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { ApiCourse } from "@/services/course.service";
 import {
   DISCOUNT_PRICE_ERROR,
+  MAX_COURSE_PRICE,
+  PRICE_FORMAT_ERROR,
   PRICE_REQUIRED_ERROR,
   buildCourseUpdatePayload,
   courseToFormData,
@@ -115,6 +117,36 @@ describe("validatePrice (Q3-09)", () => {
   it("'Có phí' với giá > 0 -> hợp lệ; Miễn phí luôn hợp lệ dù giá trống", () => {
     expect(validatePrice(form({ price: "250000" }))).toBeNull();
     expect(validatePrice(form({ is_free: true, price: "" }))).toBeNull();
+  });
+});
+
+// Q7-T02 / Q7-T03 (C13): giá là số VNĐ nguyên trong 0..1.000.000.000.
+describe("validatePrice / validateDiscountPrice: VNĐ nguyên, có trần (Q7-T02, Q7-T03)", () => {
+  const priceForm = (price: string) => ({ is_free: false, price });
+  const saleForm = (price: string, discount_price: string) => ({ is_free: false, price, discount_price });
+
+  it.each(["0.5", "1000.55", "1e3", "99999999999999", String(MAX_COURSE_PRICE + 1)])(
+    "giá bán %s bị từ chối với câu giải thích",
+    (price) => {
+      expect(validatePrice(priceForm(price))).toBe(PRICE_FORMAT_ERROR);
+    }
+  );
+
+  it("giá bán nguyên đến đúng trần là hợp lệ", () => {
+    expect(validatePrice(priceForm("1000"))).toBeNull();
+    expect(validatePrice(priceForm(String(MAX_COURSE_PRICE)))).toBeNull();
+  });
+
+  it("giá khuyến mãi lẻ hoặc quá trần cũng bị từ chối", () => {
+    expect(validateDiscountPrice(saleForm("500000", "1000.5"))).toBe(PRICE_FORMAT_ERROR);
+    expect(validateDiscountPrice(saleForm("500000", "1e3"))).toBe(PRICE_FORMAT_ERROR);
+    expect(validateDiscountPrice(saleForm(String(MAX_COURSE_PRICE), "1000000001"))).toBe(PRICE_FORMAT_ERROR);
+  });
+
+  it("buildCourseUpdatePayload cũng chặn giá lẻ (trang sửa dùng chung luật)", () => {
+    const original = course();
+    const res = buildCourseUpdatePayload({ ...courseToFormData(original), price: "1000.55" }, original);
+    expect(res.error).toBe(PRICE_FORMAT_ERROR);
   });
 });
 
