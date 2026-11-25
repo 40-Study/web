@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { AlertTriangle, ShieldAlert, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ApiError } from "@/lib/errors";
+import { ApiError, isInvalidIdError } from "@/lib/errors";
 
 /** Lỗi "không xem được": backend trả 404 khi không thấy, 403 khi thấy mà không có quyền (lane-rules). */
 export function isResourceUnavailableError(error: unknown): boolean {
@@ -12,11 +12,11 @@ export function isResourceUnavailableError(error: unknown): boolean {
 
 /**
  * Q6 #130 L3: GET theo id mà id sai định dạng -> backend trả 400 (vd `{"error":"invalid id"}`, không có `code`). Thử lại vô
- * nghĩa nên trang chi tiết coi như "không tìm thấy". Dùng cho trang đọc MỘT tài nguyên theo id trên URL; đừng dùng cho
- * lời gọi ghi (400 ở đó là lỗi nhập liệu thật).
+ * nghĩa nên trang chi tiết coi như "không tìm thấy". Chỉ đúng 400 "id sai định dạng" (`isInvalidIdError`, #134 L-3); một
+ * 400 khác (tham số truy vấn, validate) vẫn là lỗi thật kèm "Thử lại". Dùng cho trang đọc MỘT tài nguyên theo id trên URL.
  */
 export function isInvalidResourceIdError(error: unknown): boolean {
-  return error instanceof ApiError && error.status === 400;
+  return isInvalidIdError(error);
 }
 
 interface ResourceUnavailableProps {

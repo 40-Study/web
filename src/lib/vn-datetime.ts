@@ -88,7 +88,8 @@ export function hasVnSessionStarted(
 /**
  * Buổi học đã KẾT THÚC (giờ kết thúc, giờ VN, không còn sau `now`) chưa (Q6-T04). Cùng cách đọc `date`/giờ với
  * `isVnSessionUpcoming`. Thiếu/sai định dạng thì false: không chứng minh được buổi đã qua thì không tuyên bố "đã diễn ra".
- * Truyền `startTime` để nhận ra buổi qua nửa đêm (giờ kết thúc <= giờ bắt đầu thì kết thúc vào NGÀY HÔM SAU).
+ * Truyền `startTime` để nhận ra buổi qua nửa đêm (giờ kết thúc < giờ bắt đầu thì kết thúc vào NGÀY HÔM SAU). Giờ kết thúc
+ * BẰNG giờ bắt đầu (độ dài 0, dữ liệu xấu) không phải buổi 24 giờ: coi như kết thúc ngay lúc bắt đầu (#134 L-2).
  */
 export function hasVnSessionEnded(
   date: string | null | undefined,
@@ -99,7 +100,7 @@ export function hasVnSessionEnded(
   let end = vnSessionInstant(date, endTime);
   if (end === null) return false;
   const start = startTime ? vnSessionInstant(date, startTime) : null;
-  if (start !== null && end <= start) end += 86_400_000;
+  if (start !== null && end < start) end += 86_400_000;
   return end <= now.getTime();
 }
 

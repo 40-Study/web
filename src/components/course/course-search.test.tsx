@@ -67,6 +67,23 @@ describe("CourseSearch — đồng bộ với URL", () => {
     expect(input().value).toBe("python");
   });
 
+  // #134 L-8: Back tới ?q=toan rồi Forward về URL không có q trong 300ms (trước khi debounce kịp báo "toan").
+  it("Back tới ?q=toan rồi Forward về URL không q trong 300ms: ô được xoá và không báo lại 'toan'", () => {
+    const onSearch = vi.fn();
+    const { rerender } = render(<CourseSearch onSearch={onSearch} />);
+
+    currentParams = new URLSearchParams("q=toan");
+    rerender(<CourseSearch onSearch={onSearch} />);
+    expect(input().value).toBe("toan");
+    act(() => void vi.advanceTimersByTime(100)); // chưa tới 300ms
+
+    currentParams = new URLSearchParams();
+    rerender(<CourseSearch onSearch={onSearch} />);
+    expect(input().value).toBe("");
+    act(() => void vi.advanceTimersByTime(1000));
+    expect(onSearch).not.toHaveBeenCalledWith("toan");
+  });
+
   it("URL đổi thì báo trang cha từ khoá mới (sau 300ms) để danh sách lọc theo", () => {
     const onSearch = vi.fn();
     currentParams = new URLSearchParams("q=react");
