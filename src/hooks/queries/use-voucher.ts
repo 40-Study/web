@@ -128,6 +128,9 @@ export function useAdminVouchers(page = 1, pageSize = ADMIN_VOUCHER_PAGE_SIZE) {
 /** C9 (QA6-A05): mã voucher trùng trả 409 `ERR_VOUCHER_CODE_EXISTS` (backend cũ: 400 `ERR_CREATE_VOUCHER` + "voucher code already exists"). */
 export const VOUCHER_CODE_EXISTS_CODE = "ERR_VOUCHER_CODE_EXISTS";
 const VOUCHER_CODE_EXISTS_MESSAGE = "Mã voucher này đã tồn tại, hãy dùng mã khác.";
+/** Q6 #132 L4: tên voucher trùng trả 409 `ERR_VOUCHER_NAME_EXISTS`. Có nhánh riêng theo MÃ lỗi, không dựa vào việc message có dấu. */
+export const VOUCHER_NAME_EXISTS_CODE = "ERR_VOUCHER_NAME_EXISTS";
+const VOUCHER_NAME_EXISTS_MESSAGE = "Tên voucher này đã tồn tại. Hãy dùng tên khác.";
 
 /**
  * Lý do thật của lỗi lưu voucher thay cho một câu chung cho mọi 400 (QA6-A05): mã trùng nói là mã trùng, lỗi
@@ -137,6 +140,7 @@ export function voucherSaveErrorMessage(error: unknown, fallback: string): strin
   if (error instanceof ApiError && (error.code === VOUCHER_CODE_EXISTS_CODE || /code already exists/i.test(error.message))) {
     return VOUCHER_CODE_EXISTS_MESSAGE;
   }
+  if (error instanceof ApiError && error.code === VOUCHER_NAME_EXISTS_CODE) return VOUCHER_NAME_EXISTS_MESSAGE;
   return getErrorMessage(error, fallback);
 }
 

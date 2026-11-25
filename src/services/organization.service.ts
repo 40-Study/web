@@ -117,6 +117,8 @@ type R<T> = { message: string; data: T };
 
 /** Số dòng gán vai trò xin mỗi lần khi tải thành viên tổ chức. */
 const ORG_MEMBERS_PAGE_SIZE = 100;
+/** Trần số trang khi backend không trả `total` (phải đi từng trang); vượt trần thì báo lỗi thay vì cắt im lặng. */
+const ORG_MEMBERS_MAX_PAGES = 100;
 
 // ─── Service ────────────────────────────────────────────────────────────────
 
@@ -184,6 +186,19 @@ export const organizationService = {
 
     const first = await fetchPage(1);
     const rows = [...first.user_organization_roles];
+    // Q6 #132 L1: backend cũ/đổi không trả `total` mà trang đầu đã đầy -> không biết còn bao nhiêu. Đi từng trang tới khi gặp
+    // trang chưa đầy, thay vì dừng ở trang đầu và cắt im lặng (đúng lỗi A14 từng sửa).
+    if (typeof first.total !== "number") {
+      let last = first;
+      for (let page = 2; last.user_organization_roles.length >= ORG_MEMBERS_PAGE_SIZE; page++) {
+        if (page > ORG_MEMBERS_MAX_PAGES) {
+          throw new Error(`Danh sách thành viên vượt ${ORG_MEMBERS_MAX_PAGES} trang mà máy chủ không trả tổng số; không thể tải đủ.`);
+        }
+        last = await fetchPage(page);
+        rows.push(...last.user_organization_roles);
+      }
+      return groupOrgMembers(rows);
+    }
     // Cỡ trang thật là số dòng backend trả (nó có thể chặn trần thấp hơn page_size đã xin).
     const pageSize = first.user_organization_roles.length;
     if (pageSize > 0 && first.total > pageSize) {

@@ -58,4 +58,21 @@ describe("/org/classes — chip trạng thái ghi vào URL", () => {
 
     expect(screen.getByRole("button", { name: "Nháp" }).getAttribute("aria-pressed")).toBe("true");
   });
+
+  // Q6 #132 L7: Back/Forward đổi URL mà trang vẫn mở; chip và truy vấn phải theo URL.
+  it("URL đổi từ ngoài (Back/Forward) -> chip và truy vấn đi theo ?status=", () => {
+    nav.search = "status=draft";
+    const view = render(<OrgClassesPage />);
+    expect(screen.getByRole("button", { name: "Nháp" }).getAttribute("aria-pressed")).toBe("true");
+
+    nav.search = "";
+    view.rerender(<OrgClassesPage />);
+    expect(screen.getByRole("button", { name: "Tất cả" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Nháp" }).getAttribute("aria-pressed")).toBe("false");
+    expect(query.useOrgClasses).toHaveBeenLastCalledWith("org-1", expect.objectContaining({ status: "", page: 1 }));
+
+    nav.search = "status=draft";
+    view.rerender(<OrgClassesPage />);
+    expect(screen.getByRole("button", { name: "Nháp" }).getAttribute("aria-pressed")).toBe("true");
+  });
 });

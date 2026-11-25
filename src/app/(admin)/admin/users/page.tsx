@@ -82,7 +82,7 @@ export default function AdminUsersPage() {
   const debouncedKeyword = useDebouncedValue(keyword, 300);
   const [rawRoleFilter, setRoleFilter] = useState(() => searchParams.get("role") ?? "ALL");
   // QA6-A11: danh sách vai trò tải bất đồng bộ nên `?role=` chỉ kiểm được sau khi có danh sách; trước đó giữ nguyên giá trị URL.
-  const { data: systemRoles = [], isSuccess: rolesLoaded } = useSystemRoles();
+  const { data: systemRoles = [], isSuccess: rolesLoaded, isPending: rolesPending } = useSystemRoles();
   const roleFilter = rolesLoaded
     ? parseRoleParam(rawRoleFilter, systemRoles.map((role) => role.name))
     : rawRoleFilter;
@@ -114,7 +114,12 @@ export default function AdminUsersPage() {
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }, [debouncedKeyword, roleFilter, statusFilter, page, pathname, router]);
 
-  const { data, isLoading, isError, error, refetch } = useAdminUsers(params);
+  // Q6 #132 L6: `?role=nope` từng bị gửi lên API một lần trước khi danh sách vai trò về. Có `?role=` khác "Tất cả" thì chờ
+  // danh sách vai trò (thành công hoặc lỗi) rồi mới tải; trong lúc chờ bảng hiện trạng thái đang tải như bình thường.
+  const waitingForRoles = rawRoleFilter !== "ALL" && rolesPending;
+  const usersQuery = useAdminUsers(params, { enabled: !waitingForRoles });
+  const { data, isError, error, refetch } = usersQuery;
+  const isLoading = usersQuery.isLoading || waitingForRoles;
   const updateStatus = useUpdateUserStatus();
 
   // ADM-L2: backend chưa có tham số sort -> sắp xếp trong trang đang xem (xem _lib/user-sort.ts).

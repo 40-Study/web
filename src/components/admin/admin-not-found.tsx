@@ -8,7 +8,9 @@ import { ApiError } from "@/lib/errors";
  * 400 `ERR_INVALID_ID` cho id sai định dạng; cả hai là kết quả cuối cùng, không phải lỗi tạm, nên "Thử lại" vô nghĩa.
  */
 export function isMissingResourceError(error: unknown): boolean {
-  return error instanceof ApiError && (error.status === 404 || error.status === 400);
+  if (!(error instanceof ApiError)) return false;
+  // Q6 #132 L2: 400 chỉ là "không tìm thấy" khi đúng là id sai định dạng; một 400 khác (tham số truy vấn...) là lỗi thật.
+  return error.status === 404 || (error.status === 400 && error.code === "ERR_INVALID_ID");
 }
 
 interface AdminNotFoundProps {

@@ -18,11 +18,20 @@ function OrgClassesList() {
   const orgId = useActiveOrgId();
   const router = useRouter();
   const pathname = usePathname();
-  const initialStatus = useSearchParams().get("status") ?? "";
-  const [status, setStatus] = useState(initialStatus);
+  const urlStatus = useSearchParams().get("status") ?? "";
+  const [status, setStatus] = useState(urlStatus);
+  const [syncedUrlStatus, setSyncedUrlStatus] = useState(urlStatus);
   const [keyword, setKeyword] = useState("");
   const [debounced, setDebounced] = useState("");
   const [page, setPage] = useState(1);
+
+  // Q6 #132 L7: `?status=` đổi từ NGOÀI chip (Back/Forward, link từ trang tổng quan khi trang đã mở) thì chip và danh sách đi theo URL.
+  // Chip bấm vẫn đổi ngay (state cục bộ) rồi mới ghi URL; khi URL tới nơi, giá trị trùng nên không đổi gì.
+  if (urlStatus !== syncedUrlStatus) {
+    setSyncedUrlStatus(urlStatus);
+    setStatus(urlStatus);
+    setPage(1);
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => {

@@ -65,6 +65,11 @@ function PlatformFeeCard({ settings }: { settings: AdminSettings }) {
       setError(parsed.error);
       return;
     }
+    // Q6 #132 L5: lưu đúng mức đang áp dụng thì không mở hộp "đổi từ 12,5% thành 12,5%" rồi PUT vô nghĩa.
+    if (parsed.value === settings.platform_fee_percent) {
+      setError("Mức phí này đang được áp dụng, không có gì để lưu.");
+      return;
+    }
     setError(undefined);
     // QA6: phí nền tảng là cấu hình tiền bạc, ảnh hưởng mọi đơn sau đó nên không lưu ngay khi bấm "Lưu".
     setPendingValue(parsed.value);
@@ -93,7 +98,10 @@ function PlatformFeeCard({ settings }: { settings: AdminSettings }) {
             step="0.01"
             value={draft}
             error={error}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              setError(undefined);
+            }}
           />
         </div>
         <Button className="mt-7" size="sm" isLoading={updateMutation.isPending} onClick={onSave}>

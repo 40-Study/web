@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "@/lib/errors";
-import { voucherSaveErrorMessage, VOUCHER_CODE_EXISTS_CODE } from "./use-voucher";
+import { voucherSaveErrorMessage, VOUCHER_CODE_EXISTS_CODE, VOUCHER_NAME_EXISTS_CODE } from "./use-voucher";
 
 // QA6-A05: mọi 400 khi lưu voucher từng hiện cùng một câu "Mã hoặc tên có thể đã tồn tại". Mỗi lý do giờ có câu riêng.
 const FALLBACK = "Không thể tạo voucher, thử lại sau.";
@@ -10,6 +10,12 @@ describe("voucherSaveErrorMessage (C9)", () => {
     // Message cố ý không chứa "code already exists": chỉ nhánh theo MÃ lỗi mới cho ra câu này.
     const msg = voucherSaveErrorMessage(new ApiError(409, VOUCHER_CODE_EXISTS_CODE, "conflict"), FALLBACK);
     expect(msg).toBe("Mã voucher này đã tồn tại, hãy dùng mã khác.");
+  });
+
+  // Q6 #132 L4: message cố ý tiếng Anh, không có dấu: chỉ nhánh theo MÃ lỗi mới cho ra câu tiếng Việt.
+  it("409 ERR_VOUCHER_NAME_EXISTS -> nói là tên trùng, kể cả khi message tiếng Anh", () => {
+    const msg = voucherSaveErrorMessage(new ApiError(409, VOUCHER_NAME_EXISTS_CODE, "voucher name already exists"), FALLBACK);
+    expect(msg).toBe("Tên voucher này đã tồn tại. Hãy dùng tên khác.");
   });
 
   it("backend cũ: 400 ERR_CREATE_VOUCHER + 'voucher code already exists' vẫn nói là mã trùng", () => {

@@ -76,14 +76,17 @@ for (const viewport of WIDTHS) {
     test.afterAll(async () => close?.());
 
     test("A02 /admin/roles không tràn ngang khi danh sách người dùng có email dài", async () => {
+      let injected = false;
       await injectIntoGet(page, /\/api\/system-roles\/[^/]+\/users(\?.*)?$/, (body) => {
         const rows = body.data.user_system_roles;
         if (rows.length === 0) return;
         rows[0].user = { ...rows[0].user, email: `${"qa6-guest-".repeat(6)}@example.com` };
+        injected = true;
       });
       await page.goto("/admin/roles");
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       await page.waitForLoadState("networkidle");
+      test.skip(!injected, "vai trò chưa có người dùng nào: không có dòng để chèn email dài");
       expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
     });
 
@@ -126,14 +129,18 @@ for (const viewport of WIDTHS) {
     });
 
     test("A04 dashboard: tên tổ chức dài trong 'Hoạt động gần đây' không tràn", async () => {
+      // Q6 #132 L3: nhật ký trống thì không có dòng để chèn tên dài; không được để test "xanh" mà chẳng kiểm tra gì.
+      let injected = false;
       await injectIntoGet(page, /\/api\/admin\/audit-logs(\?.*)?$/, (body) => {
         const item = body.data.items[0];
         if (!item) return;
         item.target_type = "organization";
         item.metadata = { target_name: "Đ".repeat(100) };
+        injected = true;
       });
       await page.goto("/admin");
       await page.waitForLoadState("networkidle");
+      test.skip(!injected, "nhật ký kiểm toán trống: không có dòng nào để chèn tên tổ chức dài");
       expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
     });
 

@@ -258,7 +258,8 @@ describe("AdminUsersPage — đồng bộ bộ lọc với URL", () => {
     // Ngay lần render đầu — không đợi debounce — vì giá trị debounce khởi tạo
     // bằng chính giá trị URL (useDebouncedValue seed từ useState(value)).
     expect(mockUseAdminUsers).toHaveBeenCalledWith(
-      expect.objectContaining({ keyword: "student2" })
+      expect.objectContaining({ keyword: "student2" }),
+      expect.anything()
     );
     expect(screen.getByText("student2@demo.com")).toBeTruthy();
   });
@@ -276,7 +277,8 @@ describe("AdminUsersPage — đồng bộ bộ lọc với URL", () => {
     render(<AdminUsersPage />);
 
     expect(mockUseAdminUsers).toHaveBeenCalledWith(
-      expect.objectContaining({ role: "TEACHER", status: "locked", page: 2 })
+      expect.objectContaining({ role: "TEACHER", status: "locked", page: 2 }),
+      expect.anything()
     );
   });
 
@@ -386,7 +388,7 @@ describe("AdminUsersPage — QA3-15: ?page vượt trang cuối", () => {
 
     render(<AdminUsersPage />);
 
-    await waitFor(() => expect(mockUseAdminUsers).toHaveBeenLastCalledWith(expect.objectContaining({ page: 11 })));
+    await waitFor(() => expect(mockUseAdminUsers).toHaveBeenLastCalledWith(expect.objectContaining({ page: 11 }), expect.anything()));
     await waitFor(() => expect(replace).toHaveBeenLastCalledWith("/admin/users?page=11", { scroll: false }));
     expect(screen.getByText("student1@fortex.vn")).toBeTruthy();
   });
