@@ -32,8 +32,16 @@ export class BusinessApiError extends ApiError {
   /** Số giây phải chờ nếu backend trả `retry_after` (body hoặc header `Retry-After`). */
   public readonly retryAfter?: number;
 
-  constructor(status: number, code: string, message: string, payload?: unknown, retryAfter?: number) {
-    super(status, code, message);
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    payload?: unknown,
+    retryAfter?: number,
+    /** Nguyên body lỗi (như `ApiError.responseBody` của interceptor), vd. `retry_after_at` của 409 ERR_PAYMENT_VERIFYING. */
+    responseBody?: Record<string, unknown>
+  ) {
+    super(status, code, message, undefined, responseBody);
     this.name = "BusinessApiError";
     this.payload = payload;
     this.retryAfter = retryAfter;
@@ -48,8 +56,9 @@ function retryAfterSeconds(body: ErrorBody | undefined, headers: Record<string, 
   return undefined;
 }
 
-export async function businessRequest<T>(config: AxiosRequestConfig): Promise<T> {
-  const res = await api.request<Envelope<T> | ErrorBody>({
+/** Gửi request, ném `BusinessApiError` cho lỗi nghiệp vụ; trả nguyên `res.data` khi thành công. */
+async function sendKeepingBusinessErrors(config: AxiosRequestConfig): Promise<unknown> {
+  const res = await api.request<unknown>({
     ...config,
     validateStatus: (status) => (status >= 200 && status < 300) || BUSINESS_ERROR_STATUSES.has(status),
   });
@@ -60,7 +69,27 @@ export async function businessRequest<T>(config: AxiosRequestConfig): Promise<T>
       throw new RateLimitError(retryAfterSeconds(body, res.headers as Record<string, unknown> | undefined));
     }
     const retryAfter = retryAfterSeconds(body, res.headers as Record<string, unknown> | undefined);
-    throw new BusinessApiError(res.status, body?.code ?? "UNKNOWN", body?.message ?? "", body?.data, retryAfter);
+    throw new BusinessApiError(
+      res.status,
+      body?.code ?? "UNKNOWN",
+      body?.message ?? "",
+      body?.data,
+      retryAfter,
+      body && typeof body === "object" ? (body as Record<string, unknown>) : undefined
+    );
   }
-  return (res.data as Envelope<T>).data;
+  return res.data;
+}
+
+/** Endpoint trả envelope `{message, data}`: trả `data`. */
+export async function businessRequest<T>(config: AxiosRequestConfig): Promise<T> {
+  return ((await sendKeepingBusinessErrors(config)) as Envelope<T>).data;
+}
+
+/**
+ * Endpoint KHÔNG có envelope (nhóm `/orders/*`, xem order.service.ts): trả nguyên body. Cùng cách giữ
+ * `code` của 400/403/404/409/429 như `businessRequest`.
+ */
+export async function businessRequestRaw<T>(config: AxiosRequestConfig): Promise<T> {
+  return (await sendKeepingBusinessErrors(config)) as T;
 }

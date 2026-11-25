@@ -4,6 +4,7 @@
  */
 
 import { api } from "@/lib/api-client";
+import { businessRequest } from "./business-request";
 import type { PlayedRange } from "@/lib/played-ranges";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -69,9 +70,9 @@ interface EnrollmentListResponse {
 }
 
 export const enrollmentService = {
-  /** POST /courses/:courseId/enroll */
+  /** POST /courses/:courseId/enroll. Qua businessRequest để giữ `code` của 403 ERR_PARENT_CANNOT_PURCHASE. */
   enroll: (courseId: string) =>
-    api.post<R<Enrollment>>(`/courses/${courseId}/enroll`, {}).then((r) => r.data.data),
+    businessRequest<Enrollment>({ method: "POST", url: `/courses/${courseId}/enroll`, data: {} }),
 
   /** DELETE /courses/:courseId/enroll */
   unenroll: (courseId: string) =>

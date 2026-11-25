@@ -4,6 +4,7 @@
  */
 
 import { api } from "@/lib/api-client";
+import { businessRequest } from "./business-request";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -69,9 +70,12 @@ export const cartService = {
   getCart: () =>
     api.get<R<Cart>>("/cart").then((r) => normalizeCart(r.data.data)),
 
-  /** POST /cart { course_id } */
+  /**
+   * POST /cart { course_id }. Qua businessRequest để giữ `code` của 403 ERR_PARENT_CANNOT_PURCHASE
+   * (interceptor chung đổi mọi 403 thành ForbiddenError code cứng).
+   */
   addToCart: (courseId: string) =>
-    api.post<R<CartItem>>("/cart", { course_id: courseId }).then((r) => normalizeCartItem(r.data.data)),
+    businessRequest<CartItem>({ method: "POST", url: "/cart", data: { course_id: courseId } }).then(normalizeCartItem),
 
   /** GET /cart/check/:courseId */
   isInCart: (courseId: string) =>

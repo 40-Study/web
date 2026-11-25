@@ -6,9 +6,13 @@
  * envelope {message, data} — trả thẳng OrderResponse/PaymentIntentResponse…
  * ở top-level JSON. Đã đối chiếu internal/handler/order_handler.go và
  * internal/dto/orderDTO.go (2026-09-09).
+ *
+ * createOrder / createPaymentIntent / checkPayment đi qua businessRequestRaw (không envelope) để giữ `code` của
+ * 403 ERR_PARENT_CANNOT_PURCHASE mà interceptor chung làm rơi.
  */
 
 import { api } from "@/lib/api-client";
+import { businessRequestRaw } from "./business-request";
 
 // ─── Types (khớp internal/dto/orderDTO.go) ─────────────────────────────────
 
@@ -197,7 +201,7 @@ export interface PaymentStatus {
 
 export const orderService = {
   /** POST /orders — create order (buy_now or cart). 402 nếu khoá học cần thanh toán trước. */
-  createOrder: (dto: CreateOrderDTO) => api.post<Order>("/orders", dto).then((r) => r.data),
+  createOrder: (dto: CreateOrderDTO) => businessRequestRaw<Order>({ method: "POST", url: "/orders", data: dto }),
 
   /** GET /orders/me?page=&limit=&status= */
   getMyOrders: (params?: { page?: number; limit?: number; status?: string }) =>
@@ -212,7 +216,7 @@ export const orderService = {
 
   /** POST /orders/:id/payment-intent */
   createPaymentIntent: (id: string, data: PaymentIntentDTO) =>
-    api.post<PaymentIntent>(`/orders/${id}/payment-intent`, data).then((r) => r.data),
+    businessRequestRaw<PaymentIntent>({ method: "POST", url: `/orders/${id}/payment-intent`, data }),
 
   /** GET /orders/:id/payment-status */
   getPaymentStatus: (id: string) =>
@@ -220,5 +224,5 @@ export const orderService = {
 
   /** POST /orders/:id/check-payment */
   checkPayment: (id: string) =>
-    api.post<PaymentStatus>(`/orders/${id}/check-payment`, {}).then((r) => r.data),
+    businessRequestRaw<PaymentStatus>({ method: "POST", url: `/orders/${id}/check-payment`, data: {} }),
 };

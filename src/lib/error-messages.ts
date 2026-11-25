@@ -106,6 +106,9 @@ const CODE_MESSAGES: Record<string, string> = {
   ERR_DUE_DATE_IN_PAST: "Hạn nộp phải ở tương lai. Hãy chọn lại hạn nộp.",
   // Q4-T13: thêm/sửa nội dung khi khoá đang chờ duyệt (409); message backend là tiếng Anh.
   COURSE_PENDING_REVIEW: "Khoá học đang chờ duyệt nên không thể chỉnh sửa. Hãy rút yêu cầu duyệt trước.",
+  // QA6 PG-01 (contract C6): 403 khi vai ĐANG CHỌN là phụ huynh đăng ký / thêm giỏ / tạo đơn / thanh toán.
+  ERR_PARENT_CANNOT_PURCHASE:
+    "Tài khoản phụ huynh không thể đăng ký hoặc mua khoá học cho chính mình. Hãy chuyển sang vai học viên.",
 };
 
 // Code chỉ nói LOẠI lỗi, message mới nói lý do (vd. ERR_NOT_FOUND + "Voucher not found",
