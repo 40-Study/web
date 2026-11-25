@@ -9,6 +9,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
+import { lastPageToClampTo } from "@/app/(admin)/admin/_lib/clamp-page";
 import { QueryState } from "@/components/common/query-state";
 import { Badge } from "@/components/ui/badge";
 import { useAdminContests } from "@/hooks/queries/use-contest-manage";
@@ -65,6 +66,13 @@ function AdminContestsContent() {
     limit: PAGE_SIZE,
   });
   const contests = data?.items ?? [];
+
+  // QA7-A06 (M1): ?page=9999 vượt trang cuối -> trạng thái rỗng che mất thanh phân trang; kéo về trang cuối thật.
+  const clampTo = lastPageToClampTo(page, data?.total_pages);
+  useEffect(() => {
+    if (clampTo !== null) updateQuery({ page: clampTo });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clampTo]);
 
   // Đổi tab: tab "Chờ duyệt" không có bộ lọc trạng thái nên bỏ status; luôn về trang 1.
   const switchTab = (next: ContestTab) => updateQuery({ tab: next, status: null, page: null });

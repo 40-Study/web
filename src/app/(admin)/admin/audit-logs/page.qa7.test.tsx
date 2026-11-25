@@ -38,8 +38,8 @@ function row(overrides: Partial<AuditLogItem> = {}): AuditLogItem {
   };
 }
 
-function ok(items: AuditLogItem[], total: number, page = 1) {
-  queryResult = { data: { items, total, page, page_size: 20 }, isLoading: false, isError: false, error: null, refetch: vi.fn() };
+function ok(items: AuditLogItem[], total: number, page = 1, isPlaceholderData = false) {
+  queryResult = { data: { items, total, page, page_size: 20 }, isLoading: false, isError: false, error: null, refetch: vi.fn(), isPlaceholderData };
 }
 
 beforeEach(() => {
@@ -67,6 +67,14 @@ describe("AdminAuditLogsPage — QA7-A06 trang vượt trang cuối", () => {
     render(<AdminAuditLogsPage />);
 
     expect(replace).toHaveBeenCalledWith("/admin/audit-logs?action=user.lock&page=31", { scroll: false });
+  });
+
+  it("data còn là placeholder của truy vấn trước (keepPreviousData) thì chưa kéo trang", () => {
+    search = "action=user.lock&page=9999";
+    ok([], 612, 1, true);
+    render(<AdminAuditLogsPage />);
+
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it("không có dòng nào (total=0) thì không đẩy về trang 0", () => {

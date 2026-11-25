@@ -78,10 +78,10 @@ describe("AdminOrdersPage — tìm kiếm phía server", () => {
     mockSearch = "page=4";
     render(<AdminOrdersPage />);
     fireEvent.change(box(), { target: { value: "  an@demo.com  " } });
-    await waitFor(() => expect(mockReplace).toHaveBeenCalled());
-    const url = mockReplace.mock.calls.at(-1)![0] as string;
-    expect(url).toBe("/admin/orders?q=an%40demo.com");
-    expect(url).not.toContain("page=");
+    await waitFor(() =>
+      expect(mockReplace).toHaveBeenLastCalledWith("/admin/orders?q=an%40demo.com", expect.anything()),
+    );
+    expect(mockReplace.mock.calls.at(-1)![0]).not.toContain("page=");
   });
 
   it("hai dấu cách không tạo ?q=++", async () => {

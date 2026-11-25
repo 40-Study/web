@@ -96,4 +96,32 @@ describe("AdminContestsPage — QA7-A08 bộ lọc trên URL", () => {
     expect(screen.getByTestId("tab-pending").getAttribute("aria-selected")).toBe("true");
     expect(lastParams()).toMatchObject({ status: "PENDING_REVIEW", page: 1 });
   });
+
+  it("QA7-A06: ?page=9999 vượt total_pages=3 với danh sách rỗng -> replace sang trang cuối, giữ tab và từ khoá", () => {
+    mockSearch = "tab=all&q=toan&page=9999";
+    mockUseAdminContests.mockReturnValue({
+      data: { items: [], total_count: 45, page: 9999, limit: 20, total_pages: 3 },
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<AdminContestsPage />);
+
+    expect(replace).toHaveBeenCalledWith("/admin/contests?tab=all&q=toan&page=3", { scroll: false });
+  });
+
+  it("QA7-A06: không có kết quả nào (total_pages=0) thì không đẩy về trang 0", () => {
+    mockSearch = "tab=all&page=4";
+    mockUseAdminContests.mockReturnValue({
+      data: { items: [], total_count: 0, page: 4, limit: 20, total_pages: 0 },
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<AdminContestsPage />);
+
+    expect(replace).not.toHaveBeenCalled();
+  });
 });
