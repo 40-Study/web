@@ -62,6 +62,18 @@ describe("AssignmentSubmissionsPage, bài tập không tồn tại (Q6-T01)", ()
     expect(getById.mock.calls.length).toBeLessThanOrEqual(1);
   });
 
+  // Q6 #130 L3: id sai định dạng -> backend 400 `{"error":"invalid id"}`; "Thử lại" không giúp được gì.
+  it("400 (id sai định dạng): hiện 'Không tìm thấy bài tập', không có nút Thử lại, không lặp request", async () => {
+    getById.mockRejectedValue(new ApiError(400, "UNKNOWN", "invalid id"));
+    renderPage();
+
+    expect(await screen.findByText("Không tìm thấy bài tập")).toBeTruthy();
+    await settle();
+    expect(screen.queryByText("Không tải được bài tập")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Thử lại" })).toBeNull();
+    expect(getById.mock.calls.length).toBeLessThanOrEqual(1);
+  });
+
   it("5xx: hiện lỗi tải kèm nút Thử lại, không báo 'không tìm thấy'", async () => {
     getById.mockRejectedValue(new ApiError(500, "ERR_INTERNAL", "boom"));
     renderPage();

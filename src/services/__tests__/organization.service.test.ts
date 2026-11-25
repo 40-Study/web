@@ -104,6 +104,35 @@ describe("organizationService", () => {
     expect(mockApi.get).toHaveBeenCalledTimes(1);
   });
 
+  // Q6 #132 L1: không có `total` thì trang đầu đầy từng làm cắt im lặng ở 100 dòng.
+  describe("getMembers khi backend không trả total", () => {
+    const owner = (n: number) =>
+      row({ id: `r${n}`, user_id: `u${n}`, user: { id: `u${n}`, user_name: `user${n}`, full_name: `Người ${n}`, email: `u${n}@example.com` } });
+    const full = (from: number) => Array.from({ length: 100 }, (_, i) => owner(from + i));
+
+    it("trang đầu đầy -> đi tiếp tới trang chưa đầy, không cắt ở trang đầu", async () => {
+      const pages: Record<number, unknown[]> = { 1: full(0), 2: full(100), 3: [owner(200)] };
+      mockApi.get.mockImplementation(async (_url: string, config: { params: { page: number } }) =>
+        envelope({ user_organization_roles: pages[config.params.page] })
+      );
+      const members = await organizationService.getMembers("org-1");
+      expect(members).toHaveLength(201);
+      expect(mockApi.get).toHaveBeenCalledTimes(3);
+    });
+
+    it("trang đầu chưa đầy -> chỉ một request", async () => {
+      mockApi.get.mockResolvedValue(envelope({ user_organization_roles: [owner(1)] }));
+      expect(await organizationService.getMembers("org-1")).toHaveLength(1);
+      expect(mockApi.get).toHaveBeenCalledTimes(1);
+    });
+
+    it("máy chủ luôn trả trang đầy -> báo lỗi rõ ràng khi chạm trần, không lặp vô hạn", async () => {
+      mockApi.get.mockResolvedValue(envelope({ user_organization_roles: full(0) }));
+      await expect(organizationService.getMembers("org-1")).rejects.toThrow(/vượt 100 trang/);
+      expect(mockApi.get).toHaveBeenCalledTimes(100);
+    });
+  });
+
   it("getClasses gọi /organizations/:id/classes kèm bộ lọc", async () => {
     mockApi.get.mockResolvedValue(envelope({ classes: [], total: 0, page: 1, page_size: 20 }));
     await organizationService.getClasses("org-1", { status: "draft", keyword: "toan" });

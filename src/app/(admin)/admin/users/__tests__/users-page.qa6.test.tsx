@@ -73,6 +73,30 @@ describe("AdminUsersPage — QA6-A11 ?role= lạ", () => {
     expect(replace).toHaveBeenLastCalledWith("/admin/users", { scroll: false });
   });
 
+  // Q6 #132 L6: trước khi danh sách vai trò về, `?role=nope` chưa kiểm được nên không được gửi lên API.
+  it("?role=nope: chưa có danh sách vai trò -> không tải danh sách (enabled=false); có rồi -> tải một lần, không role", () => {
+    mockUseSearchParams.mockReturnValue(new URLSearchParams("role=nope"));
+    mockUseSystemRoles.mockReturnValue({ data: undefined, isSuccess: false, isPending: true });
+    mockUseAdminUsers.mockClear();
+    const view = render(<AdminUsersPage />);
+    expect(mockUseAdminUsers.mock.calls.every((c) => c[1]?.enabled === false)).toBe(true);
+
+    mockUseAdminUsers.mockClear();
+    mockUseSystemRoles.mockReturnValue({ data: ROLES, isSuccess: true, isPending: false });
+    view.rerender(<AdminUsersPage />);
+    const last = mockUseAdminUsers.mock.calls.at(-1);
+    expect(last?.[1]?.enabled).toBe(true);
+    expect(last?.[0].role).toBeUndefined();
+    expect(mockUseAdminUsers.mock.calls.some((c) => c[0].role === "nope" && c[1]?.enabled !== false)).toBe(false);
+  });
+
+  it("không có ?role= thì không chờ danh sách vai trò (tải ngay)", () => {
+    mockUseSystemRoles.mockReturnValue({ data: undefined, isSuccess: false, isPending: true });
+    mockUseAdminUsers.mockClear();
+    render(<AdminUsersPage />);
+    expect(mockUseAdminUsers.mock.calls.at(-1)?.[1]?.enabled).toBe(true);
+  });
+
   it("?role=TEACHER hợp lệ được giữ nguyên", () => {
     mockUseSearchParams.mockReturnValue(new URLSearchParams("role=TEACHER"));
     render(<AdminUsersPage />);

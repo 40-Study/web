@@ -44,6 +44,9 @@ export function CourseSearch({
   // Đồng bộ khi URL đổi (back/forward, link tìm kiếm ở header). Chỉ chạy khi `q` trên URL đổi,
   // nên không ghi đè thứ người dùng đang gõ dở.
   useEffect(() => {
+    // Q6 #133 R2: gõ 1 ký tự (< 2 = coi như rỗng) làm trang cha bỏ `?q=` khỏi URL; URL rỗng đó là do CHÍNH ô này báo ra
+    // (lần báo gần nhất cũng là rỗng), không phải điều hướng ngoài, nên không được xoá ký tự người dùng đang gõ.
+    if (urlQuery === "" && lastNotifiedRef.current === "") return;
     setQuery(urlQuery);
   }, [urlQuery]);
   const [showSuggestions, setShowSuggestions] = useState(false);

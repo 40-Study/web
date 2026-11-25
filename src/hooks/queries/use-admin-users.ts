@@ -21,9 +21,10 @@ function extractErrorMessage(error: unknown, fallback: string): string {
 }
 
 /** GET /users — danh sách + tìm + lọc + phân trang */
-export function useAdminUsers(params: AdminUserListParams) {
+export function useAdminUsers(params: AdminUserListParams, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: adminUserKeys.list(params),
+    enabled: options.enabled ?? true,
     queryFn: () => userService.list(params),
     // Giữ dữ liệu trang cũ khi đổi filter/trang — tránh nháy toàn bộ bảng về loading.
     placeholderData: (prev) => prev,

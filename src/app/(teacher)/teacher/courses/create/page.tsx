@@ -6,7 +6,7 @@ import { SafeImage } from "@/components/ui/safe-image";
 import { ChevronLeft, ChevronRight, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { useCreateCourse } from "@/hooks/queries/use-courses";
 import { useCategoryList } from "@/hooks/queries/use-categories";
 import { toast } from "sonner";
@@ -329,7 +329,7 @@ function Step4Review({ formData }: { formData: CourseFormData }) {
                 {formData.is_free
                   ? "Miễn phí"
                   : formData.price
-                    ? `${parseInt(formData.price).toLocaleString("vi-VN")}đ`
+                    ? formatCurrency(parseInt(formData.price))
                     : "Chưa thiết lập"}
               </span>
             </div>

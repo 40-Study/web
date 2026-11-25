@@ -112,3 +112,26 @@ describe("businessRequest: retry_after của lỗi nghiệp vụ", () => {
     expect((await caught(businessRequest({ method: "POST", url: "/friends/requests" }))).retryAfter).toBeUndefined();
   });
 });
+
+// Q6 #133 R1: câu lỗi lấy theo cùng quy tắc với interceptor, không chỉ `message` (nhãn chung chung của nhiều handler).
+describe("businessRequest: câu lỗi cùng quy tắc với interceptor", () => {
+  beforeEach(() => vi.mocked(api.request).mockReset());
+  const messageOf = async () => (await caught(businessRequest({ method: "POST", url: "/courses/c1/enroll" }))).message;
+
+  it("`error` (chi tiết thật) thắng `message` chung: enroll 400 'already enrolled'", async () => {
+    respond(400, { message: "Failed to enroll", error: "already enrolled in this course" });
+    expect(await messageOf()).toBe("already enrolled in this course");
+  });
+
+  it("không có `error`: lỗi field đầu tiên trong `errors[]` thắng 'Validation failed'", async () => {
+    respond(400, { message: "Validation failed", errors: [{ field: "x", message: "Tên quá dài" }] });
+    expect(await messageOf()).toBe("Tên quá dài");
+  });
+
+  it("chỉ có `message` (order handler): giữ nguyên message; không có gì: chuỗi rỗng như trước", async () => {
+    respond(409, { message: "Đơn đã thanh toán", code: "ERR_ORDER_ALREADY_PAID" });
+    expect(await messageOf()).toBe("Đơn đã thanh toán");
+    respond(404, { code: "ERR_NOT_FOUND" });
+    expect(await messageOf()).toBe("");
+  });
+});

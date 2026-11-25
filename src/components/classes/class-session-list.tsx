@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCancelSession, useClassSessions } from "@/hooks/queries/use-sessions";
 import { toTimeOfDay } from "@/lib/class-schedule-validation";
-import { formatVnDateOnly, hasVnSessionEnded, isVnSessionUpcoming } from "@/lib/vn-datetime";
+import { formatVnDateOnly, hasVnSessionEnded, hasVnSessionStarted, isVnSessionUpcoming } from "@/lib/vn-datetime";
 import type { ClassSession, SessionStatus } from "@/services/session.service";
 
 const PAGE_SIZE = 20;
@@ -30,8 +30,9 @@ export const SESSION_HELD_META = { label: "Đã diễn ra", variant: "outline" }
 
 export function sessionDisplayMeta(s: ClassSession, now: Date = new Date()) {
   if (s.status === "scheduled") {
-    if (hasVnSessionEnded(s.date, s.end_time, now)) return SESSION_HELD_META;
-    if (!isVnSessionUpcoming(s.date, s.start_time, now)) return STATUS_META.in_progress;
+    if (hasVnSessionEnded(s.date, s.end_time, now, s.start_time)) return SESSION_HELD_META;
+    // Chỉ "Đang diễn ra" khi CHỨNG MINH được đã bắt đầu; thiếu/sai giờ bắt đầu thì giữ "Đã lên lịch" (không tuyên bố thứ không biết).
+    if (hasVnSessionStarted(s.date, s.start_time, now)) return STATUS_META.in_progress;
   }
   return STATUS_META[s.status] ?? STATUS_META.scheduled;
 }

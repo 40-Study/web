@@ -73,16 +73,34 @@ export function isVnSessionUpcoming(
 }
 
 /**
+ * Buổi học đã BẮT ĐẦU (giờ bắt đầu, giờ VN, không còn sau `now`) chưa (Q6 #130 M2). Thiếu/sai định dạng thì false:
+ * không chứng minh được buổi đã bắt đầu thì không tuyên bố "đang diễn ra".
+ */
+export function hasVnSessionStarted(
+  date: string | null | undefined,
+  startTime: string | null | undefined,
+  now: Date = new Date()
+): boolean {
+  const start = vnSessionInstant(date, startTime);
+  return start !== null && start <= now.getTime();
+}
+
+/**
  * Buổi học đã KẾT THÚC (giờ kết thúc, giờ VN, không còn sau `now`) chưa (Q6-T04). Cùng cách đọc `date`/giờ với
  * `isVnSessionUpcoming`. Thiếu/sai định dạng thì false: không chứng minh được buổi đã qua thì không tuyên bố "đã diễn ra".
+ * Truyền `startTime` để nhận ra buổi qua nửa đêm (giờ kết thúc <= giờ bắt đầu thì kết thúc vào NGÀY HÔM SAU).
  */
 export function hasVnSessionEnded(
   date: string | null | undefined,
   endTime: string | null | undefined,
-  now: Date = new Date()
+  now: Date = new Date(),
+  startTime?: string | null
 ): boolean {
-  const end = vnSessionInstant(date, endTime);
-  return end !== null && end <= now.getTime();
+  let end = vnSessionInstant(date, endTime);
+  if (end === null) return false;
+  const start = startTime ? vnSessionInstant(date, startTime) : null;
+  if (start !== null && end <= start) end += 86_400_000;
+  return end <= now.getTime();
 }
 
 /** Mốc (epoch ms) của `date` + `time` theo giờ VN; null khi thiếu hoặc sai định dạng. */

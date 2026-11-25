@@ -36,6 +36,20 @@ describe("sessionDisplayMeta (Q6-T04)", () => {
     expect(sessionDisplayMeta(s("2026-11-24", "18:00", "19:00"), now).label).toBe("Đã lên lịch");
   });
 
+  // Q6 #130 M2: thiếu/sai giờ bắt đầu từng hiện "Đang diễn ra" mãi mãi.
+  it("thiếu hoặc sai giờ bắt đầu -> giữ 'Đã lên lịch', không tuyên bố 'Đang diễn ra'", () => {
+    expect(sessionDisplayMeta(s("2026-11-24", "", "13:00"), now).label).toBe("Đã lên lịch");
+    expect(sessionDisplayMeta(s("2026-11-24", "xx", "xx"), now).label).toBe("Đã lên lịch");
+    expect(sessionDisplayMeta({ ...s("2026-11-24", "11:00", "13:00"), start_time: undefined } as unknown as ClassSession, now).label).toBe("Đã lên lịch");
+  });
+
+  // Q6 #130 M2: buổi 23:00-01:00 không phải "Đã diễn ra" từ lúc bắt đầu.
+  it("buổi qua nửa đêm (23:00-01:00): đang diễn ra lúc 23:30, đã diễn ra sau 01:00 hôm sau", () => {
+    const night = s("2026-11-24", "23:00", "01:00");
+    expect(sessionDisplayMeta(night, new Date("2026-11-24T16:30:00Z")).label).toBe("Đang diễn ra"); // 23:30 VN
+    expect(sessionDisplayMeta(night, new Date("2026-11-24T18:30:00Z")).label).toBe("Đã diễn ra"); // 01:30 VN hôm sau
+  });
+
   it("trạng thái backend khác scheduled giữ nguyên dù đã qua giờ", () => {
     expect(sessionDisplayMeta(s("2026-11-01", "18:00", "19:00", "cancelled"), now).label).toBe("Đã huỷ");
     expect(sessionDisplayMeta(s("2026-11-01", "18:00", "19:00", "completed"), now).label).toBe("Đã kết thúc");

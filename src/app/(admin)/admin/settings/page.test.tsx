@@ -105,6 +105,20 @@ describe("AdminSettingsPage — cấu hình hệ thống", () => {
     expect(mockUpdate.mock.calls[0][0]).toBe(expected);
   });
 
+  // Q6 #132 L5: mức hiện hành là 12,5 (mockSettings).
+  it("lưu đúng mức phí đang áp dụng -> báo không đổi, không mở hộp xác nhận, không gọi PUT; sửa lại thì xoá báo", () => {
+    render(<AdminSettingsPage />);
+    fireEvent.change(feeInput(), { target: { value: "12.5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert").textContent).toContain("đang được áp dụng");
+
+    fireEvent.change(feeInput(), { target: { value: "13" } });
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
   it("Huỷ ở hộp thoại xác nhận -> đóng hộp thoại và KHÔNG gọi PUT", () => {
     render(<AdminSettingsPage />);
     fireEvent.change(feeInput(), { target: { value: "7" } });

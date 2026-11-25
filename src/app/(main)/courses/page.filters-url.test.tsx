@@ -147,6 +147,52 @@ describe("CoursesPage — bộ lọc trên URL", () => {
     expect(replace).toHaveBeenLastCalledWith("/courses?category=thiet-ke", { scroll: false });
   });
 
+  // Q6 #133 R3: chip được chọn khi lần ghi "bỏ q" chưa hạ cánh (searchParams còn q cũ) không được đưa q trở lại.
+  it("chọn chip khi lần bỏ ?q= chưa hạ cánh (searchParams còn q cũ) không đưa q trở lại (R3)", () => {
+    currentParams = new URLSearchParams("q=python");
+    render(<CoursesPage />);
+    act(() => latestOnSearch("")); // URL chưa cập nhật: currentParams vẫn có q=python
+    act(() => latestOnFilterChange({ category: "thiet-ke" }));
+    expect(replace).toHaveBeenLastCalledWith("/courses?category=thiet-ke", { scroll: false });
+  });
+
+  it("q đổi từ ngoài sau lần bỏ q (điều hướng mới tới ?q=) thì ghi bộ lọc giữ q mới (R3)", () => {
+    currentParams = new URLSearchParams("q=python");
+    const { rerender } = render(<CoursesPage />);
+    act(() => latestOnSearch(""));
+    currentParams = new URLSearchParams(); // lần bỏ q hạ cánh
+    rerender(<CoursesPage />);
+    currentParams = new URLSearchParams("q=java"); // người dùng tìm "java" từ header
+    rerender(<CoursesPage />);
+    act(() => latestOnFilterChange({ category: "thiet-ke" }));
+    expect(replace).toHaveBeenLastCalledWith("/courses?q=java&category=thiet-ke", { scroll: false });
+  });
+
+  // Q6 #133 R3: lần ghi không bao giờ hạ cánh không được nuốt một điều hướng ngoài về đúng khoá đó về sau.
+  it("lần ghi không hạ cánh quá hạn thì điều hướng ngoài về đúng khoá đó vẫn đồng bộ lại bộ lọc (R3)", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const { rerender } = render(<CoursesPage />);
+      act(() => latestOnFilterChange({ category: "thiet-ke" })); // ghi k1, URL chưa báo lại
+      act(() => latestOnFilterChange({})); // kéo ngược về k0 trong cùng nhịp: không ghi thêm
+      vi.setSystemTime(Date.now() + 10_000);
+      currentParams = new URLSearchParams("category=thiet-ke"); // header pill: điều hướng ngoài tới k1
+      rerender(<CoursesPage />);
+      expect(screen.getByTestId("filters").getAttribute("data-category")).toBe("thiet-ke");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("cùng tình huống nhưng URL báo lại NGAY (chưa quá hạn) vẫn coi là lần ghi của chính trang, giữ state mới", () => {
+    const { rerender } = render(<CoursesPage />);
+    act(() => latestOnFilterChange({ category: "thiet-ke" }));
+    act(() => latestOnFilterChange({}));
+    currentParams = new URLSearchParams("category=thiet-ke"); // URL cũ của lần ghi k1 tới muộn
+    rerender(<CoursesPage />);
+    expect(screen.getByTestId("filters").getAttribute("data-category")).toBe("");
+  });
+
   it("không có ?q= thì tìm kiếm rỗng không ghi URL", () => {
     render(<CoursesPage />);
     act(() => latestOnSearch(""));
