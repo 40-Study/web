@@ -126,6 +126,17 @@ describe("organizationService", () => {
       expect(mockApi.get).toHaveBeenCalledTimes(1);
     });
 
+    it("Q7 #134 L-7: máy chủ chặn trần 50 dòng/trang và báo page_size=50 (không có total) -> vẫn đi hết các trang", async () => {
+      const part = (from: number, n: number) => Array.from({ length: n }, (_, i) => owner(from + i));
+      const pages: Record<number, unknown[]> = { 1: part(0, 50), 2: part(50, 50), 3: part(100, 7) };
+      mockApi.get.mockImplementation(async (_url: string, config: { params: { page: number } }) =>
+        envelope({ user_organization_roles: pages[config.params.page], page_size: 50 })
+      );
+      const members = await organizationService.getMembers("org-1");
+      expect(members).toHaveLength(107);
+      expect(mockApi.get).toHaveBeenCalledTimes(3);
+    });
+
     it("máy chủ luôn trả trang đầy -> báo lỗi rõ ràng khi chạm trần, không lặp vô hạn", async () => {
       mockApi.get.mockResolvedValue(envelope({ user_organization_roles: full(0) }));
       await expect(organizationService.getMembers("org-1")).rejects.toThrow(/vượt 100 trang/);

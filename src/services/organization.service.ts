@@ -179,7 +179,7 @@ export const organizationService = {
   getMembers: async (orgId: string): Promise<OrgMember[]> => {
     const fetchPage = (page: number) =>
       api
-        .get<R<{ user_organization_roles: OrgMemberRow[]; total: number }>>(`/organizations/${orgId}/members`, {
+        .get<R<{ user_organization_roles: OrgMemberRow[]; total: number; page_size?: number }>>(`/organizations/${orgId}/members`, {
           params: { page, page_size: ORG_MEMBERS_PAGE_SIZE, status: "active" },
         })
         .then((r) => r.data.data);
@@ -189,8 +189,14 @@ export const organizationService = {
     // Q6 #132 L1: backend cũ/đổi không trả `total` mà trang đầu đã đầy -> không biết còn bao nhiêu. Đi từng trang tới khi gặp
     // trang chưa đầy, thay vì dừng ở trang đầu và cắt im lặng (đúng lỗi A14 từng sửa).
     if (typeof first.total !== "number") {
+      // Q7 #134 L-7: "trang đầy" so với cỡ trang THẬT mà backend báo (`page_size`, nó có thể chặn trần thấp hơn 100 đã xin);
+      // không báo thì mới dùng cỡ đã xin. So với 100 khi backend chặn ở 50 làm vòng dừng ngay sau trang đầu và cắt im lặng.
+      const fullPage =
+        typeof first.page_size === "number" && first.page_size > 0
+          ? Math.min(first.page_size, ORG_MEMBERS_PAGE_SIZE)
+          : ORG_MEMBERS_PAGE_SIZE;
       let last = first;
-      for (let page = 2; last.user_organization_roles.length >= ORG_MEMBERS_PAGE_SIZE; page++) {
+      for (let page = 2; last.user_organization_roles.length >= fullPage; page++) {
         if (page > ORG_MEMBERS_MAX_PAGES) {
           throw new Error(`Danh sách thành viên vượt ${ORG_MEMBERS_MAX_PAGES} trang mà máy chủ không trả tổng số; không thể tải đủ.`);
         }
