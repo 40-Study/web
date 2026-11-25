@@ -34,6 +34,14 @@ describe("AccountSettings — hàng chuyển vai trò", () => {
     expect(screen.getByRole("button", { name: "Chuyển" })).toBeTruthy();
   });
 
+  it("L1: một vai hệ thống + một vai tuỳ biến của tổ chức: không hiện hàng (cùng cách đếm với header)", () => {
+    const orgCustom = { id: "r9", type: "organization" as const, role_name: "ORG_STUDENT", display_name: "ORG_STUDENT", organization_id: "o1", organization_name: "ABC" };
+    useAuthStore.setState({ roles: [PARENT, orgCustom], activeRole: "PARENT", activeUnifiedRole: PARENT });
+    renderWithQuery(<AccountSettings user={user} />);
+    expect(screen.queryByText("Chuyển vai trò")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Chuyển" })).toBeNull();
+  });
+
   it("huy hiệu 'Sắp ra mắt' không bị bẻ dòng", () => {
     renderWithQuery(<AccountSettings user={user} />);
     expect(screen.getByText("Sắp ra mắt").className).toContain("whitespace-nowrap");

@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuthStore, type UnifiedRole } from "@/stores/auth.store";
 import { ApplyTeacherButton } from "@/components/teacher-application/apply-teacher-button";
-import { isIncorrectCurrentPasswordError } from "@/hooks/queries/use-auth";
+import { isIncorrectCurrentPasswordError, useMyRoles } from "@/hooks/queries/use-auth";
+import { isSelectableRole } from "@/lib/role-resolution";
 import { getErrorMessage } from "@/lib/error-messages";
 import { validateNewPassword } from "@/lib/password-policy";
 import { PasswordChecklist } from "@/components/auth/password-checklist";
@@ -100,6 +101,10 @@ export function AccountSettings({
 
   // Get roles from store
   const { roles, activeRole, activeUnifiedRole, activeOrg, user: sessionUser } = useAuthStore();
+  // L1: cùng nguồn đếm với menu avatar ở header (header.tsx): chỉ vai web có khu vực thật (`isSelectableRole`), nên
+  // một vai Phụ huynh + một vai tuỳ biến của tổ chức không hiện hàng "Chuyển vai trò" ở đây mà ẩn ở header.
+  const { data: myRolesData } = useMyRoles();
+  const switchableRoleCount = (myRolesData?.roles ?? roles ?? []).filter(isSelectableRole).length;
   // QA-C-09: trang Cài đặt không truyền name/avatar nên header hộp thoại từng ghi "Người dùng"; lấy từ phiên.
   const displayName = user.name?.trim() || sessionUser?.name?.trim() || "";
   const displayAvatar = user.avatar || sessionUser?.avatar;
@@ -155,7 +160,7 @@ export function AccountSettings({
       </div>
 
       {/* Switch Account. Q6-PG-16: chỉ một vai thì hộp thoại chỉ có đúng vai đang dùng, không có gì để chuyển. */}
-      {roles.length > 1 && (
+      {switchableRoleCount > 1 && (
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-4">
@@ -170,7 +175,7 @@ export function AccountSettings({
                       {activeOrg && <span className="text-gray-400"> • {activeOrg.name}</span>}
                     </>
                   ) : (
-                    `${roles.length} vai trò khả dụng`
+                    `${switchableRoleCount} vai trò khả dụng`
                   )}
                 </p>
               </div>

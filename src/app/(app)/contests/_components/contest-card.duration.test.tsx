@@ -22,3 +22,11 @@ describe("ContestCard — thời lượng", () => {
     expect(screen.getByText(text)).toBeTruthy();
   });
 });
+
+describe("ContestCard — thiếu thời lượng (L4)", () => {
+  it.each([[null], [undefined], [Number.NaN], [-5]])("%s -> ẩn dòng, không in '— làm bài'", (minutes) => {
+    render(<ContestCard contest={contest(minutes as unknown as number)} />);
+    expect(screen.queryByText(/làm bài/)).toBeNull();
+    expect(screen.queryByText("Thời lượng")).toBeNull();
+  });
+});
