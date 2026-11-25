@@ -87,14 +87,15 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
         </Link>
 
         {/* Actions */}
-        <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-50">
+        {/* S7-08: mỗi nút >= 32px (WCAG 2.2 AA tối thiểu 24px), 44px dưới 640px. */}
+        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-50">
           <button
             type="button"
             onClick={() => onVote(post.id, hasVoted)}
             aria-label={`${hasVoted ? "Bỏ thích" : "Thích"} bài viết (${post.upvote_count})`}
             aria-pressed={hasVoted}
             className={cn(
-              "flex items-center gap-1.5 text-sm transition-colors",
+              "inline-flex min-h-8 min-w-8 items-center justify-center gap-1.5 text-sm max-sm:min-h-11 transition-colors",
               hasVoted ? "text-rose-500" : "text-slate-400 hover:text-rose-400"
             )}
           >
@@ -105,7 +106,7 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
           <Link
             href={`/discussions/${post.slug}`}
             aria-label={`Xem ${post.reply_count} phản hồi`}
-            className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-primary-500 transition-colors"
+            className="inline-flex min-h-8 min-w-8 items-center justify-center gap-1.5 text-sm max-sm:min-h-11 text-slate-400 hover:text-primary-500 transition-colors"
           >
             <MessageSquare className="w-4 h-4" aria-hidden="true" />
             <span>{post.reply_count}</span>
@@ -114,7 +115,7 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
           <button
             type="button"
             onClick={() => void handleShare()}
-            className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-600 transition-colors ml-auto"
+            className="inline-flex min-h-8 min-w-8 items-center justify-center gap-1.5 text-sm max-sm:min-h-11 text-slate-400 hover:text-slate-600 transition-colors ml-auto"
           >
             <Share2 className="w-4 h-4" />
             <span>Chia sẻ</span>

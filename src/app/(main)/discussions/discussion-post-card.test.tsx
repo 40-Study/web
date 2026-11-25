@@ -82,3 +82,21 @@ describe("DiscussionPostCard — nhãn danh mục", () => {
     expect(screen.getByText(label)).toBeTruthy();
   });
 });
+
+// QA7 S7-08: vùng bấm của tim / phản hồi / chia sẻ chỉ cao 22px; tối thiểu 32px, 44px trên điện thoại.
+describe("DiscussionPostCard — vùng bấm (S7-08)", () => {
+  it("tim, liên kết phản hồi và chia sẻ có min-h-8 min-w-8 và max-sm:min-h-11", () => {
+    render(<DiscussionPostCard post={post()} onVote={vi.fn()} />);
+    const targets = [
+      screen.getByRole("button", { name: "Thích bài viết (1)" }),
+      screen.getByRole("link", { name: "Xem 4 phản hồi" }),
+      screen.getByRole("button", { name: /Chia sẻ/ }),
+    ];
+    for (const el of targets) {
+      const cls = el.className.split(/\s+/);
+      expect(cls).toContain("min-h-8");
+      expect(cls).toContain("min-w-8");
+      expect(cls).toContain("max-sm:min-h-11");
+    }
+  });
+});

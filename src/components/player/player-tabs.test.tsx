@@ -78,3 +78,42 @@ describe("PlayerTabs", () => {
     expect(screen.queryByRole("button", { name: /Hỏi & Đáp/ })).toBeNull();
   });
 });
+
+// QA7 S7-10: hàng tab cuộn ngang ở 390px: "Đánh giá (n)" nằm ngoài khung mà không có dấu hiệu nào báo còn cuộn được.
+describe("PlayerTabs — gợi ý cuộn ngang (S7-10)", () => {
+  function stubScrollMetrics(scrollWidth: number, clientWidth: number) {
+    const proto = HTMLElement.prototype;
+    const original = {
+      sw: Object.getOwnPropertyDescriptor(proto, "scrollWidth"),
+      cw: Object.getOwnPropertyDescriptor(proto, "clientWidth"),
+    };
+    Object.defineProperty(proto, "scrollWidth", { configurable: true, get: () => scrollWidth });
+    Object.defineProperty(proto, "clientWidth", { configurable: true, get: () => clientWidth });
+    return () => {
+      for (const [k, d] of [["scrollWidth", original.sw], ["clientWidth", original.cw]] as const) {
+        if (d) Object.defineProperty(proto, k, d);
+        else delete (proto as unknown as Record<string, unknown>)[k];
+      }
+    };
+  }
+
+  it("hàng tab rộng hơn khung: có vệt mờ báo còn tab bên phải", () => {
+    const restore = stubScrollMetrics(466, 334);
+    try {
+      renderTabs();
+      expect(screen.getByTestId("player-tabs-more")).toBeTruthy();
+    } finally {
+      restore();
+    }
+  });
+
+  it("hàng tab vừa khung: không có vệt mờ", () => {
+    const restore = stubScrollMetrics(300, 334);
+    try {
+      renderTabs();
+      expect(screen.queryByTestId("player-tabs-more")).toBeNull();
+    } finally {
+      restore();
+    }
+  });
+});
