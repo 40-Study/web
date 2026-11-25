@@ -17,3 +17,13 @@ export function aiNotConfiguredHint(isAdmin = false): string {
     ? "Cấu hình API key, base URL và model Viettel AI trong env backend để bắt đầu."
     : "Sau khi quản trị viên bật AI, bấm Kiểm tra lại để bắt đầu.";
 }
+
+/**
+ * Q6 #130: lời báo khi `/open-design/generate` trả 5xx. Giảng viên thấy câu này nên không được chứa chỉ dẫn vận hành
+ * ("kiểm tra endpoint, model, API key", "cấu hình backend") mà họ không làm được; chỉ nói chuyện gì xảy ra và làm gì tiếp.
+ */
+export function aiGenerateServerErrorMessage(status: number): string {
+  if (status === 504) return "AI phản hồi quá lâu. Hãy giảm số lượng và thử lại; bản nháp trước vẫn được giữ.";
+  if (status === 503) return "AI tạm thời chưa sẵn sàng. Vui lòng thử lại sau hoặc liên hệ quản trị viên.";
+  return "AI chưa trả về kết quả hợp lệ. Vui lòng thử lại; bản nháp trước vẫn được giữ.";
+}

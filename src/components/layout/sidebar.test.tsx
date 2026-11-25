@@ -160,6 +160,18 @@ describe("Sidebar — menu data-driven theo role", () => {
     useAuthStore.setState({ roles: [] });
   });
 
+  // Q6 #130 M1: menu đọc cùng vai đã quy đổi với route guard; vai tuỳ biến của tổ chức không được làm mất mục học viên-only.
+  it("vai tuỳ biến của tổ chức (QA3_STUDENT) có vai STUDENT hệ thống: vẫn thấy mục học viên-only", () => {
+    useAuthStore.setState({
+      isAuthenticated: true,
+      activeRole: "QA3_STUDENT",
+      roles: [{ role_name: "STUDENT", type: "system" }, { role_name: "QA3_STUDENT", type: "organization" }] as never,
+    });
+    render(<Sidebar />);
+    expect(screen.getByRole("link", { name: /Chứng chỉ/ })).toBeTruthy();
+    useAuthStore.setState({ roles: [] });
+  });
+
   it("SYSTEM_ADMIN: ẩn Bạn bè", () => {
     setRole("SYSTEM_ADMIN", true);
     render(<Sidebar />);

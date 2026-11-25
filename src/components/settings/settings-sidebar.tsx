@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canAccessStudentOnlyRoute, normalizeRole } from "@/lib/routes";
+import { mapOrgRoleToSystemRole } from "@/lib/role-resolution";
 import { useAuthStore } from "@/stores/auth.store";
 
 export type SettingsSection =
@@ -58,7 +59,8 @@ export function SettingsSidebar({
   const activeRole = useAuthStore((s) => s.activeRole);
   const isParent = normalizeRole(activeRole) === "PARENT";
   // Q6-T03: giảng viên không có liên kết phụ huynh; cùng hàm với route guard nên mục menu và route không lệch nhau.
-  const showFamily = canAccessStudentOnlyRoute("/settings/family", activeRole);
+  const roles = useAuthStore((s) => s.roles);
+  const showFamily = canAccessStudentOnlyRoute("/settings/family", mapOrgRoleToSystemRole(activeRole, roles) ?? activeRole);
 
   return (
     <nav className={cn("w-full md:w-72 shrink-0", className)}>

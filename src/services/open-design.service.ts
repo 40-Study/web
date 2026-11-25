@@ -1,5 +1,6 @@
 import { api } from "@/lib/api-client";
 import { ApiError } from "@/lib/errors";
+import { aiGenerateServerErrorMessage } from "@/lib/open-design/ai-unavailable-copy";
 import {
   artifactSchema,
   type OutputKind,
@@ -46,13 +47,7 @@ export const openDesignService = {
       };
     } catch (error) {
       if (error instanceof ApiError && error.status >= 500) {
-        throw new Error(
-          error.status === 504
-            ? "AI phản hồi quá lâu. Hãy giảm số lượng và thử lại; bản nháp trước vẫn được giữ."
-            : error.status === 503
-              ? "AI chưa sẵn sàng. Kiểm tra cấu hình Viettel AI và backend rồi thử lại."
-              : "Viettel AI chưa trả về kết quả hợp lệ. Kiểm tra endpoint, model và API key rồi thử lại; bản nháp trước vẫn được giữ."
-        );
+        throw new Error(aiGenerateServerErrorMessage(error.status));
       }
       throw error;
     }

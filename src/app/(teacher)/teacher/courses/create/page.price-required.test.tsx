@@ -14,6 +14,7 @@ const createCourse = vi.fn();
 vi.mock("@/hooks/queries/use-courses", () => ({
   useCreateCourse: () => ({ mutateAsync: createCourse, isPending: false }),
 }));
+vi.mock("@/hooks/queries/use-categories", () => ({ useCategoryList: () => ({ data: [] }) }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 vi.mock("../_components/course-basic-info-step", () => ({
   CourseBasicInfoStep: ({ update }: { update: (k: "title", v: string) => void }) => (
@@ -72,6 +73,15 @@ describe("wizard tạo khoá — giá bán (Q3-09)", () => {
     goToPricingStep();
     fireEvent.click(screen.getByRole("button", { name: /Miễn phí/ }));
     expect(next().disabled).toBe(false);
+  });
+
+  // Q6 #130 L2: bước xem lại hiện giá cùng định dạng tiền với ví/rút tiền ("500.000 ₫"), không còn "500.000đ".
+  it("bước xem lại hiện giá bằng formatCurrency, không phải 'đ' tự ghép", () => {
+    goToPricingStep();
+    fireEvent.change(screen.getByPlaceholderText("1200000"), { target: { value: "500000" } });
+    fireEvent.click(next()); // -> bước xem lại
+    expect(screen.getByText(/^500\.000\s₫$/)).toBeTruthy();
+    expect(screen.queryByText("500.000đ")).toBeNull();
   });
 
   it("'Lưu nháp' khi chưa có giá: không tạo khoá, quay về bước giá", async () => {

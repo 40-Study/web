@@ -32,4 +32,12 @@ describe("SettingsSidebar: mục Gia đình theo vai", () => {
     expect(screen.getByText("Gia đình")).toBeTruthy();
     expect(screen.getByText("Con của tôi")).toBeTruthy();
   });
+
+  // Q6 #130 M1: vai tuỳ biến của tổ chức phải được quy về vai hệ thống như route guard, nếu không giảng viên org vẫn thấy "Gia đình".
+  it("vai tuỳ biến của tổ chức (QA3_TEACHER) có vai TEACHER hệ thống: không thấy 'Gia đình'", () => {
+    useAuthStore.setState({ roles: [{ role_name: "TEACHER", type: "system" }] as never });
+    renderAs("QA3_TEACHER");
+    expect(screen.queryByText("Gia đình")).toBeNull();
+    useAuthStore.setState({ roles: [] });
+  });
 });

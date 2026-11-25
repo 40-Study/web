@@ -177,3 +177,29 @@ describe("(app)/layout: Q6-T02/T03 route học viên-only cho giảng viên", ()
     });
   }
 });
+
+// Q6 #130 L1: quyết định theo vai ĐANG DÙNG, không theo "có vai giảng viên nào". Người có cả STUDENT và TEACHER vào học
+// với vai STUDENT thì được vào, chuyển sang TEACHER thì bị đưa đi; một lần sửa thành "có TEACHER là chặn" sẽ làm test này đỏ.
+describe("(app)/layout: người dùng hai vai STUDENT + TEACHER", () => {
+  const SYSTEM_ROLE = (name: string) => ({ id: `sr-${name}`, type: "system" as const, role_name: name, display_name: name });
+
+  beforeEach(() => replace.mockClear());
+  afterEach(() => {
+    useAuthStore.setState({ isAuthenticated: false, activeRole: null, roles: [], hasHydrated: false, sessionStatus: "checking" });
+  });
+
+  for (const path of ["/my-assignments", "/my-courses", "/livestream"]) {
+    it(`vai đang dùng STUDENT vào ${path} -> render, không chuyển hướng`, () => {
+      useAuthStore.setState({ roles: [SYSTEM_ROLE("STUDENT"), SYSTEM_ROLE("TEACHER")] });
+      expect(renderAs("STUDENT", path)).not.toBeNull();
+      expect(replace).not.toHaveBeenCalled();
+    });
+
+    it(`vai đang dùng TEACHER vào ${path} -> không render, bị đưa về trang giảng viên`, () => {
+      useAuthStore.setState({ roles: [SYSTEM_ROLE("STUDENT"), SYSTEM_ROLE("TEACHER")] });
+      expect(renderAs("TEACHER", path)).toBeNull();
+      expect(replace).toHaveBeenCalledTimes(1);
+      expect(String(replace.mock.calls[0][0])).toMatch(/^\/teacher\//);
+    });
+  }
+});

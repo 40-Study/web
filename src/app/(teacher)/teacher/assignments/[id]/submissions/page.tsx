@@ -23,6 +23,7 @@ import { formatDateTime } from "@/components/grading/submission-grade-dialog";
 import {
   ResourceLoadError,
   ResourceUnavailable,
+  isInvalidResourceIdError,
   isResourceUnavailableError,
   unavailableStatus,
 } from "@/components/common/resource-unavailable";
@@ -42,7 +43,7 @@ export default function AssignmentSubmissionsPage() {
 
   if (!assignment) {
     // 5xx/mất mạng khác "không tìm thấy": cho thử lại thay vì báo bài tập không tồn tại.
-    if (error && !isResourceUnavailableError(error)) {
+    if (error && !isResourceUnavailableError(error) && !isInvalidResourceIdError(error)) {
       return <ResourceLoadError resourceLabel="bài tập" onRetry={() => void refetch()} />;
     }
     return (

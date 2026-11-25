@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { FriendsNavBadge } from "@/components/friends/friends-nav-badge";
 import { useAuthStore } from "@/stores/auth.store";
+import { mapOrgRoleToSystemRole } from "@/lib/role-resolution";
 import { canUseFriends } from "@/components/friends/friends-access";
 import { useSidebarStore } from "@/stores/sidebar.store";
 import { TEACHER_MENU_ITEMS } from "./teacher-menu";
@@ -90,10 +91,12 @@ function buildSidebarItems(homeHref: string, familyLabel: string): SidebarNavIte
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { isAuthenticated, activeRole } = useAuthStore();
+  const { isAuthenticated, activeRole, roles } = useAuthStore();
   const { isCollapsed, toggle } = useSidebarStore();
   const isExpanded = !isCollapsed; // sidebar.store.ts dùng chung 1 API isCollapsed (mục 14)
   const normalizedRole = normalizeRole(activeRole);
+  // Q6 #130 M1: guard đọc vai đã quy về vai hệ thống (QA3_STUDENT -> STUDENT); menu phải dùng cùng vai, không thì nháy mất 8 mục.
+  const guardRole = mapOrgRoleToSystemRole(activeRole, roles) ?? activeRole;
   const isParent = normalizedRole === "PARENT";
   const homeHref = isAuthenticated ? getRoleHomeRoute(normalizedRole) : "/";
 
@@ -109,7 +112,7 @@ export function Sidebar() {
           item.roles.includes(currentRole) &&
           (item.href !== "/friends" || canUseFriends(activeRole)) &&
           // Mục học viên-only khoá theo vai THẬT (cùng hàm với route guard).
-          canAccessStudentOnlyRoute(item.href, activeRole)
+          canAccessStudentOnlyRoute(item.href, guardRole)
         );
 
   return (

@@ -10,6 +10,15 @@ export function isResourceUnavailableError(error: unknown): boolean {
   return error instanceof ApiError && (error.status === 403 || error.status === 404);
 }
 
+/**
+ * Q6 #130 L3: GET theo id mà id sai định dạng -> backend trả 400 (vd `{"error":"invalid id"}`, không có `code`). Thử lại vô
+ * nghĩa nên trang chi tiết coi như "không tìm thấy". Dùng cho trang đọc MỘT tài nguyên theo id trên URL; đừng dùng cho
+ * lời gọi ghi (400 ở đó là lỗi nhập liệu thật).
+ */
+export function isInvalidResourceIdError(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 400;
+}
+
 interface ResourceUnavailableProps {
   /** 403 hiện "Không có quyền truy cập", còn lại hiện "Không tìm thấy". */
   status?: 403 | 404;
