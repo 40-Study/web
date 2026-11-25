@@ -5,29 +5,58 @@
  * backend không trả bản nháp của người khác). Thao tác duyệt/từ chối/huỷ/chốt ở trang chi tiết.
  */
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { QueryState } from "@/components/common/query-state";
 import { Badge } from "@/components/ui/badge";
 import { useAdminContests } from "@/hooks/queries/use-contest-manage";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { contestListEmptyCopy } from "./_lib/contest-list-empty-copy";
+import { parseContestPage, parseContestStatus, parseContestTab, patchContestQuery, type ContestTab } from "./_lib/contest-list-query";
 import { formatVnDateTime } from "@/lib/contest-manage/format";
 import { CONTEST_STATUS_LABEL, phaseLabel, phaseVariant } from "@/lib/contest-manage/labels";
 import { cn } from "@/lib/utils";
-import { isContestStatus } from "@/lib/contest-manage/labels";
-import { CONTEST_STATUSES, type ContestStatus } from "@/types/contest";
+import { CONTEST_STATUSES } from "@/types/contest";
 
-type Tab = "pending" | "all";
 const PAGE_SIZE = 20;
 
 export default function AdminContestsPage() {
-  const [tab, setTab] = useState<Tab>("pending");
-  const [status, setStatus] = useState<ContestStatus | "">("");
-  const [keyword, setKeyword] = useState("");
+  // useSearchParams cần Suspense boundary khi Next prerender trang client.
+  return (
+    <Suspense fallback={null}>
+      <AdminContestsContent />
+    </Suspense>
+  );
+}
+
+function AdminContestsContent() {
+  // QA7-A08: URL là nguồn sự thật cho tab/status/page; ô tìm kiếm ghi lên URL sau debounce.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tab = parseContestTab(searchParams.get("tab"));
+  const status = parseContestStatus(searchParams.get("status"));
+  const page = parseContestPage(searchParams.get("page"));
+  const urlQuery = searchParams.get("q") ?? "";
+  const [keyword, setKeyword] = useState(urlQuery);
   const q = useDebouncedValue(keyword.trim(), 300);
-  const [page, setPage] = useState(1);
+
+  const updateQuery = (patch: Record<string, string | number | null>) => {
+    const qs = patchContestQuery(searchParams.toString(), patch);
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
+
+  // Back/Forward đổi ?q= thì ô tìm kiếm theo URL; bỏ qua khi URL vừa do chính ô này ghi (urlQuery === q).
+  useEffect(() => {
+    if (urlQuery !== q) setKeyword(urlQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlQuery]);
+  useEffect(() => {
+    if (urlQuery !== q) updateQuery({ q, page: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
 
   const { data, isLoading, isError, error, refetch } = useAdminContests({
     status: tab === "pending" ? "PENDING_REVIEW" : status || undefined,
@@ -37,10 +66,9 @@ export default function AdminContestsPage() {
   });
   const contests = data?.items ?? [];
 
-  const switchTab = (next: Tab) => {
-    setTab(next);
-    setPage(1);
-  };
+  // Đổi tab: tab "Chờ duyệt" không có bộ lọc trạng thái nên bỏ status; luôn về trang 1.
+  const switchTab = (next: ContestTab) => updateQuery({ tab: next, status: null, page: null });
+  const setPage = (updater: (p: number) => number) => updateQuery({ page: updater(page) });
 
   return (
     <div className="space-y-6">
@@ -79,10 +107,7 @@ export default function AdminContestsPage() {
       <section className="grid gap-3 rounded-xl border bg-white p-4 shadow-sm sm:grid-cols-2 dark:border-gray-800 dark:bg-gray-950">
         <input
           value={keyword}
-          onChange={(e) => {
-            setKeyword(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => setKeyword(e.target.value)}
           placeholder="Tìm theo tên cuộc thi..."
           aria-label="Tìm cuộc thi"
           className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
@@ -91,10 +116,7 @@ export default function AdminContestsPage() {
           <select
             value={status}
             aria-label="Lọc theo trạng thái"
-            onChange={(e) => {
-              setStatus(isContestStatus(e.target.value) ? e.target.value : "");
-              setPage(1);
-            }}
+            onChange={(e) => updateQuery({ status: parseContestStatus(e.target.value), page: null })}
             className="h-10 rounded-lg border border-gray-200 px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
           >
             <option value="">Tất cả trạng thái</option>
