@@ -1186,57 +1186,59 @@ export default function AssignmentWorkOverlay({ assignmentId, title, userId, isH
             </div>
           </div>
 
-          {/* Custom Input panel (bottom) */}
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: 0,
-          }}>
+          {/* S7-05: bài chấm thủ công không chạy được code nên không có ô nhập input thử (nó không nuôi gì). */}
+          {!manualGrading && (
             <div style={{
-              padding: '0.7rem 1rem',
-              borderBottom: '1px solid rgba(255,255,255,0.06)',
-              background: 'rgba(15,15,15,0.8)',
+              flex: 1,
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexShrink: 0,
+              flexDirection: 'column',
+              minHeight: 0,
             }}>
-              <span style={{
-                fontSize: '0.65rem',
-                fontWeight: 700,
-                color: '#a78bfa',
-                letterSpacing: '0.5px',
-                textTransform: 'uppercase',
-              }}>Test Input</span>
-              <span style={{
-                fontSize: '0.6rem',
-                fontWeight: 600,
-                color: 'rgba(255,255,255,0.4)',
-              }}>Nhập input để test thử</span>
+              <div style={{
+                padding: '0.7rem 1rem',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(15,15,15,0.8)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexShrink: 0,
+              }}>
+                <span style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  color: '#a78bfa',
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                }}>Đầu vào thử</span>
+                <span style={{
+                  fontSize: '0.6rem',
+                  fontWeight: 600,
+                  color: 'rgba(255,255,255,0.4)',
+                }}>Nhập dữ liệu vào để chạy thử</span>
+              </div>
+              <div style={{ flex: 1, overflow: 'auto', padding: '0.75rem' }}>
+                <textarea
+                  value={customInput}
+                  onChange={(e) => setCustomInput(e.target.value)}
+                  placeholder="Nhập input tại đây...&#10;VD:&#10;5&#10;1 2 3 4 5"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    minHeight: '80px',
+                    background: '#0d0d0d',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '8px',
+                    padding: '0.6rem',
+                    color: 'rgba(255,255,255,0.9)',
+                    fontSize: '0.78rem',
+                    fontFamily: 'monospace',
+                    resize: 'none',
+                    outline: 'none',
+                  }}
+                />
+              </div>
             </div>
-            <div style={{ flex: 1, overflow: 'auto', padding: '0.75rem' }}>
-              <textarea
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                placeholder="Nhập input tại đây...&#10;VD:&#10;5&#10;1 2 3 4 5"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  minHeight: '80px',
-                  background: '#0d0d0d',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  padding: '0.6rem',
-                  color: 'rgba(255,255,255,0.9)',
-                  fontSize: '0.78rem',
-                  fontFamily: 'monospace',
-                  resize: 'none',
-                  outline: 'none',
-                }}
-              />
-            </div>
-          </div>
+          )}
         </div>
           </>
         )}

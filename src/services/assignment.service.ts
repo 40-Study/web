@@ -127,6 +127,16 @@ export const assignmentService = {
       .then((r) => r.data),
 
   /**
+   * GET /me/assignments?page=&page_size= — MỌI bài tập học viên đang đăng nhập thấy được (mọi lớp/buổi của họ),
+   * cùng dạng phần tử với `getBySession` kể cả `my_submission`, trả raw {data,total,page,page_size} (QA7 S7-09, C16).
+   * Backend cũ chưa có route này trả 404: `fetchMyAssignments` rơi về cách gọi từng buổi.
+   */
+  getMine: (page = 1, pageSize = 100) =>
+    api
+      .get<AssignmentListDTO>("/me/assignments", { params: { page, page_size: pageSize } })
+      .then((r) => r.data),
+
+  /**
    * GET /classes/:classId/assignments — bài tập của một lớp, trả raw {data,total,page,page_size} như getBySession.
    * Quản lý lớp (giảng viên, chủ khoá, admin, chủ/quản trị tổ chức của lớp) thấy cả bản nháp; học viên đang học
    * chỉ thấy bản đã công bố; lớp không xem được là 404.

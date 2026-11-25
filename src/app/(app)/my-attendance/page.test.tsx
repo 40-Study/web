@@ -2,7 +2,7 @@
  * F-18 (QA2 261013): ngày giờ điểm danh hiện "19:00 07/10/2026" (giờ trước, ngày sau) — đọc ngược so với
  * cách người Việt viết; phải là "07/10/2026 19:00".
  */
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 const attendance: { note?: string; [k: string]: unknown } = {
@@ -59,5 +59,49 @@ describe("MyAttendancePage — lớp/buổi (S5-14)", () => {
     delete attendance.session_title;
     render(<MyAttendancePage />);
     expect(screen.queryByRole("columnheader", { name: "Lớp" })).toBeNull();
+  });
+});
+
+// QA7 S7-01 (C15): cột "Thời gian" là giờ BẮT ĐẦU của buổi, không phải lúc đánh dấu (vắng/có phép từng hiện giờ kết thúc).
+describe("MyAttendancePage — giờ của buổi học (S7-01)", () => {
+  it("có session_start_time: hiện giờ bắt đầu buổi thay vì check_in/created_at", () => {
+    attendance.status = "absent";
+    attendance.session_start_time = "2026-11-24T19:30:00+07:00";
+    attendance.created_at = "2026-11-24T21:30:00+07:00";
+    delete attendance.check_in_time;
+    render(<MyAttendancePage />);
+    expect(screen.getAllByText("24/11/2026 19:30")).toHaveLength(2);
+    expect(screen.queryByText("24/11/2026 21:30")).toBeNull();
+  });
+
+  it("dòng đi trễ giữ giờ vào lớp ở dòng phụ", () => {
+    attendance.status = "late";
+    attendance.session_start_time = "2026-11-24T19:30:00+07:00";
+    attendance.check_in_time = "2026-11-24T19:42:00+07:00";
+    render(<MyAttendancePage />);
+    expect(screen.getAllByText("24/11/2026 19:30", { exact: false }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Vào lớp lúc 24/11/2026 19:42")).toHaveLength(2);
+  });
+
+  it("backend cũ (không có session_start_time): rơi về check_in_time ?? created_at", () => {
+    attendance.status = "present";
+    delete attendance.session_start_time;
+    attendance.check_in_time = "2026-11-24T19:05:00+07:00";
+    render(<MyAttendancePage />);
+    expect(screen.getAllByText("24/11/2026 19:05")).toHaveLength(2);
+    expect(screen.queryByText(/Vào lớp lúc/)).toBeNull();
+  });
+});
+
+// QA7 S7-02: "Có phép" không được xuống dòng trong pill; tiêu đề cột cũng không.
+describe("MyAttendancePage — pill trạng thái một dòng (S7-02)", () => {
+  it("pill và tiêu đề cột Trạng thái có whitespace-nowrap", () => {
+    attendance.status = "excused";
+    render(<MyAttendancePage />);
+    for (const root of [screen.getByTestId("my-attendance-table"), screen.getByTestId("my-attendance-cards")]) {
+      const pill = within(root).getByText("Có phép");
+      expect(pill.className.split(/\s+/)).toContain("whitespace-nowrap");
+    }
+    expect(screen.getByRole("columnheader", { name: "Trạng thái" }).className.split(/\s+/)).toContain("whitespace-nowrap");
   });
 });

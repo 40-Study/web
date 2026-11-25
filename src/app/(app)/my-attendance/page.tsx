@@ -5,11 +5,11 @@ import {
   AttendanceStats,
   summarizeAttendances,
 } from "@/components/attendance/attendance-stats";
+import { AttendanceWhen } from "@/components/attendance/attendance-when";
 import { AttendanceStatusBadge } from "@/components/attendance/attendance-status-badge";
 import { MyAttendanceCardList } from "@/components/attendance/my-attendance-card-list";
 import { useAllMyAttendances, useMyAttendances } from "@/hooks/queries/use-sessions";
 import { attendanceSessionLabel } from "@/lib/attendance-session-label";
-import { formatVnDateThenTime } from "@/lib/vn-datetime";
 
 /** Backend ép page_size tối đa 50 (schedule_service.go GetMyAttendances) */
 const PAGE_SIZE = 20;
@@ -70,10 +70,10 @@ export default function MyAttendancePage() {
               <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
                 <tr>
                   {showSessionColumn && <th className="px-4 py-3 font-medium">Lớp</th>}
-                  <th className="px-4 py-3 font-medium">Thời gian</th>
-                  <th className="px-4 py-3 font-medium">Trạng thái</th>
-                  <th className="px-4 py-3 font-medium">Trễ</th>
-                  <th className="px-4 py-3 font-medium">Ghi chú</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Thời gian</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Trạng thái</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Trễ</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Ghi chú</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -82,9 +82,9 @@ export default function MyAttendancePage() {
                     {showSessionColumn && (
                       <td className="px-4 py-3 font-medium text-gray-900">{attendanceSessionLabel(a) ?? "—"}</td>
                     )}
-                    {/* S11: formatter chung (giờ VN, bỏ giây); F-18: ngày trước, giờ sau. */}
-                    <td className="px-4 py-3 text-gray-700">
-                      {formatVnDateThenTime(a.check_in_time ?? a.created_at)}
+                    {/* S11: formatter chung (giờ VN, bỏ giây); F-18: ngày trước, giờ sau; S7-01: giờ của BUỔI học. */}
+                    <td className="whitespace-nowrap px-4 py-3 text-gray-700">
+                      <AttendanceWhen attendance={a} />
                     </td>
                     <td className="px-4 py-3">
                       <AttendanceStatusBadge status={a.status} />

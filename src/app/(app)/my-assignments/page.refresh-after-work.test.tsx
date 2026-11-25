@@ -27,11 +27,10 @@ vi.mock("next/dynamic", () => ({
       );
     },
 }));
-vi.mock("@/services/livestream-classroom.service", () => ({
-  livestreamClassroomService: { listSessions: vi.fn(), getAssignments: vi.fn() },
-}));
+// S7-09 (C16): danh sách đi qua MỘT request `GET /me/assignments`, không còn mỗi buổi một request.
+vi.mock("@/services/assignment.service", () => ({ assignmentService: { getMine: vi.fn() } }));
 
-import { livestreamClassroomService } from "@/services/livestream-classroom.service";
+import { assignmentService } from "@/services/assignment.service";
 import MyAssignmentsPage from "./page";
 
 function renderPage() {
@@ -44,11 +43,11 @@ function renderPage() {
 
 describe("/my-assignments — làm mới sau khi làm bài", () => {
   beforeEach(() => {
-    vi.mocked(livestreamClassroomService.listSessions).mockResolvedValue([{ id: "s1" }] as never);
-    vi.mocked(livestreamClassroomService.getAssignments)
+    const page = (rows: unknown[]) => ({ data: rows, total: rows.length, page: 1, page_size: 100 });
+    vi.mocked(assignmentService.getMine)
       .mockReset()
-      .mockResolvedValueOnce([base] as never)
-      .mockResolvedValue([{ ...base, my_submission: { id: "x", status: "submitted", score: null, max_score: null } }] as never);
+      .mockResolvedValueOnce(page([base]) as never)
+      .mockResolvedValue(page([{ ...base, my_submission: { id: "x", status: "submitted", score: null, max_score: null } }]) as never);
   });
 
   it("đóng màn làm bài thì danh sách tải lại: 'Làm bài ngay' thành 'Xem bài nộp'", async () => {
@@ -63,6 +62,6 @@ describe("/my-assignments — làm mới sau khi làm bài", () => {
     renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "Làm bài ngay" }));
     fireEvent.click(screen.getByRole("button", { name: "nop-xong" }));
-    await waitFor(() => expect(livestreamClassroomService.getAssignments).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(assignmentService.getMine).toHaveBeenCalledTimes(2));
   });
 });

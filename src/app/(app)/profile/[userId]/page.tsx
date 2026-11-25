@@ -243,9 +243,9 @@ export default function PublicProfilePage() {
                       {completedCourses.map((course) => (
                         <div
                           key={course.id}
-                          className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800"
+                          className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800"
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex min-w-0 items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-green-500 flex items-center justify-center">
                               <span className="text-white text-lg">✓</span>
                             </div>
@@ -258,7 +258,9 @@ export default function PublicProfilePage() {
                               </p>
                             </div>
                           </div>
-                          <Badge variant="success">Đã hoàn thành</Badge>
+                          <Badge variant="success" className="shrink-0 whitespace-nowrap">
+                            Đã hoàn thành
+                          </Badge>
                         </div>
                       ))}
                     </div>

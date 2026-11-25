@@ -2,7 +2,7 @@
 
 /**
  * My Assignments page — shows student's assignments fetched from real API.
- * Assignments are session-scoped; we list all classes then aggregate assignments.
+ * Một request `GET /me/assignments` (C16); backend cũ rơi về từng buổi học (`lib/fetch-my-assignments.ts`).
  */
 
 import { useState } from "react";
@@ -21,7 +21,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { livestreamClassroomService, type Assignment } from "@/services/livestream-classroom.service";
+import type { Assignment } from "@/services/livestream-classroom.service";
+import { fetchMyAssignments } from "@/lib/fetch-my-assignments";
 import { classifyAssignment, isPastDue, type AssignmentStatus } from "@/lib/assignment-status";
 import { hasSubmitted, submissionLabel } from "@/lib/assignment-submission";
 import { useAuthStore } from "@/stores/auth.store";
@@ -126,8 +127,8 @@ function AssignmentCard({
           )}
         </div>
 
-        {/* Time limit */}
-        {item.time_limit && item.time_limit > 0 && (
+        {/* Time limit (S7-05: bài chấm thủ công không chạy test nên không có giới hạn/test) */}
+        {item.auto_grade !== false && item.time_limit && item.time_limit > 0 && (
           <span
             className="text-xs text-gray-400 flex items-center gap-1"
             title="Thời gian chạy tối đa cho mỗi test (không phải đồng hồ đếm ngược)"
@@ -172,33 +173,13 @@ function EmptyState() {
   );
 }
 
-// ---- Aggregate assignments hook ----
+// ---- Assignments hook ----
 
 const ASSIGNMENTS_QUERY_KEY = ["my-assignments-aggregated"] as const;
 
 function useAllAssignments() {
-  return useQuery({
-    queryKey: ASSIGNMENTS_QUERY_KEY,
-    queryFn: async () => {
-      // Step 1: fetch all sessions
-      const sessions = await livestreamClassroomService.listSessions();
-      if (!sessions || sessions.length === 0) return [];
-
-      // Step 2: fetch assignments for each session in parallel
-      const assignmentResults = await Promise.allSettled(
-        sessions.map((s) => livestreamClassroomService.getAssignments(s.id))
-      );
-
-      const allAssignments: Assignment[] = [];
-      for (const result of assignmentResults) {
-        if (result.status === "fulfilled" && Array.isArray(result.value)) {
-          allAssignments.push(...result.value);
-        }
-      }
-
-      return allAssignments;
-    },
-  });
+  // S7-09 (C16): một request `/me/assignments`; backend cũ (404) rơi về từng buổi, xem `fetchMyAssignments`.
+  return useQuery({ queryKey: ASSIGNMENTS_QUERY_KEY, queryFn: fetchMyAssignments });
 }
 
 // ---- Main Page ----
