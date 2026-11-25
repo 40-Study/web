@@ -10,6 +10,7 @@ import {
   isSelectableRole,
   mapOrgRoleToSystemRole,
   resolveHomeRoute,
+  sortSystemRolesForPicker,
   type RoleLike,
 } from "./role-resolution";
 
@@ -109,5 +110,23 @@ describe("filterAddableSystemRoles (Q3-14)", () => {
     const names = filterAddableSystemRoles(options, [sys("teacher")]).map((o) => o.name);
     expect(names).not.toContain("TEACHER_APPLICANT");
     expect(names).not.toContain("TEACHER");
+  });
+});
+
+describe("sortSystemRolesForPicker (Q7 role-select)", () => {
+  it("Học viên, Phụ huynh, ... rồi 'Đăng ký làm giảng viên' cuối cùng, bất kể backend trả thứ tự nào", () => {
+    const fromBackend = [
+      { id: "4", name: "TEACHER_APPLICANT" },
+      { id: "3", name: "PARENT" },
+      { id: "1", name: "STUDENT" },
+    ];
+    expect(sortSystemRolesForPicker(fromBackend).map((o) => o.name)).toEqual(["STUDENT", "PARENT", "TEACHER_APPLICANT"]);
+  });
+
+  it("vai lạ xếp sau các vai biết, giữ thứ tự gốc; không sửa mảng đầu vào; không phân biệt hoa thường", () => {
+    const input = [{ name: "zeta" }, { name: "TEACHER_APPLICANT" }, { name: "alpha" }, { name: "student" }];
+    const copy = [...input];
+    expect(sortSystemRolesForPicker(input).map((o) => o.name)).toEqual(["student", "TEACHER_APPLICANT", "zeta", "alpha"]);
+    expect(input).toEqual(copy);
   });
 });

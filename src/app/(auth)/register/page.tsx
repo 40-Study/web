@@ -17,9 +17,9 @@ export default function RegisterPage() {
 
   return (
     <AuthCard>
-      <h2 className="mb-1 text-center text-xl font-semibold text-foreground">
+      <h1 className="mb-1 text-center text-xl font-semibold text-foreground">
         Đăng ký tài khoản
-      </h2>
+      </h1>
       <p className="mb-6 text-center text-sm text-muted-foreground">Chọn phương thức đăng ký</p>
 
       <div className="space-y-3">

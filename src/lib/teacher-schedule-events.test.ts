@@ -278,3 +278,17 @@ describe("audience: family", () => {
     expect(teacherView.tag).toBe("Cá nhân");
   });
 });
+
+// QA7 S7-06: lớp trong lịch của học viên không mang nhãn "Cá nhân" (đọc như ghi chú riêng của mình).
+describe("audience: student", () => {
+  it("không in 'Cá nhân'/'Bạn'; hiện tên tổ chức khi có; vẫn giữ cancelTarget như mặc định", () => {
+    const base = { session_id: "x1", date: "2026-10-06", status: "scheduled" };
+    const [plain] = timetableEntriesToEvents([entry(base)], { audience: "student" });
+    expect(plain.tag).toBeUndefined();
+    expect(plain.teacher).toBeUndefined();
+    expect(plain.cancelTarget).toBeDefined();
+
+    const [org] = timetableEntriesToEvents([entry({ ...base, organization_id: "o1", organization_name: "Trung tâm A" })], { audience: "student" });
+    expect(org.tag).toBe("Trung tâm A");
+  });
+});

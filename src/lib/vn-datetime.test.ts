@@ -110,6 +110,17 @@ describe("hasVnSessionEnded (Q6-T04)", () => {
     expect(hasVnSessionEnded("2026-11-25", "08:00", now)).toBe(false);
   });
 
+  // #134 L-2: `end <= start` biến buổi 10:00-10:00 (dữ liệu xấu) thành buổi 24 giờ "đang diễn ra" cả ngày.
+  it("giờ kết thúc BẰNG giờ bắt đầu: kết thúc ngay lúc bắt đầu, không kéo dài 24 giờ", () => {
+    expect(hasVnSessionEnded("2026-11-24", "10:00", now, "10:00")).toBe(true); // 12:00, đã qua 10:00
+    expect(hasVnSessionEnded("2026-11-24", "14:00", now, "14:00")).toBe(false); // chưa tới 14:00
+  });
+
+  it("buổi qua nửa đêm (kết thúc < bắt đầu) vẫn kết thúc vào ngày hôm sau", () => {
+    expect(hasVnSessionEnded("2026-11-24", "01:00", now, "23:00")).toBe(false); // 12:00 ngày 24: chưa tới 01:00 ngày 25
+    expect(hasVnSessionEnded("2026-11-23", "01:00", now, "23:00")).toBe(true);
+  });
+
   it("thiếu hoặc sai định dạng thì false", () => {
     expect(hasVnSessionEnded(undefined, "10:00", now)).toBe(false);
     expect(hasVnSessionEnded("2026-11-24", "", now)).toBe(false);

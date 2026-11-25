@@ -16,6 +16,21 @@ export class ApiError extends Error {
   }
 }
 
+/** Mã `code` của 400 "id sai định dạng" ở các handler đã chuẩn hoá (vd. user/order admin). */
+export const INVALID_ID_CODE = "ERR_INVALID_ID";
+
+/**
+ * 400 "id sai định dạng" của một GET theo id: `code === ERR_INVALID_ID` (handler chuẩn hoá) hoặc body cũ không có code
+ * `{"error":"invalid id"}` (assignment...). MỌI 400 khác (tham số truy vấn, validate) KHÔNG phải "không tìm thấy" (#134 L-3).
+ */
+export function isInvalidIdError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    error.status === 400 &&
+    (error.code === INVALID_ID_CODE || /invalid id/i.test(error.message))
+  );
+}
+
 export class AuthError extends ApiError {
   // Review đối kháng (plans/reports/review-260928-users-pr72-pr28.md, finding #5 MAJOR):
   // trước đây gán CỨNG code="AUTH_ERROR", bỏ qua data?.code thật mà backend trả (vd.

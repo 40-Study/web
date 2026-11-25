@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Download, ExternalLink, FileText, Link as LinkIcon, ClipboardCheck, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -34,6 +34,25 @@ function ResourceIcon({ type }: { type: PlayerResource["type"] }) {
   }
 }
 
+/**
+ * Hàng tab cuộn ngang (S-P1-5) nhưng không có dấu hiệu nào báo còn tab bên phải: "Đánh giá (n)" nằm ngoài khung ở 390px
+ * trông như không tồn tại (QA7 S7-10). Hook cho biết còn nội dung bị cắt ở mép phải để vẽ vệt mờ báo hiệu.
+ */
+function useHasMoreToRight() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [more, setMore] = useState(false);
+  const update = useCallback(() => {
+    const el = ref.current;
+    if (el) setMore(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+  useEffect(() => {
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [update]);
+  return { ref, more, update };
+}
+
 export interface PlayerTabsHandle {
   switchToExercises: () => void;
 }
@@ -57,25 +76,44 @@ export const PlayerTabs = forwardRef<PlayerTabsHandle, PlayerTabsProps>(
       { key: "reviews", label: reviewTotal !== undefined ? `Đánh giá (${reviewTotal})` : "Đánh giá" },
     ];
 
+    const { ref: tabsRef, more: moreTabs, update: updateMoreTabs } = useHasMoreToRight();
+    // Nhãn đổi độ rộng khi số đánh giá/quiz tải xong: đo lại.
+    const tabsKey = tabs.map((t) => t.label).join("|");
+    useEffect(() => updateMoreTabs(), [updateMoreTabs, tabsKey]);
+
     return (
       <div className="mt-4">
         {/* Tab navigation — cuộn ngang trên mobile (S-P1-5): 5 tab (kể cả nhãn
-            dài "Đánh giá (N)"/"Hỏi & Đáp") vỡ chữ dọc ở 390px nếu để flex co lại. */}
-        <div className="flex gap-0 overflow-x-auto whitespace-nowrap border-b border-gray-200">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                "shrink-0 px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px",
-                activeTab === tab.key
-                  ? "border-primary-500 text-primary-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+            dài "Đánh giá (N)"/"Hỏi & Đáp") vỡ chữ dọc ở 390px nếu để flex co lại.
+            S7-10: vệt mờ ở mép phải khi còn tab bị cắt, để biết còn cuộn được. */}
+        <div className="relative">
+          <div
+            ref={tabsRef}
+            onScroll={updateMoreTabs}
+            className="flex gap-0 overflow-x-auto whitespace-nowrap border-b border-gray-200"
+          >
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={cn(
+                  "shrink-0 px-3 py-2.5 text-sm sm:px-5 font-medium transition-colors border-b-2 -mb-px",
+                  activeTab === tab.key
+                    ? "border-primary-500 text-primary-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          {moreTabs && (
+            <div
+              aria-hidden="true"
+              data-testid="player-tabs-more"
+              className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent"
+            />
+          )}
         </div>
 
         {/* Tab content */}

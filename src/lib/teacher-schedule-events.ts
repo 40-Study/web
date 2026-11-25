@@ -92,9 +92,10 @@ interface TimetableEventOptions {
   /**
    * Người xem. Mặc định (giảng viên): "Bạn" + nhãn nguồn "Cá nhân"/tên tổ chức. `family` (phụ huynh, Q5-PG-08):
    * "Cá nhân" và "Bạn" không có nghĩa với phụ huynh nên bỏ; hiện tên giảng viên và tên tổ chức khi backend trả,
-   * còn thiếu thì không in dòng đó.
+   * còn thiếu thì không in dòng đó. `student` (học viên, QA7 S7-06): cùng nhãn như `family` (lớp của chính mình không phải
+   * "Cá nhân" kiểu ghi chú riêng), nhưng KHÔNG đổi quyền thao tác (`cancelTarget` chỉ bỏ với `family`).
    */
-  audience?: "family";
+  audience?: "family" | "student";
 }
 
 /** `teacher` và `tag` của một mục lớp theo người xem (xem `TimetableEventOptions.audience`). */
@@ -102,7 +103,7 @@ function classLabels(
   e: Pick<TimetableEntry, "organization_id" | "organization_name" | "teacher_name">,
   audience: TimetableEventOptions["audience"],
 ): Pick<ScheduleEvent, "teacher" | "tag"> {
-  if (audience === "family") {
+  if (audience === "family" || audience === "student") {
     return { teacher: e.teacher_name || undefined, tag: e.organization_name || undefined };
   }
   return { teacher: "Bạn", tag: timetableSourceLabel(e) };

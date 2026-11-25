@@ -111,6 +111,11 @@ export interface SessionAttendance {
    */
   class_name?: string;
   session_title?: string;
+  /**
+   * Giờ BẮT ĐẦU theo lịch của buổi học, RFC3339 (QA7 S7-01, C15). Cột "Thời gian" của /my-attendance hiện mốc này;
+   * backend cũ không trả thì rơi về `check_in_time ?? created_at`.
+   */
+  session_start_time?: string;
   student_id: string;
   status: AttendanceStatus;
   note?: string;

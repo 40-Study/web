@@ -44,6 +44,12 @@ export const APP_VERSION = "1.0.0";
 
 // ─── Site Config ─────────────────────────────────────────────────────────────
 
+/**
+ * Ngày cập nhật gần nhất của Điều khoản dịch vụ và Chính sách bảo mật (dd/MM/yyyy) — SSOT cho cả hai trang
+ * (Q7-PG-04: "Cập nhật lần cuối: 2026" chỉ có năm trông như chưa hoàn thiện). Đổi khi nội dung hai trang đổi.
+ */
+export const LEGAL_PAGES_LAST_UPDATED = "25/11/2026";
+
 export const siteConfig = {
     name: "ForteX",
     // Email hỗ trợ chính thức (chủ dự án chốt 29/09) — SSOT cho footer, /help, điều khoản, bảo mật.

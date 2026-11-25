@@ -193,6 +193,23 @@ describe("CoursesPage — bộ lọc trên URL", () => {
     expect(screen.getByTestId("filters").getAttribute("data-category")).toBe("");
   });
 
+  // #134 L-1: TTL theo từng mục coi lần ghi cũ hạ cánh muộn (router chậm trên di động) là điều hướng ngoài.
+  it("hai lần ghi, URL của lần ghi ĐẦU hạ cánh sau hơn 3s kể từ lúc ghi nó nhưng còn sớm so với lần ghi cuối: không giật lại (L-1)", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const { rerender } = render(<CoursesPage />);
+      act(() => latestOnFilterChange({ sortBy: "newest" })); // ghi k1
+      vi.setSystemTime(Date.now() + 2_000);
+      act(() => latestOnFilterChange({ sortBy: "rating" })); // ghi k2
+      vi.setSystemTime(Date.now() + 2_500); // k1 đã 4,5 s tuổi, k2 mới 2,5 s
+      currentParams = new URLSearchParams("sort=newest"); // router chậm: URL của k1 mới hạ cánh
+      rerender(<CoursesPage />);
+      expect(screen.getByTestId("filters").getAttribute("data-sort")).toBe("rating");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("không có ?q= thì tìm kiếm rỗng không ghi URL", () => {
     render(<CoursesPage />);
     act(() => latestOnSearch(""));

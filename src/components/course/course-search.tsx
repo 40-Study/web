@@ -40,13 +40,17 @@ export function CourseSearch({
   const onSearchRef = useRef(onSearch);
   onSearchRef.current = onSearch;
   const lastNotifiedRef = useRef(urlQuery);
+  const queryRef = useRef(query);
+  queryRef.current = query;
 
   // Đồng bộ khi URL đổi (back/forward, link tìm kiếm ở header). Chỉ chạy khi `q` trên URL đổi,
   // nên không ghi đè thứ người dùng đang gõ dở.
   useEffect(() => {
     // Q6 #133 R2: gõ 1 ký tự (< 2 = coi như rỗng) làm trang cha bỏ `?q=` khỏi URL; URL rỗng đó là do CHÍNH ô này báo ra
     // (lần báo gần nhất cũng là rỗng), không phải điều hướng ngoài, nên không được xoá ký tự người dùng đang gõ.
-    if (urlQuery === "" && lastNotifiedRef.current === "") return;
+    // #134 L-8: chỉ đúng với từ khoá < 2 ký tự. Từ khoá >= 2 ký tự chưa kịp báo (debounce 300ms) mà URL về rỗng là điều
+    // hướng ngoài (Back rồi Forward trong 300ms): phải xoá ô, không thì debounce báo lại từ khoá cũ.
+    if (urlQuery === "" && lastNotifiedRef.current === "" && queryRef.current.length < 2) return;
     setQuery(urlQuery);
   }, [urlQuery]);
   const [showSuggestions, setShowSuggestions] = useState(false);

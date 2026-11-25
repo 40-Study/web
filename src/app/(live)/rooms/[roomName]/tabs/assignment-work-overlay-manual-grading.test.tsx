@@ -46,6 +46,9 @@ describe("AssignmentWorkOverlay — chấm thủ công (C11)", () => {
 
     expect(await screen.findByText(MANUAL_GRADING_NOTICE)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Chạy thử" })).toBeNull();
+    // S7-05: không còn ô "Test Input" nuôi một lần chạy không tồn tại.
+    expect(screen.queryByPlaceholderText(/Nhập input tại đây/)).toBeNull();
+    expect(screen.queryByText("Đầu vào thử")).toBeNull();
     expect(screen.getByRole("option", { name: "Dart" })).toBeTruthy();
 
     fireEvent.click(screen.getAllByRole("button", { name: "Nộp bài" }).at(-1)!);
@@ -62,5 +65,9 @@ describe("AssignmentWorkOverlay — chấm thủ công (C11)", () => {
     render(<AssignmentWorkOverlay assignmentId="a1" title="T" userId="u1" onClose={() => {}} />);
     expect((await screen.findAllByRole("button", { name: "Chạy thử" })).length).toBeGreaterThan(0);
     expect(screen.queryByText(MANUAL_GRADING_NOTICE)).toBeNull();
+    // S7-05: bài tự chấm vẫn có ô nhập input thử, nhãn tiếng Việt.
+    expect(screen.getByPlaceholderText(/Nhập input tại đây/)).toBeTruthy();
+    expect(screen.getByText("Đầu vào thử")).toBeTruthy();
+    expect(screen.queryByText("Test Input")).toBeNull();
   });
 });

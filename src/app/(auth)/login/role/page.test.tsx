@@ -128,3 +128,27 @@ describe("/login/role — một vai hiển thị được thì vào luôn (Q4-T1
     expect(mockApi.post).not.toHaveBeenCalled();
   });
 });
+
+// Q7 role-select: người đăng ký mới thấy Học viên, Phụ huynh trước, "Đăng ký làm giảng viên" cuối cùng.
+describe("/login/role — thứ tự thẻ vai trò (Q7)", () => {
+  it("backend trả applicant trước: vẫn hiện Học viên, Phụ huynh, rồi Đăng ký làm giảng viên", async () => {
+    useAuthStore.setState({ roles: [], sessionToken: "session-1" });
+    mockApi.get.mockResolvedValue(
+      envelope({
+        system_roles: [
+          { id: "4", name: "TEACHER_APPLICANT" },
+          { id: "3", name: "PARENT" },
+          { id: "1", name: "STUDENT" },
+        ],
+      })
+    );
+    renderWithProviders(<LoginRolePage />);
+
+    const cards = await screen.findAllByRole("radio");
+    expect(cards.map((c) => c.textContent)).toEqual([
+      expect.stringContaining("Học sinh"),
+      expect.stringContaining("Phụ huynh"),
+      expect.stringContaining("Đăng ký làm giảng viên"),
+    ]);
+  });
+});

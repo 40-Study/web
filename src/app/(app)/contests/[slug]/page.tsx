@@ -56,6 +56,7 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
   const boundary = detail.phase === "UPCOMING" ? detail.start_time : detail.phase === "ACTIVE" ? detail.end_time : null;
   const remaining = useServerCountdown(boundary, detail.server_time, onRefresh, receivedAt);
   const mine = detail.viewer.my_participation;
+  const hasNoPrizes = detail.prizes.length === 0 && detail.certificate_min_percentage === null;
   const seats = detail.max_participants > 0 ? `${detail.participant_count}/${detail.max_participants}` : `${detail.participant_count}`;
 
   return (
@@ -103,7 +104,7 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
               <Award className="h-5 w-5 text-violet-600" aria-hidden="true" />
               Giải thưởng
             </h2>
-            {detail.prizes.length === 0 && detail.certificate_min_percentage === null ? (
+            {hasNoPrizes ? (
               <p className="text-sm text-gray-600">Cuộc thi này không có giải thưởng.</p>
             ) : (
               <ul className="space-y-1 text-sm text-gray-700">
@@ -115,7 +116,8 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
                 )}
               </ul>
             )}
-            <p className="text-xs text-gray-500">Giải được trao sau khi quản trị viên chốt kết quả.</p>
+            {/* S7-04: không có giải thì không nói "giải được trao…" ngay sau câu "không có giải thưởng". */}
+            {!hasNoPrizes && <p className="text-xs text-gray-500">Giải được trao sau khi quản trị viên chốt kết quả.</p>}
           </section>
 
           <section className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">

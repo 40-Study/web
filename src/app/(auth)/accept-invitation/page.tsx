@@ -28,7 +28,7 @@ function AcceptInvitationContent() {
     return (
       <AuthCard>
         <div className="text-center">
-          <h2 className="mb-2 text-xl font-semibold text-foreground">Liên kết không hợp lệ</h2>
+          <h1 className="mb-2 text-xl font-semibold text-foreground">Liên kết không hợp lệ</h1>
           <p className="mb-6 text-sm text-muted-foreground">
             Không tìm thấy mã lời mời. Vui lòng kiểm tra lại liên kết trong email.
           </p>
@@ -62,7 +62,7 @@ function AcceptInvitationContent() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h2 className="mb-2 text-xl font-semibold text-foreground">Lời mời không hợp lệ</h2>
+          <h1 className="mb-2 text-xl font-semibold text-foreground">Lời mời không hợp lệ</h1>
           <p className="mb-6 text-sm text-muted-foreground">
             Lời mời đã hết hạn, đã được sử dụng, hoặc không tồn tại.
           </p>
@@ -91,7 +91,7 @@ function AcceptInvitationContent() {
               />
             </svg>
           </div>
-          <h2 className="mb-2 text-xl font-semibold text-foreground">Lời mời từ {data.student_name}</h2>
+          <h1 className="mb-2 text-xl font-semibold text-foreground">Lời mời từ {data.student_name}</h1>
           <p className="mb-1 text-sm text-muted-foreground">
             Bạn được mời làm{" "}
             <span className="font-medium text-muted-foreground">
@@ -167,7 +167,7 @@ function AcceptInvitationContent() {
             />
           </svg>
         </div>
-        <h2 className="mb-2 text-xl font-semibold text-foreground">Lời mời phụ huynh</h2>
+        <h1 className="mb-2 text-xl font-semibold text-foreground">Lời mời phụ huynh</h1>
         <p className="mb-1 text-sm text-muted-foreground">
           <span className="font-medium text-muted-foreground">{data.student_name}</span> đã mời bạn làm
         </p>

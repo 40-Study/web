@@ -319,7 +319,7 @@ export default function SchedulePage() {
     setRange(current => current?.from === next.from && current?.to === next.to ? current : next);
   }, []);
   const events = useMemo(() => {
-    const classEvents = timetableEntriesToEvents(timetable?.entries ?? [], { range, cancelled: timetable?.cancelled }).map(event => ({ ...event, teacher: undefined }));
+    const classEvents = timetableEntriesToEvents(timetable?.entries ?? [], { range, cancelled: timetable?.cancelled, audience: "student" }).map(event => ({ ...event, teacher: undefined }));
     const liveEvents = (sessions?.sessions ?? []).map(session => ({ ...liveSessionToEvent(session), teacher: undefined, meetingUrl: session.status === "live" ? `/rooms/${session.id}` : undefined }));
     const personal: ScheduleEvent[] = notes.map(note => ({ id: note.id, title: note.title, startTime: new Date(`${note.dateStr}T${String(note.startH).padStart(2,"0")}:${String(note.startM).padStart(2,"0")}:00`).toISOString(), endTime: new Date(`${note.dateStr}T${String(note.endH).padStart(2,"0")}:${String(note.endM).padStart(2,"0")}:00`).toISOString(), type: "hybrid", status: "upcoming", location: note.location, description: note.description }));
     return [...classEvents, ...liveEvents, ...personal];

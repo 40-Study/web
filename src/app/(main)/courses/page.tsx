@@ -15,8 +15,13 @@ import { applyCourseFiltersToParams, courseFilterKey, parseCourseFilterParams } 
 /** Số card hiển thị mỗi lượt. Dữ liệu đã tải đủ một lần, "Tải thêm" chỉ mở rộng phần hiển thị. */
 const PAGE_SIZE = 12;
 
-/** Quá thời gian này mà URL chưa báo lại thì coi một lần ghi bộ lọc là không bao giờ hạ cánh (xem sổ `writtenKeysRef`). */
-const WRITTEN_KEY_TTL_MS = 3000;
+/**
+ * Quá thời gian này KỂ TỪ LẦN GHI CUỐI mà URL vẫn chưa báo lại thì coi các lần ghi bộ lọc là không bao giờ hạ cánh (xem sổ
+ * `writtenKeysRef`). Tính theo lần ghi cuối chứ không theo từng mục, và đủ rộng cho `router.replace` chậm trên di động:
+ * 3 giây theo từng mục khiến một lần ghi cũ hạ cánh muộn bị coi là điều hướng ngoài và kéo bộ lọc giật về giá trị cũ
+ * (Q7, #134 L-1).
+ */
+const WRITTEN_KEY_TTL_MS = 10_000;
 
 export default function CoursesPage() {
   const router = useRouter();
@@ -58,10 +63,10 @@ export default function CoursesPage() {
   const urlFilterKey = courseFilterKey(parseCourseFilterParams(searchParams));
   useEffect(() => {
     // Q6 #133 R3: một lần ghi mà URL không bao giờ báo lại (ghi rồi ghi ngược về khoá cũ trong một nhịp router) không được nằm
-    // trong sổ mãi và nuốt một điều hướng ngoài về đúng khoá đó về sau: bỏ các mục quá hạn trước khi đối chiếu.
-    const now = Date.now();
-    writtenKeysRef.current = writtenKeysRef.current.filter((entry) => now - entry.at < WRITTEN_KEY_TTL_MS);
+    // trong sổ mãi và nuốt một điều hướng ngoài về đúng khoá đó về sau: cả sổ hết hạn khi lần ghi CUỐI đã quá hạn.
     const written = writtenKeysRef.current;
+    const lastWriteAt = written[written.length - 1]?.at;
+    if (lastWriteAt !== undefined && Date.now() - lastWriteAt >= WRITTEN_KEY_TTL_MS) written.length = 0;
     const landed = written.findIndex((entry) => entry.key === urlFilterKey);
     if (landed >= 0) {
       // URL do chính trang ghi (có thể là bản cũ): bỏ qua, và bỏ luôn các lần ghi cũ hơn đã bị gộp/vượt qua.

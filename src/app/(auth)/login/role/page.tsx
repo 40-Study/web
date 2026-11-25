@@ -8,7 +8,7 @@ import { useAuthStore } from "@/stores";
 import { useSelectRole } from "@/hooks/queries/use-auth";
 import { authService } from "@/services/auth.service";
 import { getSystemRoleLabel } from "@/lib/role-labels";
-import { filterAddableSystemRoles, isSelectableRole } from "@/lib/role-resolution";
+import { filterAddableSystemRoles, isSelectableRole, sortSystemRolesForPicker } from "@/lib/role-resolution";
 import type { UnifiedRole, SystemRoleOption } from "@/services/auth.service";
 
 export default function LoginRolePage() {
@@ -70,7 +70,7 @@ export default function LoginRolePage() {
   };
 
   // Roles chưa có (để hiện trong add mode); Q3-14: đã là giảng viên thì không mời đăng ký làm giảng viên nữa.
-  const availableNewRoles = filterAddableSystemRoles(allSystemRoles, roles);
+  const availableNewRoles = sortSystemRolesForPicker(filterAddableSystemRoles(allSystemRoles, roles));
 
   const handleContinue = async () => {
     if (!selectedRole && !selectedSystemRole) return;
@@ -107,7 +107,7 @@ export default function LoginRolePage() {
 
   return (
     <AuthCard>
-      <h2 className="mb-1 text-center text-xl font-semibold text-foreground">{title}</h2>
+      <h1 className="mb-1 text-center text-xl font-semibold text-foreground">{title}</h1>
       <p className="mb-6 text-center text-sm text-muted-foreground">{subtitle}</p>
 
       <div className="space-y-3" role="radiogroup" aria-label="Chọn vai trò">

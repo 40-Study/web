@@ -16,7 +16,8 @@ export function AuthCard({ children, className, showLogo = true }: AuthCardProps
     >
       {showLogo && (
         <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-primary">ForteX</h1>
+          {/* Q7-PG-05: thương hiệu không phải h1; h1 của trang auth là tiêu đề mục đích (Đăng nhập, Đăng ký...). */}
+          <p className="text-3xl font-bold text-primary">ForteX</p>
           <p className="text-xs tracking-[0.2em] text-slate-600 dark:text-slate-400 mt-1 uppercase">Learn · Leap · Lead</p>
         </div>
       )}

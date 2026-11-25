@@ -36,6 +36,8 @@ import { ChildAssignmentsTab } from "@/components/parent/child-assignments-tab";
 import { ChildAttendanceTab } from "@/components/parent/child-attendance-tab";
 import { assignmentTypeLabel, difficultyLabel, gradeTypeLabel, roomLabel } from "@/lib/display-labels";
 import { formatStudyMinutes } from "@/lib/format-study-time";
+import { ApiError } from "@/lib/errors";
+import { ResourceLoadError } from "@/components/common/resource-unavailable";
 
 type TabType = "overview" | "courses" | "grades" | "schedule" | "attendance" | "assignments";
 
@@ -68,6 +70,11 @@ function ScheduleGrid({ entries }: { entries: TimetableEntry[] }) {
   </>;
 }
 
+/** Lỗi "con này không có/không xem được" (khác sự cố tải tạm thời). Xem Q7-PG-03. */
+function isChildNotFoundError(error: unknown): boolean {
+  return error instanceof ApiError && (error.status === 400 || error.status === 403 || error.status === 404);
+}
+
 export default function ChildDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -87,7 +94,7 @@ export default function ChildDetailPage() {
     window.history.replaceState(window.history.state, "", url.toString());
   };
 
-  const { data: overview, isLoading: loadingOverview } = useChildOverview(childId);
+  const { data: overview, isLoading: loadingOverview, error: overviewError, refetch: refetchOverview } = useChildOverview(childId);
   // PG-L2: chỉ chạy các query còn lại SAU khi overview xác nhận đây là con của phụ huynh. Id lạ thì overview
   // 403 và trước đây 5 query kia vẫn bắn song song (6 × 403). Id rỗng làm hook tự tắt qua `enabled: !!childId`.
   const dataChildId = overview ? childId : "";
@@ -103,6 +110,13 @@ export default function ChildDetailPage() {
         <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
       </div>
     );
+  }
+
+  // Q7-PG-03 (C17): chỉ 400 (id sai định dạng), 403 (không liên kết, `ERR_CHILD_NOT_LINKED`) và 404 là "không tìm thấy".
+  // Lỗi khác (5xx `ERR_INTERNAL`, mất mạng) là sự cố tạm: hiện "Thử lại", không nói "không tìm thấy" như thể con không tồn tại.
+  // Backend cũ trả 403 cho MỌI lỗi nên vẫn rơi về "không tìm thấy" như trước.
+  if (!overview && overviewError && !isChildNotFoundError(overviewError)) {
+    return <ResourceLoadError resourceLabel="thông tin học sinh" onRetry={() => void refetchOverview()} />;
   }
 
   if (!overview) {
@@ -158,41 +172,44 @@ export default function ChildDetailPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <div className="flex items-center gap-2 text-orange-500 mb-2">
-            <Flame className="w-5 h-5" />
-            <span className="text-sm font-medium">Chuỗi ngày học</span>
+      {/* Stats Cards. Q7-PG-07: ở tab Lịch học ẩn đi: bốn thẻ này đẩy lịch xuống y~570 nên các buổi 19:00 nằm ngoài
+          màn 1280x800 (chỉ thấy các hàng trống 15:00-18:00); các tab khác vẫn hiện. */}
+      {activeTab !== "schedule" && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-xl p-4 shadow-sm border">
+            <div className="flex items-center gap-2 text-orange-500 mb-2">
+              <Flame className="w-5 h-5" />
+              <span className="text-sm font-medium">Chuỗi ngày học</span>
+            </div>
+            <p className="text-2xl font-bold">{overview.current_streak} ngày</p>
           </div>
-          <p className="text-2xl font-bold">{overview.current_streak} ngày</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <div className="flex items-center gap-2 text-purple-500 mb-2">
-            <Trophy className="w-5 h-5" />
-            <span className="text-sm font-medium">Tổng XP</span>
+          <div className="bg-white rounded-xl p-4 shadow-sm border">
+            <div className="flex items-center gap-2 text-purple-500 mb-2">
+              <Trophy className="w-5 h-5" />
+              <span className="text-sm font-medium">Tổng XP</span>
+            </div>
+            {/* QA-B-26: toLocaleString() không truyền locale ra "1,850" trên máy tiếng Anh; app dùng dấu chấm. */}
+            <p className="text-2xl font-bold">{overview.total_xp.toLocaleString("vi-VN")}</p>
           </div>
-          {/* QA-B-26: toLocaleString() không truyền locale ra "1,850" trên máy tiếng Anh; app dùng dấu chấm. */}
-          <p className="text-2xl font-bold">{overview.total_xp.toLocaleString("vi-VN")}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <div className="flex items-center gap-2 text-blue-500 mb-2">
-            <BookOpen className="w-5 h-5" />
-            <span className="text-sm font-medium">Khoá học</span>
+          <div className="bg-white rounded-xl p-4 shadow-sm border">
+            <div className="flex items-center gap-2 text-blue-500 mb-2">
+              <BookOpen className="w-5 h-5" />
+              <span className="text-sm font-medium">Khoá học</span>
+            </div>
+            <p className="text-2xl font-bold">
+              {overview.completed_courses}/{overview.enrolled_courses}
+            </p>
+            <p className="text-xs text-gray-500">hoàn thành</p>
           </div>
-          <p className="text-2xl font-bold">
-            {overview.completed_courses}/{overview.enrolled_courses}
-          </p>
-          <p className="text-xs text-gray-500">hoàn thành</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <div className="flex items-center gap-2 text-green-500 mb-2">
-            <Clock className="w-5 h-5" />
-            <span className="text-sm font-medium">Thời gian học</span>
+          <div className="bg-white rounded-xl p-4 shadow-sm border">
+            <div className="flex items-center gap-2 text-green-500 mb-2">
+              <Clock className="w-5 h-5" />
+              <span className="text-sm font-medium">Thời gian học</span>
+            </div>
+            <p className="text-2xl font-bold">{formatStudyMinutes(overview.total_study_minutes)}</p>
           </div>
-          <p className="text-2xl font-bold">{formatStudyMinutes(overview.total_study_minutes)}</p>
         </div>
-      </div>
+      )}
 
       {/* Tabs */}
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">

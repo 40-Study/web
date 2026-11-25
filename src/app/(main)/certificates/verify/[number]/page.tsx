@@ -11,6 +11,15 @@ import { SITE_URL } from "@/lib/seo";
  * Nằm trong group (main) — group này không có RoleGuard (khác với (app)).
  */
 
+/**
+ * Số chứng chỉ CHUẨN để dựng URL xác minh (Q7-PG-06): mã nhập vào đã được backend chuẩn hoá (hoa/thường, khoảng trắng),
+ * nên "Xác minh tại" / canonical / og:url phải dùng số backend trả về, không lặp lại đúng thứ khách gõ trên thanh địa chỉ.
+ * Không xác minh được (không có kết quả) thì giữ số trên URL.
+ */
+function canonicalVerifyUrl(result: { certificate_number?: string } | null, typed: string): string {
+  return `${SITE_URL}/certificates/verify/${encodeURIComponent(result?.certificate_number || typed)}`;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -36,7 +45,7 @@ export async function generateMetadata({
   const description = `Chứng chỉ hoàn thành khoá học${
     result.course_name ? ` "${result.course_name}"` : ""
   } do ForteX cấp. Mã: ${result.certificate_number}.`;
-  const url = `${SITE_URL}/certificates/verify/${encodeURIComponent(params.number)}`;
+  const url = canonicalVerifyUrl(result, params.number);
 
   return {
     title,
@@ -55,7 +64,7 @@ export default async function VerifyCertificatePage({
   params: { number: string };
 }) {
   const result = await verifyCertificateServer(params.number);
-  const verifyUrl = `${SITE_URL}/certificates/verify/${encodeURIComponent(params.number)}`;
+  const verifyUrl = canonicalVerifyUrl(result, params.number);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
