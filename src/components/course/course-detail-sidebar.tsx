@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { VoucherInput } from "@/components/checkout/voucher-input";
 import { CheckoutModal } from "@/components/checkout/checkout-modal";
 import { OrderPaymentDialog } from "@/components/checkout/order-payment-dialog";
+import { ParentPurchaseNotice } from "./parent-purchase-notice";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
 import { normalizeRole } from "@/lib/routes";
@@ -329,12 +330,7 @@ export function CourseDetailSidebar({
             {/* CTA buttons */}
             <div className="space-y-2.5">
               {isParent ? (
-                <p
-                  data-testid="parent-cannot-purchase"
-                  className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-600"
-                >
-                  Tài khoản Phụ huynh không đăng ký hay mua khoá học. Hãy dùng tài khoản học viên của con để đăng ký.
-                </p>
+                <ParentPurchaseNotice />
               ) : isEnrolled ? (
                 /* State 4: Already enrolled */
                 <div className="space-y-2">
