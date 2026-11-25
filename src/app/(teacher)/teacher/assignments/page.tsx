@@ -109,6 +109,8 @@ export default function TeacherAssignmentsPage() {
   }, [courseSearch, ordered]);
   // Đang tìm kiếm thì không giấu kết quả trong nhóm thu gọn.
   const othersVisible = showUnpublished || courseSearch.trim() !== "";
+  // Q7-T06: con số phải bằng số khoá đang HIỆN trong danh sách (nhóm chưa xuất bản thu gọn thì không tính).
+  const visibleCourseCount = filteredCourses.published.length + (othersVisible ? filteredCourses.others.length : 0);
 
   const renderCourseButton = (course: (typeof courses)[number]) => (
     <button
@@ -234,7 +236,7 @@ export default function TeacherAssignmentsPage() {
         {/* Column 1: Course list */}
         <Card className="flex h-[22rem] flex-col overflow-hidden">
           <CardHeader className="border-b pb-3">
-            <CardTitle className="text-base">1) Tất cả khoá học ({courses.length})</CardTitle>
+            <CardTitle className="text-base">1) Khoá học của tôi ({visibleCourseCount})</CardTitle>
             <Input
               placeholder="Tìm khoá học..."
               value={courseSearch}
@@ -428,9 +430,13 @@ export default function TeacherAssignmentsPage() {
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="assignment-instructions">Yêu cầu chi tiết *</Label>
+                <Label id="assignment-instructions-label" htmlFor="assignment-instructions">
+                  Yêu cầu chi tiết *
+                </Label>
                 {selectedSessionId ? (
                   <TiptapEditor
+                    id="assignment-instructions"
+                    ariaLabelledBy="assignment-instructions-label"
                     value={instructions}
                     onChange={setInstructions}
                     placeholder="Mô tả tiêu chí chấm, yêu cầu đầu ra, deadline..."
