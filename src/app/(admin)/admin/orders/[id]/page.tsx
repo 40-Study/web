@@ -73,9 +73,10 @@ export default function AdminOrderDetailPage() {
       <div className="flex items-center gap-3">
         <Link
           href="/admin/orders"
+          aria-label="Về danh sách đơn hàng"
           className="flex h-9 w-9 items-center justify-center rounded-lg border hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Chi tiết đơn hàng</h1>
