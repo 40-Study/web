@@ -39,7 +39,8 @@ vi.mock("@/hooks/queries/use-admin-orders", () => ({
         total_count: 1,
         page: 1,
         limit: 20,
-        total_pages: 1,
+        // Đủ lớn để các URL ?page=3/4 trong file này hợp lệ (QA7-A06 kéo trang vượt total_pages về trang cuối).
+        total_pages: 9,
       },
       isLoading: false,
       isError: false,
