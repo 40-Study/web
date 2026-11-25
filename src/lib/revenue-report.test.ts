@@ -27,7 +27,11 @@ describe("successRateValue — QA3-13: không in 0.0% trên mẫu số 0", () =>
   });
 
   it("có mẫu số thì giữ 1 chữ số thập phân, kể cả khi tỷ lệ thật sự là 0%", () => {
-    expect(successRateValue({ success_rate: 80, by_status: { completed: 4, failed: 1 } })).toBe("80.0%");
-    expect(successRateValue({ success_rate: 0, by_status: { failed: 2 } })).toBe("0.0%");
+    expect(successRateValue({ success_rate: 80, by_status: { completed: 4, failed: 1 } })).toBe("80,0%");
+    expect(successRateValue({ success_rate: 0, by_status: { failed: 2 } })).toBe("0,0%");
+  });
+
+  it("QA7-A07: dấu phẩy thập phân vi-VN, không phải dấu chấm (23,1% chứ không phải 23.1%)", () => {
+    expect(successRateValue({ success_rate: (3 / 13) * 100, by_status: { completed: 3, failed: 10 } })).toBe("23,1%");
   });
 });

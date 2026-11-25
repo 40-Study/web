@@ -47,6 +47,12 @@ async function injectIntoGet(page: Page, pattern: RegExp, mutate: (body: Record<
   });
 }
 
+/** Dòng nhật ký tổng hợp cho trường hợp DB trống: chỉ tồn tại trong response bị chèn, không ghi gì vào DB. */
+const syntheticAuditRow = () => ({
+  id: "zz-audit", created_at: "2026-11-20T00:00:00Z", actor: null, action: "organization.update", target_type: "organization",
+  target_id: "zz-org", status_code: 200, ip: "203.0.113.7", metadata: null,
+});
+
 const horizontalOverflow = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 
 /** Cuộn mượt mất vài trăm ms nên thăm dò tới khi form nằm trọn trong khung nhìn. */
@@ -76,17 +82,25 @@ for (const viewport of WIDTHS) {
     test.afterAll(async () => close?.());
 
     test("A02 /admin/roles không tràn ngang khi danh sách người dùng có email dài", async () => {
-      let injected = false;
+      // QA7 #134 L-6: luôn có một dòng để đo. Vai trò chưa có người dùng thì chèn một dòng tổng hợp (chỉ ở response GET).
+      const longEmail = `${"qa6-guest-".repeat(6)}@example.com`;
       await injectIntoGet(page, /\/api\/system-roles\/[^/]+\/users(\?.*)?$/, (body) => {
         const rows = body.data.user_system_roles;
-        if (rows.length === 0) return;
-        rows[0].user = { ...rows[0].user, email: `${"qa6-guest-".repeat(6)}@example.com` };
-        injected = true;
+        if (rows.length === 0) {
+          rows.push({
+            id: "zz-row", user_id: "zz-user", system_role_id: "zz-role", status: "active", granted_at: "2026-11-20T00:00:00Z",
+            created_at: "2026-11-20T00:00:00Z", updated_at: "2026-11-20T00:00:00Z",
+            user: { id: "zz-user", user_name: "zz", email: longEmail },
+          });
+          body.data.total = Math.max(1, body.data.total ?? 0);
+        } else {
+          rows[0].user = { ...rows[0].user, email: longEmail };
+        }
       });
       await page.goto("/admin/roles");
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       await page.waitForLoadState("networkidle");
-      test.skip(!injected, "vai trò chưa có người dùng nào: không có dòng để chèn email dài");
+      await expect(page.getByText(longEmail).first()).toBeVisible();
       expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
     });
 
@@ -129,19 +143,32 @@ for (const viewport of WIDTHS) {
     });
 
     test("A04 dashboard: tên tổ chức dài trong 'Hoạt động gần đây' không tràn", async () => {
-      // Q6 #132 L3: nhật ký trống thì không có dòng để chèn tên dài; không được để test "xanh" mà chẳng kiểm tra gì.
-      let injected = false;
+      // QA7 #134 L-6: nhật ký trống thì chèn một dòng tổng hợp (chỉ ở response GET) để phép đo luôn chạy.
       await injectIntoGet(page, /\/api\/admin\/audit-logs(\?.*)?$/, (body) => {
+        if (body.data.items.length === 0) body.data.items.push(syntheticAuditRow());
         const item = body.data.items[0];
-        if (!item) return;
         item.target_type = "organization";
         item.metadata = { target_name: "Đ".repeat(100) };
-        injected = true;
       });
       await page.goto("/admin");
       await page.waitForLoadState("networkidle");
-      test.skip(!injected, "nhật ký kiểm toán trống: không có dòng nào để chèn tên tổ chức dài");
       expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+    });
+
+    test("QA7-A05 /admin/audit-logs: đối tượng dài không đẩy các cột Kết quả/IP/Chi tiết ra khỏi khung nhìn", async () => {
+      await injectIntoGet(page, /\/api\/admin\/audit-logs(\?.*)?$/, (body) => {
+        if (body.data.items.length === 0) body.data.items.push(syntheticAuditRow());
+        const item = body.data.items[0];
+        item.target_type = "organization";
+        item.metadata = { target_name: "Đ".repeat(100) };
+      });
+      await page.goto("/admin/audit-logs");
+      await page.waitForLoadState("networkidle");
+      expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+      const outside = await page.locator("tbody tr").first().evaluate((tr) =>
+        Array.from(tr.querySelectorAll("td")).filter((td) => td.getBoundingClientRect().right > window.innerWidth + 1).length
+      );
+      expect(outside, "mọi ô của dòng nhật ký phải nằm trong khung nhìn, không phải cuộn ngang trong bảng").toBe(0);
     });
 
     test("A01 /admin/permissions: Sửa mô tả ở quyền cuối đưa form vào khung nhìn và focus ô mô tả", async () => {

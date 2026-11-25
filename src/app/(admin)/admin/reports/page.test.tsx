@@ -9,6 +9,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/stores/auth.store";
 import AdminReportsPage from "./page";
 
+let mockFeePercent: number | string = 5;
+
 vi.mock("@/hooks/queries/use-admin-reports", () => ({
   useAdminRevenueReport: () => ({
     data: {
@@ -37,11 +39,12 @@ vi.mock("@/hooks/queries/use-admin-reports", () => ({
     error: null,
     refetch: vi.fn(),
   }),
-  usePlatformFeeSetting: () => ({ data: { platform_fee_percent: 5 }, isLoading: false }),
+  usePlatformFeeSetting: () => ({ data: { platform_fee_percent: mockFeePercent }, isLoading: false }),
 }));
 
 describe("AdminReportsPage — real platform revenue report", () => {
   beforeEach(() => {
+    mockFeePercent = 5;
     useAuthStore.setState({
       sessionStatus: "authenticated",
       permissions: ["SYSTEM_SETTINGS_MANAGE"],
@@ -59,7 +62,7 @@ describe("AdminReportsPage — real platform revenue report", () => {
     // platform_fee_amount / teacher_share_amount — new fields from decision #2.
     expect(screen.getByText(/87\.320/)).toBeTruthy();
     expect(screen.getByText(/1\.410\.080/)).toBeTruthy();
-    expect(screen.getByText("80.0%")).toBeTruthy();
+    expect(screen.getByText("80,0%")).toBeTruthy();
   });
 
   it("ADM-L6: nhãn 'ròng' nói rõ là sau hoàn tiền và chưa trừ phí nền tảng, cạnh dòng phí", () => {
@@ -92,6 +95,13 @@ describe("AdminReportsPage — real platform revenue report", () => {
     expect(screen.getByText("Đang chờ chuyển khoản")).toBeTruthy();
     expect(screen.queryByText("Đang xử lý")).toBeNull();
     expect(screen.getByText("1.746.400 ₫")).toBeTruthy();
+  });
+
+  it("QA7-A07: phí nền tảng thập phân dùng dấu phẩy vi-VN ('12,5%'), không phải '12.5%'", () => {
+    mockFeePercent = "12.50"; // backend mã hoá decimal thành chuỗi
+    render(<AdminReportsPage />);
+    expect(screen.getByText("12,5%")).toBeTruthy();
+    expect(screen.queryByText("12.5%")).toBeNull();
   });
 
   it("hides the fee card without SYSTEM_SETTINGS_MANAGE (the fee endpoint would 403)", () => {

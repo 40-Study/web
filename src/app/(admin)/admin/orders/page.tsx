@@ -12,6 +12,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { OrderCardList } from "./_components/order-card-list";
 import { OrderStatusCell } from "./_components/order-status-cell";
 import { STICKY_ACTION_CELL, STICKY_ACTION_HEAD } from "@/app/(admin)/admin/_lib/sticky-action-column";
+import { lastPageToClampTo } from "@/app/(admin)/admin/_lib/clamp-page";
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
@@ -96,6 +97,13 @@ function AdminOrdersContent() {
     limit,
   });
   const items = data?.items ?? [];
+
+  // QA7-A06: ?page=9999 vượt trang cuối -> trạng thái rỗng che mất thanh phân trang; kéo về trang cuối thật.
+  const clampTo = lastPageToClampTo(page, data?.total_pages);
+  useEffect(() => {
+    if (clampTo !== null) updateQuery({ page: clampTo });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clampTo]);
 
   return (
     <div className="space-y-6">

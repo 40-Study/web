@@ -139,7 +139,7 @@ export default function AdminReportsPage() {
 
 function PlatformFeeSettingCard() {
   const { data, isLoading } = usePlatformFeeSetting();
-  // Backend mã hoá decimal thành chuỗi; Number() để hiển thị gọn ("5" -> "5%", "12.50" -> "12.5%").
+  // Backend mã hoá decimal thành chuỗi; Number() để hiển thị gọn ("5" -> "5%", "12.50" -> "12,5%", dấu phẩy vi-VN).
   const currentPercent = Number(data?.platform_fee_percent ?? 0);
 
   return (
@@ -155,7 +155,7 @@ function PlatformFeeSettingCard() {
       ) : (
         <div className="flex items-center gap-3">
           <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {currentPercent}%
+            {currentPercent.toLocaleString("vi-VN", { maximumFractionDigits: 2 })}%
           </span>
           {/* Nơi sửa duy nhất là trang cấu hình hệ thống (phase 5). */}
           <Link href="/admin/settings" className="text-sm font-medium text-primary-700 hover:underline">

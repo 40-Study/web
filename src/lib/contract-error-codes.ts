@@ -21,6 +21,8 @@ export const CONTRACT_CODE_MESSAGES: Record<string, string> = {
   ERR_ORDER_ALREADY_PAID: "Đơn hàng này đã được thanh toán.",
   ERR_PAYMENT_PROVIDER_UNAVAILABLE:
     "Ngân hàng đang gặp sự cố nên chưa kiểm tra được giao dịch. Vui lòng thử lại sau ít phút.",
+  // QA7 C14: tạo/sửa vai trò hệ thống trùng tên hoặc tên dành riêng -> 409.
+  ERR_ROLE_NAME_EXISTS: "Tên vai trò đã tồn tại, hãy chọn tên khác.",
 };
 
 /** Các mã mà message tiếng Việt của backend nói lý do cụ thể hơn câu dự phòng: xét message trước. */
@@ -33,6 +35,7 @@ export const CONTRACT_MESSAGE_FIRST_CODES: readonly string[] = [
   "ERR_INVALID_VOUCHER_CODE",
   "ERR_ORDER_ALREADY_PAID",
   "ERR_PAYMENT_PROVIDER_UNAVAILABLE",
+  "ERR_ROLE_NAME_EXISTS",
 ];
 
 /**

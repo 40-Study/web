@@ -10,6 +10,7 @@ import { QueryState } from "@/components/common/query-state";
 import { isUuid } from "@/lib/uuid";
 import { Badge } from "@/components/ui/badge";
 import { formatVnDateTime } from "../_lib/format-vn-datetime";
+import { lastPageToClampTo } from "../_lib/clamp-page";
 
 const PAGE_SIZE = 20;
 // Tiêu đề cột; ô tương ứng mang cùng chuỗi ở `data-label` để dưới `sm` (thẻ xếp dọc) vẫn có nhãn.
@@ -95,7 +96,7 @@ function AuditLogsContent() {
 
   // Khoảng ngày ngược (Từ > Đến): nói rõ cho admin thay vì trả bảng rỗng "không có thao tác" (ADM-L8).
   const dateRangeError = from && to && from > to ? DATE_RANGE_ERROR : null;
-  const { data, isLoading, isError, error, refetch } = useAuditLogs(
+  const { data, isLoading, isError, error, refetch, isPlaceholderData } = useAuditLogs(
     {
       page,
       page_size: PAGE_SIZE,
@@ -110,6 +111,17 @@ function AuditLogsContent() {
   const { data: actions = [] } = useAuditLogActions();
   const items = data?.items ?? [];
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.page_size)) : 1;
+
+  // QA7-A06: ?page=9999 vượt trang cuối -> trạng thái rỗng che mất thanh phân trang; kéo về trang cuối thật.
+  // Bỏ qua khi `data` còn là dữ liệu giữ lại từ khoá truy vấn trước (keepPreviousData): total_pages đó không thuộc URL này.
+  const clampTo = lastPageToClampTo(
+    page,
+    !isPlaceholderData && data && data.page_size > 0 ? Math.ceil(data.total / data.page_size) : undefined
+  );
+  useEffect(() => {
+    if (clampTo !== null) updateQuery({ page: clampTo });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clampTo]);
 
   return (
     <div className="space-y-6">
@@ -221,7 +233,7 @@ function AuditLogsContent() {
                     <td data-label={COL.action} className={`${CELL_CLASS} text-gray-900 dark:text-gray-100 ${ACTION_COLUMN_CLASS}`}>
                       {auditActionLabel(log.action)}
                     </td>
-                    <td data-label={COL.target} className={`${CELL_CLASS} break-all text-gray-600 dark:text-gray-300 sm:break-normal`}>
+                    <td data-label={COL.target} className={`${CELL_CLASS} min-w-0 max-w-xs break-words [overflow-wrap:anywhere] text-gray-600 dark:text-gray-300`}>
                       <div>
                         <p>{auditTargetText(log)}</p>
                         {auditContextText(log) && <p className="text-xs text-gray-500">{auditContextText(log)}</p>}

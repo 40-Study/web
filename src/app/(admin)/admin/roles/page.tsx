@@ -24,6 +24,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } f
 import { formatVnDateTime } from "../_lib/format-vn-datetime";
 import { ORG_SCOPED_ROLE_HINT, isOrgScopedSystemRole, roleUserCountLabel } from "../_lib/org-scoped-role";
 import Link from "next/link";
+import { ROLE_NAME_EXISTS_MESSAGE, isRoleNameTakenError } from "../_lib/role-name-taken";
 
 // A1: vai trò hệ thống dựng sẵn (seed từ data/roles.json) không xoá được — backend trả 409
 // SYSTEM_ROLE_PROTECTED. Danh sách lấy từ SYSTEM_ROLES (SSOT dùng chung) thay vì hardcode.
@@ -121,16 +122,23 @@ export default function RolesPage() {
       .filter((perm) => roleForm.permissions.includes(perm.name))
       .map((perm) => perm.id);
 
-    if (roleForm.id) {
-      // Sửa role: PUT thông tin + PUT permissions (replace toàn bộ, kể cả khi bỏ tick hết).
-      await updateRole.mutateAsync({ roleId: roleForm.id, data: payload });
-      await setRolePermissions.mutateAsync({ roleId: roleForm.id, permissionIds });
-    } else {
-      // Tạo role: chỉ gọi thêm API gán quyền nếu có tick — tránh 1 request rỗng vô ích.
-      const created = await createRole.mutateAsync(payload);
-      if (permissionIds.length > 0) {
-        await setRolePermissions.mutateAsync({ roleId: created.id, permissionIds });
+    // QA7-A02: lỗi không được thoát khỏi handler thành unhandled rejection. Toast chung đã do mutation hiện; ở đây
+    // chỉ giữ nguyên form để sửa và, khi trùng tên, chỉ thẳng vào ô tên.
+    try {
+      if (roleForm.id) {
+        // Sửa role: PUT thông tin + PUT permissions (replace toàn bộ, kể cả khi bỏ tick hết).
+        await updateRole.mutateAsync({ roleId: roleForm.id, data: payload });
+        await setRolePermissions.mutateAsync({ roleId: roleForm.id, permissionIds });
+      } else {
+        // Tạo role: chỉ gọi thêm API gán quyền nếu có tick — tránh 1 request rỗng vô ích.
+        const created = await createRole.mutateAsync(payload);
+        if (permissionIds.length > 0) {
+          await setRolePermissions.mutateAsync({ roleId: created.id, permissionIds });
+        }
       }
+    } catch (error) {
+      if (isRoleNameTakenError(error)) setNameError(ROLE_NAME_EXISTS_MESSAGE);
+      return;
     }
 
     setRoleForm(emptyRoleForm);
