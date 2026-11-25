@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatVnDateTime } from "@/lib/vn-datetime";
+import { PIN_BELOW_SM_AND_FROM_2XL } from "../_lib/sticky-action-column";
 
 const LIMIT = 20;
 
@@ -82,10 +83,14 @@ export default function AdminUsersPage() {
   const debouncedKeyword = useDebouncedValue(keyword, 300);
   const [rawRoleFilter, setRoleFilter] = useState(() => searchParams.get("role") ?? "ALL");
   // QA6-A11: danh sách vai trò tải bất đồng bộ nên `?role=` chỉ kiểm được sau khi có danh sách; trước đó giữ nguyên giá trị URL.
-  const { data: systemRoles = [], isSuccess: rolesLoaded, isPending: rolesPending } = useSystemRoles();
+  // QA7 #134 L-4: tải danh sách vai trò THẤT BẠI thì `?role=` không bao giờ kiểm được; coi như vai trò lạ (về "Tất cả")
+  // thay vì gửi một giá trị chưa kiểm lên API. (Ô chọn vai trò cũng không có lựa chọn nào khi danh sách lỗi.)
+  const { data: systemRoles = [], isSuccess: rolesLoaded, isPending: rolesPending, isError: rolesFailed } = useSystemRoles();
   const roleFilter = rolesLoaded
     ? parseRoleParam(rawRoleFilter, systemRoles.map((role) => role.name))
-    : rawRoleFilter;
+    : rolesFailed
+      ? "ALL"
+      : rawRoleFilter;
   const [statusFilter, setStatusFilter] = useState<"ALL" | AdminUserStatusFilter>(() =>
     parseStatusParam(searchParams.get("status"))
   );
@@ -242,8 +247,8 @@ export default function AdminUsersPage() {
                 <SortableHead label="Đăng nhập cuối" sortKey="last_login_at" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
                 {/* A7 (mobile 390px): bảng rộng hơn màn hình nên cột hành động bị đẩy khỏi tầm
                     nhìn, không có dấu hiệu cuộn. Ghim cột này vào mép phải để nút Khoá/Mở khoá
-                    luôn tới được. Nền đục để hàng không lộ qua khi cuộn ngang. */}
-                <TableHead className="sticky right-0 z-10 bg-gray-50 text-right dark:bg-gray-900">
+                    luôn tới được. Nền đục để hàng không lộ qua khi cuộn ngang. QA7-A01: xem PIN_BELOW_SM_AND_FROM_2XL. */}
+                <TableHead className={`${PIN_BELOW_SM_AND_FROM_2XL} bg-gray-50 text-right dark:bg-gray-900`}>
                   Hành động
                 </TableHead>
               </TableRow>
@@ -279,7 +284,7 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{formatDate(user.created_at)}</TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{formatDate(user.last_login_at)}</TableCell>
-                    <TableCell className="sticky right-0 z-10 bg-white text-right dark:bg-gray-950">
+                    <TableCell className={`${PIN_BELOW_SM_AND_FROM_2XL} bg-white text-right dark:bg-gray-950`}>
                       <Can permission={PERMISSIONS.USERS_BAN}>
                         {user.is_active ? (
                           <Button

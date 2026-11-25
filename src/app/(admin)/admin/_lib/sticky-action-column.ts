@@ -24,3 +24,11 @@ export const ACTION_BUTTON_GROUP = "flex min-w-[7.5rem] max-w-[8.5rem] flex-col 
  */
 export const HIDDEN_BELOW_SM = "hidden sm:table-cell";
 export const MOBILE_SUMMARY = "mt-1 flex flex-wrap items-center gap-2 text-xs sm:hidden";
+
+/**
+ * QA7-A01 (Người dùng): ở 1280px bảng (1038px) rộng hơn khung (942px) nên cột "Hành động" ghim đè lên "Đăng nhập cuối"
+ * (mất ngày). Chỉ ghim khi cần hoặc vô hại: dưới `sm` (390px, QA3-05: bảng rộng gấp đôi màn hình, không ghim thì nút
+ * Khoá/Mở khoá khuất) và từ `2xl` (1536px). Từ `sm` tới dưới `2xl` là cột cuối bình thường, cuộn ngang được.
+ * Dùng cho cả <th> và <td>; nền đục đặt riêng ở từng nơi.
+ */
+export const PIN_BELOW_SM_AND_FROM_2XL = "sticky right-0 z-10 sm:static 2xl:sticky";

@@ -79,6 +79,8 @@ describe("AdminUsersPage — QA6-A11 ?role= lạ", () => {
     mockUseSystemRoles.mockReturnValue({ data: undefined, isSuccess: false, isPending: true });
     mockUseAdminUsers.mockClear();
     const view = render(<AdminUsersPage />);
+    // Q7 #134 L-5: `every` trên danh sách rỗng luôn đúng — phải chắc là hook đã được gọi.
+    expect(mockUseAdminUsers).toHaveBeenCalled();
     expect(mockUseAdminUsers.mock.calls.every((c) => c[1]?.enabled === false)).toBe(true);
 
     mockUseAdminUsers.mockClear();
