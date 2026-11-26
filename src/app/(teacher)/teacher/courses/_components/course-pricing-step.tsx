@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { MAX_COURSE_PRICE, validateDiscountPrice, validatePrice, type CourseFormData, type UpdateCourseFormField } from "./course-form-model";
+import { validateDiscountPrice, validatePrice, type CourseFormData, type UpdateCourseFormField } from "./course-form-model";
 
 /**
  * Bước "Cài đặt giá" — dùng chung trang tạo và trang sửa khoá.
@@ -13,6 +13,8 @@ import { MAX_COURSE_PRICE, validateDiscountPrice, validatePrice, type CourseForm
  * đánh dấu nổi bật là việc của quản trị viên.
  */
 export function CoursePricingStep({ formData, update }: { formData: CourseFormData; update: UpdateCourseFormField }) {
+  // Hai ô giá là type="text" (không phải "number"): ô number của trình duyệt đọc "1e", "-", "2." thành "" nên
+  // bộ kiểm không thấy gì để báo. Với text, validatePrice/validateDiscountPrice nhận đúng chuỗi người dùng gõ.
   const price = parseFloat(formData.price) || 0;
   const salePrice = parseFloat(formData.discount_price) || 0;
   const discount = price > 0 && salePrice > 0 && salePrice < price
@@ -76,11 +78,9 @@ export function CoursePricingStep({ formData, update }: { formData: CourseFormDa
               <div className="space-y-2">
                 <Label>Giá bán (VNĐ)</Label>
                 <Input
-                  type="number"
+                  type="text"
                   inputMode="numeric"
-                  min={0}
-                  max={MAX_COURSE_PRICE}
-                  step={1}
+                  autoComplete="off"
                   placeholder="1200000"
                   value={formData.price}
                   onChange={(e) => update("price", e.target.value)}
@@ -97,11 +97,9 @@ export function CoursePricingStep({ formData, update }: { formData: CourseFormDa
               <div className="space-y-2">
                 <Label>Giá khuyến mãi (VNĐ)</Label>
                 <Input
-                  type="number"
+                  type="text"
                   inputMode="numeric"
-                  min={0}
-                  max={MAX_COURSE_PRICE}
-                  step={1}
+                  autoComplete="off"
                   placeholder="890000"
                   value={formData.discount_price}
                   onChange={(e) => update("discount_price", e.target.value)}

@@ -87,7 +87,8 @@ describe("/teacher/courses/[id] - thời lượng bài học (Q7-T01)", () => {
     createLesson.mockReset().mockResolvedValue({ id: "les-1" });
   });
 
-  it.each(["-5", "2.5", "99999999999"])("%s: báo lỗi dưới ô, khoá nút tạo, không gửi", async (value) => {
+  // "1e", "-", "2." là những gì ô type="number" của trình duyệt đọc thành "" (bị coi là để trống): ô phải là text.
+  it.each(["-5", "2.5", "99999999999", "1e", "-", "2.", "abc"])("%s: báo lỗi dưới ô, khoá nút tạo, không gửi", async (value) => {
     const dialog = await openLessonDialog();
     fireEvent.change(within(dialog).getByLabelText("Thời lượng (phút)"), { target: { value } });
 

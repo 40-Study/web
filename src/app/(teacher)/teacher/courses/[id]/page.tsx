@@ -1311,14 +1311,13 @@ export default function CourseDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="new-lesson-duration">Thời lượng (phút)</Label>
-                {/* B-18: placeholder "15" trông như giá trị mặc định nhưng để trống thì không gửi gì (lưu 0 phút). */}
+                {/* B-18: placeholder "15" trông như giá trị mặc định nhưng để trống thì không gửi gì (lưu 0 phút).
+                    type="text": ô number đọc "1e", "-", "2." thành "" nên bị coi là để trống và lưu im lặng. */}
                 <Input
                   id="new-lesson-duration"
-                  type="number"
+                  type="text"
                   inputMode="numeric"
-                  min={0}
-                  max={1440}
-                  step={1}
+                  autoComplete="off"
                   value={lessonDuration}
                   onChange={(e) => setLessonDuration(e.target.value)}
                   placeholder="Không bắt buộc"
