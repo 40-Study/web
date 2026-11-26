@@ -27,7 +27,7 @@ function MetricCard({ label, value, hint }: { label: string; value: string; hint
     <article className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
       <p className="text-sm text-gray-500">{label}</p>
       <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
-      {hint && <p className="mt-1 text-xs text-gray-400">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{hint}</p>}
     </article>
   );
 }
@@ -151,7 +151,7 @@ function PlatformFeeSettingCard() {
       </p>
 
       {isLoading ? (
-        <p className="text-sm text-gray-400">Đang tải...</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Đang tải...</p>
       ) : (
         <div className="flex items-center gap-3">
           <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">

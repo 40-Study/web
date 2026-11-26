@@ -23,7 +23,8 @@ export function OrgAreaGate() {
   const homeHref = resolveHomeRoute(activeRole, storeRoles);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    // QA8-A09: là landmark <main> duy nhất của trang chặn; id="main-content" là đích của skip link trong app/layout.tsx.
+    <main id="main-content" className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
         <Building2 className="mx-auto h-10 w-10 text-primary-600" aria-hidden="true" />
         <h1 className="mt-3 font-heading text-xl font-semibold text-foreground">Khu quản lý tổ chức</h1>
@@ -65,6 +66,6 @@ export function OrgAreaGate() {
           Về trang chủ
         </Link>
       </div>
-    </div>
+    </main>
   );
 }

@@ -103,9 +103,9 @@ function CourseDetailBody({ courseId }: { courseId: string }) {
 
 function SectionLessons({ courseId, sectionId }: { courseId: string; sectionId: string }) {
   const { data, isLoading, isError } = useLessons(courseId, sectionId);
-  if (isLoading) return <p className="mt-1 text-xs text-gray-400">Đang tải bài học…</p>;
+  if (isLoading) return <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Đang tải bài học…</p>;
   if (isError) return <p className="mt-1 text-xs text-red-500">Không tải được danh sách bài học.</p>;
-  if (!data || data.length === 0) return <p className="mt-1 text-xs text-gray-400">Chưa có bài học.</p>;
+  if (!data || data.length === 0) return <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Chưa có bài học.</p>;
   return (
     <ul className="mt-1 list-disc space-y-0.5 pl-5 text-gray-600 dark:text-gray-400">
       {data.map((lesson) => (

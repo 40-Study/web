@@ -140,7 +140,7 @@ export default function AdminIndexPage() {
             <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
               {totalAssignedUsersError ? "lỗi" : totalAssignedUsers === null ? "…" : totalAssignedUsers}
             </p>
-            <p className="mt-1 text-[11px] text-gray-400">
+            <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
               {totalAssignedUsersError
                 ? "Không tải được số người dùng theo vai trò — có thể thiếu quyền hoặc hệ thống đang lỗi."
                 : "Tổng số lượt gán vai trò: một người giữ 2 vai trò sẽ được tính 2 lần."}
@@ -151,7 +151,7 @@ export default function AdminIndexPage() {
         {/* QA6-A04: cột `auto` giãn theo tên tổ chức dài trong "Hoạt động gần đây" (597px ở 390); cần cột `minmax(0,…)` + `min-w-0`. */}
         <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div className="min-w-0 rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Vai trò có nhiều người dùng nhất</h3>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Vai trò có nhiều người dùng nhất</h2>
             <div className="mt-4 space-y-3">
               {topRoles.length === 0 ? (
                 <p className="text-sm text-gray-500">Chưa có dữ liệu vai trò</p>
@@ -180,7 +180,7 @@ export default function AdminIndexPage() {
 
           <Can permission={PERMISSIONS.SYSTEM_SETTINGS_MANAGE}>
             <div className="min-w-0 rounded-xl border bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Hoạt động gần đây</h3>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Hoạt động gần đây</h2>
               <RecentActivity />
             </div>
           </Can>

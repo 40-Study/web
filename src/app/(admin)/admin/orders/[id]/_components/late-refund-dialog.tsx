@@ -178,7 +178,7 @@ export function LateRefundDialog({ orderId, orderNumber, totalAmount, pendingIte
                 rows={3}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
               />
-              <p className="mt-1 text-right text-xs text-gray-400">
+              <p className="mt-1 text-right text-xs text-gray-500 dark:text-gray-400">
                 {note.length}/{NOTE_MAX_LEN}
               </p>
             </div>

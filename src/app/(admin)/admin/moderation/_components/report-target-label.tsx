@@ -13,7 +13,7 @@ const NO_TITLE_LABEL: Record<string, string> = {
 export function ReportTargetLabel({ report }: { report: Report }) {
   const target = report.target;
   if (!target) {
-    return <span className="break-all font-mono text-[11px] text-gray-400">{report.reported_id}</span>;
+    return <span className="break-all font-mono text-[11px] text-gray-500 dark:text-gray-400">{report.reported_id}</span>;
   }
   if (!target.exists) {
     return <span className="text-xs italic text-gray-500">Đối tượng đã bị xoá</span>;

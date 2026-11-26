@@ -120,7 +120,7 @@ function RejectReasonBody({
           placeholder="Nêu rõ lý do để người gửi biết cần sửa gì..."
           className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
         />
-        <p className="mt-1 text-right text-xs text-gray-400">
+        <p className="mt-1 text-right text-xs text-gray-500 dark:text-gray-400">
           {reason.length}/{REJECT_REASON_MAX_LEN}
         </p>
       </div>

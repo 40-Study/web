@@ -20,7 +20,7 @@ export function LateRefundList({ summary }: { summary: LateRefundSummary }) {
           <li key={item.ref} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
             <span className="font-mono text-xs">{item.transaction_id || "(không có mã giao dịch)"}</span>
             <span className="font-medium">{formatLateRefundAmount(item.amount)}</span>
-            <span className="text-xs text-gray-400">{formatOrderDateTime(item.flagged_at)}</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">{formatOrderDateTime(item.flagged_at)}</span>
             <span className="ml-auto">
               {item.refunded ? <Badge variant="success">Đã hoàn</Badge> : <Badge variant="destructive">Chờ hoàn</Badge>}
             </span>

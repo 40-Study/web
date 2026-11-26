@@ -211,8 +211,8 @@ export default function RolesPage() {
                   <button className="w-full text-left" onClick={() => setSelectedRoleId(role.id)}>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <h3 className="font-medium text-gray-900">{getSystemRoleLabel(role.name)}</h3>
-                        <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">{role.name}</span>
+                        <h2 className="font-medium text-gray-900">{getSystemRoleLabel(role.name)}</h2>
+                        <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-gray-600">{role.name}</span>
                       </div>
                       <span
                         className={`shrink-0 rounded-full px-2 py-1 text-xs ${

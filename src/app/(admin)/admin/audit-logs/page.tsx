@@ -227,7 +227,7 @@ function AuditLogsContent() {
                           <p className="text-xs text-gray-500">{log.actor.email}</p>
                         </div>
                       ) : (
-                        <span className="text-gray-400">Tài khoản không còn</span>
+                        <span className="text-gray-500 dark:text-gray-400">Tài khoản không còn</span>
                       )}
                     </td>
                     <td data-label={COL.action} className={`${CELL_CLASS} text-gray-900 dark:text-gray-100 ${ACTION_COLUMN_CLASS}`}>
