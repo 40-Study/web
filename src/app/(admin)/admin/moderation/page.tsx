@@ -8,6 +8,7 @@ import { QueryState } from "@/components/common/query-state";
 import { formatVnDateTime } from "@/lib/vn-datetime";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import { useUrlEnumParam } from "../_lib/use-url-enum-param";
 import { ReportActionDialog } from "./_components/report-action-dialog";
 import { ReportTargetLabel } from "./_components/report-target-label";
 import { REPORT_ACTION_SPECS, isKnownReportAction } from "./_lib/report-actions";
@@ -49,12 +50,14 @@ const REPORTED_TYPE_LABEL: Record<string, string> = {
 };
 
 type StatusFilter = "ALL" | ReportStatus;
+const STATUS_FILTERS: readonly StatusFilter[] = ["pending", "reviewing", "resolved", "dismissed", "ALL"];
 
 // QA-C-12: cùng định dạng ngày giờ VN với các màn admin khác (không giây).
 const formatDate = (iso?: string) => formatVnDateTime(iso);
 
 export default function AdminModerationPage() {
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
+  // QA8-A11: bộ lọc trạng thái nằm trên URL (?status=), không phải state cục bộ.
+  const [statusFilter, setStatusFilter] = useUrlEnumParam<StatusFilter>("status", STATUS_FILTERS, "pending");
   const { data, isLoading, isError, error, refetch } = useAllReports(
     statusFilter === "ALL" ? { page_size: 50 } : { status: statusFilter, page_size: 50 }
   );
@@ -97,7 +100,7 @@ export default function AdminModerationPage() {
 
       <section className="rounded-xl border bg-white p-3 shadow-sm dark:border-gray-800 dark:bg-gray-950">
         <div className="flex flex-wrap gap-2">
-          {(["pending", "reviewing", "resolved", "dismissed", "ALL"] as StatusFilter[]).map((s) => (
+          {STATUS_FILTERS.map((s) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}

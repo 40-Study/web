@@ -24,6 +24,7 @@ import {
   type CourseStatus,
 } from "@/types/approval";
 import { ACTION_BUTTON_GROUP, STICKY_ACTION_CELL, STICKY_ACTION_HEAD } from "@/app/(admin)/admin/_lib/sticky-action-column";
+import { useUrlEnumParam } from "@/app/(admin)/admin/_lib/use-url-enum-param";
 
 const PAGE_SIZE = 20;
 
@@ -39,7 +40,8 @@ const ACTION_BTN = "rounded px-2 py-1 text-xs font-medium disabled:opacity-50";
 
 export default function AdminCoursesPage() {
   // Mặc định "Chờ duyệt": việc chính của trang là xử lý hàng đợi duyệt.
-  const [status, setStatus] = useState<CourseStatus>("pending_review");
+  // QA8-A11: bộ lọc trạng thái nằm trên URL (?status=), không phải state cục bộ.
+  const [status, setStatus] = useUrlEnumParam<CourseStatus>("status", COURSE_STATUSES, "pending_review");
   // QA4-A16: từ khoá nằm trên URL (?keyword=, như /admin/users) để F5/quay lại/gửi link vẫn giữ tìm kiếm.
   // Khởi tạo một lần từ URL; sau đó state ghi ngược ra URL (replace, không spam history).
   const router = useRouter();
@@ -191,7 +193,7 @@ export default function AdminCoursesPage() {
                             <button
                               onClick={() => setApproveTarget(course)}
                               data-testid="course-approve"
-                              className={`${ACTION_BTN} bg-green-600 text-white hover:bg-green-700`}
+                              className={`${ACTION_BTN} bg-green-700 text-white hover:bg-green-800`}
                             >
                               Duyệt
                             </button>
