@@ -120,7 +120,7 @@ function DiscussionsPageContent() {
             </div>
           ) : isError && posts.length === 0 ? (
             // Q8-PG-04: API lỗi không được đọc thành "Chưa có bài viết nào, hãy mở đầu cuộc thảo luận".
-            <QueryState isError error={error} onRetry={() => void refetch()}>
+            <QueryState isError error={error} onRetry={() => refetch()}>
               {null}
             </QueryState>
           ) : posts.length === 0 ? (

@@ -35,7 +35,7 @@ export function ChildAssignmentsTab({
   isLoading: boolean;
   /** Q8-PG-05: API lỗi không được đọc thành "Chưa có bài tập nào". */
   isError?: boolean;
-  onRetry?: () => void;
+  onRetry?: () => unknown;
 }) {
   if (isLoading) {
     return (

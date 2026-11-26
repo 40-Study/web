@@ -50,4 +50,13 @@ describe("CoursesPage — API lỗi (Q8-PG-03)", () => {
     expect(screen.getByTestId("grid")).toBeTruthy();
     expect(screen.queryByRole("alert")).toBeNull();
   });
+
+  // M2 (review #139): refetch nền lỗi nhưng react-query còn `data` cũ thì danh sách đang xem không được thay bằng hộp lỗi.
+  it("refetch nền lỗi nhưng còn dữ liệu cũ: giữ lưới, không hiện hộp lỗi", () => {
+    useCoursesMock.mockReturnValue({ data: [{ id: "c1" }], isLoading: false, isError: true, error: new Error("boom"), refetch });
+    render(<CoursesPage />);
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByTestId("grid")).toBeTruthy();
+    expect(screen.getByText("1 khoá học")).toBeTruthy();
+  });
 });

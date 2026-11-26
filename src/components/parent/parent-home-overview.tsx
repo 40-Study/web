@@ -95,7 +95,7 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
         </div>
       ) : overviewError ? (
         // Q8-PG-05 (quyết định: mỗi widget một lỗi riêng): lỗi tải không phải "chưa có dữ liệu".
-        <div className="mb-4"><ChildSectionError compact label="tổng quan" onRetry={() => void refetchOverview()} /></div>
+        <div className="mb-4"><ChildSectionError compact label="tổng quan" onRetry={() => refetchOverview()} /></div>
       ) : (
         <p className="text-sm text-gray-500 mb-4">Chưa có dữ liệu tổng quan.</p>
       )}
@@ -110,7 +110,7 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
           {loadingAssignments ? (
             <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
           ) : assignmentsError && !assignmentsData ? (
-            <ChildSectionError compact label="bài tập" onRetry={() => void refetchAssignments()} />
+            <ChildSectionError compact label="bài tập" onRetry={() => refetchAssignments()} />
           ) : upcomingAssignments.length === 0 ? (
             <p className="text-xs text-gray-500">Không có bài tập nào sắp tới hạn.</p>
           ) : (
@@ -166,7 +166,7 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
           {loadingAttendance ? (
             <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
           ) : attendanceError && !attendanceData ? (
-            <ChildSectionError compact label="điểm danh" onRetry={() => void refetchAttendance()} />
+            <ChildSectionError compact label="điểm danh" onRetry={() => refetchAttendance()} />
           ) : recentAttendance.length === 0 ? (
             <p className="text-xs text-gray-500">Chưa có dữ liệu điểm danh.</p>
           ) : (

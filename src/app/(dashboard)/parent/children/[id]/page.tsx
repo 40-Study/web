@@ -119,7 +119,7 @@ export default function ChildDetailPage() {
   // Lỗi khác (5xx `ERR_INTERNAL`, mất mạng) là sự cố tạm: hiện "Thử lại", không nói "không tìm thấy" như thể con không tồn tại.
   // Backend cũ trả 403 cho MỌI lỗi nên vẫn rơi về "không tìm thấy" như trước.
   if (!overview && overviewError && !isChildNotFoundError(overviewError)) {
-    return <ResourceLoadError resourceLabel="thông tin học sinh" onRetry={() => void refetchOverview()} />;
+    return <ResourceLoadError resourceLabel="thông tin học sinh" onRetry={() => refetchOverview()} />;
   }
 
   if (!overview) {
@@ -255,7 +255,7 @@ export default function ChildDetailPage() {
               courses={coursesData?.courses}
               isLoading={loadingCourses}
               isError={coursesError}
-              onRetry={() => void refetchCourses()}
+              onRetry={() => refetchCourses()}
             />
           )}
 
@@ -267,7 +267,7 @@ export default function ChildDetailPage() {
                   <Loader2 className="w-6 h-6 animate-spin" />
                 </div>
               ) : gradesError && !gradesData ? (
-                <ChildSectionError label="điểm số" onRetry={() => void refetchGrades()} />
+                <ChildSectionError label="điểm số" onRetry={() => refetchGrades()} />
               ) : gradesData?.grades.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">Chưa có điểm nào</p>
               ) : (
@@ -363,7 +363,7 @@ export default function ChildDetailPage() {
                   <Loader2 className="w-6 h-6 animate-spin" />
                 </div>
               ) : timetableError && !timetableData ? (
-                <ChildSectionError label="lịch học" onRetry={() => void refetchTimetable()} />
+                <ChildSectionError label="lịch học" onRetry={() => refetchTimetable()} />
               ) : (
                 <ScheduleGrid entries={timetableData?.entries || []} />
               )}
@@ -379,7 +379,7 @@ export default function ChildDetailPage() {
               data={assignmentsData}
               isLoading={loadingAssignments}
               isError={assignmentsError}
-              onRetry={() => void refetchAssignments()}
+              onRetry={() => refetchAssignments()}
             />
           )}
         </div>

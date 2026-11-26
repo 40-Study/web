@@ -69,7 +69,7 @@ function ConversationItem({
       <div className="relative">
         <Avatar
           src={isDirect ? (otherParticipant?.avatar_url ?? undefined) : undefined}
-          fallback={displayName[0]?.toUpperCase() ?? "?"}
+          fallback={displayName}
           size="md"
           status={isOnline ? "online" : undefined}
         />
@@ -298,7 +298,7 @@ function MessagesContent() {
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <Avatar
-                  fallback={headerName[0]?.toUpperCase() ?? "C"}
+                  fallback={headerName}
                   size="sm"
                 />
                 <div>

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { RetryButton } from "@/components/common/retry-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +16,7 @@ export interface QueryStateProps {
   /** true khi query thành công nhưng không có dữ liệu */
   isEmpty?: boolean;
   /** Gọi lại query khi người dùng bấm "Thử lại" */
-  onRetry?: () => void;
+  onRetry?: () => unknown;
   children: React.ReactNode;
   /** Skeleton tuỳ biến; mặc định là 3 khối chữ nhật */
   loadingFallback?: React.ReactNode;
@@ -99,11 +99,7 @@ export function QueryState({
           <p className="font-medium text-red-700 dark:text-red-400">Không thể tải dữ liệu</p>
           <p className="mt-1 text-sm text-red-600/80 dark:text-red-400/70">{getErrorMessage(error)}</p>
         </div>
-        {onRetry && (
-          <Button variant="outline" size="sm" onClick={onRetry}>
-            Thử lại
-          </Button>
-        )}
+        {onRetry && <RetryButton onRetry={onRetry} />}
       </div>
     );
   }

@@ -24,7 +24,7 @@ export function ChildCoursesTab({
   isLoading: boolean;
   /** Q8-PG-05: API lỗi không được đọc thành "Chưa đăng ký khoá học nào". */
   isError?: boolean;
-  onRetry?: () => void;
+  onRetry?: () => unknown;
 }) {
   const router = useRouter();
   // Backend cho phụ huynh nhắn giảng viên đang dạy lớp/khoá mà con (liên kết đã xác nhận) ghi danh. Khi vẫn bị

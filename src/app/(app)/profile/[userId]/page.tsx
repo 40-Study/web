@@ -18,6 +18,7 @@ import { usePublicProfile } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth.store";
 import { normalizeRole } from "@/lib/routes";
 import { formatCompletedMonth } from "@/lib/format-completed-month";
+import { getInitials } from "@/lib/initials";
 
 interface CompletedCourse {
   id: string;
@@ -173,7 +174,7 @@ export default function PublicProfilePage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={user.avatar} alt="" className="h-full w-full object-cover" />
             ) : (
-              user.fullName.slice(0, 1).toUpperCase()
+              getInitials(user.fullName)
             )}
           </div>
           <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{user.fullName}</h1>

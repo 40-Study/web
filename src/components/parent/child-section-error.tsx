@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { RetryButton } from "@/components/common/retry-button";
 
 /**
  * Q8-PG-05: lỗi tải MỘT khối dữ liệu của con (tab hoặc widget). Trước đây tab Khoá học/Điểm số/Lịch học/Bài tập và thẻ
@@ -14,7 +14,8 @@ export function ChildSectionError({
 }: {
   /** Tên khối, viết thường, đi sau "Không tải được": "danh sách khoá học", "điểm số"... */
   label: string;
-  onRetry: () => void;
+  /** Trả Promise (vd. `() => refetch()`) để nút hiện trạng thái đang tải lại. */
+  onRetry: () => unknown;
   /** Widget nhỏ trên thẻ trang chủ: một dòng chữ nhỏ thay vì khối căn giữa. */
   compact?: boolean;
 }) {
@@ -22,18 +23,14 @@ export function ChildSectionError({
     return (
       <div role="alert" className="flex flex-wrap items-center gap-2 text-xs text-red-700">
         <span>Không tải được {label}.</span>
-        <button type="button" onClick={onRetry} className="font-medium underline underline-offset-2 hover:text-red-800">
-          Thử lại
-        </button>
+        <RetryButton asLink onRetry={onRetry} className="font-medium underline underline-offset-2 hover:text-red-800 disabled:opacity-60" />
       </div>
     );
   }
   return (
     <div role="alert" className="flex flex-col items-center gap-3 py-8 text-center">
       <p className="text-sm text-red-700">Không tải được {label}. Vui lòng thử lại.</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        Thử lại
-      </Button>
+      <RetryButton onRetry={onRetry} />
     </div>
   );
 }

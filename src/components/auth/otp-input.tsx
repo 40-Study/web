@@ -70,14 +70,16 @@ export function OtpInput({
   const handleChange = useCallback(
     (index: number, value: string) => {
       if (!/^\d*$/.test(value)) return;
-      // Q8-PG-08: ô đầu nhận cả mã khi trình duyệt tự điền mã một lần (one-time-code).
-      if (value.length > 1) {
+      // Q8-PG-08: ô đầu nhận cả mã khi trình duyệt tự điền mã một lần (one-time-code). Chỉ coi là tự điền khi đó là cả mã,
+      // hoặc ô đang trống; ô 1 đã có số mà gõ thêm một chữ ("1" -> "19" / "91") là gõ lại chữ số đầu, không được xoá cả mã.
+      if (value.length > 1 && index === 0 && (value.length >= length || !otp[0])) {
         applyDigits(value);
         return;
       }
 
       const newOtp = [...otp];
-      newOtp[index] = value.slice(-1);
+      // Ô đã có số: giữ ký tự MỚI gõ (bỏ số cũ khỏi giá trị), kể cả khi caret ở đầu hay cuối ô.
+      newOtp[index] = value.length > 1 && otp[index] ? value.replace(otp[index], "").slice(-1) : value.slice(-1);
       setOtp(newOtp);
 
       if (value && index < length - 1) {

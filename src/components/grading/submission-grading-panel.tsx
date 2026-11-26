@@ -39,6 +39,7 @@ import type { Grade } from "@/services/grade.service";
 import { matchesSearchQuery } from "@/lib/text-search";
 import { SubmissionGradeDialog, formatDateTime } from "./submission-grade-dialog";
 import { SubmissionCardList } from "./submission-card-list";
+import { getInitials } from "@/lib/initials";
 
 type StatusFilter = "all" | "ungraded" | "graded" | "late";
 
@@ -230,7 +231,7 @@ export function SubmissionGradingPanel({ assignmentId }: SubmissionGradingPanelP
                 <td className="p-3">
                   <div className="flex items-center gap-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-medium text-primary-700">
-                      {row.studentName.charAt(0).toUpperCase()}
+                      {getInitials(row.studentName)}
                     </div>
                     <span className="font-medium">{row.studentName}</span>
                   </div>

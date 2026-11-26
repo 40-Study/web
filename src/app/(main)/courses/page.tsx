@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CourseGrid } from "@/components/course/course-grid";
 import { CourseFiltersComponent } from "@/components/course/course-filters";
@@ -40,7 +40,7 @@ export default function CoursesPage() {
   // Từ khoá tìm ở backend (`keyword`, không phân biệt dấu) — trước đây lọc ở client bằng
   // `toLowerCase().includes` nên "dai so" không ra "Đại số" (F-07). `searchQuery` đã được CourseSearch debounce 300ms.
   const {
-    data: allCourses = [],
+    data: coursesData,
     isLoading: coursesLoading,
     isError: coursesError,
     error: coursesFetchError,
@@ -49,6 +49,9 @@ export default function CoursesPage() {
     ...filters,
     keyword: searchQuery || undefined,
   });
+  const allCourses = useMemo(() => coursesData ?? [], [coursesData]);
+  // Chỉ coi là lỗi khi CHƯA có dữ liệu: refetch nền thất bại (focus/retry) mà react-query vẫn giữ `data` cũ thì danh sách đang xem không được bị hộp lỗi thay (M2).
+  const showCoursesError = coursesError && !coursesData;
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: suggestions = [] } = useSearchSuggestions(debouncedSearchQuery);
 
@@ -174,20 +177,20 @@ export default function CoursesPage() {
           />
 
           {/* Q8-PG-03: API lỗi không được đọc thành "0 khoá học / Không tìm thấy khoá học nào"; nói là lỗi và cho thử lại. */}
-          {!isLoading && coursesError && (
-            <QueryState isError error={coursesFetchError} onRetry={() => void refetchCourses()}>
+          {!isLoading && showCoursesError && (
+            <QueryState isError error={coursesFetchError} onRetry={() => refetchCourses()}>
               {null}
             </QueryState>
           )}
 
-          {!isLoading && !coursesError && (
+          {!isLoading && !showCoursesError && (
             <p className="text-sm text-slate-600 dark:text-slate-400" aria-live="polite">
               {allCourses.length} khoá học
               {searchQuery && ` cho "${searchQuery}"`}
             </p>
           )}
 
-          {!coursesError && <CourseGrid
+          {!showCoursesError && <CourseGrid
             courses={visibleCourses}
             loading={isLoading}
             staggered
@@ -201,7 +204,7 @@ export default function CoursesPage() {
             }
           />}
 
-          {hasMore && !isLoading && !coursesError && (
+          {hasMore && !isLoading && !showCoursesError && (
             <div className="flex justify-center pt-2">
               <Button
                 type="button"

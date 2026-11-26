@@ -20,7 +20,7 @@ export function MessageBubble({ message, isOwn }: { message: Message; isOwn: boo
       {!isOwn && (
         <Avatar
           src={message.sender_avatar ?? undefined}
-          fallback={senderName[0].toUpperCase()}
+          fallback={senderName}
           size="xs"
           className="mt-1 shrink-0"
         />

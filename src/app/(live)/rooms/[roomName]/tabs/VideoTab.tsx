@@ -26,6 +26,7 @@ import { useParticipants } from '@livekit/components-react';
 import React, { useEffect, useState, useRef } from 'react';
 import { useIsMobile } from '@/lib/meet/use-is-mobile';
 import { shouldDiscardWhiteboardEvent } from './whiteboard-gate';
+import { getInitials } from "@/lib/initials";
 
 /**
  * Đợi quyền publish màn hình được LiveKit ÁP DỤNG THẬT trên client cục bộ
@@ -604,7 +605,7 @@ function LocalParticipantFallback({ participant, pip }: { participant: any; pip?
           fontWeight: 700,
           color: '#fff',
         }}>
-          {name[0].toUpperCase()}
+          {getInitials(name)}
         </div>
         {!pip && (
           <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>{name}</span>
@@ -803,7 +804,7 @@ function ParticipantPlaceholder({ participant }: { participant: any }) {
           color: '#fff',
         }}
       >
-        {name[0].toUpperCase()}
+        {getInitials(name)}
       </div>
       <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', maxWidth: '80%', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {name}
@@ -946,7 +947,7 @@ function ParticipantListPanel({ onClose, hostId }: { onClose: () => void; hostId
                   flexShrink: 0,
                 }}
               >
-                {(p.name || '?')[0].toUpperCase()}
+                {getInitials(p.name)}
               </div>
 
               {/* Name + badges */}

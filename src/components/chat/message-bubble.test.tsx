@@ -54,4 +54,10 @@ describe("MessageBubble — tên người gửi", () => {
     render(<MessageBubble message={{ ...base, sender_full_name: "Phạm Thị D" }} isOwn />);
     expect(screen.queryByText("Phạm Thị D")).toBeNull();
   });
+
+  // L3 (review #139): chữ viết tắt avatar theo getInitials (họ + tên), không còn chỉ chữ cái đầu của cả chuỗi.
+  it("avatar người gửi hiện chữ viết tắt họ + tên", () => {
+    render(<MessageBubble message={{ ...base, sender_full_name: "Nguyễn Thị Lan" }} isOwn={false} />);
+    expect(screen.getByText("NL")).toBeTruthy();
+  });
 });
