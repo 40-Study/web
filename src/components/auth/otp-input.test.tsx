@@ -65,3 +65,20 @@ describe("OtpInput onResend", () => {
     expect(screen.queryByText(/Gửi lại mã sau/)).toBeNull();
   });
 });
+
+describe("OtpInput autofill (Q8-PG-08)", () => {
+  it("ô đầu khai báo one-time-code; các ô sau không", () => {
+    render(<OtpInput />);
+    expect(screen.getByLabelText("Chữ số OTP 1").getAttribute("autocomplete")).toBe("one-time-code");
+    expect(screen.getByLabelText("Chữ số OTP 2").getAttribute("autocomplete")).toBe("off");
+  });
+
+  it("trình duyệt điền cả mã vào ô đầu: chia đủ 6 ô và gọi onComplete một lần", () => {
+    const onComplete = vi.fn();
+    render(<OtpInput onComplete={onComplete} />);
+    fireEvent.change(screen.getByLabelText("Chữ số OTP 1"), { target: { value: "482913" } });
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onComplete).toHaveBeenCalledWith("482913");
+    expect((screen.getByLabelText("Chữ số OTP 6") as HTMLInputElement).value).toBe("3");
+  });
+});

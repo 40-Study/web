@@ -11,8 +11,9 @@ import { AUTH_ROUTES } from "@/lib/routes";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { ApiError } from "@/lib/errors";
 import { authErrorMessage, useRegisterRequest } from "@/hooks/queries/use-auth";
+import { normalizeEmail } from "@/lib/email-validation";
 import { useRedirectIfAuthenticated } from "@/hooks/use-redirect-if-authenticated";
-import { validateRegisterForm, type RegisterFieldErrors, type RegisterFormData as FormData } from "@/lib/register-validation";
+import { mapRegisterServerError, validateRegisterForm, type RegisterFieldErrors, type RegisterFormData as FormData } from "@/lib/register-validation";
 
 export default function RegisterFormPage() {
   const router = useRouter();
@@ -64,15 +65,20 @@ export default function RegisterFormPage() {
         user_name: formData.username,
         full_name: `${formData.lastName} ${formData.firstName}`.trim() || undefined,
       };
-      await registerRequest.mutateAsync({ email: formData.email, ...payload });
+      // Q8-PG-01: email luôn cắt khoảng trắng + chữ thường (một địa chỉ = một tài khoản); trang OTP cũng hiện đúng bản đó.
+      const email = normalizeEmail(formData.email);
+      await registerRequest.mutateAsync({ email, ...payload });
       // Chỉ lưu email: "Gửi lại mã" không cần mật khẩu nữa (N-07).
-      sessionStorage.setItem(STORAGE_KEYS.REGISTER_EMAIL, formData.email);
+      sessionStorage.setItem(STORAGE_KEYS.REGISTER_EMAIL, email);
       router.push(AUTH_ROUTES.OTP);
     } catch (err) {
       // Lỗi từ backend (email trùng, 429...) đã hiện trên form; chỉ log lỗi bất ngờ (Q6-PG-19).
       if (!(err instanceof ApiError)) console.error("Failed to request OTP:", err);
       // Hiện lý do thật (email đã đăng ký, tên đăng nhập trùng, rate-limit...) thay vì một câu chung.
-      setFormError(authErrorMessage(err, "Đăng ký thất bại. Vui lòng thử lại."));
+      // Q8-PG-02/07: tên đăng nhập trùng và lỗi theo ô hiện ngay dưới ô nhập thay vì câu chung "Đăng ký thất bại".
+      const mapped = mapRegisterServerError(err, (e) => authErrorMessage(e, "Đăng ký thất bại. Vui lòng thử lại."));
+      setFieldErrors(mapped.fieldErrors);
+      setFormError(mapped.formError);
     }
   };
 
@@ -92,6 +98,8 @@ export default function RegisterFormPage() {
         <Input
           label="Tên đăng nhập"
           placeholder="username"
+          name="username"
+          autoComplete="username"
           value={formData.username}
           onChange={handleChange("username")}
           error={fieldErrors.username}
@@ -102,6 +110,8 @@ export default function RegisterFormPage() {
           <Input
             label="Họ"
             placeholder="Nguyễn"
+            name="family-name"
+            autoComplete="family-name"
             value={formData.lastName}
             onChange={handleChange("lastName")}
             error={fieldErrors.lastName}
@@ -111,6 +121,8 @@ export default function RegisterFormPage() {
           <Input
             label="Tên"
             placeholder="Văn A"
+            name="given-name"
+            autoComplete="given-name"
             value={formData.firstName}
             onChange={handleChange("firstName")}
             error={fieldErrors.firstName}
@@ -122,6 +134,8 @@ export default function RegisterFormPage() {
           type="email"
           label="Email"
           placeholder="example@email.com"
+          name="email"
+          autoComplete="email"
           value={formData.email}
           onChange={handleChange("email")}
           error={fieldErrors.email}
@@ -132,6 +146,8 @@ export default function RegisterFormPage() {
           type="password"
           label="Mật khẩu"
           placeholder="Tạo mật khẩu"
+          name="password"
+          autoComplete="new-password"
           value={formData.password}
           onChange={handleChange("password")}
           error={fieldErrors.password}
@@ -144,6 +160,8 @@ export default function RegisterFormPage() {
           type="password"
           label="Xác nhận mật khẩu"
           placeholder="Nhập lại mật khẩu"
+          name="confirm-password"
+          autoComplete="new-password"
           value={formData.confirmPassword}
           onChange={handleChange("confirmPassword")}
           error={fieldErrors.confirmPassword}

@@ -114,3 +114,68 @@ describe("/register/form — gửi đăng ký", () => {
     await waitFor(() => expect(sessionStorage.getItem("register_payload")).toBeNull());
   });
 });
+
+describe("/register/form — QA8 khách", () => {
+  it("Q8-PG-01: email gõ HOA/có khoảng trắng được gửi và lưu ở dạng chữ thường", async () => {
+    mockApi.post.mockResolvedValue({ data: { message: "OTP sent" } });
+    renderWithProviders(<RegisterFormPage />);
+
+    fillValidForm();
+    fill("Email", "  QAGuest86464@Example.COM ");
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+
+    await waitFor(() => expect(mockApi.post).toHaveBeenCalledTimes(1));
+    expect(mockApi.post.mock.calls[0][1]).toMatchObject({ email: "qaguest86464@example.com" });
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/otp"));
+    expect(sessionStorage.getItem(STORAGE_KEYS.REGISTER_EMAIL)).toBe("qaguest86464@example.com");
+  });
+
+  it("Q8-PG-02: 409 ERR_USERNAME_EXISTS hiện dưới ô Tên đăng nhập, không phải câu chung 'Đăng ký thất bại'", async () => {
+    mockApi.post.mockRejectedValue(new ApiError(409, "ERR_USERNAME_EXISTS", "username already exists"));
+    renderWithProviders(<RegisterFormPage />);
+
+    fillValidForm();
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+
+    const error = await screen.findByText(/Tên đăng nhập đã được dùng/);
+    expect(screen.getByLabelText("Tên đăng nhập").getAttribute("aria-invalid")).toBe("true");
+    expect(error.id).toBe(`${screen.getByLabelText("Tên đăng nhập").id}-error`);
+    expect(screen.queryByText(/Đăng ký thất bại/)).toBeNull();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("Q8-PG-07: Họ/Tên quá dài bị chặn ở ô, không gửi request", async () => {
+    renderWithProviders(<RegisterFormPage />);
+
+    fillValidForm();
+    fill("Họ", "N".repeat(150));
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+
+    expect(await screen.findByText("Họ tối đa 100 ký tự")).toBeTruthy();
+    expect(mockApi.post).not.toHaveBeenCalled();
+  });
+
+  it("Q8-PG-07: 400 tiếng Anh của backend (full_name) hiện thành lỗi tiếng Việt dưới ô Họ", async () => {
+    const body = { errors: [{ field: "full_name", message: "full_name must be at most 255 characters" }], message: "Validation failed" };
+    mockApi.post.mockRejectedValue(new ApiError(400, "UNKNOWN", "Validation failed", undefined, body));
+    renderWithProviders(<RegisterFormPage />);
+
+    fillValidForm();
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+
+    expect(await screen.findByText(/Họ và tên không hợp lệ/)).toBeTruthy();
+    expect(screen.queryByText(/must be at most/)).toBeNull();
+    expect(screen.queryByText(/Đăng ký thất bại/)).toBeNull();
+  });
+
+  it("Q8-PG-08: các ô có autocomplete đúng cho trình quản lý mật khẩu / tự điền", () => {
+    renderWithProviders(<RegisterFormPage />);
+    const ac = (label: string) => screen.getByLabelText(label).getAttribute("autocomplete");
+    expect(ac("Tên đăng nhập")).toBe("username");
+    expect(ac("Họ")).toBe("family-name");
+    expect(ac("Tên")).toBe("given-name");
+    expect(ac("Email")).toBe("email");
+    expect(ac("Mật khẩu")).toBe("new-password");
+    expect(ac("Xác nhận mật khẩu")).toBe("new-password");
+  });
+});

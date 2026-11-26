@@ -14,6 +14,7 @@ import { bootstrapAuthSession } from "@/components/providers/auth-session";
 import { ApiError, AuthError, RateLimitError } from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-messages";
 import { deleteAccountErrorMessage } from "@/lib/account-deletion";
+import { isUsernameTakenError } from "@/lib/user-name";
 import { sanitizeRedirect } from "@/lib/safe-redirect";
 import { AUTH_ROUTES } from "@/lib/routes";
 import { STORAGE_KEYS } from "@/lib/constants";
@@ -130,6 +131,8 @@ export function useUpdateProfile() {
     // Hiện lý do thật của backend (vd. user_name sai định dạng) thay vì câu chung "Cập nhật thất bại"
     // (QA hồi quy A-09); lỗi không có lý do dùng được vẫn rơi về câu chung.
     onError: (error) => {
+      // Q8-PG-02: tên đăng nhập trùng hiện dưới ô Username của form (profile-settings), không thêm toast thứ hai.
+      if (isUsernameTakenError(error)) return;
       toast.error(getErrorMessage(error, "Cập nhật thất bại"));
     },
   });

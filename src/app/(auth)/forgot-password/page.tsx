@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LockIcon } from "@/components/icons";
 import { AUTH_ROUTES } from "@/lib/routes";
-import { validateEmail } from "@/lib/email-validation";
+import { normalizeEmail, validateEmail } from "@/lib/email-validation";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { useResetPasswordRequest } from "@/hooks/queries/use-auth";
 
@@ -36,7 +36,8 @@ export default function ForgotPasswordPage() {
       setEmailError(error);
       return;
     }
-    const trimmed = email.trim();
+    // Q8-PG-01: chữ thường + cắt khoảng trắng, trang nhập mã dùng đúng bản này.
+    const trimmed = normalizeEmail(email);
     sessionStorage.setItem(STORAGE_KEYS.RESET_PASSWORD_EMAIL, trimmed);
     try {
       await resetPasswordRequest.mutateAsync({ email: trimmed });

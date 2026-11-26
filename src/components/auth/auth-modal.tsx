@@ -8,8 +8,8 @@ import { X, ArrowLeft, Mail, UserCheck, FileText, ShieldCheck } from "lucide-rea
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { STORAGE_KEYS } from "@/lib/constants";
-import { validateEmail } from "@/lib/email-validation";
-import { validateRegisterForm, type RegisterFieldErrors } from "@/lib/register-validation";
+import { normalizeEmail, validateEmail } from "@/lib/email-validation";
+import { mapRegisterServerError, validateRegisterForm, type RegisterFieldErrors } from "@/lib/register-validation";
 import { useModalA11y } from "@/hooks/use-modal-a11y";
 import { showComingSoon } from "@/lib/toast-helpers";
 import { startOAuthFlow } from "@/services/auth.service";
@@ -417,6 +417,8 @@ function LoginView({
                     type="email"
                     label="Email"
                     placeholder="Nhập email của bạn"
+                    name="email"
+                    autoComplete="username"
                     value={email}
                     onChange={(e) => {
                         setEmail(e.target.value);
@@ -430,6 +432,8 @@ function LoginView({
                     type="password"
                     label="Mật khẩu"
                     placeholder="Nhập mật khẩu"
+                    name="password"
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => {
                         setPassword(e.target.value);
@@ -718,20 +722,25 @@ function RegisterFormView({
         }
 
         try {
+            // Q8-PG-01: email luôn cắt khoảng trắng + chữ thường, trang OTP hiện đúng bản đó.
+            const email = normalizeEmail(formData.email);
             await registerRequest.mutateAsync({
-                email: formData.email,
+                email,
                 password: formData.password,
                 confirm_password: formData.confirmPassword,
                 user_name: formData.username,
                 full_name: `${formData.lastName} ${formData.firstName}`.trim(),
             });
-            sessionStorage.setItem(STORAGE_KEYS.REGISTER_EMAIL, formData.email);
-            onNext(formData.email);
+            sessionStorage.setItem(STORAGE_KEYS.REGISTER_EMAIL, email);
+            onNext(email);
         } catch (err) {
             // Lỗi từ backend (email trùng, 429...) đã hiện trên form; chỉ log lỗi bất ngờ (Q6-PG-19).
             if (!(err instanceof ApiError)) console.error("Failed to request OTP:", err);
             // Lý do thật (email trùng, rate-limit...) như trang /register/form; toast mặc định đã tắt ở hook (G-08).
-            setError(authErrorMessage(err, "Đăng ký thất bại. Vui lòng thử lại."));
+            // Q8-PG-02/07: tên đăng nhập trùng và lỗi theo ô hiện ngay dưới ô nhập, như trang /register/form.
+            const mapped = mapRegisterServerError(err, (e) => authErrorMessage(e, "Đăng ký thất bại. Vui lòng thử lại."));
+            setFieldErrors(mapped.fieldErrors);
+            setError(mapped.formError);
         }
     };
 
@@ -746,6 +755,8 @@ function RegisterFormView({
                 <Input
                     label="Tên đăng nhập"
                     placeholder="username"
+                    name="username"
+                    autoComplete="username"
                     value={formData.username}
                     onChange={handleChange("username")}
                     error={fieldErrors.username}
@@ -756,6 +767,8 @@ function RegisterFormView({
                     <Input
                         label="Họ"
                         placeholder="Nguyễn"
+                        name="family-name"
+                        autoComplete="family-name"
                         value={formData.lastName}
                         onChange={handleChange("lastName")}
                     error={fieldErrors.lastName}
@@ -765,6 +778,8 @@ function RegisterFormView({
                     <Input
                         label="Tên"
                         placeholder="Văn A"
+                        name="given-name"
+                        autoComplete="given-name"
                         value={formData.firstName}
                         onChange={handleChange("firstName")}
                     error={fieldErrors.firstName}
@@ -776,6 +791,8 @@ function RegisterFormView({
                     type="email"
                     label="Email"
                     placeholder="example@email.com"
+                    name="email"
+                    autoComplete="email"
                     value={formData.email}
                     onChange={handleChange("email")}
                     error={fieldErrors.email}
@@ -786,6 +803,8 @@ function RegisterFormView({
                     type="password"
                     label="Mật khẩu"
                     placeholder="Tạo mật khẩu"
+                    name="password"
+                    autoComplete="new-password"
                     value={formData.password}
                     onChange={handleChange("password")}
                     error={fieldErrors.password}
@@ -798,6 +817,8 @@ function RegisterFormView({
                     type="password"
                     label="Xác nhận mật khẩu"
                     placeholder="Nhập lại mật khẩu"
+                    name="confirm-password"
+                    autoComplete="new-password"
                     value={formData.confirmPassword}
                     onChange={handleChange("confirmPassword")}
                     error={fieldErrors.confirmPassword}

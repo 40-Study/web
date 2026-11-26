@@ -3,7 +3,8 @@
  * `bio: data.bio || undefined` nên trường bị bỏ khỏi body và giá trị cũ còn nguyên.
  */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { ApiError } from "@/lib/errors";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockMutate = vi.fn();
@@ -102,5 +103,32 @@ describe("ProfileSettings", () => {
     fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     expect(await screen.findByText(/Số điện thoại không hợp lệ/)).toBeTruthy();
     expect(mockMutate).not.toHaveBeenCalled();
+  });
+
+  // Q8-PG-02 (C19): username trùng/dành riêng -> 409 ERR_USERNAME_EXISTS, hiện dưới ô Username (không chỉ toast chung).
+  it("409 ERR_USERNAME_EXISTS: lỗi hiện dưới ô Username", async () => {
+    render(<ProfileSettings />);
+    await waitFor(() => expect((screen.getByLabelText("Tiểu sử") as HTMLTextAreaElement).value).toBe("Tiểu sử cũ"));
+    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "admin" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
+
+    const options = mockMutate.mock.calls[0][1] as { onError: (e: unknown) => void };
+    act(() => options.onError(new ApiError(409, "ERR_USERNAME_EXISTS", "username already exists")));
+
+    expect(await screen.findByText(/Tên đăng nhập đã được dùng/)).toBeTruthy();
+    expect(screen.getByLabelText("Username").getAttribute("aria-invalid")).toBe("true");
+  });
+
+  it("lỗi khác (500) không đụng tới ô Username", async () => {
+    render(<ProfileSettings />);
+    await waitFor(() => expect((screen.getByLabelText("Tiểu sử") as HTMLTextAreaElement).value).toBe("Tiểu sử cũ"));
+    fireEvent.change(screen.getByLabelText("Tiểu sử"), { target: { value: "x" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
+
+    const options = mockMutate.mock.calls[0][1] as { onError: (e: unknown) => void };
+    act(() => options.onError(new ApiError(500, "ERR_INTERNAL", "boom")));
+    expect(screen.getByLabelText("Username").getAttribute("aria-invalid")).not.toBe("true");
   });
 });

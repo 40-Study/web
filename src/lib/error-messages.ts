@@ -17,6 +17,7 @@
  */
 
 import { ApiError, NetworkError, RateLimitError } from "./errors";
+import { USERNAME_TAKEN_MESSAGE } from "./user-name";
 import {
   CONTRACT_CODE_MESSAGES,
   CONTRACT_MESSAGE_FIRST_CODES,
@@ -114,6 +115,8 @@ const CODE_MESSAGES: Record<string, string> = {
   ERR_ROLE_NOT_ASSIGNABLE:
     "Vai trò này được gán theo từng tổ chức nên không thể gán như vai hệ thống. Hãy thêm người dùng vào tổ chức ở mục Quản lý tổ chức.",
   ...QA8_TEACHER_CODE_MESSAGES,
+  // ── QA8 khách/phụ huynh (contract C19): đăng ký và PUT /auth/me với tên đăng nhập đã dùng hoặc dành riêng (409). ──
+  ERR_USERNAME_EXISTS: USERNAME_TAKEN_MESSAGE,
 };
 
 // Code chỉ nói LOẠI lỗi, message mới nói lý do (vd. ERR_NOT_FOUND + "Voucher not found",
