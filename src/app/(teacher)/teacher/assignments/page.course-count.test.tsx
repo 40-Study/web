@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }));
 vi.mock("@/stores/auth.store", () => ({ useAuthStore: () => ({ user: { id: "t1" } }) }));
-const course = (id: string, status: string) => ({ id, title: `Khoá ${id}`, status, isPublished: status === "published" });
+const course = (id: string, status: string) => ({ id, title: id === "p1" ? "Người mới bắt đầu" : `Khoá ${id}`, status, isPublished: status === "published" });
 vi.mock("@/hooks/queries/use-courses", () => ({
   useMyCourses: () => ({
     data: [course("p1", "published"), course("p2", "published"), course("d1", "draft"), course("d2", "draft"), course("d3", "draft")],
@@ -38,5 +38,15 @@ describe("/teacher/assignments — số khoá học trên tiêu đề (Q7-T06)",
 
     fireEvent.click(screen.getByRole("button", { name: /Hiện khoá chưa xuất bản \(3\)/ }));
     expect(screen.getByText("1) Khoá học của tôi (5)")).toBeTruthy();
+  });
+});
+
+describe("/teacher/assignments — ô tìm khoá học (Q8-T01, Q8-T11)", () => {
+  it("có tên truy cập và tìm không dấu: 'nguoi moi' ra 'Người mới bắt đầu'", () => {
+    render(<TeacherAssignmentsPage />);
+    const search = screen.getByRole("textbox", { name: "Tìm khoá học" });
+    fireEvent.change(search, { target: { value: " nguoi moi " } });
+    expect(screen.getAllByText("Người mới bắt đầu").length).toBeGreaterThan(0);
+    expect(screen.queryAllByText("Khoá p2")).toHaveLength(0);
   });
 });

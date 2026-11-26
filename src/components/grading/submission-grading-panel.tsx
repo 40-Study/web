@@ -177,6 +177,7 @@ export function SubmissionGradingPanel({ assignmentId }: SubmissionGradingPanelP
           <Input
             placeholder="Tìm kiếm học viên..."
             aria-label="Tìm kiếm học viên"
+            aria-label="Tìm kiếm học viên"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"

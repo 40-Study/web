@@ -97,6 +97,7 @@ export default function TeacherCourseMembersPage() {
             <Input
               className="pl-9"
               placeholder="Tìm theo tên hoặc mã học viên..."
+              aria-label="Tìm theo tên hoặc mã học viên"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
             />

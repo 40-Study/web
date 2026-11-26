@@ -239,6 +239,7 @@ export default function TeacherAssignmentsPage() {
             <CardTitle className="text-base">1) Khoá học của tôi ({visibleCourseCount})</CardTitle>
             <Input
               placeholder="Tìm khoá học..."
+              aria-label="Tìm khoá học"
               value={courseSearch}
               onChange={(e) => setCourseSearch(e.target.value)}
             />

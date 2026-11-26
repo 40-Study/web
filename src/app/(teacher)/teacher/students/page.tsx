@@ -93,6 +93,7 @@ export default function TeacherStudentsPage() {
               <Input
                 className="pl-9"
                 placeholder="Tìm theo Mã HS, Tên, Phụ huynh..."
+                aria-label="Tìm theo mã học sinh, tên hoặc phụ huynh"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);

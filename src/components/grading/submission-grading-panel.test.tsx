@@ -276,3 +276,17 @@ describe("SubmissionGradingPanel — bố cục mobile (Q4-T18)", () => {
     expect(cls).toContain("md:block");
   });
 });
+
+describe("SubmissionGradingPanel — ô tìm kiếm (Q8-T01, Q8-T11)", () => {
+  it("ô tìm có tên truy cập và tìm không dấu: 'le van' ra 'Lê Văn C', 'xyz' không ra ai", () => {
+    mockGrades = [grade()];
+    render(<SubmissionGradingPanel assignmentId="a1" />);
+    const search = screen.getByRole("textbox", { name: "Tìm kiếm học viên" });
+
+    fireEvent.change(search, { target: { value: "  le van " } });
+    expect(screen.getByText("Lê Văn C")).toBeTruthy();
+
+    fireEvent.change(search, { target: { value: "xyz" } });
+    expect(screen.queryByText("Lê Văn C")).toBeNull();
+  });
+});

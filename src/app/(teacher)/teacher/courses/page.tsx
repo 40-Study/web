@@ -287,6 +287,7 @@ export default function TeacherCoursesPage() {
             <Input
               type="text"
               placeholder="Tìm kiếm khoá học..."
+              aria-label="Tìm kiếm khoá học"
               className="pl-9"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
