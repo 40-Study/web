@@ -115,11 +115,25 @@ export function useUpdateContest() {
 }
 
 export function useDeleteContest() {
-  const invalidate = useInvalidateContests();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => contestManageService.remove(id),
-    onSuccess: () => {
-      invalidate();
+    onSuccess: (_, id) => {
+      // Q8-T05: trang chi tiết còn mount (chờ router.push) mà `invalidate()` làm nó refetch chi tiết + người tham gia
+      // của cuộc thi vừa xoá -> 2 lỗi 404 + console error. Huỷ request đang bay, bỏ hai truy vấn đó khỏi đợt refetch.
+      const isDeletedContestQuery = (queryKey: readonly unknown[]) =>
+        (queryKey[1] === "detail" || queryKey[1] === "participants") && queryKey[2] === id;
+      void qc.cancelQueries({ queryKey: contestManageKeys.all, predicate: (q) => isDeletedContestQuery(q.queryKey) });
+      qc.invalidateQueries({
+        queryKey: contestManageKeys.all,
+        predicate: (q) => !isDeletedContestQuery(q.queryKey),
+      });
+      qc.invalidateQueries({
+        queryKey: contestManageKeys.all,
+        predicate: (q) => isDeletedContestQuery(q.queryKey),
+        refetchType: "none",
+      });
+      qc.invalidateQueries({ queryKey: contestKeys.all });
       toast.success("Đã xoá cuộc thi");
     },
     onError: (error) => toast.error(contestErrorMessage(error, "Không thể xoá cuộc thi, thử lại sau.")),

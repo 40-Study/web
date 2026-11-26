@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Ban, CalendarPlus, Wand2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { QueryState } from "@/components/common/query-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCancelSession, useClassSessions } from "@/hooks/queries/use-sessions";
+import { useAllClassSessions, useCancelSession } from "@/hooks/queries/use-sessions";
+import { pageContainingToday } from "@/lib/class-session-paging";
 import { toTimeOfDay } from "@/lib/class-schedule-validation";
 import { formatVnDateOnly, hasVnSessionEnded, hasVnSessionStarted, isVnSessionUpcoming } from "@/lib/vn-datetime";
 import type { ClassSession, SessionStatus } from "@/services/session.service";
@@ -52,13 +53,22 @@ export function ClassSessionList({
   onAdd: () => void;
 }) {
   const [page, setPage] = useState(1);
-  const query = useClassSessions(classId, { page, page_size: PAGE_SIZE });
+  // Q8-T06: lấy MỌI buổi rồi phân trang tại chỗ; lần đầu có dữ liệu thì nhảy tới trang chứa hôm nay (danh sách xếp cũ trước).
+  const query = useAllClassSessions(classId);
   const cancel = useCancelSession(classId);
   // Q5-T02: buổi đang chờ xác nhận huỷ (null = đóng hộp thoại).
   const [cancelling, setCancelling] = useState<ClassSession | null>(null);
-  const sessions = query.data?.sessions ?? [];
-  const total = query.data?.total ?? 0;
+  const allSessions = useMemo(() => query.data?.sessions ?? [], [query.data]);
+  const total = allSessions.length;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const jumpedToToday = useRef(false);
+  useEffect(() => {
+    if (jumpedToToday.current || allSessions.length === 0) return;
+    jumpedToToday.current = true;
+    setPage(pageContainingToday(allSessions, PAGE_SIZE));
+  }, [allSessions]);
+  const currentPage = Math.min(page, pageCount);
+  const sessions = allSessions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <Card>
@@ -128,11 +138,11 @@ export function ClassSessionList({
         </QueryState>
         {pageCount > 1 && (
           <div className="flex items-center justify-between text-sm">
-            <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            <Button size="sm" variant="outline" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>
               Trang trước
             </Button>
-            <span className="text-muted-foreground">Trang {page} / {pageCount}</span>
-            <Button size="sm" variant="outline" disabled={page >= pageCount} onClick={() => setPage((p) => p + 1)}>
+            <span className="text-muted-foreground">Trang {currentPage} / {pageCount}</span>
+            <Button size="sm" variant="outline" disabled={currentPage >= pageCount} onClick={() => setPage(currentPage + 1)}>
               Trang sau
             </Button>
           </div>
