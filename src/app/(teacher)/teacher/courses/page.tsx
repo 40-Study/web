@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn, formatCurrency } from "@/lib/utils";
+import { matchesSearchQuery } from "@/lib/text-search";
 import { COURSE_STATUS_LABEL, isCourseStatus, type CourseStatus as ApiCourseStatus } from "@/types/approval";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 
@@ -225,7 +226,7 @@ export default function TeacherCoursesPage() {
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
       const matchesTab = course.status === activeTab;
-      const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = matchesSearchQuery(searchQuery, course.title);
       return matchesTab && matchesSearch;
     });
   }, [courses, activeTab, searchQuery]);

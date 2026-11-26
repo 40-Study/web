@@ -37,3 +37,13 @@ export function filterByQuery<T extends SearchableItem>(items: readonly T[], que
   const inLabel = matches.filter((item) => containsAll(item.label));
   return [...inLabel, ...matches.filter((item) => !inLabel.includes(item))];
 }
+
+/**
+ * Ô tìm kiếm của trang quản lý: true khi truy vấn (đã bỏ dấu, hoa thường, khoảng trắng thừa) nằm trong ít nhất một trường.
+ * Truy vấn rỗng khớp tất cả; trường null/undefined bị bỏ qua.
+ */
+export function matchesSearchQuery(query: string, ...fields: Array<string | null | undefined>): boolean {
+  const folded = foldSearchText(query);
+  if (!folded) return true;
+  return fields.some((field) => field != null && foldSearchText(field).includes(folded));
+}

@@ -19,6 +19,7 @@ import {
 import { useMyStudents } from "@/hooks/queries/use-classes";
 import { useCourse } from "@/hooks/queries/use-courses";
 import { useAuthStore } from "@/stores/auth.store";
+import { matchesSearchQuery } from "@/lib/text-search";
 import { ResourceLoadError, ResourceUnavailable, StaleDataNotice, isResourceUnavailableError, unavailableStatus } from "@/components/common/resource-unavailable";
 
 export default function TeacherCourseMembersPage() {
@@ -43,13 +44,7 @@ export default function TeacherCourseMembersPage() {
   const courseTitle = course?.title ?? members[0]?.course_name ?? members[0]?.class_name ?? "Khoá học";
 
   const filteredMembers = useMemo(() => {
-    return members.filter((member) => {
-      const q = searchQuery.toLowerCase();
-      return (
-        member.name.toLowerCase().includes(q) ||
-        (member.student_id ?? "").toLowerCase().includes(q)
-      );
-    });
+    return members.filter((member) => matchesSearchQuery(searchQuery, member.name, member.student_id));
   }, [members, searchQuery]);
 
   if (courseLoading) {

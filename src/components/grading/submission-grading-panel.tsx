@@ -36,6 +36,7 @@ import {
   type GradingRow,
 } from "@/lib/submission-grading";
 import type { Grade } from "@/services/grade.service";
+import { matchesSearchQuery } from "@/lib/text-search";
 import { SubmissionGradeDialog, formatDateTime } from "./submission-grade-dialog";
 import { SubmissionCardList } from "./submission-card-list";
 
@@ -94,7 +95,7 @@ export function SubmissionGradingPanel({ assignmentId }: SubmissionGradingPanelP
   const filtered = useMemo(
     () =>
       rows.filter((r) => {
-        const matchesSearch = r.studentName.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = matchesSearchQuery(searchQuery, r.studentName);
         const matchesStatus =
           statusFilter === "all" ||
           (statusFilter === "late" ? r.late : r.status === statusFilter);

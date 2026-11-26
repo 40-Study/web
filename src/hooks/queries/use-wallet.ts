@@ -103,6 +103,7 @@ export function useUpdateBankInfo() {
     mutationFn: (data: UpdateBankInfoRequest) => walletService.updateBankInfo(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: walletKeys.teacherSummary() });
+      toast.success("Đã lưu tài khoản nhận tiền");
     },
   });
 }

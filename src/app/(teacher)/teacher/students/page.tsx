@@ -26,6 +26,7 @@ import {
 import { useMyStudents } from "@/hooks/queries/use-classes";
 import { buildCsv, downloadCsv } from "@/lib/csv-export";
 import { withClassPrefix } from "@/lib/class-label";
+import { matchesSearchQuery } from "@/lib/text-search";
 import { StudentMobileCard } from "./student-mobile-card";
 import { ParentContact } from "./parent-contact";
 import { courseFilterOptions, groupStudents, STUDENT_STATUS_LABEL } from "./group-students";
@@ -43,12 +44,8 @@ export default function TeacherStudentsPage() {
   const courseOptions = useMemo(() => courseFilterOptions(students), [students]);
 
   const filteredStudents = useMemo(() => {
-    const q = searchQuery.toLowerCase();
     return students.filter((student) => {
-      const matchesSearch =
-        student.name.toLowerCase().includes(q) ||
-        (student.studentId ?? "").toLowerCase().includes(q) ||
-        (student.parentName ?? "").toLowerCase().includes(q);
+      const matchesSearch = matchesSearchQuery(searchQuery, student.name, student.studentId, student.parentName);
       const matchesCourse =
         courseFilter === "all" || student.courses.some((c) => c.courseName === courseFilter);
       const matchesStatus = statusFilter === "all" || student.status === statusFilter;
