@@ -168,7 +168,9 @@ function AdminOrdersContent() {
                 {items.map((order) => (
                   <tr key={order.id}>
                     <td className="px-4 py-3 font-medium">{order.order_number}</td>
-                    <td className="px-4 py-3">{order.user_email}</td>
+                    <td className="max-w-[12rem] truncate px-4 py-3" title={order.user_email}>
+                      {order.user_email}
+                    </td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
                       {order.items.map((i) => i.course_title).join(", ") || "-"}
                     </td>

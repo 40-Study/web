@@ -40,6 +40,39 @@ function parseStatusParam(raw: string | null): "ALL" | AdminUserStatusFilter {
   return raw === "active" || raw === "locked" ? raw : "ALL";
 }
 
+type SortState = { key: UserSortKey | null; direction: SortDirection };
+
+function ariaSortOf(sort: SortState, keys: UserSortKey[]) {
+  const active = sort.key !== null && keys.includes(sort.key);
+  return !active ? "none" : sort.direction === "asc" ? "ascending" : "descending";
+}
+
+function SortButton({
+  label,
+  sortKey,
+  sort,
+  onSort,
+}: {
+  label: string;
+  sortKey: UserSortKey;
+  sort: SortState;
+  onSort: (key: UserSortKey) => void;
+}) {
+  const active = sort.key === sortKey;
+  const Icon = !active ? ChevronsUpDown : sort.direction === "asc" ? ChevronUp : ChevronDown;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(sortKey)}
+      title="Sắp xếp trong trang đang xem"
+      className="inline-flex items-center gap-1 whitespace-nowrap font-medium hover:text-foreground"
+    >
+      {label}
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+    </button>
+  );
+}
+
 function SortableHead({
   label,
   sortKey,
@@ -48,22 +81,12 @@ function SortableHead({
 }: {
   label: string;
   sortKey: UserSortKey;
-  sort: { key: UserSortKey | null; direction: SortDirection };
+  sort: SortState;
   onSort: (key: UserSortKey) => void;
 }) {
-  const active = sort.key === sortKey;
-  const Icon = !active ? ChevronsUpDown : sort.direction === "asc" ? ChevronUp : ChevronDown;
   return (
-    <TableHead aria-sort={!active ? "none" : sort.direction === "asc" ? "ascending" : "descending"}>
-      <button
-        type="button"
-        onClick={() => onSort(sortKey)}
-        title="Sắp xếp trong trang đang xem"
-        className="inline-flex items-center gap-1 font-medium hover:text-foreground"
-      >
-        {label}
-        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-      </button>
+    <TableHead aria-sort={ariaSortOf(sort, [sortKey])}>
+      <SortButton label={label} sortKey={sortKey} sort={sort} onSort={onSort} />
     </TableHead>
   );
 }
@@ -243,8 +266,14 @@ export default function AdminUsersPage() {
                 <SortableHead label="Tên" sortKey="name" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
                 <TableHead>Vai trò</TableHead>
                 <TableHead>Trạng thái</TableHead>
-                <SortableHead label="Ngày tạo" sortKey="created_at" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
-                <SortableHead label="Đăng nhập cuối" sortKey="last_login_at" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
+                {/* QA8-A02: "Ngày tạo" và "Đăng nhập cuối" gộp một cột (hai dòng xếp chồng) để bảng vừa khung 942px
+                    ở 1280px; vẫn sắp xếp được theo từng mốc (aria-sort báo mốc đang sắp). */}
+                <TableHead aria-sort={ariaSortOf(sort, ["created_at", "last_login_at"])}>
+                  <div className="flex flex-col items-start gap-0.5">
+                    <SortButton label="Ngày tạo" sortKey="created_at" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
+                    <SortButton label="Đăng nhập cuối" sortKey="last_login_at" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
+                  </div>
+                </TableHead>
                 {/* A7 (mobile 390px): bảng rộng hơn màn hình nên cột hành động bị đẩy khỏi tầm
                     nhìn, không có dấu hiệu cuộn. Ghim cột này vào mép phải để nút Khoá/Mở khoá
                     luôn tới được. Nền đục để hàng không lộ qua khi cuộn ngang. QA7-A01: xem PIN_BELOW_SM_AND_FROM_2XL. */}
@@ -259,7 +288,12 @@ export default function AdminUsersPage() {
                 return (
                   <TableRow key={user.id}>
                     <TableCell>
-                      <Link href={`/admin/users/${user.id}`} className="font-medium text-primary-700 hover:underline">
+                      {/* QA8-A02: email dài bị cắt (đủ chữ ở title) để không đẩy bảng rộng hơn khung. */}
+                      <Link
+                        href={`/admin/users/${user.id}`}
+                        title={user.email}
+                        className="block max-w-[14rem] truncate font-medium text-primary-700 hover:underline"
+                      >
                         {user.email}
                       </Link>
                     </TableCell>
@@ -282,8 +316,16 @@ export default function AdminUsersPage() {
                         {getUserActiveLabel(user.is_active)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{formatDate(user.created_at)}</TableCell>
-                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{formatDate(user.last_login_at)}</TableCell>
+                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                      <div title="Ngày tạo">
+                        <span className="sr-only">Ngày tạo: </span>
+                        {formatDate(user.created_at)}
+                      </div>
+                      <div title="Đăng nhập cuối">
+                        <span className="sr-only">Đăng nhập cuối: </span>
+                        {formatDate(user.last_login_at)}
+                      </div>
+                    </TableCell>
                     <TableCell className={`${PIN_BELOW_SM_AND_FROM_2XL} bg-white text-right dark:bg-gray-950`}>
                       <Can permission={PERMISSIONS.USERS_BAN}>
                         {user.is_active ? (
