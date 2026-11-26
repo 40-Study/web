@@ -61,12 +61,13 @@ export function ClassSessionList({
   const allSessions = useMemo(() => query.data?.sessions ?? [], [query.data]);
   const total = allSessions.length;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const jumpedToToday = useRef(false);
+  // Ghi nhớ lớp đã nhảy tới hôm nay: đổi `classId` mà không remount thì nhảy lại cho lớp mới.
+  const jumpedForClass = useRef<string | null>(null);
   useEffect(() => {
-    if (jumpedToToday.current || allSessions.length === 0) return;
-    jumpedToToday.current = true;
+    if (jumpedForClass.current === classId || allSessions.length === 0) return;
+    jumpedForClass.current = classId;
     setPage(pageContainingToday(allSessions, PAGE_SIZE));
-  }, [allSessions]);
+  }, [allSessions, classId]);
   const currentPage = Math.min(page, pageCount);
   const sessions = allSessions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 

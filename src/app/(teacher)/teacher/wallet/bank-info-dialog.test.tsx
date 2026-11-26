@@ -43,6 +43,18 @@ describe("BankInfoDialog (Q8-T04)", () => {
     expect(screen.getByRole("alert").textContent).toMatch(/chỉ gồm chữ số/);
   });
 
+  it("dán số tài khoản 21 chữ số: ô giữ nguyên giá trị (không cắt lặng lẽ), không gọi API, hiện lý do 6 đến 20 chữ số", () => {
+    renderDialog();
+    const pasted = "123456789012345678901";
+    const input = screen.getByLabelText("Số tài khoản") as HTMLInputElement;
+    expect(input.maxLength).toBe(-1);
+    fireEvent.change(input, { target: { value: pasted } });
+    expect(input.value).toBe(pasted);
+    save();
+    expect(mutate).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert").textContent).toMatch(/từ 6 đến 20 chữ số/);
+  });
+
   it("tên chủ tài khoản toàn khoảng trắng không gọi API", () => {
     renderDialog();
     fireEvent.change(screen.getByLabelText("Tên chủ tài khoản"), { target: { value: "   " } });

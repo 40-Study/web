@@ -3,7 +3,7 @@
  * báo không được nói "xoá vĩnh viễn" (Q8-T10). Giảng viên còn số dư ví hoặc yêu cầu rút đang chờ thì backend từ chối
  * bằng 409 `ERR_ACCOUNT_HAS_BALANCE` (hợp đồng C22); backend cũ không kiểm tra nên vẫn xoá được như trước.
  */
-import { ApiError } from "./errors";
+import { ApiError, NetworkError } from "./errors";
 import { getErrorMessage } from "./error-messages";
 
 export const ACCOUNT_HAS_BALANCE_CODE = "ERR_ACCOUNT_HAS_BALANCE";
@@ -21,8 +21,12 @@ export function hasTeacherRole(roles: ReadonlyArray<{ role_name: string }>): boo
   return roles.some((r) => r.role_name === "TEACHER" || r.role_name === "ORG_TEACHER");
 }
 
-/** Câu toast khi xoá tài khoản lỗi: lý do số dư/rút tiền nói rõ, mọi lỗi khác giữ câu "kiểm tra lại mật khẩu". */
+/**
+ * Câu toast khi xoá tài khoản lỗi: lý do số dư/rút tiền nói rõ; lỗi máy chủ (5xx) hoặc mất mạng dùng câu chung đúng
+ * sự thật (không đổ lỗi cho mật khẩu); mọi lỗi khác giữ câu "kiểm tra lại mật khẩu".
+ */
 export function deleteAccountErrorMessage(error: unknown): string {
   if (error instanceof ApiError && error.code === ACCOUNT_HAS_BALANCE_CODE) return getErrorMessage(error);
+  if (error instanceof NetworkError || (error instanceof ApiError && error.status >= 500)) return getErrorMessage(error);
   return DELETE_FAILED_MESSAGE;
 }

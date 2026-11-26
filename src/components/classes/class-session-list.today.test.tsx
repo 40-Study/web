@@ -32,4 +32,25 @@ describe("ClassSessionList mở đúng trang hôm nay (Q8-T06)", () => {
     expect(screen.queryByText("Buổi 1")).toBeNull();
     expect(screen.getByText("Buổi học (104)")).toBeTruthy();
   });
+
+  it("đổi classId không remount: nhảy lại tới trang chứa hôm nay của lớp mới (review L2)", async () => {
+    resetMockApi();
+    const rowsFor = (classId: string, todayIndex: number) =>
+      Array.from({ length: 104 }, (_, i) => ({
+        id: `${classId}-s${i}`, class_id: classId, date: vnDay(i - todayIndex), start_time: "19:00", end_time: "20:30", status: "scheduled", topic: `${classId} buổi ${i + 1}`,
+      }));
+    const data: Record<string, ReturnType<typeof rowsFor>> = { c1: rowsFor("c1", 89), c2: rowsFor("c2", 10) };
+    mockApi.get.mockImplementation((url: string, config: { params: { page: number; page_size: number } }) => {
+      const rows = data[url.includes("c2") ? "c2" : "c1"];
+      const { page, page_size } = config.params;
+      return Promise.resolve(envelope({ data: rows.slice((page - 1) * page_size, page * page_size), total: 104, page, page_size }));
+    });
+    const ui = (classId: string) => <ClassSessionList classId={classId} canWrite hasSchedules onGenerate={() => {}} onAdd={() => {}} />;
+    const { rerender } = renderWithProviders(ui("c1"));
+    expect(await screen.findByText("Trang 5 / 6")).toBeTruthy();
+
+    rerender(ui("c2"));
+    expect(await screen.findByText("Trang 1 / 6")).toBeTruthy();
+    expect(screen.getByText("c2 buổi 11")).toBeTruthy();
+  });
 });

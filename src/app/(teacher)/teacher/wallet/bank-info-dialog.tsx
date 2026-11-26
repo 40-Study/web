@@ -14,7 +14,6 @@ import {
 import { useUpdateBankInfo } from "@/hooks/queries/use-wallet";
 import {
   BANK_ACCOUNT_NAME_MAX_LENGTH,
-  BANK_ACCOUNT_NUMBER_MAX_LENGTH,
   BANK_NAME_MAX_LENGTH,
   validateBankInfo,
   type BankInfoInput,
@@ -102,7 +101,8 @@ export function BankInfoDialog({
               inputMode="numeric"
               autoComplete="off"
               value={accountNumber}
-              maxLength={BANK_ACCOUNT_NUMBER_MAX_LENGTH}
+              // Không đặt maxLength: dán số quá dài sẽ bị trình duyệt cắt lặng lẽ thành một số tài khoản KHÁC mà vẫn hợp lệ;
+              // để validateBankInfo báo "6 đến 20 chữ số".
               aria-invalid={!!shown("accountNumber")}
               aria-describedby={shown("accountNumber") ? "bank-account-number-error" : undefined}
               onChange={(e) => setAccountNumber(e.target.value)}

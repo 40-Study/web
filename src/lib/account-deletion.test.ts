@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { deleteAccountErrorMessage, hasTeacherRole } from "./account-deletion";
-import { ApiError } from "./errors";
+import { ApiError, NetworkError } from "./errors";
 import { getErrorMessage } from "./error-messages";
 
 describe("deleteAccountErrorMessage (Q8-T10, C22)", () => {
@@ -18,6 +18,13 @@ describe("deleteAccountErrorMessage (Q8-T10, C22)", () => {
   it("lỗi khác (sai mật khẩu 401/400): giữ câu 'kiểm tra lại mật khẩu'", () => {
     expect(deleteAccountErrorMessage(new ApiError(400, "ERR_VALIDATION", "invalid password"))).toMatch(/kiểm tra lại mật khẩu/);
     expect(deleteAccountErrorMessage(new Error("x"))).toMatch(/kiểm tra lại mật khẩu/);
+  });
+});
+
+describe("deleteAccountErrorMessage, lỗi không phải do mật khẩu (Q8 review L4)", () => {
+  it("5xx và mất mạng không đổ lỗi cho mật khẩu", () => {
+    expect(deleteAccountErrorMessage(new ApiError(500, "INTERNAL", "boom"))).not.toMatch(/mật khẩu/);
+    expect(deleteAccountErrorMessage(new NetworkError())).not.toMatch(/mật khẩu/);
   });
 });
 
