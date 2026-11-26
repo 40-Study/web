@@ -10,11 +10,12 @@ import { useAttendanceDraft } from "@/components/attendance/use-attendance-draft
 import { useClassStudentsByClassId } from "@/hooks/queries/use-classes";
 import { useClassById } from "@/hooks/queries/use-class-manage";
 import { isClassArchived } from "@/lib/class-status";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { ResourceUnavailable, isResourceUnavailableError, unavailableStatus } from "@/components/common/resource-unavailable";
 import { formatVnDateOnly } from "@/lib/vn-datetime";
 import {
   useBulkMarkAttendance,
-  useClassSessions,
+  useAllClassSessions,
   useSessionAttendances,
   useUpdateAttendance,
 } from "@/hooks/queries/use-sessions";
@@ -36,11 +37,12 @@ export default function ClassAttendancePage() {
   const classId = String(params.classId ?? "");
 
   const [sessionId, setSessionId] = useState("");
+  // Q8-T07: buổi người dùng vừa chọn trong khi bản nháp điểm danh chưa lưu; chờ xác nhận bỏ nháp mới đổi.
+  const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
 
-  const { data: sessionsData, isLoading: sessionsLoading, isError: sessionsError, error: sessionsErrorValue } = useClassSessions(
-    classId,
-    // Backend giới hạn page_size tối đa 50; giá trị lớn hơn bị reset về 20.
-    { page: 1, page_size: 50 }
+  const { data: sessionsData, isLoading: sessionsLoading, isError: sessionsError, error: sessionsErrorValue } = useAllClassSessions(
+    // Q8-T06: đi hết mọi trang (backend chỉ trả tối đa 50 buổi/trang), không chỉ 50 buổi cũ nhất.
+    classId
   );
   const groups = useMemo(() => groupAttendanceSessions(sessionsData?.sessions ?? []), [sessionsData]);
   const sessions = useMemo(() => [...groups.past, ...groups.upcoming], [groups]);
@@ -132,6 +134,11 @@ export default function ClassAttendancePage() {
               <select
                 value={sessionId}
                 onChange={(e) => {
+                  if (e.target.value === sessionId) return;
+                  if (hasChanges) {
+                    setPendingSessionId(e.target.value);
+                    return;
+                  }
                   reset();
                   setSessionId(e.target.value);
                 }}
@@ -212,6 +219,23 @@ export default function ClassAttendancePage() {
           )}
         </>
       )}
+      <ConfirmDialog
+        open={pendingSessionId !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingSessionId(null);
+        }}
+        title="Bỏ điểm danh chưa lưu?"
+        description="Bạn đã đánh dấu điểm danh cho buổi này nhưng chưa lưu. Chuyển sang buổi khác sẽ mất các thay đổi đó."
+        confirmLabel="Bỏ và chuyển buổi"
+        cancelLabel="Ở lại buổi này"
+        destructive
+        onConfirm={() => {
+          if (pendingSessionId === null) return;
+          reset();
+          setSessionId(pendingSessionId);
+          setPendingSessionId(null);
+        }}
+      />
     </div>
   );
 }

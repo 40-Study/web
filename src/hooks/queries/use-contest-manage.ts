@@ -3,7 +3,7 @@
  * Mọi lỗi đi qua `contestErrorMessage` để toast luôn là tiếng Việt (403/404/409 có câu riêng).
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { partialMatchKey, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { contestErrorMessage } from "@/lib/contest-manage/errors";
@@ -23,8 +23,9 @@ export const contestManageKeys = {
   admin: (params?: ContestManageListParams) =>
     [...contestManageKeys.all, "admin", params ?? {}] as const,
   detail: (id: string) => [...contestManageKeys.all, "detail", id] as const,
-  participants: (id: string, page: number) =>
-    [...contestManageKeys.all, "participants", id, page] as const,
+  /** Tiền tố của mọi trang người tham gia của một cuộc thi (dùng để khớp theo tiền tố). */
+  participantsOf: (id: string) => [...contestManageKeys.all, "participants", id] as const,
+  participants: (id: string, page: number) => [...contestManageKeys.participantsOf(id), page] as const,
   quizOptions: () => [...contestManageKeys.all, "quiz-options"] as const,
 };
 
@@ -115,11 +116,26 @@ export function useUpdateContest() {
 }
 
 export function useDeleteContest() {
-  const invalidate = useInvalidateContests();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => contestManageService.remove(id),
-    onSuccess: () => {
-      invalidate();
+    onSuccess: (_, id) => {
+      // Q8-T05: trang chi tiết còn mount (chờ router.push) mà `invalidate()` làm nó refetch chi tiết + người tham gia
+      // của cuộc thi vừa xoá -> 2 lỗi 404 + console error. Huỷ request đang bay, bỏ hai truy vấn đó khỏi đợt refetch.
+      const isDeletedContestQuery = (queryKey: readonly unknown[]) =>
+        partialMatchKey(queryKey, contestManageKeys.detail(id)) ||
+        partialMatchKey(queryKey, contestManageKeys.participantsOf(id));
+      void qc.cancelQueries({ queryKey: contestManageKeys.all, predicate: (q) => isDeletedContestQuery(q.queryKey) });
+      qc.invalidateQueries({
+        queryKey: contestManageKeys.all,
+        predicate: (q) => !isDeletedContestQuery(q.queryKey),
+      });
+      qc.invalidateQueries({
+        queryKey: contestManageKeys.all,
+        predicate: (q) => isDeletedContestQuery(q.queryKey),
+        refetchType: "none",
+      });
+      qc.invalidateQueries({ queryKey: contestKeys.all });
       toast.success("Đã xoá cuộc thi");
     },
     onError: (error) => toast.error(contestErrorMessage(error, "Không thể xoá cuộc thi, thử lại sau.")),

@@ -19,14 +19,9 @@ import {
 import { useLiveSessions } from "@/hooks/queries/use-live-sessions";
 import { useAuthStore } from "@/stores/auth.store";
 import { toAnalyticsSessionOptions } from "@/lib/analytics-session-options";
+import { formatDurationVi } from "@/lib/format-duration-vi";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatSeconds(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}m ${s}s`;
-}
 
 // Nhãn vai trò theo `model.ParticipantRole` ở backend; vai lạ hiện nguyên giá trị thay vì mất dòng.
 const ROLE_LABELS: Record<string, string> = {
@@ -154,11 +149,11 @@ export default function TeacherAnalyticsPage() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">TG xem TB</span>
+                <span className="text-sm text-muted-foreground">Thời gian xem trung bình</span>
                 <Zap className="w-5 h-5 text-muted-foreground" />
               </div>
               <span className="text-2xl font-bold">
-                {formatSeconds(sessionAnalytics.avg_watch_time_secs ?? 0)}
+                {formatDurationVi(sessionAnalytics.avg_watch_time_secs ?? 0)}
               </span>
             </CardContent>
           </Card>

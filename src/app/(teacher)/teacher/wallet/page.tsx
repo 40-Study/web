@@ -30,7 +30,13 @@ import { walletService, type TeacherTransaction } from "@/services/wallet.servic
 import { BankInfoDialog } from "./bank-info-dialog";
 import { WithdrawalSection } from "./withdrawal-section";
 import { TransactionCardList } from "./transaction-card-list";
-import { formatDate, formatMoney, getStatusConfig, transactionAmountDisplay } from "./transaction-display";
+import {
+  formatDate,
+  formatMoney,
+  getStatusConfig,
+  transactionAmountDisplay,
+  visibleWalletTransactions,
+} from "./transaction-display";
 
 /** Backend chấp nhận limit 1..100; ngoài khoảng đó nó âm thầm đổi về 20. */
 const EXPORT_PAGE_SIZE = 100;
@@ -58,22 +64,13 @@ export default function TeacherWalletPage() {
   const transactions: TeacherTransaction[] = txResponse?.transactions ?? [];
   const totalPages = txResponse?.total_pages ?? 1;
 
-  // Client-side search filter on top of server-side type filter
-  const searchedTransactions = searchQuery
-    ? transactions.filter(
-        (tx) =>
-          tx.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          tx.course_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          tx.buyer_name?.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-    : transactions;
   // QA-B-14: đơn đã huỷ không đem lại tiền nhưng chiếm chỗ trong bảng, làm giảng viên cộng bảng không ra tổng.
   // Mặc định ẩn (trong trang đang xem, vì backend chưa lọc theo trạng thái) và nói rõ đã ẩn bao nhiêu.
   const [showCancelled, setShowCancelled] = useState(false);
+  // Tìm kiếm phía client chồng lên bộ lọc loại giao dịch của server; bảng và file CSV dùng chung một bộ lọc.
+  const searchedTransactions = visibleWalletTransactions(transactions, searchQuery, true);
   const hiddenCancelled = showCancelled ? 0 : searchedTransactions.filter((tx) => tx.status === "cancelled").length;
-  const filteredTransactions = showCancelled
-    ? searchedTransactions
-    : searchedTransactions.filter((tx) => tx.status !== "cancelled");
+  const filteredTransactions = visibleWalletTransactions(transactions, searchQuery, showCancelled);
 
   // Bank info display
   const hasBankInfo = wallet?.bank_name && wallet?.bank_account_number;
@@ -97,9 +94,11 @@ export default function TeacherWalletPage() {
         nextPage += 1;
       } while (nextPage <= pages);
 
+      // Q8-T03: CSV khớp bảng đang xem (cùng ô tìm kiếm, đơn đã huỷ chỉ có khi bật "Hiện đơn đã huỷ").
+      const exported = visibleWalletTransactions(all, searchQuery, showCancelled);
       const rows: CsvCell[][] = [
         ["Mã GD", "Ngày", "Khoá học", "Người mua", "Loại", "Số tiền", "Trạng thái"],
-        ...all.map((tx) => [
+        ...exported.map((tx) => [
           tx.order_number,
           formatDate(tx.created_at),
           tx.course_name,
@@ -111,7 +110,7 @@ export default function TeacherWalletPage() {
         ]),
       ];
       downloadCsv("giao-dich-giang-vien.csv", buildCsv(rows));
-      toast.success(`Đã xuất ${all.length} giao dịch`);
+      toast.success(`Đã xuất ${exported.length} giao dịch`);
     } catch {
       toast.error("Không xuất được danh sách giao dịch. Vui lòng thử lại.");
     } finally {

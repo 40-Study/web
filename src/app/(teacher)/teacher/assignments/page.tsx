@@ -39,6 +39,7 @@ import { DUE_DATE_IN_PAST_MESSAGE, isDueDateInPast } from "./assignment-due-date
 import { toast } from "sonner";
 import { orderAssignmentCourses } from "./assignment-course-order";
 import { COURSE_STATUS_LABEL, isCourseStatus } from "@/types/approval";
+import { matchesSearchQuery } from "@/lib/text-search";
 import type { ApiCourse } from "@/services/course.service";
 import type { AssignmentResponseDTO, AssignmentType, DifficultyLevel } from "@/services/assignment.service";
 
@@ -103,8 +104,7 @@ export default function TeacherAssignmentsPage() {
   }, [courses, ordered, searchParams]);
 
   const filteredCourses = useMemo(() => {
-    const query = courseSearch.trim().toLowerCase();
-    const match = (c: { title: string }) => !query || c.title.toLowerCase().includes(query);
+    const match = (c: { title: string }) => matchesSearchQuery(courseSearch, c.title);
     return { published: ordered.published.filter(match), others: ordered.others.filter(match) };
   }, [courseSearch, ordered]);
   // Đang tìm kiếm thì không giấu kết quả trong nhóm thu gọn.
@@ -239,6 +239,7 @@ export default function TeacherAssignmentsPage() {
             <CardTitle className="text-base">1) Khoá học của tôi ({visibleCourseCount})</CardTitle>
             <Input
               placeholder="Tìm khoá học..."
+              aria-label="Tìm khoá học"
               value={courseSearch}
               onChange={(e) => setCourseSearch(e.target.value)}
             />

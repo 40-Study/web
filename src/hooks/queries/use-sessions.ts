@@ -5,6 +5,7 @@ import { describeScheduleError } from "@/lib/class-schedule-errors";
 import { ApiError } from "@/lib/errors";
 import { scheduleOverlapSummary, scheduleWarningsFrom } from "@/lib/schedule-overlap-warnings";
 import { classScheduleKeys } from "@/hooks/queries/use-class-schedule";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { allSkippedSummary, generateSessionsSummary, skippedFromErrorPayload } from "@/lib/generate-sessions-summary";
 import {
   sessionService,
@@ -17,6 +18,8 @@ import {
   BulkAttendanceDTO,
   UpdateAttendanceDTO,
   ReminderSetting,
+  type ClassSession,
+  type ClassSessionListResponse,
 } from "@/services/session.service";
 
 // ─── Query keys ────────────────────────────────────────────────────────────
@@ -98,10 +101,23 @@ export function useClassTimetable(classId: string) {
 
 // ─── Class Sessions ────────────────────────────────────────────────────────
 
-export function useClassSessions(classId: string, params?: { page?: number; page_size?: number }) {
+/** Backend giới hạn `page_size` tối đa 50 (lớn hơn bị reset về 20). */
+const SESSION_PAGE_SIZE = 50;
+
+/**
+ * MỌI buổi học của lớp, đi hết các trang theo `total` (Q8-T06). Trước đây trang điểm danh chỉ lấy trang 1 (50 buổi cũ nhất)
+ * nên lớp 104 buổi không chọn được buổi nào từ tháng 7. Backend trả buổi theo ngày tăng dần; thứ tự đó được giữ nguyên.
+ */
+export function useAllClassSessions(classId: string) {
   return useQuery({
-    queryKey: [...sessionKeys.sessions(classId), params],
-    queryFn: () => sessionService.getSessions(classId, params),
+    queryKey: [...sessionKeys.sessions(classId), "all"],
+    queryFn: async (): Promise<ClassSessionListResponse> => {
+      const { items, total } = await fetchAllPages<ClassSession>(async (page, pageSize) => {
+        const res = await sessionService.getSessions(classId, { page, page_size: pageSize });
+        return { items: res.sessions, total: res.total };
+      }, SESSION_PAGE_SIZE);
+      return { sessions: items, total, page: 1, page_size: items.length };
+    },
     enabled: !!classId,
   });
 }

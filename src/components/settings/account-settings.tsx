@@ -16,6 +16,7 @@ import { ApplyTeacherButton } from "@/components/teacher-application/apply-teach
 import { isIncorrectCurrentPasswordError, useMyRoles } from "@/hooks/queries/use-auth";
 import { isSelectableRole } from "@/lib/role-resolution";
 import { getErrorMessage } from "@/lib/error-messages";
+import { ACCOUNT_DELETE_COMMON_WARNING, ACCOUNT_DELETE_TEACHER_WARNING, hasTeacherRole } from "@/lib/account-deletion";
 import { validateNewPassword } from "@/lib/password-policy";
 import { PasswordChecklist } from "@/components/auth/password-checklist";
 import { getOrgRoleLabel, getSystemRoleLabel } from "@/lib/role-labels";
@@ -243,7 +244,7 @@ export function AccountSettings({
             <div className="p-2.5 bg-red-50 rounded-xl"><Trash2 className="h-5 w-5 text-red-500" /></div>
             <div>
               <p className="font-medium text-red-600">Xoá tài khoản</p>
-              <p className="text-sm text-gray-500">Xoá vĩnh viễn tài khoản và toàn bộ dữ liệu</p>
+              <p className="text-sm text-gray-500">Vô hiệu hoá tài khoản và đăng xuất ngay</p>
             </div>
           </div>
           <Button variant="destructive" size="sm" className="rounded-xl" onClick={() => setDeleteDialogOpen(true)}>
@@ -273,9 +274,10 @@ export function AccountSettings({
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="rounded-2xl">
           <DialogHeader><DialogTitle className="text-red-600">Xoá tài khoản</DialogTitle></DialogHeader>
-          <p className="text-gray-600 text-sm">
-            Hành động này <strong>không thể hoàn tác</strong>. Toàn bộ dữ liệu bao gồm khoá học, tiến độ và thành tích sẽ bị xoá vĩnh viễn.
-          </p>
+          <p className="text-gray-600 text-sm">{ACCOUNT_DELETE_COMMON_WARNING}</p>
+          {hasTeacherRole(myRolesData?.roles ?? roles ?? []) && (
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">{ACCOUNT_DELETE_TEACHER_WARNING}</p>
+          )}
           <form onSubmit={deleteForm.handleSubmit(handleDeleteSubmit)} className="space-y-4 mt-2">
             <Input label="Mật khẩu xác nhận" type="password" placeholder="Nhập mật khẩu để xác nhận" {...deleteForm.register("password")} error={deleteForm.formState.errors.password?.message} />
             <div className="flex justify-end gap-3">

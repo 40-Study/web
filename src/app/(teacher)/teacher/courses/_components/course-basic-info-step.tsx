@@ -86,12 +86,13 @@ export function CourseBasicInfoStep({ formData, update }: { formData: CourseForm
       {/* Short Description */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label>Mô tả ngắn</Label>
+          <Label htmlFor="short_description">Mô tả ngắn</Label>
           <span className="text-xs text-muted-foreground">
             {formData.short_description.length}/200
           </span>
         </div>
         <Textarea
+          id="short_description"
           placeholder="Tóm tắt ngắn gọn nội dung khoá học để thu hút học viên..."
           value={formData.short_description}
           onChange={(e) => update("short_description", e.target.value)}

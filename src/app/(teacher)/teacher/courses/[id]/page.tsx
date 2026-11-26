@@ -306,6 +306,11 @@ function SortableSectionCard({
 
 // ─── Sortable Lesson Row (expandable — shows contents inside) ────────────────
 
+// Q8-T08: nút kéo/xoá chỉ hiện khi rê chuột nên trên màn cảm ứng (không có hover) và khi tab bằng bàn phím chúng vô hình.
+// Hiện khi rê chuột, khi focus bàn phím, và luôn hiện trên thiết bị không hover; mục tiêu chạm >= 36px trên màn cảm ứng.
+const ROW_CONTROL_REVEAL = "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100";
+const ROW_CONTROL_TOUCH_TARGET = "[@media(pointer:coarse)]:p-3";
+
 function SortableLessonRow({
   lesson,
   index,
@@ -337,7 +342,7 @@ function SortableLessonRow({
       {/* Lesson header row */}
       <div className="flex items-center gap-2 rounded-lg px-2 py-2 group hover:bg-gray-50 transition-colors">
         {!readOnly && (
-          <button {...attributes} {...listeners} aria-label="Kéo để sắp xếp bài học" className="cursor-grab active:cursor-grabbing p-0.5 text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button {...attributes} {...listeners} aria-label="Kéo để sắp xếp bài học" className={cn("cursor-grab active:cursor-grabbing p-0.5 text-gray-300 hover:text-gray-500 transition-opacity", ROW_CONTROL_REVEAL, ROW_CONTROL_TOUCH_TARGET)}>
             <GripVertical className="w-3.5 h-3.5" />
           </button>
         )}
@@ -368,7 +373,7 @@ function SortableLessonRow({
           <button
             onClick={onDelete}
             aria-label="Xoá bài học"
-            className="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+            className={cn("p-1 text-gray-300 hover:text-red-500 transition-all", ROW_CONTROL_REVEAL, ROW_CONTROL_TOUCH_TARGET)}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>

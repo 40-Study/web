@@ -1,5 +1,6 @@
 import { formatWithdrawalAmount } from "@/lib/withdrawal-format";
 import { formatVnDateThenTime } from "@/lib/vn-datetime";
+import { matchesSearchQuery } from "@/lib/text-search";
 import type { TeacherTransaction } from "@/services/wallet.service";
 
 type BadgeVariant = "success" | "warning" | "secondary" | "destructive";
@@ -33,4 +34,20 @@ export function transactionAmountDisplay(tx: Pick<TeacherTransaction, "type" | "
   if (tx.type === "expense") return { sign: "-", className: "text-red-500" };
   if (tx.status === "completed") return { sign: "+", className: "text-green-600" };
   return { sign: "", className: "text-muted-foreground" };
+}
+
+/**
+ * Các dòng giao dịch mà bảng đang hiện: lọc theo ô tìm kiếm (không dấu, hoa thường) và ẩn đơn đã huỷ trừ khi bật
+ * "Hiện đơn đã huỷ" (QA-B-14). File CSV dùng đúng hàm này (Q8-T03) nên luôn khớp bảng, không cộng thừa đơn đã huỷ.
+ */
+export function visibleWalletTransactions(
+  transactions: TeacherTransaction[],
+  searchQuery: string,
+  showCancelled: boolean,
+): TeacherTransaction[] {
+  return transactions.filter(
+    (tx) =>
+      matchesSearchQuery(searchQuery, tx.order_number, tx.course_name, tx.buyer_name) &&
+      (showCancelled || tx.status !== "cancelled"),
+  );
 }

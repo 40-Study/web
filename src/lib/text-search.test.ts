@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { adminMenu } from "./admin-menu";
-import { filterByQuery, foldSearchText } from "./text-search";
+import { filterByQuery, foldSearchText, matchesSearchQuery } from "./text-search";
 
 const labels = (query: string) => filterByQuery(adminMenu, query).map((item) => item.label);
 
@@ -40,5 +40,22 @@ describe("filterByQuery — tìm không dấu trên menu admin", () => {
 
   it("truy vấn rỗng trả toàn bộ, giữ thứ tự menu", () => {
     expect(labels("   ")).toEqual(adminMenu.map((item) => item.label));
+  });
+});
+
+describe("matchesSearchQuery — ô tìm kiếm trang giảng viên (Q8-T01)", () => {
+  it('"Le" khớp "Lê Văn C" và "nguoi moi" khớp "Người mới"', () => {
+    expect(matchesSearchQuery("Le", "Lê Văn C")).toBe(true);
+    expect(matchesSearchQuery("nguoi moi", "Python cho Người mới")).toBe(true);
+  });
+
+  it("khoảng trắng đầu/cuối không làm hỏng khớp", () => {
+    expect(matchesSearchQuery("  git  ", "Học Git cơ bản")).toBe(true);
+  });
+
+  it("truy vấn rỗng khớp tất cả, trường null bị bỏ qua, không khớp thì false", () => {
+    expect(matchesSearchQuery("   ", "x")).toBe(true);
+    expect(matchesSearchQuery("abc", null, undefined, "xyz")).toBe(false);
+    expect(matchesSearchQuery("abc", null, "ABC-1")).toBe(true);
   });
 });

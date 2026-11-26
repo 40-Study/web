@@ -65,7 +65,8 @@ describe("TeacherAnalyticsPage", () => {
     expect(await screen.findByText("Tổng lượt xem")).toBeTruthy();
     expect(screen.getByText("12")).toBeTruthy();
     expect(screen.getByText("7")).toBeTruthy();
-    expect(screen.getByText("2m 5s")).toBeTruthy();
+    expect(screen.getByText("2 phút 5 giây")).toBeTruthy();
+    expect(screen.getByText("Thời gian xem trung bình")).toBeTruthy();
     expect(screen.getByText("Học viên")).toBeTruthy();
     expect(screen.getByText("8")).toBeTruthy();
     expect(mockApi.get.mock.calls.some((c) => String(c[0]) === `/analytics/livestream/${SESSION}`)).toBe(true);

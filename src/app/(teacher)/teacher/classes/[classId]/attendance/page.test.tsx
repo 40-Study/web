@@ -2,7 +2,7 @@
  * QA B-18: lớp không tồn tại / của giảng viên khác (API 404) trước đây hiện trang điểm danh rỗng như lớp chưa có
  * buổi. Phải báo rõ; lỗi khác (mạng, 500) KHÔNG bị nhầm thành "không tìm thấy".
  */
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/errors";
 
@@ -14,7 +14,7 @@ vi.mock("@/hooks/queries/use-class-manage", () => ({
   useClassById: () => ({ data: state.classStatus ? { id: "class-1", status: state.classStatus } : undefined }),
 }));
 vi.mock("@/hooks/queries/use-sessions", () => ({
-  useClassSessions: () => state.sessions,
+  useAllClassSessions: () => state.sessions,
   useSessionAttendances: () => ({ data: [], isLoading: false }),
   useBulkMarkAttendance: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useUpdateAttendance: () => ({ mutateAsync: vi.fn(), isPending: false }),
@@ -150,5 +150,53 @@ describe("ClassAttendancePage — buổi chưa diễn ra (Q4-T07)", () => {
     expect((screen.getByRole("button", { name: "Lưu điểm danh" }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole("button", { name: "Đánh dấu tất cả có mặt" }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByTestId("table").getAttribute("data-disabled")).toBe("true");
+  });
+});
+
+describe("ClassAttendancePage — đổi buổi khi có bản nháp (Q8-T07)", () => {
+  const twoSessions = () => {
+    state.sessions = {
+      data: {
+        sessions: [
+          { id: "s1", date: "2026-10-01", start_time: "19:00", end_time: "20:30", status: "completed" },
+          { id: "s2", date: "2026-10-03", start_time: "19:00", end_time: "20:30", status: "completed" },
+        ],
+      },
+      isLoading: false,
+    };
+  };
+  const select = () => screen.getByRole("combobox") as HTMLSelectElement;
+
+  it("có thay đổi chưa lưu: đổi buổi hỏi xác nhận, chưa đổi ngay; 'Ở lại' giữ nguyên buổi", () => {
+    state.hasChanges = true;
+    twoSessions();
+    render(<ClassAttendancePage />);
+    expect(select().value).toBe("s2");
+
+    fireEvent.change(select(), { target: { value: "s1" } });
+    expect(screen.getByText("Bỏ điểm danh chưa lưu?")).toBeTruthy();
+    expect(select().value).toBe("s2");
+
+    fireEvent.click(screen.getByRole("button", { name: "Ở lại buổi này" }));
+    expect(screen.queryByText("Bỏ điểm danh chưa lưu?")).toBeNull();
+    expect(select().value).toBe("s2");
+  });
+
+  it("xác nhận 'Bỏ và chuyển buổi' thì mới đổi sang buổi đã chọn", () => {
+    state.hasChanges = true;
+    twoSessions();
+    render(<ClassAttendancePage />);
+    fireEvent.change(select(), { target: { value: "s1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Bỏ và chuyển buổi" }));
+    expect(select().value).toBe("s1");
+  });
+
+  it("không có thay đổi: đổi buổi ngay, không hỏi", () => {
+    state.hasChanges = false;
+    twoSessions();
+    render(<ClassAttendancePage />);
+    fireEvent.change(select(), { target: { value: "s1" } });
+    expect(screen.queryByText("Bỏ điểm danh chưa lưu?")).toBeNull();
+    expect(select().value).toBe("s1");
   });
 });

@@ -74,3 +74,15 @@ describe("/teacher/courses — ảnh LCP", () => {
   });
 });
 
+// Q8-T01 + Q8-T11: ô tìm kiếm có tên truy cập và tìm không dấu, bỏ qua khoảng trắng đầu/cuối.
+describe("/teacher/courses — ô tìm kiếm", () => {
+  it("'nhap' (không dấu, thừa khoảng trắng) tìm ra khoá có tên 'QA-Khoa nhap'; gõ lạ thì không ra", () => {
+    render(<TeacherCoursesPage />);
+    openTab("draft");
+    const search = screen.getByRole("textbox", { name: "Tìm kiếm khoá học" });
+    fireEvent.change(search, { target: { value: "  NHAP " } });
+    expect(screen.getByText("QA-Khoa nhap")).toBeTruthy();
+    fireEvent.change(search, { target: { value: "khong co" } });
+    expect(screen.queryByText("QA-Khoa nhap")).toBeNull();
+  });
+});
