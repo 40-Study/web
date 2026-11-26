@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 /**
  * Bản render chứng chỉ để xem + in/lưu PDF.
@@ -14,15 +15,7 @@ import { cn } from "@/lib/utils";
  */
 
 function formatIssuedDate(iso?: string) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime())
-    ? ""
-    : d.toLocaleDateString("vi-VN", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      });
+  return iso ? formatVnDate(iso) : "";
 }
 
 export function CertificateView({

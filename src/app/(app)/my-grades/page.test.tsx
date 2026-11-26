@@ -41,6 +41,13 @@ describe("/my-grades — Điểm của tôi", () => {
     mockState = { data: [], isLoading: false, error: null };
   });
 
+  it("ngày chấm theo định dạng chung dd/MM/yyyy giờ Việt Nam, không theo múi giờ trình duyệt (L2)", () => {
+    // 20:30 UTC ngày 25 = 03:30 ngày 26 giờ VN: trình duyệt ở UTC hay Mỹ sẽ in 25/11.
+    mockState = { isLoading: false, error: null, data: [grade({ graded_at: "2026-11-25T20:30:00Z" })] };
+    render(<MyGradesPage />);
+    expect(screen.getByText(/Chấm bởi Nguyễn Văn A · 26\/11\/2026/)).toBeTruthy();
+  });
+
   it("hiện điểm, nhận xét và người chấm, nhóm theo lớp", () => {
     mockState = {
       isLoading: false,

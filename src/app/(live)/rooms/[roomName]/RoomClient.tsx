@@ -1525,7 +1525,7 @@ export default function RoomClient({
                             <circle cx="12" cy="12" r="10"/>
                             <polyline points="12 6 12 12 16 14"/>
                           </svg>
-                          <span>
+                          <span className="whitespace-nowrap">
                             Hạn nộp: {formatVnDateTime(assignment.end_time)}
                           </span>
                         </div>

@@ -23,4 +23,12 @@ describe("TiptapEditor — tên truy cập được (Q7-T07)", () => {
     render(<TiptapEditor ariaLabel="Nội dung" />);
     expect(await screen.findByRole("textbox", { name: "Nội dung" })).toBeTruthy();
   });
+
+  it("readOnly: vùng soạn thảo báo aria-readonly; soạn được thì không có (L5)", async () => {
+    const { unmount } = render(<TiptapEditor ariaLabel="Chỉ đọc" readOnly />);
+    expect((await screen.findByRole("textbox", { name: "Chỉ đọc" })).getAttribute("aria-readonly")).toBe("true");
+    unmount();
+    render(<TiptapEditor ariaLabel="Soạn được" />);
+    expect((await screen.findByRole("textbox", { name: "Soạn được" })).getAttribute("aria-readonly")).toBeNull();
+  });
 });

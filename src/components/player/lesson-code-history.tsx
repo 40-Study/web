@@ -71,7 +71,7 @@ export function LessonCodeHistory({
                     {isJudged(item.status) ? `${item.score}/100` : "–"}
                   </td>
                   <td>{item.execution_time_ms == null ? "–" : `${item.execution_time_ms} ms`}</td>
-                  <td>
+                  <td className="whitespace-nowrap">
                     <time dateTime={item.created_at}>
                       {formatVnDateTime(item.created_at)}
                     </time>

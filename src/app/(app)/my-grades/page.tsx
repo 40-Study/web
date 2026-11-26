@@ -9,6 +9,7 @@ import Link from "next/link";
 import { ArrowLeft, GraduationCap, Loader2, MessageSquareText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/error-messages";
+import { formatVnDate } from "@/lib/vn-datetime";
 import { useMyGrades } from "@/hooks/queries/use-grades";
 import { groupGradesByClass, scoreTone, type ScoreTone } from "@/lib/my-grades";
 
@@ -19,10 +20,7 @@ const TONE_CLASSES: Record<ScoreTone, string> = {
 };
 
 function formatGradedAt(iso: string | undefined): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return iso ? formatVnDate(iso) : "";
 }
 
 export default function MyGradesPage() {

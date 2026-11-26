@@ -105,7 +105,7 @@ export function LessonNotes({
                     className="text-sm prose prose-sm max-w-none break-words"
                     dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.content) }}
                   />
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-xs text-muted-foreground mt-2 whitespace-nowrap">
                     {formatVnDateTime(note.createdAt)}
                   </p>
                 </div>

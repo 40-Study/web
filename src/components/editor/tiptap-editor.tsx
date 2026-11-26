@@ -67,6 +67,8 @@ export function TiptapEditor({
             attributes: {
                 role: "textbox",
                 "aria-multiline": "true",
+                // Chỉ đọc vẫn là textbox có tên, nhưng đọc ra "chỉ đọc" thay vì mời người dùng gõ (L5).
+                ...(readOnly ? { "aria-readonly": "true" } : {}),
                 ...(id ? { id } : {}),
                 ...(ariaLabelledBy ? { "aria-labelledby": ariaLabelledBy } : {}),
                 ...(ariaLabel ? { "aria-label": ariaLabel } : {}),
