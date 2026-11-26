@@ -266,7 +266,7 @@ export function CourseDetailSidebar({
           <p className="flex min-w-0 items-baseline gap-2">
             <span className="text-base font-bold text-gray-900">{formatCurrency(course.price)}</span>
             {discountPct > 0 && course.originalPrice && (
-              <span className="truncate text-xs text-gray-400 line-through">{formatCurrency(course.originalPrice)}</span>
+              <span className="truncate text-xs text-gray-500 line-through">{formatCurrency(course.originalPrice)}</span>
             )}
           </p>
           <Button
@@ -315,7 +315,7 @@ export function CourseDetailSidebar({
                   </span>
                   {discountPct > 0 && course.originalPrice && (
                     <>
-                      <span className="text-base text-gray-400 line-through">
+                      <span className="text-base text-gray-500 line-through">
                         {formatCurrency(course.originalPrice)}
                       </span>
                       <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600">

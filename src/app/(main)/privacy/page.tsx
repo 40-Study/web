@@ -63,7 +63,7 @@ export default function PrivacyPage() {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">6. Liên hệ</h2>
           <p className="mt-2">
             Mọi thắc mắc về chính sách bảo mật vui lòng liên hệ{" "}
-            <a href={`mailto:${siteConfig.supportEmail}`} className="text-primary-600 hover:underline">
+            <a href={`mailto:${siteConfig.supportEmail}`} className="text-primary-600 underline underline-offset-2 hover:text-primary-700">
               {siteConfig.supportEmail}
             </a>
             .

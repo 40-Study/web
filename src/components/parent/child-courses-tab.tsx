@@ -6,6 +6,7 @@ import { BookOpen, Loader2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCreateDirectConversation } from "@/hooks/queries/use-conversations";
 import type { ChildCourse } from "@/services/parent-dashboard.service";
+import { ChildSectionError } from "./child-section-error";
 
 /**
  * Tab "Khoá học" của trang chi tiết con. E2 (QA vòng 2): mỗi khoá có nút "Nhắn giảng viên" —
@@ -13,7 +14,18 @@ import type { ChildCourse } from "@/services/parent-dashboard.service";
  * thoại đó được chọn sẵn. Khoá chưa gắn giảng viên (không có instructor_id) thì không hiện nút. Từ QA hồi quy
  * 03/10 backend cho phép nhắn giảng viên đang dạy con (conversation_service.go, nhánh phụ huynh -> giảng viên).
  */
-export function ChildCoursesTab({ courses, isLoading }: { courses?: ChildCourse[]; isLoading: boolean }) {
+export function ChildCoursesTab({
+  courses,
+  isLoading,
+  isError = false,
+  onRetry,
+}: {
+  courses?: ChildCourse[];
+  isLoading: boolean;
+  /** Q8-PG-05: API lỗi không được đọc thành "Chưa đăng ký khoá học nào". */
+  isError?: boolean;
+  onRetry?: () => void;
+}) {
   const router = useRouter();
   // Backend cho phụ huynh nhắn giảng viên đang dạy lớp/khoá mà con (liên kết đã xác nhận) ghi danh. Khi vẫn bị
   // từ chối (vd. giảng viên đã thôi dạy con, hoặc quyền liên hệ giảng viên của liên kết bị tắt) nói đúng điều
@@ -30,6 +42,7 @@ export function ChildCoursesTab({ courses, isLoading }: { courses?: ChildCourse[
       </div>
     );
   }
+  if (isError && !courses && onRetry) return <ChildSectionError label="danh sách khoá học" onRetry={onRetry} />;
   if (!courses || courses.length === 0) {
     return <p className="text-center text-gray-500 py-8">Chưa đăng ký khoá học nào</p>;
   }

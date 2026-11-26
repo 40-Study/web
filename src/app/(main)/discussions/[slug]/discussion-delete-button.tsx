@@ -35,7 +35,7 @@ export function DiscussionDeleteButton({ target, onConfirm, isPending = false, c
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={cn("flex items-center gap-1 text-xs text-slate-400 hover:text-rose-500 transition-colors", className)}
+        className={cn("flex items-center gap-1 text-xs text-slate-500 hover:text-rose-500 transition-colors", className)}
       >
         <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
         Xoá {target}

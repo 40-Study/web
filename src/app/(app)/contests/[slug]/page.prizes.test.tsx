@@ -55,3 +55,17 @@ describe("ContestDetailPage — giải thưởng (S7-04)", () => {
     expect(screen.getByText(/Giải được trao sau khi quản trị viên chốt kết quả/)).toBeTruthy();
   });
 });
+
+describe("ContestDetailPage — thông tin cuộc thi là danh sách định nghĩa hợp lệ (Q8-PG-10)", () => {
+  it("dl > div > dt + dd, không có phần tử nào khác trong div (axe dlitem / definition-list)", () => {
+    const { container } = render(<ContestDetailPage />);
+    const list = container.querySelector("dl");
+    expect(list).toBeTruthy();
+    const groups = Array.from(list!.children);
+    expect(groups.length).toBeGreaterThanOrEqual(4);
+    for (const group of groups) {
+      expect(group.tagName).toBe("DIV");
+      expect(Array.from(group.children).map((c) => c.tagName)).toEqual(["DT", "DD"]);
+    }
+  });
+});

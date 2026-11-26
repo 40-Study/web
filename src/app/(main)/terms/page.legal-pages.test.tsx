@@ -49,3 +49,14 @@ describe("/terms và /privacy (Q7-PG-04)", () => {
     expect(text).not.toContain("chỉ chia sẻ dữ liệu này với tài khoản đã liên kết");
   });
 });
+
+describe("liên kết trong văn bản (Q8-PG-10, axe link-in-text-block)", () => {
+  it.each([
+    ["Điều khoản", TermsPage],
+    ["Bảo mật", PrivacyPage],
+  ])("%s: link mailto trong đoạn văn có gạch chân, không chỉ khác màu", (_name, Page) => {
+    const { container } = render(<Page />);
+    const mail = container.querySelector('a[href^="mailto:"]');
+    expect(mail?.className).toMatch(/(^|\s)underline(\s|$)/);
+  });
+});

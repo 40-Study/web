@@ -7,6 +7,7 @@ import { CourseFiltersComponent } from "@/components/course/course-filters";
 import { CourseSearch } from "@/components/course/course-search";
 import { CourseBannerCarousel } from "@/components/course/course-banner-carousel";
 import { Button } from "@/components/ui/button";
+import { QueryState } from "@/components/common/query-state";
 import { useCourses, useCategories, useSearchSuggestions } from "@/hooks/use-courses";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { CourseFilters } from "@/types/course";
@@ -38,7 +39,13 @@ export default function CoursesPage() {
 
   // Từ khoá tìm ở backend (`keyword`, không phân biệt dấu) — trước đây lọc ở client bằng
   // `toLowerCase().includes` nên "dai so" không ra "Đại số" (F-07). `searchQuery` đã được CourseSearch debounce 300ms.
-  const { data: allCourses = [], isLoading: coursesLoading } = useCourses({
+  const {
+    data: allCourses = [],
+    isLoading: coursesLoading,
+    isError: coursesError,
+    error: coursesFetchError,
+    refetch: refetchCourses,
+  } = useCourses({
     ...filters,
     keyword: searchQuery || undefined,
   });
@@ -166,14 +173,21 @@ export default function CoursesPage() {
             onFilterChange={handleFilterChange}
           />
 
-          {!isLoading && (
+          {/* Q8-PG-03: API lỗi không được đọc thành "0 khoá học / Không tìm thấy khoá học nào"; nói là lỗi và cho thử lại. */}
+          {!isLoading && coursesError && (
+            <QueryState isError error={coursesFetchError} onRetry={() => void refetchCourses()}>
+              {null}
+            </QueryState>
+          )}
+
+          {!isLoading && !coursesError && (
             <p className="text-sm text-slate-600 dark:text-slate-400" aria-live="polite">
               {allCourses.length} khoá học
               {searchQuery && ` cho "${searchQuery}"`}
             </p>
           )}
 
-          <CourseGrid
+          {!coursesError && <CourseGrid
             courses={visibleCourses}
             loading={isLoading}
             staggered
@@ -185,9 +199,9 @@ export default function CoursesPage() {
                 </Button>
               ) : undefined
             }
-          />
+          />}
 
-          {hasMore && !isLoading && (
+          {hasMore && !isLoading && !coursesError && (
             <div className="flex justify-center pt-2">
               <Button
                 type="button"

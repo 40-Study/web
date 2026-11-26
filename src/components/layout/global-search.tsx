@@ -207,7 +207,7 @@ export function GlobalSearch({
           </button>
         ) : (
           <kbd
-            className="hidden lg:inline-flex items-center h-5 text-[10px] leading-none text-muted-foreground bg-muted border border-border rounded px-1.5 flex-shrink-0"
+            className="hidden lg:inline-flex items-center h-5 text-[10px] leading-none text-slate-600 dark:text-muted-foreground bg-muted border border-border rounded px-1.5 flex-shrink-0"
             title="Phím tắt mở tìm kiếm"
           >
             Ctrl K

@@ -26,6 +26,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { LoginRequiredPrompt } from "@/components/auth/login-required-prompt";
 import { discussionCategoryLabel } from "../discussion-categories";
 import { formatVnDate } from "@/lib/vn-datetime";
+import { getInitials } from "@/lib/initials";
 
 interface PageProps {
   params: { slug: string };
@@ -33,9 +34,9 @@ interface PageProps {
 
 const CATEGORY_COLORS: Record<string, string> = {
   programming: "bg-slate-100 text-slate-600",
-  design: "bg-blue-100 text-blue-600",
-  "learning-tips": "bg-green-100 text-green-600",
-  project: "bg-purple-100 text-purple-600",
+  design: "bg-blue-100 text-blue-700",
+  "learning-tips": "bg-green-100 text-green-700",
+  project: "bg-purple-100 text-purple-700",
   qna: "bg-amber-100 text-amber-700",
 };
 
@@ -67,7 +68,7 @@ export default function DiscussionDetailPage({ params }: PageProps) {
 
   const hasVoted = post?.user_vote === "upvote";
   const categoryColor = CATEGORY_COLORS[post?.category ?? ""] ?? "bg-slate-100 text-slate-600";
-  const initials = post?.author_name?.slice(0, 2).toUpperCase() ?? "??";
+  const initials = getInitials(post?.author_name);
 
   const handlePostVote = () => {
     if (!post) return;
@@ -153,7 +154,7 @@ export default function DiscussionDetailPage({ params }: PageProps) {
           <span className={cn("text-xs font-medium px-2.5 py-1 rounded-full", categoryColor)}>
             {discussionCategoryLabel(post.category)}
           </span>
-          <span className="text-xs text-slate-400">{timeAgo(post.created_at)}</span>
+          <span className="text-xs text-slate-500">{timeAgo(post.created_at)}</span>
         </div>
 
         <h1 className="text-xl font-bold text-slate-900 mb-4">{post.title}</h1>
@@ -183,13 +184,13 @@ export default function DiscussionDetailPage({ params }: PageProps) {
             onClick={handlePostVote}
             className={cn(
               "flex items-center gap-1.5 text-sm transition-colors",
-              hasVoted ? "text-rose-500" : "text-slate-400 hover:text-rose-400"
+              hasVoted ? "text-rose-500" : "text-slate-500 hover:text-rose-400"
             )}
           >
             <Heart className={cn("w-4 h-4", hasVoted && "fill-rose-500")} />
             <span>{post.upvote_count}</span>
           </button>
-          <div className="flex items-center gap-1.5 text-sm text-slate-400">
+          <div className="flex items-center gap-1.5 text-sm text-slate-500">
             <MessageSquare className="w-4 h-4" />
             <span>{post.reply_count} bình luận</span>
           </div>

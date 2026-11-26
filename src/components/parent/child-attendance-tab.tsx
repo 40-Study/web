@@ -39,9 +39,9 @@ export function ChildAttendanceTab({ childId }: { childId: string }) {
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
           <Stat value={stats.total_sessions} label="Tổng buổi" tone="bg-gray-50" />
-          <Stat value={stats.present_count} label="Có mặt" tone="bg-green-50 text-green-600" />
-          <Stat value={stats.late_count} label="Trễ" tone="bg-yellow-50 text-yellow-600" />
-          <Stat value={stats.absent_count} label="Vắng" tone="bg-red-50 text-red-600" />
+          <Stat value={stats.present_count} label="Có mặt" tone="bg-green-50 text-green-700" />
+          <Stat value={stats.late_count} label="Trễ" tone="bg-yellow-50 text-yellow-700" />
+          <Stat value={stats.absent_count} label="Vắng" tone="bg-red-50 text-red-700" />
           {/* P6: buổi nghỉ có phép phải có thẻ riêng, nếu không present+late+absent không bằng tổng. */}
           <Stat value={stats.excused_count} label="Có phép" tone="bg-blue-50 text-blue-600" />
           <Stat value={`${stats.attendance_rate.toFixed(0)}%`} label="Tỷ lệ" tone="bg-primary-50 text-primary-600" />
@@ -71,7 +71,7 @@ export function ChildAttendanceTab({ childId }: { childId: string }) {
                     withIcon
                     className="text-sm"
                   />
-                  {checkIn && <p className="text-xs text-gray-400">Vào lúc {checkIn}</p>}
+                  {checkIn && <p className="text-xs text-gray-500">Vào lúc {checkIn}</p>}
                 </div>
               </li>
             );
@@ -95,7 +95,7 @@ export function ChildAttendanceTab({ childId }: { childId: string }) {
           >
             {isFetchingMore ? "Đang tải..." : isError ? "Thử lại" : "Xem thêm"}
           </button>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-500">
             Đang hiện {records.length}/{total} buổi
           </p>
         </div>

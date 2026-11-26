@@ -43,8 +43,8 @@ describe("DiscussionSidebar — thành viên tích cực", () => {
 
     expect(await screen.findByText("Bình Công Khai")).toBeTruthy();
     expect(screen.getAllByText("Học viên ẩn danh")).toHaveLength(2);
-    // chữ cái đầu của người ẩn danh lấy từ nhãn (2 ký tự đầu), không phải "UN" của undefined
-    expect(screen.getAllByText("HỌ")).toHaveLength(2);
+    // chữ cái đầu của người ẩn danh lấy từ nhãn theo getInitials (chữ đầu của từ đầu + từ cuối, Q8-PG-09), không phải "UN" của undefined
+    expect(screen.getAllByText("HD")).toHaveLength(2);
     expect(screen.queryByText("UN")).toBeNull();
     expect(screen.getByAltText("Bình Công Khai")).toBeTruthy();
     // điểm vẫn hiện cho cả người ẩn danh

@@ -107,6 +107,7 @@ export function BottomNav({ role = "student", className }: BottomNavProps) {
   return (
     <>
     <nav
+      aria-label="Điều hướng nhanh"
       className={cn(
         "fixed bottom-4 left-2 right-2 sm:left-4 sm:right-4 bg-card/95 backdrop-blur-md border border-border rounded-2xl shadow-raised lg:hidden z-50",
         className

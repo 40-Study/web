@@ -178,7 +178,7 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
               {/* Optional message */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Lời nhắn <span className="text-slate-400 font-normal">(tuỳ chọn)</span>
+                  Lời nhắn <span className="text-slate-500 font-normal">(tuỳ chọn)</span>
                 </label>
                 <textarea
                   placeholder="Gửi lời nhắn kèm theo lời mời..."
@@ -188,7 +188,7 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 resize-none text-sm transition-colors"
                   maxLength={500}
                 />
-                <p className="mt-1 text-xs text-slate-400 text-right">{message.length}/500</p>
+                <p className="mt-1 text-xs text-slate-500 text-right">{message.length}/500</p>
               </div>
 
               {/* Submit */}

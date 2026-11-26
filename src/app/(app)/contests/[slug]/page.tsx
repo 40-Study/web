@@ -159,12 +159,14 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
 
 function InfoRow({ icon: Icon, label, value }: { icon: typeof Clock; label: string; value: React.ReactNode }) {
   return (
-    <div className="flex min-w-0 items-start gap-2">
-      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
-      <div className="min-w-0">
-        <dt className="text-xs text-gray-500">{label}</dt>
-        <dd className="break-words font-medium text-gray-900">{value}</dd>
-      </div>
+    // Q8-PG-10: `dl > div > dt + dd` hợp lệ khi div chỉ chứa dt/dd (trước đây có thêm một div bọc và icon làm axe báo
+    // `dlitem`/`definition-list`). Icon nằm trong dt, bù lề cho dd để giá trị thẳng hàng với nhãn.
+    <div className="min-w-0">
+      <dt className="flex items-center gap-2 text-xs text-gray-500">
+        <Icon className="h-4 w-4 shrink-0 text-gray-500" aria-hidden="true" />
+        {label}
+      </dt>
+      <dd className="break-words pl-6 font-medium text-gray-900">{value}</dd>
     </div>
   );
 }

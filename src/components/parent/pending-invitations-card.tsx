@@ -93,14 +93,14 @@ function InvitationItem({
 
           {/* Meta */}
           <div className="flex items-center gap-3 mt-2">
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-500">
               {formatTimeAgo(invitation.created_at)}
             </span>
             {expiryInfo && (
               <span
                 className={cn(
                   "flex items-center gap-1 text-xs",
-                  expiryInfo.urgent ? "text-amber-600" : "text-slate-400"
+                  expiryInfo.urgent ? "text-amber-600" : "text-slate-500"
                 )}
               >
                 {expiryInfo.urgent && <AlertTriangle className="w-3 h-3" />}

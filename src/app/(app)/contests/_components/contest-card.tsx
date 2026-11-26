@@ -45,7 +45,7 @@ export function ContestCard({ contest, participation }: ContestCardProps) {
       className="group flex min-w-0 flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-primary-300 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500"
     >
       <div className="flex items-start justify-between gap-2">
-        <h3 className="min-w-0 break-words text-base font-semibold text-gray-900 group-hover:text-primary-700">{contest.title}</h3>
+        <h2 className="min-w-0 break-words text-base font-semibold text-gray-900 group-hover:text-primary-700">{contest.title}</h2>
         <ContestPhaseBadge phase={contest.phase} />
       </div>
 

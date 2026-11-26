@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Flame } from "lucide-react";
+import { getInitials } from "@/lib/initials";
 
 interface AvatarProps {
   src?: string;
@@ -18,7 +19,7 @@ interface AvatarProps {
 }
 
 const tones = {
-  solid: "bg-primary-500 text-white",
+  solid: "bg-primary-600 text-white",
   soft: "bg-primary-100 text-primary-700",
 };
 
@@ -80,7 +81,7 @@ export function Avatar({
           />
         ) : (
           <span className="font-medium uppercase">
-            {fallback.slice(0, 2)}
+            {getInitials(fallback)}
           </span>
         )}
       </div>

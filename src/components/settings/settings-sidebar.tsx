@@ -63,7 +63,7 @@ export function SettingsSidebar({
   const showFamily = canAccessStudentOnlyRoute("/settings/family", mapOrgRoleToSystemRole(activeRole, roles) ?? activeRole);
 
   return (
-    <nav className={cn("w-full md:w-72 shrink-0", className)}>
+    <nav aria-label="Mục cài đặt" className={cn("w-full md:w-72 shrink-0", className)}>
       <div className="bg-white rounded-2xl border border-gray-100 p-2 shadow-sm">
         <div className="space-y-1">
           {navItems.map((item) => {
