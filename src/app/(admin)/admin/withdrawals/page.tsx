@@ -283,7 +283,11 @@ function AdminWithdrawalsContent() {
                           <>
                             <div>{w.bank_name}</div>
                             <div className="text-xs">
-                              {w.bank_account_number} — {w.bank_account_name}
+                              {/* QA8-A12: chỉ nối dấu gạch khi cả hai vế có chữ (tên chủ tài khoản có thể trống). */}
+                              {[w.bank_account_number, w.bank_account_name]
+                                .map((part) => part?.trim())
+                                .filter(Boolean)
+                                .join(" — ")}
                             </div>
                           </>
                         ) : (
