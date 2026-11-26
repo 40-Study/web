@@ -134,6 +134,8 @@ export default function LoginPage() {
           type="email"
           label="Email"
           placeholder="Nhập email của bạn"
+          name="email"
+          autoComplete="username"
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
@@ -147,6 +149,8 @@ export default function LoginPage() {
           type="password"
           label="Mật khẩu"
           placeholder="Nhập mật khẩu"
+          name="password"
+          autoComplete="current-password"
           value={password}
           onChange={(e) => {
             setPassword(e.target.value);

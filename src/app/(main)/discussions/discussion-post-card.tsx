@@ -12,6 +12,7 @@ import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import type { ForumPost } from "@/types/discussion";
 import { discussionCategoryLabel } from "./discussion-categories";
 import { formatVnDate } from "@/lib/vn-datetime";
+import { getInitials } from "@/lib/initials";
 
 interface DiscussionPostCardProps {
   post: ForumPost;
@@ -21,9 +22,9 @@ interface DiscussionPostCardProps {
 
 const CATEGORY_COLORS: Record<string, string> = {
   programming: "bg-slate-100 text-slate-600",
-  design: "bg-blue-100 text-blue-600",
-  "learning-tips": "bg-green-100 text-green-600",
-  project: "bg-purple-100 text-purple-600",
+  design: "bg-blue-100 text-blue-700",
+  "learning-tips": "bg-green-100 text-green-700",
+  project: "bg-purple-100 text-purple-700",
   qna: "bg-amber-100 text-amber-700",
 };
 
@@ -46,7 +47,7 @@ function stripHtml(html: string): string {
 export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCardProps) {
   const hasVoted = post.user_vote === "upvote";
   const categoryColor = CATEGORY_COLORS[post.category] ?? "bg-slate-100 text-slate-600";
-  const initials = post.author_name?.slice(0, 2).toUpperCase() ?? "??";
+  const initials = getInitials(post.author_name);
 
   // Q6-PG-12: sao chép phải báo kết quả; trình duyệt từ chối quyền clipboard (hoặc không có) từng ném lỗi chưa bắt.
   const handleShare = async () => {
@@ -72,7 +73,7 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
           )}
           <div>
             <p className="text-sm font-medium text-slate-800">{post.author_name}</p>
-            <p className="text-xs text-slate-400">{timeAgo(post.created_at)}</p>
+            <p className="text-xs text-slate-500">{timeAgo(post.created_at)}</p>
           </div>
           <span className={cn("ml-auto text-xs font-medium px-2.5 py-1 rounded-full", categoryColor)}>
             {discussionCategoryLabel(post.category)}
@@ -81,9 +82,9 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
 
         {/* Title + excerpt */}
         <Link href={`/discussions/${post.slug}`} className="block group">
-          <h3 className="font-semibold text-slate-900 group-hover:text-primary-600 transition-colors mb-1 line-clamp-2">
+          <h2 className="font-semibold text-slate-900 group-hover:text-primary-600 transition-colors mb-1 line-clamp-2">
             {post.title}
-          </h3>
+          </h2>
           <p className="text-sm text-slate-500 line-clamp-2">{stripHtml(post.content)}</p>
         </Link>
 
@@ -97,7 +98,7 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
             aria-pressed={hasVoted}
             className={cn(
               "inline-flex min-h-8 min-w-8 items-center justify-center gap-1.5 text-sm max-sm:min-h-11 transition-colors",
-              hasVoted ? "text-rose-500" : "text-slate-400 hover:text-rose-400"
+              hasVoted ? "text-rose-500" : "text-slate-500 hover:text-rose-400"
             )}
           >
             <Heart className={cn("w-4 h-4", hasVoted && "fill-rose-500")} aria-hidden="true" />
@@ -107,7 +108,7 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
           <Link
             href={`/discussions/${post.slug}`}
             aria-label={`Xem ${post.reply_count} phản hồi`}
-            className="inline-flex min-h-8 min-w-8 items-center justify-center gap-1.5 text-sm max-sm:min-h-11 text-slate-400 hover:text-primary-500 transition-colors"
+            className="inline-flex min-h-8 min-w-8 items-center justify-center gap-1.5 text-sm max-sm:min-h-11 text-slate-500 hover:text-primary-500 transition-colors"
           >
             <MessageSquare className="w-4 h-4" aria-hidden="true" />
             <span>{post.reply_count}</span>
@@ -116,7 +117,7 @@ export function DiscussionPostCard({ post, onVote, delay = 0 }: DiscussionPostCa
           <button
             type="button"
             onClick={() => void handleShare()}
-            className="inline-flex min-h-8 min-w-8 items-center justify-center gap-1.5 text-sm max-sm:min-h-11 text-slate-400 hover:text-slate-600 transition-colors ml-auto"
+            className="inline-flex min-h-8 min-w-8 items-center justify-center gap-1.5 text-sm max-sm:min-h-11 text-slate-500 hover:text-slate-600 transition-colors ml-auto"
           >
             <Share2 className="w-4 h-4" />
             <span>Chia sẻ</span>

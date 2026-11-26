@@ -15,6 +15,7 @@ import { usePublicProfile } from "@/hooks/queries/use-user-stats";
 import { useMyCertificates } from "@/hooks/queries/use-certificates";
 import type { AchievementWithStatusDTO } from "@/services/achievement.service";
 import type { PublicProfileActivity } from "@/services/user-stats.service";
+import { getInitials } from "@/lib/initials";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -134,7 +135,7 @@ function ProfileBanner({
                 <img src={user.avatar} alt="" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-2xl sm:text-4xl font-bold text-white">
-                  {user.name?.[0] || user.email?.[0]?.toUpperCase() || "?"}
+                  {getInitials(user.name || user.email)}
                 </span>
               )}
             </div>

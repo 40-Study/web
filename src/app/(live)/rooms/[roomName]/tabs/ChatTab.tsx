@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { api, MeetApiError } from '@/lib/meet/api';
 import { getMe } from '@/lib/meet/auth';
+import { getInitials } from "@/lib/initials";
 
 interface ChatMessage {
   id: string;
@@ -166,11 +167,6 @@ export default function ChatTab({ sessionId, onClose, broadcast, onChatMessage }
     } catch {
       return '';
     }
-  };
-
-  // Get initials for avatar
-  const getInitials = (name: string) => {
-    return name.charAt(0).toUpperCase();
   };
 
   // Generate consistent color from user id

@@ -6,6 +6,7 @@
 import { api } from "@/lib/api-client";
 import { STORAGE_KEYS, APP_VERSION } from "@/lib/constants";
 import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
+import { normalizeEmail } from "@/lib/email-validation";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
@@ -400,25 +401,30 @@ export const authService = {
 
   /** POST /auth/register/request - Request OTP for registration */
   registerRequest: (data: RegisterRequestDTO) =>
-    api.post<{ message: string }>("/auth/register/request", data).then((r) => r.data),
+    api
+      .post<{ message: string }>("/auth/register/request", { ...data, email: normalizeEmail(data.email) })
+      .then((r) => r.data),
 
   /** POST /auth/register/resend-otp - Gửi lại OTP đăng ký từ đăng ký đang chờ phía server (N-07) */
   registerResendOtp: (data: { email: string }) =>
-    api.post<{ message: string }>("/auth/register/resend-otp", data).then((r) => r.data),
+    api
+      .post<{ message: string }>("/auth/register/resend-otp", { ...data, email: normalizeEmail(data.email) })
+      .then((r) => r.data),
 
   /** POST /auth/register - Complete registration with OTP */
   register: (data: RegisterDTO) =>
     api
       .post<{ message: string; data: { id: string; email: string; user_name: string; full_name?: string } }>(
         "/auth/register",
-        data
+        { ...data, email: normalizeEmail(data.email) }
       )
       .then((r) => r.data),
 
   // ─── Login Flow ─────────────────────────────────────────────────────────
 
   /** POST /auth/login - Returns session_token + roles OR access_token directly */
-  login: (data: LoginDTO) => api.post<LoginResponse>("/auth/login", data).then((r) => r.data),
+  login: (data: LoginDTO) =>
+    api.post<LoginResponse>("/auth/login", { ...data, email: normalizeEmail(data.email) }).then((r) => r.data),
 
   /** POST /auth/select-role - Select a role during login flow (uses session_token) */
   selectRole: (data: SelectRoleDTO) =>
@@ -519,11 +525,15 @@ export const authService = {
 
   /** POST /auth/reset-password/request - Request password reset OTP */
   resetPasswordRequest: (data: ResetPasswordRequestDTO) =>
-    api.post<{ message: string }>("/auth/reset-password/request", data).then((r) => r.data),
+    api
+      .post<{ message: string }>("/auth/reset-password/request", { ...data, email: normalizeEmail(data.email) })
+      .then((r) => r.data),
 
   /** POST /auth/reset-password - Complete password reset */
   resetPassword: (data: ResetPasswordDTO) =>
-    api.post<{ message: string }>("/auth/reset-password", data).then((r) => r.data),
+    api
+      .post<{ message: string }>("/auth/reset-password", { ...data, email: normalizeEmail(data.email) })
+      .then((r) => r.data),
 
   /** PUT /auth/change-password - Change password (authenticated) */
   changePassword: (data: ChangePasswordDTO) =>

@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
  * Điểm danh thiếu icon cho "Có phép"). Một bảng dùng chung cho cả ba nơi.
  */
 const ATTENDANCE_STATUS: Record<string, { label: string; className: string; icon: React.ElementType }> = {
-  present: { label: "Có mặt", className: "text-green-600", icon: CheckCircle },
-  late: { label: "Trễ", className: "text-amber-600", icon: Clock },
-  absent: { label: "Vắng", className: "text-red-600", icon: XCircle },
+  present: { label: "Có mặt", className: "text-green-700", icon: CheckCircle },
+  late: { label: "Trễ", className: "text-amber-700", icon: Clock },
+  absent: { label: "Vắng", className: "text-red-700", icon: XCircle },
   excused: { label: "Có phép", className: "text-blue-600", icon: FileCheck },
 };
 

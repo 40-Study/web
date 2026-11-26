@@ -228,3 +228,11 @@ describe("BottomNav — giảng viên với tới MỌI trang của sidebar (Q3-
     }
   });
 });
+
+describe("BottomNav — landmark có tên (Q8-PG-10)", () => {
+  it("nav có aria-label để không trùng landmark không tên với nav khác của trang (axe landmark-unique)", () => {
+    useAuthStore.setState({ isAuthenticated: false, activeRole: null });
+    render(<BottomNav />);
+    expect(screen.getByRole("navigation", { name: "Điều hướng nhanh" })).toBeTruthy();
+  });
+});

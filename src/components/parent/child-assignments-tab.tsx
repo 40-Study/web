@@ -11,6 +11,7 @@ import {
   isUnfinishedSubmission,
 } from "./child-assignments";
 import { formatVnDate } from "@/lib/vn-datetime";
+import { ChildSectionError } from "./child-section-error";
 
 /** "3/3 TC" là số test case, phụ huynh không hiểu (QA-B-26): ghi thành câu. */
 function resultText(a: ChildAssignment): string | null {
@@ -27,9 +28,14 @@ function resultText(a: ChildAssignment): string | null {
 export function ChildAssignmentsTab({
   data,
   isLoading,
+  isError = false,
+  onRetry,
 }: {
   data: ChildAssignmentsResponse | undefined;
   isLoading: boolean;
+  /** Q8-PG-05: API lỗi không được đọc thành "Chưa có bài tập nào". */
+  isError?: boolean;
+  onRetry?: () => unknown;
 }) {
   if (isLoading) {
     return (
@@ -38,6 +44,7 @@ export function ChildAssignmentsTab({
       </div>
     );
   }
+  if (isError && !data && onRetry) return <ChildSectionError label="danh sách bài tập" onRetry={onRetry} />;
   const stats = data?.stats;
   const assignments = data?.assignments ?? [];
   const now = Date.now();
@@ -49,19 +56,19 @@ export function ChildAssignmentsTab({
         <>
           <p className="mb-2 text-sm text-gray-500">Tổng {stats.total_assignments} bài tập</p>
           <div className={cn("grid grid-cols-2 gap-3 mb-6", submitted ? "md:grid-cols-5" : "md:grid-cols-4")}>
-            <StatCell value={stats.completed} label="Hoàn thành" tone="bg-green-50 text-green-600" />
+            <StatCell value={stats.completed} label="Hoàn thành" tone="bg-green-50 text-green-700" />
             {/* Q5-PG-13: "Chờ chấm" là việc của giảng viên. "Cần chú ý" (không phải "Cần làm lại": có cả bài lỗi chấm)
                 là đúng tên và đúng nhóm trên tab Tổng quan / trang chủ. */}
             {submitted ? (
               <>
                 <StatCell value={submitted.awaiting} label="Chờ chấm" tone="bg-blue-50 text-blue-600" />
-                <StatCell value={submitted.retry} label="Cần chú ý" tone="bg-amber-50 text-amber-600" />
+                <StatCell value={submitted.retry} label="Cần chú ý" tone="bg-amber-50 text-amber-700" />
               </>
             ) : (
               <StatCell value={stats.in_progress} label="Đã nộp, chưa xong" tone="bg-blue-50 text-blue-600" />
             )}
             <StatCell value={stats.not_started} label="Chưa nộp" tone="bg-gray-50 text-gray-700" />
-            <StatCell value={stats.overdue} label="Quá hạn, chưa nộp" tone="bg-red-50 text-red-600" />
+            <StatCell value={stats.overdue} label="Quá hạn, chưa nộp" tone="bg-red-50 text-red-700" />
           </div>
         </>
       )}
@@ -84,7 +91,7 @@ export function ChildAssignmentsTab({
                       {[assignmentTypeLabel(a.type), difficultyLabel(a.difficulty)].filter(Boolean).join(" | ")}
                     </p>
                     {a.due_date && (
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-gray-500">
                         Hạn nộp {formatVnDate(a.due_date)}
                       </p>
                     )}
@@ -94,7 +101,7 @@ export function ChildAssignmentsTab({
                       {CHILD_ASSIGNMENT_STATE_LABEL[state]}
                     </span>
                     {result && <p className="text-xs text-gray-500">{result}</p>}
-                    <p className="text-xs text-gray-400">{a.submission_count} lần nộp</p>
+                    <p className="text-xs text-gray-500">{a.submission_count} lần nộp</p>
                   </div>
                 </div>
               </li>

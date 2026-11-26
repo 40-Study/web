@@ -9,17 +9,20 @@ import { cn } from "@/lib/utils";
 import { useLeaderboard } from "@/hooks/queries/use-leaderboard";
 import { leaderboardEntryKey, leaderboardEntryName } from "@/lib/leaderboard-display";
 import { DISCUSSION_CATEGORIES, GENERAL_DISCUSSION_CATEGORY, generalDiscussionCount } from "./discussion-categories";
+import { getInitials } from "@/lib/initials";
 
 interface DiscussionSidebarProps {
   /** Tổng số bài theo API (không phải số bài đã tải). */
   total?: number;
   /** Tổng số bài theo từng danh mục theo API; thiếu khoá = chưa biết, hiện "–". */
   categoryCounts?: Record<string, number>;
+  /** Q8-PG-04: danh sách bài lỗi nên số liệu 0/"–" sẽ sai sự thật; ẩn cột số thay vì hiện "Tất cả 0". */
+  countsUnavailable?: boolean;
   activeCategory?: string;
   onCategoryChange: (cat: string | undefined) => void;
 }
 
-export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, onCategoryChange }: DiscussionSidebarProps) {
+export function DiscussionSidebar({ total, categoryCounts = {}, countsUnavailable = false, activeCategory, onCategoryChange }: DiscussionSidebarProps) {
   const { data: leaderboard } = useLeaderboard({ limit: 5 });
   const members = leaderboard?.entries ?? [];
   const categoryRows = [
@@ -33,7 +36,7 @@ export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="w-4 h-4 text-primary-500" />
-          <h3 className="text-sm font-semibold text-slate-800">Chủ đề nổi bật</h3>
+          <h2 className="text-sm font-semibold text-slate-800">Chủ đề nổi bật</h2>
         </div>
         <div className="space-y-1">
           <button
@@ -46,7 +49,7 @@ export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, 
             )}
           >
             <span>Tất cả</span>
-            <span className="text-xs text-slate-400">{total ?? "–"}</span>
+            {!countsUnavailable && <span className="text-xs text-slate-500">{total ?? "–"}</span>}
           </button>
           {categoryRows.map((cat) => (
             <button
@@ -62,7 +65,7 @@ export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, 
               <span>
                 {cat.emoji} {cat.label}
               </span>
-              <span className="text-xs text-slate-400">{cat.count ?? "–"}</span>
+              {!countsUnavailable && <span className="text-xs text-slate-500">{cat.count ?? "–"}</span>}
             </button>
           ))}
         </div>
@@ -73,12 +76,12 @@ export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, 
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-4">
             <Users className="w-4 h-4 text-primary-500" />
-            <h3 className="text-sm font-semibold text-slate-800">Thành viên tích cực</h3>
+            <h2 className="text-sm font-semibold text-slate-800">Thành viên tích cực</h2>
           </div>
           <div className="space-y-3">
             {members.map((m, index) => {
               const name = leaderboardEntryName(m);
-              const initials = name.slice(0, 2).toUpperCase();
+              const initials = getInitials(name);
               return (
                 <div key={leaderboardEntryKey(m, index)} className="flex items-center gap-3">
                   {m.avatar_url ? (
@@ -92,9 +95,9 @@ export function DiscussionSidebar({ total, categoryCounts = {}, activeCategory, 
                     <p className="text-sm font-medium text-slate-800 truncate">
                       {name}
                     </p>
-                    <p className="text-xs text-slate-400">{Number(m.points).toLocaleString("vi-VN")} điểm</p>
+                    <p className="text-xs text-slate-500">{Number(m.points).toLocaleString("vi-VN")} điểm</p>
                   </div>
-                  <span className="text-xs font-bold text-slate-400">#{m.rank}</span>
+                  <span className="text-xs font-bold text-slate-500">#{m.rank}</span>
                 </div>
               );
             })}

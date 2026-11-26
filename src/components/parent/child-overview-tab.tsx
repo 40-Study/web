@@ -55,7 +55,7 @@ export function ChildOverviewTab({
         {upcoming.map((a) => (
           <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
             <span className="truncate text-gray-700">{a.title}</span>
-            <span className="shrink-0 text-gray-400">{formatVnDate(a.due_date)}</span>
+            <span className="shrink-0 text-gray-500">{formatVnDate(a.due_date)}</span>
           </li>
         ))}
       </Section>
@@ -121,7 +121,7 @@ function Section({
         <Icon className="h-4 w-4 text-primary-600" />
         <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
       </div>
-      {empty ? <p className="text-sm text-gray-400">{empty}</p> : <ul className="space-y-2">{children}</ul>}
+      {empty ? <p className="text-sm text-gray-500">{empty}</p> : <ul className="space-y-2">{children}</ul>}
     </section>
   );
 }

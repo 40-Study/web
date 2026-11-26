@@ -13,7 +13,8 @@ describe("PlayerHeader", () => {
     useAuthStore.setState({ user: { id: "u1", email: "student1@demo.com", name: "Lê Văn C" } });
     render(<PlayerHeader courseSlug="git" />);
     expect(screen.queryByText("TK")).toBeNull();
-    expect(screen.getByText("Lê")).toBeTruthy();
+    // Q8-PG-09: chữ tắt = chữ đầu của từ đầu + từ cuối ("Lê Văn C" -> "LC"), không phải 2 chữ đầu của họ.
+    expect(screen.getByText("LC")).toBeTruthy();
   });
 
   it("avatar dẫn tới trang hồ sơ có thật /profile/<id>, không phải /profile (404)", () => {

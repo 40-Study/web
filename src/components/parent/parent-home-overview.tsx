@@ -28,6 +28,8 @@ import { CHILD_ASSIGNMENT_STATE_LABEL, childAssignmentState, splitAssignmentsByD
 import { ChildAttendanceStatus } from "./child-attendance-status";
 import { formatStudyMinutes } from "@/lib/format-study-time";
 import { formatVnDate } from "@/lib/vn-datetime";
+import { getInitials } from "@/lib/initials";
+import { ChildSectionError } from "./child-section-error";
 
 function StatPill({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | number }) {
   return (
@@ -44,9 +46,9 @@ function StatPill({ icon: Icon, label, value }: { icon: React.ElementType; label
 /** Một thẻ tổng quan cho MỘT con — tự gọi hook riêng (đúng Rules of Hooks vì mỗi instance là 1 lần gọi component). */
 function ParentChildOverviewCard({ child }: { child: Child }) {
   const displayName = child.full_name || child.username;
-  const { data: overview, isLoading: loadingOverview } = useChildOverview(child.id);
-  const { data: assignmentsData, isLoading: loadingAssignments } = useChildAssignments(child.id, 1, 20);
-  const { data: attendanceData, isLoading: loadingAttendance } = useChildAttendance(child.id, 1, 3);
+  const { data: overview, isLoading: loadingOverview, isError: overviewError, refetch: refetchOverview } = useChildOverview(child.id);
+  const { data: assignmentsData, isLoading: loadingAssignments, isError: assignmentsError, refetch: refetchAssignments } = useChildAssignments(child.id, 1, 20);
+  const { data: attendanceData, isLoading: loadingAttendance, isError: attendanceError, refetch: refetchAttendance } = useChildAttendance(child.id, 1, 3);
 
   // Bài tập sắp hạn (hạn >= hiện tại, gần nhất trước) tách khỏi bài đã quá hạn (P-02, QA3 261104). Bài con đã
   // nộp không bao giờ tính quá hạn (QA-B-23), cùng quy tắc với tab Tổng quan và tab Bài tập.
@@ -67,7 +69,7 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
             <Image src={child.avatar_url} alt={displayName} width={44} height={44} className="rounded-full object-cover shrink-0" />
           ) : (
             <div className="w-11 h-11 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-              <span className="text-base font-semibold text-primary-700">{displayName.charAt(0).toUpperCase()}</span>
+              <span className="text-base font-semibold text-primary-700">{getInitials(displayName)}</span>
             </div>
           )}
           <div className="min-w-0">
@@ -91,8 +93,11 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
           <StatPill icon={Clock} label="Thời gian học" value={formatStudyMinutes(overview.total_study_minutes)} />
           <StatPill icon={Flame} label="Chuỗi ngày học" value={overview.current_streak} />
         </div>
+      ) : overviewError ? (
+        // Q8-PG-05 (quyết định: mỗi widget một lỗi riêng): lỗi tải không phải "chưa có dữ liệu".
+        <div className="mb-4"><ChildSectionError compact label="tổng quan" onRetry={() => refetchOverview()} /></div>
       ) : (
-        <p className="text-sm text-gray-400 mb-4">Chưa có dữ liệu tổng quan.</p>
+        <p className="text-sm text-gray-500 mb-4">Chưa có dữ liệu tổng quan.</p>
       )}
 
       <div className="grid sm:grid-cols-2 gap-4 pt-3 border-t border-gray-100">
@@ -104,14 +109,16 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
           </div>
           {loadingAssignments ? (
             <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+          ) : assignmentsError && !assignmentsData ? (
+            <ChildSectionError compact label="bài tập" onRetry={() => refetchAssignments()} />
           ) : upcomingAssignments.length === 0 ? (
-            <p className="text-xs text-gray-400">Không có bài tập nào sắp tới hạn.</p>
+            <p className="text-xs text-gray-500">Không có bài tập nào sắp tới hạn.</p>
           ) : (
             <ul className="space-y-1.5">
               {upcomingAssignments.map((a) => (
                 <li key={a.id} className="text-xs text-gray-600 flex items-center justify-between gap-2">
                   <span className="truncate">{a.title}</span>
-                  <span className="text-gray-400 shrink-0">
+                  <span className="text-gray-500 shrink-0">
                     {a.due_date ? formatVnDate(a.due_date) : ""}
                   </span>
                 </li>
@@ -158,8 +165,10 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
           </div>
           {loadingAttendance ? (
             <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+          ) : attendanceError && !attendanceData ? (
+            <ChildSectionError compact label="điểm danh" onRetry={() => refetchAttendance()} />
           ) : recentAttendance.length === 0 ? (
-            <p className="text-xs text-gray-400">Chưa có dữ liệu điểm danh.</p>
+            <p className="text-xs text-gray-500">Chưa có dữ liệu điểm danh.</p>
           ) : (
             <ul className="space-y-1.5">
               {recentAttendance.map((r) => (

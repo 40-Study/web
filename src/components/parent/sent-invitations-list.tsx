@@ -128,7 +128,7 @@ function InvitationCard({
           </div>
 
           {/* Meta info */}
-          <div className="mt-2 flex items-center gap-3 text-xs text-slate-400">
+          <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
             <span>Gửi lúc {formatDate(invitation.created_at)}</span>
             {invitation.expires_at && canRevoke && (
               <span className={expiringSoon ? "text-amber-500 font-medium" : ""}>

@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/stores/auth.store";
 import { useMe, useUpdateProfile } from "@/hooks/queries/use-auth";
-import { USER_NAME_RULE_MESSAGE, validateUserName } from "@/lib/user-name";
+import { USER_NAME_RULE_MESSAGE, USERNAME_TAKEN_MESSAGE, isUsernameTakenError, validateUserName } from "@/lib/user-name";
 import { PHONE_FORMAT_MESSAGE, normalizePhone } from "@/lib/phone";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -49,6 +49,7 @@ export function ProfileSettings() {
     handleSubmit,
     watch,
     reset,
+    setError,
     formState: { errors, isDirty },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -95,18 +96,26 @@ export function ProfileSettings() {
   };
 
   const onSubmit = async (data: ProfileFormData) => {
-    updateProfile.mutate({
-      full_name: data.fullName,
-      username: data.username || undefined,
-      // D5 (QA vòng 2): gửi "" khi người dùng xoá trắng — `|| undefined` làm mất trường khỏi
-      // body nên backend (chỉ ghi khi field có mặt) giữ nguyên giá trị cũ. Backend nhận "" và
-      // ghi rỗng đúng (auth_service.go UpdateMe; DTO bio chỉ validate max=1000).
-      bio: data.bio ?? "",
-      // Backend phân biệt 3 trạng thái: vắng mặt = giữ nguyên, null = XOÁ, chuỗi = đặt số mới.
-      // Xoá trắng ô khi đang có SĐT -> gửi null. Tài khoản vốn chưa có SĐT mà ô trống thì không
-      // gửi gì (không có gì để xoá, và "" không phải số hợp lệ).
-      phone: data.phone?.trim() ? normalizePhone(data.phone) : profileData?.phone ? null : undefined,
-    });
+    updateProfile.mutate(
+      {
+        full_name: data.fullName,
+        username: data.username || undefined,
+        // D5 (QA vòng 2): gửi "" khi người dùng xoá trắng — `|| undefined` làm mất trường khỏi
+        // body nên backend (chỉ ghi khi field có mặt) giữ nguyên giá trị cũ. Backend nhận "" và
+        // ghi rỗng đúng (auth_service.go UpdateMe; DTO bio chỉ validate max=1000).
+        bio: data.bio ?? "",
+        // Backend phân biệt 3 trạng thái: vắng mặt = giữ nguyên, null = XOÁ, chuỗi = đặt số mới.
+        // Xoá trắng ô khi đang có SĐT -> gửi null. Tài khoản vốn chưa có SĐT mà ô trống thì không
+        // gửi gì (không có gì để xoá, và "" không phải số hợp lệ).
+        phone: data.phone?.trim() ? normalizePhone(data.phone) : profileData?.phone ? null : undefined,
+      },
+      {
+        // Q8-PG-02 (C19): 409 ERR_USERNAME_EXISTS hiện dưới ô Username (hook đã bỏ toast cho mã này).
+        onError: (error) => {
+          if (isUsernameTakenError(error)) setError("username", { type: "server", message: USERNAME_TAKEN_MESSAGE });
+        },
+      }
+    );
   };
 
   const hasChanges = isDirty || avatarFile !== null;

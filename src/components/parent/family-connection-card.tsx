@@ -15,6 +15,7 @@ import { useChildren } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth.store";
 import { normalizeRole } from "@/lib/routes";
 import { InviteParentModal } from "./invite-parent-modal";
+import { getInitials } from "@/lib/initials";
 
 interface FamilyConnectionCardProps {
   className?: string;
@@ -73,7 +74,7 @@ export function FamilyConnectionCard({ className }: FamilyConnectionCardProps) {
         {children.length === 0 ? (
           <div className="text-center py-4">
             <p className="text-sm text-gray-500 mb-1">Chưa có liên kết nào</p>
-            <p className="text-xs text-gray-400">Chờ con mời bạn tham gia</p>
+            <p className="text-xs text-gray-500">Chờ con mời bạn tham gia</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -96,7 +97,7 @@ export function FamilyConnectionCard({ className }: FamilyConnectionCardProps) {
                   ) : (
                     <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center">
                       <span className="text-sm font-medium text-primary-700">
-                        {displayName.charAt(0).toUpperCase()}
+                        {getInitials(displayName)}
                       </span>
                     </div>
                   )}

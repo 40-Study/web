@@ -108,7 +108,7 @@ export default function NotificationsPage() {
                     {item.content && (
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{item.content}</p>
                     )}
-                    <p className="text-xs text-gray-400 mt-1.5">{timeAgo(item.created_at)}</p>
+                    <p className="text-xs text-gray-500 mt-1.5">{timeAgo(item.created_at)}</p>
                   </div>
                 </div>
               </button>

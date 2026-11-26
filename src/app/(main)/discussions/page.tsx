@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { QueryState } from "@/components/common/query-state";
 import { loginHref } from "@/lib/login-redirect";
 import { useAuthStore } from "@/stores/auth.store";
 import { useDiscussionPosts, useDiscussionCategoryTotals, useCreateDiscussionPost, useVoteDiscussion, useRemoveVoteDiscussion } from "@/hooks/queries/use-discussions";
@@ -50,7 +51,7 @@ function DiscussionsPageContent() {
     router.replace(next ? `/discussions?category=${encodeURIComponent(next)}` : "/discussions", { scroll: false });
   };
 
-  const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = useDiscussionPosts(category);
+  const { data, isLoading, isError, error, refetch, hasNextPage, isFetchingNextPage, fetchNextPage } = useDiscussionPosts(category);
   const categoryTotals = useDiscussionCategoryTotals(TOTAL_KEYS);
   const createPost = useCreateDiscussionPost();
   const votePost = useVoteDiscussion();
@@ -94,7 +95,7 @@ function DiscussionsPageContent() {
               <p className="text-sm text-slate-500">Đăng nhập để bắt đầu một cuộc thảo luận.</p>
               <Link
                 href={loginHref("/discussions")}
-                className="shrink-0 rounded-xl bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
+                className="shrink-0 rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
               >
                 Đăng nhập để đăng bài
               </Link>
@@ -117,6 +118,11 @@ function DiscussionsPageContent() {
                 </div>
               ))}
             </div>
+          ) : isError && posts.length === 0 ? (
+            // Q8-PG-04: API lỗi không được đọc thành "Chưa có bài viết nào, hãy mở đầu cuộc thảo luận".
+            <QueryState isError error={error} onRetry={() => refetch()}>
+              {null}
+            </QueryState>
           ) : posts.length === 0 ? (
             <div className="text-center py-16">
               <div className="mx-auto w-14 h-14 rounded-2xl bg-primary-50 flex items-center justify-center mb-4">
@@ -154,10 +160,11 @@ function DiscussionsPageContent() {
         </div>
 
         {/* Sidebar */}
-        <aside className="w-64 shrink-0 hidden lg:block">
+        <aside aria-label="Chủ đề và thành viên tích cực" className="w-64 shrink-0 hidden lg:block">
           <DiscussionSidebar
             total={allTotal}
             categoryCounts={categoryTotals}
+            countsUnavailable={isError && posts.length === 0}
             activeCategory={category}
             onCategoryChange={handleCategoryChange}
           />

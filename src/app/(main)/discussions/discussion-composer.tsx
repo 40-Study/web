@@ -39,7 +39,7 @@ export function DiscussionComposer({ onSubmit, isSubmitting }: DiscussionCompose
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onFocus={() => setExpanded(true)}
-        className="w-full text-sm font-medium placeholder:text-slate-400 outline-none text-slate-800 mb-0"
+        className="w-full text-sm font-medium placeholder:text-slate-500 outline-none text-slate-800 mb-0"
       />
 
       {expanded && (
@@ -72,7 +72,7 @@ export function DiscussionComposer({ onSubmit, isSubmitting }: DiscussionCompose
           <div className="flex justify-end gap-2">
             <button
               onClick={() => setExpanded(false)}
-              className="text-sm text-slate-400 hover:text-slate-600 px-4 py-2"
+              className="text-sm text-slate-500 hover:text-slate-600 px-4 py-2"
             >
               Huỷ
             </button>

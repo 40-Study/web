@@ -12,6 +12,7 @@ import type { ForumComment } from "@/types/discussion";
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import { DiscussionDeleteButton } from "./discussion-delete-button";
 import { formatVnDate } from "@/lib/vn-datetime";
+import { getInitials } from "@/lib/initials";
 
 interface DiscussionCommentProps {
   comment: ForumComment;
@@ -53,7 +54,7 @@ export function DiscussionComment({
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [replyContent, setReplyContent] = useState("");
   const hasVoted = comment.user_vote === "upvote";
-  const initials = comment.author_name?.slice(0, 2).toUpperCase() ?? "??";
+  const initials = getInitials(comment.author_name);
 
   const handleReplySubmit = () => {
     if (!replyContent.trim()) return;
@@ -79,7 +80,7 @@ export function DiscussionComment({
           {/* Author + time */}
           <div className="flex items-baseline gap-2 mb-1">
             <span className="text-sm font-semibold text-slate-800">{comment.author_name}</span>
-            <span className="text-xs text-slate-400">{timeAgo(comment.created_at)}</span>
+            <span className="text-xs text-slate-500">{timeAgo(comment.created_at)}</span>
           </div>
 
           {/* Content */}
@@ -94,7 +95,7 @@ export function DiscussionComment({
               onClick={() => onVote(comment.id, hasVoted)}
               className={cn(
                 "flex items-center gap-1 text-xs transition-colors",
-                hasVoted ? "text-rose-500" : "text-slate-400 hover:text-rose-400"
+                hasVoted ? "text-rose-500" : "text-slate-500 hover:text-rose-400"
               )}
             >
               <Heart className={cn("w-3.5 h-3.5", hasVoted && "fill-rose-500")} />
@@ -104,7 +105,7 @@ export function DiscussionComment({
             {canReply && depth < 2 && (
               <button
                 onClick={() => setShowReplyBox(!showReplyBox)}
-                className="flex items-center gap-1 text-xs text-slate-400 hover:text-primary-500 transition-colors"
+                className="flex items-center gap-1 text-xs text-slate-500 hover:text-primary-500 transition-colors"
               >
                 <CornerDownRight className="w-3.5 h-3.5" />
                 Trả lời
@@ -132,7 +133,7 @@ export function DiscussionComment({
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowReplyBox(false)}
-                  className="text-xs text-slate-400 hover:text-slate-600 px-3 py-1.5"
+                  className="text-xs text-slate-500 hover:text-slate-600 px-3 py-1.5"
                 >
                   Huỷ
                 </button>

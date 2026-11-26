@@ -49,7 +49,7 @@ export function Footer() {
 
           {/* Khám phá */}
           <div>
-            <h3 className="font-heading font-semibold text-foreground mb-4">Khám phá</h3>
+            <h2 className="font-heading font-semibold text-foreground mb-4">Khám phá</h2>
             <ul className="space-y-3">
               {exploreLinks.map((item) => (
                 <li key={item.href}>
@@ -63,7 +63,7 @@ export function Footer() {
 
           {/* Hỗ trợ — thay khối newsletter giả bằng lối vào trang trợ giúp thật */}
           <div>
-            <h3 className="font-heading font-semibold text-foreground mb-4">Hỗ trợ</h3>
+            <h2 className="font-heading font-semibold text-foreground mb-4">Hỗ trợ</h2>
             <ul className="space-y-3">
               <li>
                 <Link href="/help" className="text-sm text-muted-foreground hover:text-foreground transition-colors">

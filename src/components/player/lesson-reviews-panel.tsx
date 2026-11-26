@@ -7,6 +7,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useCreateReview } from "@/hooks/queries/use-reviews";
 import type { ReviewListResponse } from "@/services/review.service";
 import { formatVnDate } from "@/lib/vn-datetime";
+import { getInitials } from "@/lib/initials";
 
 function Stars({ value, size = "w-4 h-4" }: { value: number; size?: string }) {
   return (
@@ -137,7 +138,7 @@ export function LessonReviewsPanel({ courseId, data, isLoading, isError }: Lesso
         <div key={review.id} className="border-b border-gray-100 pb-4 last:border-0">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600 shrink-0">
-              {(review.user_name || "?").charAt(0).toUpperCase()}
+              {getInitials(review.user_name)}
             </div>
             <div>
               <p className="text-sm font-medium text-gray-900">{review.user_name || "Học viên"}</p>

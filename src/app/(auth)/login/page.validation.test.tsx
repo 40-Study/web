@@ -69,3 +69,11 @@ describe("LoginPage — validate tiếng Việt", () => {
     expect(login.mutate.mock.calls[0]?.[0]).toMatchObject({ email: "admin@demo.com", password: "Demo@123" });
   });
 });
+
+describe("LoginPage — autocomplete (Q8-PG-08, WCAG 1.3.5)", () => {
+  it("email là 'username' và mật khẩu là 'current-password' để trình quản lý mật khẩu ghép đôi", () => {
+    render(<LoginPage />);
+    expect(screen.getByLabelText("Email").getAttribute("autocomplete")).toBe("username");
+    expect(screen.getByLabelText("Mật khẩu").getAttribute("autocomplete")).toBe("current-password");
+  });
+});

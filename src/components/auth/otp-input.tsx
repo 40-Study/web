@@ -43,14 +43,43 @@ export function OtpInput({
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
+  // Cả mã (dán, hoặc trình duyệt/bàn phím điện thoại tự điền qua autocomplete="one-time-code") đổ vào các ô từ ô đầu.
+  const applyDigits = useCallback(
+    (digits: string) => {
+      const pastedData = digits.replace(/\D/g, "").slice(0, length);
+      if (!pastedData) return;
+
+      const newOtp = Array(length).fill("");
+      for (let i = 0; i < pastedData.length; i++) {
+        newOtp[i] = pastedData[i];
+      }
+      setOtp(newOtp);
+
+      const focusIndex = Math.min(pastedData.length, length - 1);
+      inputRefs.current[focusIndex]?.focus();
+
+      if (pastedData.length === length) {
+        onCompleteRef.current?.(pastedData);
+      }
+    },
+    [length]
+  );
+
   // N-14 (QA4 261123): tính mã mới từ state hiện tại rồi gọi `onComplete` NGOÀI hàm cập nhật của setOtp. Gọi bên
   // trong thì React chạy nó lúc render OtpInput, setState của trang cha thành "update while rendering".
   const handleChange = useCallback(
     (index: number, value: string) => {
       if (!/^\d*$/.test(value)) return;
+      // Q8-PG-08: ô đầu nhận cả mã khi trình duyệt tự điền mã một lần (one-time-code). Chỉ coi là tự điền khi đó là cả mã,
+      // hoặc ô đang trống; ô 1 đã có số mà gõ thêm một chữ ("1" -> "19" / "91") là gõ lại chữ số đầu, không được xoá cả mã.
+      if (value.length > 1 && index === 0 && (value.length >= length || !otp[0])) {
+        applyDigits(value);
+        return;
+      }
 
       const newOtp = [...otp];
-      newOtp[index] = value.slice(-1);
+      // Ô đã có số: giữ ký tự MỚI gõ (bỏ số cũ khỏi giá trị), kể cả khi caret ở đầu hay cuối ô.
+      newOtp[index] = value.length > 1 && otp[index] ? value.replace(otp[index], "").slice(-1) : value.slice(-1);
       setOtp(newOtp);
 
       if (value && index < length - 1) {
@@ -62,7 +91,7 @@ export function OtpInput({
         onCompleteRef.current?.(joined);
       }
     },
-    [length, otp]
+    [length, otp, applyDigits]
   );
 
   const handleKeyDown = useCallback(
@@ -82,23 +111,9 @@ export function OtpInput({
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
       e.preventDefault();
-      const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, length);
-      if (!pastedData) return;
-
-      const newOtp = Array(length).fill("");
-      for (let i = 0; i < pastedData.length; i++) {
-        newOtp[i] = pastedData[i];
-      }
-      setOtp(newOtp);
-
-      const focusIndex = Math.min(pastedData.length, length - 1);
-      inputRefs.current[focusIndex]?.focus();
-
-      if (pastedData.length === length) {
-        onCompleteRef.current?.(pastedData);
-      }
+      applyDigits(e.clipboardData.getData("text"));
     },
-    [length]
+    [applyDigits]
   );
 
   const handleResend = async () => {
@@ -129,7 +144,10 @@ export function OtpInput({
             }}
             type="text"
             inputMode="numeric"
-            maxLength={1}
+            // Ô đầu cho tới `length` ký tự để mã tự điền (one-time-code) không bị cắt còn một số; ô sau vẫn một số.
+            maxLength={index === 0 ? length : 1}
+            autoComplete={index === 0 ? "one-time-code" : "off"}
+            name={index === 0 ? "otp" : undefined}
             value={digit}
             aria-label={`Chữ số OTP ${index + 1}`}
             onChange={(e) => handleChange(index, e.target.value)}

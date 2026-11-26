@@ -65,3 +65,49 @@ describe("OtpInput onResend", () => {
     expect(screen.queryByText(/Gửi lại mã sau/)).toBeNull();
   });
 });
+
+describe("OtpInput autofill (Q8-PG-08)", () => {
+  it("ô đầu khai báo one-time-code; các ô sau không", () => {
+    render(<OtpInput />);
+    expect(screen.getByLabelText("Chữ số OTP 1").getAttribute("autocomplete")).toBe("one-time-code");
+    expect(screen.getByLabelText("Chữ số OTP 2").getAttribute("autocomplete")).toBe("off");
+  });
+
+  it("trình duyệt điền cả mã vào ô đầu: chia đủ 6 ô và gọi onComplete một lần", () => {
+    const onComplete = vi.fn();
+    render(<OtpInput onComplete={onComplete} />);
+    fireEvent.change(screen.getByLabelText("Chữ số OTP 1"), { target: { value: "482913" } });
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onComplete).toHaveBeenCalledWith("482913");
+    expect((screen.getByLabelText("Chữ số OTP 6") as HTMLInputElement).value).toBe("3");
+  });
+
+  it("autofill một phần vào ô đầu đang trống: vẫn đổ vào các ô từ ô đầu", () => {
+    render(<OtpInput />);
+    fireEvent.change(screen.getByLabelText("Chữ số OTP 1"), { target: { value: "4829" } });
+    expect((screen.getByLabelText("Chữ số OTP 4") as HTMLInputElement).value).toBe("9");
+  });
+
+  // M1 (review #139): ô đầu cho tới `length` ký tự; mã đã điền đủ rồi gõ lại ô 1 là "19"/"91", không được xoá 4 số còn lại.
+  it.each([
+    ["caret cuối ô", "19"],
+    ["caret đầu ô", "91"],
+  ])("đã điền đủ mã, gõ lại ô 1 (%s): thay chữ số 1, giữ nguyên các ô còn lại", (_label, typed) => {
+    const onComplete = vi.fn();
+    render(<OtpInput onComplete={onComplete} />);
+    fireEvent.change(screen.getByLabelText("Chữ số OTP 1"), { target: { value: "123456" } });
+    onComplete.mockClear();
+
+    fireEvent.change(screen.getByLabelText("Chữ số OTP 1"), { target: { value: typed } });
+    const values = Array.from({ length: 6 }, (_, i) => (screen.getByLabelText(`Chữ số OTP ${i + 1}`) as HTMLInputElement).value);
+    expect(values).toEqual(["9", "2", "3", "4", "5", "6"]);
+    expect(onComplete).toHaveBeenCalledWith("923456");
+  });
+
+  it("dán lại cả mã mới lên ô 1 đã có số: thay toàn bộ", () => {
+    render(<OtpInput />);
+    fireEvent.change(screen.getByLabelText("Chữ số OTP 1"), { target: { value: "123456" } });
+    fireEvent.change(screen.getByLabelText("Chữ số OTP 1"), { target: { value: "654321" } });
+    expect((screen.getByLabelText("Chữ số OTP 6") as HTMLInputElement).value).toBe("1");
+  });
+});

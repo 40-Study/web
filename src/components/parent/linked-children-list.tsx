@@ -9,6 +9,7 @@ import { useChildren } from "@/hooks/queries/use-auth";
 import { useUnlinkChild } from "@/hooks/queries/use-parent-link";
 import type { Child } from "@/services/auth.service";
 import { ConfirmUnlinkDialog } from "./confirm-unlink-dialog";
+import { getInitials } from "@/lib/initials";
 
 /** Danh sách con đã liên kết của phụ huynh: mở trang chi tiết, hoặc huỷ liên kết (có xác nhận). */
 export function LinkedChildrenList() {
@@ -55,7 +56,7 @@ export function LinkedChildrenList() {
                   <Image src={child.avatar_url} alt={displayName} width={48} height={48} className="rounded-full object-cover" />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-                    <span className="text-lg font-medium text-primary-700">{displayName.charAt(0).toUpperCase()}</span>
+                    <span className="text-lg font-medium text-primary-700">{getInitials(displayName)}</span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">

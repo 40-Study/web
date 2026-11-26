@@ -50,3 +50,11 @@ describe("Footer", () => {
     expect(hits).toEqual([]);
   });
 });
+describe("Footer — thứ bậc tiêu đề (Q8-PG-10)", () => {
+  it("cột 'Khám phá' và 'Hỗ trợ' là h2: trang chỉ có h1 không bị nhảy h1 -> h3 (axe heading-order)", () => {
+    render(<Footer />);
+    expect(screen.getByRole("heading", { level: 2, name: "Khám phá" })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 2, name: "Hỗ trợ" })).toBeTruthy();
+    expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(0);
+  });
+});

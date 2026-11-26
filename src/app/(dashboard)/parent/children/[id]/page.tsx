@@ -39,6 +39,8 @@ import { formatStudyMinutes } from "@/lib/format-study-time";
 import { ApiError } from "@/lib/errors";
 import { ResourceLoadError } from "@/components/common/resource-unavailable";
 import { formatVnDate } from "@/lib/vn-datetime";
+import { getInitials } from "@/lib/initials";
+import { ChildSectionError } from "@/components/parent/child-section-error";
 
 type TabType = "overview" | "courses" | "grades" | "schedule" | "attendance" | "assignments";
 
@@ -99,11 +101,11 @@ export default function ChildDetailPage() {
   // PG-L2: chỉ chạy các query còn lại SAU khi overview xác nhận đây là con của phụ huynh. Id lạ thì overview
   // 403 và trước đây 5 query kia vẫn bắn song song (6 × 403). Id rỗng làm hook tự tắt qua `enabled: !!childId`.
   const dataChildId = overview ? childId : "";
-  const { data: coursesData, isLoading: loadingCourses } = useChildCourses(dataChildId);
-  const { data: gradesData, isLoading: loadingGrades } = useChildGrades(activeTab === "grades" ? dataChildId : "");
-  const { data: timetableData, isLoading: loadingTimetable } = useChildTimetable(activeTab === "schedule" ? dataChildId : "");
+  const { data: coursesData, isLoading: loadingCourses, isError: coursesError, refetch: refetchCourses } = useChildCourses(dataChildId);
+  const { data: gradesData, isLoading: loadingGrades, isError: gradesError, refetch: refetchGrades } = useChildGrades(activeTab === "grades" ? dataChildId : "");
+  const { data: timetableData, isLoading: loadingTimetable, isError: timetableError, refetch: refetchTimetable } = useChildTimetable(activeTab === "schedule" ? dataChildId : "");
   const { data: attendanceData } = useChildAttendance(dataChildId);
-  const { data: assignmentsData, isLoading: loadingAssignments } = useChildAssignments(dataChildId);
+  const { data: assignmentsData, isLoading: loadingAssignments, isError: assignmentsError, refetch: refetchAssignments } = useChildAssignments(dataChildId);
 
   if (loadingOverview) {
     return (
@@ -117,7 +119,7 @@ export default function ChildDetailPage() {
   // Lỗi khác (5xx `ERR_INTERNAL`, mất mạng) là sự cố tạm: hiện "Thử lại", không nói "không tìm thấy" như thể con không tồn tại.
   // Backend cũ trả 403 cho MỌI lỗi nên vẫn rơi về "không tìm thấy" như trước.
   if (!overview && overviewError && !isChildNotFoundError(overviewError)) {
-    return <ResourceLoadError resourceLabel="thông tin học sinh" onRetry={() => void refetchOverview()} />;
+    return <ResourceLoadError resourceLabel="thông tin học sinh" onRetry={() => refetchOverview()} />;
   }
 
   if (!overview) {
@@ -157,7 +159,7 @@ export default function ChildDetailPage() {
           ) : (
             <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
               <span className="text-2xl font-bold text-primary-700">
-                {displayName.charAt(0).toUpperCase()}
+                {getInitials(displayName)}
               </span>
             </div>
           )}
@@ -178,14 +180,14 @@ export default function ChildDetailPage() {
       {activeTab !== "schedule" && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl p-4 shadow-sm border">
-            <div className="flex items-center gap-2 text-orange-500 mb-2">
+            <div className="flex items-center gap-2 text-orange-700 mb-2">
               <Flame className="w-5 h-5" />
               <span className="text-sm font-medium">Chuỗi ngày học</span>
             </div>
             <p className="text-2xl font-bold">{overview.current_streak} ngày</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border">
-            <div className="flex items-center gap-2 text-purple-500 mb-2">
+            <div className="flex items-center gap-2 text-purple-700 mb-2">
               <Trophy className="w-5 h-5" />
               <span className="text-sm font-medium">Tổng XP</span>
             </div>
@@ -193,7 +195,7 @@ export default function ChildDetailPage() {
             <p className="text-2xl font-bold">{overview.total_xp.toLocaleString("vi-VN")}</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border">
-            <div className="flex items-center gap-2 text-blue-500 mb-2">
+            <div className="flex items-center gap-2 text-blue-700 mb-2">
               <BookOpen className="w-5 h-5" />
               <span className="text-sm font-medium">Khoá học</span>
             </div>
@@ -203,7 +205,7 @@ export default function ChildDetailPage() {
             <p className="text-xs text-gray-500">hoàn thành</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border">
-            <div className="flex items-center gap-2 text-green-500 mb-2">
+            <div className="flex items-center gap-2 text-green-700 mb-2">
               <Clock className="w-5 h-5" />
               <span className="text-sm font-medium">Thời gian học</span>
             </div>
@@ -249,7 +251,12 @@ export default function ChildDetailPage() {
 
           {/* Courses Tab */}
           {activeTab === "courses" && (
-            <ChildCoursesTab courses={coursesData?.courses} isLoading={loadingCourses} />
+            <ChildCoursesTab
+              courses={coursesData?.courses}
+              isLoading={loadingCourses}
+              isError={coursesError}
+              onRetry={() => refetchCourses()}
+            />
           )}
 
           {/* Grades Tab */}
@@ -259,6 +266,8 @@ export default function ChildDetailPage() {
                 <div className="flex justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin" />
                 </div>
+              ) : gradesError && !gradesData ? (
+                <ChildSectionError label="điểm số" onRetry={() => refetchGrades()} />
               ) : gradesData?.grades.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">Chưa có điểm nào</p>
               ) : (
@@ -283,9 +292,9 @@ export default function ChildDetailPage() {
                               className={cn(
                                 "text-xs font-medium",
                                 grade.percentage >= 80
-                                  ? "text-green-600"
+                                  ? "text-green-700"
                                   : grade.percentage >= 50
-                                    ? "text-yellow-600"
+                                    ? "text-yellow-700"
                                     : "text-red-600"
                               )}
                             >
@@ -325,9 +334,9 @@ export default function ChildDetailPage() {
                               <span
                                 className={cn(
                                   grade.percentage >= 80
-                                    ? "text-green-600"
+                                    ? "text-green-700"
                                     : grade.percentage >= 50
-                                      ? "text-yellow-600"
+                                      ? "text-yellow-700"
                                       : "text-red-600"
                                 )}
                               >
@@ -353,6 +362,8 @@ export default function ChildDetailPage() {
                 <div className="flex justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin" />
                 </div>
+              ) : timetableError && !timetableData ? (
+                <ChildSectionError label="lịch học" onRetry={() => refetchTimetable()} />
               ) : (
                 <ScheduleGrid entries={timetableData?.entries || []} />
               )}
@@ -364,7 +375,12 @@ export default function ChildDetailPage() {
 
           {/* Assignments Tab */}
           {activeTab === "assignments" && (
-            <ChildAssignmentsTab data={assignmentsData} isLoading={loadingAssignments} />
+            <ChildAssignmentsTab
+              data={assignmentsData}
+              isLoading={loadingAssignments}
+              isError={assignmentsError}
+              onRetry={() => refetchAssignments()}
+            />
           )}
         </div>
       </div>

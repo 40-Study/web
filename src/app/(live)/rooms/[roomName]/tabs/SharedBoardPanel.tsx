@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { getInitials } from "@/lib/initials";
 
 // Dynamically import Excalidraw wrapper
 const MiniExcalidraw = dynamic(() => import('./MiniExcalidraw'), { ssr: false });
@@ -309,7 +310,7 @@ export default function SharedBoardPanel({
                             color: COLORS.accent,
                           }}
                         >
-                          {p.name[0]?.toUpperCase() || '?'}
+                          {getInitials(p.name)}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div

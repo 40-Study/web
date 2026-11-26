@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CourseGrid } from "@/components/course/course-grid";
 import { CourseFiltersComponent } from "@/components/course/course-filters";
 import { CourseSearch } from "@/components/course/course-search";
 import { CourseBannerCarousel } from "@/components/course/course-banner-carousel";
 import { Button } from "@/components/ui/button";
+import { QueryState } from "@/components/common/query-state";
 import { useCourses, useCategories, useSearchSuggestions } from "@/hooks/use-courses";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { CourseFilters } from "@/types/course";
@@ -38,10 +39,19 @@ export default function CoursesPage() {
 
   // Từ khoá tìm ở backend (`keyword`, không phân biệt dấu) — trước đây lọc ở client bằng
   // `toLowerCase().includes` nên "dai so" không ra "Đại số" (F-07). `searchQuery` đã được CourseSearch debounce 300ms.
-  const { data: allCourses = [], isLoading: coursesLoading } = useCourses({
+  const {
+    data: coursesData,
+    isLoading: coursesLoading,
+    isError: coursesError,
+    error: coursesFetchError,
+    refetch: refetchCourses,
+  } = useCourses({
     ...filters,
     keyword: searchQuery || undefined,
   });
+  const allCourses = useMemo(() => coursesData ?? [], [coursesData]);
+  // Chỉ coi là lỗi khi CHƯA có dữ liệu: refetch nền thất bại (focus/retry) mà react-query vẫn giữ `data` cũ thì danh sách đang xem không được bị hộp lỗi thay (M2).
+  const showCoursesError = coursesError && !coursesData;
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: suggestions = [] } = useSearchSuggestions(debouncedSearchQuery);
 
@@ -166,14 +176,21 @@ export default function CoursesPage() {
             onFilterChange={handleFilterChange}
           />
 
-          {!isLoading && (
+          {/* Q8-PG-03: API lỗi không được đọc thành "0 khoá học / Không tìm thấy khoá học nào"; nói là lỗi và cho thử lại. */}
+          {!isLoading && showCoursesError && (
+            <QueryState isError error={coursesFetchError} onRetry={() => refetchCourses()}>
+              {null}
+            </QueryState>
+          )}
+
+          {!isLoading && !showCoursesError && (
             <p className="text-sm text-slate-600 dark:text-slate-400" aria-live="polite">
               {allCourses.length} khoá học
               {searchQuery && ` cho "${searchQuery}"`}
             </p>
           )}
 
-          <CourseGrid
+          {!showCoursesError && <CourseGrid
             courses={visibleCourses}
             loading={isLoading}
             staggered
@@ -185,9 +202,9 @@ export default function CoursesPage() {
                 </Button>
               ) : undefined
             }
-          />
+          />}
 
-          {hasMore && !isLoading && (
+          {hasMore && !isLoading && !showCoursesError && (
             <div className="flex justify-center pt-2">
               <Button
                 type="button"

@@ -32,11 +32,11 @@ export const CHILD_ASSIGNMENT_STATE_LABEL: Record<ChildAssignmentState, string> 
 
 /** Màu chữ cho từng trạng thái, dùng chung để ba màn hình tô cùng một màu. */
 export const CHILD_ASSIGNMENT_STATE_CLASS: Record<ChildAssignmentState, string> = {
-  completed: "text-green-600",
+  completed: "text-green-700",
   awaiting_grade: "text-blue-600",
-  needs_retry: "text-amber-600",
+  needs_retry: "text-amber-700",
   judge_error: "text-blue-600",
-  overdue: "text-red-600",
+  overdue: "text-red-700",
   not_started: "text-gray-500",
 };
 
