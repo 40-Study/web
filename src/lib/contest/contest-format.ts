@@ -6,6 +6,7 @@
  * 409). Web lấy `server_time` trong response, tính độ lệch một lần, rồi cộng vào `Date.now()`.
  */
 import { toContestNumber, type ContestDecimal, type ContestPhase, type ContestPrize } from "@/types/contest";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 export const CONTEST_PHASE_LABELS: Record<ContestPhase, string> = {
   DRAFT: "Bản nháp",
@@ -74,19 +75,9 @@ export function formatContestWindowMinutes(minutes: number | null | undefined): 
   return h === 0 ? `${d} ngày` : `${d} ngày ${h} giờ`;
 }
 
-/** Giờ Việt Nam cố định (người xem ở múi giờ khác vẫn thấy đúng giờ thi công bố). */
+/** Giờ Việt Nam cố định (người xem ở múi giờ khác vẫn thấy đúng giờ thi công bố): "dd/MM/yyyy HH:mm". */
 export function formatContestDateTime(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString("vi-VN", {
-    timeZone: "Asia/Ho_Chi_Minh",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatVnDateTime(iso);
 }
 
 /** "Hạng 1–3: Chứng nhận + Voucher Giảm 50k". */
@@ -124,14 +115,9 @@ export function contestRevealAt(endTime: string): string {
   return Number.isNaN(end) ? endTime : new Date(end + CONTEST_SUBMIT_GRACE_SECONDS * 1000).toISOString();
 }
 
-/** Giờ có giây, giờ Việt Nam: "00:10:30 29/09/2026" — mốc công bố chỉ cách giờ đóng 30 giây. */
+/** Giờ có giây, giờ Việt Nam: "29/09/2026 00:10:30" — mốc công bố chỉ cách giờ đóng 30 giây. */
 export function formatContestTimeWithSeconds(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  const time = d.toLocaleTimeString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
-  const date = d.toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", day: "2-digit", month: "2-digit", year: "numeric" });
-  return `${time} ${date}`;
+  return formatVnDateTime(iso, { seconds: true });
 }
 
 export type LeaderboardVisibility = { visible: true } | { visible: false; message: string };

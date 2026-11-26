@@ -2,6 +2,7 @@
 
 import { CODE_VERDICT_LABELS } from "@/components/code-workspace/code-judge-result";
 import type { LessonCodeHistoryItem } from "@/services/lesson-code.service";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 // Bài nộp cũ có thể mang trạng thái không có trong kết quả chấm đồng bộ (route nộp bài cũ qua hàng đợi).
 const HISTORY_VERDICT_LABELS: Record<string, string> = {
@@ -12,13 +13,6 @@ const HISTORY_VERDICT_LABELS: Record<string, string> = {
 
 // Chỉ verdict của một lần chấm xong mới có điểm; "đang chấm"/"lỗi hệ thống" không phải 0 điểm.
 const isJudged = (status: string) => status in CODE_VERDICT_LABELS;
-
-const submittedAt = new Intl.DateTimeFormat("vi-VN", {
-  day: "2-digit",
-  month: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-});
 
 /** Lịch sử nộp bài của người học cho một bài tập code; mỗi dòng mở lại được mã đã nộp. */
 export function LessonCodeHistory({
@@ -79,7 +73,7 @@ export function LessonCodeHistory({
                   <td>{item.execution_time_ms == null ? "–" : `${item.execution_time_ms} ms`}</td>
                   <td>
                     <time dateTime={item.created_at}>
-                      {submittedAt.format(new Date(item.created_at))}
+                      {formatVnDateTime(item.created_at)}
                     </time>
                   </td>
                   <td>
@@ -87,7 +81,7 @@ export function LessonCodeHistory({
                       type="button"
                       className="whitespace-nowrap text-emerald-700 hover:underline disabled:opacity-50"
                       disabled={disabled}
-                      aria-label={`Mở lại mã bài nộp ${item.language} lúc ${submittedAt.format(new Date(item.created_at))}`}
+                      aria-label={`Mở lại mã bài nộp ${item.language} lúc ${formatVnDateTime(item.created_at)}`}
                       onClick={() => onOpen(item)}
                     >
                       Mở lại mã

@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { useChildAttendancePages } from "@/hooks/queries/use-parent-dashboard";
 import { formatCheckInTime } from "@/lib/format-check-in-time";
 import { ChildAttendanceStatus } from "./child-attendance-status";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 const PAGE_SIZE = 20;
 
@@ -59,7 +60,7 @@ export function ChildAttendanceTab({ childId }: { childId: string }) {
                 <div className="min-w-0">
                   <p className="font-medium">{record.class_name}</p>
                   <p className="text-sm text-gray-500">
-                    Buổi {record.session_number} - {new Date(record.date).toLocaleDateString("vi-VN")}
+                    Buổi {record.session_number} - {formatVnDate(record.date)}
                   </p>
                 </div>
                 {/* Q6-PG-09: cột phải không co/không bẻ dòng ("Vào lúc 08:30", "Trễ 12 phút" ở 390px); tên lớp bên trái là phần xuống dòng. */}

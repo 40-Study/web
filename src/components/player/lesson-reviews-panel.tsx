@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCreateReview } from "@/hooks/queries/use-reviews";
 import type { ReviewListResponse } from "@/services/review.service";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 function Stars({ value, size = "w-4 h-4" }: { value: number; size?: string }) {
   return (
@@ -23,7 +24,7 @@ function Stars({ value, size = "w-4 h-4" }: { value: number; size?: string }) {
 function formatReviewDate(iso?: string) {
   if (!iso) return "";
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("vi-VN");
+  return Number.isNaN(d.getTime()) ? "" : formatVnDate(d);
 }
 
 interface LessonReviewsPanelProps {

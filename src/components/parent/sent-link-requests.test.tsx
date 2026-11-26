@@ -37,7 +37,7 @@ describe("SentLinkRequests", () => {
     renderWithProviders(<SentLinkRequests />);
     expect(await screen.findByText("con@demo.com")).toBeTruthy();
     expect(screen.getByText("Bé Hai")).toBeTruthy();
-    expect(screen.getByText("Con đã xác nhận ngày 21/9/2026")).toBeTruthy();
+    expect(screen.getByText("Con đã xác nhận ngày 21/09/2026")).toBeTruthy();
     expect(screen.getByText("Đang chờ con xác nhận")).toBeTruthy();
   });
 

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useMyVouchersWithDetails, type MyVoucherWithDetails } from "@/hooks/queries/use-voucher";
 import { formatVoucherDiscountLabel, type Voucher } from "@/services/voucher.service";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 // ─── Status config ──────────────────────────────────────────────────────────
 
@@ -83,7 +84,7 @@ function VoucherCard({ entry }: { entry: MyVoucherWithDetails }) {
     return (
       <div className="rounded-xl border border-dashed p-4 text-sm text-gray-400">
         Không tải được chi tiết voucher (đã lưu lúc{" "}
-        {new Date(entry.saved_at).toLocaleDateString("vi-VN")})
+        {formatVnDate(entry.saved_at)})
       </div>
     );
   }
@@ -97,11 +98,7 @@ function VoucherCard({ entry }: { entry: MyVoucherWithDetails }) {
   const minPurchase = Number(voucher.min_purchase_money ?? 0);
 
   const expiryDate = voucher.end_date
-    ? new Date(voucher.end_date).toLocaleDateString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      })
+    ? formatVnDate(voucher.end_date)
     : null;
 
   const copyCode = async () => {

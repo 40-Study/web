@@ -164,7 +164,7 @@ describe("MyOrdersPage", () => {
 
     expect(screen.getByText("Lập trình Go")).toBeTruthy();
     // Ngày tạo lấy đúng created_at của backend (giờ Việt Nam), không phải thời điểm render.
-    expect(screen.getByText("08:00 28/09/2026")).toBeTruthy();
+    expect(screen.getByText("28/09/2026 08:00")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Tiếp tục thanh toán" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Huỷ đơn" })).toBeTruthy();
   });

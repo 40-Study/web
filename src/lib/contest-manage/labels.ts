@@ -34,6 +34,12 @@ export const CONTEST_PHASE_VARIANT: Record<ContestPhase, BadgeVariant> = {
   FINALIZED: "success",
 };
 
+/**
+ * Q7 (câu hỏi 3): cuộc thi còn "Chờ duyệt" mà `start_time` đã qua thì admin không thể công bố nữa (409, xem
+ * `getApproveBlockedReason`). Giảng viên thấy huy hiệu cảnh báo này (không ép đổi lịch).
+ */
+export const PENDING_PAST_START_LABEL = "Đã quá giờ bắt đầu, chờ duyệt";
+
 export const ATTEMPT_STATUS_LABEL: Record<ContestAttemptStatus, string> = {
   NOT_STARTED: "Chưa làm",
   IN_PROGRESS: "Đang làm",

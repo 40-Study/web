@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -77,15 +78,7 @@ interface AssignmentManagementProps {
 // ─── Helper Functions ──────────────────────────────────────────────────────
 
 function formatDate(dateStr: string | undefined): string {
-  if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatVnDateTime(dateStr);
 }
 
 function getStatusConfig(status: SubmissionStatus) {

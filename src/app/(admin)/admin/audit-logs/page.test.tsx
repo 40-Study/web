@@ -73,7 +73,7 @@ describe("AdminAuditLogsPage", () => {
     expect(within(row).getByText("Khoá tài khoản")).toBeTruthy();
     expect(within(row).getByText("Người dùng: u-123")).toBeTruthy();
     expect(within(row).getByText("203.0.113.7")).toBeTruthy();
-    expect(within(row).getByText("10:00 03/10/2026")).toBeTruthy(); // giờ Việt Nam
+    expect(within(row).getByText("03/10/2026 10:00")).toBeTruthy(); // giờ Việt Nam
 
     const unknown = screen.getByText("future.action").closest("tr")!; // mã lạ hiện nguyên mã
     expect(within(unknown).getByText("Tài khoản không còn")).toBeTruthy();

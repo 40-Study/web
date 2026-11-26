@@ -19,6 +19,7 @@ import { livestreamService } from '@/services/livestream.service';
 import { useAuthStore } from '@/stores/auth.store';
 import { resolveRoleAwareHref } from '@/lib/routes';
 import { mapOrgRoleToSystemRole } from '@/lib/role-resolution';
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 interface AssignmentNotification {
   assignment_id: string;
@@ -1525,12 +1526,7 @@ export default function RoomClient({
                             <polyline points="12 6 12 12 16 14"/>
                           </svg>
                           <span>
-                            Hạn nộp: {new Date(assignment.end_time).toLocaleString('vi-VN', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                            Hạn nộp: {formatVnDateTime(assignment.end_time)}
                           </span>
                         </div>
                       )}

@@ -27,6 +27,7 @@ import { inProgressCourseCount } from "./child-stats";
 import { CHILD_ASSIGNMENT_STATE_LABEL, childAssignmentState, splitAssignmentsByDeadline } from "./child-assignments";
 import { ChildAttendanceStatus } from "./child-attendance-status";
 import { formatStudyMinutes } from "@/lib/format-study-time";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 function StatPill({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | number }) {
   return (
@@ -111,7 +112,7 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
                 <li key={a.id} className="text-xs text-gray-600 flex items-center justify-between gap-2">
                   <span className="truncate">{a.title}</span>
                   <span className="text-gray-400 shrink-0">
-                    {a.due_date ? new Date(a.due_date).toLocaleDateString("vi-VN") : ""}
+                    {a.due_date ? formatVnDate(a.due_date) : ""}
                   </span>
                 </li>
               ))}
@@ -125,7 +126,7 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
                   <li key={a.id} className="text-xs text-gray-600 flex items-center justify-between gap-2">
                     <span className="truncate">{a.title}</span>
                     <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-red-600">
-                      Chưa nộp, hạn {new Date(a.due_date!).toLocaleDateString("vi-VN")}
+                      Chưa nộp, hạn {formatVnDate(a.due_date)}
                     </span>
                   </li>
                 ))}

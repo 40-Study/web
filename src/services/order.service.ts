@@ -13,6 +13,7 @@
 
 import { api } from "@/lib/api-client";
 import { businessRequestRaw } from "./business-request";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 // ─── Types (khớp internal/dto/orderDTO.go) ─────────────────────────────────
 
@@ -35,17 +36,9 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   expired: "Hết hạn",
 };
 
-/** "14:05 28/09/2026" (định dạng vi-VN) theo giờ Việt Nam — ngày tạo/hạn đơn cần cả giờ, không chỉ ngày. */
+/** "28/09/2026 14:05" (ngày trước giờ sau, giờ Việt Nam): ngày tạo/hạn đơn cần cả giờ. Dùng helper chung (QA7). */
 export function formatOrderDateTime(iso: string): string {
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "Asia/Ho_Chi_Minh",
-  }).format(new Date(iso));
+  return formatVnDateTime(iso);
 }
 
 /** Đơn còn mở (chưa thanh toán) — được tiếp tục thanh toán hoặc huỷ nếu chưa quá hạn. */

@@ -5,6 +5,7 @@ import { api } from '@/lib/meet/api';
 import { getMe, type User } from '@/lib/meet/auth';
 import type { Assignment, CreateAssignment } from '@/lib/meet/types-assignment';
 import RichTextEditor, { RichTextViewer } from '@/components/meet/RichTextEditor';
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 // Modern color palette
 const COLORS = {
@@ -1910,7 +1911,7 @@ export default function ExercisePanel({
                         )}
                       </div>
                       <div style={{ fontSize: '11px', color: COLORS.textDim }}>
-                        {sub.language === 'text' ? 'Tự luận' : sub.language} • {new Date(sub.created_at).toLocaleString('vi-VN')}
+                        {sub.language === 'text' ? 'Tự luận' : sub.language} • {formatVnDateTime(sub.created_at)}
                       </div>
                     </button>
                   ))
@@ -1952,7 +1953,7 @@ export default function ExercisePanel({
                         {selectedSubmission.user?.username || 'Học viên'}
                       </h4>
                       <p style={{ margin: '4px 0 0', fontSize: '11px', color: COLORS.textDim }}>
-                        Nộp lúc {new Date(selectedSubmission.created_at).toLocaleString('vi-VN')}
+                        Nộp lúc {formatVnDateTime(selectedSubmission.created_at)}
                       </p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>

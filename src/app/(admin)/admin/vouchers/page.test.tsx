@@ -232,7 +232,7 @@ describe("/admin/vouchers — QA3-11", () => {
     const rows = await screen.findAllByTestId("admin-voucher-row");
     expect(rows[0].querySelector("[data-testid=voucher-validity]")?.textContent).toBe("Hiệu lực: không giới hạn thời gian");
     expect(rows[1].querySelector("[data-testid=voucher-validity]")?.textContent).toBe(
-      "Hiệu lực: 10:00 01/10/2026 – 10:00 31/12/2026",
+      "Hiệu lực: 01/10/2026 10:00 – 31/12/2026 10:00",
     );
   });
 

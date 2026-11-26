@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { courseLevelLabel } from "./course-level";
-import { formatVnDateOnly, formatVnDateTime, formatVnDateThenTime, hasVnSessionEnded, isVnSessionUpcoming } from "./vn-datetime";
+import { formatVnDate, formatVnDateOnly, formatVnDateTime, formatVnDateThenTime, hasVnSessionEnded, isVnSessionUpcoming } from "./vn-datetime";
 
 describe("courseLevelLabel", () => {
   it("dịch mã trình độ sang tiếng Việt", () => {
@@ -29,13 +29,38 @@ describe("formatVnDateTime", () => {
   it("không in chuỗi ISO thô và luôn theo giờ Việt Nam", () => {
     const text = formatVnDateTime("2026-09-28T18:00:09+07:00");
     expect(text).not.toContain("T18");
-    expect(text).toContain("18:00");
-    expect(text).toContain("28/09/2026");
+    expect(text).toBe("28/09/2026 18:00");
+  });
+  // QA7 (T08/S7-07): MỘT thứ tự duy nhất, ngày trước giờ sau, đệm số 0.
+  it("ngày trước, giờ sau, đệm số 0 (dd/MM/yyyy HH:mm)", () => {
+    expect(formatVnDateTime("2026-10-06T03:05:00+07:00")).toBe("06/10/2026 03:05");
+    expect(formatVnDateTime("2026-09-28T03:00:00Z")).toBe("28/09/2026 10:00");
+  });
+  it("nửa đêm là 00:xx, không phải 24:xx", () => {
+    expect(formatVnDateTime("2026-10-06T00:05:00+07:00")).toBe("06/10/2026 00:05");
+  });
+  it("nhận cả Date và tuỳ chọn giây", () => {
+    expect(formatVnDateTime(new Date("2026-09-28T03:00:30Z"))).toBe("28/09/2026 10:00");
+    expect(formatVnDateTime("2026-09-28T03:00:30Z", { seconds: true })).toBe("28/09/2026 10:00:30");
   });
   it("chuỗi hỏng thì —", () => {
     expect(formatVnDateTime("khong-phai-ngay")).toBe("—");
   });
 });
+describe("formatVnDate (QA7 S7-07)", () => {
+  it("đệm số 0 như các trang khác, không phải '6/10/2026'", () => {
+    expect(formatVnDate("2026-10-06T10:00:00+07:00")).toBe("06/10/2026");
+    expect(formatVnDate(new Date("2026-10-05T17:30:00Z"))).toBe("06/10/2026"); // qua nửa đêm giờ VN
+  });
+  it("YYYY-MM-DD thuần không lệch ngày", () => {
+    expect(formatVnDate("2026-10-03")).toBe("03/10/2026");
+  });
+  it("rỗng/hỏng thì —", () => {
+    expect(formatVnDate(null)).toBe("—");
+    expect(formatVnDate("khong-phai-ngay")).toBe("—");
+  });
+});
+
 describe("formatVnDateThenTime", () => {
   it("ngày trước, giờ sau (dd/MM/yyyy HH:mm) theo giờ Việt Nam", () => {
     expect(formatVnDateThenTime("2026-10-07T19:00:00+07:00")).toBe("07/10/2026 19:00");

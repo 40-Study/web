@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import type { ForumPost } from "@/types/discussion";
 import { discussionCategoryLabel } from "./discussion-categories";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 interface DiscussionPostCardProps {
   post: ForumPost;
@@ -35,7 +36,7 @@ function timeAgo(dateStr: string): string {
   if (hrs < 24) return `${hrs} giờ trước`;
   const days = Math.floor(hrs / 24);
   if (days < 30) return `${days} ngày trước`;
-  return new Date(dateStr).toLocaleDateString("vi-VN");
+  return formatVnDate(dateStr);
 }
 
 function stripHtml(html: string): string {

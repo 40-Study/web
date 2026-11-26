@@ -23,7 +23,7 @@ describe("ContestAnswersPending — review m1 (đếm tới answers_available_at
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-29T10:00:05Z"));
     render(<ContestAnswersPending answersAvailableAt={AVAILABLE} serverTime="2026-09-29T10:00:05Z" receivedAt={Date.now()} onAvailable={() => {}} />);
-    expect(screen.getByText(/17:00:30 29\/09\/2026/)).toBeTruthy();
+    expect(screen.getByText(/29\/09\/2026 17:00:30/)).toBeTruthy();
     expect(screen.getByRole("timer").textContent).toContain("00:00:25");
   });
 

@@ -9,6 +9,7 @@ import { usePendingInvitations, useRespondInvitation, invitationKeys } from "@/h
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { ParentInvitation } from "@/services/invitation.service";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 const relationshipLabels: Record<string, string> = {
   parent: "Phụ huynh",
@@ -25,11 +26,7 @@ function formatTimeAgo(dateString: string): string {
   if (diffDays === 0) return "Hôm nay";
   if (diffDays === 1) return "Hôm qua";
   if (diffDays < 7) return `${diffDays} ngày trước`;
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
+  return formatVnDate(date);
 }
 
 function getExpiryInfo(expiresAt: string): { text: string; urgent: boolean } {

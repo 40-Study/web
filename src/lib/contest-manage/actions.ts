@@ -54,6 +54,16 @@ export function getFinalizeState(contest: ContestLike, now: Date): FinalizeState
   return { kind: "ready" };
 }
 
+/**
+ * Cuộc thi đang chờ duyệt mà giờ bắt đầu đã tới/qua (cùng quy tắc `!start.After(now)` của backend). Tính theo `now`, không
+ * theo `phase` của lần tải, như `getFinalizeState`. `start_time` hỏng thì false: không chứng minh được thì không cảnh báo.
+ */
+export function isPendingPastStart(contest: Pick<ContestManage, "status" | "start_time">, now: Date): boolean {
+  if (contest.status !== "PENDING_REVIEW") return false;
+  const start = new Date(contest.start_time).getTime();
+  return !Number.isNaN(start) && now.getTime() >= start;
+}
+
 export interface AdminContestActions {
   canApprove: boolean;
   /**

@@ -13,6 +13,7 @@ import { ArrowLeft } from "lucide-react";
 import { QueryState } from "@/components/common/query-state";
 import { ContestForm } from "@/components/contest-manage/contest-form";
 import { ContestSummary } from "@/components/contest-manage/contest-summary";
+import { PendingPastStartBadge } from "@/components/contest-manage/pending-past-start-badge";
 import { ParticipantsTable } from "@/components/contest-manage/participants-table";
 import { ContestRowActions } from "@/components/contest-manage/teacher-row-actions";
 import { useManagedContest, useUpdateContest } from "@/hooks/queries/use-contest-manage";
@@ -40,7 +41,10 @@ export default function TeacherContestDetailPage() {
         {contest && (
           <>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <h1 className="min-w-0 break-words text-2xl font-bold">{contest.title}</h1>
+              <div className="min-w-0 space-y-2">
+                <h1 className="break-words text-2xl font-bold">{contest.title}</h1>
+                <PendingPastStartBadge contest={contest} />
+              </div>
               <ContestRowActions contest={contest} hideEditLink redirectAfterDelete />
             </div>
             <ContestSummary contest={contest} />

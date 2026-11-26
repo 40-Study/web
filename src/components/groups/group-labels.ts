@@ -1,3 +1,4 @@
+import { formatVnDate as formatSharedVnDate } from "@/lib/vn-datetime";
 /** Nhãn tiếng Việt cho nhóm — một nguồn duy nhất cho trang danh sách và trang chi tiết. */
 
 export const ROLE_LABELS: Record<string, string> = {
@@ -33,7 +34,7 @@ export function roleLabel(role?: string): string {
 export function formatVnDate(iso?: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("vi-VN");
+  return Number.isNaN(d.getTime()) ? "" : formatSharedVnDate(d);
 }
 
 /** Tên hiển thị của thành viên nhóm: `full_name` rồi `user_name`, không bao giờ rỗng. */

@@ -26,6 +26,7 @@ import { fetchMyAssignments } from "@/lib/fetch-my-assignments";
 import { classifyAssignment, isPastDue, type AssignmentStatus } from "@/lib/assignment-status";
 import { hasSubmitted, submissionLabel } from "@/lib/assignment-submission";
 import { useAuthStore } from "@/stores/auth.store";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 // A-02: nơi làm bài (code / tự luận / trắc nghiệm, chạy thử, nộp) đã có sẵn ở phòng livestream. Dùng lại đúng
 // màn đó thay vì viết bản thứ hai; tải động vì kéo theo trình soạn thảo nặng mà phần lớn lượt vào trang không dùng.
@@ -39,13 +40,7 @@ const AssignmentWorkOverlay = dynamic(
 function formatDeadline(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleString("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  return formatVnDateTime(d);
 }
 
 type TabKey = "all" | AssignmentStatus;

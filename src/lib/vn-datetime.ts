@@ -7,6 +7,8 @@
  * test, để cùng một mốc luôn ra cùng một giờ Việt Nam (máy CI chạy UTC vẫn đúng).
  */
 
+const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
 const VN_DATE_TIME_OPTIONS: Intl.DateTimeFormatOptions = {
   timeZone: "Asia/Ho_Chi_Minh",
   hour: "2-digit",
@@ -14,34 +16,65 @@ const VN_DATE_TIME_OPTIONS: Intl.DateTimeFormatOptions = {
   day: "2-digit",
   month: "2-digit",
   year: "numeric",
+  // Chốt đồng hồ 24 giờ: không để locale/ICU chèn "SA/CH" hay in "24:00" lúc nửa đêm.
+  hourCycle: "h23",
 };
 
 // Dựng một lần ở mức module: tạo `Intl.DateTimeFormat` tốn kém (nạp dữ liệu locale + múi giờ), mà hàm
 // dưới được gọi theo từng dòng bảng (vd điểm danh). Formatter không giữ trạng thái nên dùng chung được.
 const VN_DATE_TIME_FORMAT = new Intl.DateTimeFormat("vi-VN", VN_DATE_TIME_OPTIONS);
+const VN_DATE_TIME_SECONDS_FORMAT = new Intl.DateTimeFormat("vi-VN", { ...VN_DATE_TIME_OPTIONS, second: "2-digit" });
+const VN_DATE_FORMAT = new Intl.DateTimeFormat("vi-VN", {
+  timeZone: "Asia/Ho_Chi_Minh",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
 
-/** "10:00 28/09/2026"; null/rỗng/chuỗi không parse được thì "—" (không hiện "Invalid Date"). */
-export function formatVnDateTime(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return VN_DATE_TIME_FORMAT.format(date);
+function toValidDate(value: string | Date | null | undefined): Date | null {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/** Ghép lại theo thứ tự cố định từ `formatToParts`, không cắt chuỗi nên không phụ thuộc thứ tự locale in ra. */
+function joinParts(format: Intl.DateTimeFormat, date: Date, withTime: false | "minutes" | "seconds"): string {
+  const parts = new Map(format.formatToParts(date).map((p) => [p.type, p.value]));
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.get(type) ?? "";
+  const day = `${part("day")}/${part("month")}/${part("year")}`;
+  if (!withTime) return day;
+  const time = withTime === "seconds" ? `${part("hour")}:${part("minute")}:${part("second")}` : `${part("hour")}:${part("minute")}`;
+  return `${day} ${time}`;
 }
 
 /**
- * "07/10/2026 19:00" — NGÀY trước, giờ sau (F-18, QA2 261013). `formatVnDateTime` giữ nguyên "19:00 07/10/2026"
- * cho các trang đã dùng nó; dựng từ `formatToParts` thay vì cắt chuỗi để không phụ thuộc thứ tự mà locale in ra.
+ * NGÀY GIỜ hiển thị DUY NHẤT của app (QA7 chốt, T08/S7-07): ngày trước, đệm số 0 — "28/09/2026 10:00" — theo giờ
+ * Việt Nam. `{ seconds: true }` thêm giây ("28/09/2026 10:00:30") cho mốc cần độ chính xác (công bố bảng xếp hạng).
+ * null/rỗng/chuỗi không parse được thì "—" (không hiện "Invalid Date"). Đừng tự dựng formatter khác: nhập từ đây.
  */
-export function formatVnDateThenTime(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  const parts = new Map(VN_DATE_TIME_FORMAT.formatToParts(date).map((p) => [p.type, p.value]));
-  const part = (type: Intl.DateTimeFormatPartTypes) => parts.get(type) ?? "";
-  return `${part("day")}/${part("month")}/${part("year")} ${part("hour")}:${part("minute")}`;
+export function formatVnDateTime(value: string | Date | null | undefined, options?: { seconds?: boolean }): string {
+  const date = toValidDate(value);
+  if (!date) return "—";
+  return options?.seconds
+    ? joinParts(VN_DATE_TIME_SECONDS_FORMAT, date, "seconds")
+    : joinParts(VN_DATE_TIME_FORMAT, date, "minutes");
 }
 
-const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+/** Tên cũ của `formatVnDateTime` từ khi còn hai thứ tự ngày/giờ (F-18); giữ để các nơi đã nhập không phải đổi. */
+export const formatVnDateThenTime = formatVnDateTime;
+
+/**
+ * NGÀY (không giờ) của một mốc thời gian, "dd/MM/yyyy" đệm số 0 theo giờ Việt Nam. Thay cho `toLocaleDateString("vi-VN")`
+ * trần ("6/10/2026" thiếu số 0, và theo múi giờ trình duyệt). "YYYY-MM-DD" thuần được tách bằng chuỗi (xem `formatVnDateOnly`).
+ */
+export function formatVnDate(value: string | Date | null | undefined): string {
+  if (typeof value === "string") {
+    const match = DATE_ONLY_PATTERN.exec(value);
+    if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+  }
+  const date = toValidDate(value);
+  return date ? joinParts(VN_DATE_FORMAT, date, false) : "—";
+}
 
 /**
  * "2026-10-03" -> "03/10/2026". Ngày thuần (không có giờ) được tách bằng chuỗi, KHÔNG qua `new Date`:

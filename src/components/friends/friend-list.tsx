@@ -14,6 +14,7 @@ import { useCreateDirectConversation } from "@/hooks/queries/use-conversations";
 import { SEARCH_DEBOUNCE_MS, useBlockUser, useFriends, useUnfriend } from "@/hooks/queries/use-friends";
 import { friendDisplayName, type FriendItem } from "@/services/friend.service";
 import { PersonRow } from "./person-row";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 const PAGE_SIZE = 20;
 
@@ -21,7 +22,7 @@ type Pending = { kind: "unfriend" | "block"; item: FriendItem } | null;
 
 function formatSince(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "" : `Bạn bè từ ${d.toLocaleDateString("vi-VN")}`;
+  return Number.isNaN(d.getTime()) ? "" : `Bạn bè từ ${formatVnDate(d)}`;
 }
 
 export function FriendList() {

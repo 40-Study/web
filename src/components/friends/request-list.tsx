@@ -15,12 +15,13 @@ import {
 } from "@/hooks/queries/use-friends";
 import { friendDisplayName, type RequestDirection } from "@/services/friend.service";
 import { PersonRow } from "./person-row";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 const PAGE_SIZE = 20;
 
 function formatSent(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "" : `Gửi ngày ${d.toLocaleDateString("vi-VN")}`;
+  return Number.isNaN(d.getTime()) ? "" : `Gửi ngày ${formatVnDate(d)}`;
 }
 
 /** Hai nhóm con: "Nhận được" (chấp nhận / từ chối) và "Đã gửi" (huỷ lời mời). */

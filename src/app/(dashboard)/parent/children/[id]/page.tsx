@@ -38,6 +38,7 @@ import { assignmentTypeLabel, difficultyLabel, gradeTypeLabel, roomLabel } from 
 import { formatStudyMinutes } from "@/lib/format-study-time";
 import { ApiError } from "@/lib/errors";
 import { ResourceLoadError } from "@/components/common/resource-unavailable";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 type TabType = "overview" | "courses" | "grades" | "schedule" | "attendance" | "assignments";
 
@@ -58,7 +59,7 @@ function formatPercent(value: number): string {
 function formatGradedAt(value: string | undefined): string {
   if (!value) return "—";
   const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("vi-VN");
+  return Number.isNaN(d.getTime()) ? "—" : formatVnDate(d);
 }
 
 function ScheduleGrid({ entries }: { entries: TimetableEntry[] }) {
