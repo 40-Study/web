@@ -20,10 +20,12 @@ import { formatVnDateOnly, formatVnDateTime } from "@/lib/vn-datetime";
 import { AdminNotFound, isMissingResourceError } from "@/components/admin/admin-not-found";
 import { getErrorMessage } from "@/lib/error-messages";
 import { getUserActiveLabel } from "../../_lib/user-status-label";
+import { isOrgScopedSystemRole } from "../../_lib/org-scoped-role";
 import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 
 // QA-C-12: cùng định dạng ngày giờ VN với các màn admin khác.
@@ -56,6 +58,8 @@ export default function AdminUserDetailPage() {
   const [lockReason, setLockReason] = useState("");
   const [unlockOpen, setUnlockOpen] = useState(false);
   const [selectedNewRole, setSelectedNewRole] = useState("");
+  // QA8-A05: gỡ vai trò phải qua hộp xác nhận (như "Gỡ khỏi tổ chức"), không gỡ ngay khi bấm.
+  const [revokeTarget, setRevokeTarget] = useState<{ id: string; name: string } | null>(null);
 
   const isNotFound = isError && isMissingResourceError(error);
   const isSelf = !!currentUserId && !!user && user.id === currentUserId;
@@ -65,10 +69,12 @@ export default function AdminUserDetailPage() {
     [user]
   );
   const availableRoles = useMemo(
-    () => systemRoles.filter((r) => !assignedRoleNames.has(r.name)),
+    // QA8-A04: vai gán theo tổ chức (ORG_OWNER) không được mời gán ở đây — gán cũng không làm họ thành chủ tổ chức nào
+    // mà còn tạo thẻ vai trò "chết" lúc đăng nhập (vào /org báo "Chưa chọn tổ chức").
+    () => systemRoles.filter((r) => !assignedRoleNames.has(r.name) && !isOrgScopedSystemRole(r.name)),
     [systemRoles, assignedRoleNames]
   );
-  // Không cho gỡ vai trò cuối cùng — user sẽ mồ côi quyền (backend chưa chặn, xem báo cáo).
+  // Không cho gỡ vai trò cuối cùng — user sẽ mồ côi quyền (backend cũng chặn: 400 "cannot revoke the last active system role").
   const onlyOneRoleLeft = (user?.system_roles.length ?? 0) <= 1;
 
   const submitLock = async () => {
@@ -181,7 +187,7 @@ export default function AdminUserDetailPage() {
 
             <div className="space-y-4">
               <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Vai trò hệ thống</h3>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Vai trò hệ thống</h2>
 
                 <div className="mt-3 space-y-2">
                   {user.system_roles.length === 0 ? (
@@ -214,7 +220,8 @@ export default function AdminUserDetailPage() {
                               variant="destructiveGhost"
                               disabled={disableRevoke || revokeRole.isPending}
                               title={reason}
-                              onClick={() => revokeRole.mutate({ userId, systemRoleId: role.id })}
+                              aria-label={`Gỡ vai trò ${getSystemRoleLabel(role.name)} của ${user.full_name || user.email}`}
+                              onClick={() => setRevokeTarget({ id: role.id, name: role.name })}
                             >
                               Gỡ
                             </Button>
@@ -254,7 +261,7 @@ export default function AdminUserDetailPage() {
               </div>
 
               <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Tổ chức</h3>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Tổ chức</h2>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Thêm, đổi hoặc gỡ vai trò trong tổ chức ở trang Quản lý tổ chức.
                 </p>
@@ -349,6 +356,21 @@ export default function AdminUserDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* QA8-A05: xác nhận trước khi gỡ vai trò hệ thống */}
+      <ConfirmDialog
+        open={!!revokeTarget}
+        onOpenChange={(open) => !open && setRevokeTarget(null)}
+        title={`Gỡ vai trò "${revokeTarget ? getSystemRoleLabel(revokeTarget.name) : ""}"?`}
+        description={`${user?.full_name || user?.email || "Người dùng"} sẽ mất các quyền của vai trò này ngay lập tức.`}
+        confirmLabel="Gỡ vai trò"
+        destructive
+        pending={revokeRole.isPending}
+        onConfirm={() => {
+          if (!revokeTarget) return;
+          revokeRole.mutate({ userId, systemRoleId: revokeTarget.id }, { onSettled: () => setRevokeTarget(null) });
+        }}
+      />
     </div>
   );
 }

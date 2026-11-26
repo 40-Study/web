@@ -8,6 +8,8 @@ import { organizationService } from "@/services/organization.service";
 import { permissionService } from "@/services/permission.service";
 import { roleService, type SystemRole } from "@/services/role.service";
 import { getErrorMessage } from "@/lib/error-messages";
+import { handleMutationError } from "@/lib/query-client";
+import { isRoleNameTakenError } from "@/lib/role-name-taken";
 
 // Query Keys
 export const adminKeys = {
@@ -183,6 +185,15 @@ export function useCreateOrgRole() {
   });
 }
 
+/**
+ * QA8-A13: tên vai trò trùng đã được ô tên của trang báo ngay tại chỗ; không hiện thêm toast khác lời. Lỗi khác
+ * vẫn đi toast mặc định (ghi đè `onError` của hook thì mất mặc định của app).
+ */
+function onRoleSaveError(error: unknown): void {
+  if (isRoleNameTakenError(error)) return;
+  handleMutationError(error);
+}
+
 export function useCreateSystemRole() {
   const qc = useQueryClient();
   return useMutation({
@@ -191,6 +202,7 @@ export function useCreateSystemRole() {
       qc.invalidateQueries({ queryKey: adminKeys.systemRoles() });
       toast.success("Tạo vai trò hệ thống thành công");
     },
+    onError: onRoleSaveError,
   });
 }
 
@@ -203,6 +215,7 @@ export function useUpdateSystemRole() {
       qc.invalidateQueries({ queryKey: adminKeys.systemRoles() });
       toast.success("Cập nhật vai trò hệ thống thành công");
     },
+    onError: onRoleSaveError,
   });
 }
 

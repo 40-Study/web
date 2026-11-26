@@ -303,13 +303,17 @@ export function calculateVoucherDiscount(voucher: Voucher, subtotal: number): Vo
 
 /** Nhãn hiển thị mức giảm của voucher, dùng cho danh sách/voucher card. */
 export function formatVoucherDiscountLabel(voucher: Voucher): string {
-  if (voucher.discount_unit !== "MONEY") {
-    return `Giảm ${Number(voucher.discount_amount_points ?? 0).toLocaleString("vi-VN")} điểm`;
-  }
+  const isMoney = voucher.discount_unit === "MONEY";
   if (voucher.discount_method === "PERCENT") {
-    const percent = Number(voucher.discount_percent ?? 0);
-    const cap = Number(voucher.max_discount_money ?? 0);
-    return `Giảm ${percent}%${cap > 0 ? ` (tối đa ${formatCurrency(cap)})` : ""}`;
+    // QA8-A07: dấu phẩy thập phân kiểu vi-VN ("12,5%"), cùng quy ước với trang báo cáo.
+    const percent = Number(voucher.discount_percent ?? 0).toLocaleString("vi-VN");
+    // QA8-A06: voucher điểm theo phần trăm cũng có phần trăm + trần (điểm), không phải "Giảm 0 điểm".
+    const cap = Number((isMoney ? voucher.max_discount_money : voucher.max_discount_points) ?? 0);
+    const capText = isMoney ? formatCurrency(cap) : `${cap.toLocaleString("vi-VN")} điểm`;
+    return `Giảm ${percent}%${cap > 0 ? ` (tối đa ${capText})` : ""}`;
+  }
+  if (!isMoney) {
+    return `Giảm ${Number(voucher.discount_amount_points ?? 0).toLocaleString("vi-VN")} điểm`;
   }
   return `Giảm ${formatCurrency(Number(voucher.discount_amount_money ?? 0))}`;
 }

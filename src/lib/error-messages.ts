@@ -109,6 +109,9 @@ const CODE_MESSAGES: Record<string, string> = {
   // QA6 PG-01 (contract C6): 403 khi vai ĐANG CHỌN là phụ huynh đăng ký / thêm giỏ / tạo đơn / thanh toán.
   ERR_PARENT_CANNOT_PURCHASE:
     "Tài khoản phụ huynh không thể đăng ký hoặc mua khoá học cho chính mình. Hãy chuyển sang vai học viên.",
+  // QA8 C23 (A04): vai gán theo tổ chức (Chủ tổ chức) không gán được như vai hệ thống (400).
+  ERR_ROLE_NOT_ASSIGNABLE:
+    "Vai trò này được gán theo từng tổ chức nên không thể gán như vai hệ thống. Hãy thêm người dùng vào tổ chức ở mục Quản lý tổ chức.",
 };
 
 // Code chỉ nói LOẠI lỗi, message mới nói lý do (vd. ERR_NOT_FOUND + "Voucher not found",

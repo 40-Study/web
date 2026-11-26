@@ -28,7 +28,7 @@ const RUN_STATE_CLASS: Record<VoucherRunState, string> = {
   scheduled: "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
   expired: "bg-red-50 text-red-700 ring-1 ring-red-200",
   exhausted: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-  disabled: "bg-gray-100 text-gray-500",
+  disabled: "bg-gray-100 text-gray-700",
 };
 
 function VoucherRunBadge({ state }: { state: VoucherRunState }) {
@@ -50,7 +50,7 @@ function Field({ label, children, hint }: { label: string; children: React.React
     <label className="block space-y-1 text-sm">
       <span className="font-medium text-gray-700">{label}</span>
       {children}
-      {hint && <span className="block text-xs text-gray-400">{hint}</span>}
+      {hint && <span className="block text-xs text-gray-500 dark:text-gray-400">{hint}</span>}
     </label>
   );
 }
@@ -146,7 +146,7 @@ export default function AdminVouchersPage() {
                 <p className="mt-1 text-xs text-gray-500" data-testid="voucher-validity">
                   {voucherValidityText(v)}
                 </p>
-                <p className="mt-1 text-xs text-gray-400">
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Đã dùng {v.used_count ?? 0}
                   {v.usage_limit ? `/${v.usage_limit}` : ""} lượt
                 </p>

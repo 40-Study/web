@@ -143,10 +143,10 @@ export default function AdminCategoriesPage() {
               >
                 <button className="w-full min-w-0 text-left" onClick={() => setSelectedId(cat.id)}>
                   {/* QA5-A03: tên/mô tả dài không có khoảng trắng (cho phép 64/120 ký tự) làm tràn thẻ và cả trang. */}
-                  <h3 className="min-w-0 break-words font-semibold text-gray-900">{cat.name}</h3>
+                  <h2 className="min-w-0 break-words font-semibold text-gray-900">{cat.name}</h2>
                   <p className="min-w-0 break-words text-sm text-gray-500">{cat.description || "Không có mô tả"}</p>
                   {cat.is_active === false && (
-                    <span className="mt-1 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-500">
+                    <span className="mt-1 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-700">
                       Đã ẩn
                     </span>
                   )}

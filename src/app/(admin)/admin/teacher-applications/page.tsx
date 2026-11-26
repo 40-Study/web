@@ -21,6 +21,8 @@ import {
   type TeacherApprovalStatus,
 } from "@/types/approval";
 
+import { useUrlEnumParam } from "../_lib/use-url-enum-param";
+
 const LIMIT = 20;
 
 const STATUS_VARIANT: Record<TeacherApprovalStatus, "success" | "warning" | "destructive"> = {
@@ -36,7 +38,8 @@ function isApprovalStatus(value: string): value is TeacherApprovalStatus {
 }
 
 export default function AdminTeacherApplicationsPage() {
-  const [status, setStatus] = useState<TeacherApprovalStatus>("pending");
+  // QA8-A11: bộ lọc trạng thái nằm trên URL (?status=), không phải state cục bộ.
+  const [status, setStatus] = useUrlEnumParam<TeacherApprovalStatus>("status", TEACHER_APPROVAL_STATUSES, "pending");
   const [keyword, setKeyword] = useState("");
   const debouncedKeyword = useDebouncedValue(keyword.trim(), 300);
   const [page, setPage] = useState(1);
@@ -166,7 +169,7 @@ export default function AdminTeacherApplicationsPage() {
                             <button
                               onClick={() => setApproveTarget(app)}
                               data-testid="application-approve"
-                              className={`${ACTION_BTN} bg-green-600 text-white hover:bg-green-700`}
+                              className={`${ACTION_BTN} bg-green-700 text-white hover:bg-green-800`}
                             >
                               Duyệt
                             </button>
