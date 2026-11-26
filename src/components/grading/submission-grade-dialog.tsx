@@ -24,18 +24,11 @@ import {
   type GradingRow,
 } from "@/lib/submission-grading";
 import { submissionVerdictLabel } from "@/lib/live-submission-verdict";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
+/** Ngày giờ hiển thị chung của app (QA7): "dd/MM/yyyy HH:mm" giờ Việt Nam, rỗng/hỏng thì "—". */
 export function formatDateTime(iso: string | undefined): string {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "-";
-  return d.toLocaleString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatVnDateTime(iso);
 }
 
 interface Props {

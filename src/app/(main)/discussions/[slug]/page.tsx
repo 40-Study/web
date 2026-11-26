@@ -25,6 +25,7 @@ import { sanitizeHtml } from "@/lib/sanitize-html";
 import { useAuthStore } from "@/stores/auth.store";
 import { LoginRequiredPrompt } from "@/components/auth/login-required-prompt";
 import { discussionCategoryLabel } from "../discussion-categories";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 interface PageProps {
   params: { slug: string };
@@ -46,7 +47,7 @@ function timeAgo(dateStr: string): string {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs} giờ trước`;
   const days = Math.floor(hrs / 24);
-  return days < 30 ? `${days} ngày trước` : new Date(dateStr).toLocaleDateString("vi-VN");
+  return days < 30 ? `${days} ngày trước` : formatVnDate(dateStr);
 }
 
 export default function DiscussionDetailPage({ params }: PageProps) {

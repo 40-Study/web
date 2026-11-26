@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { lessonService } from "@/services/lesson.service";
 import { isUncertainOutcomeError } from "@/lib/uncertain-mutation";
+import { approvalErrorMessage } from "@/lib/approval-errors";
 import { sectionKeys } from "@/hooks/queries/use-sections";
 import type { CreateLessonDTO, UpdateLessonDTO } from "@/types/lesson";
 
@@ -49,7 +50,8 @@ export function useCreateLesson(courseId: string, sectionId: string) {
     },
     // Timeout/mất mạng: xem useCreateSection — trang gọi tự đối chiếu với server (QA-B-03).
     onError: (error) => {
-      if (!isUncertainOutcomeError(error)) toast.error("Không thể tạo bài học");
+      // Q7-T01 (C12): 400 ERR_VALIDATION kèm câu tiếng Việt nêu tên trường (thời lượng) thì hiện câu đó; lỗi khác giữ câu chung.
+      if (!isUncertainOutcomeError(error)) toast.error(approvalErrorMessage(error, "Không thể tạo bài học"));
     },
   });
 }

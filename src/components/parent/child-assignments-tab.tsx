@@ -10,6 +10,7 @@ import {
   childAssignmentState,
   isUnfinishedSubmission,
 } from "./child-assignments";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 /** "3/3 TC" là số test case, phụ huynh không hiểu (QA-B-26): ghi thành câu. */
 function resultText(a: ChildAssignment): string | null {
@@ -84,7 +85,7 @@ export function ChildAssignmentsTab({
                     </p>
                     {a.due_date && (
                       <p className="text-xs text-gray-400">
-                        Hạn nộp {new Date(a.due_date).toLocaleDateString("vi-VN")}
+                        Hạn nộp {formatVnDate(a.due_date)}
                       </p>
                     )}
                   </div>

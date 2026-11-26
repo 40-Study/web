@@ -18,6 +18,7 @@ import { useSentInvitations, useRevokeInvitation, invitationKeys } from "@/hooks
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { ParentInvitation } from "@/services/invitation.service";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 const statusConfig: Record<
   string,
@@ -68,13 +69,7 @@ const relationshipLabels: Record<string, string> = {
 };
 
 function formatDate(dateString: string): string {
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(dateString));
+  return formatVnDateTime(dateString);
 }
 
 function isExpiringSoon(expiresAt: string): boolean {

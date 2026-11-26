@@ -145,10 +145,10 @@ describe("QA3-11: định dạng mã voucher và dòng hiệu lực", () => {
 
   it("voucherValidityText nêu ngày bắt đầu/kết thúc theo giờ VN hoặc 'không giới hạn'", () => {
     expect(voucherValidityText({ start_date: "2026-10-01T03:00:00Z", end_date: "2026-12-31T03:00:00Z" })).toBe(
-      "Hiệu lực: 10:00 01/10/2026 – 10:00 31/12/2026",
+      "Hiệu lực: 01/10/2026 10:00 – 31/12/2026 10:00",
     );
-    expect(voucherValidityText({ start_date: "2026-10-01T03:00:00Z", end_date: null })).toMatch(/^Hiệu lực: từ 10:00 01\/10\/2026/);
-    expect(voucherValidityText({ start_date: null, end_date: "2026-12-31T03:00:00Z" })).toBe("Hiệu lực: đến 10:00 31/12/2026");
+    expect(voucherValidityText({ start_date: "2026-10-01T03:00:00Z", end_date: null })).toMatch(/^Hiệu lực: từ 01\/10\/2026 10:00/);
+    expect(voucherValidityText({ start_date: null, end_date: "2026-12-31T03:00:00Z" })).toBe("Hiệu lực: đến 31/12/2026 10:00");
     expect(voucherValidityText({})).toBe("Hiệu lực: không giới hạn thời gian");
   });
 });

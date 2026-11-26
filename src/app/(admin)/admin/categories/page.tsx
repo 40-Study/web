@@ -20,6 +20,7 @@ import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { useRevealForm } from "../_lib/use-reveal-form";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 // Danh mục khoá học: backend đã có CRUD đầy đủ (GET/POST/PUT/DELETE /api/categories) và hook
 // react-query có sẵn ở src/hooks/queries/use-categories.ts (dùng cho trang này nguyên trạng,
@@ -230,7 +231,7 @@ export default function AdminCategoriesPage() {
                 <p className="break-words"><span className="text-gray-500">Tên:</span> {selected.name}</p>
                 <p className="break-words"><span className="text-gray-500">Mô tả:</span> {selected.description || "-"}</p>
                 {selected.created_at && (
-                  <p><span className="text-gray-500">Tạo lúc:</span> {new Date(selected.created_at).toLocaleString("vi-VN")}</p>
+                  <p><span className="text-gray-500">Tạo lúc:</span> {formatVnDateTime(selected.created_at)}</p>
                 )}
               </div>
             ) : (

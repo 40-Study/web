@@ -43,6 +43,7 @@ import { QueryState } from "@/components/common/query-state";
 import type { CoinPurchase, CoinTransaction } from "@/services/coin.service";
 import { CoinPaymentDialog } from "@/components/coins/coin-payment-dialog";
 import { coinBonusLabel } from "@/lib/coin-package-label";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 function formatNumber(n: number) {
   return new Intl.NumberFormat("vi-VN").format(n);
@@ -85,7 +86,7 @@ function TransactionRow({ tx }: { tx: CoinTransaction }) {
         <div>
           <p className="text-sm font-medium">{TYPE_LABELS[tx.type] ?? tx.description ?? tx.type}</p>
           <p className="text-xs text-muted-foreground">
-            {new Date(tx.created_at).toLocaleString("vi-VN")}
+            {formatVnDateTime(tx.created_at)}
           </p>
         </div>
       </div>
@@ -432,7 +433,7 @@ export default function CoinsPage() {
                       <td>
                         <strong>{formatNumber(item.coin_amount + item.bonus_amount)} xu</strong>
                         <p className="coin-ref">
-                          {new Date(item.created_at).toLocaleString("vi-VN")}
+                          {formatVnDateTime(item.created_at)}
                         </p>
                         <p className="coin-ref">{item.payment_reference}</p>
                       </td>

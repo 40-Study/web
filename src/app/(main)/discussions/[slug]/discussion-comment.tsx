@@ -11,6 +11,7 @@ import { TiptapEditor } from "@/components/editor/tiptap-editor";
 import type { ForumComment } from "@/types/discussion";
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import { DiscussionDeleteButton } from "./discussion-delete-button";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 interface DiscussionCommentProps {
   comment: ForumComment;
@@ -34,7 +35,7 @@ function timeAgo(dateStr: string): string {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs} giờ trước`;
   const days = Math.floor(hrs / 24);
-  return days < 30 ? `${days} ngày trước` : new Date(dateStr).toLocaleDateString("vi-VN");
+  return days < 30 ? `${days} ngày trước` : formatVnDate(dateStr);
 }
 
 export function DiscussionComment({

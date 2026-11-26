@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TiptapEditor } from "@/components/editor";
 import { cn } from "@/lib/utils";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 export interface Note {
   id: string;
@@ -104,13 +105,8 @@ export function LessonNotes({
                     className="text-sm prose prose-sm max-w-none break-words"
                     dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.content) }}
                   />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {new Date(note.createdAt).toLocaleDateString("vi-VN", {
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                  <p className="text-xs text-muted-foreground mt-2 whitespace-nowrap">
+                    {formatVnDateTime(note.createdAt)}
                   </p>
                 </div>
                 <Button

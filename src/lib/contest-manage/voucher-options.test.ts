@@ -13,7 +13,7 @@ describe("buildContestVoucherOptions", () => {
     const opts = buildContestVoucherOptions([EXPIRED, VALID, NO_END, ENDS_MID], END, []);
     const byId = Object.fromEntries(opts.map((o) => [o.id, o]));
     expect(byId.v1.disabled).toBe(true);
-    expect(byId.v1.label).toContain("Hết hạn 06:23 16/09/2026");
+    expect(byId.v1.label).toContain("Hết hạn 16/09/2026 06:23");
     expect(byId.v4.disabled).toBe(true); // hết hạn trong ngày thi nhưng trước giờ kết thúc
     expect(byId.v2.disabled).toBeUndefined();
     expect(byId.v3.disabled).toBeUndefined();

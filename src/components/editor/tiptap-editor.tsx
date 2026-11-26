@@ -27,6 +27,12 @@ export interface TiptapEditorProps {
     editorClassName?: string;
     readOnly?: boolean;
     minHeight?: number;
+    /** `id` của vùng soạn thảo (contenteditable) để `<label htmlFor>` / test trỏ tới được. */
+    id?: string;
+    /** Id của nhãn hiển thị bên ngoài: tên truy cập được của vùng soạn thảo (Q7-T07). */
+    ariaLabelledBy?: string;
+    /** Tên truy cập được khi không có nhãn hiển thị. */
+    ariaLabel?: string;
 }
 
 export function TiptapEditor({
@@ -40,6 +46,9 @@ export function TiptapEditor({
     editorClassName,
     readOnly = false,
     minHeight = 200,
+    id,
+    ariaLabelledBy,
+    ariaLabel,
 }: TiptapEditorProps) {
     const [isMounted, setIsMounted] = useState(false);
 
@@ -53,6 +62,18 @@ export function TiptapEditor({
         extensions,
         content: value ?? "",
         editable: !readOnly,
+        // Q7-T07: vùng soạn thảo là một `div[role=textbox]` không id/tên -> nhãn "Yêu cầu chi tiết *" trỏ vào hư không.
+        editorProps: {
+            attributes: {
+                role: "textbox",
+                "aria-multiline": "true",
+                // Chỉ đọc vẫn là textbox có tên, nhưng đọc ra "chỉ đọc" thay vì mời người dùng gõ (L5).
+                ...(readOnly ? { "aria-readonly": "true" } : {}),
+                ...(id ? { id } : {}),
+                ...(ariaLabelledBy ? { "aria-labelledby": ariaLabelledBy } : {}),
+                ...(ariaLabel ? { "aria-label": ariaLabel } : {}),
+            },
+        },
         onUpdate({ editor }) {
             onChange?.(editor.getHTML());
         },

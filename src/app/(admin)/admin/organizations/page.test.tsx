@@ -84,11 +84,11 @@ describe("/admin/organizations — G2/G8: không tạo tổ chức tên rỗng",
 });
 
 describe("/admin/organizations — G1: giờ tạo hiển thị theo giờ Việt Nam", () => {
-  it("created_at 10:00 +07:00 hiện '10:00 28/09/2026' khi máy chạy UTC", async () => {
+  it("created_at 10:00 +07:00 hiện '28/09/2026 10:00' khi máy chạy UTC", async () => {
     renderWithProviders(<OrganizationsPage />);
     fireEvent.click(await screen.findByText("ForteX"));
 
-    expect(await screen.findByText("10:00 28/09/2026")).toBeTruthy();
+    expect(await screen.findByText("28/09/2026 10:00")).toBeTruthy();
   });
 });
 

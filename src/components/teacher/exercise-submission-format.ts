@@ -4,6 +4,7 @@
 
 import { CODE_VERDICT_LABELS } from "@/components/code-workspace/code-judge-result";
 import type { ExerciseSubmissionRecord } from "@/services/exercise.service";
+import { formatVnDateTime } from "@/lib/vn-datetime";
 
 /** Trạng thái chỉ có ở bảng `exercise_submissions` (không có trong kết quả chấm trực tiếp). */
 const EXTRA_VERDICT_LABELS: Record<string, string> = {
@@ -33,17 +34,8 @@ export function submissionScore(sub: Pick<ExerciseSubmissionRecord, "test_cases_
   return sub.total_test_cases > 0 ? Math.floor((100 * sub.test_cases_passed) / sub.total_test_cases) : 0;
 }
 
-const DATE_TIME = new Intl.DateTimeFormat("vi-VN", {
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
 export function formatSubmittedAt(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "—" : DATE_TIME.format(date);
+  return formatVnDateTime(value);
 }
 
 /** Tên học viên; backend chưa gắn `student` (bản cũ) thì hiện mã người dùng rút gọn thay vì bỏ trống. */

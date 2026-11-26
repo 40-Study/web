@@ -12,6 +12,7 @@ import { Plus, Trophy } from "lucide-react";
 
 import { QueryState } from "@/components/common/query-state";
 import { ContestRowActions } from "@/components/contest-manage/teacher-row-actions";
+import { PendingPastStartBadge } from "@/components/contest-manage/pending-past-start-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useMyManagedContests } from "@/hooks/queries/use-contest-manage";
@@ -90,6 +91,7 @@ export default function TeacherContestsPage() {
                       {c.title}
                     </Link>
                     <Badge variant={phaseVariant(c.phase)}>{phaseLabel(c.phase)}</Badge>
+                    <PendingPastStartBadge contest={c} />
                   </div>
                   <p className="text-xs text-gray-500">
                     {formatVnDateTime(c.start_time)} → {formatVnDateTime(c.end_time)} · {c.duration_minutes} phút ·{" "}

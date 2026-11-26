@@ -46,7 +46,7 @@ describe("ContestLeaderboard — ân hạn 30 giây", () => {
   it("ACTIVE -> ẩn, ghi giờ công bố cụ thể", () => {
     renderAt("2026-09-29T09:00:00Z", "ACTIVE");
     expect(leaderboardMock).toHaveBeenLastCalledWith("c1", 1, false);
-    expect(screen.getByRole("status").textContent).toContain("17:00:30 29/09/2026");
+    expect(screen.getByRole("status").textContent).toContain("29/09/2026 17:00:30");
   });
 
   it("FINALIZED -> luôn hiện", () => {

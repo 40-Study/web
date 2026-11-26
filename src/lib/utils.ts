@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 /**
  * Utility function to merge Tailwind CSS classes
@@ -23,11 +24,7 @@ export function formatCurrency(amount: number): string {
  * Format date to Vietnamese locale
  */
 export function formatDate(date: Date | string): string {
-    return new Intl.DateTimeFormat("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-    }).format(new Date(date));
+    return formatVnDate(date);
 }
 
 /**

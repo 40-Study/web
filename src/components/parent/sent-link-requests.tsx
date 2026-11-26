@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCancelLinkRequest, useSentLinkRequests } from "@/hooks/queries/use-parent-link";
 import type { LinkRequestStatus } from "@/services/parent-link.service";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 const STATUS_LABEL: Record<LinkRequestStatus, { text: string; className: string }> = {
   pending: { text: "Đang chờ con xác nhận", className: "bg-amber-50 text-amber-700" },
@@ -13,7 +14,7 @@ const STATUS_LABEL: Record<LinkRequestStatus, { text: string; className: string 
   cancelled: { text: "Đã huỷ", className: "bg-slate-100 text-slate-600" },
 };
 
-const formatDay = (iso: string) => new Date(iso).toLocaleDateString("vi-VN");
+const formatDay = (iso: string) => formatVnDate(iso);
 
 /**
  * Nhãn trạng thái. Yêu cầu đã chốt ghi kèm NGÀY (review #38 W4): "Con đã xác nhận" trần trụi đọc

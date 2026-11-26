@@ -46,6 +46,7 @@ import {
   readHomeLayout,
   type HomeWidgetId,
 } from "./home-widget-layout";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 const ICONS: Record<HomeWidgetId, LucideIcon> = {
   continue: BookOpen,
@@ -331,7 +332,7 @@ export function HomeDashboard() {
                 <div
                   className="mt-5 flex h-32 items-end gap-3 border-b border-border pb-2"
                   role="img"
-                  aria-label={`Hoạt động 7 ngày qua: ${activity.map((day) => `${day.date.toLocaleDateString("vi-VN")}: ${day.count}`).join(", ")}`}
+                  aria-label={`Hoạt động 7 ngày qua: ${activity.map((day) => `${formatVnDate(day.date)}: ${day.count}`).join(", ")}`}
                 >
                   {activity.map((day, index) => (
                     <div

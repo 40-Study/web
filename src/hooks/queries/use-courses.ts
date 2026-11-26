@@ -87,14 +87,16 @@ export function useFeaturedCourses() {
   });
 }
 
-/** Create course mutation */
+/**
+ * Create course mutation. KHÔNG tự báo thành công (Q7-T05): trang tạo khoá báo đúng ngữ cảnh ("Đã lưu nháp thành công"
+ * / "Khoá học đã được tạo!"); hook cũng báo thì hiện hai toast cùng lúc. Lỗi vẫn báo ở đây (trang chỉ nuốt exception).
+ */
 export function useCreateCourse() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateCourseDTO) => courseService.createCourse(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: courseKeys.all });
-      toast.success("Tạo khoá học thành công");
     },
     // 400 DISCOUNT_PRICE_INVALID -> lý do tiếng Việt cụ thể thay vì lỗi chung.
     onError: (error) => toast.error(approvalErrorMessage(error, "Không thể tạo khoá học")),
@@ -141,8 +143,16 @@ export function useDeleteCourse() {
 
   return useMutation({
     mutationFn: (id: string) => courseService.deleteCourse(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: courseKeys.all });
+    onSuccess: (_, id) => {
+      // Q7-T10: invalidate cả `courseKeys.all` làm trang chi tiết (còn đang mount, chờ router.push) refetch chính khoá
+      // vừa xoá -> 404 + console error. Huỷ request đang bay, bỏ chi tiết khoá này khỏi đợt refetch, chỉ đánh dấu cũ.
+      const detailKey = courseKeys.detail(id);
+      void qc.cancelQueries({ queryKey: detailKey });
+      qc.invalidateQueries({
+        queryKey: courseKeys.all,
+        predicate: (query) => !(query.queryKey[1] === "detail" && query.queryKey[2] === id),
+      });
+      qc.invalidateQueries({ queryKey: detailKey, refetchType: "none" });
       qc.invalidateQueries({ queryKey: adminCourseKeys.all });
       toast.success("Xoá khoá học thành công");
     },

@@ -18,16 +18,16 @@ afterAll(() => {
 
 describe("formatVnDateTime", () => {
   it("chuỗi backend mới (+07:00) hiện đúng 10:00 giờ VN", () => {
-    expect(formatVnDateTime("2026-09-28T10:00:00+07:00")).toBe("10:00 28/09/2026");
+    expect(formatVnDateTime("2026-09-28T10:00:00+07:00")).toBe("28/09/2026 10:00");
   });
 
   it("cùng instant viết theo UTC (03:00Z) cũng ra 10:00 giờ VN", () => {
-    expect(formatVnDateTime("2026-09-28T03:00:00Z")).toBe("10:00 28/09/2026");
+    expect(formatVnDateTime("2026-09-28T03:00:00Z")).toBe("28/09/2026 10:00");
   });
 
   it("chuỗi kiểu CŨ (giờ local gắn Z) là sai 7 tiếng — lý do backend phải đổi format", () => {
     // 10:00 VN bị backend cũ in thành "…T10:00:00Z" => web hiểu là 17:00 VN.
-    expect(formatVnDateTime("2026-09-28T10:00:00Z")).toBe("17:00 28/09/2026");
+    expect(formatVnDateTime("2026-09-28T10:00:00Z")).toBe("28/09/2026 17:00");
   });
 
   it("null/rỗng/không hợp lệ hiện gạch ngang", () => {

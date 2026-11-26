@@ -9,6 +9,7 @@ import type {
   ChildCourse,
   ChildOverview,
 } from "@/services/parent-dashboard.service";
+import { formatVnDate } from "@/lib/vn-datetime";
 
 /**
  * Tab "Tổng quan" (E5, QA vòng 2): trước đây chỉ có một câu "Chọn các tab khác để xem chi tiết",
@@ -54,7 +55,7 @@ export function ChildOverviewTab({
         {upcoming.map((a) => (
           <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
             <span className="truncate text-gray-700">{a.title}</span>
-            <span className="shrink-0 text-gray-400">{new Date(a.due_date!).toLocaleDateString("vi-VN")}</span>
+            <span className="shrink-0 text-gray-400">{formatVnDate(a.due_date)}</span>
           </li>
         ))}
       </Section>
@@ -65,7 +66,7 @@ export function ChildOverviewTab({
             <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
               <span className="truncate text-gray-700">{a.title}</span>
               <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-red-600">
-                Chưa nộp, hạn {new Date(a.due_date!).toLocaleDateString("vi-VN")}
+                Chưa nộp, hạn {formatVnDate(a.due_date)}
               </span>
             </li>
           ))}
