@@ -55,3 +55,15 @@ describe("/admin/withdrawals — QA8-A12 tên chủ tài khoản trống", () =>
     expect(screen.getByText(/1260866135/).textContent?.trim()).toBe("1260866135 — NGUYEN VAN A");
   });
 });
+
+describe("/admin/withdrawals — QA8-L1 email giảng viên dài", () => {
+  it("email 58 ký tự bị cắt bằng truncate/max-w và còn đủ trong title", () => {
+    const long = `${"giang.vien.ten.rat.dai".repeat(2)}@truong-dai-hoc-rat-dai.edu.vn`;
+    mockItems = [{ ...item("NGUYEN VAN A"), teacher_name: "GV A", teacher_email: long }];
+    render(<AdminWithdrawalsPage />);
+    const email = screen.getByTitle(long);
+    expect(email.textContent).toBe(long);
+    expect(email.className).toMatch(/\btruncate\b/);
+    expect(email.className).toMatch(/\bmax-w-\[14rem\]/);
+  });
+});

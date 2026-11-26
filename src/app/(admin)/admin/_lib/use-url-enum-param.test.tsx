@@ -47,4 +47,26 @@ describe("useUrlEnumParam", () => {
     act(() => result.current[1]("pending_review"));
     expect(replace).toHaveBeenCalledWith("/admin/courses", { scroll: false });
   });
+
+  it("QA8-L6: ?status= lạ được dọn khỏi URL bằng replace, giữ tham số khác", () => {
+    search = "keyword=abc&status=hack";
+    const { result } = renderHook(() => useUrlEnumParam("status", STATUSES, "pending_review"));
+    expect(result.current[0]).toBe("pending_review");
+    expect(replace).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledWith("/admin/courses?keyword=abc", { scroll: false });
+  });
+
+  it("QA8-L6: ?status= lạ là tham số duy nhất thì về đường dẫn trần", () => {
+    search = "status=hack";
+    renderHook(() => useUrlEnumParam("status", STATUSES, "pending_review"));
+    expect(replace).toHaveBeenCalledWith("/admin/courses", { scroll: false });
+  });
+
+  it("QA8-L6: giá trị hợp lệ hoặc thiếu thì không replace", () => {
+    search = "status=published";
+    renderHook(() => useUrlEnumParam("status", STATUSES, "pending_review"));
+    search = "";
+    renderHook(() => useUrlEnumParam("status", STATUSES, "pending_review"));
+    expect(replace).not.toHaveBeenCalled();
+  });
 });

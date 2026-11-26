@@ -40,6 +40,13 @@ describe("admin pages — QA8-A10 tương phản và thứ tự heading", () => 
     expect(roles).not.toMatch(/bg-muted[^"]*text-muted-foreground/);
   });
 
+  it("QA8-L2: huy hiệu 'Đã ẩn' ở danh mục và chip menu mobile cũng đủ đậm (cùng cặp 4.4:1 với A10)", () => {
+    const categories = files.find((f) => f.path.endsWith("admin/categories/page.tsx"))?.text ?? "";
+    expect(categories).not.toMatch(/bg-gray-100[^"]*text-gray-500/);
+    const nav = files.find((f) => f.path.endsWith("components/admin/admin-mobile-nav.tsx"))?.text ?? "";
+    expect(nav).not.toMatch(/bg-muted[^"]*text-muted-foreground/);
+  });
+
   it("tiêu đề thẻ ở dashboard, vai trò, danh mục, chi tiết người dùng là h2 (không nhảy h1 -> h3)", () => {
     for (const suffix of ["admin/page.tsx", "admin/roles/page.tsx", "admin/categories/page.tsx", "users/[id]/page.tsx"]) {
       const file = files.find((f) => f.path.endsWith(suffix));

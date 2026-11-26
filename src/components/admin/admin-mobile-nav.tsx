@@ -52,7 +52,7 @@ export function AdminMobileNav({ items, isActive }: AdminMobileNavProps) {
               "whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium",
               isActive(item.href)
                 ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
-                : "bg-muted text-muted-foreground"
+                : "bg-muted text-gray-600 dark:text-gray-300"
             )}
           >
             {item.label}

@@ -146,7 +146,7 @@ export default function AdminCategoriesPage() {
                   <h2 className="min-w-0 break-words font-semibold text-gray-900">{cat.name}</h2>
                   <p className="min-w-0 break-words text-sm text-gray-500">{cat.description || "Không có mô tả"}</p>
                   {cat.is_active === false && (
-                    <span className="mt-1 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-500">
+                    <span className="mt-1 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-700">
                       Đã ẩn
                     </span>
                   )}

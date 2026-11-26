@@ -271,7 +271,7 @@ function AdminWithdrawalsContent() {
                         >
                           {w.teacher_name || w.teacher_email}
                         </button>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{w.teacher_email}</div>
+                        <div className="block max-w-[14rem] truncate text-xs text-gray-500 dark:text-gray-400" title={w.teacher_email}>{w.teacher_email}</div>
                         <div className={MOBILE_SUMMARY} data-testid="withdrawal-mobile-summary">
                           <span className="font-medium text-gray-900 dark:text-gray-100">{formatWithdrawalAmount(w.amount)}</span>
                           <Badge variant={getWithdrawalStatusVariant(w.status)}>{getWithdrawalStatusLabel(w.status)}</Badge>
