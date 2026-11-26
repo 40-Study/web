@@ -49,6 +49,12 @@ export default function CreateCoursePage() {
   // nên tự mất khi giá được sửa đúng).
   const [draftBlocked, setDraftBlocked] = useState(false);
 
+  /** Mọi lần đổi bước dùng hàm này: lý do chặn lưu nháp chỉ thuộc về lần bấm lưu vừa rồi, sang bước khác thì bỏ (L4). */
+  const goToStep = (step: number | ((s: number) => number)) => {
+    setDraftBlocked(false);
+    setCurrentStep(step);
+  };
+
   const update = useCallback(<K extends keyof CourseFormData>(key: K, value: CourseFormData[K]) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   }, []);
@@ -81,9 +87,9 @@ export default function CreateCoursePage() {
       toast.info(THUMBNAIL_UPLOADING_NOTE);
       return false;
     }
-    if (priceBlockError === null) return true;
-    setDraftBlocked(true);
-    return false;
+    // Mỗi lần bấm lưu tính lại từ đầu: lần này qua được thì lý do của lần chặn trước không còn đúng nữa (L4).
+    setDraftBlocked(priceBlockError !== null);
+    return priceBlockError === null;
   };
 
   const buildPayload = () => ({
@@ -167,7 +173,7 @@ export default function CreateCoursePage() {
               Tạo khoá & thêm bài học
             </Button>
           ) : (
-            <Button size="sm" onClick={() => setCurrentStep((s) => s + 1)} disabled={!canGoNext()}>
+            <Button size="sm" onClick={() => goToStep((s) => s + 1)} disabled={!canGoNext()}>
               Tiếp tục
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
@@ -187,7 +193,7 @@ export default function CreateCoursePage() {
                 <button
                   key={step.id}
                   data-step-state={isCurrent ? "current" : isCompleted ? "completed" : "todo"}
-                  onClick={() => step.id <= currentStep && setCurrentStep(step.id)}
+                  onClick={() => step.id <= currentStep && goToStep(step.id)}
                   className={cn(
                     "flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-sm transition-colors text-left",
                     isCurrent && "bg-primary-50 text-primary-700 font-medium",
@@ -255,7 +261,7 @@ export default function CreateCoursePage() {
           {draftBlocked && priceBlockError !== null && currentStep !== 3 && (
             <div role="alert" className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-red-600">
               <span>Chưa thể lưu nháp: {priceBlockError}</span>
-              <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setCurrentStep(3)}>
+              <Button variant="link" size="sm" className="h-auto p-0" onClick={() => goToStep(3)}>
                 Đến bước Cài đặt giá
               </Button>
             </div>
@@ -271,7 +277,7 @@ export default function CreateCoursePage() {
           {/* Bottom Navigation */}
           <div className="flex flex-col-reverse gap-3 mt-8 pt-6 border-t sm:flex-row sm:items-center sm:justify-between">
             {currentStep > 1 ? (
-              <Button variant="ghost" onClick={() => setCurrentStep((s) => s - 1)}>
+              <Button variant="ghost" onClick={() => goToStep((s) => s - 1)}>
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 Quay lại
               </Button>
@@ -290,7 +296,7 @@ export default function CreateCoursePage() {
                   Tạo khoá & thêm bài học
                 </Button>
               ) : (
-                <Button onClick={() => setCurrentStep((s) => s + 1)} disabled={!canGoNext()}>
+                <Button onClick={() => goToStep((s) => s + 1)} disabled={!canGoNext()}>
                   Tiếp tục bước kế tiếp
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>

@@ -1,7 +1,7 @@
 /**
- * Q7-T04 / Q7-T05: "Lưu nháp" ở bước 1 khi chưa có giá từng nhảy thẳng sang bước 3 kèm toast đỏ, và thanh bước tick
- * xanh bước 1 + 2 chỉ vì chúng nằm trước bước hiện tại (bước 2 chưa có ảnh bìa/mô tả). Giờ: ở yên bước hiện tại,
- * hiện lý do + lối sang bước giá; tick theo bước đã hợp lệ; một lần lưu thành công chỉ một toast.
+ * Q7-T04 / Q7-T05: "Lưu nháp" ở bước 1 khi chưa có giá từng nhảy thẳng sang bước 3 kèm toast đỏ. Giờ: ở yên bước
+ * hiện tại, hiện lý do + lối sang bước giá (lý do mất khi đổi bước, L4); một lần lưu thành công chỉ một toast.
+ * Quy tắc tick thanh bước (theo bước hợp lệ, không theo vị trí) nằm ở page.step-tick.test.tsx.
  */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -36,9 +36,9 @@ vi.mock("../_components/course-media-step", () => ({
 // eslint-disable-next-line import/first
 import CreateCoursePage from "./page";
 
+// Có hai nút "Quay lại": đầu trang (về danh sách khoá) và cuối trang (về bước trước). Cần cái cuối.
+const backButton = () => screen.getAllByRole("button", { name: /Quay lại/ }).at(-1)!;
 const draftButton = () => screen.getAllByRole("button", { name: "Lưu nháp" })[0];
-const stepState = (title: string) =>
-  screen.getByRole("button", { name: new RegExp(title) }).getAttribute("data-step-state");
 
 describe("wizard tạo khoá — Lưu nháp thiếu giá (Q7-T04)", () => {
   beforeEach(() => {
@@ -61,12 +61,29 @@ describe("wizard tạo khoá — Lưu nháp thiếu giá (Q7-T04)", () => {
     expect(screen.getByRole("heading", { name: "Cài đặt giá" })).toBeTruthy();
   });
 
-  it("tick bước theo điều kiện của bước, không theo vị trí: bước 2 thiếu ảnh/mô tả thì không tick", () => {
+  it("lý do chặn lưu nháp mất khi sang bước khác, không hiện lại khi chưa bấm lưu (L4)", () => {
     render(<CreateCoursePage />);
     fireEvent.change(screen.getByLabelText("Tên khoá học"), { target: { value: "Khoá test" } });
-    fireEvent.click(screen.getAllByRole("button", { name: /Tiếp tục/ })[0]); // -> bước 2 (chưa có ảnh bìa)
-    expect(stepState("Thông tin cơ bản")).toBe("completed");
-    expect(stepState("Hình ảnh & Mô tả")).toBe("current");
+    fireEvent.click(draftButton());
+    expect(screen.getByRole("alert")).toBeTruthy();
+
+    fireEvent.click(screen.getAllByRole("button", { name: /Tiếp tục/ })[0]); // -> bước 2
+    expect(screen.queryByRole("alert")).toBeNull();
+    fireEvent.click(backButton()); // -> bước 1, giá vẫn thiếu
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("sau khi sửa giá rồi làm sai lại, quay về bước 1 không hiện lại cảnh báo của lần lưu cũ (L4)", () => {
+    render(<CreateCoursePage />);
+    fireEvent.change(screen.getByLabelText("Tên khoá học"), { target: { value: "Khoá test" } });
+    fireEvent.click(draftButton());
+    fireEvent.click(screen.getByRole("button", { name: "Đến bước Cài đặt giá" })); // -> bước 3
+    const price = screen.getByPlaceholderText("1200000");
+    fireEvent.change(price, { target: { value: "5000" } });
+    fireEvent.change(price, { target: { value: "" } });
+    fireEvent.click(backButton()); // -> bước 2
+    fireEvent.click(backButton()); // -> bước 1
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("lưu nháp thành công chỉ báo một toast thành công", async () => {
