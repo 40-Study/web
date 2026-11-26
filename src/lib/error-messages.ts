@@ -22,6 +22,7 @@ import {
   CONTRACT_MESSAGE_FIRST_CODES,
   isUserFacingServerErrorCode,
 } from "./contract-error-codes";
+import { QA8_TEACHER_CODE_MESSAGES, QA8_TEACHER_MESSAGE_FIRST_CODES } from "./qa8-teacher-error-codes";
 
 export const GENERIC_ERROR_MESSAGE = "Có lỗi xảy ra, vui lòng thử lại";
 export const NETWORK_ERROR_MESSAGE = "Mất kết nối tới máy chủ. Vui lòng kiểm tra mạng và thử lại.";
@@ -112,6 +113,7 @@ const CODE_MESSAGES: Record<string, string> = {
   // QA8 C23 (A04): vai gán theo tổ chức (Chủ tổ chức) không gán được như vai hệ thống (400).
   ERR_ROLE_NOT_ASSIGNABLE:
     "Vai trò này được gán theo từng tổ chức nên không thể gán như vai hệ thống. Hãy thêm người dùng vào tổ chức ở mục Quản lý tổ chức.",
+  ...QA8_TEACHER_CODE_MESSAGES,
 };
 
 // Code chỉ nói LOẠI lỗi, message mới nói lý do (vd. ERR_NOT_FOUND + "Voucher not found",
@@ -128,6 +130,7 @@ const GENERIC_CODES = new Set([
   "CLASS_ARCHIVED",
   "ORG_ROLE_ALREADY_ASSIGNED",
   "ROLE_NAME_TAKEN",
+  ...QA8_TEACHER_MESSAGE_FIRST_CODES,
 ]);
 
 // Khoá là message backend viết thường (so khớp không phân biệt hoa thường).

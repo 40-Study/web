@@ -13,6 +13,7 @@ import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { bootstrapAuthSession } from "@/components/providers/auth-session";
 import { ApiError, AuthError, RateLimitError } from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-messages";
+import { deleteAccountErrorMessage } from "@/lib/account-deletion";
 import { sanitizeRedirect } from "@/lib/safe-redirect";
 import { AUTH_ROUTES } from "@/lib/routes";
 import { STORAGE_KEYS } from "@/lib/constants";
@@ -589,8 +590,8 @@ export function useDeleteAccount() {
       authStore.logout();
       window.location.href = "/login";
     },
-    onError: () => {
-      toast.error("Xoá tài khoản thất bại, vui lòng kiểm tra lại mật khẩu");
+    onError: (error: unknown) => {
+      toast.error(deleteAccountErrorMessage(error));
     },
   });
 }
