@@ -110,7 +110,7 @@ describe("/teacher/wallet — đơn huỷ không hiện như đã nhận tiền 
     expect(screen.getByText(/Đã ẩn 1 đơn đã huỷ/)).toBeTruthy();
   });
 
-  it("đơn 'cancelled': KHÔNG dấu '+', KHÔNG màu xanh (text-green-600), badge 'Đã huỷ'", () => {
+  it("đơn 'cancelled': KHÔNG dấu '+', KHÔNG màu xanh (text-green-700), badge 'Đã huỷ'", () => {
     mockTransactions = [txFixture({ order_id: "cancelled-1", status: "cancelled", type: "income" })];
     render(<TeacherWalletPage />);
     fireEvent.click(screen.getByRole("checkbox", { name: "Hiện đơn đã huỷ" }));
@@ -118,7 +118,7 @@ describe("/teacher/wallet — đơn huỷ không hiện như đã nhận tiền 
     expect(screen.getByText("Đã huỷ")).toBeTruthy();
     const amountCell = screen.getByText(/499\.000/);
     expect(amountCell.textContent).not.toContain("+");
-    expect(amountCell.className).not.toContain("text-green-600");
+    expect(amountCell.className).not.toContain("text-green-700");
   });
 
   it("đơn 'completed' (income): CÓ dấu '+' và màu xanh — đối chứng, không phải mọi đơn đều trung tính", () => {
@@ -126,7 +126,7 @@ describe("/teacher/wallet — đơn huỷ không hiện như đã nhận tiền 
     render(<TeacherWalletPage />);
 
     const amountCell = screen.getByText(/\+.*499\.000/);
-    expect(amountCell.className).toContain("text-green-600");
+    expect(amountCell.className).toContain("text-green-700");
   });
 
   it("đơn hoàn tiền (type=expense): dấu '-' và màu đỏ, bất kể status", () => {

@@ -121,9 +121,9 @@ export default function CalendarEventCard({ event }: CalendarEventCardProps) {
             <p className={cn("text-[10px] font-semibold leading-tight", colors.text)}>
               {timeStr}
             </p>
-            <h4 className="font-semibold text-gray-900 text-[11px] mt-0.5 line-clamp-2 leading-tight">
+            <p className="font-semibold text-gray-900 text-[11px] mt-0.5 line-clamp-2 leading-tight">
               {event.title}
-            </h4>
+            </p>
           </div>
           {/* Bottom row: tag / participants / recurrence */}
           <div className="flex items-center justify-between gap-1 mt-1">

@@ -80,7 +80,7 @@ function TransactionRow({ tx }: { tx: CoinTransaction }) {
           )}
         >
           {isEarn ? (
-            <ArrowDownRight className="h-4 w-4 text-green-600" />
+            <ArrowDownRight className="h-4 w-4 text-green-700" />
           ) : (
             <ArrowUpRight className="h-4 w-4 text-red-600" />
           )}
@@ -92,7 +92,7 @@ function TransactionRow({ tx }: { tx: CoinTransaction }) {
           </p>
         </div>
       </div>
-      <div className={cn("font-semibold text-sm", isEarn ? "text-green-600" : "text-red-600")}>
+      <div className={cn("font-semibold text-sm", isEarn ? "text-green-700" : "text-red-600")}>
         {isEarn ? "+" : ""}
         {formatNumber(tx.amount)}
       </div>
@@ -331,7 +331,7 @@ export default function CoinsPage() {
             <div className="commerce-checkout-grid">
               <section>
                 <h2 className="mb-2 text-base font-semibold">Chọn gói xu phù hợp</h2>
-                <p className="mb-5 text-xs text-slate-400">
+                <p className="mb-5 text-xs text-slate-600">
                   Số xu nhận được đã bao gồm xu tặng thêm.
                 </p>
                 <div className="coin-package-grid">
@@ -360,7 +360,7 @@ export default function CoinsPage() {
                       <div className="coin-package-price">
                         {formatNumber(Number(pkg.price))} ₫{" "}
                         {pkg.is_featured && (
-                          <span className="ml-1 rounded bg-indigo-50 px-2 py-1 text-[9px] text-indigo-500">
+                          <span className="ml-1 rounded bg-indigo-50 px-2 py-1 text-[9px] text-indigo-700">
                             Phổ biến
                           </span>
                         )}
@@ -369,7 +369,7 @@ export default function CoinsPage() {
                   ))}
                 </div>
                 {packages.data?.length === 0 && (
-                  <div className="commerce-panel p-10 text-center text-sm text-slate-400">
+                  <div className="commerce-panel p-10 text-center text-sm text-slate-600">
                     Hiện chưa có gói xu. Vui lòng quay lại sau.
                   </div>
                 )}
@@ -390,7 +390,7 @@ export default function CoinsPage() {
                   </div>
                   <div>
                     <dt>Xu tặng thêm</dt>
-                    <dd className="text-emerald-600">
+                    <dd className="text-emerald-700">
                       +{formatNumber(selected?.bonus_amount ?? 0)} xu
                     </dd>
                   </div>
@@ -485,7 +485,7 @@ export default function CoinsPage() {
                 </tbody>
               </table>
               {!purchases.data?.purchases.length && (
-                <p className="p-10 text-center text-sm text-slate-400">Bạn chưa có đơn nạp xu.</p>
+                <p className="p-10 text-center text-sm text-slate-600">Bạn chưa có đơn nạp xu.</p>
               )}
             </div>
             <div className="mt-4 flex items-center justify-end gap-3 text-xs text-slate-500">
@@ -522,7 +522,7 @@ export default function CoinsPage() {
               {transactions.data?.transactions.length ? (
                 transactions.data.transactions.map((tx) => <TransactionRow key={tx.id} tx={tx} />)
               ) : (
-                <p className="p-8 text-center text-sm text-slate-400">Chưa có biến động số dư.</p>
+                <p className="p-8 text-center text-sm text-slate-600">Chưa có biến động số dư.</p>
               )}
             </div>
           </QueryState>

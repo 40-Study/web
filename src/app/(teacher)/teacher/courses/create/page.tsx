@@ -206,7 +206,7 @@ export default function CreateCoursePage() {
                       "w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium shrink-0",
                       isCurrent && "bg-primary-600 text-white",
                       isCompleted && "bg-green-500 text-white",
-                      !isCurrent && !isCompleted && "bg-gray-200 text-gray-500"
+                      !isCurrent && !isCompleted && "bg-gray-200 text-gray-600"
                     )}
                   >
                     {isCompleted ? <Check className="w-3.5 h-3.5" /> : step.id}

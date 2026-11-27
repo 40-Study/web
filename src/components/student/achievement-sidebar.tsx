@@ -47,7 +47,7 @@ export function AchievementSidebar({ achievements }: AchievementSidebarProps) {
               <p className="text-sm font-semibold text-gray-900 truncate">
                 {achievement.title}
               </p>
-              <p className="text-xs text-gray-400">{achievement.earnedAt}</p>
+              <p className="text-xs text-gray-500">{achievement.earnedAt}</p>
             </div>
           </div>
         ))}

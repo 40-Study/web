@@ -34,7 +34,7 @@ export function CourseBasicInfoStep({ formData, update }: { formData: CourseForm
       {/* Course Title */}
       <div className="space-y-2">
         <Label htmlFor="title">
-          Tên khoá học <span className="text-red-500">*</span>
+          Tên khoá học <span className="text-red-600">*</span>
         </Label>
         <Input
           id="title"

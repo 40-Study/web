@@ -113,7 +113,7 @@ function AssignmentCard({
             </span>
           )}
           {!item.is_published && (
-            <span className="text-gray-400">Chưa công bố</span>
+            <span className="text-gray-500">Chưa công bố</span>
           )}
           {deadline && (
             // Đã nộp/đã chấm thì không còn "nộp muộn" nào để nhắc (QA6 S6-06): chỉ ghi mốc hạn, không tô cam.
@@ -127,7 +127,7 @@ function AssignmentCard({
         {/* Time limit (S7-05: bài chấm thủ công không chạy test nên không có giới hạn/test) */}
         {item.auto_grade !== false && item.time_limit && item.time_limit > 0 && (
           <span
-            className="text-xs text-gray-400 flex items-center gap-1"
+            className="text-xs text-gray-500 flex items-center gap-1"
             title="Thời gian chạy tối đa cho mỗi test (không phải đồng hồ đếm ngược)"
           >
             <Clock className="w-3 h-3" aria-hidden="true" />

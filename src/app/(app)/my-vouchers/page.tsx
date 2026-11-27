@@ -33,18 +33,18 @@ const STATUS_CONFIG: Record<VoucherStatus, StatusConfig> = {
   },
   inactive: {
     label: "Không hoạt động",
-    className: "bg-gray-100 text-gray-500 border-gray-200",
+    className: "bg-gray-100 text-gray-600 border-gray-200",
     icon: <XCircle className="h-3.5 w-3.5" />,
   },
   expired: {
     label: "Hết hạn",
-    className: "bg-red-50 text-red-600 border-red-200",
+    className: "bg-red-50 text-red-700 border-red-200",
     icon: <Clock className="h-3.5 w-3.5" />,
   },
   // Voucher còn hiệu lực nhưng backend báo người này chưa dùng được (hết lượt, chỉ đơn đầu tiên, chưa đến ngày...).
   unavailable: {
     label: "Chưa dùng được",
-    className: "bg-gray-100 text-gray-500 border-gray-200",
+    className: "bg-gray-100 text-gray-600 border-gray-200",
     icon: <XCircle className="h-3.5 w-3.5" />,
   },
 };
@@ -84,7 +84,7 @@ function VoucherCard({ entry }: { entry: MyVoucherWithDetails }) {
 
   if (!voucher) {
     return (
-      <div className="rounded-xl border border-dashed p-4 text-sm text-gray-400">
+      <div className="rounded-xl border border-dashed p-4 text-sm text-gray-500">
         Không tải được chi tiết voucher (đã lưu lúc{" "}
         {formatVnDate(entry.saved_at)})
       </div>
@@ -125,7 +125,7 @@ function VoucherCard({ entry }: { entry: MyVoucherWithDetails }) {
       data-testid={eligible ? "voucher-eligible" : "voucher-ineligible"}
       className={cn(
         "relative rounded-xl border p-4 transition-shadow",
-        eligible ? "bg-white shadow-sm hover:shadow-md" : "bg-gray-50 opacity-70"
+        eligible ? "bg-white shadow-sm hover:shadow-md" : "bg-gray-50"
       )}
     >
       {/* Top row: code + status badge */}
@@ -173,7 +173,7 @@ function VoucherCard({ entry }: { entry: MyVoucherWithDetails }) {
       )}
 
       {/* Footer: min order + expiry */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400 border-t pt-2 mt-2">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 border-t pt-2 mt-2">
         {minPurchase > 0 ? (
           <span>Đơn tối thiểu {formatCurrency(minPurchase)}</span>
         ) : (

@@ -32,7 +32,7 @@ export function transactionAmountDisplay(tx: Pick<TeacherTransaction, "type" | "
   className: string;
 } {
   if (tx.type === "expense") return { sign: "-", className: "text-red-500" };
-  if (tx.status === "completed") return { sign: "+", className: "text-green-600" };
+  if (tx.status === "completed") return { sign: "+", className: "text-green-700 dark:text-green-400" };
   return { sign: "", className: "text-muted-foreground" };
 }
 

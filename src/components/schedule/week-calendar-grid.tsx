@@ -497,7 +497,7 @@ function StatCard({ icon, label, value }: { icon?: React.ReactNode; label: strin
     <div className="flex items-center gap-3 bg-white rounded-2xl border px-5 py-4 shadow-sm" data-testid="schedule-stat">
       {icon && <div className="p-2 bg-gray-50 rounded-xl">{icon}</div>}
       <div>
-        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
+        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">{label}</p>
         <p className="text-xl font-bold text-gray-900">{value}</p>
       </div>
     </div>

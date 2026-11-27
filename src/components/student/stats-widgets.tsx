@@ -19,7 +19,7 @@ export function StatsWidgets({ stats }: StatsWidgetsProps) {
           <Flame className="w-5 h-5 text-orange-500" />
         </div>
         <div>
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Tổng thời gian học</p>
+          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Tổng thời gian học</p>
           <p className="text-lg font-bold text-gray-900 leading-tight">{stats.timeSpent}</p>
         </div>
       </div>
@@ -30,7 +30,7 @@ export function StatsWidgets({ stats }: StatsWidgetsProps) {
           <Zap className="w-5 h-5 text-primary-500" />
         </div>
         <div>
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Tiến độ tổng</p>
+          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Tiến độ tổng</p>
           <p className="text-lg font-bold text-gray-900 leading-tight">{stats.progress}%</p>
         </div>
       </div>
