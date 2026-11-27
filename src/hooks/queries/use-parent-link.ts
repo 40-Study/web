@@ -27,7 +27,9 @@ export function parentLinkErrorMessage(
   fallback: string,
   rateLimitMessage = "Bạn thao tác quá nhanh. Vui lòng thử lại sau ít phút.",
 ): string {
-  if (error instanceof RateLimitError) return rateLimitMessage;
+  // 429 có code nghiệp vụ (vd. LINK_REQUEST_DAILY_LIMIT, khoá 24 giờ): giữ câu backend để phụ huynh biết đây là hạn mức
+  // theo ngày (Q11-PG-01 cùng lớp lỗi). Chỉ 429 limiter thuần (code RATE_LIMIT) mới dùng câu chung (Q11 #149 M1).
+  if (error instanceof RateLimitError) return error.code !== "RATE_LIMIT" ? error.message : rateLimitMessage;
   if (error instanceof ApiError && error.status < 500 && error.message) return error.message;
   return fallback;
 }
