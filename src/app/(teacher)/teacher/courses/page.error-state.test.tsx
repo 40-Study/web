@@ -23,6 +23,8 @@ describe("/teacher/courses — danh sách lỗi (Q9-T-02)", () => {
     expect(screen.getByRole("alert").textContent).toContain("Không thể tải dữ liệu");
     expect(screen.queryByText(/Không có khoá học/)).toBeNull();
     expect(screen.queryByText(/\(0\)/)).toBeNull();
+    // L3: tạo khoá học không phụ thuộc danh sách nên nút vẫn hiện khi GET lỗi.
+    expect(screen.getByRole("link", { name: /Tạo khoá học mới/ }).getAttribute("href")).toBe("/teacher/courses/create");
     fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
     expect(refetch).toHaveBeenCalledTimes(1);
   });

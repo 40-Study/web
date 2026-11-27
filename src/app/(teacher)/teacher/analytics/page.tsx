@@ -48,6 +48,8 @@ export default function TeacherAnalyticsPage() {
     user?.id ? { host_id: user.id, page_size: 100 } : undefined
   );
   const sessionOptions = useMemo(() => toAnalyticsSessionOptions(sessionsData?.sessions ?? []), [sessionsData]);
+  // Q9-T-03: hộp lỗi chỉ khi KHÔNG có dữ liệu cũ; refetch nền lỗi mà đã có danh sách thì giữ nguyên danh sách.
+  const sessionListLoadFailed = isSessionListError && !sessionsData;
   const selectedLabel = sessionOptions.find((o) => o.value === sessionId)?.label ?? sessionId;
 
   const {
@@ -90,7 +92,7 @@ export default function TeacherAnalyticsPage() {
               placeholder={
                 isSessionListLoading
                   ? "Đang tải danh sách buổi học..."
-                  : isSessionListError && sessionOptions.length === 0
+                  : sessionListLoadFailed
                     ? "Không tải được danh sách buổi học"
                     : sessionOptions.length === 0
                     ? "Chưa có buổi học nào để xem thống kê"
@@ -106,7 +108,7 @@ export default function TeacherAnalyticsPage() {
             ))}
           </SelectContent>
         </Select>
-        {isSessionListError && (
+        {sessionListLoadFailed && (
           // Q9-T-03: một câu lỗi + "Thử lại"; không đi kèm câu "Chưa có buổi học nào" của trạng thái rỗng.
           <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-destructive">
             <span>Không tải được danh sách buổi học.</span>
@@ -116,7 +118,7 @@ export default function TeacherAnalyticsPage() {
       </div>
 
       {/* Empty state */}
-      {!sessionId && !(isSessionListError && sessionOptions.length === 0) && (
+      {!sessionId && !sessionListLoadFailed && (
         <Card>
           <EmptyState
             icon={BarChart3}

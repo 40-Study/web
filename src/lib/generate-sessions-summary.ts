@@ -17,7 +17,7 @@ const REASON_LABEL: Record<string, string> = {
   // backend#149: buổi của lịch lặp ngày đó đã bị huỷ có chủ ý, không sinh lại.
   cancelled: "đã huỷ",
 };
-const UNKNOWN_REASON_LABEL = "không tạo được";
+const UNKNOWN_REASON_LABEL = "(không rõ lý do)";
 
 /** "2026-11-30" -> "30/11"; chuỗi lạ giữ nguyên. */
 function shortDate(ymd: string): string {
@@ -29,9 +29,10 @@ function groupByReason(skipped: readonly SkippedSession[]): Map<string, string[]
   const byReason = new Map<string, string[]>();
   for (const s of skipped) {
     const label = REASON_LABEL[s.reason] ?? UNKNOWN_REASON_LABEL;
-    byReason.set(label, [...(byReason.get(label) ?? []), shortDate(s.date)]);
+    byReason.set(label, [...(byReason.get(label) ?? []), s.date]);
   }
-  return byReason;
+  // Sắp tăng dần theo YYYY-MM-DD để "3 ngày đầu" không phụ thuộc thứ tự backend trả về.
+  return new Map(Array.from(byReason, ([label, dates]) => [label, dates.sort().map(shortDate)]));
 }
 
 /** Số ngày liệt kê tối đa cho mỗi lý do; phần còn lại gộp thành "(+N)". */

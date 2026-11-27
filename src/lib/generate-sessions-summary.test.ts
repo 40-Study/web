@@ -31,7 +31,7 @@ describe("lý do mới của backend#149", () => {
         { date: "2031-03-24", reason: "cancelled" },
         { date: "2031-03-31", reason: "holiday" },
       ]),
-    ).toBe("Đã tạo 1 buổi học. Bỏ qua 1 ngày đã huỷ: 24/03; 1 ngày không tạo được: 31/03");
+    ).toBe("Đã tạo 1 buổi học. Bỏ qua 1 ngày đã huỷ: 24/03; 1 ngày (không rõ lý do): 31/03");
   });
 });
 
@@ -79,6 +79,27 @@ describe("Q9-T-07: tóm tắt ngắn, không liệt kê hết", () => {
     expect(
       allSkippedSummary([...overlap(5), { date: "2031-03-03", reason: "duplicate" }]),
     ).toBe("Không tạo được buổi nào. Bỏ qua 5 ngày trùng lịch: 01/01, 02/01, 03/01 (+2); 1 ngày đã tồn tại: 03/03");
+  });
+});
+
+describe("Q9 review L2/L4", () => {
+  it("L2: ngày bỏ qua được sắp tăng dần trước khi lấy 3 ngày đầu, dù backend trả lộn xộn", () => {
+    const shuffled = ["2031-03-10", "2031-01-05", "2031-03-03", "2031-02-01", "2031-01-02"].map((date) => ({ date, reason: "overlap" }));
+    expect(allSkippedSummary(shuffled)).toBe("Bỏ qua tất cả 5 ngày trùng lịch: 02/01, 05/01, 01/02 (+2)");
+    expect(generateSessionsSummary(0, shuffled)).toBe("Đã tạo 0 buổi học. Bỏ qua 5 ngày trùng lịch: 02/01, 05/01, 01/02 (+2)");
+  });
+
+  it("L2: không đổi thứ tự mảng đầu vào", () => {
+    const input = [{ date: "2031-03-10", reason: "overlap" }, { date: "2031-01-05", reason: "overlap" }];
+    generateSessionsSummary(0, input);
+    expect(input.map((s) => s.date)).toEqual(["2031-03-10", "2031-01-05"]);
+  });
+
+  it("L4: lý do lạ đọc là 'Bỏ qua 1 ngày (không rõ lý do)'", () => {
+    expect(generateSessionsSummary(0, [{ date: "2031-03-31", reason: "holiday" }])).toBe(
+      "Đã tạo 0 buổi học. Bỏ qua 1 ngày (không rõ lý do): 31/03",
+    );
+    expect(allSkippedSummary([{ date: "2031-03-31", reason: "holiday" }])).toBe("Bỏ qua tất cả 1 ngày (không rõ lý do): 31/03");
   });
 });
 
