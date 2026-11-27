@@ -12,7 +12,12 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { getSystemRoleLabel } from "@/lib/role-labels";
 import { useAuthStore } from "@/stores/auth.store";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { getUserActiveLabel } from "../_lib/user-status-label";
+import {
+  RESTORE_ACTION_LABEL,
+  getUserStatusLabel,
+  getUserStatusVariant,
+  isSelfDeleted,
+} from "../_lib/user-status-label";
 import { parseRoleParam } from "../_lib/role-param";
 import { nextSort, sortAdminUsers, type SortDirection, type UserSortKey } from "../_lib/user-sort";
 import type { AdminUserListItem, AdminUserStatusFilter } from "@/types/user";
@@ -184,7 +189,11 @@ export default function AdminUsersPage() {
   const submitUnlock = async () => {
     if (!unlockTarget) return;
     try {
-      await updateStatus.mutateAsync({ id: unlockTarget.id, data: { is_active: true } });
+      await updateStatus.mutateAsync({
+        id: unlockTarget.id,
+        data: { is_active: true },
+        ...(isSelfDeleted(unlockTarget) ? { restore: true } : {}),
+      });
       setUnlockTarget(null);
     } catch {
       // Lỗi đã hiển thị qua toast trong hook.
@@ -313,8 +322,8 @@ export default function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.is_active ? "success" : "destructive"} className="whitespace-nowrap">
-                        {getUserActiveLabel(user.is_active)}
+                      <Badge variant={getUserStatusVariant(user)} className="whitespace-nowrap">
+                        {getUserStatusLabel(user)}
                       </Badge>
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
@@ -341,9 +350,14 @@ export default function AdminUsersPage() {
                             Khoá
                           </Button>
                         ) : (
-                          <Button size="sm" variant="outline" onClick={() => setUnlockTarget(user)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            title={isSelfDeleted(user) ? `${RESTORE_ACTION_LABEL} (người dùng tự xoá)` : undefined}
+                            onClick={() => setUnlockTarget(user)}
+                          >
                             <Unlock className="mr-1 h-3.5 w-3.5" />
-                            Mở khoá
+                            {isSelfDeleted(user) ? "Khôi phục" : "Mở khoá"}
                           </Button>
                         )}
                       </Can>
@@ -436,14 +450,21 @@ export default function AdminUsersPage() {
       {/* Dialog mở khoá — xác nhận ngắn, không cần lý do */}
       <Dialog open={!!unlockTarget} onOpenChange={(open) => !open && setUnlockTarget(null)}>
         <DialogContent>
-          <DialogTitle>Mở khoá tài khoản &quot;{unlockTarget?.email}&quot;?</DialogTitle>
-          <DialogDescription>Người dùng sẽ đăng nhập lại được ngay sau khi mở khoá.</DialogDescription>
+          <DialogTitle>
+            {unlockTarget && isSelfDeleted(unlockTarget) ? RESTORE_ACTION_LABEL : "Mở khoá tài khoản"} &quot;
+            {unlockTarget?.email}&quot;?
+          </DialogTitle>
+          <DialogDescription>
+            {unlockTarget && isSelfDeleted(unlockTarget)
+              ? "Người dùng đã tự xoá tài khoản này, không phải bị khoá. Khôi phục sẽ cho họ đăng nhập lại ngay."
+              : "Người dùng sẽ đăng nhập lại được ngay sau khi mở khoá."}
+          </DialogDescription>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUnlockTarget(null)}>
               Huỷ
             </Button>
             <Button isLoading={updateStatus.isPending} onClick={submitUnlock}>
-              Mở khoá
+              {unlockTarget && isSelfDeleted(unlockTarget) ? "Khôi phục" : "Mở khoá"}
             </Button>
           </DialogFooter>
         </DialogContent>
