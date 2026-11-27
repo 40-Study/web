@@ -134,13 +134,17 @@ export function useSystemRolesWithUserCounts() {
   // quyền" (vd một role không phải SYSTEM_ADMIN gọi GET /system-roles/:id/users -> 403) — UI hiện
   // "…" mãi mãi trông như còn đang tải chứ không phải đã lỗi hẳn. Tách riêng `userCountError` để
   // nơi hiển thị phân biệt được hai trạng thái.
+  // Q11-ADMIN-02: "lỗi" chỉ khi KHÔNG còn số nào để hiện. Refetch nền lỗi mà còn số cache thì giữ số cũ (react-query giữ `data`),
+  // báo hỏng ở thông báo cấp trang (`countsRefetchFailed`), không đổi thẻ/huy hiệu thành "lỗi".
+  const countFailedWithoutData = (q: (typeof countQueries)[number] | undefined) => !!q && q.isError && q.data === undefined;
   const rolesWithCounts = roles.map((role, index) => ({
     ...role,
     userCount: countQueries[index]?.data?.total ?? null,
-    userCountError: countQueries[index]?.isError ?? false,
+    userCountError: countFailedWithoutData(countQueries[index]),
   }));
 
-  const anyCountError = countQueries.some((q) => q.isError);
+  const anyCountError = countQueries.some(countFailedWithoutData);
+  const countsRefetchFailed = countQueries.some((q) => q.isError && q.data !== undefined);
   const totalAssignedUsers = countQueries.every((q) => q.data)
     ? countQueries.reduce((sum, q) => sum + (q.data?.total ?? 0), 0)
     : null;
@@ -149,6 +153,10 @@ export function useSystemRolesWithUserCounts() {
     roles: rolesWithCounts,
     totalAssignedUsers,
     totalAssignedUsersError: anyCountError,
+    /** Có ít nhất một truy vấn đếm refetch lỗi NHƯNG còn số cache (Q11-ADMIN-02): trang giữ số + báo một thông báo. */
+    countsRefetchFailed,
+    /** Làm mới chỉ các truy vấn đếm đang lỗi; trả Promise để nút "Thử lại" hiện trạng thái bận. */
+    refetchFailedCounts: () => Promise.all(countQueries.filter((q) => q.isError).map((q) => q.refetch())),
     isLoading: rolesLoading || countsLoading,
     isError: rolesError,
     /** Đã có danh sách vai trò cache (`data !== undefined`; rỗng đã cache vẫn là dữ liệu hợp lệ, Q10 #148 L2). */
