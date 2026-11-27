@@ -12,6 +12,7 @@ import {
   UserPlus,
   EyeOff,
 } from "lucide-react";
+import { QueryState } from "@/components/common/query-state";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -170,8 +171,20 @@ function CreateGroupDialog() {
 export default function GroupsPage() {
   const [tab, setTab] = useState("my-groups");
   const [keyword, setKeyword] = useState("");
-  const { data: allGroups, isLoading: allLoading } = useGroups({ keyword: keyword || undefined });
-  const { data: myGroups, isLoading: myLoading } = useMyJoinedGroups();
+  const {
+    data: allGroups,
+    isLoading: allLoading,
+    isError: allError,
+    error: allFetchError,
+    refetch: refetchAll,
+  } = useGroups({ keyword: keyword || undefined });
+  const {
+    data: myGroups,
+    isLoading: myLoading,
+    isError: myError,
+    error: myFetchError,
+    refetch: refetchMine,
+  } = useMyJoinedGroups();
 
   return (
     <div className="page-container py-6 space-y-6">
@@ -198,6 +211,11 @@ export default function GroupsPage() {
             <div className="flex justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
+          ) : myError && !myGroups ? (
+            // Q9-STU-01: lỗi API không được đọc thành "Bạn chưa tham gia nhóm nào".
+            <QueryState isError error={myFetchError} onRetry={() => refetchMine()}>
+              {null}
+            </QueryState>
           ) : (myGroups?.groups ?? []).length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
@@ -227,6 +245,10 @@ export default function GroupsPage() {
             <div className="flex justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
+          ) : allError && !allGroups ? (
+            <QueryState isError error={allFetchError} onRetry={() => refetchAll()}>
+              {null}
+            </QueryState>
           ) : (allGroups?.groups ?? []).length === 0 ? (
             <p className="text-center py-12 text-muted-foreground">Không tìm thấy nhóm nào</p>
           ) : (

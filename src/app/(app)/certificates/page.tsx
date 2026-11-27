@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { CertificateCard } from "@/components/certificate/certificate-card";
+import { QueryState } from "@/components/common/query-state";
 import { useMyCertificates } from "@/hooks/queries/use-certificates";
 import { useRoleAwareHref } from "@/hooks/use-role-aware-href";
 
@@ -11,7 +12,7 @@ const PAGE_SIZE = 12;
 export default function MyCertificatesPage() {
   const roleAwareHref = useRoleAwareHref();
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useMyCertificates({
+  const { data, isLoading, isError, error, refetch } = useMyCertificates({
     page,
     page_size: PAGE_SIZE,
   });
@@ -43,6 +44,11 @@ export default function MyCertificatesPage() {
         <div className="rounded-lg border border-gray-200 p-8 text-center text-sm text-gray-500">
           Đang tải…
         </div>
+      ) : isError && !data ? (
+        // Q9-STU-01: lỗi API không được đọc thành "Bạn chưa có chứng chỉ nào".
+        <QueryState isError error={error} onRetry={() => refetch()}>
+          {null}
+        </QueryState>
       ) : certificates.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center">
           <p className="text-sm text-gray-500">

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { Clock, MapPin, Radio, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { QueryState } from "@/components/common/query-state";
 import { useLiveSessions } from "@/hooks/queries/use-live-sessions";
 import {
   formatLiveDate,
@@ -97,7 +98,9 @@ function Section({ title, sessions }: { title: string; sessions: LiveSession[] }
 }
 
 export default function StudentLivestreamPage() {
-  const { data, isLoading, isError } = useLiveSessions({ page_size: PAGE_SIZE });
+  const { data, isLoading, isError: queryFailed, error, refetch } = useLiveSessions({ page_size: PAGE_SIZE });
+  // Chỉ coi là lỗi khi chưa có dữ liệu (refetch nền hỏng mà còn cache thì giữ danh sách đang xem).
+  const isError = queryFailed && !data;
   const groups = useMemo(() => groupLiveSessions(data?.sessions ?? []), [data]);
   const isEmpty = groups.live.length + groups.upcoming.length + groups.past.length === 0;
 
@@ -114,9 +117,10 @@ export default function StudentLivestreamPage() {
       {isLoading ? (
         <div className="rounded-lg border border-gray-200 p-8 text-center text-sm text-gray-500">Đang tải…</div>
       ) : isError ? (
-        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-8 text-center text-sm text-red-700">
-          Không thể tải danh sách buổi học trực tiếp. Vui lòng tải lại trang.
-        </div>
+        // Q9-STU-02: cùng khuôn QueryState + "Thử lại" như các trang khác.
+        <QueryState isError error={error} onRetry={() => refetch()}>
+          {null}
+        </QueryState>
       ) : isEmpty ? (
         <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
           Chưa có buổi học trực tiếp nào cho các lớp của bạn.

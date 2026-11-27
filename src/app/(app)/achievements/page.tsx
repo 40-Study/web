@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { QueryState } from "@/components/common/query-state";
 import { cn } from "@/lib/utils";
 import { useMyAchievements } from "@/hooks/queries/use-achievements";
 import { useMe } from "@/hooks/queries/use-auth";
@@ -395,17 +396,33 @@ function StatCard({
 
 export default function AchievementsPage() {
   const { data: meData, isLoading: meLoading } = useMe();
-  const { data: rawAchievements = [], isLoading: achievementsLoading } = useMyAchievements();
+  const {
+    data: achievementsData,
+    isLoading: achievementsLoading,
+    isError: achievementsError,
+    error: achievementsFetchError,
+    refetch: refetchAchievements,
+  } = useMyAchievements();
+  const rawAchievements = useMemo(() => achievementsData ?? [], [achievementsData]);
   const { user } = useAuthStore();
 
   // Get user ID for public profile
   const userId = meData?.id || user?.id;
 
   // Fetch public profile (contains stats and activity heatmap)
-  const { data: profileData, isLoading: profileLoading } = usePublicProfile(userId || "");
+  const {
+    data: profileData,
+    isLoading: profileLoading,
+    isError: profileError,
+    error: profileFetchError,
+    refetch: refetchProfile,
+  } = usePublicProfile(userId || "");
 
   // Fetch certificates
-  const { data: certificatesData, isLoading: certificatesLoading } = useMyCertificates({ page: 1, page_size: 100 });
+  const {
+    data: certificatesData,
+    isError: certificatesError,
+  } = useMyCertificates({ page: 1, page_size: 100 });
 
   const isLoading = meLoading || achievementsLoading || profileLoading;
 
@@ -419,6 +436,8 @@ export default function AchievementsPage() {
 
   // Certificate count
   const certificateCount = certificatesData?.total || 0;
+  // Q9-STU-01: lỗi API không được đọc thành "0 huy hiệu / 0 XP / Chưa có huy hiệu nào". Chỉ coi là lỗi khi chưa có dữ liệu cache.
+  const loadFailed = (achievementsError && !achievementsData) || (profileError && !profileData);
 
   // Calculate badge count from achievements
   const unlockedAchievements = rawAchievements.filter((a) => a.unlocked);
@@ -458,6 +477,20 @@ export default function AchievementsPage() {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (loadFailed) {
+    return (
+      <div className="page-container py-6">
+        <QueryState
+          isError
+          error={achievementsError ? achievementsFetchError : profileFetchError}
+          onRetry={() => Promise.all([refetchAchievements(), refetchProfile()])}
+        >
+          {null}
+        </QueryState>
       </div>
     );
   }
@@ -583,7 +616,7 @@ export default function AchievementsPage() {
             icon={<CheckCircle className="w-6 h-6 text-green-500" />}
             iconBg="bg-green-100"
             label="CHỨNG CHỈ"
-            value={String(certificateCount)}
+            value={certificatesError && !certificatesData ? "—" : String(certificateCount)}
           />
         </div>
       </div>

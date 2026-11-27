@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { RetryButton } from "@/components/common/retry-button";
 import { useMyTimetableEntries } from "@/hooks/queries/use-class-schedule";
 import { useLiveSessions } from "@/hooks/queries/use-live-sessions";
 import WeekCalendarGrid, { type ScheduleEvent } from "@/components/schedule/week-calendar-grid";
@@ -312,8 +313,12 @@ export default function SchedulePage() {
   const [notes, setNotes] = useState<PersonalNote[]>([]);
   const [detail, setDetail] = useState<ScheduleEvent | null>(null);
   const [fullDialog, setFullDialog] = useState<{ open: boolean; date: Date; hour: number; editingNote?: PersonalNote | null }>({ open: false, date: today, hour: 9 });
-  const { data: timetable, isLoading, isError } = useMyTimetableEntries(range);
-  const { data: sessions, isError: liveError } = useLiveSessions({ page_size: 100 });
+  const { data: timetable, isLoading, isError, refetch: refetchTimetable } = useMyTimetableEntries(range);
+  const { data: sessions, isError: liveError, refetch: refetchLive } = useLiveSessions({ page_size: 100 });
+  // Q9-STU-02: chỉ báo lỗi khi nguồn lỗi chưa có dữ liệu cache; "Thử lại" gọi lại đúng nguồn đang lỗi.
+  const timetableFailed = isError && !timetable;
+  const liveFailed = liveError && !sessions;
+  const retryLoad = () => Promise.all([timetableFailed && refetchTimetable(), liveFailed && refetchLive()]);
   const handleRange = useCallback((start: Date, end: Date) => {
     const next = visibleDateRange(start, end);
     setRange(current => current?.from === next.from && current?.to === next.to ? current : next);
@@ -326,7 +331,7 @@ export default function SchedulePage() {
   }, [timetable, range, sessions, notes]);
   return <div>
     {isLoading && <p role="status" className="mb-2 text-xs text-muted-foreground">Đang tải lịch học…</p>}
-    {(isError || liveError) && <p role="alert" className="mb-2 text-sm text-red-600">Chưa tải được đầy đủ lịch học. Vui lòng tải lại trang.</p>}
+    {(timetableFailed || liveFailed) && <p role="alert" className="mb-2 flex flex-wrap items-center gap-2 text-sm text-red-600">Chưa tải được đầy đủ lịch học. <RetryButton asLink onRetry={retryLoad} className="font-medium underline disabled:opacity-60" /></p>}
     {/* QA-A-15: học viên chỉ tạo được ghi chú cá nhân, không tạo buổi học như giáo viên. */}
     <WeekCalendarGrid events={events} selectable selectionHelp="Bấm hoặc kéo trên lịch để thêm ghi chú cá nhân." onRangeChange={handleRange}
       onSelectMore={start => setFullDialog({ open: true, date: start, hour: start.getHours(), editingNote: null })}

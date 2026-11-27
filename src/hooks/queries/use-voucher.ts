@@ -67,6 +67,10 @@ export function useMyVouchersWithDetails() {
     data,
     isLoading: savedQuery.isLoading,
     isError: savedQuery.isError,
+    // Q9-STU-02: trang cần lý do lỗi + nút "Thử lại"; `hasData` để refetch nền hỏng không thay danh sách đang xem.
+    error: savedQuery.error,
+    refetch: savedQuery.refetch,
+    hasData: savedQuery.data !== undefined,
   };
 }
 
