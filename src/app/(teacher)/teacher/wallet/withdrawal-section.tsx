@@ -162,6 +162,7 @@ export function WithdrawalSection() {
                 size="sm"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
+                aria-label="Trang trước"
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
@@ -170,6 +171,7 @@ export function WithdrawalSection() {
                 size="sm"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
+                aria-label="Trang sau"
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>

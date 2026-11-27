@@ -240,4 +240,15 @@ describe("WithdrawalSection", () => {
       expect(mockCancel.mock.calls[0][0]).toBe("pending-1");
     });
   });
+
+  // Q9-T-04: hai nút chevron của phân trang lịch sử rút tiền không có tên truy cập.
+  it("nút phân trang lịch sử rút tiền có tên 'Trang trước' / 'Trang sau'", () => {
+    mockWallet = walletFixture({});
+    mockHistoryItems = [
+      { id: "w1", amount: 100000, currency: "VND", status: "pending", rejection_reason: null, transaction_id: null, bank_name: null, bank_account_number: null, bank_account_name: null, created_at: "2026-09-01T00:00:00Z", processed_at: null },
+    ];
+    render(<WithdrawalSection />);
+    expect(screen.getByRole("button", { name: "Trang trước" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Trang sau" })).toBeTruthy();
+  });
 });

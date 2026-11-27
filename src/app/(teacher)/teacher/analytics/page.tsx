@@ -10,6 +10,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RetryButton } from "@/components/common/retry-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -38,10 +39,17 @@ export default function TeacherAnalyticsPage() {
   const [sessionId, setSessionId] = useState("");
 
   // Q3-24: chọn buổi của chính mình thay vì gõ Session ID (cùng nguồn dữ liệu với trang Lịch giảng dạy).
-  const { data: sessionsData, isLoading: isSessionListLoading, isError: isSessionListError } = useLiveSessions(
+  const {
+    data: sessionsData,
+    isLoading: isSessionListLoading,
+    isError: isSessionListError,
+    refetch: refetchSessionList,
+  } = useLiveSessions(
     user?.id ? { host_id: user.id, page_size: 100 } : undefined
   );
   const sessionOptions = useMemo(() => toAnalyticsSessionOptions(sessionsData?.sessions ?? []), [sessionsData]);
+  // Q9-T-03: hộp lỗi chỉ khi KHÔNG có dữ liệu cũ; refetch nền lỗi mà đã có danh sách thì giữ nguyên danh sách.
+  const sessionListLoadFailed = isSessionListError && !sessionsData;
   const selectedLabel = sessionOptions.find((o) => o.value === sessionId)?.label ?? sessionId;
 
   const {
@@ -84,7 +92,9 @@ export default function TeacherAnalyticsPage() {
               placeholder={
                 isSessionListLoading
                   ? "Đang tải danh sách buổi học..."
-                  : sessionOptions.length === 0
+                  : sessionListLoadFailed
+                    ? "Không tải được danh sách buổi học"
+                    : sessionOptions.length === 0
                     ? "Chưa có buổi học nào để xem thống kê"
                     : "Chọn buổi học..."
               }
@@ -98,15 +108,17 @@ export default function TeacherAnalyticsPage() {
             ))}
           </SelectContent>
         </Select>
-        {isSessionListError && (
-          <p role="alert" className="text-sm text-destructive">
-            Không tải được danh sách buổi học. Hãy tải lại trang.
-          </p>
+        {sessionListLoadFailed && (
+          // Q9-T-03: một câu lỗi + "Thử lại"; không đi kèm câu "Chưa có buổi học nào" của trạng thái rỗng.
+          <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-destructive">
+            <span>Không tải được danh sách buổi học.</span>
+            <RetryButton onRetry={() => refetchSessionList()} />
+          </div>
         )}
       </div>
 
       {/* Empty state */}
-      {!sessionId && (
+      {!sessionId && !sessionListLoadFailed && (
         <Card>
           <EmptyState
             icon={BarChart3}

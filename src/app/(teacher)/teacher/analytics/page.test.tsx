@@ -6,7 +6,7 @@
  * Q3-24: giảng viên chọn buổi học từ danh sách của mình thay vì gõ tay Session ID.
  */
 
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/api-client", async () => {
@@ -109,5 +109,73 @@ describe("TeacherAnalyticsPage", () => {
     mockApi.get.mockResolvedValue({ data: { data: [], total: 0, page: 1, page_size: 100 } });
     renderWithProviders(<TeacherAnalyticsPage />);
     expect(await screen.findByText("Chưa có buổi học nào để xem thống kê")).toBeTruthy();
+  });
+
+  // Q9-T-03: lỗi tải danh sách buổi từng hiện CẢ "Chưa có buổi học nào..." LẪN câu lỗi, không có nút thử lại.
+  it("danh sách buổi lỗi: một câu lỗi + Thử lại, không kèm câu 'Chưa có buổi học nào'; Thử lại gọi lại API", async () => {
+    let calls = 0;
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/livestream") {
+        calls += 1;
+        return calls === 1
+          ? Promise.reject(Object.assign(new Error("Request failed"), { response: { status: 500 } }))
+          : Promise.resolve({ data: { data: LIVE_SESSIONS, total: 3, page: 1, page_size: 100 } });
+      }
+      return Promise.resolve(envelope({}));
+    });
+    renderWithProviders(<TeacherAnalyticsPage />);
+
+    expect(await screen.findByText("Không tải được danh sách buổi học.")).toBeTruthy();
+    expect(screen.queryByText(/Chưa có buổi học nào/)).toBeNull();
+    expect(screen.queryByText(/Chưa có dữ liệu thống kê/)).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    await waitFor(() => expect(calls).toBe(2));
+    expect(await screen.findAllByText(/Chọn buổi học/)).not.toHaveLength(0);
+    expect(screen.queryByText("Không tải được danh sách buổi học.")).toBeNull();
+  });
+  // Review M1: refetch nền lỗi khi ĐÃ có danh sách thì không được bật hộp lỗi (chỉ lỗi khi chưa có dữ liệu cũ).
+  it("refetch danh sách lỗi nhưng đã có dữ liệu cũ: không hiện hộp lỗi, vẫn chọn được buổi", async () => {
+    let calls = 0;
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/livestream") {
+        calls += 1;
+        return calls === 1
+          ? Promise.resolve({ data: { data: LIVE_SESSIONS, total: 3, page: 1, page_size: 100 } })
+          : Promise.reject(Object.assign(new Error("Request failed"), { response: { status: 500 } }));
+      }
+      return Promise.resolve(envelope({}));
+    });
+    const { queryClient } = renderWithProviders(<TeacherAnalyticsPage />);
+    expect(await screen.findAllByText(/Chọn buổi học/)).not.toHaveLength(0);
+
+    await queryClient.refetchQueries({ predicate: (q) => JSON.stringify(q.queryKey).includes("list") }).catch(() => {});
+    await waitFor(() => expect(calls).toBe(2));
+
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByText("Không tải được danh sách buổi học.")).toBeNull();
+    expect(screen.getByText(/Chưa có dữ liệu thống kê/)).toBeTruthy();
+    await pick(/Giải thuật cơ bản/);
+  });
+
+  it("danh sách rỗng thật (đã tải) + refetch lỗi: không hiện hộp lỗi, vẫn là trạng thái rỗng", async () => {
+    let calls = 0;
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/livestream") {
+        calls += 1;
+        return calls === 1
+          ? Promise.resolve({ data: { data: [], total: 0, page: 1, page_size: 100 } })
+          : Promise.reject(Object.assign(new Error("Request failed"), { response: { status: 500 } }));
+      }
+      return Promise.resolve(envelope({}));
+    });
+    const { queryClient } = renderWithProviders(<TeacherAnalyticsPage />);
+    expect(await screen.findByText("Chưa có buổi học nào để xem thống kê")).toBeTruthy();
+
+    await queryClient.refetchQueries({ predicate: (q) => JSON.stringify(q.queryKey).includes("list") }).catch(() => {});
+    await waitFor(() => expect(calls).toBe(2));
+
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByText("Chưa có buổi học nào để xem thống kê")).toBeTruthy();
   });
 });

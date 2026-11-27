@@ -51,7 +51,7 @@ describe("useGenerateSessions", () => {
     });
     const { result } = renderHook(() => useGenerateSessions("c1"), { wrapper });
     await act(() => result.current.mutateAsync({ start_date: "2026-11-24", end_date: "2026-12-08" }));
-    expect(toastWarning).toHaveBeenCalledWith("Đã tạo 1 buổi học, bỏ qua 1 buổi trùng lịch (30/11)");
+    expect(toastWarning).toHaveBeenCalledWith("Đã tạo 1 buổi học. Bỏ qua 1 ngày trùng lịch: 30/11");
     expect(toastSuccess).not.toHaveBeenCalled();
   });
 
@@ -75,7 +75,7 @@ describe("useGenerateSessions", () => {
     const { result } = renderHook(() => useGenerateSessions("c1"), { wrapper });
     await act(() => result.current.mutateAsync({ start_date: "2031-03-03", end_date: "2031-03-17" }).catch(() => undefined));
     expect(toastError).toHaveBeenCalledWith("Không thể sinh buổi học", {
-      description: "Tất cả 3 buổi đã tồn tại (03/03, 10/03, 17/03)",
+      description: "Bỏ qua tất cả 3 ngày đã tồn tại: 03/03, 10/03, 17/03",
     });
   });
 
@@ -84,7 +84,7 @@ describe("useGenerateSessions", () => {
     const { result } = renderHook(() => useGenerateSessions("c1"), { wrapper });
     await act(() => result.current.mutateAsync({ start_date: "2031-03-03", end_date: "2031-03-17" }).catch(() => undefined));
     const description = (toastError.mock.calls[0]?.[1] as { description: string }).description;
-    expect(description).not.toContain("Tất cả");
+    expect(description).not.toContain("Bỏ qua tất cả");
     expect(description.length).toBeGreaterThan(0);
   });
 });

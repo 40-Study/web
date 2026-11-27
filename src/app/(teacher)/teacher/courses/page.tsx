@@ -21,6 +21,7 @@ import {
 import { cn, formatCurrency } from "@/lib/utils";
 import { matchesSearchQuery } from "@/lib/text-search";
 import { COURSE_STATUS_LABEL, isCourseStatus, type CourseStatus as ApiCourseStatus } from "@/types/approval";
+import { QueryState } from "@/components/common/query-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 
 // Phase 3: đủ 5 trạng thái backend + "other" cho giá trị lạ. Trước đây mọi status không phải
@@ -212,7 +213,7 @@ export default function TeacherCoursesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
 
-  const { data: apiCourses, isLoading } = useMyCourses();
+  const { data: apiCourses, isLoading, isError, error, refetch } = useMyCourses();
   const deleteCourse = useDeleteCourse();
   const courses = useMemo(() => (apiCourses || []).map(mapApiCourse), [apiCourses]);
   // Hộp thoại xác nhận của app thay cho `confirm()` của trình duyệt (QA-B-05).
@@ -255,18 +256,35 @@ export default function TeacherCoursesPage() {
     );
   }
 
+  const pageHeader = (
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <h1 className="text-2xl font-bold">Khoá học của tôi</h1>
+      <Button asChild>
+        <Link href="/teacher/courses/create" className="flex items-center gap-2">
+          <Plus className="w-4 h-4" />
+          Tạo khoá học mới
+        </Link>
+      </Button>
+    </div>
+  );
+
+  // Q9-T-02: GET lỗi (và chưa có dữ liệu cũ) không được trông như "0 khoá học". Tạo khoá học không phụ thuộc
+  // danh sách nên nút "Tạo khoá học mới" vẫn hiện.
+  if (isError && !apiCourses) {
+    return (
+      <div className="space-y-6">
+        {pageHeader}
+        <QueryState isError error={error} onRetry={() => refetch()}>
+          {null}
+        </QueryState>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold">Khoá học của tôi</h1>
-        <Button asChild>
-          <Link href="/teacher/courses/create" className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Tạo khoá học mới
-          </Link>
-        </Button>
-      </div>
+      {pageHeader}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as CourseStatus)}>
