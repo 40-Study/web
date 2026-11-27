@@ -25,11 +25,7 @@ const WRAPPERS = [
  * File được miễn luật 3 (đường dẫn tính từ `src/`, KÈM LÝ DO). Chỉ thêm khi file thuộc PR khác đang sửa đúng chỗ đó; phải xoá
  * dòng khi PR kia merge (guard sẽ báo nếu dòng miễn không còn cần thiết).
  */
-const SILENT_SHAPE_EXEMPT: Record<string, string> = {
-  "app/(teacher)/teacher/wallet/page.tsx": "PR #147 (fix/qa10-web-teacher-admin) sửa nhánh lỗi ví/rút tiền",
-  "app/(teacher)/teacher/wallet/withdrawal-section.tsx": "PR #147 sửa nhánh lỗi ví/rút tiền",
-  "app/(teacher)/teacher/classes/[classId]/attendance/page.tsx": "PR #147 khoá lưu điểm danh khi lỗi điểm danh",
-};
+const SILENT_SHAPE_EXEMPT: Record<string, string> = {};
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {

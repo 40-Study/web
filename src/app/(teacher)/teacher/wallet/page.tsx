@@ -26,6 +26,8 @@ import {
 import { toast } from "sonner";
 import { buildCsv, downloadCsv, type CsvCell } from "@/lib/csv-export";
 import { QueryState } from "@/components/common/query-state";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
+import { staleQueries } from "@/components/common/stale-queries";
 import { useTeacherWallet, useTeacherTransactions } from "@/hooks/queries/use-wallet";
 import { walletService, type TeacherTransaction } from "@/services/wallet.service";
 import { BankInfoDialog } from "./bank-info-dialog";
@@ -76,6 +78,13 @@ export default function TeacherWalletPage() {
 
   // Q10-T-02: bảng giao dịch lỗi (và không còn dữ liệu cũ) không được hiện "Không có giao dịch nào." / "0 giao dịch".
   const txLoadFailed = isTxError && !txResponse;
+
+  // Q10 #147 M2 (#148): ví hoặc bảng giao dịch refetch lỗi mà còn dữ liệu cũ => MỘT thông báo cho cả trang (thẻ số dư + bảng),
+  // không nuốt lỗi âm thầm. Mục "Rút tiền" tự báo phần lịch sử của nó và không lặp lại phần ví (`showWalletStaleNotice={false}`).
+  const stale = staleQueries([
+    { isError: isWalletError, data: wallet, refetch: refetchWallet },
+    { isError: isTxError, data: txResponse, refetch: refetchTx },
+  ]);
 
   const transactions: TeacherTransaction[] = txResponse?.transactions ?? [];
   const totalPages = txResponse?.total_pages ?? 1;
@@ -153,6 +162,8 @@ export default function TeacherWalletPage() {
           Xuất CSV
         </Button>
       </div>
+
+      {stale.isStale && <StaleDataNotice resourceLabel="số liệu ví và giao dịch" onRetry={stale.retry} />}
 
       {/* Balance Cards */}
       {isWalletLoading ? (
@@ -257,7 +268,7 @@ export default function TeacherWalletPage() {
       )}
 
       {/* Rút tiền — component riêng (Phase 4), xem withdrawal-section.tsx */}
-      <WithdrawalSection />
+      <WithdrawalSection showWalletStaleNotice={false} />
 
       {/* Transactions */}
       <Card>
@@ -375,6 +386,21 @@ export default function TeacherWalletPage() {
             </table>
             </div>
             </>
+          )}
+
+          {/* Q10 #147 L2: trang N>1 lỗi (chưa có dữ liệu) vẫn giữ đường lùi về trang trước; số trang/tổng chưa biết nên không hiện. */}
+          {txLoadFailed && page > 1 && (
+            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+              <p className="text-sm text-muted-foreground">Trang {page}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                aria-label="Trang trước"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+            </div>
           )}
 
           {/* Pagination */}

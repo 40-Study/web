@@ -8,11 +8,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockUseAdminUsers = vi.fn();
 const mutateAsync = vi.fn();
 const replace = vi.fn();
+const nav = vi.hoisted(() => ({ search: "" }));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace }),
   usePathname: () => "/admin/users",
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => new URLSearchParams(nav.search),
   useParams: () => ({}),
 }));
 vi.mock("@/hooks/queries/use-admin-users", () => ({
@@ -40,6 +41,7 @@ const OLD_BACKEND = { ...base, id: "u-old", email: "old@example.com", is_active:
 const row = (email: string) => screen.getByRole("link", { name: email }).closest("tr") as HTMLElement;
 
 beforeEach(() => {
+  nav.search = "";
   mutateAsync.mockReset().mockResolvedValue(undefined);
   mockUseAdminUsers.mockReturnValue({
     data: { items: [LOCKED, DELETED, OLD_BACKEND], total_count: 3, page: 1, limit: 20, total_pages: 1 },
@@ -82,3 +84,48 @@ describe("AdminUsersPage — Q10-ADMIN-03 tự xoá khác bị khoá", () => {
     expect(mutateAsync).toHaveBeenCalledWith({ id: "u-locked", data: { is_active: true } });
   });
 });
+
+// Q10 #147 L1: backend chỉ có status=active|locked (= is_active), nên "Đã khoá" từng trả cả tài khoản tự xoá.
+describe("AdminUsersPage — Q10 #147 L1 bộ lọc 'Đã khoá' / 'Đã tự xoá'", () => {
+  const lastParams = () => mockUseAdminUsers.mock.calls.at(-1)?.[0] as { status?: string };
+  const emails = () => screen.getAllByRole("link").map((a) => a.textContent).filter((t) => t?.includes("@"));
+
+  it("?status=locked: gửi status=locked, bảng chỉ còn tài khoản bị khoá (cả backend cũ), KHÔNG có tài khoản tự xoá", () => {
+    nav.search = "status=locked";
+    render(<AdminUsersPage />);
+    expect(lastParams().status).toBe("locked");
+    expect(emails()).toEqual(["locked@example.com", "old@example.com"]);
+  });
+
+  it("?status=self-deleted: vẫn gửi status=locked (backend không có giá trị riêng), bảng chỉ còn tài khoản tự xoá", () => {
+    nav.search = "status=self-deleted";
+    render(<AdminUsersPage />);
+    expect(lastParams().status).toBe("locked");
+    expect(emails()).toEqual(["deleted@example.com"]);
+  });
+
+  it("nói rõ việc tách chỉ làm trong trang đang xem; không hiện khi không dùng bộ lọc tách", () => {
+    nav.search = "status=locked";
+    const { unmount } = render(<AdminUsersPage />);
+    expect(screen.getByText(/Backend chưa có bộ lọc riêng cho tài khoản tự xoá/)).toBeTruthy();
+    unmount();
+
+    nav.search = "";
+    render(<AdminUsersPage />);
+    expect(screen.queryByText(/Backend chưa có bộ lọc riêng/)).toBeNull();
+    expect(emails()).toHaveLength(3);
+  });
+
+  it("trang server toàn tài khoản tự xoá + lọc 'Đã khoá': không nói 'Không tìm thấy', còn phân trang để sang trang khác", () => {
+    nav.search = "status=locked";
+    mockUseAdminUsers.mockReturnValue({
+      data: { items: [DELETED], total_count: 25, page: 1, limit: 20, total_pages: 2 },
+      isLoading: false, isError: false, error: undefined, refetch: vi.fn(),
+    });
+    render(<AdminUsersPage />);
+    expect(screen.queryByText("Không tìm thấy người dùng nào")).toBeNull();
+    expect(screen.getByText(/Trang này không có tài khoản thuộc loại đã chọn/)).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Trang sau" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+});
+

@@ -12,6 +12,8 @@ import { useClassById } from "@/hooks/queries/use-class-manage";
 import { isClassArchived } from "@/lib/class-status";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { QueryState } from "@/components/common/query-state";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
+import { staleQueries } from "@/components/common/stale-queries";
 import { ResourceUnavailable, isResourceUnavailableError, unavailableStatus } from "@/components/common/resource-unavailable";
 import { formatVnDateOnly } from "@/lib/vn-datetime";
 import {
@@ -77,6 +79,16 @@ export default function ClassAttendancePage() {
   // trùng, hoặc lưu điểm danh đè lên bản ghi cũ chưa tải về. Còn dữ liệu cũ trong cache (refetch nền lỗi) thì giữ nguyên.
   const sessionsLoadFailed = sessionsError && !sessionsData;
   const rosterLoadFailed = (studentsError && !students) || (attendancesError && !attendances);
+  // Q10 #147 M1: refetch điểm danh lỗi MÀ còn bản cũ trong cache: vẫn hiện bảng (đọc được) nhưng KHOÁ ghi. Sau một lần
+  // lưu, invalidate rồi refetch lỗi sẽ dựng lại hàng từ bản ghi TRƯỚC lúc lưu (HS vừa lưu trông như chưa điểm danh, không
+  // có attendanceId); sửa tiếp sẽ đi nhánh bulk-create, backend âm thầm bỏ qua HS đã có bản ghi => mất thay đổi nhưng UI báo thành công.
+  const attendancesStale = attendancesError && !!attendances;
+  // Q10 #147 M2 (#148): MỘT thông báo "dữ liệu cũ" cho cả trang (buổi học / học viên / điểm danh), không nuốt lỗi âm thầm.
+  const stale = staleQueries([
+    { isError: sessionsError, data: sessionsData, refetch: refetchSessions },
+    { isError: studentsError, data: students, refetch: refetchStudents },
+    { isError: attendancesError, data: attendances, refetch: refetchAttendances },
+  ]);
   const retryRoster = () => Promise.all([studentsError ? refetchStudents() : null, attendancesError ? refetchAttendances() : null]);
 
   const { rows, setStatus, setNote, markAllPresent, reset, changes, hasChanges } =
@@ -90,8 +102,9 @@ export default function ClassAttendancePage() {
   const archived = isClassArchived(classInfo?.status);
   // Q4-T07: buổi sau hôm nay (giờ Việt Nam) chưa được điểm danh; backend cũng chặn (422 ERR_SESSION_NOT_STARTED).
   const notStarted = groups.upcoming.some((s) => s.id === sessionId);
-  // Chưa tải được danh sách học viên/điểm danh thì cũng khoá lưu: bảng không có dữ liệu thật để sửa.
-  const readOnly = archived || notStarted || rosterLoadFailed;
+  // Chưa tải được danh sách học viên/điểm danh thì cũng khoá lưu: bảng không có dữ liệu thật để sửa. Lỗi điểm danh LÚC CÒN
+  // bản cũ cũng khoá (attendancesStale): đọc được, không ghi được tới khi tải lại thành công.
+  const readOnly = archived || notStarted || rosterLoadFailed || attendancesStale;
 
   async function handleSave() {
     if (readOnly) return;
@@ -153,6 +166,17 @@ export default function ClassAttendancePage() {
         </div>
       ) : (
         <>
+          {stale.isStale && (
+            <StaleDataNotice
+              resourceLabel="dữ liệu điểm danh"
+              message={
+                attendancesStale
+                  ? "Không làm mới được điểm danh của buổi này, đang hiện dữ liệu đã tải trước đó. Tạm khoá lưu để không ghi đè lên bản ghi chưa tải về."
+                  : undefined
+              }
+              onRetry={stale.retry}
+            />
+          )}
           <div className="mb-4 flex flex-wrap items-end gap-3">
             <label className="flex-1 min-w-[240px]">
               <span className="mb-1 block text-xs font-medium text-gray-600">

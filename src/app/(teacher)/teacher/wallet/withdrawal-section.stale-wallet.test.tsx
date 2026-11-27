@@ -16,7 +16,7 @@ const state = vi.hoisted(() => ({
 
 vi.mock("@/hooks/queries/use-wallet", () => ({
   useTeacherWallet: () => ({ data: state.wallet, isLoading: false, isError: state.walletError, refetch: refetchWallet }),
-  useMyWithdrawals: () => ({ data: state.history, isLoading: false, isError: state.historyError, refetch: vi.fn() }),
+  useMyWithdrawals: () => ({ data: state.history, isLoading: false, isError: state.historyError, refetch: refetchHistory }),
   useCreateWithdrawal: () => ({ mutate: vi.fn(), isPending: false }),
   useCancelWithdrawal: () => ({ mutate: vi.fn(), isPending: false }),
 }));
@@ -31,10 +31,12 @@ const WALLET = {
   min_withdrawal_amount: 100000, has_open_withdrawal: false,
 };
 const HISTORY = { items: [{ id: "w1" }, { id: "w2" }, { id: "w3" }], total_count: 3, page: 1, limit: 10, total_pages: 1 };
+const refetchHistory = vi.fn();
 const requestButton = () => screen.getByRole("button", { name: /Yêu cầu rút tiền/ }) as HTMLButtonElement;
 
 beforeEach(() => {
   refetchWallet.mockReset();
+  refetchHistory.mockReset();
   state.wallet = WALLET;
   state.walletError = false;
   state.history = HISTORY;
@@ -48,10 +50,28 @@ describe("WithdrawalSection — Q10-T-04 dữ liệu cũ khi refetch lỗi", () 
 
     expect(requestButton().disabled).toBe(false);
     expect(screen.queryByText(/Không tải được thông tin ví/)).toBeNull();
-    expect(screen.getByRole("status").textContent).toContain("Không cập nhật được thông tin ví mới");
+    expect(screen.getByRole("status").textContent).toContain("Không làm mới được thông tin ví và lịch sử rút tiền");
 
     fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
     expect(refetchWallet).toHaveBeenCalledTimes(1);
+  });
+
+  it("ví và lịch sử cùng lỗi (còn bản cũ): đúng MỘT thông báo; Thử lại làm mới cả hai (M2)", () => {
+    state.walletError = true;
+    state.historyError = true;
+    render(<WithdrawalSection />);
+
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    expect(refetchWallet).toHaveBeenCalledTimes(1);
+    expect(refetchHistory).toHaveBeenCalledTimes(1);
+  });
+
+  it("trang cha đã báo phần ví (showWalletStaleNotice=false): ví lỗi không báo lần nữa trong mục rút tiền", () => {
+    state.walletError = true;
+    render(<WithdrawalSection showWalletStaleNotice={false} />);
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(requestButton().disabled).toBe(false);
   });
 
   it("ví lỗi và KHÔNG có ví cũ: nút khoá với lý do tải ví, không có dòng 'đang hiện số liệu cũ'", () => {
@@ -64,9 +84,14 @@ describe("WithdrawalSection — Q10-T-04 dữ liệu cũ khi refetch lỗi", () 
     expect(screen.queryByRole("status")).toBeNull();
   });
 
-  it("lịch sử lỗi nhưng còn trang cũ: hiện bảng và phân trang, không báo 'Không tải được lịch sử'", () => {
+  it("lịch sử lỗi nhưng còn trang cũ: hiện bảng và phân trang, không báo 'Không tải được lịch sử', có thông báo cũ + Thử lại (M2)", () => {
     state.historyError = true;
     render(<WithdrawalSection />);
+
+    expect(screen.getByRole("status").textContent).toContain("lịch sử rút tiền");
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    expect(refetchHistory).toHaveBeenCalledTimes(1);
+    expect(refetchWallet).not.toHaveBeenCalled();
 
     expect(screen.queryByText(/Không tải được lịch sử/)).toBeNull();
     expect(screen.getByTestId("history-table")).toBeTruthy();

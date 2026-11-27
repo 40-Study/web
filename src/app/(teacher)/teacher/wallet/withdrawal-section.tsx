@@ -19,14 +19,15 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { RetryButton } from "@/components/common/retry-button";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
+import { staleQueries } from "@/components/common/stale-queries";
 import { useTeacherWallet, useMyWithdrawals, useCreateWithdrawal } from "@/hooks/queries/use-wallet";
 import { formatWithdrawalAmount } from "@/lib/withdrawal-format";
 import { WithdrawalHistoryTable } from "./withdrawal-history-table";
 
 const LIMIT = 10;
 
-export function WithdrawalSection() {
+export function WithdrawalSection({ showWalletStaleNotice = true }: { showWalletStaleNotice?: boolean } = {}) {
   const {
     data: wallet,
     isLoading: isWalletLoading,
@@ -58,7 +59,12 @@ export function WithdrawalSection() {
   // Q10-T-04: refetch nền lỗi mà còn ví trong cache thì dùng ví cũ (cùng quy tắc với thẻ số dư ở page.tsx), chỉ khoá
   // nút khi KHÔNG có dữ liệu ví nào; báo "chưa cập nhật" bằng dòng riêng bên dưới.
   const walletLoadFailed = isWalletError && !wallet;
-  const walletStale = isWalletError && !!wallet;
+  // Q10 #147 M2 (#148): MỘT thông báo cho cả mục (ví + lịch sử). Trang cha đã báo phần ví (thẻ số dư dùng chung ví) thì
+  // truyền `showWalletStaleNotice={false}` để không báo hai lần.
+  const stale = staleQueries([
+    ...(showWalletStaleNotice ? [{ isError: isWalletError, data: wallet, refetch: refetchWallet }] : []),
+    { isError: isHistoryError, data: history, refetch: refetchHistory },
+  ]);
   if (walletLoadFailed) {
     disableReason = "Không tải được thông tin ví, vui lòng tải lại trang.";
   } else if (isWalletLoading) {
@@ -127,11 +133,11 @@ export function WithdrawalSection() {
       </CardHeader>
 
       <CardContent className="pt-4">
-        {walletStale && (
-          <p role="status" className="mb-4 flex flex-wrap items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
-            Không cập nhật được thông tin ví mới, đang hiện số liệu đã tải trước đó.
-            <RetryButton asLink onRetry={() => refetchWallet()} className="font-medium underline" />
-          </p>
+        {stale.isStale && (
+          <StaleDataNotice
+            resourceLabel={showWalletStaleNotice ? "thông tin ví và lịch sử rút tiền" : "lịch sử rút tiền"}
+            onRetry={stale.retry}
+          />
         )}
 
         {/* Cảnh báo số dư âm — hiển thị nổi bật, tách khỏi text giải thích cạnh nút */}

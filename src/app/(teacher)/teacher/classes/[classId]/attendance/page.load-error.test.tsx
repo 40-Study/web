@@ -90,10 +90,51 @@ describe("ClassAttendancePage — Q10-T-01 lỗi tải không phải 'chưa có 
     expect(refetchAttendances).toHaveBeenCalledTimes(1);
   });
 
+  // Q10 #147 M1: bản cũ trong cache + refetch lỗi => đọc được nhưng KHÔNG ghi được (bulk-create âm thầm bỏ qua HS đã có bản ghi).
+  it("điểm danh refetch lỗi nhưng còn bản cũ: bảng vẫn hiện, khoá Lưu + Đánh dấu tất cả, có lý do + Thử lại (M1)", () => {
+    state.attendances = { data: [], isLoading: false, isError: true, error: new Error("net"), refetch: refetchAttendances };
+    render(<ClassAttendancePage />);
+
+    expect(screen.getByTestId("table")).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect((screen.getByRole("button", { name: "Lưu điểm danh" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Đánh dấu tất cả có mặt" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByRole("status").textContent).toContain("Tạm khoá lưu");
+
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    expect(refetchAttendances).toHaveBeenCalledTimes(1);
+    expect(refetchSessions).not.toHaveBeenCalled();
+    expect(refetchStudents).not.toHaveBeenCalled();
+  });
+
+  it("buổi học refetch lỗi nhưng còn bản cũ: có thông báo dữ liệu cũ + Thử lại, KHÔNG khoá lưu (chỉ lỗi điểm danh mới khoá) (M2)", () => {
+    state.sessions = { data: { sessions: [SESSION] }, isLoading: false, isError: true, error: new Error("net"), refetch: refetchSessions };
+    render(<ClassAttendancePage />);
+
+    expect(screen.getByRole("status").textContent).toContain("Không làm mới được dữ liệu điểm danh");
+    expect(screen.getByRole("status").textContent).not.toContain("Tạm khoá lưu");
+    expect((screen.getByRole("button", { name: "Lưu điểm danh" }) as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    expect(refetchSessions).toHaveBeenCalledTimes(1);
+  });
+
+  it("nhiều query cùng lỗi (còn bản cũ): đúng MỘT thông báo, Thử lại làm mới đúng các query đang lỗi (M2)", () => {
+    state.sessions = { data: { sessions: [SESSION] }, isLoading: false, isError: true, error: new Error("net"), refetch: refetchSessions };
+    state.students = { data: [{ id: "u1" }], isLoading: false, isError: true, error: new Error("net"), refetch: refetchStudents };
+    render(<ClassAttendancePage />);
+
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    expect(refetchSessions).toHaveBeenCalledTimes(1);
+    expect(refetchStudents).toHaveBeenCalledTimes(1);
+    expect(refetchAttendances).not.toHaveBeenCalled();
+  });
+
   it("đối chứng: mọi query ổn thì bảng hiện, nút Lưu bật, không có hộp lỗi", () => {
     render(<ClassAttendancePage />);
     expect(screen.getByTestId("table")).toBeTruthy();
     expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
     expect((screen.getByRole("button", { name: "Lưu điểm danh" }) as HTMLButtonElement).disabled).toBe(false);
   });
 });
