@@ -23,8 +23,12 @@ beforeEach(() => {
 });
 
 describe("useSessionAttendances — failureCount trong lúc thử lại (Q11-T-01)", () => {
-  const makeWrapper = (client: QueryClient) =>
-    ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  const makeWrapper = (client: QueryClient) => {
+    function Wrapper({ children }: { children: ReactNode }) {
+      return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    }
+    return Wrapper;
+  };
 
   it("refetch lỗi: failureCount > 0 và data cũ còn nguyên TRƯỚC KHI isError bật", async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: 3, retryDelay: 5, staleTime: 0 } } });
