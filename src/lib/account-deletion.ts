@@ -34,14 +34,16 @@ export function deleteAccountErrorMessage(error: unknown): string {
   return DELETE_FAILED_MESSAGE;
 }
 
+/** Mã backend cho "sai mật khẩu xác nhận" của `DELETE /auth/me` (400). */
+export const INVALID_PASSWORD_CODE = "ERR_INVALID_PASSWORD";
+
 /**
- * Sai mật khẩu xác nhận: 400/401/403 không phải lý do số dư. Lỗi này gắn vào ô nhập (Q9-PG-05) nên hook không toast
- * thêm; 5xx, mất mạng, 429, 409 số dư vẫn do toast của hook báo.
+ * Sai mật khẩu xác nhận: chỉ `ERR_INVALID_PASSWORD`, hoặc (backend cũ chưa có mã) 400 kèm message "invalid password".
+ * Lỗi này gắn vào ô nhập (Q9-PG-05) nên hook không toast thêm. Mọi lỗi khác (400 khác như lỗi DB, 401
+ * `ACCOUNT_LOCKED`/phiên hết hạn, 403, 409 số dư, 429, 5xx, mất mạng) KHÔNG được báo là sai mật khẩu và vẫn do toast báo.
  */
 export function isDeleteAccountPasswordError(error: unknown): boolean {
-  return (
-    error instanceof ApiError &&
-    error.code !== ACCOUNT_HAS_BALANCE_CODE &&
-    (error.status === 400 || error.status === 401 || error.status === 403)
-  );
+  if (!(error instanceof ApiError)) return false;
+  if (error.code === INVALID_PASSWORD_CODE) return true;
+  return error.status === 400 && /^\s*invalid password\s*$/i.test(error.message);
 }

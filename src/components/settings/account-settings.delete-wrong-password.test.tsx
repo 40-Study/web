@@ -30,7 +30,7 @@ describe("AccountSettings — xoá tài khoản sai mật khẩu (Q9-PG-05)", ()
   it("sai mật khẩu: hộp thoại vẫn mở, lỗi dưới ô nhập, gõ lại và xoá thành công thì đóng", async () => {
     const onDelete = vi
       .fn<(p: string) => Promise<void>>()
-      .mockRejectedValueOnce(new ApiError(400, "ERR_VALIDATION", "incorrect password"))
+      .mockRejectedValueOnce(new ApiError(400, "ERR_INVALID_PASSWORD", "invalid password"))
       .mockResolvedValueOnce(undefined);
     openDelete(onDelete);
 

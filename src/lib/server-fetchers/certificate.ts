@@ -8,10 +8,12 @@
  */
 
 import type { VerifyCertificateResponse } from "@/services/certificate.service";
-import { normalizeCertificateNumber } from "@/lib/certificate-number";
 import { getPublicApiBaseUrl } from "./base-url";
 
 /**
+ * `certificateNumber` phải là mã đã chuẩn hoá (giải mã + cắt khoảng trắng) ở ranh giới URL, tức trang
+ * (`normalizeCertificateNumber`); giải mã thêm ở đây sẽ làm sai mã chứa "%" (giải mã hai lần).
+ *
  * Trả null khi số chứng chỉ không tồn tại (backend trả 404) hoặc backend lỗi
  * — trang gọi hàm này tự hiển thị trạng thái "không tìm thấy".
  */
@@ -20,7 +22,7 @@ export async function verifyCertificateServer(
 ): Promise<VerifyCertificateResponse | null> {
   try {
     const res = await fetch(
-      `${getPublicApiBaseUrl()}/certificates/verify/${encodeURIComponent(normalizeCertificateNumber(certificateNumber))}`,
+      `${getPublicApiBaseUrl()}/certificates/verify/${encodeURIComponent(certificateNumber)}`,
       // Không cache: chứng chỉ có thể bị thu hồi (hoàn tiền) bất cứ lúc nào, bản "hợp lệ" cũ kèm tên
       // học viên không được sống thêm phút nào ở data cache. Backend đã có cache redis riêng (xoá khi thu hồi).
       { cache: "no-store" }

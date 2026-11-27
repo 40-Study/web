@@ -87,7 +87,8 @@ export default function CourseDetailPage() {
 
   if (isLoading) return <LoadingSkeleton />;
 
-  if (error) {
+  // Chỉ thay nội dung bằng khối lỗi khi chưa có khoá học nào được tải; refetch nền lỗi thì giữ dữ liệu đã có (#142 M2).
+  if (error && !course) {
     // N13: không in thẳng error.message (lộ "invalid UUID length: 14"); slug không tồn tại đã được
     // hook trả null → nhánh notFound() bên dưới. Còn lại là lỗi mạng/server thật.
     return (

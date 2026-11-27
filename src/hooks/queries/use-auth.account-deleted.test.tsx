@@ -57,9 +57,19 @@ describe("useDeleteAccount — toast (Q9-PG-05)", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
   }
 
-  it("sai mật khẩu: không toast (lỗi nằm dưới ô nhập)", async () => {
-    await deleteWith(new ApiError(400, "ERR_VALIDATION", "incorrect password"));
+  it("sai mật khẩu (ERR_INVALID_PASSWORD): không toast (lỗi nằm dưới ô nhập)", async () => {
+    await deleteWith(new ApiError(400, "ERR_INVALID_PASSWORD", "invalid password"));
     expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("backend cũ: 400 message 'invalid password' cũng không toast", async () => {
+    await deleteWith(new ApiError(400, "ERR_VALIDATION", "invalid password"));
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("400 khác không phải sai mật khẩu (lỗi DB): vẫn toast", async () => {
+    await deleteWith(new ApiError(400, "ERR_VALIDATION", "failed to deactivate account: db down"));
+    expect(toast.error).toHaveBeenCalledTimes(1);
   });
 
   it("5xx: vẫn toast", async () => {

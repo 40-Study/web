@@ -36,11 +36,21 @@ describe("hasTeacherRole", () => {
   });
 });
 
-describe("isDeleteAccountPasswordError (Q9-PG-05)", () => {
-  it("400/401/403 là sai mật khẩu (gắn vào ô nhập)", () => {
-    for (const status of [400, 401, 403]) {
-      expect(isDeleteAccountPasswordError(new ApiError(status, "ERR_X", "wrong"))).toBe(true);
-    }
+describe("isDeleteAccountPasswordError (Q9-PG-05, review #142 M1)", () => {
+  it("ERR_INVALID_PASSWORD là sai mật khẩu (gắn vào ô nhập)", () => {
+    expect(isDeleteAccountPasswordError(new ApiError(400, "ERR_INVALID_PASSWORD", "invalid password"))).toBe(true);
+  });
+
+  it("backend cũ: 400 không mã kèm message 'invalid password' cũng là sai mật khẩu", () => {
+    expect(isDeleteAccountPasswordError(new ApiError(400, "ERR_VALIDATION", "invalid password"))).toBe(true);
+  });
+
+  it("400 khác (lỗi DB, không tìm thấy user), 401, 403: KHÔNG phải sai mật khẩu, vẫn toast", () => {
+    expect(isDeleteAccountPasswordError(new ApiError(400, "ERR_VALIDATION", "failed to deactivate account: db down"))).toBe(false);
+    expect(isDeleteAccountPasswordError(new ApiError(400, "ERR_VALIDATION", "failed to find user"))).toBe(false);
+    expect(isDeleteAccountPasswordError(new ApiError(401, "ACCOUNT_LOCKED", "locked"))).toBe(false);
+    expect(isDeleteAccountPasswordError(new ApiError(401, "ERR_UNAUTHORIZED", "invalid password"))).toBe(false);
+    expect(isDeleteAccountPasswordError(new ApiError(403, "ERR_FORBIDDEN", "invalid password"))).toBe(false);
   });
 
   it("số dư (409), 5xx, mất mạng và lỗi lạ không phải sai mật khẩu (vẫn do toast báo)", () => {

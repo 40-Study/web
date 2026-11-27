@@ -87,3 +87,14 @@ describe("mã trên URL kèm khoảng trắng (Q9-PG-09)", () => {
     expect(el.props.children.props.certificateNumber).toBe("C-9");
   });
 });
+
+// L1 (#142 review): trang giải mã đúng một lần ("A%2541" trên URL -> "A%41" gửi đi), không giải mã lại ở nơi khác.
+describe("mã trên URL chứa '%' mã hoá (L1)", () => {
+  beforeEach(() => verifyMock.mockReset());
+
+  it("'A%2541' -> xác minh bằng 'A%41' (một lần giải mã)", async () => {
+    verifyMock.mockResolvedValue(null);
+    await VerifyCertificatePage({ params: { number: "A%2541" } });
+    expect(verifyMock).toHaveBeenLastCalledWith("A%41");
+  });
+});
