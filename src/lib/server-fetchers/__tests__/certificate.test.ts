@@ -28,4 +28,14 @@ describe("verifyCertificateServer", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("down")));
     await expect(verifyCertificateServer("C-2")).resolves.toBeNull();
   });
+
+  // L1 (#142 review): trang giải mã đúng một lần; fetcher chỉ mã hoá lại, không giải mã/cắt thêm.
+  it("mã chứa '%' đã giải mã được mã hoá lại đúng một lần, không giải mã hai lần", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { valid: true, certificate_number: "A%41" } }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await verifyCertificateServer("A%41");
+
+    expect(String(fetchMock.mock.calls[0][0])).toBe("http://api.test/api/certificates/verify/A%2541");
+  });
 });

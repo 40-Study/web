@@ -14,6 +14,9 @@ export const ACCOUNT_DELETE_COMMON_WARNING =
 export const ACCOUNT_DELETE_TEACHER_WARNING =
   "Là giảng viên, bạn chỉ vô hiệu hoá được tài khoản khi số dư ví bằng 0 và không còn yêu cầu rút tiền đang chờ. Hãy rút hết số dư hoặc huỷ yêu cầu rút trước.";
 
+/** Lỗi ở ô mật khẩu của hộp thoại xoá tài khoản (hiện dưới ô nhập, hộp thoại giữ nguyên). */
+export const DELETE_PASSWORD_FIELD_MESSAGE = "Mật khẩu không đúng, vui lòng nhập lại";
+
 const DELETE_FAILED_MESSAGE = "Xoá tài khoản thất bại, vui lòng kiểm tra lại mật khẩu";
 
 /** Vai giảng viên (hệ thống hoặc trong tổ chức): có ví thu nhập nên bị chặn khi còn số dư. */
@@ -29,4 +32,18 @@ export function deleteAccountErrorMessage(error: unknown): string {
   if (error instanceof ApiError && error.code === ACCOUNT_HAS_BALANCE_CODE) return getErrorMessage(error);
   if (error instanceof NetworkError || (error instanceof ApiError && error.status >= 500)) return getErrorMessage(error);
   return DELETE_FAILED_MESSAGE;
+}
+
+/** Mã backend cho "sai mật khẩu xác nhận" của `DELETE /auth/me` (400). */
+export const INVALID_PASSWORD_CODE = "ERR_INVALID_PASSWORD";
+
+/**
+ * Sai mật khẩu xác nhận: chỉ `ERR_INVALID_PASSWORD`, hoặc (backend cũ chưa có mã) 400 kèm message "invalid password".
+ * Lỗi này gắn vào ô nhập (Q9-PG-05) nên hook không toast thêm. Mọi lỗi khác (400 khác như lỗi DB, 401
+ * `ACCOUNT_LOCKED`/phiên hết hạn, 403, 409 số dư, 429, 5xx, mất mạng) KHÔNG được báo là sai mật khẩu và vẫn do toast báo.
+ */
+export function isDeleteAccountPasswordError(error: unknown): boolean {
+  if (!(error instanceof ApiError)) return false;
+  if (error.code === INVALID_PASSWORD_CODE) return true;
+  return error.status === 400 && /^\s*invalid password\s*$/i.test(error.message);
 }

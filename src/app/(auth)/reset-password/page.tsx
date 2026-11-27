@@ -88,6 +88,8 @@ export default function ResetPasswordPage() {
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <Input
           type="password"
+          name="new-password"
+          autoComplete="new-password"
           label="Mật khẩu mới"
           placeholder="Nhập mật khẩu mới"
           value={password}
@@ -101,6 +103,8 @@ export default function ResetPasswordPage() {
         />
         <Input
           type="password"
+          name="confirm-password"
+          autoComplete="new-password"
           label="Xác nhận mật khẩu"
           placeholder="Nhập lại mật khẩu mới"
           value={confirmPassword}

@@ -36,11 +36,29 @@ describe("useDeleteAccount", () => {
     expect(toastError.mock.calls[0][0]).toMatch(/số dư trong ví hoặc yêu cầu rút tiền/);
   });
 
-  it("lỗi khác -> câu cũ 'kiểm tra lại mật khẩu'", async () => {
-    deleteAccount.mockRejectedValue(new ApiError(401, "ERR_UNAUTHORIZED", "invalid password"));
+  it("lỗi khác (429) -> câu cũ 'kiểm tra lại mật khẩu'", async () => {
+    deleteAccount.mockRejectedValue(new ApiError(429, "ERR_RATE_LIMITED", "too many requests"));
     const { result } = renderHook(() => useDeleteAccount(), { wrapper });
     result.current.mutate({ password: "x" });
     await waitFor(() => expect(toastError).toHaveBeenCalled());
     expect(toastError.mock.calls[0][0]).toMatch(/kiểm tra lại mật khẩu/);
+  });
+
+  it("sai mật khẩu (ERR_INVALID_PASSWORD) -> không toast, lỗi hiện ở ô nhập", async () => {
+    deleteAccount.mockRejectedValue(new ApiError(400, "ERR_INVALID_PASSWORD", "invalid password"));
+    const { result } = renderHook(() => useDeleteAccount(), { wrapper });
+    result.current.mutate({ password: "x" });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("400 khác (lỗi DB) và 401 -> vẫn toast, không bị nuốt như sai mật khẩu", async () => {
+    for (const err of [new ApiError(400, "ERR_VALIDATION", "failed to deactivate account: db down"), new ApiError(401, "ACCOUNT_LOCKED", "locked")]) {
+      toastError.mockReset();
+      deleteAccount.mockRejectedValue(err);
+      const { result } = renderHook(() => useDeleteAccount(), { wrapper });
+      result.current.mutate({ password: "x" });
+      await waitFor(() => expect(toastError).toHaveBeenCalled());
+    }
   });
 });

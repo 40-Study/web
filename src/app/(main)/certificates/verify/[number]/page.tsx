@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { CertificateVerifyResult } from "@/components/certificate/certificate-verify-result";
 import { verifyCertificateServer } from "@/lib/server-fetchers/certificate";
 import { SITE_URL } from "@/lib/seo";
+import { normalizeCertificateNumber } from "@/lib/certificate-number";
 
 /**
  * Tra cứu chứng chỉ — TRANG CÔNG KHAI (không cần đăng nhập).
@@ -25,7 +26,7 @@ export async function generateMetadata({
 }: {
   params: { number: string };
 }): Promise<Metadata> {
-  const result = await verifyCertificateServer(params.number);
+  const result = await verifyCertificateServer(normalizeCertificateNumber(params.number));
 
   if (result?.revoked) {
     return {
@@ -45,7 +46,7 @@ export async function generateMetadata({
   const description = `Chứng chỉ hoàn thành khoá học${
     result.course_name ? ` "${result.course_name}"` : ""
   } do ForteX cấp. Mã: ${result.certificate_number}.`;
-  const url = canonicalVerifyUrl(result, params.number);
+  const url = canonicalVerifyUrl(result, normalizeCertificateNumber(params.number));
 
   return {
     title,
@@ -63,14 +64,16 @@ export default async function VerifyCertificatePage({
 }: {
   params: { number: string };
 }) {
-  const result = await verifyCertificateServer(params.number);
-  const verifyUrl = canonicalVerifyUrl(result, params.number);
+  // Q9-PG-09: mã trên URL có thể kèm khoảng trắng (%20) hoặc còn percent-encoded; chuẩn hoá một lần cho cả fetch lẫn URL.
+  const typed = normalizeCertificateNumber(params.number);
+  const result = await verifyCertificateServer(typed);
+  const verifyUrl = canonicalVerifyUrl(result, typed);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
       <CertificateVerifyResult
         result={result}
-        certificateNumber={params.number}
+        certificateNumber={typed}
         verifyUrl={verifyUrl}
       />
     </div>

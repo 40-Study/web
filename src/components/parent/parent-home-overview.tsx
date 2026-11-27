@@ -73,7 +73,7 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
             </div>
           )}
           <div className="min-w-0">
-            <p className="font-semibold text-gray-900 truncate">{displayName}</p>
+            <h2 className="font-semibold text-gray-900 truncate">{displayName}</h2>
             <p className="text-xs text-gray-500">Con của tôi</p>
           </div>
         </div>
@@ -105,7 +105,7 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
         <div>
           <div className="flex items-center gap-1.5 mb-2">
             <ClipboardList className="h-4 w-4 text-amber-500" />
-            <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Bài tập sắp hạn</h4>
+            <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Bài tập sắp hạn</h3>
           </div>
           {loadingAssignments ? (
             <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
@@ -161,7 +161,7 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
         <div>
           <div className="flex items-center gap-1.5 mb-2">
             <CalendarCheck className="h-4 w-4 text-emerald-500" />
-            <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Điểm danh gần đây</h4>
+            <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Điểm danh gần đây</h3>
           </div>
           {loadingAttendance ? (
             <Loader2 className="h-4 w-4 animate-spin text-gray-400" />

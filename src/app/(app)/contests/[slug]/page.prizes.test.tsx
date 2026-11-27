@@ -69,3 +69,10 @@ describe("ContestDetailPage — thông tin cuộc thi là danh sách định ngh
     }
   });
 });
+
+describe("ContestDetailPage — landmark (Q9-PG-10)", () => {
+  it("cột bên phải là complementary có tên (axe landmark-unique: khung ứng dụng đã có một aside không tên)", () => {
+    render(<ContestDetailPage />);
+    expect(screen.getByRole("complementary", { name: "Thông tin và đăng ký cuộc thi" })).toBeTruthy();
+  });
+});

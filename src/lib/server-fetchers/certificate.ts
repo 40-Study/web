@@ -11,6 +11,9 @@ import type { VerifyCertificateResponse } from "@/services/certificate.service";
 import { getPublicApiBaseUrl } from "./base-url";
 
 /**
+ * `certificateNumber` phải là mã đã chuẩn hoá (giải mã + cắt khoảng trắng) ở ranh giới URL, tức trang
+ * (`normalizeCertificateNumber`); giải mã thêm ở đây sẽ làm sai mã chứa "%" (giải mã hai lần).
+ *
  * Trả null khi số chứng chỉ không tồn tại (backend trả 404) hoặc backend lỗi
  * — trang gọi hàm này tự hiển thị trạng thái "không tìm thấy".
  */

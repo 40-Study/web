@@ -17,6 +17,7 @@ import { useCourseReviews } from "@/hooks/queries/use-reviews";
 import { resolveCourseRatingSummary } from "@/components/course/course-rating-summary";
 import { useAuthStore } from "@/stores/auth.store";
 import { getErrorMessage } from "@/lib/error-messages";
+import { RetryButton } from "@/components/common/retry-button";
 
 function LoadingSkeleton() {
   return (
@@ -43,7 +44,7 @@ export default function CourseDetailPage() {
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  const { data: course, isLoading, error } = useCourseBySlug(slug);
+  const { data: course, isLoading, error, refetch } = useCourseBySlug(slug);
   // Hook tự bỏ qua khi chưa đăng nhập (enabled: isAuthenticated) — xem
   // use-courses.ts; nếu vẫn gọi thì khách bị 401 rồi đá về /login.
   const { data: enrolledCourses = [], isLoading: enrolledLoading } = useEnrolledCourses();
@@ -86,7 +87,8 @@ export default function CourseDetailPage() {
 
   if (isLoading) return <LoadingSkeleton />;
 
-  if (error) {
+  // Chỉ thay nội dung bằng khối lỗi khi chưa có khoá học nào được tải; refetch nền lỗi thì giữ dữ liệu đã có (#142 M2).
+  if (error && !course) {
     // N13: không in thẳng error.message (lộ "invalid UUID length: 14"); slug không tồn tại đã được
     // hook trả null → nhánh notFound() bên dưới. Còn lại là lỗi mạng/server thật.
     return (
@@ -95,6 +97,8 @@ export default function CourseDetailPage() {
         <p className="text-muted-foreground mb-4">
           {getErrorMessage(error, "Không thể tải thông tin khoá học, vui lòng thử lại")}
         </p>
+        {/* Q9-PG-03: lỗi tải tạm thời phải có nút thử lại, như trang giảng viên / cuộc thi / diễn đàn. */}
+        <RetryButton onRetry={() => refetch()} />
       </div>
     );
   }

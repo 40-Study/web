@@ -185,7 +185,7 @@ export function ProfileSettings() {
               >
                 Thay đổi ảnh đại diện
               </button>
-              {avatarError && <p className="text-xs text-red-500 mt-1">{avatarError}</p>}
+              {avatarError && <p className="text-xs text-red-700 mt-1">{avatarError}</p>}
             </div>
           </div>
         </div>
@@ -206,7 +206,7 @@ export function ProfileSettings() {
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">@</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">@</span>
                 <Input
                   id="username"
                   {...register("username")}
@@ -240,7 +240,7 @@ export function ProfileSettings() {
               rows={3}
               className="rounded-xl"
             />
-            <p className="text-xs text-gray-400 text-right">{bio.length}/160</p>
+            <p className="text-xs text-gray-500 text-right">{bio.length}/160</p>
           </div>
         </div>
 

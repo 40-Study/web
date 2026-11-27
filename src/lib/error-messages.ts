@@ -17,6 +17,7 @@
  */
 
 import { ApiError, NetworkError, RateLimitError } from "./errors";
+import { ACCOUNT_DELETED_CODE, ACCOUNT_DELETED_MESSAGE } from "./errors";
 import { USERNAME_TAKEN_MESSAGE } from "./user-name";
 import {
   CONTRACT_CODE_MESSAGES,
@@ -117,6 +118,8 @@ const CODE_MESSAGES: Record<string, string> = {
   ...QA8_TEACHER_CODE_MESSAGES,
   // ── QA8 khách/phụ huynh (contract C19): đăng ký và PUT /auth/me với tên đăng nhập đã dùng hoặc dành riêng (409). ──
   ERR_USERNAME_EXISTS: USERNAME_TAKEN_MESSAGE,
+  // ── QA9 khách/phụ huynh (PG-05): đăng nhập tài khoản đã tự vô hiệu hoá (401), khác ACCOUNT_LOCKED của admin. ──
+  [ACCOUNT_DELETED_CODE]: ACCOUNT_DELETED_MESSAGE,
 };
 
 // Code chỉ nói LOẠI lỗi, message mới nói lý do (vd. ERR_NOT_FOUND + "Voucher not found",

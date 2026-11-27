@@ -1,5 +1,9 @@
 /* Generated from web/src/app/globals.css. Run npm run design:sync. */
 :root {
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-inter: var(--font-ui);
+  --font-heading: var(--font-ui);
+  --font-plus-jakarta: var(--font-ui);
   --radius: 0.625rem;
   --background: 210 40% 98%;
   --background-secondary: 214 32% 91%;
@@ -13,7 +17,7 @@
   --secondary: 214 95% 93%;
   --secondary-foreground: 221 83% 53%;
   --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
+  --muted-foreground: 215 19% 42%;
   --accent: 199 89% 48%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 60%;
@@ -23,7 +27,6 @@
   --ring: 221 83% 53%;
   --edu-blue: 217 91% 60%;
   --edu-sky: 199 89% 48%;
-  --edu-slate: 215 16% 47%;
   --xp-green: 142 72% 29%;
   --streak-orange: 17 88% 40%;
   --achievement-gold: 45 93% 47%;
