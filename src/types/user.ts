@@ -7,7 +7,11 @@
  * snake_case trong response type, KHÔNG tự chuyển camelCase.
  */
 
-export type AdminUserStatusFilter = "active" | "locked";
+/**
+ * `self_deleted`: chỉ tài khoản tự xoá (Q11-ADMIN-03). Backend mới: `locked` KHÔNG gồm tài khoản tự xoá; backend cũ trả 400
+ * "Invalid query params" cho `self_deleted` và `locked` gồm cả hai (xem `userService.list`).
+ */
+export type AdminUserStatusFilter = "active" | "locked" | "self_deleted";
 
 export interface AdminUserListItem {
   id: string;
@@ -56,6 +60,8 @@ export interface AdminUserListResponse {
   page: number;
   limit: number;
   total_pages: number;
+  /** KHÔNG phải trường backend: `userService.list` đặt true khi phải hỏi lại bằng `locked` vì backend cũ từ chối `self_deleted` (400). */
+  client_split?: boolean;
 }
 
 export interface UpdateUserStatusDTO {

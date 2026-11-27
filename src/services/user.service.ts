@@ -7,6 +7,7 @@
  */
 
 import { api } from "@/lib/api-client";
+import { ApiError } from "@/lib/errors";
 import type {
   AdminUserDetail,
   AdminUserListParams,
@@ -16,10 +17,28 @@ import type {
 
 type R<T> = { message: string; data: T };
 
+const fetchUsers = (params?: AdminUserListParams) =>
+  api.get<R<AdminUserListResponse>>("/users", { params }).then((r) => r.data.data);
+
 export const userService = {
-  /** GET /users — tìm/lọc/phân trang, quyền USERS_VIEW_ALL */
-  list: (params?: AdminUserListParams) =>
-    api.get<R<AdminUserListResponse>>("/users", { params }).then((r) => r.data.data),
+  /**
+   * GET /users — tìm/lọc/phân trang, quyền USERS_VIEW_ALL.
+   *
+   * Fallback CÓ TÀI LIỆU cho BACKEND CŨ (Q11-ADMIN-03): `status=self_deleted` bị từ chối 400 "Invalid query params" vì chưa có bộ
+   * lọc này. Khi đó (và chỉ khi đó) hỏi lại bằng `status=locked`, tập cha chứa cả tài khoản tự xoá; trang admin lọc tiếp phía
+   * client, nên danh sách đúng nhưng tổng số/phân trang là của `locked`. Có cảnh báo trong console; mọi lỗi khác ném nguyên.
+   */
+  list: async (params?: AdminUserListParams) => {
+    try {
+      return await fetchUsers(params);
+    } catch (error) {
+      if (params?.status === "self_deleted" && error instanceof ApiError && error.status === 400) {
+        console.warn("[admin/users] backend chưa hỗ trợ status=self_deleted (400); dùng status=locked rồi lọc phía client.");
+        return { ...(await fetchUsers({ ...params, status: "locked" })), client_split: true };
+      }
+      throw error;
+    }
+  },
 
   /** GET /users/:id — chi tiết 1 user, quyền USERS_VIEW_ALL */
   getById: (id: string) =>

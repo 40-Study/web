@@ -173,6 +173,9 @@ export default function AdminUsersPage() {
   const splitClientSide = isSplitClientSide(statusFilter);
   // Trang server có người dùng nhưng bộ lọc client loại hết: KHÔNG phải "không có ai", còn trang khác (giữ phân trang).
   const filteredOutOnThisPage = splitClientSide && items.length === 0 && (data?.items.length ?? 0) > 0;
+  // Q11-ADMIN-03: backend mới lọc đúng và đếm đúng, nên chú thích "tổng số tính cả hai loại" chỉ còn đúng với BACKEND CŨ: hoặc service
+  // phải hỏi lại bằng `locked` (400 với self_deleted), hoặc `locked` trả về dòng mà bộ lọc client phải loại.
+  const countIsApproximate = splitClientSide && (data?.client_split === true || items.length < (data?.items.length ?? 0));
   const totalPages = data?.total_pages ?? 1;
 
   // QA3-15: ?page=999 vượt trang cuối cho danh sách rỗng và không có đường quay lại. Khi server báo số
@@ -396,7 +399,7 @@ export default function AdminUsersPage() {
         <div className="mt-4 flex items-center justify-between border-t pt-4 dark:border-gray-800">
           <p className="text-sm text-muted-foreground">
             Trang {data?.page ?? page}/{totalPages} · {data?.total_count ?? 0} người dùng
-            {splitClientSide && (
+            {countIsApproximate && (
               <span className="block text-xs">
                 Backend chưa có bộ lọc riêng cho tài khoản tự xoá: tổng số tính cả tài khoản khoá lẫn tự xoá, còn bảng chỉ
                 tách loại trong trang đang xem.

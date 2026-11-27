@@ -26,11 +26,11 @@ describe("user-status-filter (Q10 #147 L1)", () => {
     }
   });
 
-  it("API chỉ biết active|locked: 'self-deleted' gửi lên là locked", () => {
+  it("Q11-ADMIN-03: 'self-deleted' (URL) gửi lên API là self_deleted, không còn là locked", () => {
     expect(toApiStatus("ALL")).toBeUndefined();
     expect(toApiStatus("active")).toBe("active");
     expect(toApiStatus("locked")).toBe("locked");
-    expect(toApiStatus("self-deleted")).toBe("locked");
+    expect(toApiStatus("self-deleted")).toBe("self_deleted");
   });
 
   it("parse URL: giá trị lạ về ALL; chỉ locked/self-deleted là tách phía client", () => {
