@@ -58,6 +58,20 @@ describe("ClassAttendancePage — Q11-T-01 khoá ngay khi lượt làm mới th�
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
+  // Q11 #149 L6: lượt thử lại thành công đưa failureCount về 0 (xem use-sessions.attendances-failure-count.test.tsx) thì hàng mở lại.
+  it("khoá rồi phục hồi (failureCount 1 -> 0, isError=false): Lưu + Đánh dấu tất cả mở lại, thông báo biến mất", () => {
+    state.attendances = { data: [], isLoading: false, isError: false, failureCount: 1, refetch: refetchAttendances };
+    const { rerender } = render(<ClassAttendancePage />);
+    expect(saveDisabled()).toBe(true);
+    expect(markAllDisabled()).toBe(true);
+
+    state.attendances = { data: [], isLoading: false, isError: false, failureCount: 0, refetch: refetchAttendances };
+    rerender(<ClassAttendancePage />);
+    expect(saveDisabled()).toBe(false);
+    expect(markAllDisabled()).toBe(false);
+    expect(screen.queryByText(/Tạm khoá lưu/)).toBeNull();
+  });
+
   it("chưa thất bại lần nào (failureCount=0): không khoá, không thông báo (đối chứng)", () => {
     render(<ClassAttendancePage />);
     expect(saveDisabled()).toBe(false);
