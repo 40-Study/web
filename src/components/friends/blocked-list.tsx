@@ -19,6 +19,7 @@ export function BlockedList() {
 
   return (
     <QueryState
+      hasData={blocks.length > 0}
       isLoading={isLoading}
       isError={isError}
       error={error}

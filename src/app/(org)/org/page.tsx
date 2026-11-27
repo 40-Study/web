@@ -36,7 +36,7 @@ export default function OrgOverviewPage() {
   ];
 
   return (
-    <QueryState isLoading={org.isLoading} isError={org.isError} error={org.error} onRetry={() => org.refetch()} isEmpty={!org.data} emptyTitle="Không tìm thấy tổ chức">
+    <QueryState hasData={!!org.data} isLoading={org.isLoading} isError={org.isError} error={org.error} onRetry={() => org.refetch()} isEmpty={!org.data} emptyTitle="Không tìm thấy tổ chức">
       <div className="space-y-6">
         {/* QA-C-18: tên tổ chức đã có ở sidebar (desktop) và header (mobile), không lặp lại lần thứ ba ở đây. */}
         {org.data?.description && <p className="text-sm text-muted-foreground">{org.data.description}</p>}

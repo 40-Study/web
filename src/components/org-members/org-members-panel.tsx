@@ -144,6 +144,7 @@ export function OrgMembersPanel({ orgId, canAddMember, memberLookup = "directory
         </p>
       )}
       <QueryState
+        hasData={filtered.length > 0}
         isLoading={members.isLoading}
         isError={members.isError}
         error={members.error}

@@ -28,7 +28,7 @@ function RecentActivity() {
   return (
     <>
       <div className="mt-4">
-        <QueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
+        <QueryState hasData={items.length > 0} isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
           {items.length === 0 ? (
             <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-800">
               <EmptyState
@@ -108,6 +108,7 @@ export default function AdminIndexPage() {
       </section>
 
       <QueryState
+        hasData={!!orgPage && roles.length > 0 && permissions.length > 0}
         isLoading={loading}
         isError={hasError}
         onRetry={() => {

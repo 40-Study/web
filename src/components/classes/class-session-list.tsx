@@ -94,6 +94,7 @@ export function ClassSessionList({
       </CardHeader>
       <CardContent className="space-y-3">
         <QueryState
+          hasData={sessions.length > 0}
           isLoading={query.isLoading}
           isError={query.isError}
           error={query.error}

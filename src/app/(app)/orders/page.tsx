@@ -179,6 +179,7 @@ export default function MyOrdersPage() {
       </select>
 
       <QueryState
+        hasData={orders.length > 0}
         isLoading={isLoading}
         isError={isError}
         error={error}

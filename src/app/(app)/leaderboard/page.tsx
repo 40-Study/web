@@ -301,6 +301,7 @@ export default function LeaderboardPage() {
 
       {/* Leaderboard list */}
       <QueryState
+        hasData={entries.length > 0}
         isLoading={isLoading}
         isError={isError}
         error={leaderboardError}

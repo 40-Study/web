@@ -31,6 +31,7 @@ export default function CheckoutSuccessPage() {
   return (
     <div className="commerce-page max-w-2xl py-12">
       <QueryState
+        hasData={!!query.data}
         isLoading={query.isLoading}
         isError={query.isError}
         error={query.error}

@@ -69,6 +69,7 @@ export default function TeacherContestsPage() {
       </select>
 
       <QueryState
+        hasData={contests.length > 0}
         isLoading={isLoading}
         isError={isError}
         error={error}

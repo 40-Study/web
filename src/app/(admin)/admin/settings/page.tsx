@@ -155,7 +155,7 @@ export default function AdminSettingsPage() {
 function SettingsContent() {
   const { data, isLoading, isError, error, refetch } = useAdminSettings();
   return (
-    <QueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
+    <QueryState hasData={!!data} isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
       {data && (
         // key theo updated_at: sau khi lưu xong và tải lại, form lấy giá trị máy chủ chốt.
         <PlatformFeeCard key={data.updated_at ?? "default"} settings={data} />

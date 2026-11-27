@@ -51,6 +51,7 @@ export function ClassAssignmentsList({
       </CardHeader>
       <CardContent>
         <QueryState
+          hasData={items.length > 0}
           isLoading={query.isLoading}
           isError={query.isError}
           error={query.error}

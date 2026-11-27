@@ -29,6 +29,7 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 import { useAuthStore } from "@/stores/auth.store";
 import { useEnrolledCourses, useFeaturedCourses } from "@/hooks/use-courses";
 import { useMySchedules } from "@/hooks/queries/use-class-schedule";
@@ -114,11 +115,14 @@ function Widget({
 function QueryContent({
   loading,
   error,
+  hasData = false,
   retry,
   children,
 }: {
   loading: boolean;
   error: boolean;
+  /** Query đã có dữ liệu cache: refetch nền lỗi thì giữ dữ liệu + thông báo "Thử lại" (Q10-STU-01). */
+  hasData?: boolean;
   retry: () => void;
   children: ReactNode;
 }) {
@@ -129,6 +133,13 @@ function QueryContent({
         <Skeleton className="h-20 w-full" />
         <Skeleton className="h-4 w-1/2" />
       </div>
+    );
+  if (error && hasData)
+    return (
+      <>
+        <StaleDataNotice onRetry={retry} />
+        {children}
+      </>
     );
   if (error)
     return (
@@ -232,6 +243,7 @@ export function HomeDashboard() {
     <QueryContent
       loading={enrolled.isLoading}
       error={enrolled.isError}
+      hasData={!!enrolled.data}
       retry={() => void enrolled.refetch()}
     >
       {children}
@@ -241,6 +253,7 @@ export function HomeDashboard() {
     <QueryContent
       loading={profile.isLoading}
       error={profile.isError}
+      hasData={!!profile.data}
       retry={() => void profile.refetch()}
     >
       {children}
@@ -437,6 +450,7 @@ export function HomeDashboard() {
             <QueryContent
               loading={schedule.isLoading}
               error={schedule.isError}
+              hasData={!!schedule.data}
               retry={() => void schedule.refetch()}
             >
               {today.length ? (
@@ -537,6 +551,7 @@ export function HomeDashboard() {
             <QueryContent
               loading={featured.isLoading || enrolled.isLoading}
               error={featured.isError || enrolled.isError}
+              hasData={!!featured.data && !!enrolled.data}
               retry={() => {
                 if (featured.isError) void featured.refetch();
                 if (enrolled.isError) void enrolled.refetch();
@@ -607,19 +622,19 @@ export function HomeDashboard() {
       <div className="flex flex-wrap gap-2" aria-label="Tóm tắt học tập">
         <span className="inline-flex items-center gap-2 rounded-pill border border-border bg-card px-3 py-1.5 text-xs">
           <BookOpen className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-          {enrolled.isLoading || enrolled.isError
+          {enrolled.isLoading || (enrolled.isError && !enrolled.data)
             ? "Khoá học của bạn"
             : `${courses.filter((course) => course.progress < 100).length} khoá đang học`}
         </span>
         <span className="inline-flex items-center gap-2 rounded-pill border border-border bg-card px-3 py-1.5 text-xs">
           <CalendarDays className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-          {schedule.isLoading || schedule.isError
+          {schedule.isLoading || (schedule.isError && !schedule.data)
             ? "Lịch học hôm nay"
             : `${today.length} buổi học hôm nay`}
         </span>
         <span className="inline-flex items-center gap-2 rounded-pill border border-border bg-card px-3 py-1.5 text-xs">
           <Flame className="h-3.5 w-3.5 text-streak dark:text-streak-light" aria-hidden="true" />
-          {profile.isLoading || profile.isError
+          {profile.isLoading || (profile.isError && !profile.data)
             ? "Chuỗi ngày học"
             : `${stats?.current_streak || 0} ngày liên tiếp`}
         </span>

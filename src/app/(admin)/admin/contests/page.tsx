@@ -138,6 +138,7 @@ function AdminContestsContent() {
       </section>
 
       <QueryState
+        hasData={contests.length > 0}
         isLoading={isLoading}
         isError={isError}
         error={error}

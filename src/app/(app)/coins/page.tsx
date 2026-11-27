@@ -266,11 +266,13 @@ export default function CoinsPage() {
         </div>
         <SendGiftDialog balance={wallet.data?.balance ?? 0} />
       </div>
-      {wallet.isError ? (
-        <QueryState isError error={wallet.error} onRetry={() => wallet.refetch()}>
-          {null}
-        </QueryState>
-      ) : (
+      {/* Q10-STU-01: lỗi refetch nền khi đã có số dư cache thì giữ số dư + thông báo "Thử lại", không thay bằng hộp lỗi. */}
+      <QueryState
+        isError={wallet.isError}
+        hasData={!!wallet.data}
+        error={wallet.error}
+        onRetry={() => wallet.refetch()}
+      >
         <section className="commerce-balance" aria-label="Số dư ví xu">
           <div>
             <small>XU HIỆN CÓ</small>
@@ -289,7 +291,7 @@ export default function CoinsPage() {
             </div>
           </div>
         </section>
-      )}
+      </QueryState>
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="mb-6">
           <TabsTrigger value="packages">
@@ -307,6 +309,7 @@ export default function CoinsPage() {
         </TabsList>
         <TabsContent value="packages">
           <QueryState
+            hasData={(packages.data?.length ?? 0) > 0}
             isLoading={packages.isLoading}
             isError={packages.isError}
             error={packages.error}
@@ -412,6 +415,7 @@ export default function CoinsPage() {
         </TabsContent>
         <TabsContent value="purchases">
           <QueryState
+            hasData={(purchases.data?.purchases.length ?? 0) > 0}
             isLoading={purchases.isLoading}
             isError={purchases.isError}
             error={purchases.error}
@@ -493,6 +497,7 @@ export default function CoinsPage() {
         </TabsContent>
         <TabsContent value="transactions">
           <QueryState
+            hasData={(transactions.data?.transactions.length ?? 0) > 0}
             isLoading={transactions.isLoading}
             isError={transactions.isError}
             error={transactions.error}

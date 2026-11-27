@@ -80,6 +80,7 @@ export default function OrganizationsPage() {
             </p>
           )}
           <QueryState
+            hasData={data.length > 0}
             isLoading={orgs.isLoading}
             isError={orgs.isError}
             error={orgs.error}

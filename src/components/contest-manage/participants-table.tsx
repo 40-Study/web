@@ -42,6 +42,7 @@ export function ParticipantsTable({ contestId, phase }: { contestId: string; pha
 
   return (
     <QueryState
+      hasData={rows.length > 0}
       isLoading={isLoading}
       isError={isError}
       error={error}

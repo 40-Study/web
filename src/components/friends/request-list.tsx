@@ -65,6 +65,7 @@ export function RequestList() {
       </div>
 
       <QueryState
+        hasData={requests.length > 0}
         isLoading={isLoading}
         isError={isError}
         error={error}

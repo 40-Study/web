@@ -211,10 +211,11 @@ export default function RolesPage() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-3">
           {/* QA9-ADMIN-01: GET /system-roles lỗi không được trông như "chưa có vai trò nào". Hộp lỗi chỉ hiện khi chưa có
-              dữ liệu cache (như /courses); có dữ liệu cũ thì giữ danh sách. */}
+              dữ liệu cache (như /courses); có dữ liệu cũ thì giữ danh sách kèm thông báo "Thử lại" (Q10-ADMIN-01). */}
           <QueryState
             isLoading={rolesLoading}
-            isError={rolesError && rolesWithCounts.length === 0}
+            isError={rolesError}
+            hasData={rolesWithCounts.length > 0}
             onRetry={() => refetchRoles()}
             loadingFallback={[1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-200" />)}
           >

@@ -60,6 +60,7 @@ export function FriendList() {
       </div>
 
       <QueryState
+        hasData={friends.length > 0}
         isLoading={isLoading}
         isError={isError}
         error={error}

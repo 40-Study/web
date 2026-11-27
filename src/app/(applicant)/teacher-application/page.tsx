@@ -27,7 +27,7 @@ export default function TeacherApplicationPage() {
         </p>
       </div>
 
-      <QueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
+      <QueryState hasData={!!data} isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
         {/* data === null: GET /teacher-profiles/me trả 404 — chưa từng nộp hồ sơ. */}
         {data === null && <CreateApplication />}
         {data && <ApplicationStatus application={data} />}

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 import { ClassSourceBadge } from "@/components/classes/class-source-badge";
 import { useMyClasses } from "@/hooks/queries/use-classes";
 import { getClassDisplayBadge } from "@/lib/class-status";
@@ -26,12 +27,15 @@ export default function TeacherClassesPage() {
         </p>
       </div>
 
+      {/* Q10-T-03: refetch nền lỗi nhưng danh sách cache còn → giữ danh sách + thông báo "Thử lại". */}
+      {isError && classes.length > 0 && <StaleDataNotice onRetry={() => refetch()} />}
+
       {isLoading ? (
         <div className="space-y-3" aria-busy="true">
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-20 w-full" />
         </div>
-      ) : isError ? (
+      ) : isError && classes.length === 0 ? (
         <div role="alert" className="flex flex-col items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
           <p className="text-sm text-destructive">Không tải được danh sách lớp. Vui lòng thử lại.</p>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isRefetching}>

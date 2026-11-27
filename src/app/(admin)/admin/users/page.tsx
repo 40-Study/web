@@ -250,6 +250,7 @@ export default function AdminUsersPage() {
       </div>
 
       <QueryState
+        hasData={items.length > 0}
         isLoading={isLoading}
         isError={isError}
         error={error}

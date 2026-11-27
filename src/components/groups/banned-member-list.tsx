@@ -28,6 +28,7 @@ export function BannedMemberList({ group }: { group: Group }) {
 
   return (
     <QueryState
+      hasData={banned.length > 0}
       isLoading={isLoading}
       isError={isError}
       error={error}

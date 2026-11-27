@@ -65,6 +65,7 @@ export function ClassManagePanel({ classId, initialTab = "members" }: { classId:
 
   return (
     <QueryState
+      hasData={!!cls}
       isLoading={classQuery.isLoading}
       // Backend trả 404 cho lớp không xem được (lớp của tổ chức khác, lớp cá nhân): hiện "Không tìm thấy lớp", không phải lỗi tải.
       isError={classQuery.isError && !(classQuery.error instanceof NotFoundError)}
@@ -144,6 +145,7 @@ export function ClassManagePanel({ classId, initialTab = "members" }: { classId:
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <QueryState
+                    hasData={teachers.length > 0}
                     isLoading={teachersQuery.isLoading}
                     isError={teachersQuery.isError}
                     error={teachersQuery.error}
@@ -194,6 +196,7 @@ export function ClassManagePanel({ classId, initialTab = "members" }: { classId:
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <QueryState
+                    hasData={students.length > 0}
                     isLoading={studentsQuery.isLoading}
                     isError={studentsQuery.isError}
                     error={studentsQuery.error}

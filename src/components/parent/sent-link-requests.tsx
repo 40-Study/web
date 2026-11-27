@@ -2,6 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 import { cn } from "@/lib/utils";
 import { useCancelLinkRequest, useSentLinkRequests } from "@/hooks/queries/use-parent-link";
 import type { LinkRequestStatus } from "@/services/parent-link.service";
@@ -33,7 +34,7 @@ export function SentLinkRequests() {
   if (isLoading) {
     return <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div>;
   }
-  if (isError) {
+  if (isError && requests.length === 0) {
     return (
       <p className="text-sm text-slate-500">
         Không tải được yêu cầu đã gửi.{" "}
@@ -46,6 +47,8 @@ export function SentLinkRequests() {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 p-5">
       <h2 className="text-base font-semibold text-slate-900 mb-3">Yêu cầu đã gửi</h2>
+      {/* Q10-PG-01: refetch nền lỗi nhưng danh sách cache còn → giữ danh sách + thông báo "Thử lại". */}
+      {isError && <StaleDataNotice onRetry={() => refetch()} />}
       <ul className="divide-y divide-slate-100">
         {requests.map((r) => {
           const status = STATUS_LABEL[r.status] ?? { text: r.status, className: "bg-slate-100 text-slate-600" };

@@ -127,6 +127,7 @@ export default function AdminCoursesPage() {
       </section>
 
       <QueryState
+        hasData={courses.length > 0}
         isLoading={isLoading}
         isError={isError}
         error={error}
