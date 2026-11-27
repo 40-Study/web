@@ -234,11 +234,12 @@ function AdminWithdrawalsContent() {
       </section>
 
       <QueryState
+        hasData={data !== undefined}
         isLoading={isLoading}
         isError={isError}
         error={error}
         onRetry={() => refetch()}
-        isEmpty={!isLoading && !isError && items.length === 0}
+        isEmpty={!isLoading && items.length === 0}
         emptyTitle="Không có yêu cầu rút tiền nào"
         emptyDescription="Chưa có yêu cầu khớp bộ lọc hiện tại."
       >

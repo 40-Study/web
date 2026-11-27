@@ -21,6 +21,7 @@ import { useLiveSessions } from "@/hooks/queries/use-live-sessions";
 import { useAuthStore } from "@/stores/auth.store";
 import { toAnalyticsSessionOptions } from "@/lib/analytics-session-options";
 import { formatDurationVi } from "@/lib/format-duration-vi";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -108,6 +109,10 @@ export default function TeacherAnalyticsPage() {
             ))}
           </SelectContent>
         </Select>
+        {/* Q10 #148 H1: refetch nền lỗi mà còn danh sách buổi học cache thì giữ danh sách + báo "Thử lại". */}
+        {isSessionListError && !sessionListLoadFailed && (
+          <StaleDataNotice className="mb-0" resourceLabel="danh sách buổi học" onRetry={() => refetchSessionList()} />
+        )}
         {sessionListLoadFailed && (
           // Q9-T-03: một câu lỗi + "Thử lại"; không đi kèm câu "Chưa có buổi học nào" của trạng thái rỗng.
           <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-destructive">

@@ -48,5 +48,9 @@ describe("CourseDetailPage — API lỗi (Q9-PG-03)", () => {
     render(<CourseDetailPage />);
     expect(screen.getByText("course-header")).toBeTruthy();
     expect(screen.queryByText("Lỗi tải khoá học")).toBeNull();
+    // Q10 #148 H1: giữ trang nhưng báo "Thử lại" (trước đây im lặng).
+    expect(screen.getByRole("status").textContent).toContain("Không làm mới được thông tin khoá học");
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    expect(refetch).toHaveBeenCalledTimes(1);
   });
 });

@@ -13,6 +13,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useEnrolledCourses } from "@/hooks/use-courses";
 import { useMyCertificates } from "@/hooks/queries/use-certificates";
 import { QueryState } from "@/components/common/query-state";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 import { StatsWidgets } from "@/components/student/stats-widgets";
 import { CurrentCourseHero } from "@/components/student/current-course-hero";
 import { OtherCoursesSidebar } from "@/components/student/other-courses-sidebar";
@@ -132,7 +133,8 @@ export default function MyCoursesPage() {
   // khoá học nào" — học viên tưởng mất hết ghi danh. PR này còn khiến ô "Thời gian học" suy
   // ra từ cùng query đó, nên hậu quả rộng hơn (0m trông như chưa từng học).
   // Đặt trước `currentCourse`/`stats` vì cả hai đều đọc từ `enrolledCourses` rỗng.
-  if (coursesError) {
+  // Q10-STU-01: chỉ thay cả trang bằng hộp lỗi khi chưa có dữ liệu cache; có dữ liệu thì giữ + thông báo bên dưới.
+  if (coursesError && enrolledCourses.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="page-container !px-0">
@@ -140,9 +142,7 @@ export default function MyCoursesPage() {
           <QueryState
             isError
             error={coursesErrorObj}
-            onRetry={() => {
-              void refetchCourses();
-            }}
+            onRetry={() => refetchCourses()}
           >
             {null}
           </QueryState>
@@ -166,6 +166,12 @@ export default function MyCoursesPage() {
           </div>
           <StatsWidgets stats={stats} />
         </div>
+
+        {coursesError && (
+          <StaleDataNotice
+            onRetry={() => refetchCourses()}
+          />
+        )}
 
         {enrolledCourses.length === 0 ? (
           <EmptyState />

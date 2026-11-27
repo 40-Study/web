@@ -3,6 +3,7 @@
 import * as React from "react";
 import { AlertCircle } from "lucide-react";
 import { RetryButton } from "@/components/common/retry-button";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -15,8 +16,20 @@ export interface QueryStateProps {
   error?: unknown;
   /** true khi query thành công nhưng không có dữ liệu */
   isEmpty?: boolean;
-  /** Gọi lại query khi người dùng bấm "Thử lại" */
+  /**
+   * true khi query đã có dữ liệu hiển thị được (cache từ lần tải trước): `data !== undefined`, KHÔNG phải `length > 0`
+   * (danh sách rỗng đã cache vẫn là dữ liệu hợp lệ, Q10 #148 L2). Refetch nền lỗi + `hasData` thì KHÔNG thay
+   * nội dung bằng hộp lỗi: render `children` kèm một thông báo nhỏ có "Thử lại" phía trên (Q10-STU-01 / T-03 / PG-01 /
+   * ADMIN-01). Không truyền (mặc định false) = chưa có dữ liệu → hộp lỗi đầy đủ như trước.
+   */
+  hasData?: boolean;
+  /** Gọi lại query khi người dùng bấm "Thử lại". Nên trả Promise của refetch để nút hiện trạng thái bận. */
   onRetry?: () => unknown;
+  /**
+   * false = KHÔNG tự dựng `StaleDataNotice` khi refetch nền lỗi mà còn dữ liệu (vẫn giữ nội dung). Chỉ dùng khi trang đã
+   * dựng MỘT notice cấp trang cho nhiều query (`staleQueries`, Q10 #148 M3); guard bắt buộc file đó import `StaleDataNotice`.
+   */
+  showStaleNotice?: boolean;
   children: React.ReactNode;
   /** Skeleton tuỳ biến; mặc định là 3 khối chữ nhật */
   loadingFallback?: React.ReactNode;
@@ -54,7 +67,7 @@ function getErrorMessage(error: unknown): string {
  *
  * @example
  * const { data, isLoading, isError, error, refetch } = useSomeQuery();
- * <QueryState isLoading={isLoading} isError={isError} error={error} onRetry={refetch} isEmpty={!data?.length}>
+ * <QueryState isLoading={isLoading} isError={isError} error={error} hasData={data !== undefined} onRetry={refetch} isEmpty={!data?.length}>
  *   <ItemList items={data} />
  * </QueryState>
  */
@@ -63,7 +76,9 @@ export function QueryState({
   isError,
   error,
   isEmpty,
+  hasData = false,
   onRetry,
+  showStaleNotice = true,
   children,
   loadingFallback,
   emptyTitle = "Chưa có dữ liệu",
@@ -82,6 +97,16 @@ export function QueryState({
         )}
         <span className="sr-only">Đang tải dữ liệu…</span>
       </div>
+    );
+  }
+
+  if (isError && hasData) {
+    // Refetch nền lỗi nhưng cache còn dữ liệu: giữ dữ liệu, báo lỗi gọn phía trên, không nuốt lỗi âm thầm.
+    return (
+      <>
+        {showStaleNotice && <StaleDataNotice onRetry={onRetry} />}
+        {isEmpty ? <QueryEmpty title={emptyTitle} description={emptyDescription} className={className} /> : children}
+      </>
     );
   }
 
@@ -105,18 +130,30 @@ export function QueryState({
   }
 
   if (isEmpty) {
-    return (
-      <div
-        className={cn(
-          "flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-200 px-6 py-12 text-center dark:border-gray-800",
-          className
-        )}
-      >
-        <p className="font-medium text-gray-700 dark:text-gray-200">{emptyTitle}</p>
-        <p className="text-sm text-muted-foreground">{emptyDescription}</p>
-      </div>
-    );
+    return <QueryEmpty title={emptyTitle} description={emptyDescription} className={className} />;
   }
 
   return <>{children}</>;
+}
+
+function QueryEmpty({
+  title,
+  description,
+  className,
+}: {
+  title: string;
+  description: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-200 px-6 py-12 text-center dark:border-gray-800",
+        className
+      )}
+    >
+      <p className="font-medium text-gray-700 dark:text-gray-200">{title}</p>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </div>
+  );
 }

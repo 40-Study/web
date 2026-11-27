@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { cleanCertificateNumber } from "@/lib/certificate-number";
 
 /**
  * Form tra cứu chứng chỉ — công khai, không cần đăng nhập.
@@ -13,7 +14,7 @@ export default function VerifyCertificateFormPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = number.trim();
+    const trimmed = cleanCertificateNumber(number);
     if (!trimmed) return;
     router.push(`/certificates/verify/${encodeURIComponent(trimmed)}`);
   }
@@ -39,7 +40,7 @@ export default function VerifyCertificateFormPage() {
         />
         <button
           type="submit"
-          disabled={!number.trim()}
+          disabled={!cleanCertificateNumber(number)}
           className="rounded-md bg-primary-600 px-5 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
         >
           Tra cứu

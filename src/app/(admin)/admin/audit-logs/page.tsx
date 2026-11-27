@@ -186,11 +186,12 @@ function AuditLogsContent() {
       </section>
 
       <QueryState
+        hasData={data !== undefined}
         isLoading={isLoading}
         isError={isError}
         error={error}
         onRetry={() => refetch()}
-        isEmpty={!!dateRangeError || (!isLoading && !isError && items.length === 0)}
+        isEmpty={!!dateRangeError || (!isLoading && items.length === 0)}
         emptyTitle={dateRangeError ? "Khoảng ngày chưa hợp lệ" : "Chưa có nhật ký hoạt động nào"}
         emptyDescription={
           dateRangeError

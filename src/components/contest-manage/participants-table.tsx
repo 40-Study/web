@@ -42,11 +42,12 @@ export function ParticipantsTable({ contestId, phase }: { contestId: string; pha
 
   return (
     <QueryState
+      hasData={data !== undefined}
       isLoading={isLoading}
       isError={isError}
       error={error}
       onRetry={() => refetch()}
-      isEmpty={!isLoading && !isError && rows.length === 0}
+      isEmpty={!isLoading && rows.length === 0}
       emptyTitle={empty.title}
       emptyDescription={empty.description}
     >

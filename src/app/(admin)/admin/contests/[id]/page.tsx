@@ -255,6 +255,7 @@ export default function AdminContestDetailPage() {
         />
       ) : (
       <QueryState
+        hasData={!!contest}
         isLoading={isLoading}
         isError={isError}
         error={isError ? new Error(contestErrorMessage(error, "Không tải được cuộc thi.")) : undefined}

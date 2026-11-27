@@ -113,11 +113,12 @@ export default function AdminTeacherApplicationsPage() {
       </section>
 
       <QueryState
+        hasData={data !== undefined}
         isLoading={isLoading}
         isError={isError}
         error={error}
         onRetry={() => refetch()}
-        isEmpty={!isLoading && !isError && items.length === 0}
+        isEmpty={!isLoading && items.length === 0}
         emptyTitle="Không có hồ sơ nào"
         emptyDescription={
           status === "pending" ? "Hiện không có hồ sơ nào chờ duyệt." : "Không có hồ sơ khớp bộ lọc."

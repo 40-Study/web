@@ -40,6 +40,7 @@ export function PeopleSearch() {
         <p className="text-sm text-muted-foreground">Nhập ít nhất {MIN_SEARCH_LENGTH} ký tự để tìm học viên.</p>
       ) : (
         <QueryState
+          hasData={data !== undefined}
           isLoading={isLoading}
           isError={isError}
           error={error}

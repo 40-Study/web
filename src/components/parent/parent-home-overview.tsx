@@ -30,6 +30,8 @@ import { formatStudyMinutes } from "@/lib/format-study-time";
 import { formatVnDate } from "@/lib/vn-datetime";
 import { getInitials } from "@/lib/initials";
 import { ChildSectionError } from "./child-section-error";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
+import { staleQueries } from "@/components/common/stale-queries";
 
 function StatPill({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | number }) {
   return (
@@ -60,6 +62,12 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
   const retryAssignments = retry.slice(0, 3);
 
   const recentAttendance = attendanceData?.records ?? [];
+  // Q10 #148 H1/M3: một thẻ = MỘT thông báo "Thử lại" cho cả ba nguồn khi refetch lỗi mà còn dữ liệu cache.
+  const stale = staleQueries([
+    { isError: overviewError, data: overview, refetch: refetchOverview },
+    { isError: assignmentsError, data: assignmentsData, refetch: refetchAssignments },
+    { isError: attendanceError, data: attendanceData, refetch: refetchAttendance },
+  ]);
 
   return (
     <Card className="p-5 bg-white border border-gray-100">
@@ -83,6 +91,8 @@ function ParentChildOverviewCard({ child }: { child: Child }) {
           </Button>
         </Link>
       </div>
+
+      {stale.isStale && <StaleDataNotice resourceLabel={`dữ liệu của ${displayName}`} onRetry={stale.retry} />}
 
       {loadingOverview ? (
         <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>

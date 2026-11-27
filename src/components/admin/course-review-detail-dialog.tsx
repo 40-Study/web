@@ -48,6 +48,7 @@ function CourseDetailBody({ courseId }: { courseId: string }) {
     <div className="max-h-[75vh] overflow-y-auto pr-1">
       <DialogTitle>{course.data?.title ?? "Chi tiết khoá học"}</DialogTitle>
       <QueryState
+        hasData={!!course.data}
         isLoading={course.isLoading}
         isError={course.isError}
         error={course.error}
@@ -74,6 +75,7 @@ function CourseDetailBody({ courseId }: { courseId: string }) {
             <div>
               <h3 className="mb-2 font-semibold">Chương / bài học</h3>
               <QueryState
+                hasData={sections.data !== undefined}
                 isLoading={sections.isLoading}
                 isError={sections.isError}
                 error={sections.error}

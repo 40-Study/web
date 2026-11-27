@@ -13,6 +13,7 @@ import {
   LIVE_STATUS_LABEL,
 } from "@/lib/live-session-display";
 import type { LiveSession } from "@/services/live-session.service";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 /**
  * A-08 (QA hồi quy 03/10): học viên trước đây không có đường nào vào danh sách buổi livestream — menu
@@ -113,6 +114,9 @@ export default function StudentLivestreamPage() {
         </h1>
         <p className="mt-1 text-sm text-gray-500">Các buổi học trực tiếp của những lớp bạn đang tham gia.</p>
       </header>
+
+      {/* Q10 #148 H1: refetch nền lỗi mà còn danh sách cache thì giữ danh sách + báo "Thử lại". */}
+      {queryFailed && data !== undefined && <StaleDataNotice resourceLabel="danh sách buổi học" onRetry={() => refetch()} />}
 
       {isLoading ? (
         <div className="rounded-lg border border-gray-200 p-8 text-center text-sm text-gray-500">Đang tải…</div>

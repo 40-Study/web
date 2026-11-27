@@ -47,7 +47,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
-import { ResourceLoadError, ResourceUnavailable, StaleDataNotice, isResourceUnavailableError, unavailableStatus } from "@/components/common/resource-unavailable";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
+import { ResourceLoadError, ResourceUnavailable, isResourceUnavailableError, unavailableStatus } from "@/components/common/resource-unavailable";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -1111,7 +1112,7 @@ export default function CourseDetailPage() {
 
   // B-18: khoá không tồn tại (404) trước đây render trang trắng.
   if (courseError && !course && !isResourceUnavailableError(courseErrorValue)) {
-    return <ResourceLoadError resourceLabel="khoá học" onRetry={() => void refetchCourse()} />;
+    return <ResourceLoadError resourceLabel="khoá học" onRetry={() => refetchCourse()} />;
   }
   if (!course) {
     return <ResourceUnavailable status={unavailableStatus(courseErrorValue)} resourceLabel="khoá học" backHref="/teacher/courses" backLabel="Về Khoá học của tôi" />;
@@ -1152,7 +1153,7 @@ export default function CourseDetailPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      {courseError && <StaleDataNotice resourceLabel="khoá học" onRetry={() => void refetchCourse()} />}
+      {courseError && <StaleDataNotice resourceLabel="khoá học" onRetry={() => refetchCourse()} />}
       {/* Header */}
       <div className="flex items-start gap-4">
         <Button variant="ghost" size="icon" className="mt-0.5" asChild>

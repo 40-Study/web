@@ -138,11 +138,12 @@ function AdminContestsContent() {
       </section>
 
       <QueryState
+        hasData={data !== undefined}
         isLoading={isLoading}
         isError={isError}
         error={error}
         onRetry={() => refetch()}
-        isEmpty={!isLoading && !isError && contests.length === 0}
+        isEmpty={!isLoading && contests.length === 0}
         emptyTitle={contestListEmptyCopy(tab, q).title}
         emptyDescription={contestListEmptyCopy(tab, q).description}
       >

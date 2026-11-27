@@ -127,11 +127,12 @@ export default function AdminCoursesPage() {
       </section>
 
       <QueryState
+        hasData={data !== undefined}
         isLoading={isLoading}
         isError={isError}
         error={error}
         onRetry={() => refetch()}
-        isEmpty={!isLoading && !isError && courses.length === 0}
+        isEmpty={!isLoading && courses.length === 0}
         emptyTitle="Không có khoá học nào"
         emptyDescription={
           // QA5-A04: có từ khoá thì không có kết quả là "không khớp", không phải "hàng chờ trống".

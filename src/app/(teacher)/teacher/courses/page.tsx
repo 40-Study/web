@@ -23,6 +23,7 @@ import { matchesSearchQuery } from "@/lib/text-search";
 import { COURSE_STATUS_LABEL, isCourseStatus, type CourseStatus as ApiCourseStatus } from "@/types/approval";
 import { QueryState } from "@/components/common/query-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 // Phase 3: đủ 5 trạng thái backend + "other" cho giá trị lạ. Trước đây mọi status không phải
 // published/archived bị ép thành "draft" — khoá chờ duyệt/bị từ chối sẽ hiện sai là bản nháp.
@@ -285,6 +286,9 @@ export default function TeacherCoursesPage() {
     <div className="space-y-6">
       {/* Header */}
       {pageHeader}
+
+      {/* Q10 #148 H1: refetch nền lỗi mà còn danh sách cache thì giữ danh sách + báo "Thử lại". */}
+      {isError && <StaleDataNotice resourceLabel="danh sách khoá học" onRetry={() => refetch()} />}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as CourseStatus)}>

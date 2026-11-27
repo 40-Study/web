@@ -26,7 +26,8 @@ type PermissionForm = {
 };
 
 export default function AdminPermissionsPage() {
-  const { data: permissions = [], isLoading, isError, refetch } = usePermissions();
+  const { data: permissionsData, isLoading, isError, refetch } = usePermissions();
+  const permissions = useMemo(() => permissionsData ?? [], [permissionsData]);
   const updatePermission = useUpdatePermission();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [form, setForm] = useState<PermissionForm | null>(null);
@@ -84,6 +85,7 @@ export default function AdminPermissionsPage() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-4">
           <QueryState
+            hasData={permissionsData !== undefined}
             isLoading={isLoading}
             isError={isError}
             isEmpty={Object.keys(grouped).length === 0}

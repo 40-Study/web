@@ -84,7 +84,7 @@ export default function AdminReportsPage() {
         </div>
       </section>
 
-      <QueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
+      <QueryState hasData={!!report} isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
         {report && (
           <>
             {/* Metric cards — gộp / hoàn / ròng / phí nền tảng / phần giảng viên (quyết định #2) */}

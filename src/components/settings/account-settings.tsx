@@ -120,6 +120,17 @@ export function AccountSettings({
   const passwordForm = useForm<ChangePasswordData>({ resolver: zodResolver(changePasswordSchema), defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" } });
   const deleteForm = useForm<DeleteAccountData>({ resolver: zodResolver(deleteAccountSchema), defaultValues: { password: "" } });
 
+  // Q10-STU-03 / Q10-PG-02: đóng hộp thoại bằng bất kỳ đường nào (Esc, Huỷ, bấm ra ngoài, X) đều xoá mật khẩu đã gõ và
+  // lỗi cũ của trường: không để mật khẩu nằm lại trong hộp thoại đã đóng (máy dùng chung) hay hiện lỗi cũ ở lần mở sau.
+  const handlePasswordDialogChange = (open: boolean) => {
+    setPasswordDialogOpen(open);
+    if (!open) passwordForm.reset();
+  };
+  const handleDeleteDialogChange = (open: boolean) => {
+    setDeleteDialogOpen(open);
+    if (!open) deleteForm.reset();
+  };
+
   const handleSwitchRole = async (role: UnifiedRole) => {
     if (role.role_name === activeRole && role.organization_id === activeOrg?.id) return;
     setIsLoading(true);
@@ -133,8 +144,7 @@ export function AccountSettings({
     setIsLoading(true);
     try {
       await onPasswordChange?.(data.currentPassword, data.newPassword);
-      setPasswordDialogOpen(false);
-      passwordForm.reset();
+      handlePasswordDialogChange(false);
     } catch (error) {
       // Sai mật khẩu hiện tại: lỗi CHỈ hiện dưới ô nhập (P-N1); useChangePassword bỏ toast cho đúng lỗi
       // này (N-06). Các lỗi khác vẫn do toast của hook báo.
@@ -148,12 +158,12 @@ export function AccountSettings({
     setIsLoading(true);
     try {
       await onDeleteAccount?.(data.password);
-      setDeleteDialogOpen(false);
+      handleDeleteDialogChange(false);
     } catch (error) {
       // Q9-PG-05: chỉ đóng hộp thoại khi xoá thành công. Sai mật khẩu giữ hộp thoại mở, lỗi hiện dưới ô nhập; các lỗi
       // khác (số dư, 5xx) đã có toast của hook và hộp thoại cũng giữ nguyên để không phải gõ lại.
       if (isDeleteAccountPasswordError(error)) {
-        deleteForm.setError("password", { message: DELETE_PASSWORD_FIELD_MESSAGE });
+        deleteForm.setError("password", { message: DELETE_PASSWORD_FIELD_MESSAGE }, { shouldFocus: true });
       }
     } finally { setIsLoading(false); }
   };
@@ -268,7 +278,7 @@ export function AccountSettings({
       </div>
 
       {/* Change Password Dialog */}
-      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+      <Dialog open={passwordDialogOpen} onOpenChange={handlePasswordDialogChange}>
         <DialogContent className="rounded-2xl">
           <DialogHeader><DialogTitle>Đổi mật khẩu</DialogTitle></DialogHeader>
           <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
@@ -277,7 +287,7 @@ export function AccountSettings({
             <PasswordChecklist password={passwordForm.watch("newPassword")} />
             <Input label="Xác nhận mật khẩu mới" type="password" autoComplete="new-password" {...passwordForm.register("confirmPassword")} error={passwordForm.formState.errors.confirmPassword?.message} />
             <div className="flex justify-end gap-3 pt-2">
-              <Button type="button" variant="outline" className="rounded-xl" onClick={() => setPasswordDialogOpen(false)}>Huỷ</Button>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={() => handlePasswordDialogChange(false)}>Huỷ</Button>
               <Button type="submit" className="rounded-xl" disabled={isLoading}>{isLoading ? "Đang cập nhật..." : "Cập nhật mật khẩu"}</Button>
             </div>
           </form>
@@ -285,7 +295,7 @@ export function AccountSettings({
       </Dialog>
 
       {/* Delete Account Dialog — requires password */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <Dialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogChange}>
         <DialogContent className="rounded-2xl">
           <DialogHeader><DialogTitle className="text-red-600">Xoá tài khoản</DialogTitle></DialogHeader>
           <p className="text-gray-600 text-sm">{ACCOUNT_DELETE_COMMON_WARNING}</p>
@@ -295,7 +305,7 @@ export function AccountSettings({
           <form onSubmit={deleteForm.handleSubmit(handleDeleteSubmit)} className="space-y-4 mt-2">
             <Input label="Mật khẩu xác nhận" type="password" autoComplete="current-password" placeholder="Nhập mật khẩu để xác nhận" {...deleteForm.register("password")} error={deleteForm.formState.errors.password?.message} />
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="outline" className="rounded-xl" onClick={() => setDeleteDialogOpen(false)}>Huỷ</Button>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={() => handleDeleteDialogChange(false)}>Huỷ</Button>
               <Button type="submit" variant="destructive" className="rounded-xl" disabled={isLoading}>{isLoading ? "Đang xoá..." : "Xoá tài khoản"}</Button>
             </div>
           </form>

@@ -93,7 +93,7 @@ export default function AdminOrderDetailPage() {
           onBack={() => router.push("/admin/orders")}
         />
       ) : (
-      <QueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
+      <QueryState hasData={!!order} isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
         {order && (
           <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
             {/* Danh sách khoá học trong đơn */}

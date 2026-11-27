@@ -67,9 +67,10 @@ export default function WishlistPage() {
     <div className="page-container space-y-6 py-8">
       <div>
         <h1 className="text-2xl font-bold">Khoá học yêu thích</h1>
-        {!isLoading && !isError && <p className="text-sm text-muted-foreground">{items.length} khoá học</p>}
+        {!isLoading && (!isError || items.length > 0) && <p className="text-sm text-muted-foreground">{items.length} khoá học</p>}
       </div>
       <QueryState
+        hasData={data !== undefined}
         isLoading={isLoading}
         isError={isError}
         error={error}

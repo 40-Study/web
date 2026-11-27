@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { ArrowLeft, GraduationCap, Loader2, MessageSquareText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 import { getErrorMessage } from "@/lib/error-messages";
 import { formatVnDate } from "@/lib/vn-datetime";
 import { useMyGrades } from "@/hooks/queries/use-grades";
@@ -46,7 +47,7 @@ export default function MyGradesPage() {
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
-      ) : error ? (
+      ) : error && groups.length === 0 ? (
         <div role="alert" className="rounded-2xl border border-red-100 bg-red-50 p-6 text-center">
           <p className="text-sm text-red-700">{getErrorMessage(error, "Không tải được điểm của bạn")}</p>
           <button
@@ -66,6 +67,8 @@ export default function MyGradesPage() {
         </div>
       ) : (
         <div className="space-y-6">
+          {/* Q10-STU-01: refetch nền lỗi nhưng đã có điểm cache → giữ điểm + thông báo "Thử lại". */}
+          {error && <StaleDataNotice onRetry={() => refetch()} />}
           {groups.map((group) => (
             <section
               key={group.classId}

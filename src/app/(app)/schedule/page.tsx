@@ -13,6 +13,8 @@ import { useLiveSessions } from "@/hooks/queries/use-live-sessions";
 import WeekCalendarGrid, { type ScheduleEvent } from "@/components/schedule/week-calendar-grid";
 import ScheduleEventDetailDialog from "@/components/schedule/schedule-event-detail-dialog";
 import { liveSessionToEvent, timetableEntriesToEvents, visibleDateRange, toVnWallClock } from "@/lib/teacher-schedule-events";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
+import { staleQueries } from "@/components/common/stale-queries";
 
 const EVENT_COLORS = [
   { name: "Toán", bg: "bg-blue-100", border: "border-blue-300", text: "text-blue-800", dot: "bg-blue-500" },
@@ -316,8 +318,13 @@ export default function SchedulePage() {
   const { data: timetable, isLoading, isError, refetch: refetchTimetable } = useMyTimetableEntries(range);
   const { data: sessions, isError: liveError, refetch: refetchLive } = useLiveSessions({ page_size: 100 });
   // Q9-STU-02: chỉ báo lỗi khi nguồn lỗi chưa có dữ liệu cache; "Thử lại" gọi lại đúng nguồn đang lỗi.
-  const timetableFailed = isError && !timetable;
-  const liveFailed = liveError && !sessions;
+  const timetableFailed = isError && timetable === undefined;
+  const liveFailed = liveError && sessions === undefined;
+  // Q10 #148 H1: refetch nền lỗi mà còn dữ liệu cache thì giữ lịch đang xem + MỘT thông báo "Thử lại" cho cả hai nguồn.
+  const stale = staleQueries([
+    { isError, data: timetable, refetch: refetchTimetable },
+    { isError: liveError, data: sessions, refetch: refetchLive },
+  ]);
   const retryLoad = () => Promise.all([timetableFailed && refetchTimetable(), liveFailed && refetchLive()]);
   const handleRange = useCallback((start: Date, end: Date) => {
     const next = visibleDateRange(start, end);
@@ -332,6 +339,7 @@ export default function SchedulePage() {
   return <div>
     {isLoading && <p role="status" className="mb-2 text-xs text-muted-foreground">Đang tải lịch học…</p>}
     {(timetableFailed || liveFailed) && <p role="alert" className="mb-2 flex flex-wrap items-center gap-2 text-sm text-red-600">Chưa tải được đầy đủ lịch học. <RetryButton asLink onRetry={retryLoad} className="font-medium underline disabled:opacity-60" /></p>}
+    {stale.isStale && <StaleDataNotice resourceLabel="lịch học" onRetry={stale.retry} />}
     {/* QA-A-15: học viên chỉ tạo được ghi chú cá nhân, không tạo buổi học như giáo viên. */}
     <WeekCalendarGrid events={events} selectable selectionHelp="Bấm hoặc kéo trên lịch để thêm ghi chú cá nhân." onRangeChange={handleRange}
       onSelectMore={start => setFullDialog({ open: true, date: start, hour: start.getHours(), editingNote: null })}

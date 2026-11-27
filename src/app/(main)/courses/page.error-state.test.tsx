@@ -58,5 +58,15 @@ describe("CoursesPage — API lỗi (Q8-PG-03)", () => {
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.getByTestId("grid")).toBeTruthy();
     expect(screen.getByText("1 khoá học")).toBeTruthy();
+    // Q10 #148 H1: giữ danh sách nhưng PHẢI báo (không nuốt lỗi âm thầm) và cho "Thử lại".
+    expect(screen.getByRole("status").textContent).toContain("Không làm mới được danh sách khoá học");
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("không lỗi thì không có thông báo dữ liệu cũ", () => {
+    useCoursesMock.mockReturnValue({ data: [{ id: "c1" }], isLoading: false, isError: false, error: null, refetch });
+    render(<CoursesPage />);
+    expect(screen.queryByRole("status")).toBeNull();
   });
 });

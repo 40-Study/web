@@ -56,6 +56,7 @@ export function ClassScheduleList({
       </CardHeader>
       <CardContent>
         <QueryState
+          hasData={query.data !== undefined}
           isLoading={query.isLoading}
           isError={query.isError}
           error={query.error}

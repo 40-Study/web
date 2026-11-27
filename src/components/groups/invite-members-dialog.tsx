@@ -117,6 +117,7 @@ export function InviteMembersDialog({ group, open, onOpenChange }: InviteMembers
 
             <div className="max-h-72 overflow-y-auto rounded-lg border">
               <QueryState
+                hasData={friendsQuery.data !== undefined}
                 isLoading={friendsQuery.isLoading}
                 isError={friendsQuery.isError}
                 error={friendsQuery.error}

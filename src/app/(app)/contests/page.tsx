@@ -9,6 +9,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Search, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { useMyContests, usePublicContests } from "@/hooks/queries/use-contests";
@@ -149,13 +150,15 @@ function ContestListBody({
 }: {
   isLoading: boolean;
   error: unknown;
-  onRetry: () => void;
+  onRetry: () => unknown;
   data: ContestPage<ListItem> | undefined;
   isMine: boolean;
   hasFilter: boolean;
 }) {
   if (isLoading) return <ContestLoading label="Đang tải danh sách cuộc thi…" />;
-  if (error) return <ContestErrorState error={error} onRetry={onRetry} title="Không tải được danh sách cuộc thi" backHref="/" backLabel="Về trang chủ" />;
+  // Q10-PG-01: lỗi refetch nền khi đã có danh sách cache → giữ danh sách + thông báo "Thử lại", không thay cả danh sách.
+  const hasItems = !!data && data.items.length > 0;
+  if (error && !hasItems) return <ContestErrorState error={error} onRetry={onRetry} title="Không tải được danh sách cuộc thi" backHref="/" backLabel="Về trang chủ" />;
   if (!data || data.items.length === 0) {
     return (
       <EmptyState
@@ -166,10 +169,13 @@ function ContestListBody({
     );
   }
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {data.items.map((c) => (
-        <ContestCard key={c.id} contest={c} participation={c.my_participation ?? null} />
-      ))}
-    </div>
+    <>
+      {error ? <StaleDataNotice onRetry={onRetry} /> : null}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {data.items.map((c) => (
+          <ContestCard key={c.id} contest={c} participation={c.my_participation ?? null} />
+        ))}
+      </div>
+    </>
   );
 }

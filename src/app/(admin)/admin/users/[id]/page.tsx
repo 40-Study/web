@@ -130,7 +130,7 @@ export default function AdminUserDetailPage() {
           onBack={() => router.push("/admin/users")}
         />
       ) : (
-      <QueryState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
+      <QueryState hasData={!!user} isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
         {user && (
           <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
             <div className="space-y-4">

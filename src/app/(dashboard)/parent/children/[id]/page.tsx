@@ -41,6 +41,8 @@ import { ResourceLoadError } from "@/components/common/resource-unavailable";
 import { formatVnDate } from "@/lib/vn-datetime";
 import { getInitials } from "@/lib/initials";
 import { ChildSectionError } from "@/components/parent/child-section-error";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
+import { staleQueries } from "@/components/common/stale-queries";
 
 type TabType = "overview" | "courses" | "grades" | "schedule" | "attendance" | "assignments";
 
@@ -106,6 +108,13 @@ export default function ChildDetailPage() {
   const { data: timetableData, isLoading: loadingTimetable, isError: timetableError, refetch: refetchTimetable } = useChildTimetable(activeTab === "schedule" ? dataChildId : "");
   const { data: attendanceData } = useChildAttendance(dataChildId);
   const { data: assignmentsData, isLoading: loadingAssignments, isError: assignmentsError, refetch: refetchAssignments } = useChildAssignments(dataChildId);
+  const stale = staleQueries([
+    { isError: !!overviewError, data: overview, refetch: refetchOverview },
+    { isError: coursesError, data: coursesData, refetch: refetchCourses },
+    { isError: gradesError, data: gradesData, refetch: refetchGrades },
+    { isError: timetableError, data: timetableData, refetch: refetchTimetable },
+    { isError: assignmentsError, data: assignmentsData, refetch: refetchAssignments },
+  ]);
 
   if (loadingOverview) {
     return (
@@ -137,6 +146,8 @@ export default function ChildDetailPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
+      {/* Q10 #148 H1/M3: bất kỳ nguồn nào refetch lỗi mà còn dữ liệu cache thì giữ trang + MỘT thông báo "Thử lại". */}
+      {stale.isStale && <StaleDataNotice resourceLabel="dữ liệu của con" onRetry={stale.retry} />}
       {/* Header */}
       <div className="mb-6">
         <Link
@@ -256,6 +267,7 @@ export default function ChildDetailPage() {
               isLoading={loadingCourses}
               isError={coursesError}
               onRetry={() => refetchCourses()}
+              showStaleNotice={false}
             />
           )}
 
@@ -380,6 +392,7 @@ export default function ChildDetailPage() {
               isLoading={loadingAssignments}
               isError={assignmentsError}
               onRetry={() => refetchAssignments()}
+              showStaleNotice={false}
             />
           )}
         </div>

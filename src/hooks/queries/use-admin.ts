@@ -2,6 +2,7 @@
  * React Query hooks for admin operations
  */
 
+import { useMemo } from "react";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { organizationService } from "@/services/organization.service";
@@ -117,7 +118,8 @@ export function useSystemRoles() {
  * Lưu ý: tổng là TỔNG SỐ LƯỢT GÁN theo role, một user có 2 role sẽ được đếm 2 lần.
  */
 export function useSystemRolesWithUserCounts() {
-  const { data: roles = [], isLoading: rolesLoading, isError: rolesError, refetch: refetchRoles } = useSystemRoles();
+  const { data: rolesData, isLoading: rolesLoading, isError: rolesError, refetch: refetchRoles } = useSystemRoles();
+  const roles = useMemo(() => rolesData ?? [], [rolesData]);
 
   const countQueries = useQueries({
     queries: roles.map((role) => ({
@@ -149,6 +151,8 @@ export function useSystemRolesWithUserCounts() {
     totalAssignedUsersError: anyCountError,
     isLoading: rolesLoading || countsLoading,
     isError: rolesError,
+    /** Đã có danh sách vai trò cache (`data !== undefined`; rỗng đã cache vẫn là dữ liệu hợp lệ, Q10 #148 L2). */
+    hasRolesData: rolesData !== undefined,
     refetch: refetchRoles,
   };
 }

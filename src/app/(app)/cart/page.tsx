@@ -19,6 +19,7 @@ import "@/components/commerce/commerce.css";
 import { CourseThumbnailPlaceholder } from "@/components/course/course-thumbnail-placeholder";
 import { useAuthStore } from "@/stores/auth.store";
 import { readCartVoucher, saveCartVoucher } from "@/lib/cart-voucher-storage";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 function formatPrice(price: number | string | null | undefined): string {
   // Phòng thủ: backend decimal có thể serialize thành number hoặc chuỗi tuỳ phiên bản.
@@ -123,15 +124,7 @@ export default function CartPage() {
   return (
     <div className="commerce-page">
       {showRefetchBanner && (
-        <div
-          role="alert"
-          className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
-        >
-          <span>Không làm mới được giỏ hàng — đang hiển thị dữ liệu lần trước.</span>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Thử lại
-          </Button>
-        </div>
+        <StaleDataNotice resourceLabel="giỏ hàng" className="mb-6" onRetry={() => refetch()} />
       )}
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">

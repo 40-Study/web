@@ -44,6 +44,7 @@ export function JoinRequestList({ group }: { group: Group }) {
   return (
     <div>
       <QueryState
+        hasData={data !== undefined}
         isLoading={isLoading}
         isError={isError}
         error={error}

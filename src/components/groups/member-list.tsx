@@ -66,6 +66,7 @@ export function MemberList({ group, viewerId, manage = false }: MemberListProps)
   return (
     <div>
       <QueryState
+        hasData={data !== undefined}
         isLoading={isLoading}
         isError={isError}
         error={error}

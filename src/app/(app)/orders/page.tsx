@@ -179,11 +179,12 @@ export default function MyOrdersPage() {
       </select>
 
       <QueryState
+        hasData={data !== undefined}
         isLoading={isLoading}
         isError={isError}
         error={error}
         onRetry={() => refetch()}
-        isEmpty={!isLoading && !isError && orders.length === 0}
+        isEmpty={!isLoading && orders.length === 0}
         emptyTitle="Chưa có đơn hàng nào"
         emptyDescription={status ? "Không có đơn nào ở trạng thái này." : "Các đơn mua khoá học của bạn sẽ hiện ở đây."}
       >
