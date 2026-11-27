@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Award, CalendarClock, Clock, HelpCircle, Lock, Trophy, User, Users } from "lucide-react";
 import { useContestDetail } from "@/hooks/queries/use-contests";
-import { contestErrorCode } from "@/lib/contest/contest-errors";
+import { isContestNotFoundError } from "@/lib/contest/contest-errors";
 import {
   formatContestDateTime,
   formatContestPercent,
@@ -34,7 +34,7 @@ export default function ContestDetailPage() {
 
   if (query.isLoading) return <ContestLoading />;
   if (query.error || !query.data) {
-    const notFound = contestErrorCode(query.error) === "CONTEST_NOT_FOUND";
+    const notFound = isContestNotFoundError(query.error);
     return (
       <div className="px-4 py-10">
         <ContestErrorState
