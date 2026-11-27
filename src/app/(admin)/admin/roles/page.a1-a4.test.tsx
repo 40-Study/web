@@ -61,13 +61,9 @@ describe("/admin/roles — A1: chặn xoá vai trò hệ thống dựng sẵn", 
     renderWithProviders(<RolesPage />);
     await screen.findByText("Vai trò tự tạo");
 
-    const deleteButtons = screen.getAllByRole("button", { name: "Xoá vai trò" }) as HTMLButtonElement[];
-    expect(deleteButtons).toHaveLength(2);
-
-    const teacherBtn = deleteButtons.find((b) =>
-      (b.getAttribute("title") ?? "").includes("không thể xoá")
-    );
-    const customBtn = deleteButtons.find((b) => b !== teacherBtn);
+    // QA9-ADMIN-04: mỗi nút mang tên vai trò của thẻ chứa nó.
+    const teacherBtn = screen.getByRole("button", { name: "Xoá vai trò TEACHER" }) as HTMLButtonElement;
+    const customBtn = screen.getByRole("button", { name: "Xoá vai trò QA_REVIEWER" }) as HTMLButtonElement;
 
     expect(teacherBtn?.disabled).toBe(true);
     expect(teacherBtn?.getAttribute("title")).toMatch(/không thể xoá/i);

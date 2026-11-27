@@ -20,6 +20,7 @@ import { PERMISSIONS, SYSTEM_ROLES } from "@/lib/permissions";
 import { getSystemRoleLabel } from "@/lib/role-labels";
 import type { SystemRole, UserSystemRoleItem } from "@/services/role.service";
 import { Button } from "@/components/ui/button";
+import { QueryState } from "@/components/common/query-state";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { formatVnDateTime } from "../_lib/format-vn-datetime";
 import { ORG_SCOPED_ROLE_HINT, isOrgScopedSystemRole, roleUserCountLabel } from "../_lib/org-scoped-role";
@@ -54,8 +55,18 @@ const USER_STATUS_LABEL: Record<UserSystemRoleItem["status"], string> = {
 
 
 export default function RolesPage() {
-  const { roles: rolesWithCounts, isLoading: rolesLoading } = useSystemRolesWithUserCounts();
-  const { data: permsData = [] } = usePermissions();
+  const {
+    roles: rolesWithCounts,
+    isLoading: rolesLoading,
+    isError: rolesError,
+    refetch: refetchRoles,
+  } = useSystemRolesWithUserCounts();
+  const {
+    data: permsData = [],
+    isError: permsError,
+    error: permsErrorDetail,
+    refetch: refetchPerms,
+  } = usePermissions();
   const createRole = useCreateSystemRole();
   const updateRole = useUpdateSystemRole();
   const deleteRole = useDeleteSystemRole();
@@ -199,10 +210,15 @@ export default function RolesPage() {
       {/* QA6-A02: cột `auto` giãn theo email dài trong person-picker (truncate không hạ min-content) → tràn 57px ở 390. */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-3">
-          {rolesLoading ? (
-            <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-200" />)}</div>
-          ) : (
-            rolesWithCounts.map((role) => {
+          {/* QA9-ADMIN-01: GET /system-roles lỗi không được trông như "chưa có vai trò nào". Hộp lỗi chỉ hiện khi chưa có
+              dữ liệu cache (như /courses); có dữ liệu cũ thì giữ danh sách. */}
+          <QueryState
+            isLoading={rolesLoading}
+            isError={rolesError && rolesWithCounts.length === 0}
+            onRetry={() => refetchRoles()}
+            loadingFallback={[1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-200" />)}
+          >
+            {rolesWithCounts.map((role) => {
               const active = selectedRole?.id === role.id;
               const protectedRole = BUILT_IN_ROLE_NAMES.has(role.name);
 
@@ -235,13 +251,14 @@ export default function RolesPage() {
 
                   <Can permission={PERMISSIONS.MANAGE_ROLES}>
                     <div className="mt-3 flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => startEditRole(role)}>
+                      <Button size="sm" variant="outline" aria-label={`Sửa vai trò ${role.name}`} onClick={() => startEditRole(role)}>
                         Sửa vai trò
                       </Button>
                       <Button
                         size="sm"
                         variant="destructiveGhost"
                         // A1: vai trò hệ thống dựng sẵn không xoá được (backend 409 SYSTEM_ROLE_PROTECTED).
+                        aria-label={`Xoá vai trò ${role.name}`}
                         disabled={protectedRole}
                         title={protectedRole ? BUILT_IN_ROLE_HINT : undefined}
                         onClick={() => setConfirmDeleteRole(role)}
@@ -252,8 +269,8 @@ export default function RolesPage() {
                   </Can>
                 </div>
               );
-            })
-          )}
+            })}
+          </QueryState>
         </div>
 
         <div className="min-w-0 space-y-4">
@@ -279,6 +296,12 @@ export default function RolesPage() {
                 )}
                 <input placeholder="Mô tả" aria-label="Mô tả vai trò" value={roleForm.description} onChange={(e) => setRoleForm((prev) => ({ ...prev, description: e.target.value }))} className="h-10 w-full rounded border border-gray-200 px-3 text-sm" />
                 <div className="max-h-32 space-y-1 overflow-auto rounded border border-gray-200 p-2">
+                  {/* QA9-ADMIN-01: GET /permissions lỗi thì ô chọn quyền không được trống im lặng. */}
+                  {permsError && permsData.length === 0 && (
+                    <QueryState isError error={permsErrorDetail} onRetry={() => refetchPerms()} className="px-3 py-4">
+                      {null}
+                    </QueryState>
+                  )}
                   {permsData.map((perm) => (
                     <label key={perm.id} className="flex items-center gap-2 text-sm">
                       <input type="checkbox" checked={roleForm.permissions.includes(perm.name)} onChange={() => togglePermission(perm.name)} />
