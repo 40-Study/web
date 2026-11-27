@@ -7,6 +7,7 @@
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Ticket, Clock, CheckCircle, XCircle, Copy } from "lucide-react";
+import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useMyVouchersWithDetails, type MyVoucherWithDetails } from "@/hooks/queries/use-voucher";
@@ -203,7 +204,9 @@ function VoucherCard({ entry }: { entry: MyVoucherWithDetails }) {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function MyVouchersPage() {
-  const { data: entries = [], isLoading, isError } = useMyVouchersWithDetails();
+  const { data: entries = [], isLoading, isError: queryFailed, error, refetch, hasData } = useMyVouchersWithDetails();
+  // Chỉ coi là lỗi khi chưa có dữ liệu (refetch nền hỏng mà còn cache thì giữ danh sách đang xem).
+  const isError = queryFailed && !hasData;
 
   const activeEntries = entries.filter(isVoucherEligible);
   const inactiveEntries = entries.filter((e) => !isVoucherEligible(e));
@@ -225,10 +228,11 @@ export default function MyVouchersPage() {
         </div>
       )}
 
+      {/* Q9-STU-02: cùng khuôn QueryState + "Thử lại" như các trang khác (trước là hộp đỏ không có nút). */}
       {isError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-red-600">
-          Không thể tải voucher. Vui lòng thử lại.
-        </div>
+        <QueryState isError error={error} onRetry={() => refetch()}>
+          {null}
+        </QueryState>
       )}
 
       {!isLoading && !isError && entries.length === 0 && (

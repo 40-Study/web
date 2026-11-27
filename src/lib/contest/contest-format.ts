@@ -134,7 +134,8 @@ export function resolveLeaderboardVisibility(
 ): LeaderboardVisibility {
   if (phase === "FINALIZED") return { visible: true };
   if (phase !== "ENDED") {
-    return { visible: false, message: `Bảng xếp hạng được công bố lúc ${formatContestTimeWithSeconds(revealAt)}, sau khi hết giờ nộp bài.` };
+    // Q9 S7-04: cùng dạng HH:mm với "Đóng lúc" ngay cạnh (không giây); giây chỉ có nghĩa ở nhánh ENDED dưới, nơi đang đếm ngược ân hạn.
+    return { visible: false, message: `Bảng xếp hạng được công bố lúc ${formatContestDateTime(revealAt)}, sau khi hết giờ nộp bài.` };
   }
   if (revealRemainingMs === null || revealRemainingMs > 0) {
     const wait = revealRemainingMs === null ? "" : ` sau ${formatCountdown(revealRemainingMs)}`;

@@ -109,7 +109,7 @@ describe("ProfileSettings", () => {
   it("409 ERR_USERNAME_EXISTS: lỗi hiện dưới ô Username", async () => {
     render(<ProfileSettings />);
     await waitFor(() => expect((screen.getByLabelText("Tiểu sử") as HTMLTextAreaElement).value).toBe("Tiểu sử cũ"));
-    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "admin" } });
+    fireEvent.change(screen.getByLabelText("Tên đăng nhập"), { target: { value: "admin" } });
     fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
 
@@ -117,7 +117,26 @@ describe("ProfileSettings", () => {
     act(() => options.onError(new ApiError(409, "ERR_USERNAME_EXISTS", "username already exists")));
 
     expect(await screen.findByText(/Tên đăng nhập đã được dùng/)).toBeTruthy();
-    expect(screen.getByLabelText("Username").getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByLabelText("Tên đăng nhập").getAttribute("aria-invalid")).toBe("true");
+  });
+
+  // Q9-STU-03: có dòng lỗi dưới ô, "@" không được căn giữa wrapper (trôi xuống dưới ô); phải neo vào ô nhập cao h-10.
+  it("tiền tố '@' neo vào ô nhập, không căn giữa wrapper có dòng lỗi", async () => {
+    render(<ProfileSettings />);
+    await waitFor(() => expect((screen.getByLabelText("Tiểu sử") as HTMLTextAreaElement).value).toBe("Tiểu sử cũ"));
+    const classes = screen.getByTestId("username-prefix").className.split(/\s+/);
+    expect(classes).toContain("top-0");
+    expect(classes).toContain("h-10");
+    expect(classes).not.toContain("top-1/2");
+  });
+
+  // Q9-PG-07 (#142): chữ phụ trong màn cài đặt phải >= text-gray-500; "@" dùng gray-400 sẽ không đạt tương phản.
+  it("tiền tố '@' dùng text-gray-500, không phải gray-400", async () => {
+    render(<ProfileSettings />);
+    await waitFor(() => expect((screen.getByLabelText("Tiểu sử") as HTMLTextAreaElement).value).toBe("Tiểu sử cũ"));
+    const classes = screen.getByTestId("username-prefix").className.split(/\s+/);
+    expect(classes).toContain("text-gray-500");
+    expect(classes).not.toContain("text-gray-400");
   });
 
   it("lỗi khác (500) không đụng tới ô Username", async () => {
@@ -129,6 +148,6 @@ describe("ProfileSettings", () => {
 
     const options = mockMutate.mock.calls[0][1] as { onError: (e: unknown) => void };
     act(() => options.onError(new ApiError(500, "ERR_INTERNAL", "boom")));
-    expect(screen.getByLabelText("Username").getAttribute("aria-invalid")).not.toBe("true");
+    expect(screen.getByLabelText("Tên đăng nhập").getAttribute("aria-invalid")).not.toBe("true");
   });
 });

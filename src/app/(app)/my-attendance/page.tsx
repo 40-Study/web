@@ -8,6 +8,8 @@ import {
 import { AttendanceWhen } from "@/components/attendance/attendance-when";
 import { AttendanceStatusBadge } from "@/components/attendance/attendance-status-badge";
 import { MyAttendanceCardList } from "@/components/attendance/my-attendance-card-list";
+import { QueryState } from "@/components/common/query-state";
+import { RetryButton } from "@/components/common/retry-button";
 import { useAllMyAttendances, useMyAttendances } from "@/hooks/queries/use-sessions";
 import { attendanceSessionLabel } from "@/lib/attendance-session-label";
 
@@ -16,12 +18,20 @@ const PAGE_SIZE = 20;
 
 export default function MyAttendancePage() {
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useMyAttendances({
+  const { data, isLoading, isError, error, refetch } = useMyAttendances({
     page,
     page_size: PAGE_SIZE,
   });
   // S3: thống kê đầu trang phải phủ TOÀN BỘ lịch sử, không chỉ 20 dòng của trang hiện tại.
-  const { data: allAttendances, isLoading: isLoadingAll } = useAllMyAttendances();
+  const {
+    data: allAttendances,
+    isLoading: isLoadingAll,
+    isError: isErrorAll,
+    refetch: refetchAll,
+  } = useAllMyAttendances();
+  // Q9-STU-01: chỉ coi là lỗi khi CHƯA có dữ liệu (refetch nền hỏng mà còn cache thì giữ danh sách đang xem).
+  const showError = isError && !data;
+  const showStatsError = isErrorAll && !allAttendances;
 
   const attendances = useMemo(() => data?.attendances ?? [], [data]);
   const summary = useMemo(
@@ -48,6 +58,26 @@ export default function MyAttendancePage() {
         <div className="rounded-lg border border-gray-200 p-8 text-center text-sm text-gray-500">
           Đang tải…
         </div>
+      ) : showError ? (
+        // Q9-STU-01: API lỗi không được đọc thành "Chưa có buổi học nào được điểm danh" (như dữ liệu rỗng thật).
+        // L1: lỗi ở trang 2+ không có dữ liệu để tính tổng trang, nên giữ nút "Trước" để người dùng quay lại.
+        <>
+          <QueryState isError error={error} onRetry={() => refetch()}>
+            {null}
+          </QueryState>
+          {page > 1 && (
+            <div className="mt-4 flex items-center justify-between text-sm">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="rounded-md border border-gray-200 px-3 py-1.5 hover:bg-gray-50"
+              >
+                Trước
+              </button>
+              <span className="text-gray-500">Trang {page}</span>
+            </div>
+          )}
+        </>
       ) : attendances.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
           Chưa có buổi học nào được điểm danh.
@@ -55,7 +85,14 @@ export default function MyAttendancePage() {
       ) : (
         <>
           {/* S3: số liệu tính trên TOÀN BỘ lịch sử (không phải chỉ trang đang xem). */}
-          <AttendanceStats summary={summary} />
+          {showStatsError ? (
+            <p role="alert" className="rounded-lg border border-red-200 bg-red-50/50 px-4 py-3 text-sm text-red-700">
+              Không thể tải thống kê toàn bộ lịch sử.{" "}
+              <RetryButton asLink onRetry={() => refetchAll()} className="font-medium underline disabled:opacity-60" />
+            </p>
+          ) : (
+            <AttendanceStats summary={summary} />
+          )}
           {isLoadingAll && (
             <p className="mt-2 text-xs text-gray-500">
               Đang tổng hợp toàn bộ lịch sử…

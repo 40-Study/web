@@ -20,6 +20,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { QueryState } from "@/components/common/query-state";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Assignment } from "@/services/livestream-classroom.service";
 import { fetchMyAssignments } from "@/lib/fetch-my-assignments";
@@ -189,7 +190,10 @@ export default function MyAssignmentsPage() {
   // và đếm bài đó là "đang mở" (QA5 review #127, mục 3). Làm mới ngay khi nộp và khi đóng màn làm bài.
   const refreshAssignments = () => queryClient.invalidateQueries({ queryKey: ASSIGNMENTS_QUERY_KEY });
 
-  const { data: assignments = [], isLoading } = useAllAssignments();
+  const { data, isLoading, isError, error, refetch } = useAllAssignments();
+  const assignments = data ?? [];
+  // Q9-STU-01: lỗi API không được đọc thành "0 bài tập"; chỉ coi là lỗi khi chưa có dữ liệu cache.
+  const showError = isError && !data;
   // Một mốc "bây giờ" cho cả lượt render để tab và thẻ không lệch nhau.
   const now = new Date();
 
@@ -214,6 +218,8 @@ export default function MyAssignmentsPage() {
           <p className="text-gray-500 mt-1">
             {isLoading
               ? "Đang tải..."
+              : showError
+              ? "Chưa tải được danh sách bài tập."
               : `Bạn có ${activeCount} bài tập đang mở.`}
           </p>
         </div>
@@ -285,6 +291,10 @@ export default function MyAssignmentsPage() {
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
+      ) : showError ? (
+        <QueryState isError error={error} onRetry={() => refetch()} className="mb-6">
+          {null}
+        </QueryState>
       ) : (
         <div className={cn(
           "grid gap-4 mb-6",
@@ -319,7 +329,7 @@ export default function MyAssignmentsPage() {
       )}
 
       {/* Pagination summary */}
-      {!isLoading && (
+      {!isLoading && !showError && (
         <div className="flex items-center justify-between text-sm text-gray-500">
           <span>Hiển thị {filtered.length} trong số {assignments.length} bài tập</span>
           <div className="flex items-center gap-1">
