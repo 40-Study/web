@@ -19,6 +19,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { RetryButton } from "@/components/common/retry-button";
 import { useTeacherWallet, useMyWithdrawals, useCreateWithdrawal } from "@/hooks/queries/use-wallet";
 import { formatWithdrawalAmount } from "@/lib/withdrawal-format";
 import { WithdrawalHistoryTable } from "./withdrawal-history-table";
@@ -26,7 +27,12 @@ import { WithdrawalHistoryTable } from "./withdrawal-history-table";
 const LIMIT = 10;
 
 export function WithdrawalSection() {
-  const { data: wallet, isLoading: isWalletLoading, isError: isWalletError } = useTeacherWallet();
+  const {
+    data: wallet,
+    isLoading: isWalletLoading,
+    isError: isWalletError,
+    refetch: refetchWallet,
+  } = useTeacherWallet();
   const [page, setPage] = useState(1);
   const {
     data: history,
@@ -49,7 +55,11 @@ export function WithdrawalSection() {
   // Thứ tự ưu tiên lý do khoá nút theo đúng yêu cầu: thiếu bank info -> đang có yêu cầu mở ->
   // số dư âm -> dưới mức tối thiểu.
   let disableReason: string | null = null;
-  if (isWalletError) {
+  // Q10-T-04: refetch nền lỗi mà còn ví trong cache thì dùng ví cũ (cùng quy tắc với thẻ số dư ở page.tsx), chỉ khoá
+  // nút khi KHÔNG có dữ liệu ví nào; báo "chưa cập nhật" bằng dòng riêng bên dưới.
+  const walletLoadFailed = isWalletError && !wallet;
+  const walletStale = isWalletError && !!wallet;
+  if (walletLoadFailed) {
     disableReason = "Không tải được thông tin ví, vui lòng tải lại trang.";
   } else if (isWalletLoading) {
     disableReason = null;
@@ -117,6 +127,13 @@ export function WithdrawalSection() {
       </CardHeader>
 
       <CardContent className="pt-4">
+        {walletStale && (
+          <p role="status" className="mb-4 flex flex-wrap items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
+            Không cập nhật được thông tin ví mới, đang hiện số liệu đã tải trước đó.
+            <RetryButton asLink onRetry={() => refetchWallet()} className="font-medium underline" />
+          </p>
+        )}
+
         {/* Cảnh báo số dư âm — hiển thị nổi bật, tách khỏi text giải thích cạnh nút */}
         {isNegativeBalance && (
           <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
@@ -134,7 +151,7 @@ export function WithdrawalSection() {
           <div className="flex justify-center p-6">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
-        ) : isHistoryError ? (
+        ) : isHistoryError && !history ? (
           // Lỗi tải phải hiện là lỗi, không được rơi xuống nhánh "chưa có yêu cầu nào".
           <div className="flex flex-col items-center gap-2 p-6 text-sm text-red-600">
             <span>Không tải được lịch sử yêu cầu rút tiền.</span>

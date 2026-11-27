@@ -60,13 +60,22 @@ export default function TeacherWalletPage() {
     error: walletError,
     refetch: refetchWallet,
   } = useTeacherWallet();
-  const { data: txResponse, isLoading: isTxLoading } = useTeacherTransactions({
+  const {
+    data: txResponse,
+    isLoading: isTxLoading,
+    isError: isTxError,
+    error: txError,
+    refetch: refetchTx,
+  } = useTeacherTransactions({
     type: txTypeParam || undefined,
     page,
     limit,
   });
 
   const isLoading = isWalletLoading || isTxLoading;
+
+  // Q10-T-02: bảng giao dịch lỗi (và không còn dữ liệu cũ) không được hiện "Không có giao dịch nào." / "0 giao dịch".
+  const txLoadFailed = isTxError && !txResponse;
 
   const transactions: TeacherTransaction[] = txResponse?.transactions ?? [];
   const totalPages = txResponse?.total_pages ?? 1;
@@ -135,7 +144,7 @@ export default function TeacherWalletPage() {
             Quản lý thu nhập và các giao dịch thanh toán của bạn.
           </p>
         </div>
-        <Button variant="outline" onClick={handleExport} disabled={isExporting}>
+        <Button variant="outline" onClick={handleExport} disabled={isExporting || txLoadFailed}>
           {isExporting ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
@@ -303,6 +312,10 @@ export default function TeacherWalletPage() {
             <div className="flex justify-center p-8">
               <Loader2 className="animate-spin h-6 w-6 text-muted-foreground" />
             </div>
+          ) : txLoadFailed ? (
+            <QueryState isError error={txError} onRetry={() => refetchTx()}>
+              {null}
+            </QueryState>
           ) : (
             // P2 QA 260927 teacher: bảng desktop 6 cột cố định tràn rộng hơn 390px, buộc
             // cuộn cả trang thay vì chỉ bảng — bọc trong khung có cuộn ngang RIÊNG
@@ -365,6 +378,7 @@ export default function TeacherWalletPage() {
           )}
 
           {/* Pagination */}
+          {!txLoadFailed && (
           <div className="flex items-center justify-between mt-4 pt-4 border-t">
             <p className="text-sm text-muted-foreground">
               Trang {page}/{totalPages} · {txResponse?.total_count ?? 0} giao dịch
@@ -393,6 +407,7 @@ export default function TeacherWalletPage() {
               </Button>
             </div>
           </div>
+          )}
         </CardContent>
       </Card>
 
