@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QueryState } from "@/components/common/query-state";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 import { loginHref } from "@/lib/login-redirect";
 import { useAuthStore } from "@/stores/auth.store";
 import { useDiscussionPosts, useDiscussionCategoryTotals, useCreateDiscussionPost, useVoteDiscussion, useRemoveVoteDiscussion } from "@/hooks/queries/use-discussions";
@@ -132,6 +133,8 @@ function DiscussionsPageContent() {
             </div>
           ) : (
             <div className="space-y-4">
+              {/* Q11-STU-01: refetch nền lỗi mà còn bài cache thì giữ bài và báo MỘT notice (như 13 trang khác), không im lặng. */}
+              {isError && <StaleDataNotice resourceLabel="danh sách bài viết" onRetry={() => refetch()} />}
               {posts.map((post, i) => (
                 <DiscussionPostCard
                   key={post.id}
