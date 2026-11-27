@@ -204,9 +204,10 @@ export function ProfileSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">Tên đăng nhập</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">@</span>
+                {/* Q9-STU-03: "@" neo vào ô nhập (h-10 như Input), không căn giữa wrapper vì wrapper còn chứa dòng lỗi bên dưới. */}
+                <span data-testid="username-prefix" className="pointer-events-none absolute left-3 top-0 flex h-10 items-center text-gray-500 text-sm">@</span>
                 <Input
                   id="username"
                   {...register("username")}

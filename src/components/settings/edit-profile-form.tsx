@@ -158,9 +158,10 @@ export function EditProfileForm({ user, onSubmit, onCancel }: EditProfileFormPro
 
       {/* Username */}
       <div className="space-y-2">
-        <Label htmlFor="username">Tên người dùng</Label>
+        <Label htmlFor="username">Tên đăng nhập</Label>
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+          {/* Q9-STU-03: "@" neo vào ô nhập (h-10 như Input), không căn giữa wrapper có dòng lỗi. */}
+          <span data-testid="username-prefix" className="pointer-events-none absolute left-3 top-0 flex h-10 items-center text-muted-foreground">
             @
           </span>
           <Input
