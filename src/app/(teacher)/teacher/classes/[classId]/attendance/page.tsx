@@ -72,6 +72,8 @@ export default function ClassAttendancePage() {
     data: attendances,
     isLoading: attendancesLoading,
     isError: attendancesError,
+    // Q11-T-01: số lần thất bại của lượt tải đang chạy (react-query thử lại 3 lần, mất ~2 s trước khi `isError` bật).
+    failureCount: attendancesFailureCount,
     error: attendancesErrorValue,
     refetch: refetchAttendances,
   } = useSessionAttendances(sessionId);
@@ -82,12 +84,15 @@ export default function ClassAttendancePage() {
   // Q10 #147 M1: refetch điểm danh lỗi MÀ còn bản cũ trong cache: vẫn hiện bảng (đọc được) nhưng KHOÁ ghi. Sau một lần
   // lưu, invalidate rồi refetch lỗi sẽ dựng lại hàng từ bản ghi TRƯỚC lúc lưu (HS vừa lưu trông như chưa điểm danh, không
   // có attendanceId); sửa tiếp sẽ đi nhánh bulk-create, backend âm thầm bỏ qua HS đã có bản ghi => mất thay đổi nhưng UI báo thành công.
-  const attendancesStale = attendancesError && !!attendances;
+  // Q11-T-01: khoá NGAY khi lượt làm mới đã thất bại một lần (đang thử lại), không đợi hết các lần thử: ~2 s đó giáo viên còn sửa
+  // được hàng rồi thấy nút tự khoá dưới tay. `failureCount` về 0 khi lượt mới bắt đầu hoặc thành công, nên tự mở khoá khi tải lại được.
+  const attendancesFailing = attendancesError || (attendancesFailureCount ?? 0) > 0;
+  const attendancesStale = attendancesFailing && !!attendances;
   // Q10 #147 M2 (#148): MỘT thông báo "dữ liệu cũ" cho cả trang (buổi học / học viên / điểm danh), không nuốt lỗi âm thầm.
   const stale = staleQueries([
     { isError: sessionsError, data: sessionsData, refetch: refetchSessions },
     { isError: studentsError, data: students, refetch: refetchStudents },
-    { isError: attendancesError, data: attendances, refetch: refetchAttendances },
+    { isError: attendancesFailing, data: attendances, refetch: refetchAttendances },
   ]);
   const retryRoster = () => Promise.all([studentsError ? refetchStudents() : null, attendancesError ? refetchAttendances() : null]);
 
