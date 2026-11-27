@@ -94,7 +94,7 @@ export function SettingsSidebar({
                   <p
                     className={cn(
                       "text-xs truncate",
-                      isActive ? "text-primary-500" : "text-gray-400"
+                      isActive ? "text-primary-700" : "text-gray-500"
                     )}
                   >
                     {item.description}
@@ -117,7 +117,7 @@ export function SettingsSidebar({
               <div className="min-w-0">
                 <p className="font-medium">Gia đình</p>
                 {/* E7 (QA vòng 2): phụ huynh thấy "Liên kết phụ huynh" là copy của học sinh. */}
-                <p className="text-xs text-gray-400">{isParent ? "Con của tôi" : "Liên kết phụ huynh"}</p>
+                <p className="text-xs text-gray-500">{isParent ? "Con của tôi" : "Liên kết phụ huynh"}</p>
               </div>
             </Link>
           )}
@@ -133,7 +133,7 @@ export function SettingsSidebar({
           <button
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors disabled:opacity-60"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-700 hover:bg-red-50 transition-colors disabled:opacity-60"
           >
             <div className="p-2 bg-red-50 rounded-lg">
               <LogOut className="h-4 w-4" />

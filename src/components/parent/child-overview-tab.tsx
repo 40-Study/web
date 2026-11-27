@@ -119,7 +119,7 @@ function Section({
     <section>
       <div className="flex items-center gap-1.5 mb-2">
         <Icon className="h-4 w-4 text-primary-600" />
-        <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+        <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
       </div>
       {empty ? <p className="text-sm text-gray-500">{empty}</p> : <ul className="space-y-2">{children}</ul>}
     </section>

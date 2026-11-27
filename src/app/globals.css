@@ -32,7 +32,7 @@
   --secondary-foreground: 221 83% 53%; /* #2563eb blue-600 */
 
   --muted: 210 40% 96%; /* #f1f5f9 slate-100 */
-  --muted-foreground: 215 16% 47%; /* #64748b slate-500 */
+  --muted-foreground: 215 19% 42%; /* #57687f: 5.4:1 trên slate-50, 5.2:1 trên --muted (slate-500 #64748b chỉ 4.29-4.49, Q9-ADMIN-03) */
 
   --accent: 199 89% 48%; /* #0ea5e9 sky-500 */
   --accent-foreground: 0 0% 100%;

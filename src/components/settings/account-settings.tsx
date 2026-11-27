@@ -16,7 +16,13 @@ import { ApplyTeacherButton } from "@/components/teacher-application/apply-teach
 import { isIncorrectCurrentPasswordError, useMyRoles } from "@/hooks/queries/use-auth";
 import { isSelectableRole } from "@/lib/role-resolution";
 import { getErrorMessage } from "@/lib/error-messages";
-import { ACCOUNT_DELETE_COMMON_WARNING, ACCOUNT_DELETE_TEACHER_WARNING, hasTeacherRole } from "@/lib/account-deletion";
+import {
+  ACCOUNT_DELETE_COMMON_WARNING,
+  ACCOUNT_DELETE_TEACHER_WARNING,
+  DELETE_PASSWORD_FIELD_MESSAGE,
+  hasTeacherRole,
+  isDeleteAccountPasswordError,
+} from "@/lib/account-deletion";
 import { validateNewPassword } from "@/lib/password-policy";
 import { PasswordChecklist } from "@/components/auth/password-checklist";
 import { getOrgRoleLabel, getSystemRoleLabel } from "@/lib/role-labels";
@@ -53,9 +59,9 @@ const SWITCH_ROLE_LABEL = "Chuyển vai trò";
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: string }> = {
   STUDENT: { label: "Học sinh", color: "text-blue-600", bgColor: "bg-blue-100", icon: "🎓" },
-  TEACHER: { label: "Giảng viên", color: "text-emerald-600", bgColor: "bg-emerald-100", icon: "👨‍🏫" },
+  TEACHER: { label: "Giảng viên", color: "text-emerald-700", bgColor: "bg-emerald-100", icon: "👨‍🏫" },
   PARENT: { label: "Phụ huynh", color: "text-violet-600", bgColor: "bg-violet-100", icon: "👨‍👩‍👧" },
-  ORG_OWNER: { label: "Quản lý tổ chức", color: "text-amber-600", bgColor: "bg-amber-100", icon: "🏢" },
+  ORG_OWNER: { label: "Quản lý tổ chức", color: "text-amber-700", bgColor: "bg-amber-100", icon: "🏢" },
   SYSTEM_ADMIN: { label: "Quản trị hệ thống", color: "text-red-600", bgColor: "bg-red-100", icon: "⚙️" },
   TEACHER_APPLICANT: { label: "Ứng viên giáo viên", color: "text-gray-600", bgColor: "bg-gray-100", icon: "📝" },
 };
@@ -142,7 +148,14 @@ export function AccountSettings({
     setIsLoading(true);
     try {
       await onDeleteAccount?.(data.password);
-    } catch { /* toast shown in hook */ } finally { setIsLoading(false); setDeleteDialogOpen(false); }
+      setDeleteDialogOpen(false);
+    } catch (error) {
+      // Q9-PG-05: chỉ đóng hộp thoại khi xoá thành công. Sai mật khẩu giữ hộp thoại mở, lỗi hiện dưới ô nhập; các lỗi
+      // khác (số dư, 5xx) đã có toast của hook và hộp thoại cũng giữ nguyên để không phải gõ lại.
+      if (isDeleteAccountPasswordError(error)) {
+        deleteForm.setError("password", { message: DELETE_PASSWORD_FIELD_MESSAGE });
+      }
+    } finally { setIsLoading(false); }
   };
 
   const formatLastPasswordChange = () => {
@@ -174,7 +187,7 @@ export function AccountSettings({
                   {activeUnifiedRole ? (
                     <>
                       Đang dùng: <span className={getRoleConfig(activeRole || "", isOrgRole(activeUnifiedRole)).color}>{getRoleConfig(activeRole || "", isOrgRole(activeUnifiedRole)).label}</span>
-                      {activeOrg && <span className="text-gray-400"> • {activeOrg.name}</span>}
+                      {activeOrg && <span className="text-gray-500"> • {activeOrg.name}</span>}
                     </>
                   ) : (
                     `${switchableRoleCount} vai trò khả dụng`
@@ -221,7 +234,7 @@ export function AccountSettings({
       </div>
 
       {/* 2FA — coming soon */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm opacity-70">
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-4">
             <div className="shrink-0 p-2.5 bg-green-50 rounded-xl"><ShieldCheck className="h-5 w-5 text-green-500" /></div>
@@ -259,10 +272,10 @@ export function AccountSettings({
         <DialogContent className="rounded-2xl">
           <DialogHeader><DialogTitle>Đổi mật khẩu</DialogTitle></DialogHeader>
           <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
-            <Input label="Mật khẩu hiện tại" type="password" {...passwordForm.register("currentPassword")} error={passwordForm.formState.errors.currentPassword?.message} />
-            <Input label="Mật khẩu mới" type="password" {...passwordForm.register("newPassword")} error={passwordForm.formState.errors.newPassword?.message} />
+            <Input label="Mật khẩu hiện tại" type="password" autoComplete="current-password" {...passwordForm.register("currentPassword")} error={passwordForm.formState.errors.currentPassword?.message} />
+            <Input label="Mật khẩu mới" type="password" autoComplete="new-password" {...passwordForm.register("newPassword")} error={passwordForm.formState.errors.newPassword?.message} />
             <PasswordChecklist password={passwordForm.watch("newPassword")} />
-            <Input label="Xác nhận mật khẩu mới" type="password" {...passwordForm.register("confirmPassword")} error={passwordForm.formState.errors.confirmPassword?.message} />
+            <Input label="Xác nhận mật khẩu mới" type="password" autoComplete="new-password" {...passwordForm.register("confirmPassword")} error={passwordForm.formState.errors.confirmPassword?.message} />
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="outline" className="rounded-xl" onClick={() => setPasswordDialogOpen(false)}>Huỷ</Button>
               <Button type="submit" className="rounded-xl" disabled={isLoading}>{isLoading ? "Đang cập nhật..." : "Cập nhật mật khẩu"}</Button>
@@ -280,7 +293,7 @@ export function AccountSettings({
             <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">{ACCOUNT_DELETE_TEACHER_WARNING}</p>
           )}
           <form onSubmit={deleteForm.handleSubmit(handleDeleteSubmit)} className="space-y-4 mt-2">
-            <Input label="Mật khẩu xác nhận" type="password" placeholder="Nhập mật khẩu để xác nhận" {...deleteForm.register("password")} error={deleteForm.formState.errors.password?.message} />
+            <Input label="Mật khẩu xác nhận" type="password" autoComplete="current-password" placeholder="Nhập mật khẩu để xác nhận" {...deleteForm.register("password")} error={deleteForm.formState.errors.password?.message} />
             <div className="flex justify-end gap-3">
               <Button type="button" variant="outline" className="rounded-xl" onClick={() => setDeleteDialogOpen(false)}>Huỷ</Button>
               <Button type="submit" variant="destructive" className="rounded-xl" disabled={isLoading}>{isLoading ? "Đang xoá..." : "Xoá tài khoản"}</Button>

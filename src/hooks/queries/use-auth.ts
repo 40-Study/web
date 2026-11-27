@@ -11,9 +11,16 @@ import { useAuthStore } from "@/stores/auth.store";
 import { getRoleFromToken } from "@/lib/jwt";
 import { getRoleHomeRoute, normalizeRole } from "@/lib/routes";
 import { bootstrapAuthSession } from "@/components/providers/auth-session";
-import { ApiError, AuthError, RateLimitError } from "@/lib/errors";
+import {
+  ACCOUNT_DELETED_DESCRIPTION,
+  ACCOUNT_DELETED_TITLE,
+  ApiError,
+  AuthError,
+  RateLimitError,
+  isAccountDeletedError,
+} from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-messages";
-import { deleteAccountErrorMessage } from "@/lib/account-deletion";
+import { deleteAccountErrorMessage, isDeleteAccountPasswordError } from "@/lib/account-deletion";
 import { isUsernameTakenError } from "@/lib/user-name";
 import { sanitizeRedirect } from "@/lib/safe-redirect";
 import { AUTH_ROUTES } from "@/lib/routes";
@@ -251,6 +258,11 @@ export function useLogin() {
         toast.error("Tài khoản đã bị khoá", {
           description: "Vui lòng liên hệ quản trị viên để được hỗ trợ.",
         });
+        return;
+      }
+      // Q9-PG-05: tự vô hiệu hoá tài khoản khác với bị admin khoá (so theo `code`, như ACCOUNT_LOCKED).
+      if (isAccountDeletedError(error)) {
+        toast.error(ACCOUNT_DELETED_TITLE, { description: ACCOUNT_DELETED_DESCRIPTION });
         return;
       }
       toast.error("Đăng nhập thất bại", { description: "Email hoặc mật khẩu không đúng" });
@@ -594,6 +606,8 @@ export function useDeleteAccount() {
       window.location.href = "/login";
     },
     onError: (error: unknown) => {
+      // Sai mật khẩu: lỗi hiện dưới ô nhập trong hộp thoại (account-settings.tsx), không toast thêm (Q9-PG-05).
+      if (isDeleteAccountPasswordError(error)) return;
       toast.error(deleteAccountErrorMessage(error));
     },
   });

@@ -8,6 +8,7 @@
  */
 
 import type { VerifyCertificateResponse } from "@/services/certificate.service";
+import { normalizeCertificateNumber } from "@/lib/certificate-number";
 import { getPublicApiBaseUrl } from "./base-url";
 
 /**
@@ -19,7 +20,7 @@ export async function verifyCertificateServer(
 ): Promise<VerifyCertificateResponse | null> {
   try {
     const res = await fetch(
-      `${getPublicApiBaseUrl()}/certificates/verify/${encodeURIComponent(certificateNumber)}`,
+      `${getPublicApiBaseUrl()}/certificates/verify/${encodeURIComponent(normalizeCertificateNumber(certificateNumber))}`,
       // Không cache: chứng chỉ có thể bị thu hồi (hoàn tiền) bất cứ lúc nào, bản "hợp lệ" cũ kèm tên
       // học viên không được sống thêm phút nào ở data cache. Backend đã có cache redis riêng (xoá khi thu hồi).
       { cache: "no-store" }

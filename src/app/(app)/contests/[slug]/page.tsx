@@ -129,7 +129,8 @@ function ContestDetailView({ detail, receivedAt, activeRole, onRefresh }: { deta
           </section>
         </section>
 
-        <aside className="space-y-3 lg:sticky lg:top-20 lg:self-start">
+        {/* Q9-PG-10: cùng vai complementary với sidebar của khung ứng dụng; đặt tên để axe landmark-unique không báo trùng. */}
+        <aside aria-label="Thông tin và đăng ký cuộc thi" className="space-y-3 lg:sticky lg:top-20 lg:self-start">
           <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             {remaining !== null && (
               <div className="text-center">

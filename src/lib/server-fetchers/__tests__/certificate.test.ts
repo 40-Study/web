@@ -28,4 +28,14 @@ describe("verifyCertificateServer", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("down")));
     await expect(verifyCertificateServer("C-2")).resolves.toBeNull();
   });
+
+  // Q9-PG-09: mã dán vào kèm khoảng trắng, params của Next còn percent-encoded -> trước đây gửi "C-1%2520" (mã hoá hai lần).
+  it.each(["C-1%20", "%20C-1", " C-1 "])("mã %j: cắt khoảng trắng, không mã hoá hai lần", async (typed) => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { valid: true, certificate_number: "C-1" } }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await verifyCertificateServer(typed);
+
+    expect(String(fetchMock.mock.calls[0][0])).toBe("http://api.test/api/certificates/verify/C-1");
+  });
 });

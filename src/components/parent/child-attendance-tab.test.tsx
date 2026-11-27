@@ -102,6 +102,20 @@ describe("ChildAttendanceTab", () => {
     expect(screen.queryByText("Chưa có dữ liệu điểm danh")).toBeNull();
   });
 
+  it("Q9-PG-04: trang 1 lỗi vẫn có nút 'Thử lại'; bấm thì tải lại và hiện danh sách", async () => {
+    getChildAttendance.mockRejectedValue(failure());
+    renderTab();
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    expect(screen.queryByText(/Đang hiện 0\/0/)).toBeNull();
+
+    getChildAttendance.mockImplementation((_id: string, p: number) =>
+      Promise.resolve(page(p, Array.from({ length: 20 }, (_, i) => rec(i + 1)))),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    await waitFor(() => expect(screen.getAllByRole("listitem")).toHaveLength(20));
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
   it("trang sau lỗi: giữ nút, thành 'Thử lại', bấm thì tải lại đúng trang hỏng", async () => {
     renderTab();
     await screen.findByRole("button", { name: "Xem thêm" });

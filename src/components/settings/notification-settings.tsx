@@ -86,7 +86,7 @@ export function NotificationSettings() {
       </div>
 
       {/* Channel headers */}
-      <div className="flex items-center gap-4 px-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+      <div className="flex items-center gap-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
         <div className="flex-1" />
         <div className="w-16 text-center flex flex-col items-center gap-1">
           <Mail className="h-4 w-4" />
@@ -144,7 +144,7 @@ export function NotificationSettings() {
         ))}
       </div>
 
-      <p className="text-xs text-gray-400 px-1">
+      <p className="text-xs text-gray-500 px-1">
         Bạn có thể huỷ đăng ký nhận email bất cứ lúc nào bằng cách nhấn vào liên kết huỷ đăng ký trong email.
       </p>
     </div>

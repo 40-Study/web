@@ -30,8 +30,8 @@ export function ChildAttendanceTab({ childId }: { childId: string }) {
     );
   }
 
-  // Trang sau lỗi vẫn giữ nút (thành "Thử lại" tải lại đúng trang hỏng); trang 1 lỗi thì không có total nên không
-  // có nút (review L1).
+  // Trang sau lỗi vẫn giữ nút (thành "Thử lại" tải lại đúng trang hỏng); trang 1 lỗi không có total nên nút
+  // "Thử lại" hiện theo `isError` chứ không theo `canLoadMore` (Q9-PG-04).
   const canLoadMore = records.length < total;
 
   return (
@@ -85,7 +85,8 @@ export function ChildAttendanceTab({ childId }: { childId: string }) {
         </p>
       )}
 
-      {canLoadMore && (
+      {/* Q9-PG-04: trang 1 lỗi thì total = 0 nên canLoadMore sai; nút "Thử lại" phải hiện mỗi khi có lỗi. */}
+      {(canLoadMore || isError) && (
         <div className="mt-4 flex flex-col items-center gap-1">
           <button
             type="button"
@@ -95,9 +96,11 @@ export function ChildAttendanceTab({ childId }: { childId: string }) {
           >
             {isFetchingMore ? "Đang tải..." : isError ? "Thử lại" : "Xem thêm"}
           </button>
-          <p className="text-xs text-gray-500">
-            Đang hiện {records.length}/{total} buổi
-          </p>
+          {total > 0 && (
+            <p className="text-xs text-gray-500">
+              Đang hiện {records.length}/{total} buổi
+            </p>
+          )}
         </div>
       )}
     </div>

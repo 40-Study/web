@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deleteAccountErrorMessage, hasTeacherRole } from "./account-deletion";
+import { deleteAccountErrorMessage, hasTeacherRole, isDeleteAccountPasswordError } from "./account-deletion";
 import { ApiError, NetworkError } from "./errors";
 import { getErrorMessage } from "./error-messages";
 
@@ -33,5 +33,21 @@ describe("hasTeacherRole", () => {
     expect(hasTeacherRole([{ role_name: "STUDENT" }, { role_name: "TEACHER" }])).toBe(true);
     expect(hasTeacherRole([{ role_name: "ORG_TEACHER" }])).toBe(true);
     expect(hasTeacherRole([{ role_name: "STUDENT" }, { role_name: "PARENT" }, { role_name: "ORG_OWNER" }])).toBe(false);
+  });
+});
+
+describe("isDeleteAccountPasswordError (Q9-PG-05)", () => {
+  it("400/401/403 là sai mật khẩu (gắn vào ô nhập)", () => {
+    for (const status of [400, 401, 403]) {
+      expect(isDeleteAccountPasswordError(new ApiError(status, "ERR_X", "wrong"))).toBe(true);
+    }
+  });
+
+  it("số dư (409), 5xx, mất mạng và lỗi lạ không phải sai mật khẩu (vẫn do toast báo)", () => {
+    expect(isDeleteAccountPasswordError(new ApiError(409, "ERR_ACCOUNT_HAS_BALANCE", "x"))).toBe(false);
+    expect(isDeleteAccountPasswordError(new ApiError(400, "ERR_ACCOUNT_HAS_BALANCE", "x"))).toBe(false);
+    expect(isDeleteAccountPasswordError(new ApiError(500, "ERR_INTERNAL", "x"))).toBe(false);
+    expect(isDeleteAccountPasswordError(new NetworkError())).toBe(false);
+    expect(isDeleteAccountPasswordError(new Error("x"))).toBe(false);
   });
 });

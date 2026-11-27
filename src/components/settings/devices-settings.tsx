@@ -45,7 +45,7 @@ export function DevicesSettings() {
           </p>
         </div>
         {devices.length > 1 && (
-          <LogoutAllButton className="rounded-xl text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600" />
+          <LogoutAllButton className="rounded-xl text-red-700 border-red-200 hover:bg-red-50 hover:text-red-800" />
         )}
       </div>
 

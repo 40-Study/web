@@ -76,7 +76,7 @@ function ProfileBody({ profile }: { profile: PublicTeacherProfile }) {
           <h1 className="text-2xl font-bold">{name}</h1>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
             {!hidden && profile.is_verified && (
-              <span className="inline-flex items-center gap-1 text-emerald-600">
+              <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
                 <BadgeCheck className="h-4 w-4" aria-hidden="true" /> Đã xác minh
               </span>
             )}

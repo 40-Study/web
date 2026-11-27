@@ -27,6 +27,8 @@ import { LoginRequiredPrompt } from "@/components/auth/login-required-prompt";
 import { discussionCategoryLabel } from "../discussion-categories";
 import { formatVnDate } from "@/lib/vn-datetime";
 import { getInitials } from "@/lib/initials";
+import { QueryState } from "@/components/common/query-state";
+import { isResourceUnavailableError, isInvalidResourceIdError } from "@/components/common/resource-unavailable";
 
 interface PageProps {
   params: { slug: string };
@@ -53,7 +55,7 @@ function timeAgo(dateStr: string): string {
 
 export default function DiscussionDetailPage({ params }: PageProps) {
   const { slug } = params;
-  const { data: post, isLoading } = useDiscussionPost(slug);
+  const { data: post, isLoading, error, refetch } = useDiscussionPost(slug);
   const addComment = useAddDiscussionComment(slug);
   const votePost = useVoteDiscussion();
   const removeVote = useRemoveVoteDiscussion();
@@ -121,6 +123,22 @@ export default function DiscussionDetailPage({ params }: PageProps) {
         <div className="h-8 w-2/3 bg-slate-200 rounded" />
         <div className="h-4 w-full bg-slate-100 rounded" />
         <div className="h-4 w-4/5 bg-slate-100 rounded" />
+      </div>
+    );
+  }
+
+  // Q9-PG-02: API lỗi (5xx, mất mạng) không được đọc thành "Bài viết không tồn tại". Chỉ 404/403/id sai mới là "không tồn tại".
+  if (!post && error && !isResourceUnavailableError(error) && !isInvalidResourceIdError(error)) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-16">
+        <QueryState isError error={error} onRetry={() => refetch()}>
+          {null}
+        </QueryState>
+        <div className="text-center">
+          <Link href="/discussions" className="text-primary-500 hover:underline text-sm mt-4 inline-block">
+            Quay lại diễn đàn
+          </Link>
+        </div>
       </div>
     );
   }

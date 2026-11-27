@@ -65,3 +65,25 @@ describe("URL xác minh dùng số chứng chỉ chuẩn (Q7-PG-06)", () => {
     expect(el.props.children.props.verifyUrl).toBe("https://forte.test/certificates/verify/C-9");
   });
 });
+
+// Q9-PG-09: URL có khoảng trắng (%20) phải cho kết quả như mã sạch, và canonical không mang khoảng trắng.
+describe("mã trên URL kèm khoảng trắng (Q9-PG-09)", () => {
+  beforeEach(() => verifyMock.mockReset());
+
+  it.each(["C-9%20", "%20C-9", " C-9 "])("%j: gọi xác minh bằng 'C-9'", async (typed) => {
+    verifyMock.mockResolvedValue({ valid: true, certificate_number: "C-9" });
+    await generateMetadata({ params: { number: typed } });
+    expect(verifyMock).toHaveBeenLastCalledWith("C-9");
+    await VerifyCertificatePage({ params: { number: typed } });
+    expect(verifyMock).toHaveBeenLastCalledWith("C-9");
+  });
+
+  it("không xác minh được: URL xác minh dùng mã đã cắt khoảng trắng", async () => {
+    verifyMock.mockResolvedValue(null);
+    const el = (await VerifyCertificatePage({ params: { number: "C-9%20" } })) as React.ReactElement<{
+      children: React.ReactElement<{ verifyUrl: string; certificateNumber: string }>;
+    }>;
+    expect(el.props.children.props.verifyUrl).toBe("https://forte.test/certificates/verify/C-9");
+    expect(el.props.children.props.certificateNumber).toBe("C-9");
+  });
+});

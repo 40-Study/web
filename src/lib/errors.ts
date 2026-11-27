@@ -56,6 +56,20 @@ export function isAccountLockedError(error: unknown): error is AuthError {
   return error instanceof AuthError && error.code === ACCOUNT_LOCKED_CODE;
 }
 
+/**
+ * Q9-PG-05: tài khoản tự vô hiệu hoá đăng nhập lại bị 401 `ERR_ACCOUNT_DELETED` (backend mới). Tách khỏi "bị khoá" (admin
+ * khoá) để người dùng biết mình tự xoá chứ không phải bị quản trị viên chặn. Backend cũ vẫn trả `ACCOUNT_LOCKED`, nên
+ * nhánh khoá cũ giữ nguyên. So theo `code`, không so câu chữ.
+ */
+export const ACCOUNT_DELETED_CODE = "ERR_ACCOUNT_DELETED";
+export const ACCOUNT_DELETED_TITLE = "Tài khoản đã bị xoá";
+export const ACCOUNT_DELETED_DESCRIPTION = "Liên hệ hỗ trợ nếu muốn khôi phục.";
+export const ACCOUNT_DELETED_MESSAGE = `${ACCOUNT_DELETED_TITLE}. ${ACCOUNT_DELETED_DESCRIPTION}`;
+
+export function isAccountDeletedError(error: unknown): boolean {
+  return error instanceof ApiError && error.code === ACCOUNT_DELETED_CODE;
+}
+
 export class ForbiddenError extends ApiError {
   constructor(message = "Insufficient permissions") {
     super(403, "FORBIDDEN", message);
