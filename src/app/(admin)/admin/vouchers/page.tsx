@@ -114,7 +114,7 @@ export default function AdminVouchersPage() {
       <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-3">
           <QueryState
-            hasData={data.length > 0}
+            hasData={pageData !== undefined}
             isLoading={isLoading}
             isError={isError}
             isEmpty={data.length === 0}

@@ -70,7 +70,7 @@ export default function WishlistPage() {
         {!isLoading && (!isError || items.length > 0) && <p className="text-sm text-muted-foreground">{items.length} khoá học</p>}
       </div>
       <QueryState
-        hasData={items.length > 0}
+        hasData={data !== undefined}
         isLoading={isLoading}
         isError={isError}
         error={error}

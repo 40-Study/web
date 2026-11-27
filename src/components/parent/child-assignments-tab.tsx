@@ -12,6 +12,7 @@ import {
 } from "./child-assignments";
 import { formatVnDate } from "@/lib/vn-datetime";
 import { ChildSectionError } from "./child-section-error";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 /** "3/3 TC" là số test case, phụ huynh không hiểu (QA-B-26): ghi thành câu. */
 function resultText(a: ChildAssignment): string | null {
@@ -30,12 +31,15 @@ export function ChildAssignmentsTab({
   isLoading,
   isError = false,
   onRetry,
+  showStaleNotice = true,
 }: {
   data: ChildAssignmentsResponse | undefined;
   isLoading: boolean;
   /** Q8-PG-05: API lỗi không được đọc thành "Chưa có bài tập nào". */
   isError?: boolean;
   onRetry?: () => unknown;
+  /** false khi trang cha đã dựng MỘT thông báo "dữ liệu cũ" cấp trang (Q10 #148 M3). */
+  showStaleNotice?: boolean;
 }) {
   if (isLoading) {
     return (
@@ -52,6 +56,8 @@ export function ChildAssignmentsTab({
 
   return (
     <div>
+      {/* Q10 #148 H1: refetch nền lỗi mà còn dữ liệu cache thì giữ nguyên + báo "Thử lại" (không nuốt lỗi âm thầm). */}
+      {showStaleNotice && isError && data && onRetry && <StaleDataNotice resourceLabel="danh sách bài tập" onRetry={onRetry} />}
       {stats && (
         <>
           <p className="mb-2 text-sm text-gray-500">Tổng {stats.total_assignments} bài tập</p>

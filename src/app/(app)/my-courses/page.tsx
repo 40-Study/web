@@ -142,9 +142,7 @@ export default function MyCoursesPage() {
           <QueryState
             isError
             error={coursesErrorObj}
-            onRetry={() => {
-              void refetchCourses();
-            }}
+            onRetry={() => refetchCourses()}
           >
             {null}
           </QueryState>
@@ -171,9 +169,7 @@ export default function MyCoursesPage() {
 
         {coursesError && (
           <StaleDataNotice
-            onRetry={() => {
-              void refetchCourses();
-            }}
+            onRetry={() => refetchCourses()}
           />
         )}
 

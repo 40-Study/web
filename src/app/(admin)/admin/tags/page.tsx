@@ -120,7 +120,7 @@ export default function AdminTagsPage() {
           className="sm:w-72"
         />
         <QueryState
-          hasData={items.length > 0}
+          hasData={tags.data !== undefined}
           isLoading={tags.isLoading}
           isError={tags.isError}
           error={tags.error}

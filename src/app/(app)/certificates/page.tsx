@@ -6,6 +6,7 @@ import { CertificateCard } from "@/components/certificate/certificate-card";
 import { QueryState } from "@/components/common/query-state";
 import { useMyCertificates } from "@/hooks/queries/use-certificates";
 import { useRoleAwareHref } from "@/hooks/use-role-aware-href";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 const PAGE_SIZE = 12;
 
@@ -40,11 +41,14 @@ export default function MyCertificatesPage() {
         </Link>
       </header>
 
+      {/* Q10 #148 H1: refetch nền lỗi mà còn dữ liệu cache (kể cả danh sách rỗng) thì giữ nội dung + báo "Thử lại". */}
+      {isError && data !== undefined && <StaleDataNotice resourceLabel="danh sách chứng chỉ" onRetry={() => refetch()} />}
+
       {isLoading ? (
         <div className="rounded-lg border border-gray-200 p-8 text-center text-sm text-gray-500">
           Đang tải…
         </div>
-      ) : isError && !data ? (
+      ) : isError && data === undefined ? (
         // Q9-STU-01: lỗi API không được đọc thành "Bạn chưa có chứng chỉ nào".
         // L1: lỗi ở trang 2+ không có dữ liệu để tính tổng trang, nên giữ nút "Trước" để người dùng quay lại.
         <>

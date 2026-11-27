@@ -13,6 +13,7 @@ import { useCourses, useCategories, useSearchSuggestions } from "@/hooks/use-cou
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { CourseFilters } from "@/types/course";
 import { applyCourseFiltersToParams, courseFilterKey, parseCourseFilterParams } from "@/lib/course-filter-query";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 /** Số card hiển thị mỗi lượt. Dữ liệu đã tải đủ một lần, "Tải thêm" chỉ mở rộng phần hiển thị. */
 const PAGE_SIZE = 12;
@@ -188,6 +189,11 @@ export default function CoursesPage() {
               Không tải được danh mục.
               <RetryButton asLink onRetry={() => refetchCategories()} className="font-medium underline" />
             </p>
+          )}
+
+          {/* Q10 #148 H1: refetch nền lỗi mà còn danh sách cache thì giữ danh sách + báo "Thử lại". */}
+          {!isLoading && coursesError && !showCoursesError && (
+            <StaleDataNotice resourceLabel="danh sách khoá học" onRetry={() => refetchCourses()} />
           )}
 
           {/* Q8-PG-03: API lỗi không được đọc thành "0 khoá học / Không tìm thấy khoá học nào"; nói là lỗi và cho thử lại. */}

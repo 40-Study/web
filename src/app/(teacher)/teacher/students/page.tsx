@@ -31,6 +31,7 @@ import { matchesSearchQuery } from "@/lib/text-search";
 import { StudentMobileCard } from "./student-mobile-card";
 import { ParentContact } from "./parent-contact";
 import { courseFilterOptions, groupStudents, STUDENT_STATUS_LABEL } from "./group-students";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 export default function TeacherStudentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -146,6 +147,9 @@ export default function TeacherStudentsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Q10 #148 H1: refetch nền lỗi mà còn danh sách cache thì giữ danh sách + báo "Thử lại". */}
+      {isError && !loadFailed && <StaleDataNotice resourceLabel="danh sách học viên" onRetry={() => refetch()} />}
 
       <Card className="overflow-hidden">
         {isLoading ? (

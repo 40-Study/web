@@ -26,6 +26,10 @@ describe("ký tự vô hình (Q10-PG-05)", () => {
     ["zero-width joiner U+200D", "\u200D"],
     ["word joiner U+2060", "\u2060"],
     ["BOM U+FEFF", "\uFEFF"],
+    ["left-to-right mark U+200E", "\u200E"],
+    ["right-to-left mark U+200F", "\u200F"],
+    ["soft hyphen U+00AD", "\u00AD"],
+    ["bidi isolate U+2066", "\u2066"],
     ["NBSP U+00A0", "\u00A0"],
   ])("%s ở cuối/đầu/giữa bị bỏ", (_name, ch) => {
     expect(normalizeCertificateNumber(`${CODE}${ch}`)).toBe(CODE);
@@ -40,5 +44,15 @@ describe("ký tự vô hình (Q10-PG-05)", () => {
 
   it("chỉ toàn ký tự vô hình -> rỗng (form không gửi)", () => {
     expect(cleanCertificateNumber("\u200B \uFEFF")).toBe("");
+  });
+});
+
+describe("khớp backend: bỏ mọi ký tự Cf + NBSP, không đụng ký tự thường (#148 L6)", () => {
+  it("giữ nguyên chữ, số, dấu gạch và chữ thường/hoa", () => {
+    expect(cleanCertificateNumber("Fortex-abc_123.XYZ")).toBe("Fortex-abc_123.XYZ");
+  });
+
+  it("nhiều ký tự vô hình hỗn hợp trong cùng một mã", () => {
+    expect(cleanCertificateNumber("\u200EFORTEX\u00AD-748c\u200F42ba\u2060-2dfeb3\u00A0")).toBe("FORTEX-748c42ba-2dfeb3");
   });
 });

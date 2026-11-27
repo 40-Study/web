@@ -32,4 +32,19 @@ describe("/teacher/students — danh sách lỗi (Q9-T-02)", () => {
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.getAllByText(/Chưa có học viên nào ghi danh/).length).toBeGreaterThan(0);
   });
+
+  // Q10 #148 H1: refetch nền lỗi mà còn danh sách cache thì giữ danh sách và PHẢI báo (trước đây im lặng).
+  it("refetch nền lỗi mà còn danh sách: giữ học viên + thông báo 'Thử lại', không có hộp lỗi (Q10 #148 H1)", () => {
+    query = {
+      data: [{ id: "s1", name: "QA Hoc Vien", status: "active", enrolled_at: "2026-09-01T00:00:00Z", course_id: "c1", course_name: "QA-Khoa A" }],
+      isLoading: false,
+      isError: true,
+    };
+    render(<TeacherStudentsPage />);
+    expect(screen.getAllByText("QA Hoc Vien").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByRole("status").textContent).toContain("Không làm mới được danh sách học viên");
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
 });

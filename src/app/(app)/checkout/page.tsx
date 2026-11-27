@@ -25,6 +25,7 @@ import { CartItemPrice } from "@/components/cart/cart-item-price";
 import { CourseThumbnailPlaceholder } from "@/components/course/course-thumbnail-placeholder";
 import { useAuthStore } from "@/stores/auth.store";
 import { saveCartVoucher } from "@/lib/cart-voucher-storage";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 function formatPrice(price: number | string | null | undefined): string {
   return new Intl.NumberFormat("vi-VN", {
@@ -302,11 +303,21 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
+              {/* Q10 #148 H1: cart refetch lỗi mà còn giỏ cache thì giá có thể đã cũ nên nút thanh toán bị khoá; nói rõ vì sao. */}
+              {isError && (
+                <StaleDataNotice
+                  id="checkout-stale-notice"
+                  className="mt-6 mb-0"
+                  message="Không làm mới được giỏ hàng nên giá có thể đã cũ. Nút thanh toán tạm khoá cho đến khi tải lại thành công."
+                  onRetry={() => refetch()}
+                />
+              )}
               <Button
-                className="w-full mt-6"
+                className={isError ? "w-full mt-3" : "w-full mt-6"}
                 size="lg"
                 onClick={handleCheckout}
                 disabled={isProcessing || isError}
+                aria-describedby={isError ? "checkout-stale-notice" : undefined}
               >
                 {isProcessing ? (
                   <>

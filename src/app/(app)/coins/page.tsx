@@ -44,6 +44,8 @@ import type { CoinPurchase, CoinTransaction } from "@/services/coin.service";
 import { CoinPaymentDialog } from "@/components/coins/coin-payment-dialog";
 import { coinBonusLabel } from "@/lib/coin-package-label";
 import { formatVnDateTime } from "@/lib/vn-datetime";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
+import { staleQueries } from "@/components/common/stale-queries";
 
 function formatNumber(n: number) {
   return new Intl.NumberFormat("vi-VN").format(n);
@@ -250,6 +252,14 @@ export default function CoinsPage() {
       buying.current = false;
     }
   }
+  // Q10 #148 M3: ví + gói + tab đang mở cùng lỗi khi backend sập; cả trang chỉ có MỘT thông báo "Thử lại"
+  // (các QueryState bên dưới truyền showStaleNotice={false}). Tab không mở thì query của nó bị `enabled: false`, bỏ qua.
+  const stale = staleQueries([
+    wallet,
+    packages,
+    ...(tab === "purchases" ? [purchases] : []),
+    ...(tab === "transactions" ? [transactions] : []),
+  ]);
   const statusLabel = {
     PENDING: "Chờ thanh toán",
     COMPLETED: "Đã cộng xu",
@@ -266,10 +276,12 @@ export default function CoinsPage() {
         </div>
         <SendGiftDialog balance={wallet.data?.balance ?? 0} />
       </div>
-      {/* Q10-STU-01: lỗi refetch nền khi đã có số dư cache thì giữ số dư + thông báo "Thử lại", không thay bằng hộp lỗi. */}
+      {stale.isStale && <StaleDataNotice resourceLabel="ví xu" onRetry={stale.retry} />}
+      {/* Q10-STU-01: lỗi refetch nền khi đã có số dư cache thì giữ số dư; thông báo "Thử lại" là notice cấp trang ở trên. */}
       <QueryState
+        showStaleNotice={false}
         isError={wallet.isError}
-        hasData={!!wallet.data}
+        hasData={wallet.data !== undefined}
         error={wallet.error}
         onRetry={() => wallet.refetch()}
       >
@@ -309,7 +321,8 @@ export default function CoinsPage() {
         </TabsList>
         <TabsContent value="packages">
           <QueryState
-            hasData={(packages.data?.length ?? 0) > 0}
+            showStaleNotice={false}
+            hasData={packages.data !== undefined}
             isLoading={packages.isLoading}
             isError={packages.isError}
             error={packages.error}
@@ -415,7 +428,8 @@ export default function CoinsPage() {
         </TabsContent>
         <TabsContent value="purchases">
           <QueryState
-            hasData={(purchases.data?.purchases.length ?? 0) > 0}
+            showStaleNotice={false}
+            hasData={purchases.data !== undefined}
             isLoading={purchases.isLoading}
             isError={purchases.isError}
             error={purchases.error}
@@ -497,7 +511,8 @@ export default function CoinsPage() {
         </TabsContent>
         <TabsContent value="transactions">
           <QueryState
-            hasData={(transactions.data?.transactions.length ?? 0) > 0}
+            showStaleNotice={false}
+            hasData={transactions.data !== undefined}
             isLoading={transactions.isLoading}
             isError={transactions.isError}
             error={transactions.error}

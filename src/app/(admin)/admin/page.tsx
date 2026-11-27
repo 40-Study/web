@@ -28,7 +28,7 @@ function RecentActivity() {
   return (
     <>
       <div className="mt-4">
-        <QueryState hasData={items.length > 0} isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
+        <QueryState hasData={data !== undefined} isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
           {items.length === 0 ? (
             <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-800">
               <EmptyState
@@ -77,14 +77,16 @@ export default function AdminIndexPage() {
     totalAssignedUsersError,
     isLoading: rolesLoading,
     isError: rolesError,
+    hasRolesData,
     refetch: refetchRoles,
   } = useSystemRolesWithUserCounts();
   const {
-    data: permissions = [],
+    data: permissionsData,
     isLoading: permsLoading,
     isError: permsError,
     refetch: refetchPerms,
   } = usePermissions();
+  const permissions = permissionsData ?? [];
 
   // A-P2-2: sắp xếp GIẢM DẦN theo userCount thật trước khi lấy top 4 — trước đây chỉ
   // `roles.slice(0, 4)` (thứ tự ngẫu nhiên theo API) nên nhãn "Top" sai.
@@ -108,14 +110,19 @@ export default function AdminIndexPage() {
       </section>
 
       <QueryState
-        hasData={!!orgPage && roles.length > 0 && permissions.length > 0}
+        // Q10 #148 L1: "còn dữ liệu" khi MỌI query đang lỗi đều còn cache; query lỗi lần đầu (chưa có data) vẫn hiện hộp lỗi,
+        // và thông báo "dữ liệu cũ" chỉ hiện khi thật sự có dữ liệu cũ (không còn bị OR bởi query khác).
+        hasData={
+          (!orgError || orgPage !== undefined) &&
+          (!rolesError || hasRolesData) &&
+          (!permsError || permissionsData !== undefined)
+        }
         isLoading={loading}
         isError={hasError}
-        onRetry={() => {
-          refetchOrgs();
-          refetchRoles();
-          refetchPerms();
-        }}
+        // Chỉ làm mới query đang lỗi, trả Promise để nút "Thử lại" hiện trạng thái bận (Q10 #148 L3).
+        onRetry={() =>
+          Promise.all([orgError && refetchOrgs(), rolesError && refetchRoles(), permsError && refetchPerms()])
+        }
       >
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">

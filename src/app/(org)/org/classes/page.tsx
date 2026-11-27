@@ -81,7 +81,7 @@ function OrgClassesList() {
       </div>
 
       <QueryState
-        hasData={classes.length > 0}
+        hasData={data !== undefined}
         isLoading={isLoading}
         isError={isError}
         error={error}

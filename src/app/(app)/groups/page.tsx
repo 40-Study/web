@@ -42,6 +42,7 @@ import {
 } from "@/hooks/queries/use-groups";
 import type { Group } from "@/services/group.service";
 import { PRIVACY_DESCRIPTIONS, PRIVACY_LABELS, roleLabel } from "@/components/groups/group-labels";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 function GroupCard({ group, showJoin = false }: { group: Group; showJoin?: boolean }) {
   const joinGroup = useJoinGroup();
@@ -207,6 +208,8 @@ export default function GroupsPage() {
         </TabsList>
 
         <TabsContent value="my-groups" className="mt-4">
+          {/* Q10 #148 H1: refetch nền lỗi mà còn danh sách cache thì giữ danh sách + báo "Thử lại". */}
+          {myError && myGroups && <StaleDataNotice resourceLabel="danh sách nhóm" onRetry={() => refetchMine()} />}
           {myLoading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -241,6 +244,7 @@ export default function GroupsPage() {
             />
           </div>
 
+          {allError && allGroups && <StaleDataNotice resourceLabel="danh sách nhóm" onRetry={() => refetchAll()} />}
           {allLoading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

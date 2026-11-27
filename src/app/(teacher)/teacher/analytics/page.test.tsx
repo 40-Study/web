@@ -155,6 +155,9 @@ describe("TeacherAnalyticsPage", () => {
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.queryByText("Không tải được danh sách buổi học.")).toBeNull();
     expect(screen.getByText(/Chưa có dữ liệu thống kê/)).toBeTruthy();
+    // Q10 #148 H1: giữ danh sách nhưng PHẢI báo + cho "Thử lại" (trước đây im lặng).
+    expect(await screen.findByText(/Không làm mới được danh sách buổi học/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Thử lại" })).toBeTruthy();
     await pick(/Giải thuật cơ bản/);
   });
 
@@ -177,5 +180,7 @@ describe("TeacherAnalyticsPage", () => {
 
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.getByText("Chưa có buổi học nào để xem thống kê")).toBeTruthy();
+    // Q10 #148 H1/L2: danh sách rỗng đã cache vẫn là dữ liệu, lỗi refetch vẫn phải báo.
+    await waitFor(() => expect(screen.getByRole("status").textContent).toContain("Không làm mới được danh sách buổi học"));
   });
 });

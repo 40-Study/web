@@ -13,6 +13,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { useMyVouchersWithDetails, type MyVoucherWithDetails } from "@/hooks/queries/use-voucher";
 import { formatVoucherDiscountLabel, type Voucher } from "@/services/voucher.service";
 import { formatVnDate } from "@/lib/vn-datetime";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 // ─── Status config ──────────────────────────────────────────────────────────
 
@@ -227,6 +228,9 @@ export default function MyVouchersPage() {
           ))}
         </div>
       )}
+
+      {/* Q10 #148 H1: refetch nền lỗi mà còn danh sách cache (kể cả rỗng) thì giữ danh sách + báo "Thử lại". */}
+      {queryFailed && hasData && <StaleDataNotice resourceLabel="danh sách voucher" onRetry={() => refetch()} />}
 
       {/* Q9-STU-02: cùng khuôn QueryState + "Thử lại" như các trang khác (trước là hộp đỏ không có nút). */}
       {isError && (

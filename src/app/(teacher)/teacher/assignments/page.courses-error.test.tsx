@@ -45,4 +45,14 @@ describe("/teacher/assignments — danh sách khoá lỗi (Q9-T-02)", () => {
     expect(screen.getByText("1) Khoá học của tôi (0)")).toBeTruthy();
     expect(screen.getByText("Không có khoá học phù hợp.")).toBeTruthy();
   });
+
+  it("refetch nền lỗi mà còn danh sách khoá: giữ danh sách + thông báo 'Thử lại', không có hộp lỗi (Q10 #148 H1)", () => {
+    query = { data: [{ id: "c1", title: "QA-Khoa A", status: "published" }], isLoading: false, isError: true };
+    render(<TeacherAssignmentsPage />);
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getAllByText("QA-Khoa A").length).toBeGreaterThan(0);
+    expect(screen.getByRole("status").textContent).toContain("Không làm mới được danh sách khoá học");
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
 });

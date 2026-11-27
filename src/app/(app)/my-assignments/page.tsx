@@ -28,6 +28,7 @@ import { classifyAssignment, isPastDue, type AssignmentStatus } from "@/lib/assi
 import { hasSubmitted, submissionLabel } from "@/lib/assignment-submission";
 import { useAuthStore } from "@/stores/auth.store";
 import { formatVnDateTime } from "@/lib/vn-datetime";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 // A-02: nơi làm bài (code / tự luận / trắc nghiệm, chạy thử, nộp) đã có sẵn ở phòng livestream. Dùng lại đúng
 // màn đó thay vì viết bản thứ hai; tải động vì kéo theo trình soạn thảo nặng mà phần lớn lượt vào trang không dùng.
@@ -285,6 +286,9 @@ export default function MyAssignmentsPage() {
           </button>
         </div>
       </div>
+
+      {/* Q10 #148 H1: refetch nền lỗi mà còn danh sách cache thì giữ danh sách + báo "Thử lại" (không nuốt lỗi âm thầm). */}
+      {isError && !showError && <StaleDataNotice resourceLabel="danh sách bài tập" onRetry={() => refetch()} />}
 
       {/* Assignment cards */}
       {isLoading ? (

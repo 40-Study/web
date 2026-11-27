@@ -66,7 +66,7 @@ export default function NotificationsPage() {
       </div>
 
       <QueryState
-        hasData={notifications.length > 0}
+        hasData={data !== undefined}
         isLoading={isLoading}
         isError={isError}
         error={error}

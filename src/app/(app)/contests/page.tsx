@@ -150,7 +150,7 @@ function ContestListBody({
 }: {
   isLoading: boolean;
   error: unknown;
-  onRetry: () => void;
+  onRetry: () => unknown;
   data: ContestPage<ListItem> | undefined;
   isMine: boolean;
   hasFilter: boolean;

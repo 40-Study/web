@@ -17,6 +17,8 @@ import { useMyCertificates } from "@/hooks/queries/use-certificates";
 import type { AchievementWithStatusDTO } from "@/services/achievement.service";
 import type { PublicProfileActivity } from "@/services/user-stats.service";
 import { getInitials } from "@/lib/initials";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
+import { staleQueries } from "@/components/common/stale-queries";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -422,6 +424,7 @@ export default function AchievementsPage() {
   const {
     data: certificatesData,
     isError: certificatesError,
+    refetch: refetchCertificates,
   } = useMyCertificates({ page: 1, page_size: 100 });
 
   const isLoading = meLoading || achievementsLoading || profileLoading;
@@ -438,6 +441,12 @@ export default function AchievementsPage() {
   const certificateCount = certificatesData?.total || 0;
   // Q9-STU-01: lỗi API không được đọc thành "0 huy hiệu / 0 XP / Chưa có huy hiệu nào". Chỉ coi là lỗi khi chưa có dữ liệu cache.
   const loadFailed = (achievementsError && !achievementsData) || (profileError && !profileData);
+  // Q10 #148 H1/M3: nguồn nào refetch lỗi mà còn dữ liệu cache thì giữ trang + MỘT thông báo "Thử lại" cho cả ba nguồn.
+  const stale = staleQueries([
+    { isError: achievementsError, data: achievementsData, refetch: refetchAchievements },
+    { isError: profileError, data: profileData, refetch: refetchProfile },
+    { isError: certificatesError, data: certificatesData, refetch: refetchCertificates },
+  ]);
 
   // Calculate badge count from achievements
   const unlockedAchievements = rawAchievements.filter((a) => a.unlocked);
@@ -486,7 +495,7 @@ export default function AchievementsPage() {
       <div className="page-container py-6">
         <QueryState
           isError
-          error={achievementsError ? achievementsFetchError : profileFetchError}
+          error={achievementsError && !achievementsData ? achievementsFetchError : profileFetchError}
           onRetry={() =>
             Promise.all([
               achievementsError && !achievementsData && refetchAchievements(),
@@ -503,6 +512,7 @@ export default function AchievementsPage() {
 
   return (
     <div className="page-container py-6 space-y-6">
+      {stale.isStale && <StaleDataNotice resourceLabel="thành tích" onRetry={stale.retry} />}
       {/* Profile Banner */}
       <ProfileBanner
         user={userData}

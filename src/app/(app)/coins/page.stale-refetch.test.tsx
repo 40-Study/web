@@ -19,7 +19,7 @@ import CoinsPage from "./page";
 import { ApiError } from "@/lib/errors";
 import { useAuthStore } from "@/stores/auth.store";
 import { envelope, mockApi, resetMockApi } from "@/test/mock-api";
-import { expectStaleNoticeWithRetry, refetchAllActiveQueries } from "@/test/stale-refetch";
+import { expectStaleNoticeWithRetry, refetchAllActiveQueries, staleNoticeCount } from "@/test/stale-refetch";
 import { renderWithProviders } from "@/test/utils";
 
 const WALLET = { id: "w1", user_id: "u1", balance: 590, total_earned: 700, total_spent: 110, created_at: "", updated_at: "" };
@@ -45,8 +45,9 @@ describe("/coins — Q10-STU-01 (ví)", () => {
     failing = true;
     await refetchAllActiveQueries(queryClient);
 
-    const notices = await screen.findAllByText(/Không cập nhật được dữ liệu mới/);
-    expect(notices.length).toBeGreaterThan(0);
+    // Q10 #148 M3: ví + gói xu cùng lỗi mà cả trang chỉ có MỘT thông báo (một live region, một nút "Thử lại").
+    await expectStaleNoticeWithRetry();
+    expect(staleNoticeCount()).toBe(1);
     expect(screen.getByText("XU HIỆN CÓ")).toBeTruthy();
     expect(screen.getByText("590")).toBeTruthy();
   });

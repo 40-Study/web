@@ -5,10 +5,12 @@
  * (có "%" lẻ) giữ nguyên chuỗi gốc đã cắt khoảng trắng.
  */
 /**
- * Q10-PG-05: ký tự vô hình hay đi kèm khi sao chép mã từ app chat — zero-width (U+200B..U+200D), word joiner (U+2060),
- * BOM (U+FEFF) và NBSP (U+00A0). `String.prototype.trim` chỉ cắt BOM/NBSP, không cắt U+200B..U+200D / U+2060.
+ * Q10-PG-05 / #148 L6: ký tự vô hình hay đi kèm khi sao chép mã từ app chat. KHỚP backend
+ * (`utils.NormalizeCertificateNumber`): mọi ký tự định dạng Unicode Cf (U+200B..U+200D, U+200E/U+200F, U+2060, U+FEFF,
+ * U+00AD soft hyphen...) và NBSP (U+00A0), ở BẤT KỲ vị trí nào; mã chứng chỉ chỉ gồm ASCII nên không có ca hợp lệ nào bị
+ * mất. Đổi bộ này thì đổi cả hàm Go (và ngược lại) để web và backend luôn đồng nhất.
  */
-const INVISIBLE_CERTIFICATE_CHARS = /[\u200B-\u200D\u2060\uFEFF\u00A0]/g;
+const INVISIBLE_CERTIFICATE_CHARS = /[\p{Cf}\u00A0]/gu;
 
 /** Bỏ ký tự vô hình rồi cắt khoảng trắng đầu/cuối (không giải mã percent). Dùng cho ô nhập tay. */
 export function cleanCertificateNumber(raw: string): string {

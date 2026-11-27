@@ -48,6 +48,8 @@ import {
   type HomeWidgetId,
 } from "./home-widget-layout";
 import { formatVnDate } from "@/lib/vn-datetime";
+import { staleQueries } from "@/components/common/stale-queries";
+import { RetryButton } from "@/components/common/retry-button";
 
 const ICONS: Record<HomeWidgetId, LucideIcon> = {
   continue: BookOpen,
@@ -121,9 +123,13 @@ function QueryContent({
 }: {
   loading: boolean;
   error: boolean;
-  /** Query đã có dữ liệu cache: refetch nền lỗi thì giữ dữ liệu + thông báo "Thử lại" (Q10-STU-01). */
+  /**
+   * Query đã có dữ liệu cache (`data !== undefined`): refetch nền lỗi thì GIỮ dữ liệu, không hiện hộp lỗi. Thông báo
+   * "Thử lại" do MỘT `StaleDataNotice` cấp trang dựng (Q10 #148 M3), widget không tự dựng thêm.
+   */
   hasData?: boolean;
-  retry: () => void;
+  /** Trả Promise của refetch để nút "Thử lại" hiện trạng thái bận. */
+  retry: () => unknown;
   children: ReactNode;
 }) {
   if (loading)
@@ -134,13 +140,7 @@ function QueryContent({
         <Skeleton className="h-4 w-1/2" />
       </div>
     );
-  if (error && hasData)
-    return (
-      <>
-        <StaleDataNotice onRetry={retry} />
-        {children}
-      </>
-    );
+  if (error && hasData) return <>{children}</>;
   if (error)
     return (
       <div
@@ -148,9 +148,7 @@ function QueryContent({
         className="flex min-h-32 flex-1 flex-col items-center justify-center gap-3 text-center"
       >
         <p className="text-sm text-muted-foreground">Chưa tải được dữ liệu. Vui lòng thử lại.</p>
-        <Button variant="outline" size="sm" onClick={retry}>
-          Thử lại
-        </Button>
+        <RetryButton onRetry={retry} />
       </div>
     );
   return <>{children}</>;
@@ -239,12 +237,15 @@ export function HomeDashboard() {
       return next;
     });
   }
+  // Q10 #148 M3: khi backend sập mọi widget cùng lỗi; thay vì mỗi widget một thanh cam + live region thì cả trang
+  // chỉ có MỘT thông báo (widget còn dữ liệu cache chỉ render nội dung).
+  const stale = staleQueries([enrolled, profile, schedule, featured]);
   const enrolledContent = (children: ReactNode) => (
     <QueryContent
       loading={enrolled.isLoading}
       error={enrolled.isError}
-      hasData={!!enrolled.data}
-      retry={() => void enrolled.refetch()}
+      hasData={enrolled.data !== undefined}
+      retry={() => enrolled.refetch()}
     >
       {children}
     </QueryContent>
@@ -253,8 +254,8 @@ export function HomeDashboard() {
     <QueryContent
       loading={profile.isLoading}
       error={profile.isError}
-      hasData={!!profile.data}
-      retry={() => void profile.refetch()}
+      hasData={profile.data !== undefined}
+      retry={() => profile.refetch()}
     >
       {children}
     </QueryContent>
@@ -450,8 +451,8 @@ export function HomeDashboard() {
             <QueryContent
               loading={schedule.isLoading}
               error={schedule.isError}
-              hasData={!!schedule.data}
-              retry={() => void schedule.refetch()}
+              hasData={schedule.data !== undefined}
+              retry={() => schedule.refetch()}
             >
               {today.length ? (
                 <ul className="divide-y divide-border">
@@ -551,11 +552,9 @@ export function HomeDashboard() {
             <QueryContent
               loading={featured.isLoading || enrolled.isLoading}
               error={featured.isError || enrolled.isError}
-              hasData={!!featured.data && !!enrolled.data}
-              retry={() => {
-                if (featured.isError) void featured.refetch();
-                if (enrolled.isError) void enrolled.refetch();
-              }}
+              // Q10 #148 L1: "còn dữ liệu" chỉ khi MỌI query đang lỗi đều còn cache (query lỗi lần đầu vẫn hiện hộp lỗi).
+              hasData={(!featured.isError || featured.data !== undefined) && (!enrolled.isError || enrolled.data !== undefined)}
+              retry={() => Promise.all([featured.isError && featured.refetch(), enrolled.isError && enrolled.refetch()])}
             >
               {recommendations.length ? (
                 <ul className="divide-y divide-border">
@@ -619,22 +618,23 @@ export function HomeDashboard() {
           Tuỳ chỉnh trang chủ
         </Button>
       </header>
+      {stale.isStale && <StaleDataNotice resourceLabel="trang chủ" onRetry={stale.retry} className="mb-0" />}
       <div className="flex flex-wrap gap-2" aria-label="Tóm tắt học tập">
         <span className="inline-flex items-center gap-2 rounded-pill border border-border bg-card px-3 py-1.5 text-xs">
           <BookOpen className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-          {enrolled.isLoading || (enrolled.isError && !enrolled.data)
+          {enrolled.isLoading || (enrolled.isError && enrolled.data === undefined)
             ? "Khoá học của bạn"
             : `${courses.filter((course) => course.progress < 100).length} khoá đang học`}
         </span>
         <span className="inline-flex items-center gap-2 rounded-pill border border-border bg-card px-3 py-1.5 text-xs">
           <CalendarDays className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-          {schedule.isLoading || (schedule.isError && !schedule.data)
+          {schedule.isLoading || (schedule.isError && schedule.data === undefined)
             ? "Lịch học hôm nay"
             : `${today.length} buổi học hôm nay`}
         </span>
         <span className="inline-flex items-center gap-2 rounded-pill border border-border bg-card px-3 py-1.5 text-xs">
           <Flame className="h-3.5 w-3.5 text-streak dark:text-streak-light" aria-hidden="true" />
-          {profile.isLoading || (profile.isError && !profile.data)
+          {profile.isLoading || (profile.isError && profile.data === undefined)
             ? "Chuỗi ngày học"
             : `${stats?.current_streak || 0} ngày liên tiếp`}
         </span>

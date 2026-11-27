@@ -75,7 +75,7 @@ function CourseDetailBody({ courseId }: { courseId: string }) {
             <div>
               <h3 className="mb-2 font-semibold">Chương / bài học</h3>
               <QueryState
-                hasData={(sections.data ?? []).length > 0}
+                hasData={sections.data !== undefined}
                 isLoading={sections.isLoading}
                 isError={sections.isError}
                 error={sections.error}

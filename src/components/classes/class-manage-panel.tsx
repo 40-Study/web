@@ -145,7 +145,7 @@ export function ClassManagePanel({ classId, initialTab = "members" }: { classId:
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <QueryState
-                    hasData={teachers.length > 0}
+                    hasData={teachersQuery.data !== undefined}
                     isLoading={teachersQuery.isLoading}
                     isError={teachersQuery.isError}
                     error={teachersQuery.error}
@@ -196,7 +196,7 @@ export function ClassManagePanel({ classId, initialTab = "members" }: { classId:
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <QueryState
-                    hasData={students.length > 0}
+                    hasData={studentsQuery.data !== undefined}
                     isLoading={studentsQuery.isLoading}
                     isError={studentsQuery.isError}
                     error={studentsQuery.error}

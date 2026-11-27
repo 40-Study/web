@@ -59,6 +59,7 @@ export default function RolesPage() {
     roles: rolesWithCounts,
     isLoading: rolesLoading,
     isError: rolesError,
+    hasRolesData,
     refetch: refetchRoles,
   } = useSystemRolesWithUserCounts();
   const {
@@ -215,7 +216,7 @@ export default function RolesPage() {
           <QueryState
             isLoading={rolesLoading}
             isError={rolesError}
-            hasData={rolesWithCounts.length > 0}
+            hasData={hasRolesData}
             onRetry={() => refetchRoles()}
             loadingFallback={[1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-200" />)}
           >

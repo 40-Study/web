@@ -119,7 +119,7 @@ export default function AdminModerationPage() {
       <div className="grid gap-4 xl:grid-cols-[1.8fr_1fr]">
         <div className="overflow-hidden rounded-xl border bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
           <QueryState
-            hasData={reports.length > 0}
+            hasData={data !== undefined}
             isLoading={isLoading}
             isError={isError}
             error={error}

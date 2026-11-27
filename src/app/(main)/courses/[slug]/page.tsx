@@ -18,6 +18,7 @@ import { resolveCourseRatingSummary } from "@/components/course/course-rating-su
 import { useAuthStore } from "@/stores/auth.store";
 import { getErrorMessage } from "@/lib/error-messages";
 import { RetryButton } from "@/components/common/retry-button";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 function LoadingSkeleton() {
   return (
@@ -137,6 +138,12 @@ export default function CourseDetailPage() {
 
   return (
     <div>
+      {/* Q10 #148 H1: refetch nền lỗi mà còn khoá học cache thì giữ trang + báo "Thử lại" (không nuốt lỗi âm thầm). */}
+      {error && (
+        <div className="page-container pt-4">
+          <StaleDataNotice resourceLabel="thông tin khoá học" onRetry={() => refetch()} />
+        </div>
+      )}
       <CourseDetailHeader
         course={course}
         isEnrolled={isEnrolled}

@@ -12,6 +12,8 @@ import { QueryState } from "@/components/common/query-state";
 import { RetryButton } from "@/components/common/retry-button";
 import { useAllMyAttendances, useMyAttendances } from "@/hooks/queries/use-sessions";
 import { attendanceSessionLabel } from "@/lib/attendance-session-label";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
+import { staleQueries } from "@/components/common/stale-queries";
 
 /** Backend ép page_size tối đa 50 (schedule_service.go GetMyAttendances) */
 const PAGE_SIZE = 20;
@@ -32,6 +34,11 @@ export default function MyAttendancePage() {
   // Q9-STU-01: chỉ coi là lỗi khi CHƯA có dữ liệu (refetch nền hỏng mà còn cache thì giữ danh sách đang xem).
   const showError = isError && !data;
   const showStatsError = isErrorAll && !allAttendances;
+  // Q10 #148 H1: danh sách hoặc thống kê còn cache mà refetch nền lỗi thì giữ nguyên + MỘT thông báo "Thử lại".
+  const stale = staleQueries([
+    { isError, data, refetch },
+    { isError: isErrorAll, data: allAttendances, refetch: refetchAll },
+  ]);
 
   const attendances = useMemo(() => data?.attendances ?? [], [data]);
   const summary = useMemo(
@@ -53,6 +60,8 @@ export default function MyAttendancePage() {
           Lịch sử điểm danh các buổi học của bạn.
         </p>
       </header>
+
+      {stale.isStale && <StaleDataNotice resourceLabel="lịch sử điểm danh" onRetry={stale.retry} />}
 
       {isLoading ? (
         <div className="rounded-lg border border-gray-200 p-8 text-center text-sm text-gray-500">

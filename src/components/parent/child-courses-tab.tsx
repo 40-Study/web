@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useCreateDirectConversation } from "@/hooks/queries/use-conversations";
 import type { ChildCourse } from "@/services/parent-dashboard.service";
 import { ChildSectionError } from "./child-section-error";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 /**
  * Tab "Khoá học" của trang chi tiết con. E2 (QA vòng 2): mỗi khoá có nút "Nhắn giảng viên" —
@@ -19,12 +20,15 @@ export function ChildCoursesTab({
   isLoading,
   isError = false,
   onRetry,
+  showStaleNotice = true,
 }: {
   courses?: ChildCourse[];
   isLoading: boolean;
   /** Q8-PG-05: API lỗi không được đọc thành "Chưa đăng ký khoá học nào". */
   isError?: boolean;
   onRetry?: () => unknown;
+  /** false khi trang cha đã dựng MỘT thông báo "dữ liệu cũ" cấp trang (Q10 #148 M3). */
+  showStaleNotice?: boolean;
 }) {
   const router = useRouter();
   // Backend cho phụ huynh nhắn giảng viên đang dạy lớp/khoá mà con (liên kết đã xác nhận) ghi danh. Khi vẫn bị
@@ -43,8 +47,16 @@ export function ChildCoursesTab({
     );
   }
   if (isError && !courses && onRetry) return <ChildSectionError label="danh sách khoá học" onRetry={onRetry} />;
+  // Q10 #148 H1: refetch nền lỗi mà còn danh sách cache thì giữ danh sách + báo "Thử lại" (không nuốt lỗi âm thầm).
+  const staleNotice =
+    showStaleNotice && isError && courses && onRetry ? <StaleDataNotice resourceLabel="danh sách khoá học" onRetry={onRetry} /> : null;
   if (!courses || courses.length === 0) {
-    return <p className="text-center text-gray-500 py-8">Chưa đăng ký khoá học nào</p>;
+    return (
+      <>
+        {staleNotice}
+        <p className="text-center text-gray-500 py-8">Chưa đăng ký khoá học nào</p>
+      </>
+    );
   }
 
   const messageTeacher = (teacherId: string) =>
@@ -54,6 +66,7 @@ export function ChildCoursesTab({
 
   return (
     <div className="space-y-3">
+      {staleNotice}
       {courses.map((course) => (
         <div key={course.id} className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 p-3 rounded-lg border hover:bg-gray-50">
           {course.course_thumbnail ? (

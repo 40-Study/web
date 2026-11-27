@@ -19,7 +19,7 @@ export function BlockedList() {
 
   return (
     <QueryState
-      hasData={blocks.length > 0}
+      hasData={data !== undefined}
       isLoading={isLoading}
       isError={isError}
       error={error}

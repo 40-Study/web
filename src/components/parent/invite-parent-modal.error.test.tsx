@@ -15,7 +15,7 @@ vi.mock("@/hooks/queries/use-invitation", () => ({
 vi.mock("@tanstack/react-query", () => ({ useQueryClient: () => ({ invalidateQueries: vi.fn() }) }));
 
 import { InviteParentModal } from "./invite-parent-modal";
-import { ApiError } from "@/lib/errors";
+import { ApiError, INVITATION_DAILY_LIMIT_CODE } from "@/lib/errors";
 
 const LIMIT_MESSAGE = "Bạn đã đạt giới hạn gửi lời mời phụ huynh trong ngày. Vui lòng thử lại sau 24 giờ.";
 
@@ -48,5 +48,33 @@ describe("InviteParentModal — lỗi gửi lời mời (Q10-STU-04)", () => {
     await submitInvite(new ApiError(500, "UNKNOWN", "Có lỗi xảy ra, vui lòng thử lại"));
     fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
     await waitFor(() => expect(screen.getByLabelText("Email phụ huynh")).toBeTruthy());
+  });
+
+  // Q10 #148 M1: backend mới trả 429 + code ổn định; web quyết định theo code, không theo câu chữ.
+  it("hết hạn mức (429 + ERR_INVITATION_DAILY_LIMIT): không có 'Thử lại', hiện đúng câu của backend", async () => {
+    await submitInvite(new ApiError(429, INVITATION_DAILY_LIMIT_CODE, LIMIT_MESSAGE));
+    expect(screen.getByText(LIMIT_MESSAGE)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Thử lại" })).toBeNull();
+  });
+
+  it("hết hạn mức theo CODE dù câu chữ đổi hẳn (không còn chữ 'giới hạn'): vẫn không có 'Thử lại'", async () => {
+    await submitInvite(new ApiError(429, INVITATION_DAILY_LIMIT_CODE, "Hôm nay bạn đã mời đủ 10 người rồi."));
+    expect(screen.getByText("Hôm nay bạn đã mời đủ 10 người rồi.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Thử lại" })).toBeNull();
+  });
+
+  it("quyết định theo CODE chứ không theo status: code hạn mức + status 400 + câu chữ lạ vẫn là cuối cùng", async () => {
+    await submitInvite(new ApiError(400, INVITATION_DAILY_LIMIT_CODE, "Hôm nay bạn đã mời đủ rồi."));
+    expect(screen.queryByRole("button", { name: "Thử lại" })).toBeNull();
+  });
+
+  it("mọi 429 là cuối cùng, kể cả không có code", async () => {
+    await submitInvite(new ApiError(429, "UNKNOWN", "Quá nhiều yêu cầu"));
+    expect(screen.queryByRole("button", { name: "Thử lại" })).toBeNull();
+  });
+
+  it("400 có code ERR_* khác mà trong câu có chữ 'giới hạn': KHÔNG coi là hết hạn mức, vẫn có 'Thử lại'", async () => {
+    await submitInvite(new ApiError(400, "ERR_VALIDATION", "Lời nhắn vượt giới hạn 500 ký tự."));
+    expect(screen.getByRole("button", { name: "Thử lại" })).toBeTruthy();
   });
 });

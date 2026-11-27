@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { useInviteParent, useSentInvitations, invitationKeys } from "@/hooks/queries/use-invitation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ApiError } from "@/lib/errors";
+import { ApiError, INVITATION_DAILY_LIMIT_CODE } from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-messages";
 
 interface InviteParentModalProps {
@@ -43,13 +43,17 @@ const relationships: { value: Relationship; label: string; icon: React.ReactNode
 type Step = "form" | "sending" | "success" | "error";
 
 /**
- * Q10-STU-04: lỗi mà gửi lại cùng yêu cầu chắc chắn lại thất bại, nên không hiện "Thử lại": hết hạn mức trong ngày
- * (backend trả 400 kèm câu "giới hạn ... trong ngày"), tính năng đang tắt (403 ERR_FEATURE_DISABLED), 429.
+ * Q10-STU-04 / #148 M1: lỗi mà gửi lại cùng yêu cầu chắc chắn lại thất bại, nên không hiện "Thử lại": hết hạn mức trong
+ * ngày (backend trả 429 + code `ERR_INVITATION_DAILY_LIMIT`), tính năng đang tắt (403 ERR_FEATURE_DISABLED), mọi 429.
+ *
+ * Fallback có tài liệu cho BACKEND CŨ (chưa có code ổn định, trả 400 + câu "giới hạn ... trong ngày"): chỉ khi 400 KHÔNG
+ * mang code `ERR_*` nào thì mới khớp câu chữ. Có code thì quyết định theo code, không bao giờ theo chữ.
  */
 function isTerminalInviteError(error: unknown): boolean {
   if (!(error instanceof ApiError)) return false;
+  if (error.code === INVITATION_DAILY_LIMIT_CODE) return true;
   if (error.status === 403 || error.status === 429) return true;
-  return error.status === 400 && /giới hạn/i.test(error.message);
+  return error.status === 400 && !/^ERR_/.test(error.code) && /giới hạn/i.test(error.message);
 }
 
 export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {

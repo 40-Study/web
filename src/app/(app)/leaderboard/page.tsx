@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { useLeaderboard, useMyClassBoards, useMyRank } from "@/hooks/queries/use-leaderboard";
 import type { LeaderboardEntryDTO, PeriodType } from "@/services/leaderboard.service";
 import { leaderboardEntryKey, leaderboardEntryName, secondsUntilWeeklyReset } from "@/lib/leaderboard-display";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 /**
  * Map period của backend sang lựa chọn hiển thị trên UI
@@ -132,7 +133,10 @@ export default function LeaderboardPage() {
 
   // Bảng lớp không cần hạng toàn hệ thống nên không chờ/không lỗi theo /leaderboard/me.
   const isLoading = isLeaderboardLoading || (!activeClassId && isMyRankLoading);
-  const isError = isLeaderboardError || (!activeClassId && isMyRankError);
+  // Q10 #148 L1: lỗi của /leaderboard/me KHÔNG biến cả bảng thành "lỗi" hay "dữ liệu cũ": bảng đã tải xong vẫn đúng, chỉ
+  // thiếu hạng của mình. QueryState chỉ theo query của bảng; hạng của mình có thông báo riêng (cùng một notice).
+  const leaderboardStale = isLeaderboardError && leaderboardData !== undefined;
+  const rankFailed = !activeClassId && isMyRankError;
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8">
@@ -300,18 +304,28 @@ export default function LeaderboardPage() {
       </Card>
 
       {/* Leaderboard list */}
+      {(leaderboardStale || rankFailed) && (
+        <StaleDataNotice
+          message={
+            !leaderboardStale && myRankData === undefined
+              ? "Chưa tải được hạng của bạn. Bảng xếp hạng vẫn hiển thị."
+              : undefined
+          }
+          onRetry={() =>
+            Promise.all([leaderboardStale && refetchLeaderboard(), rankFailed && refetchMyRank()])
+          }
+        />
+      )}
       <QueryState
-        hasData={entries.length > 0}
+        showStaleNotice={false}
+        hasData={leaderboardData !== undefined}
         isLoading={isLoading}
-        isError={isError}
+        isError={isLeaderboardError}
         error={leaderboardError}
         isEmpty={entries.length === 0}
         emptyTitle="Chưa có ai trên bảng xếp hạng"
         emptyDescription="Hãy là người đầu tiên hoàn thành bài học trong kỳ này."
-        onRetry={() => {
-          refetchLeaderboard();
-          refetchMyRank();
-        }}
+        onRetry={() => refetchLeaderboard()}
       >
         <LeaderboardList
           entries={entries}

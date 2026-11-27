@@ -16,6 +16,9 @@ export class ApiError extends Error {
   }
 }
 
+/** Mã ổn định backend trả (429) khi hết hạn mức mời phụ huynh trong ngày (Q10 #148 M1). */
+export const INVITATION_DAILY_LIMIT_CODE = "ERR_INVITATION_DAILY_LIMIT";
+
 /** Mã `code` của 400 "id sai định dạng" ở các handler đã chuẩn hoá (vd. user/order admin). */
 export const INVALID_ID_CODE = "ERR_INVALID_ID";
 

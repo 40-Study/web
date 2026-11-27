@@ -43,6 +43,7 @@ import { COURSE_STATUS_LABEL, isCourseStatus } from "@/types/approval";
 import { matchesSearchQuery } from "@/lib/text-search";
 import type { ApiCourse } from "@/services/course.service";
 import type { AssignmentResponseDTO, AssignmentType, DifficultyLevel } from "@/services/assignment.service";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -255,6 +256,10 @@ export default function TeacherAssignmentsPage() {
             />
           </CardHeader>
           <CardContent className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
+            {/* Q10 #148 H1: refetch nền lỗi mà còn danh sách cache thì giữ danh sách + báo "Thử lại". */}
+            {coursesError && !coursesLoadFailed && (
+              <StaleDataNotice className="mb-0" resourceLabel="danh sách khoá học" onRetry={() => refetchCourses()} />
+            )}
             {coursesLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />

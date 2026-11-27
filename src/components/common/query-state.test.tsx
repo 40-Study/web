@@ -91,4 +91,35 @@ describe("QueryState — hasData: refetch nền lỗi giữ dữ liệu (Q10-STU
     );
     expect(screen.queryByRole("status")).toBeNull();
   });
+
+  it("showStaleNotice={false} (notice cấp trang lo): vẫn giữ nội dung, không tự dựng thông báo (Q10 #148 M3)", () => {
+    render(
+      <QueryState isError hasData showStaleNotice={false} onRetry={() => {}}>
+        {content}
+      </QueryState>
+    );
+    expect(screen.getByText("Nội dung danh sách")).toBeTruthy();
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("showStaleNotice={false} KHÔNG che lỗi lần đầu: chưa có dữ liệu vẫn là hộp lỗi đầy đủ", () => {
+    render(
+      <QueryState isError showStaleNotice={false} onRetry={() => {}}>
+        {content}
+      </QueryState>
+    );
+    expect(screen.getByRole("alert").textContent).toContain("Không thể tải dữ liệu");
+  });
+
+  it("danh sách rỗng đã cache + refetch lỗi: empty-state + thông báo, không phải hộp lỗi (Q10 #148 L2)", () => {
+    render(
+      <QueryState isError hasData isEmpty emptyTitle="Chưa có gì" onRetry={() => {}}>
+        {content}
+      </QueryState>
+    );
+    expect(screen.getByText("Chưa có gì")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain("Không cập nhật được dữ liệu mới");
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
 });

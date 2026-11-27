@@ -69,12 +69,12 @@ export default function TeacherContestsPage() {
       </select>
 
       <QueryState
-        hasData={contests.length > 0}
+        hasData={data !== undefined}
         isLoading={isLoading}
         isError={isError}
         error={error}
         onRetry={() => refetch()}
-        isEmpty={!isLoading && !isError && contests.length === 0}
+        isEmpty={!isLoading && contests.length === 0}
         emptyTitle="Chưa có cuộc thi nào"
         emptyDescription="Bấm “Tạo cuộc thi” để bắt đầu."
       >
