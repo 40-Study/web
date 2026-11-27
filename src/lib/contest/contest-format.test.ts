@@ -71,6 +71,18 @@ describe("mốc công bố BXH/đáp án = end_time + 30s (ĐÍNH CHÍNH 2)", ()
     }
   });
 
+  // Q9 S7-04: thông báo trước khi thi kết thúc dùng HH:mm như "Đóng lúc", không in giây.
+  it("ACTIVE/UPCOMING: mốc công bố không có giây", () => {
+    for (const phase of ["ACTIVE", "UPCOMING"] as const) {
+      const v = resolveLeaderboardVisibility(phase, REVEAL, null);
+      expect(v.visible).toBe(false);
+      if (!v.visible) {
+        expect(v.message).toContain("được công bố lúc 29/09/2026 17:00,");
+        expect(v.message).not.toMatch(/\d{2}:\d{2}:\d{2}/);
+      }
+    }
+  });
+
   it("ENDED qua mốc -> hiện; FINALIZED -> hiện; UPCOMING/ACTIVE -> ẩn", () => {
     expect(resolveLeaderboardVisibility("ENDED", REVEAL, 0).visible).toBe(true);
     expect(resolveLeaderboardVisibility("FINALIZED", REVEAL, null).visible).toBe(true);
