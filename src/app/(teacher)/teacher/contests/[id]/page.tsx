@@ -7,9 +7,10 @@
  */
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
+import { AdminNotFound, isMissingResourceError } from "@/components/admin/admin-not-found";
 import { QueryState } from "@/components/common/query-state";
 import { ContestForm } from "@/components/contest-manage/contest-form";
 import { ContestSummary } from "@/components/contest-manage/contest-summary";
@@ -18,11 +19,13 @@ import { ParticipantsTable } from "@/components/contest-manage/participants-tabl
 import { ContestRowActions } from "@/components/contest-manage/teacher-row-actions";
 import { useManagedContest, useUpdateContest } from "@/hooks/queries/use-contest-manage";
 import { getTeacherContestActions } from "@/lib/contest-manage/actions";
+import { isContestNotFoundError } from "@/lib/contest/contest-errors";
 import { contestErrorMessage } from "@/lib/contest-manage/errors";
 import { contestToForm } from "@/lib/contest-manage/form";
 
 export default function TeacherContestDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const { data: contest, isLoading, isError, error, refetch } = useManagedContest(id);
   const update = useUpdateContest();
 
@@ -32,6 +35,14 @@ export default function TeacherContestDetailPage() {
         <ArrowLeft className="h-4 w-4" />
         Cuộc thi của tôi
       </Link>
+      {isError && (isMissingResourceError(error) || isContestNotFoundError(error)) ? (
+        <AdminNotFound
+          title="Không tìm thấy cuộc thi"
+          description="Cuộc thi này không tồn tại, đã bị xoá hoặc bạn không phải người tạo."
+          backLabel="Về cuộc thi của tôi"
+          onBack={() => router.push("/teacher/contests")}
+        />
+      ) : (
       <QueryState
         isLoading={isLoading}
         isError={isError}
@@ -75,6 +86,7 @@ export default function TeacherContestDetailPage() {
           </>
         )}
       </QueryState>
+      )}
     </div>
   );
 }

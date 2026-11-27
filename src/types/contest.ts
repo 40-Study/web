@@ -60,6 +60,7 @@ export type ContestJoinBlockReason = (typeof CONTEST_JOIN_BLOCK_REASONS)[number]
 /** Mã lỗi nghiệp vụ (§2.4) — `{message, code}` ở body lỗi. */
 export const CONTEST_ERROR_CODES = [
   "INVALID_ID",
+  "ERR_INVALID_ID",
   "CONTEST_INVALID_SCHEDULE",
   "CONTEST_QUIZ_INVALID",
   "CONTEST_PRIZES_INVALID",

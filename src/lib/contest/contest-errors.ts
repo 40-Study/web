@@ -9,7 +9,9 @@ import { ApiError, NetworkError, RateLimitError } from "@/lib/errors";
 import type { ContestErrorCode } from "@/types/contest";
 
 export const CONTEST_ERROR_MESSAGES: Record<ContestErrorCode, string> = {
-  INVALID_ID: "Đường dẫn cuộc thi không hợp lệ.",
+  // Id sai định dạng = không tìm thấy (backend #157 đổi INVALID_ID -> ERR_INVALID_ID; chấp nhận cả hai).
+  INVALID_ID: "Không tìm thấy cuộc thi (đường dẫn không hợp lệ).",
+  ERR_INVALID_ID: "Không tìm thấy cuộc thi.",
   CONTEST_INVALID_SCHEDULE: "Lịch thi không hợp lệ.",
   CONTEST_QUIZ_INVALID: "Bộ câu hỏi của cuộc thi không hợp lệ.",
   CONTEST_PRIZES_INVALID: "Cơ cấu giải thưởng không hợp lệ.",
@@ -64,4 +66,11 @@ export function contestErrorMessage(error: unknown, fallback = GENERIC_MESSAGE):
 /** Mã lỗi nghiệp vụ (nếu có) — để màn hình rẽ nhánh (vd hết giờ → về trang kết quả). */
 export function contestErrorCode(error: unknown): string | null {
   return error instanceof ApiError ? error.code : null;
+}
+
+const NOT_FOUND_CODES: readonly string[] = ["CONTEST_NOT_FOUND", "INVALID_ID", "ERR_INVALID_ID"];
+
+/** Cuộc thi không có thật cho người xem: không tồn tại, chưa công bố, hoặc id sai định dạng (cả `INVALID_ID` cũ và `ERR_INVALID_ID`). */
+export function isContestNotFoundError(error: unknown): boolean {
+  return error instanceof ApiError && NOT_FOUND_CODES.includes(error.code);
 }

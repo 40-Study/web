@@ -17,6 +17,7 @@ describe("contestService — lỗi nghiệp vụ", () => {
     [404, "CONTEST_RESULT_NOT_FOUND"],
     [409, "CONTEST_FULL"],
     [400, "INVALID_ID"],
+    [400, "ERR_INVALID_ID"],
   ])("HTTP %i {code:%s} -> ContestApiError giữ nguyên code", async (status, code) => {
     requestMock.mockResolvedValue({ status, data: { message: "english", code } });
     const error = await contestService.join("c1").catch((e: unknown) => e);
