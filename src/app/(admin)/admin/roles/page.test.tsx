@@ -164,9 +164,9 @@ describe("/admin/roles — QA3-18: xoá role không bắn GET users của id đ�
   // QA4-A04: role vừa tạo thường đứng ĐẦU danh sách; khi đó lượt chọn lại "role đầu tiên" chọn trúng chính role
   // đang xoá (danh sách chưa refetch) và bắn GET users của nó → 404. Chạy cả hai thứ tự.
   it.each([
-    { order: "role xoá đứng sau", initial: [ROLE, JUNK], junkIndex: 1 },
-    { order: "role xoá đứng đầu", initial: [JUNK, ROLE], junkIndex: 0 },
-  ])("sau khi xoá role đang chọn ($order), không có GET /system-roles/<id đã xoá>/users", async ({ initial, junkIndex }) => {
+    { order: "role xoá đứng sau", initial: [ROLE, JUNK] },
+    { order: "role xoá đứng đầu", initial: [JUNK, ROLE] },
+  ])("sau khi xoá role đang chọn ($order), không có GET /system-roles/<id đã xoá>/users", async ({ initial }) => {
     let roles = initial;
     mockApi.get.mockImplementation(async (url: string) => {
       if (url === "/system-roles") {
@@ -189,9 +189,8 @@ describe("/admin/roles — QA3-18: xoá role không bắn GET users của id đ�
 
     renderWithProviders(<RolesPage />);
     fireEvent.click(await screen.findByText("QA3-JUNK", { selector: "span" }));
-    const deleteButtons = await screen.findAllByRole("button", { name: "Xoá vai trò" });
-    fireEvent.click(deleteButtons[junkIndex]);
-    // Nút trên thẻ (QA-C-11) và nút xác nhận trong hộp thoại cùng tên "Xoá vai trò": bấm nút trong hộp thoại.
+    // QA9-ADMIN-04: nút trên thẻ mang tên vai trò ("Xoá vai trò QA3-JUNK"); nút xác nhận trong hộp thoại vẫn là "Xoá vai trò".
+    fireEvent.click(await screen.findByRole("button", { name: "Xoá vai trò QA3-JUNK" }));
     const confirmDialog = await screen.findByRole("dialog");
     // QA5-A05: cả app gọi là "người dùng", không phải "user".
     expect(confirmDialog.textContent).toContain("Toàn bộ người dùng đang được gán vai trò này");
