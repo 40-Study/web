@@ -147,7 +147,7 @@ function StatCell({ value, label, tone }: { value: number; label: string; tone: 
   return (
     <div className={cn("text-center p-3 rounded-lg", tone)}>
       <p className="text-2xl font-bold">{value}</p>
-      <p className="text-xs text-gray-500">{label}</p>
+      <p className="text-xs text-gray-600">{label}</p>
     </div>
   );
 }

@@ -135,7 +135,7 @@ function CourseCard({ course, onDelete, priority }: { course: Course; onDelete: 
         {/* QA-B-17: nhãn từng ghi "BÁN CHẠY" theo `is_featured` (khoá do admin đánh dấu nổi bật), cả khi khoá chỉ có
             1 học viên. Backend không có cờ bán chạy nên ghi đúng nghĩa của cờ là "Nổi bật". */}
         {course.isFeatured && !statusBadge && (
-          <Badge className="absolute top-2 right-2 bg-orange-500 text-white text-[10px]">
+          <Badge className="absolute top-2 right-2 bg-orange-700 text-white text-[10px]">
             NỔI BẬT
           </Badge>
         )}

@@ -82,7 +82,8 @@ describe("/my-vouchers — eligible / ineligible_reason", () => {
     const ineligible = screen.getByTestId("voucher-ineligible");
     expect(ineligible.textContent).toContain("HETLUOT");
     expect(screen.getByTestId("voucher-ineligible-reason").textContent).toBe("Bạn đã dùng hết lượt của mã này");
-    expect(ineligible.className).toContain("opacity-70");
+    expect(ineligible.className).toContain("bg-gray-50");
+    expect(ineligible.className).not.toContain("opacity-"); // Q10-STU-05: opacity phủ lên lý do đỏ kéo xuống 3.1:1
     expect(ineligible.querySelector("button")).toBeNull();
 
     const eligible = screen.getByTestId("voucher-eligible");

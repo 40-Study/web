@@ -49,7 +49,7 @@ export function DiscussionSidebar({ total, categoryCounts = {}, countsUnavailabl
             )}
           >
             <span>Tất cả</span>
-            {!countsUnavailable && <span className="text-xs text-slate-500">{total ?? "–"}</span>}
+            {!countsUnavailable && <span className="text-xs text-slate-600">{total ?? "–"}</span>}
           </button>
           {categoryRows.map((cat) => (
             <button
@@ -65,7 +65,7 @@ export function DiscussionSidebar({ total, categoryCounts = {}, countsUnavailabl
               <span>
                 {cat.emoji} {cat.label}
               </span>
-              {!countsUnavailable && <span className="text-xs text-slate-500">{cat.count ?? "–"}</span>}
+              {!countsUnavailable && <span className="text-xs text-slate-600">{cat.count ?? "–"}</span>}
             </button>
           ))}
         </div>

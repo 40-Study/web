@@ -165,7 +165,7 @@ export function CourseMediaStep({
       {/* Thumbnail Upload */}
       <div className="space-y-2">
         <Label>
-          Ảnh bìa khoá học <span className="text-red-500">*</span>
+          Ảnh bìa khoá học <span className="text-red-600">*</span>
         </Label>
         <input
           ref={thumbnailInputRef}
@@ -262,7 +262,7 @@ export function CourseMediaStep({
                 ) : videoUpload.uploadId ? (
                   <p className="text-xs text-green-600 mt-0.5">Tải lên thành công</p>
                 ) : videoUpload.error ? (
-                  <p className="text-xs text-red-500 mt-0.5" role="alert">
+                  <p className="text-xs text-red-600 mt-0.5" role="alert">
                     {approvalErrorMessage(videoUpload.error, PREVIEW_VIDEO_UPLOAD_ERROR)}
                   </p>
                 ) : null}
@@ -311,7 +311,7 @@ export function CourseMediaStep({
       {/* Description */}
       <div className="space-y-2">
         <Label>
-          Mô tả chi tiết <span className="text-red-500">*</span>
+          Mô tả chi tiết <span className="text-red-600">*</span>
         </Label>
         <Textarea
           placeholder="Mô tả chi tiết khoá học: nội dung sẽ học, phương pháp giảng dạy, kết quả đạt được..."

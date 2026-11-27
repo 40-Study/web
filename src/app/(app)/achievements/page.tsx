@@ -361,7 +361,7 @@ function HeatmapCalendar({ data }: { data: number[] }) {
           </div>
         ))}
       </div>
-      <div className="flex justify-between text-xs text-gray-400">
+      <div className="flex justify-between text-xs text-gray-500">
         {months.map(month => (
           <span key={month}>{month}</span>
         ))}

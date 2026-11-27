@@ -27,14 +27,14 @@ describe("TransactionCardList", () => {
     expect(screen.getByText("Hoàn thành")).toBeTruthy();
     const amount = screen.getByText(/499\.000/);
     expect(amount.textContent).toContain("+");
-    expect(amount.className).toContain("text-green-600");
+    expect(amount.className).toContain("text-green-700");
   });
 
   it("đơn huỷ: không dấu '+' và không màu xanh (cùng luật với bảng)", () => {
     render(<TransactionCardList transactions={[tx({ status: "cancelled" })]} />);
     const amount = screen.getByText(/499\.000/);
     expect(amount.textContent).not.toContain("+");
-    expect(amount.className).not.toContain("text-green-600");
+    expect(amount.className).not.toContain("text-green-700");
   });
 
   it("không có giao dịch: báo rỗng", () => {

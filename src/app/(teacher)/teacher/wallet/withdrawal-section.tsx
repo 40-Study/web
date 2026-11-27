@@ -238,7 +238,7 @@ export function WithdrawalSection({ showWalletStaleNotice = true }: { showWallet
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Số dư còn lại sau khi rút</span>
                 <span
-                  className={`font-semibold ${remainingAfterWithdrawal < 0 ? "text-red-600" : "text-green-600"}`}
+                  className={`font-semibold ${remainingAfterWithdrawal < 0 ? "text-red-600" : "text-green-700"}`}
                 >
                   {formatWithdrawalAmount(remainingAfterWithdrawal)}
                 </span>

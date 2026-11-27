@@ -92,7 +92,7 @@ function TransactionRow({ tx }: { tx: CoinTransaction }) {
           </p>
         </div>
       </div>
-      <div className={cn("font-semibold text-sm", isEarn ? "text-green-600" : "text-red-600")}>
+      <div className={cn("font-semibold text-sm", isEarn ? "text-green-700" : "text-red-600")}>
         {isEarn ? "+" : ""}
         {formatNumber(tx.amount)}
       </div>
