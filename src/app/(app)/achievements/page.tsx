@@ -40,10 +40,10 @@ function deriveRarity(points: number): AchievementRarity {
 
 function getRarityConfig(rarity: AchievementRarity) {
   const configs = {
-    common: { label: "PHỔ THÔNG", color: "bg-orange-500", textColor: "text-orange-600" },
-    rare: { label: "HIẾM", color: "bg-gray-400", textColor: "text-gray-600" },
-    epic: { label: "SỬ THI", color: "bg-purple-500", textColor: "text-purple-600" },
-    legendary: { label: "HUYỀN THOẠI", color: "bg-yellow-500", textColor: "text-yellow-600" },
+    common: { label: "PHỔ THÔNG", color: "bg-orange-700", textColor: "text-orange-600" },
+    rare: { label: "HIẾM", color: "bg-gray-600", textColor: "text-gray-600" },
+    epic: { label: "SỬ THI", color: "bg-purple-600", textColor: "text-purple-600" },
+    legendary: { label: "HUYỀN THOẠI", color: "bg-yellow-700", textColor: "text-yellow-600" },
   };
   return configs[rarity];
 }

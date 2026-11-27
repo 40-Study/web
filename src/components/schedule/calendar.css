@@ -15,7 +15,7 @@
 .mini-calendar-days > span { padding: 4px 0; color: #6b7280; font-size: 9px; }
 .mini-calendar-days button { border-radius: 50%; width: 24px; height: 24px; margin: auto; }
 .mini-calendar-days button:hover { background: #f1f5f9; }
-.mini-calendar-days button[data-outside="true"] { color: #57687f; }
+.mini-calendar-days button[data-outside="true"] { color: #57687f; font-style: italic; font-weight: 400; }
 .mini-calendar-days button[aria-pressed="true"] { color: #1d4ed8; background: #dbeafe; }
 .mini-calendar-days button[data-today="true"] { color: white; background: #2563eb; }
 .calendar-rail-label { font-size: 12px; font-weight: 600; margin: 26px 0 14px 6px; }

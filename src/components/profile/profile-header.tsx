@@ -95,9 +95,9 @@ export function ProfileHeader({
               <h1 className="text-2xl font-bold">{user.fullName}</h1>
               {showLearningStats && <Badge variant="level">Cấp {user.level}</Badge>}
             </div>
-            <p className="text-white/90 mb-2">@{user.username}</p>
+            <p className="text-white mb-2">@{user.username}</p>
             {user.bio && <p className="mb-3 max-w-lg">{user.bio}</p>}
-            <div className="flex items-center justify-center md:justify-start gap-4 text-sm text-white/90">
+            <div className="flex items-center justify-center md:justify-start gap-4 text-sm text-white">
               {showLearningStats && (
                 <>
                   <span>{formatNumber(user.totalXP)} XP</span>
@@ -132,20 +132,20 @@ export function ProfileHeader({
           <div className="flex justify-center md:justify-start gap-8 mt-8">
             <div className="text-center">
               <p className="text-3xl font-bold">{stats.streak}</p>
-              <p className="text-sm text-white/90">Ngày streak</p>
+              <p className="text-sm text-white">Ngày streak</p>
             </div>
             <div className="text-center">
               <p className="text-3xl font-bold">{stats.coursesCompleted}</p>
               {/* QA-A-04: số này là khoá ĐÃ HOÀN THÀNH; nhãn "Khoá học" đọc thành "0 khoá" khi đang học 2 khoá. */}
-              <p className="text-sm text-white/90">Khoá hoàn thành</p>
+              <p className="text-sm text-white">Khoá hoàn thành</p>
             </div>
             <div className="text-center">
               <p className="text-3xl font-bold">{stats.achievements}</p>
-              <p className="text-sm text-white/90">Thành tích</p>
+              <p className="text-sm text-white">Thành tích</p>
             </div>
             <div className="text-center hidden sm:block">
               <p className="text-3xl font-bold">{stats.lessonsCompleted}</p>
-              <p className="text-sm text-white/90">Bài học</p>
+              <p className="text-sm text-white">Bài học</p>
             </div>
           </div>
         )}

@@ -33,18 +33,18 @@ const STATUS_CONFIG: Record<VoucherStatus, StatusConfig> = {
   },
   inactive: {
     label: "Không hoạt động",
-    className: "bg-gray-100 text-gray-500 border-gray-200",
+    className: "bg-gray-100 text-gray-600 border-gray-200",
     icon: <XCircle className="h-3.5 w-3.5" />,
   },
   expired: {
     label: "Hết hạn",
-    className: "bg-red-50 text-red-600 border-red-200",
+    className: "bg-red-50 text-red-700 border-red-200",
     icon: <Clock className="h-3.5 w-3.5" />,
   },
   // Voucher còn hiệu lực nhưng backend báo người này chưa dùng được (hết lượt, chỉ đơn đầu tiên, chưa đến ngày...).
   unavailable: {
     label: "Chưa dùng được",
-    className: "bg-gray-100 text-gray-500 border-gray-200",
+    className: "bg-gray-100 text-gray-600 border-gray-200",
     icon: <XCircle className="h-3.5 w-3.5" />,
   },
 };

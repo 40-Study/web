@@ -155,7 +155,7 @@ function CourseCard({ course, onDelete, priority }: { course: Course; onDelete: 
       </div>
 
       <CardContent className="p-3 space-y-2">
-        <h3 className="font-semibold text-sm line-clamp-2 min-h-[40px]">{course.title}</h3>
+        <h2 className="font-semibold text-sm line-clamp-2 min-h-[40px]">{course.title}</h2>
 
         {/* Stats row — only for published */}
         {!needsWork && (

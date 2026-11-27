@@ -260,7 +260,7 @@ export function CourseMediaStep({
                     </p>
                   </div>
                 ) : videoUpload.uploadId ? (
-                  <p className="text-xs text-green-600 mt-0.5">Tải lên thành công</p>
+                  <p className="text-xs text-green-700 mt-0.5">Tải lên thành công</p>
                 ) : videoUpload.error ? (
                   <p className="text-xs text-red-600 mt-0.5" role="alert">
                     {approvalErrorMessage(videoUpload.error, PREVIEW_VIDEO_UPLOAD_ERROR)}

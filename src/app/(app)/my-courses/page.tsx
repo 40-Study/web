@@ -184,7 +184,7 @@ export default function MyCoursesPage() {
                 <section>
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-2 h-2 rounded-full bg-green-500" />
-                    <h2 className="text-xs font-bold text-green-600 uppercase tracking-wide">
+                    <h2 className="text-xs font-bold text-green-700 uppercase tracking-wide">
                       Đang học gần đây
                     </h2>
                   </div>
