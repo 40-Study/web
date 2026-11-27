@@ -19,6 +19,11 @@ export interface AdminUserListItem {
   is_verified: boolean;
   locked_reason: string | null;
   locked_at: string | null;
+  /**
+   * Q10-ADMIN-03: thời điểm người dùng TỰ xoá tài khoản (settings, "Xoá tài khoản"). Backend chỉ gửi trường này ở DTO
+   * admin và có thể chưa có (bản cũ): vắng mặt = coi là bị khoá.
+   */
+  self_deleted_at?: string | null;
   last_login_at: string | null;
   created_at: string;
   system_roles: string[];

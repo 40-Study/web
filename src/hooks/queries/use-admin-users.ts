@@ -44,12 +44,13 @@ export function useAdminUserDetail(id: string) {
 export function useUpdateUserStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateUserStatusDTO }) =>
+    // `restore`: tài khoản người dùng tự xoá được khôi phục (cùng endpoint mở khoá, khác lời báo) — Q10-ADMIN-03.
+    mutationFn: ({ id, data }: { id: string; data: UpdateUserStatusDTO; restore?: boolean }) =>
       userService.updateStatus(id, data),
-    onSuccess: (_result, { id, data }) => {
+    onSuccess: (_result, { id, data, restore }) => {
       qc.invalidateQueries({ queryKey: adminUserKeys.all });
       qc.invalidateQueries({ queryKey: adminUserKeys.detail(id) });
-      toast.success(data.is_active ? "Đã mở khoá tài khoản" : "Đã khoá tài khoản");
+      toast.success(restore ? "Đã khôi phục tài khoản" : data.is_active ? "Đã mở khoá tài khoản" : "Đã khoá tài khoản");
     },
     onError: (error) => {
       toast.error(extractErrorMessage(error, "Không thể cập nhật trạng thái tài khoản"));

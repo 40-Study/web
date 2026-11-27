@@ -11,6 +11,9 @@ import { useClassStudentsByClassId } from "@/hooks/queries/use-classes";
 import { useClassById } from "@/hooks/queries/use-class-manage";
 import { isClassArchived } from "@/lib/class-status";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { QueryState } from "@/components/common/query-state";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
+import { staleQueries } from "@/components/common/stale-queries";
 import { ResourceUnavailable, isResourceUnavailableError, unavailableStatus } from "@/components/common/resource-unavailable";
 import { formatVnDateOnly } from "@/lib/vn-datetime";
 import {
@@ -40,7 +43,13 @@ export default function ClassAttendancePage() {
   // Q8-T07: buổi người dùng vừa chọn trong khi bản nháp điểm danh chưa lưu; chờ xác nhận bỏ nháp mới đổi.
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
 
-  const { data: sessionsData, isLoading: sessionsLoading, isError: sessionsError, error: sessionsErrorValue } = useAllClassSessions(
+  const {
+    data: sessionsData,
+    isLoading: sessionsLoading,
+    isError: sessionsError,
+    error: sessionsErrorValue,
+    refetch: refetchSessions,
+  } = useAllClassSessions(
     // Q8-T06: đi hết mọi trang (backend chỉ trả tối đa 50 buổi/trang), không chỉ 50 buổi cũ nhất.
     classId
   );
@@ -52,10 +61,35 @@ export default function ClassAttendancePage() {
     if (!sessionId && groups.defaultId) setSessionId(groups.defaultId);
   }, [groups, sessionId]);
 
-  const { data: students, isLoading: studentsLoading } =
-    useClassStudentsByClassId(classId);
-  const { data: attendances, isLoading: attendancesLoading } =
-    useSessionAttendances(sessionId);
+  const {
+    data: students,
+    isLoading: studentsLoading,
+    isError: studentsError,
+    error: studentsErrorValue,
+    refetch: refetchStudents,
+  } = useClassStudentsByClassId(classId);
+  const {
+    data: attendances,
+    isLoading: attendancesLoading,
+    isError: attendancesError,
+    error: attendancesErrorValue,
+    refetch: refetchAttendances,
+  } = useSessionAttendances(sessionId);
+  // Q10-T-01: lỗi tải (5xx, mất mạng) KHÔNG được hiện như "lớp chưa có buổi / chưa có học viên": giáo viên sẽ đi tạo lịch
+  // trùng, hoặc lưu điểm danh đè lên bản ghi cũ chưa tải về. Còn dữ liệu cũ trong cache (refetch nền lỗi) thì giữ nguyên.
+  const sessionsLoadFailed = sessionsError && !sessionsData;
+  const rosterLoadFailed = (studentsError && !students) || (attendancesError && !attendances);
+  // Q10 #147 M1: refetch điểm danh lỗi MÀ còn bản cũ trong cache: vẫn hiện bảng (đọc được) nhưng KHOÁ ghi. Sau một lần
+  // lưu, invalidate rồi refetch lỗi sẽ dựng lại hàng từ bản ghi TRƯỚC lúc lưu (HS vừa lưu trông như chưa điểm danh, không
+  // có attendanceId); sửa tiếp sẽ đi nhánh bulk-create, backend âm thầm bỏ qua HS đã có bản ghi => mất thay đổi nhưng UI báo thành công.
+  const attendancesStale = attendancesError && !!attendances;
+  // Q10 #147 M2 (#148): MỘT thông báo "dữ liệu cũ" cho cả trang (buổi học / học viên / điểm danh), không nuốt lỗi âm thầm.
+  const stale = staleQueries([
+    { isError: sessionsError, data: sessionsData, refetch: refetchSessions },
+    { isError: studentsError, data: students, refetch: refetchStudents },
+    { isError: attendancesError, data: attendances, refetch: refetchAttendances },
+  ]);
+  const retryRoster = () => Promise.all([studentsError ? refetchStudents() : null, attendancesError ? refetchAttendances() : null]);
 
   const { rows, setStatus, setNote, markAllPresent, reset, changes, hasChanges } =
     useAttendanceDraft(students, attendances);
@@ -68,7 +102,9 @@ export default function ClassAttendancePage() {
   const archived = isClassArchived(classInfo?.status);
   // Q4-T07: buổi sau hôm nay (giờ Việt Nam) chưa được điểm danh; backend cũng chặn (422 ERR_SESSION_NOT_STARTED).
   const notStarted = groups.upcoming.some((s) => s.id === sessionId);
-  const readOnly = archived || notStarted;
+  // Chưa tải được danh sách học viên/điểm danh thì cũng khoá lưu: bảng không có dữ liệu thật để sửa. Lỗi điểm danh LÚC CÒN
+  // bản cũ cũng khoá (attendancesStale): đọc được, không ghi được tới khi tải lại thành công.
+  const readOnly = archived || notStarted || rosterLoadFailed || attendancesStale;
 
   async function handleSave() {
     if (readOnly) return;
@@ -115,7 +151,11 @@ export default function ClassAttendancePage() {
         </p>
       </header>
 
-      {!sessionsLoading && sessions.length === 0 ? (
+      {sessionsLoadFailed ? (
+        <QueryState isError error={sessionsErrorValue} onRetry={() => refetchSessions()}>
+          {null}
+        </QueryState>
+      ) : !sessionsLoading && sessions.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
           Lớp này chưa có buổi học nào. Hãy tạo lịch học trước khi điểm danh.
           <div className="mt-3">
@@ -126,6 +166,17 @@ export default function ClassAttendancePage() {
         </div>
       ) : (
         <>
+          {stale.isStale && (
+            <StaleDataNotice
+              resourceLabel="dữ liệu điểm danh"
+              message={
+                attendancesStale
+                  ? "Không làm mới được điểm danh của buổi này, đang hiện dữ liệu đã tải trước đó. Tạm khoá lưu để không ghi đè lên bản ghi chưa tải về."
+                  : undefined
+              }
+              onRetry={stale.retry}
+            />
+          )}
           <div className="mb-4 flex flex-wrap items-end gap-3">
             <label className="flex-1 min-w-[240px]">
               <span className="mb-1 block text-xs font-medium text-gray-600">
@@ -206,6 +257,10 @@ export default function ClassAttendancePage() {
             <div className="rounded-lg border border-gray-200 p-8 text-center text-sm text-gray-500">
               Đang tải…
             </div>
+          ) : rosterLoadFailed ? (
+            <QueryState isError error={studentsError ? studentsErrorValue : attendancesErrorValue} onRetry={retryRoster}>
+              {null}
+            </QueryState>
           ) : (
             <>
               {/* Dưới md bảng 720px cắt nút trạng thái (Q3-21): dùng thẻ xếp dọc. */}

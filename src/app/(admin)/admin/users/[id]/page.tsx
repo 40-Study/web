@@ -19,7 +19,12 @@ import { useAuthStore } from "@/stores/auth.store";
 import { formatVnDateOnly, formatVnDateTime } from "@/lib/vn-datetime";
 import { AdminNotFound, isMissingResourceError } from "@/components/admin/admin-not-found";
 import { getErrorMessage } from "@/lib/error-messages";
-import { getUserActiveLabel } from "../../_lib/user-status-label";
+import {
+  RESTORE_ACTION_LABEL,
+  getUserStatusLabel,
+  getUserStatusVariant,
+  isSelfDeleted,
+} from "../../_lib/user-status-label";
 import { isOrgScopedSystemRole } from "../../_lib/org-scoped-role";
 import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
@@ -91,7 +96,11 @@ export default function AdminUserDetailPage() {
 
   const submitUnlock = async () => {
     try {
-      await updateStatus.mutateAsync({ id: userId, data: { is_active: true } });
+      await updateStatus.mutateAsync({
+        id: userId,
+        data: { is_active: true },
+        ...(user && isSelfDeleted(user) ? { restore: true } : {}),
+      });
       setUnlockOpen(false);
     } catch {
       // Lỗi đã hiển thị qua toast trong hook.
@@ -142,9 +151,7 @@ export default function AdminUserDetailPage() {
                     </h2>
                     <p className="text-sm text-gray-500">{user.email}</p>
                   </div>
-                  <Badge variant={user.is_active ? "success" : "destructive"}>
-                    {getUserActiveLabel(user.is_active)}
-                  </Badge>
+                  <Badge variant={getUserStatusVariant(user)}>{getUserStatusLabel(user)}</Badge>
                 </div>
 
                 <div className="mt-4">
@@ -154,11 +161,15 @@ export default function AdminUserDetailPage() {
                   <DetailRow label="Đã xác thực" value={user.is_verified ? "Có" : "Chưa"} />
                   <DetailRow label="Ngày tạo" value={formatDate(user.created_at)} />
                   <DetailRow label="Đăng nhập cuối" value={formatDate(user.last_login_at)} />
-                  {!user.is_active && (
-                    <>
-                      <DetailRow label="Lý do khoá" value={user.locked_reason || "—"} />
-                      <DetailRow label="Khoá lúc" value={formatDate(user.locked_at)} />
-                    </>
+                  {isSelfDeleted(user) ? (
+                    <DetailRow label="Người dùng tự xoá lúc" value={formatDate(user.self_deleted_at ?? null)} />
+                  ) : (
+                    !user.is_active && (
+                      <>
+                        <DetailRow label="Lý do khoá" value={user.locked_reason || "—"} />
+                        <DetailRow label="Khoá lúc" value={formatDate(user.locked_at)} />
+                      </>
+                    )
                   )}
                 </div>
 
@@ -177,7 +188,7 @@ export default function AdminUserDetailPage() {
                     ) : (
                       <Button variant="outline" onClick={() => setUnlockOpen(true)}>
                         <Unlock className="mr-1 h-4 w-4" />
-                        Mở khoá tài khoản
+                        {isSelfDeleted(user) ? RESTORE_ACTION_LABEL : "Mở khoá tài khoản"}
                       </Button>
                     )}
                   </div>
@@ -344,14 +355,20 @@ export default function AdminUserDetailPage() {
       {/* Dialog mở khoá — xác nhận ngắn, không cần lý do */}
       <Dialog open={unlockOpen} onOpenChange={setUnlockOpen}>
         <DialogContent>
-          <DialogTitle>Mở khoá tài khoản &quot;{user?.email}&quot;?</DialogTitle>
-          <DialogDescription>Người dùng sẽ đăng nhập lại được ngay sau khi mở khoá.</DialogDescription>
+          <DialogTitle>
+            {user && isSelfDeleted(user) ? RESTORE_ACTION_LABEL : "Mở khoá tài khoản"} &quot;{user?.email}&quot;?
+          </DialogTitle>
+          <DialogDescription>
+            {user && isSelfDeleted(user)
+              ? "Người dùng đã tự xoá tài khoản này, không phải bị khoá. Khôi phục sẽ cho họ đăng nhập lại ngay."
+              : "Người dùng sẽ đăng nhập lại được ngay sau khi mở khoá."}
+          </DialogDescription>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUnlockOpen(false)}>
               Huỷ
             </Button>
             <Button isLoading={updateStatus.isPending} onClick={submitUnlock}>
-              Mở khoá
+              {user && isSelfDeleted(user) ? "Khôi phục" : "Mở khoá"}
             </Button>
           </DialogFooter>
         </DialogContent>

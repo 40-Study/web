@@ -12,10 +12,22 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { getSystemRoleLabel } from "@/lib/role-labels";
 import { useAuthStore } from "@/stores/auth.store";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { getUserActiveLabel } from "../_lib/user-status-label";
+import {
+  RESTORE_ACTION_LABEL,
+  getUserStatusLabel,
+  getUserStatusVariant,
+  isSelfDeleted,
+} from "../_lib/user-status-label";
 import { parseRoleParam } from "../_lib/role-param";
 import { nextSort, sortAdminUsers, type SortDirection, type UserSortKey } from "../_lib/user-sort";
-import type { AdminUserListItem, AdminUserStatusFilter } from "@/types/user";
+import {
+  isSplitClientSide,
+  matchesStatusFilter,
+  parseStatusFilter,
+  toApiStatus,
+  type UserStatusFilterValue,
+} from "../_lib/user-status-filter";
+import type { AdminUserListItem } from "@/types/user";
 import { QueryState } from "@/components/common/query-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,10 +46,6 @@ const formatDate = (iso: string | null) => formatVnDateTime(iso);
 function parsePageParam(raw: string | null): number {
   const n = Number(raw);
   return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
-}
-
-function parseStatusParam(raw: string | null): "ALL" | AdminUserStatusFilter {
-  return raw === "active" || raw === "locked" ? raw : "ALL";
 }
 
 type SortState = { key: UserSortKey | null; direction: SortDirection };
@@ -114,8 +122,8 @@ export default function AdminUsersPage() {
     : rolesFailed
       ? "ALL"
       : rawRoleFilter;
-  const [statusFilter, setStatusFilter] = useState<"ALL" | AdminUserStatusFilter>(() =>
-    parseStatusParam(searchParams.get("status"))
+  const [statusFilter, setStatusFilter] = useState<UserStatusFilterValue>(() =>
+    parseStatusFilter(searchParams.get("status"))
   );
   const [page, setPage] = useState(() => parsePageParam(searchParams.get("page")));
 
@@ -124,7 +132,7 @@ export default function AdminUsersPage() {
     () => ({
       keyword: debouncedKeyword.trim() || undefined,
       role: roleFilter === "ALL" ? undefined : roleFilter,
-      status: statusFilter === "ALL" ? undefined : statusFilter,
+      status: toApiStatus(statusFilter),
       page,
       limit: LIMIT,
     }),
@@ -152,7 +160,19 @@ export default function AdminUsersPage() {
 
   // ADM-L2: backend chưa có tham số sort -> sắp xếp trong trang đang xem (xem _lib/user-sort.ts).
   const [sort, setSort] = useState<{ key: UserSortKey | null; direction: SortDirection }>({ key: null, direction: "asc" });
-  const items = useMemo(() => sortAdminUsers(data?.items ?? [], sort.key, sort.direction), [data, sort]);
+  // Q10 #147 L1: "Đã khoá" / "Đã tự xoá" cùng là `status=locked` ở backend; tách ở đây, trong trang đang xem.
+  const items = useMemo(
+    () =>
+      sortAdminUsers(
+        (data?.items ?? []).filter((user) => matchesStatusFilter(user, statusFilter)),
+        sort.key,
+        sort.direction
+      ),
+    [data, sort, statusFilter]
+  );
+  const splitClientSide = isSplitClientSide(statusFilter);
+  // Trang server có người dùng nhưng bộ lọc client loại hết: KHÔNG phải "không có ai", còn trang khác (giữ phân trang).
+  const filteredOutOnThisPage = splitClientSide && items.length === 0 && (data?.items.length ?? 0) > 0;
   const totalPages = data?.total_pages ?? 1;
 
   // QA3-15: ?page=999 vượt trang cuối cho danh sách rỗng và không có đường quay lại. Khi server báo số
@@ -184,7 +204,11 @@ export default function AdminUsersPage() {
   const submitUnlock = async () => {
     if (!unlockTarget) return;
     try {
-      await updateStatus.mutateAsync({ id: unlockTarget.id, data: { is_active: true } });
+      await updateStatus.mutateAsync({
+        id: unlockTarget.id,
+        data: { is_active: true },
+        ...(isSelfDeleted(unlockTarget) ? { restore: true } : {}),
+      });
       setUnlockTarget(null);
     } catch {
       // Lỗi đã hiển thị qua toast trong hook.
@@ -234,7 +258,7 @@ export default function AdminUsersPage() {
         <Select
           value={statusFilter}
           onValueChange={(v) => {
-            setStatusFilter(v as "ALL" | AdminUserStatusFilter);
+            setStatusFilter(v as UserStatusFilterValue);
             resetFilterPage();
           }}
         >
@@ -245,16 +269,17 @@ export default function AdminUsersPage() {
             <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
             <SelectItem value="active">Đang hoạt động</SelectItem>
             <SelectItem value="locked">Đã khoá</SelectItem>
+            <SelectItem value="self-deleted">Đã tự xoá</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <QueryState
-        hasData={items.length > 0}
+        hasData={items.length > 0 || filteredOutOnThisPage}
         isLoading={isLoading}
         isError={isError}
         error={error}
-        isEmpty={!isLoading && !isError && items.length === 0}
+        isEmpty={!isLoading && !isError && items.length === 0 && !filteredOutOnThisPage}
         emptyTitle="Không tìm thấy người dùng nào"
         emptyDescription="Thử đổi từ khoá tìm kiếm hoặc bộ lọc."
         onRetry={() => refetch()}
@@ -284,6 +309,13 @@ export default function AdminUsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {filteredOutOnThisPage && (
+                <TableRow>
+                  <TableCell colSpan={6} className="p-6 text-center text-sm text-muted-foreground">
+                    Trang này không có tài khoản thuộc loại đã chọn. Thử trang khác.
+                  </TableCell>
+                </TableRow>
+              )}
               {items.map((user) => {
                 const isSelf = !!currentUserId && user.id === currentUserId;
                 return (
@@ -313,8 +345,8 @@ export default function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.is_active ? "success" : "destructive"} className="whitespace-nowrap">
-                        {getUserActiveLabel(user.is_active)}
+                      <Badge variant={getUserStatusVariant(user)} className="whitespace-nowrap">
+                        {getUserStatusLabel(user)}
                       </Badge>
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
@@ -341,9 +373,14 @@ export default function AdminUsersPage() {
                             Khoá
                           </Button>
                         ) : (
-                          <Button size="sm" variant="outline" onClick={() => setUnlockTarget(user)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            title={isSelfDeleted(user) ? `${RESTORE_ACTION_LABEL} (người dùng tự xoá)` : undefined}
+                            onClick={() => setUnlockTarget(user)}
+                          >
                             <Unlock className="mr-1 h-3.5 w-3.5" />
-                            Mở khoá
+                            {isSelfDeleted(user) ? "Khôi phục" : "Mở khoá"}
                           </Button>
                         )}
                       </Can>
@@ -359,6 +396,12 @@ export default function AdminUsersPage() {
         <div className="mt-4 flex items-center justify-between border-t pt-4 dark:border-gray-800">
           <p className="text-sm text-muted-foreground">
             Trang {data?.page ?? page}/{totalPages} · {data?.total_count ?? 0} người dùng
+            {splitClientSide && (
+              <span className="block text-xs">
+                Backend chưa có bộ lọc riêng cho tài khoản tự xoá: tổng số tính cả tài khoản khoá lẫn tự xoá, còn bảng chỉ
+                tách loại trong trang đang xem.
+              </span>
+            )}
           </p>
           <div className="flex items-center gap-1">
             <Button
@@ -436,14 +479,21 @@ export default function AdminUsersPage() {
       {/* Dialog mở khoá — xác nhận ngắn, không cần lý do */}
       <Dialog open={!!unlockTarget} onOpenChange={(open) => !open && setUnlockTarget(null)}>
         <DialogContent>
-          <DialogTitle>Mở khoá tài khoản &quot;{unlockTarget?.email}&quot;?</DialogTitle>
-          <DialogDescription>Người dùng sẽ đăng nhập lại được ngay sau khi mở khoá.</DialogDescription>
+          <DialogTitle>
+            {unlockTarget && isSelfDeleted(unlockTarget) ? RESTORE_ACTION_LABEL : "Mở khoá tài khoản"} &quot;
+            {unlockTarget?.email}&quot;?
+          </DialogTitle>
+          <DialogDescription>
+            {unlockTarget && isSelfDeleted(unlockTarget)
+              ? "Người dùng đã tự xoá tài khoản này, không phải bị khoá. Khôi phục sẽ cho họ đăng nhập lại ngay."
+              : "Người dùng sẽ đăng nhập lại được ngay sau khi mở khoá."}
+          </DialogDescription>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUnlockTarget(null)}>
               Huỷ
             </Button>
             <Button isLoading={updateStatus.isPending} onClick={submitUnlock}>
-              Mở khoá
+              {unlockTarget && isSelfDeleted(unlockTarget) ? "Khôi phục" : "Mở khoá"}
             </Button>
           </DialogFooter>
         </DialogContent>
