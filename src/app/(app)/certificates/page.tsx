@@ -46,9 +46,24 @@ export default function MyCertificatesPage() {
         </div>
       ) : isError && !data ? (
         // Q9-STU-01: lỗi API không được đọc thành "Bạn chưa có chứng chỉ nào".
-        <QueryState isError error={error} onRetry={() => refetch()}>
-          {null}
-        </QueryState>
+        // L1: lỗi ở trang 2+ không có dữ liệu để tính tổng trang, nên giữ nút "Trước" để người dùng quay lại.
+        <>
+          <QueryState isError error={error} onRetry={() => refetch()}>
+            {null}
+          </QueryState>
+          {page > 1 && (
+            <div className="mt-4 flex items-center justify-between text-sm">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="rounded-md border border-gray-200 px-3 py-1.5 hover:bg-gray-50"
+              >
+                Trước
+              </button>
+              <span className="text-gray-500">Trang {page}</span>
+            </div>
+          )}
+        </>
       ) : certificates.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center">
           <p className="text-sm text-gray-500">

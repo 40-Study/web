@@ -13,17 +13,26 @@ vi.mock("@/lib/api-client", async () => {
   return { api: mockApi };
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }), usePathname: () => "/" }));
+// `user: null` mô phỏng chưa có user id (M2): trang /achievements không được gọi profile khi retry.
+const authState = vi.hoisted(() => ({ user: { id: "u1", name: "Học viên" } as { id: string; name: string } | null }));
 vi.mock("@/stores/auth.store", () => ({
   useAuthStore: Object.assign(
-    (selector?: (s: { user: { id: string; name: string } }) => unknown) => {
-      const state = { user: { id: "u1", name: "Học viên" } };
-      return selector ? selector(state) : state;
-    },
-    { getState: () => ({ user: { id: "u1" } }) }
+    (selector?: (s: typeof authState) => unknown) => (selector ? selector(authState) : authState),
+    { getState: () => authState }
   ),
 }));
 vi.mock("next/dynamic", () => ({ default: () => () => null }));
-vi.mock("@/components/schedule/week-calendar-grid", () => ({ default: () => <div data-testid="grid" /> }));
+// Lưới giả vẫn báo `range` lên như lưới thật, để truy vấn timetable (cần range) chạy cùng nguồn livestream.
+vi.mock("@/components/schedule/week-calendar-grid", async () => {
+  const { useEffect } = await import("react");
+  function StubWeekCalendarGrid({ onRangeChange }: { onRangeChange?: (start: Date, end: Date) => void }) {
+    useEffect(() => {
+      onRangeChange?.(new Date(2026, 10, 23), new Date(2026, 10, 30));
+    }, [onRangeChange]);
+    return <div data-testid="grid" />;
+  }
+  return { default: StubWeekCalendarGrid };
+});
 vi.mock("@/components/schedule/schedule-event-detail-dialog", () => ({ default: () => null }));
 
 import AchievementsPage from "./achievements/page";
@@ -51,7 +60,10 @@ const PAGES: Array<{ name: string; page: ReactElement; notShown: RegExp[] }> = [
 ];
 
 describe("trang học viên: GET lỗi hiện lỗi + Thử lại, không hiện rỗng/0 (Q9-STU-01/02)", () => {
-  beforeEach(() => resetMockApi());
+  beforeEach(() => {
+    resetMockApi();
+    authState.user = { id: "u1", name: "Học viên" };
+  });
 
   it.each(PAGES)("$name", async ({ page, notShown }) => {
     failAllGets();
@@ -64,10 +76,80 @@ describe("trang học viên: GET lỗi hiện lỗi + Thử lại, không hiện
   it("/schedule: banner lỗi có nút Thử lại", async () => {
     failAllGets();
     renderWithProviders(<SchedulePage />);
-    // `range` do lưới lịch báo lên; lưới được giả nên chỉ nguồn buổi livestream chạy: đủ để banner hiện.
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Chưa tải được đầy đủ lịch học");
     expect(screen.getByRole("button", { name: "Thử lại" })).toBeTruthy();
+  });
+
+  const callsTo = (url: string) => mockApi.get.mock.calls.filter(([u]) => u === url).length;
+  const ok = (data: unknown) => Promise.resolve({ data: { data } });
+
+  // M1: nguồn timetable lỗi (livestream ổn): banner hiện, Thử lại chỉ gọi lại timetable, không đụng nguồn khoẻ.
+  it("/schedule: timetable lỗi hiện banner; Thử lại chỉ gọi lại timetable, không gọi lại livestream", async () => {
+    let timetableFails = true;
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/me/timetable") return timetableFails ? Promise.reject(new Error("500")) : ok({ entries: [] });
+      if (url === "/livestream") return Promise.resolve({ data: { data: [], total: 0 } });
+      return Promise.reject(new Error(`unexpected GET ${url}`));
+    });
+    renderWithProviders(<SchedulePage />);
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("Chưa tải được đầy đủ lịch học");
+    await waitFor(() => expect(callsTo("/livestream")).toBe(1));
+    expect(callsTo("/me/timetable")).toBe(1);
+
+    timetableFails = false;
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+
+    await waitFor(() => expect(callsTo("/me/timetable")).toBe(2));
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    expect(callsTo("/livestream")).toBe(1);
+  });
+
+  // M2: chỉ nguồn lỗi được gọi lại; profile đã có dữ liệu thì không refetch.
+  it("/achievements: Thử lại chỉ gọi lại truy vấn lỗi, không refetch profile đã có dữ liệu", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/achievements/me") return Promise.reject(new Error("500"));
+      if (url === "/users/u1/public-profile") return ok({ stats: {} });
+      return ok({ data: [], total: 0 });
+    });
+    renderWithProviders(<AchievementsPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Thử lại" }));
+
+    await waitFor(() => expect(callsTo("/achievements/me")).toBe(2));
+    expect(callsTo("/users/u1/public-profile")).toBe(1);
+  });
+
+  // M2: refetch() bỏ qua `enabled`, nên không có user id thì không được bắn getPublicProfile("").
+  it("/achievements: không có user id thì Thử lại không gọi profile", async () => {
+    authState.user = null;
+    mockApi.get.mockImplementation((url: string) =>
+      url === "/achievements/me" ? Promise.reject(new Error("500")) : ok({ data: [], total: 0 })
+    );
+    renderWithProviders(<AchievementsPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Thử lại" }));
+
+    await waitFor(() => expect(callsTo("/achievements/me")).toBe(2));
+    expect(mockApi.get.mock.calls.some(([u]) => String(u).startsWith("/users/"))).toBe(false);
+  });
+
+  // L1: lỗi ở trang 2+ không có placeholderData; vẫn phải có nút "Trước" để quay lại trang 1.
+  it.each([
+    { name: "/certificates", page: <CertificatesPage />, url: "/certificates", page1: { data: Array.from({ length: 12 }, (_, i) => ({ id: `c${i}`, course_name: `Khoá ${i}`, certificate_number: `CN-${i}` })), total: 24 } },
+    { name: "/my-attendance", page: <MyAttendancePage />, url: "/me/attendances", page1: { attendances: [{ id: "a1", session_id: "s1", student_id: "u1", status: "present", created_at: "2026-11-20T01:00:00Z" }], total: 40 } },
+  ])("$name: lỗi ở trang 2 vẫn còn nút Trước để quay lại", async ({ page, url, page1 }) => {
+    mockApi.get.mockImplementation((u: string, config?: { params?: { page?: number } }) => {
+      if (u !== url) return ok({ data: [], total: 0, attendances: [] });
+      return config?.params?.page === 2 ? Promise.reject(new Error("500")) : ok(page1);
+    });
+    renderWithProviders(page);
+    fireEvent.click(await screen.findByRole("button", { name: "Sau" }));
+
+    expect((await screen.findAllByRole("alert"))[0].textContent).toContain("Không thể tải dữ liệu");
+    const back = screen.getByRole("button", { name: "Trước" });
+    mockApi.get.mockImplementation(() => ok({ data: [], total: 0, attendances: [] }));
+    fireEvent.click(back);
+    await waitFor(() => expect(screen.queryByText("Không thể tải dữ liệu")).toBeNull());
   });
 
   it("/my-attendance: Thử lại gọi lại API và hiện dữ liệu khi lần sau thành công", async () => {

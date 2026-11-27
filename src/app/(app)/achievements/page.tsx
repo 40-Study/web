@@ -487,7 +487,13 @@ export default function AchievementsPage() {
         <QueryState
           isError
           error={achievementsError ? achievementsFetchError : profileFetchError}
-          onRetry={() => Promise.all([refetchAchievements(), refetchProfile()])}
+          onRetry={() =>
+            Promise.all([
+              achievementsError && !achievementsData && refetchAchievements(),
+              // refetch() ignores `enabled`, so never fire the profile query without a user id.
+              profileError && !profileData && userId && refetchProfile(),
+            ])
+          }
         >
           {null}
         </QueryState>

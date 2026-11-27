@@ -130,6 +130,15 @@ describe("ProfileSettings", () => {
     expect(classes).not.toContain("top-1/2");
   });
 
+  // Q9-PG-07 (#142): chữ phụ trong màn cài đặt phải >= text-gray-500; "@" dùng gray-400 sẽ không đạt tương phản.
+  it("tiền tố '@' dùng text-gray-500, không phải gray-400", async () => {
+    render(<ProfileSettings />);
+    await waitFor(() => expect((screen.getByLabelText("Tiểu sử") as HTMLTextAreaElement).value).toBe("Tiểu sử cũ"));
+    const classes = screen.getByTestId("username-prefix").className.split(/\s+/);
+    expect(classes).toContain("text-gray-500");
+    expect(classes).not.toContain("text-gray-400");
+  });
+
   it("lỗi khác (500) không đụng tới ô Username", async () => {
     render(<ProfileSettings />);
     await waitFor(() => expect((screen.getByLabelText("Tiểu sử") as HTMLTextAreaElement).value).toBe("Tiểu sử cũ"));
