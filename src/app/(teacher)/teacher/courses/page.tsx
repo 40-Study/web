@@ -21,6 +21,7 @@ import {
 import { cn, formatCurrency } from "@/lib/utils";
 import { matchesSearchQuery } from "@/lib/text-search";
 import { COURSE_STATUS_LABEL, isCourseStatus, type CourseStatus as ApiCourseStatus } from "@/types/approval";
+import { QueryState } from "@/components/common/query-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 
 // Phase 3: đủ 5 trạng thái backend + "other" cho giá trị lạ. Trước đây mọi status không phải
@@ -212,7 +213,7 @@ export default function TeacherCoursesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
 
-  const { data: apiCourses, isLoading } = useMyCourses();
+  const { data: apiCourses, isLoading, isError, error, refetch } = useMyCourses();
   const deleteCourse = useDeleteCourse();
   const courses = useMemo(() => (apiCourses || []).map(mapApiCourse), [apiCourses]);
   // Hộp thoại xác nhận của app thay cho `confirm()` của trình duyệt (QA-B-05).
@@ -251,6 +252,18 @@ export default function TeacherCoursesPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Q9-T-02: GET lỗi (và chưa có dữ liệu cũ) không được trông như "0 khoá học".
+  if (isError && !apiCourses) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Khoá học của tôi</h1>
+        <QueryState isError error={error} onRetry={() => refetch()}>
+          {null}
+        </QueryState>
       </div>
     );
   }

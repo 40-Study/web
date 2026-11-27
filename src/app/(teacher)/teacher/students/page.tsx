@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { QueryState } from "@/components/common/query-state";
 import { useMyStudents } from "@/hooks/queries/use-classes";
 import { buildCsv, downloadCsv } from "@/lib/csv-export";
 import { withClassPrefix } from "@/lib/class-label";
@@ -38,7 +39,10 @@ export default function TeacherStudentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  const { data: rows = [], isLoading } = useMyStudents();
+  const { data, isLoading, isError, error, refetch } = useMyStudents();
+  const rows = useMemo(() => data ?? [], [data]);
+  // Q9-T-02: GET lỗi (và chưa có dữ liệu cũ) không được trông như "chưa có học viên nào".
+  const loadFailed = isError && !data;
   // D6 (QA vòng 2): API trả 1 dòng/(học viên, khoá) — gộp về 1 dòng/học viên.
   const students = useMemo(() => groupStudents(rows), [rows]);
   const courseOptions = useMemo(() => courseFilterOptions(students), [students]);
@@ -78,7 +82,7 @@ export default function TeacherStudentsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Quản lý học viên</h1>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={handleExportStudents} disabled={isLoading}>
+          <Button variant="outline" onClick={handleExportStudents} disabled={isLoading || loadFailed}>
             <Download className="mr-2 h-4 w-4" />
             Xuất CSV
           </Button>
@@ -148,6 +152,10 @@ export default function TeacherStudentsPage() {
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
+        ) : loadFailed ? (
+          <QueryState isError error={error} onRetry={() => refetch()} className="border-0 py-10">
+            {null}
+          </QueryState>
         ) : (
           <>
           {/* Q3-21: dưới md bảng 6 cột bị cắt cột trạng thái/thao tác -> hiện dạng thẻ. */}
@@ -233,34 +241,36 @@ export default function TeacherStudentsPage() {
         )}
       </Card>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-muted-foreground">
-          Hiển thị {pagedStudents.length} trong tổng số {totalStudents.toLocaleString("vi-VN")} học viên
-        </p>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(currentPage - 1)}
-            aria-label="Trang trước"
-          >
-            ‹
-          </Button>
-          <span className="px-2 text-sm text-muted-foreground">
-            {currentPage}/{totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage(currentPage + 1)}
-            aria-label="Trang sau"
-          >
-            ›
-          </Button>
+      {!loadFailed && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-muted-foreground">
+            Hiển thị {pagedStudents.length} trong tổng số {totalStudents.toLocaleString("vi-VN")} học viên
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(currentPage - 1)}
+              aria-label="Trang trước"
+            >
+              ‹
+            </Button>
+            <span className="px-2 text-sm text-muted-foreground">
+              {currentPage}/{totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(currentPage + 1)}
+              aria-label="Trang sau"
+            >
+              ›
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

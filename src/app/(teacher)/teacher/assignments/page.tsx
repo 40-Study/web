@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { TiptapEditor } from "@/components/editor";
 import { useAuthStore } from "@/stores/auth.store";
+import { QueryState } from "@/components/common/query-state";
 import { useMyCourses } from "@/hooks/queries/use-courses";
 import { useTeacherLivestreamsForCourse } from "@/hooks/queries/use-livestream-v2";
 import {
@@ -71,7 +72,16 @@ export default function TeacherAssignmentsPage() {
   const searchParams = useSearchParams();
   const { user } = useAuthStore();
 
-  const { data: apiCourses = [], isLoading: coursesLoading } = useMyCourses();
+  const {
+    data: myCourses,
+    isLoading: coursesLoading,
+    isError: coursesError,
+    error: coursesErrorValue,
+    refetch: refetchCourses,
+  } = useMyCourses();
+  const apiCourses = useMemo(() => myCourses ?? [], [myCourses]);
+  // Q9-T-02: GET lỗi (và chưa có dữ liệu cũ) không được trông như "Không có khoá học phù hợp".
+  const coursesLoadFailed = coursesError && !myCourses;
 
   const ordered = useMemo(() => orderAssignmentCourses(apiCourses as ApiCourse[]), [apiCourses]);
   const courses = useMemo(() => [...ordered.published, ...ordered.others], [ordered]);
@@ -236,7 +246,7 @@ export default function TeacherAssignmentsPage() {
         {/* Column 1: Course list */}
         <Card className="flex h-[22rem] flex-col overflow-hidden">
           <CardHeader className="border-b pb-3">
-            <CardTitle className="text-base">1) Khoá học của tôi ({visibleCourseCount})</CardTitle>
+            <CardTitle className="text-base">1) Khoá học của tôi{coursesLoadFailed ? "" : ` (${visibleCourseCount})`}</CardTitle>
             <Input
               placeholder="Tìm khoá học..."
               aria-label="Tìm khoá học"
@@ -249,6 +259,10 @@ export default function TeacherAssignmentsPage() {
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
+            ) : coursesLoadFailed ? (
+              <QueryState isError error={coursesErrorValue} onRetry={() => refetchCourses()} className="py-6">
+                {null}
+              </QueryState>
             ) : filteredCourses.published.length + filteredCourses.others.length === 0 ? (
               <p className="text-sm text-muted-foreground">Không có khoá học phù hợp.</p>
             ) : (

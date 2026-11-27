@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { buildCsv, downloadCsv, type CsvCell } from "@/lib/csv-export";
+import { QueryState } from "@/components/common/query-state";
 import { useTeacherWallet, useTeacherTransactions } from "@/hooks/queries/use-wallet";
 import { walletService, type TeacherTransaction } from "@/services/wallet.service";
 import { BankInfoDialog } from "./bank-info-dialog";
@@ -52,7 +53,13 @@ export default function TeacherWalletPage() {
   // Map tab to API type param
   const txTypeParam = activeTab === "income" ? "income" : activeTab === "refund" ? "refund" : "";
 
-  const { data: wallet, isLoading: isWalletLoading } = useTeacherWallet();
+  const {
+    data: wallet,
+    isLoading: isWalletLoading,
+    isError: isWalletError,
+    error: walletError,
+    refetch: refetchWallet,
+  } = useTeacherWallet();
   const { data: txResponse, isLoading: isTxLoading } = useTeacherTransactions({
     type: txTypeParam || undefined,
     page,
@@ -143,6 +150,12 @@ export default function TeacherWalletPage() {
         <div className="flex justify-center p-8">
           <Loader2 className="animate-spin h-6 w-6 text-muted-foreground" />
         </div>
+      ) : isWalletError && !wallet ? (
+        // Q9-T-01: ví không tải được thì KHÔNG hiện "0 ₫" / "Chưa có tài khoản ngân hàng" như dữ liệu thật
+        // (giảng viên có thể nhập đè tài khoản đã lưu). Một hộp lỗi thay cho cả thẻ số dư lẫn thẻ ngân hàng.
+        <QueryState isError error={walletError} onRetry={() => refetchWallet()}>
+          {null}
+        </QueryState>
       ) : (
         <div className="grid gap-4 md:grid-cols-3">
           {/* Available Balance */}
