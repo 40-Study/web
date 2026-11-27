@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { useInviteParent, useSentInvitations, invitationKeys } from "@/hooks/queries/use-invitation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/errors";
+import { getErrorMessage } from "@/lib/error-messages";
 
 interface InviteParentModalProps {
   isOpen: boolean;
@@ -40,12 +42,23 @@ const relationships: { value: Relationship; label: string; icon: React.ReactNode
 
 type Step = "form" | "sending" | "success" | "error";
 
+/**
+ * Q10-STU-04: lỗi mà gửi lại cùng yêu cầu chắc chắn lại thất bại, nên không hiện "Thử lại": hết hạn mức trong ngày
+ * (backend trả 400 kèm câu "giới hạn ... trong ngày"), tính năng đang tắt (403 ERR_FEATURE_DISABLED), 429.
+ */
+function isTerminalInviteError(error: unknown): boolean {
+  if (!(error instanceof ApiError)) return false;
+  if (error.status === 403 || error.status === 429) return true;
+  return error.status === 400 && /giới hạn/i.test(error.message);
+}
+
 export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
   const [step, setStep] = useState<Step>("form");
   const [email, setEmail] = useState("");
   const [relationship, setRelationship] = useState<Relationship>("parent");
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [canRetry, setCanRetry] = useState(true);
 
   const queryClient = useQueryClient();
   const inviteMutation = useInviteParent();
@@ -78,8 +91,9 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
       setStep("success");
     } catch (error: unknown) {
       setStep("error");
-      const err = error as { response?: { data?: { message?: string } } };
-      setErrorMessage(err?.response?.data?.message || "Có lỗi xảy ra khi gửi lời mời");
+      // Q10-STU-04: http layer ném `ApiError` (không phải lỗi axios), nên đọc `response.data.message` luôn rơi về câu chung.
+      setErrorMessage(getErrorMessage(error, "Có lỗi xảy ra khi gửi lời mời"));
+      setCanRetry(!isTerminalInviteError(error));
     }
   };
 
@@ -89,6 +103,7 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
     setRelationship("parent");
     setMessage("");
     setErrorMessage("");
+    setCanRetry(true);
     onClose();
   };
 
@@ -241,9 +256,11 @@ export function InviteParentModal({ isOpen, onClose }: InviteParentModalProps) {
                 <Button variant="outline" onClick={handleClose} className="flex-1 h-12">
                   Đóng
                 </Button>
-                <Button onClick={handleRetry} className="flex-1 h-12">
-                  Thử lại
-                </Button>
+                {canRetry && (
+                  <Button onClick={handleRetry} className="flex-1 h-12">
+                    Thử lại
+                  </Button>
+                )}
               </div>
             </div>
           )}

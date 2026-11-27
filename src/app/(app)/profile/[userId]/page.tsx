@@ -19,6 +19,8 @@ import { useAuthStore } from "@/stores/auth.store";
 import { normalizeRole } from "@/lib/routes";
 import { formatCompletedMonth } from "@/lib/format-completed-month";
 import { getInitials } from "@/lib/initials";
+import { QueryState } from "@/components/common/query-state";
+import { isMissingResourceError } from "@/components/admin/admin-not-found";
 
 interface CompletedCourse {
   id: string;
@@ -84,7 +86,7 @@ export default function PublicProfilePage() {
   // đang đăng nhập. `usePublicProfile("")` tự vô hiệu hoá (enabled: Boolean),
   // nên trước khi store hydrate xong ta chỉ hiện skeleton, không gọi API sai.
   const userId = rawUserId === "me" ? (authUser?.id ?? "") : rawUserId;
-  const { data, isLoading, error } = usePublicProfile(userId);
+  const { data, isLoading, error, refetch } = usePublicProfile(userId);
   const isOwnProfile = authUser?.id === userId;
 
   const user = useMemo<User | null>(() => {
@@ -149,7 +151,21 @@ export default function PublicProfilePage() {
     return <PublicProfilePageSkeleton />;
   }
 
-  if (error || !data || !user || !stats) {
+  // Q10-STU-02: chỉ 404 (hoặc id sai định dạng) mới là "không tồn tại"; 5xx / mất mạng là lỗi tải → "Thử lại".
+  const missing = !!error && isMissingResourceError(error);
+  if (error && !missing && !data) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <QueryState isError error={error} onRetry={() => refetch()}>
+            {null}
+          </QueryState>
+        </div>
+      </div>
+    );
+  }
+
+  if (missing || !data || !user || !stats) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
         <Card className="p-8 max-w-md w-full text-center">

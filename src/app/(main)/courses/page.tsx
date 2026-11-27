@@ -8,6 +8,7 @@ import { CourseSearch } from "@/components/course/course-search";
 import { CourseBannerCarousel } from "@/components/course/course-banner-carousel";
 import { Button } from "@/components/ui/button";
 import { QueryState } from "@/components/common/query-state";
+import { RetryButton } from "@/components/common/retry-button";
 import { useCourses, useCategories, useSearchSuggestions } from "@/hooks/use-courses";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { CourseFilters } from "@/types/course";
@@ -52,7 +53,12 @@ export default function CoursesPage() {
   const allCourses = useMemo(() => coursesData ?? [], [coursesData]);
   // Chỉ coi là lỗi khi CHƯA có dữ liệu: refetch nền thất bại (focus/retry) mà react-query vẫn giữ `data` cũ thì danh sách đang xem không được bị hộp lỗi thay (M2).
   const showCoursesError = coursesError && !coursesData;
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+    isError: categoriesError,
+    refetch: refetchCategories,
+  } = useCategories();
   const { data: suggestions = [] } = useSearchSuggestions(debouncedSearchQuery);
 
   // Khoá bộ lọc mà CHÍNH trang này vừa ghi lên URL (theo thứ tự ghi) và chưa thấy URL báo lại. Mỗi lần router.replace
@@ -175,6 +181,14 @@ export default function CoursesPage() {
             filters={filters}
             onFilterChange={handleFilterChange}
           />
+
+          {/* Q10-PG-04: danh mục lỗi không được trông như "không có danh mục nào" (hàng chip chỉ còn "Tất cả"). */}
+          {categoriesError && categories.length === 0 && (
+            <p role="alert" className="flex flex-wrap items-center gap-2 text-sm text-red-700 dark:text-red-400">
+              Không tải được danh mục.
+              <RetryButton asLink onRetry={() => refetchCategories()} className="font-medium underline" />
+            </p>
+          )}
 
           {/* Q8-PG-03: API lỗi không được đọc thành "0 khoá học / Không tìm thấy khoá học nào"; nói là lỗi và cho thử lại. */}
           {!isLoading && showCoursesError && (
