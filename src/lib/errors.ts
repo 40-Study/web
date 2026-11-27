@@ -124,13 +124,18 @@ export class RateLimitError extends ApiError {
   /** Số giây phải đợi, đọc từ `retry_after` (body) hoặc header `Retry-After` của backend (C5). */
   public retryAfter?: number;
 
-  constructor(retryAfter?: number) {
+  /**
+   * `business`: 429 mà backend gắn `code` nghiệp vụ riêng (vd. ERR_INVITATION_DAILY_LIMIT, khoá 24 giờ). Giữ nguyên code và
+   * câu của backend thay vì câu chung "đợi một chút" (Q11-PG-01); limiter thuần (body không có code) vẫn dùng câu chung.
+   */
+  constructor(retryAfter?: number, business?: { code: string; message?: string }) {
     super(
       429,
-      "RATE_LIMIT",
-      retryAfter
-        ? `Bạn thao tác quá nhiều lần, vui lòng thử lại sau ${retryAfter} giây`
-        : "Bạn thao tác quá nhiều lần, vui lòng đợi một chút rồi thử lại"
+      business?.code ?? "RATE_LIMIT",
+      business?.message ||
+        (retryAfter
+          ? `Bạn thao tác quá nhiều lần, vui lòng thử lại sau ${retryAfter} giây`
+          : "Bạn thao tác quá nhiều lần, vui lòng đợi một chút rồi thử lại")
     );
     this.name = "RateLimitError";
     this.retryAfter = retryAfter;

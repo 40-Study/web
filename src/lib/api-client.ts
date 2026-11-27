@@ -21,6 +21,7 @@ import { classifyRefreshFailure } from "./session-failure-policy";
 import { AUTH_ROLE_CHANGED_EVENT, type AuthRoleChangedDetail } from "./auth-events";
 import { useAuthStore } from "@/stores/auth.store";
 import { DEFAULT_API_BASE_URL } from "@/lib/default-backend-url";
+import { HAS_VIETNAMESE_DIACRITICS } from "@/lib/error-messages";
 import { extractErrorMessage, type ErrorResponseBody } from "@/lib/extract-error-message";
 
 function resolveApiBaseUrl(): string {
@@ -221,8 +222,12 @@ api.interceptors.response.use(
             : undefined
         );
       case 429:
+        // 429 có `code` nghiệp vụ (vd. ERR_INVITATION_DAILY_LIMIT) giữ code + câu của backend; limiter thuần không có code.
         throw new RateLimitError(
-          readRetryAfterSeconds(data, headers as Record<string, unknown> | undefined)
+          readRetryAfterSeconds(data, headers as Record<string, unknown> | undefined),
+          typeof data?.code === "string" && data.code
+            ? { code: data.code, message: typeof data.message === "string" && HAS_VIETNAMESE_DIACRITICS.test(data.message) ? data.message : undefined }
+            : undefined
         );
       default: {
         // 4xx chưa được case riêng ở trên (400, 405, 409, 410…) — vẫn là lỗi

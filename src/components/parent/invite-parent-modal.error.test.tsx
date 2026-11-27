@@ -16,6 +16,8 @@ vi.mock("@tanstack/react-query", () => ({ useQueryClient: () => ({ invalidateQue
 
 import { InviteParentModal } from "./invite-parent-modal";
 import { ApiError, INVITATION_DAILY_LIMIT_CODE } from "@/lib/errors";
+import { api } from "@/lib/api-client";
+import { AxiosError, type InternalAxiosRequestConfig } from "axios";
 
 const LIMIT_MESSAGE = "Bạn đã đạt giới hạn gửi lời mời phụ huynh trong ngày. Vui lòng thử lại sau 24 giờ.";
 
@@ -76,5 +78,32 @@ describe("InviteParentModal — lỗi gửi lời mời (Q10-STU-04)", () => {
   it("400 có code ERR_* khác mà trong câu có chữ 'giới hạn': KHÔNG coi là hết hạn mức, vẫn có 'Thử lại'", async () => {
     await submitInvite(new ApiError(400, "ERR_VALIDATION", "Lời nhắn vượt giới hạn 500 ký tự."));
     expect(screen.getByRole("button", { name: "Thử lại" })).toBeTruthy();
+  });
+});
+
+// Q11-PG-01 / Q11-STU-02: lỗi đi qua CLIENT THẬT (interceptor), không dựng tay ApiError. Trước đây mọi 429 bị dẹt thành
+// RateLimitError "đợi một chút", nên code hạn mức không bao giờ tới modal.
+describe("InviteParentModal — 429 qua api-client thật (Q11-PG-01)", () => {
+  it("hiện câu 24 giờ của backend, không có 'Thử lại', không có câu 'đợi một chút'", async () => {
+    const realError = await api
+      .post("/invitations/invite", {}, {
+        adapter: async (config: InternalAxiosRequestConfig) =>
+          Promise.reject(
+            new AxiosError("limit", "ERR_BAD_REQUEST", config, undefined, {
+              status: 429,
+              statusText: "429",
+              headers: {},
+              config,
+              data: { code: INVITATION_DAILY_LIMIT_CODE, message: LIMIT_MESSAGE },
+            })
+          ),
+      })
+      .catch((e: unknown) => e);
+
+    await submitInvite(realError);
+    expect(screen.getByText(LIMIT_MESSAGE)).toBeTruthy();
+    expect(screen.queryByText(/đợi một chút/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Thử lại" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Đóng" })).toBeTruthy();
   });
 });
