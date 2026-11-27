@@ -34,3 +34,19 @@ export function successRateHint(report: {
   const tail = unsettled > 0 ? ` (chưa tính ${unsettled} đơn đang chờ hoặc hoàn tiền)` : "";
   return `${report.completed_count} hoàn tất / ${settled} đơn đã có kết quả${tail}`;
 }
+
+/** Số ngày của từng bộ lọc kỳ ở /admin/reports. */
+export const REVENUE_PERIOD_DAYS = { "7days": 7, "30days": 30, "90days": 90 } as const;
+export type RevenuePeriod = keyof typeof REVENUE_PERIOD_DAYS;
+
+/**
+ * Khoảng thời gian của báo cáo doanh thu, tính theo NGÀY (Q11-ADMIN-01): từ 00:00 của ngày đầu tiên trong kỳ đến 23:59:59.999
+ * hôm nay (giờ máy). Trước đây dùng `new Date()` nguyên giây nên mỗi lần mount ra một khoá query mới: mỗi lần quay lại trang là
+ * cache miss (spinner, cache phình ra) và refetch lỗi không còn dữ liệu cũ để giữ. Trong cùng một ngày hai lần gọi cho cùng
+ * kỳ trả đúng cùng chuỗi, nên khoá lặp lại.
+ */
+export function revenueReportRange(period: RevenuePeriod, now: Date = new Date()): { from: string; to: string } {
+  const from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (REVENUE_PERIOD_DAYS[period] - 1), 0, 0, 0, 0);
+  const to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  return { from: from.toISOString(), to: to.toISOString() };
+}

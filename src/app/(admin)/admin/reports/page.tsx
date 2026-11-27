@@ -7,14 +7,14 @@ import { Can } from "@/components/guards";
 import { PERMISSIONS } from "@/lib/permissions";
 import { QueryState } from "@/components/common/query-state";
 import { formatVnd } from "@/lib/vnd-format";
-import { successRateHint, successRateValue } from "@/lib/revenue-report";
+import { REVENUE_PERIOD_DAYS, revenueReportRange, successRateHint, successRateValue, type RevenuePeriod } from "@/lib/revenue-report";
 import { ORDER_STATUS_LABEL } from "@/services/order.service";
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
-type PeriodFilter = "7days" | "30days" | "90days";
+type PeriodFilter = RevenuePeriod;
 
-const PERIOD_DAYS: Record<PeriodFilter, number> = { "7days": 7, "30days": 30, "90days": 90 };
+const PERIOD_DAYS = REVENUE_PERIOD_DAYS;
 
 // QA-C-08: nhãn trạng thái đơn lấy từ cùng bảng với trang Đơn hàng (ORDER_STATUS_LABEL) để cùng một đơn không
 // lúc "Đang xử lý" lúc "Đang chờ chuyển khoản". Riêng "failed" chỉ có trong báo cáo nên bổ sung ở đây.
@@ -37,11 +37,8 @@ function MetricCard({ label, value, hint }: { label: string; value: string; hint
 export default function AdminReportsPage() {
   const [period, setPeriod] = useState<PeriodFilter>("30days");
 
-  const { from, to } = useMemo(() => {
-    const now = new Date();
-    const from = new Date(now.getTime() - PERIOD_DAYS[period] * 24 * 60 * 60 * 1000);
-    return { from: from.toISOString(), to: now.toISOString() };
-  }, [period]);
+  // Q11-ADMIN-01: khoảng theo ngày (không theo giây) để khoá query lặp lại giữa các lần mount, nhờ vậy refetch lỗi vẫn giữ dữ liệu cache.
+  const { from, to } = useMemo(() => revenueReportRange(period), [period]);
 
   const {
     data: report,
