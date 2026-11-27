@@ -34,27 +34,41 @@ function groupByReason(skipped: readonly SkippedSession[]): Map<string, string[]
   return byReason;
 }
 
-const describeGroups = (byReason: Map<string, string[]>) =>
-  Array.from(byReason, ([label, dates]) => `${dates.length} buổi ${label} (${dates.join(", ")})`).join("; ");
+/** Số ngày liệt kê tối đa cho mỗi lý do; phần còn lại gộp thành "(+N)". */
+const MAX_LISTED_DATES = 3;
 
-/** Câu toast sau khi sinh buổi: "Đã tạo 1 buổi học, bỏ qua 1 buổi trùng lịch (30/11)". */
+/** "05/01, 07/01, 12/01 (+101)" */
+function listDates(dates: readonly string[]): string {
+  const listed = dates.slice(0, MAX_LISTED_DATES).join(", ");
+  const rest = dates.length - MAX_LISTED_DATES;
+  return rest > 0 ? `${listed} (+${rest})` : listed;
+}
+
+/** "104 ngày trùng lịch: 05/01, 07/01, 12/01 (+101)" */
+const describeGroups = (byReason: Map<string, string[]>) =>
+  Array.from(byReason, ([label, dates]) => `${dates.length} ngày ${label}: ${listDates(dates)}`).join("; ");
+
+/**
+ * Câu toast sau khi sinh buổi: "Đã tạo 1 buổi học. Bỏ qua 1 ngày trùng lịch: 30/11".
+ * Q9-T-07: chỉ tóm tắt (số ngày + vài ngày đầu + "(+N)"), không liệt kê hết hàng trăm ngày.
+ */
 export function generateSessionsSummary(createdCount: number, skipped: readonly SkippedSession[] = []): string {
   const created = `Đã tạo ${createdCount} buổi học`;
   if (skipped.length === 0) return created;
-  return `${created}, bỏ qua ${describeGroups(groupByReason(skipped))}`;
+  return `${created}. Bỏ qua ${describeGroups(groupByReason(skipped))}`;
 }
 
 /**
- * backend#149: mọi ngày đều bị bỏ qua -> 409 kèm `skipped[]`. "Tất cả 3 buổi đã tồn tại (03/03, 10/03, 17/03)" khi
- * cùng một lý do, nếu không thì liệt kê từng lý do.
+ * backend#149: mọi ngày đều bị bỏ qua -> 409 kèm `skipped[]`. Cùng một lý do: "Bỏ qua tất cả 104 ngày trùng lịch:
+ * 05/01, 07/01, 12/01 (+101)"; nhiều lý do thì liệt kê từng lý do.
  */
 export function allSkippedSummary(skipped: readonly SkippedSession[]): string {
   const byReason = groupByReason(skipped);
   if (byReason.size === 1) {
     const [[label, dates]] = Array.from(byReason);
-    return `Tất cả ${dates.length} buổi ${label} (${dates.join(", ")})`;
+    return `Bỏ qua tất cả ${dates.length} ngày ${label}: ${listDates(dates)}`;
   }
-  return `Không tạo được buổi nào: ${describeGroups(byReason)}`;
+  return `Không tạo được buổi nào. Bỏ qua ${describeGroups(byReason)}`;
 }
 
 /** `skipped[]` hợp lệ trong body lỗi (ApiError.responseBody), hoặc `null` nếu không có. */

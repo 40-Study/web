@@ -9,7 +9,7 @@ describe("generateSessionsSummary (Q4-T06)", () => {
 
   it("nêu số buổi bỏ qua, lý do và ngày", () => {
     expect(generateSessionsSummary(1, [{ date: "2026-11-30", reason: "overlap" }])).toBe(
-      "Đã tạo 1 buổi học, bỏ qua 1 buổi trùng lịch (30/11)",
+      "Đã tạo 1 buổi học. Bỏ qua 1 ngày trùng lịch: 30/11",
     );
   });
 
@@ -20,7 +20,7 @@ describe("generateSessionsSummary (Q4-T06)", () => {
         { date: "2026-12-07", reason: "overlap" },
         { date: "2026-12-14", reason: "duplicate" },
       ]),
-    ).toBe("Đã tạo 0 buổi học, bỏ qua 2 buổi trùng lịch (30/11, 07/12); 1 buổi đã tồn tại (14/12)");
+    ).toBe("Đã tạo 0 buổi học. Bỏ qua 2 ngày trùng lịch: 30/11, 07/12; 1 ngày đã tồn tại: 14/12");
   });
 });
 
@@ -31,7 +31,7 @@ describe("lý do mới của backend#149", () => {
         { date: "2031-03-24", reason: "cancelled" },
         { date: "2031-03-31", reason: "holiday" },
       ]),
-    ).toBe("Đã tạo 1 buổi học, bỏ qua 1 buổi đã huỷ (24/03); 1 buổi không tạo được (31/03)");
+    ).toBe("Đã tạo 1 buổi học. Bỏ qua 1 ngày đã huỷ: 24/03; 1 ngày không tạo được: 31/03");
   });
 });
 
@@ -42,7 +42,7 @@ describe("allSkippedSummary (409 mọi ngày bị bỏ qua)", () => {
         { date: "2031-03-03", reason: "duplicate" },
         { date: "2031-03-10", reason: "duplicate" },
       ]),
-    ).toBe("Tất cả 2 buổi đã tồn tại (03/03, 10/03)");
+    ).toBe("Bỏ qua tất cả 2 ngày đã tồn tại: 03/03, 10/03");
   });
 
   it("nhiều lý do: liệt kê từng lý do", () => {
@@ -52,7 +52,33 @@ describe("allSkippedSummary (409 mọi ngày bị bỏ qua)", () => {
         { date: "2031-03-10", reason: "overlap" },
         { date: "2031-03-24", reason: "cancelled" },
       ]),
-    ).toBe("Không tạo được buổi nào: 1 buổi đã tồn tại (03/03); 1 buổi trùng lịch (10/03); 1 buổi đã huỷ (24/03)");
+    ).toBe("Không tạo được buổi nào. Bỏ qua 1 ngày đã tồn tại: 03/03; 1 ngày trùng lịch: 10/03; 1 ngày đã huỷ: 24/03");
+  });
+});
+
+describe("Q9-T-07: tóm tắt ngắn, không liệt kê hết", () => {
+  // Báo cáo QA9: 104 buổi trùng lịch từng thành một toast ~500 ký tự liệt kê mọi ngày.
+  const overlap = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ date: `2031-${String(Math.floor(i / 28) + 1).padStart(2, "0")}-${String((i % 28) + 1).padStart(2, "0")}`, reason: "overlap" }));
+
+  it("409 mọi ngày bị bỏ qua: số ngày + 3 ngày đầu + (+N)", () => {
+    const text = allSkippedSummary(overlap(104));
+    expect(text).toBe("Bỏ qua tất cả 104 ngày trùng lịch: 01/01, 02/01, 03/01 (+101)");
+    expect(text.length).toBeLessThan(80);
+  });
+
+  it("thành công một phần (77 tạo, 27 bỏ qua): cũng chỉ tóm tắt", () => {
+    expect(generateSessionsSummary(77, overlap(27))).toBe("Đã tạo 77 buổi học. Bỏ qua 27 ngày trùng lịch: 01/01, 02/01, 03/01 (+24)");
+  });
+
+  it("đúng 3 ngày: liệt kê hết, không có (+0)", () => {
+    expect(generateSessionsSummary(1, overlap(3))).toBe("Đã tạo 1 buổi học. Bỏ qua 3 ngày trùng lịch: 01/01, 02/01, 03/01");
+  });
+
+  it("nhiều lý do: mỗi lý do có giới hạn riêng", () => {
+    expect(
+      allSkippedSummary([...overlap(5), { date: "2031-03-03", reason: "duplicate" }]),
+    ).toBe("Không tạo được buổi nào. Bỏ qua 5 ngày trùng lịch: 01/01, 02/01, 03/01 (+2); 1 ngày đã tồn tại: 03/03");
   });
 });
 
