@@ -3,7 +3,7 @@
  * "chưa có vai trò nào"; ô chọn quyền của "Tạo vai trò mới" cũng trống im lặng khi GET /permissions lỗi.
  * QA9-ADMIN-04: nút "Sửa vai trò" / "Xoá vai trò" trên các thẻ phải có tên riêng theo vai trò.
  */
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/api-client", async () => {
@@ -16,6 +16,8 @@ import { ApiError } from "@/lib/errors";
 import { useAuthStore } from "@/stores/auth.store";
 import { envelope, mockApi, resetMockApi } from "@/test/mock-api";
 import { renderWithProviders } from "@/test/utils";
+import { adminKeys } from "@/hooks/queries/use-admin";
+import { getSystemRoleLabel } from "@/lib/role-labels";
 
 const TEACHER = { id: "role-teacher", name: "TEACHER", description: "Giảng viên" };
 const CUSTOM = { id: "role-custom", name: "QA_REVIEWER", description: "Vai trò tự tạo" };
@@ -81,8 +83,14 @@ describe("/admin/roles — QA9-ADMIN-01: GET lỗi không được trông như d
     expect(alert.textContent).toContain("Không thể tải dữ liệu");
     expect(screen.queryByText("COURSES_CREATE")).toBeNull();
 
+    // jsdom không dàn trang: ô cuộn `max-h-32` (128px) cao hơn hộp lỗi thì 'Thử lại' nằm dưới đáy ô, phải cuộn mới thấy
+    // (đo ở Chromium: nút cách đỉnh 140px trong ô 128px). Nên khoá cấu trúc: nút không được nằm trong ô cuộn nào.
+    const retry = within(alert).getByRole("button", { name: "Thử lại" });
+    expect(retry.closest(".overflow-auto")).toBeNull();
+    expect(retry.closest(".max-h-32")).toBeNull();
+
     permissionsFail = false;
-    fireEvent.click(within(alert).getByRole("button", { name: "Thử lại" }));
+    fireEvent.click(retry);
     await screen.findByText("COURSES_CREATE");
     expect(screen.queryByText("Không thể tải dữ liệu")).toBeNull();
   });
@@ -95,14 +103,36 @@ describe("/admin/roles — QA9-ADMIN-01: GET lỗi không được trông như d
 });
 
 describe("/admin/roles — QA9-ADMIN-04: nút trên thẻ có tên theo vai trò", () => {
-  it("mỗi thẻ có 'Sửa vai trò <tên>' và 'Xoá vai trò <tên>' riêng, không trùng nhau", async () => {
+  it("mỗi thẻ có 'Sửa vai trò <nhãn hiển thị>' và 'Xoá vai trò <nhãn hiển thị>' riêng, không trùng nhau", async () => {
     renderWithProviders(<RolesPage />);
     await screen.findByText("Vai trò tự tạo");
 
-    for (const name of [TEACHER.name, CUSTOM.name]) {
-      expect(screen.getByRole("button", { name: `Sửa vai trò ${name}` })).toBeTruthy();
-      expect(screen.getByRole("button", { name: `Xoá vai trò ${name}` })).toBeTruthy();
+    // Nhãn đọc ra cho người dùng là nhãn tiếng Việt trên tiêu đề thẻ ("Giảng viên"), không phải mã TEACHER.
+    const labels = [getSystemRoleLabel(TEACHER.name), getSystemRoleLabel(CUSTOM.name)];
+    expect(labels).toEqual(["Giảng viên", "QA_REVIEWER"]);
+    for (const label of labels) {
+      expect(screen.getByRole("button", { name: `Sửa vai trò ${label}` })).toBeTruthy();
+      expect(screen.getByRole("button", { name: `Xoá vai trò ${label}` })).toBeTruthy();
     }
+    expect(screen.queryByRole("button", { name: "Sửa vai trò TEACHER" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Sửa vai trò" })).toBeNull();
+  });
+});
+
+describe("/admin/roles — QA9-ADMIN-01: lỗi refetch khi đã có danh sách thì giữ danh sách", () => {
+  it("tải được rồi refetch GET /system-roles lỗi: vẫn liệt kê vai trò, không hiện hộp lỗi của danh sách", async () => {
+    const { queryClient } = renderWithProviders(<RolesPage />);
+    await screen.findByText("Vai trò tự tạo");
+
+    rolesFail = true;
+    await act(async () => {
+      await queryClient.invalidateQueries({ queryKey: adminKeys.systemRoles() });
+    });
+    // react-query giữ `data` cũ khi refetch lỗi, nhưng `isError` bật: trang không được vì thế mà bỏ danh sách.
+    await waitFor(() => expect(queryClient.getQueryState(adminKeys.systemRoles())?.status).toBe("error"));
+
+    expect(screen.getByText("Vai trò tự tạo")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Sửa vai trò Giảng viên" })).toBeTruthy();
+    expect(screen.queryByText("Không thể tải dữ liệu")).toBeNull();
   });
 });

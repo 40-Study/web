@@ -62,7 +62,7 @@ describe("/admin/roles — A1: chặn xoá vai trò hệ thống dựng sẵn", 
     await screen.findByText("Vai trò tự tạo");
 
     // QA9-ADMIN-04: mỗi nút mang tên vai trò của thẻ chứa nó.
-    const teacherBtn = screen.getByRole("button", { name: "Xoá vai trò TEACHER" }) as HTMLButtonElement;
+    const teacherBtn = screen.getByRole("button", { name: "Xoá vai trò Giảng viên" }) as HTMLButtonElement;
     const customBtn = screen.getByRole("button", { name: "Xoá vai trò QA_REVIEWER" }) as HTMLButtonElement;
 
     expect(teacherBtn?.disabled).toBe(true);

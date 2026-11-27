@@ -1,7 +1,10 @@
 /**
- * QA9-ADMIN-02: ở 1280px bảng /admin/orders rộng 978px trong khung 942px (cuộn ngang 36px) nên nút "Chi tiết" bị cắt.
- * jsdom không đo được bề rộng, nên khoá hai nguyên nhân: ô "Khoá học" nối tên mọi khoá không giới hạn bề rộng, và
- * mọi ô dùng px-4 (cả 7 cột). Từ sm tới dưới 2xl dùng px-3 và ô Khoá học cắt bớt (đầy đủ ở `title`); từ 2xl trả px-4.
+ * QA9-ADMIN-02: ở 1280px bảng /admin/orders rộng 978px trong khung 940px (cuộn ngang) nên nút "Chi tiết" bị cắt.
+ * jsdom không dàn trang nên không đo được bề rộng; test này khoá NGUYÊN NHÂN đã đo ở Chromium, không khoá riêng tên lớp:
+ *  - `truncate` (nowrap) TRÊN <td> đặt bề rộng tối thiểu của cột bằng max-width => ô Khoá học 256px không co được, bảng
+ *    rộng 1039px (lần sửa đầu, thất bại). Chữ phải xuống dòng và bị cắt bởi `line-clamp` ở div BÊN TRONG ô.
+ *  - Cột Mã đơn / Học viên bị chặn bề rộng (cắt bằng `truncate` + `title`) để email dài và mã đơn 25 ký tự vẫn vừa khung.
+ * Số đo (Chromium, khung 940px, 8 dòng): xem mô tả PR. Tại 1280px: dữ liệu giống QA 1039 -> 940, dữ liệu email dài 1155 -> 940.
  */
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
@@ -37,14 +40,34 @@ vi.mock("@/hooks/queries/use-admin-orders", () => ({
 import AdminOrdersPage from "./page";
 
 describe("/admin/orders — QA9-ADMIN-02 bảng vừa khung ở 1280px", () => {
-  it("ô Khoá học bị giới hạn bề rộng và cắt bớt, tên đầy đủ nằm ở title", () => {
+  it("ô Khoá học KHÔNG nowrap: chữ xuống dòng, cắt 2 dòng trong div, tên đầy đủ ở title", () => {
     render(<AdminOrdersPage />);
-    const cell = screen.getAllByText(`${LONG_A}, ${LONG_B}`).find((el) => el.tagName === "TD");
-    expect(cell, "ô Khoá học của bảng desktop").toBeTruthy();
-    const tokens = cell!.className.split(/\s+/);
-    expect(tokens).toContain("truncate");
+    const cell = screen.getAllByText(`${LONG_A}, ${LONG_B}`).find((el) => el.closest("td"))!.closest("td")!;
+    const tokens = cell.className.split(/\s+/);
+    // Chính 2 lớp này làm bảng rộng thêm 99px ở 1280 khi nằm trên <td>.
+    expect(tokens).not.toContain("truncate");
+    expect(tokens).not.toContain("whitespace-nowrap");
     expect(tokens.some((t) => t.startsWith("max-w-"))).toBe(true);
-    expect(cell!.getAttribute("title")).toBe(`${LONG_A}, ${LONG_B}`);
+    expect(cell.getAttribute("title")).toBe(`${LONG_A}, ${LONG_B}`);
+    const inner = cell.firstElementChild as HTMLElement;
+    expect(inner.tagName).toBe("DIV");
+    expect(inner.className.split(/\s+/)).toContain("line-clamp-2");
+    expect(inner.className).not.toMatch(/truncate|whitespace-nowrap/);
+  });
+
+  it("Mã đơn và Học viên bị chặn bề rộng, cắt bằng truncate và giữ giá trị đầy đủ ở title", () => {
+    ORDER.order_number = "ORD20261124100132d4f1214c";
+    ORDER.user_email = "nguyen.van.hoc.vien.rat.dai.ten@example.com";
+    const { container } = render(<AdminOrdersPage />);
+    const [orderCell, emailCell] = Array.from(container.querySelectorAll("table tbody td")) as HTMLElement[];
+    for (const [cell, full] of [[orderCell, ORDER.order_number], [emailCell, ORDER.user_email]] as const) {
+      const tokens = cell.className.split(/\s+/);
+      expect(tokens, full).toContain("truncate");
+      expect(tokens.some((t) => /^max-w-\[\d+(\.\d+)?rem\]$/.test(t)), full).toBe(true);
+      expect(cell.getAttribute("title")).toBe(full);
+    }
+    ORDER.order_number = "ORD-1";
+    ORDER.user_email = "hocvien@example.com";
   });
 
   it("mọi ô và tiêu đề của bảng dùng px-3, chỉ từ 2xl mới px-4", () => {

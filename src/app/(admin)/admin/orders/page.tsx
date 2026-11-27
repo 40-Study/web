@@ -172,15 +172,19 @@ function AdminOrdersContent() {
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {items.map((order) => (
                   <tr key={order.id}>
-                    <td className="px-3 py-3 2xl:px-4 font-medium">{order.order_number}</td>
-                    <td className="max-w-[12rem] truncate px-3 py-3 2xl:px-4" title={order.user_email}>
+                    <td className="max-w-[11rem] truncate px-3 py-3 2xl:px-4 font-medium" title={order.order_number}>
+                      {order.order_number}
+                    </td>
+                    <td className="max-w-[10rem] truncate px-3 py-3 2xl:px-4" title={order.user_email}>
                       {order.user_email}
                     </td>
                     <td
-                      className="max-w-[16rem] truncate px-3 py-3 text-gray-600 dark:text-gray-400 2xl:px-4"
+                      className="max-w-[16rem] px-3 py-3 text-gray-600 dark:text-gray-400 2xl:px-4"
                       title={courseTitles(order) || undefined}
                     >
-                      {courseTitles(order) || "-"}
+                      {/* Không dùng `truncate` trên <td>: nowrap đặt bề rộng tối thiểu của cột bằng max-width. Cho chữ
+                          xuống dòng và cắt ở 2 dòng trong div (line-clamp không dùng được trên table-cell). */}
+                      <div className="line-clamp-2 break-words">{courseTitles(order) || "-"}</div>
                     </td>
                     <td className="px-3 py-3 2xl:px-4 font-medium">{formatVnd(order.total_amount)}</td>
                     <td className="px-3 py-3 2xl:px-4">

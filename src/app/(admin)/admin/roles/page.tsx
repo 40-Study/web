@@ -251,14 +251,14 @@ export default function RolesPage() {
 
                   <Can permission={PERMISSIONS.MANAGE_ROLES}>
                     <div className="mt-3 flex gap-2">
-                      <Button size="sm" variant="outline" aria-label={`Sửa vai trò ${role.name}`} onClick={() => startEditRole(role)}>
+                      <Button size="sm" variant="outline" aria-label={`Sửa vai trò ${getSystemRoleLabel(role.name)}`} onClick={() => startEditRole(role)}>
                         Sửa vai trò
                       </Button>
                       <Button
                         size="sm"
                         variant="destructiveGhost"
                         // A1: vai trò hệ thống dựng sẵn không xoá được (backend 409 SYSTEM_ROLE_PROTECTED).
-                        aria-label={`Xoá vai trò ${role.name}`}
+                        aria-label={`Xoá vai trò ${getSystemRoleLabel(role.name)}`}
                         disabled={protectedRole}
                         title={protectedRole ? BUILT_IN_ROLE_HINT : undefined}
                         onClick={() => setConfirmDeleteRole(role)}
@@ -295,20 +295,22 @@ export default function RolesPage() {
                   </p>
                 )}
                 <input placeholder="Mô tả" aria-label="Mô tả vai trò" value={roleForm.description} onChange={(e) => setRoleForm((prev) => ({ ...prev, description: e.target.value }))} className="h-10 w-full rounded border border-gray-200 px-3 text-sm" />
-                <div className="max-h-32 space-y-1 overflow-auto rounded border border-gray-200 p-2">
-                  {/* QA9-ADMIN-01: GET /permissions lỗi thì ô chọn quyền không được trống im lặng. */}
-                  {permsError && permsData.length === 0 && (
-                    <QueryState isError error={permsErrorDetail} onRetry={() => refetchPerms()} className="px-3 py-4">
-                      {null}
-                    </QueryState>
-                  )}
-                  {permsData.map((perm) => (
-                    <label key={perm.id} className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={roleForm.permissions.includes(perm.name)} onChange={() => togglePermission(perm.name)} />
-                      <span>{perm.name}</span>
-                    </label>
-                  ))}
-                </div>
+                {/* QA9-ADMIN-01: GET /permissions lỗi thì ô chọn quyền không được trống im lặng. Hộp lỗi nằm NGOÀI ô cuộn
+                    max-h-32 (128px): đặt trong đó thì nút "Thử lại" rơi xuống dưới đáy ô, phải cuộn ô nhỏ mới thấy. */}
+                {permsError && permsData.length === 0 ? (
+                  <QueryState isError error={permsErrorDetail} onRetry={() => refetchPerms()} className="rounded border border-gray-200 px-3 py-4">
+                    {null}
+                  </QueryState>
+                ) : (
+                  <div className="max-h-32 space-y-1 overflow-auto rounded border border-gray-200 p-2">
+                    {permsData.map((perm) => (
+                      <label key={perm.id} className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" checked={roleForm.permissions.includes(perm.name)} onChange={() => togglePermission(perm.name)} />
+                        <span>{perm.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <button
                     type="submit"
