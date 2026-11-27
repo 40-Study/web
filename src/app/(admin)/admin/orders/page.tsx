@@ -165,7 +165,7 @@ function AdminOrdersContent() {
                   <th className="px-3 py-3 2xl:px-4 text-left">Học viên</th>
                   <th className="px-3 py-3 2xl:px-4 text-left">Khoá học</th>
                   <th className="px-3 py-3 2xl:px-4 text-left">Tổng tiền</th>
-                  <th className="px-3 py-3 2xl:px-4 text-left">Trạng thái</th>
+                  <th className="whitespace-nowrap px-3 py-3 2xl:px-4 text-left">Trạng thái</th>
                   <th className="px-3 py-3 2xl:px-4 text-left">Ngày tạo</th>
                   <th className={`px-3 py-3 2xl:px-4 text-left ${STICKY_ACTION_HEAD}`} />
                 </tr>
@@ -195,7 +195,7 @@ function AdminOrdersContent() {
                     <td className={`px-3 py-3 2xl:px-4 ${STICKY_ACTION_CELL}`}>
                       <Link
                         href={`/admin/orders/${order.id}`}
-                        className="rounded bg-gray-100 px-2 py-1 text-xs font-medium hover:bg-gray-200 dark:bg-gray-800"
+                        className="whitespace-nowrap rounded bg-gray-100 px-2 py-1 text-xs font-medium hover:bg-gray-200 dark:bg-gray-800"
                       >
                         Chi tiết
                       </Link>
