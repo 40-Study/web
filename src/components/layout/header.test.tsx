@@ -158,6 +158,24 @@ describe("Header — menu tài khoản", () => {
   describe("chuông thông báo", () => {
     const openBell = () => fireEvent.click(screen.getByRole("button", { name: /^Thông báo/ }));
 
+    // Q12-ADMIN-01/T-01: khung neo vào chuông (cách mép phải ~64px) với w-96 tràn trái 23–28px ở 360–414px.
+    // jsdom không đo layout, nên khoá bằng token class: dưới sm neo vào <header> với lề 8px; từ sm như cũ.
+    it("khung thông báo dưới sm neo vào header với lề 8px, từ sm giữ w-96 căn phải quanh chuông", () => {
+      render(<Header />);
+      openBell();
+      const dialog = screen.getByRole("dialog", { name: "Danh sách thông báo" });
+      const tokens = dialog.className.split(/\s+/);
+      // dưới sm: kéo giãn hai mép, không có bề rộng cố định / lệch phải trần
+      expect(tokens).toContain("inset-x-2");
+      for (const bare of ["right-0", "w-96", "max-w-[90vw]", "top-12"]) expect(tokens).not.toContain(bare);
+      // từ sm: bố cục cũ
+      for (const t of ["sm:inset-x-auto", "sm:right-0", "sm:top-12", "sm:w-96", "sm:max-w-[90vw]"]) expect(tokens).toContain(t);
+      // mốc neo dưới sm phải là header (fixed): ô bọc chuông chỉ `relative` từ sm
+      const wrapper = dialog.parentElement as HTMLElement;
+      expect(wrapper.className.split(/\s+/)).not.toContain("relative");
+      expect(wrapper.className.split(/\s+/)).toContain("sm:relative");
+    });
+
     it("đang tải: khung chờ, không có câu 'Không có thông báo nào'", () => {
       unreadCountData = { unread_count: 3 };
       notificationsState = { data: undefined, isLoading: true };
