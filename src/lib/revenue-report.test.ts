@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { successRateHint, successRateValue } from "./revenue-report";
+import { revenueReportRange, successRateHint, successRateValue } from "./revenue-report";
 
 describe("successRateHint — mẫu số khớp phép tính backend (B-19)", () => {
   it("số liệu QA: 3 hoàn tất, 15 đơn trong kỳ nhưng mẫu số thật là 13 (23.1%)", () => {
@@ -33,5 +33,31 @@ describe("successRateValue — QA3-13: không in 0.0% trên mẫu số 0", () =>
 
   it("QA7-A07: dấu phẩy thập phân vi-VN, không phải dấu chấm (23,1% chứ không phải 23.1%)", () => {
     expect(successRateValue({ success_rate: (3 / 13) * 100, by_status: { completed: 3, failed: 10 } })).toBe("23,1%");
+  });
+});
+
+describe("revenueReportRange — khoảng theo ngày, khoá query lặp lại (Q11-ADMIN-01)", () => {
+  it("hai thời điểm khác nhau trong CÙNG ngày cho cùng from/to (khoá cache lặp lại giữa các lần mount)", () => {
+    const morning = new Date(2026, 10, 27, 8, 5, 3, 120);
+    const evening = new Date(2026, 10, 27, 22, 41, 59, 900);
+    expect(revenueReportRange("30days", morning)).toEqual(revenueReportRange("30days", evening));
+  });
+
+  it("sang ngày khác thì khoảng đổi (không dính cache của hôm qua)", () => {
+    const a = revenueReportRange("7days", new Date(2026, 10, 27, 10));
+    const b = revenueReportRange("7days", new Date(2026, 10, 28, 10));
+    expect(a).not.toEqual(b);
+  });
+
+  it("N ngày dương lịch gồm cả hôm nay: 7 ngày = từ 00:00 ngày 21/11 đến 23:59:59.999 ngày 27/11", () => {
+    const { from, to } = revenueReportRange("7days", new Date(2026, 10, 27, 15, 30));
+    expect(new Date(from).getTime()).toBe(new Date(2026, 10, 21, 0, 0, 0, 0).getTime());
+    expect(new Date(to).getTime()).toBe(new Date(2026, 10, 27, 23, 59, 59, 999).getTime());
+  });
+
+  it("bộ lọc 30 và 90 ngày", () => {
+    const now = new Date(2026, 10, 27, 12);
+    expect(new Date(revenueReportRange("30days", now).from).getTime()).toBe(new Date(2026, 9, 29).getTime());
+    expect(new Date(revenueReportRange("90days", now).from).getTime()).toBe(new Date(2026, 7, 30).getTime());
   });
 });

@@ -97,19 +97,49 @@ describe("AdminUsersPage — Q10 #147 L1 bộ lọc 'Đã khoá' / 'Đã tự xo
     expect(emails()).toEqual(["locked@example.com", "old@example.com"]);
   });
 
-  it("?status=self-deleted: vẫn gửi status=locked (backend không có giá trị riêng), bảng chỉ còn tài khoản tự xoá", () => {
+  // Q11-ADMIN-03: backend mới có status=self_deleted; web gửi thẳng, không tách phía client để đếm.
+  it("?status=self-deleted: gửi status=self_deleted, đếm và phân trang là của server (không chú thích 'tính cả khoá lẫn tự xoá')", () => {
     nav.search = "status=self-deleted";
+    mockUseAdminUsers.mockReturnValue({
+      data: { items: [DELETED], total_count: 7, page: 1, limit: 20, total_pages: 1 },
+      isLoading: false, isError: false, error: undefined, refetch: vi.fn(),
+    });
     render(<AdminUsersPage />);
-    expect(lastParams().status).toBe("locked");
+    expect(lastParams().status).toBe("self_deleted");
     expect(emails()).toEqual(["deleted@example.com"]);
+    expect(screen.getByText(/Trang 1\/1 · 7 người dùng/)).toBeTruthy();
+    expect(screen.queryByText(/Backend chưa có bộ lọc riêng/)).toBeNull();
   });
 
-  it("nói rõ việc tách chỉ làm trong trang đang xem; không hiện khi không dùng bộ lọc tách", () => {
+  it("backend cũ (service phải hỏi lại bằng locked: client_split): bảng vẫn chỉ còn tài khoản tự xoá, có chú thích số đếm gần đúng", () => {
+    nav.search = "status=self-deleted";
+    mockUseAdminUsers.mockReturnValue({
+      data: { items: [LOCKED, DELETED, OLD_BACKEND], total_count: 3, page: 1, limit: 20, total_pages: 1, client_split: true },
+      isLoading: false, isError: false, error: undefined, refetch: vi.fn(),
+    });
+    render(<AdminUsersPage />);
+    expect(emails()).toEqual(["deleted@example.com"]);
+    expect(screen.getByText(/Backend chưa có bộ lọc riêng cho tài khoản tự xoá/)).toBeTruthy();
+  });
+
+  it("?status=locked trên backend cũ (trả cả tài khoản tự xoá): có chú thích; backend mới (không dòng nào bị loại): không chú thích", () => {
     nav.search = "status=locked";
     const { unmount } = render(<AdminUsersPage />);
     expect(screen.getByText(/Backend chưa có bộ lọc riêng cho tài khoản tự xoá/)).toBeTruthy();
     unmount();
 
+    mockUseAdminUsers.mockReturnValue({
+      data: { items: [LOCKED], total_count: 1, page: 1, limit: 20, total_pages: 1 },
+      isLoading: false, isError: false, error: undefined, refetch: vi.fn(),
+    });
+    const second = render(<AdminUsersPage />);
+    expect(screen.queryByText(/Backend chưa có bộ lọc riêng/)).toBeNull();
+    second.unmount();
+
+    mockUseAdminUsers.mockReturnValue({
+      data: { items: [LOCKED, DELETED, OLD_BACKEND], total_count: 3, page: 1, limit: 20, total_pages: 1 },
+      isLoading: false, isError: false, error: undefined, refetch: vi.fn(),
+    });
     nav.search = "";
     render(<AdminUsersPage />);
     expect(screen.queryByText(/Backend chưa có bộ lọc riêng/)).toBeNull();

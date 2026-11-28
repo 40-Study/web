@@ -21,6 +21,7 @@ import { getSystemRoleLabel } from "@/lib/role-labels";
 import type { SystemRole, UserSystemRoleItem } from "@/services/role.service";
 import { Button } from "@/components/ui/button";
 import { QueryState } from "@/components/common/query-state";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { formatVnDateTime } from "../_lib/format-vn-datetime";
 import { ORG_SCOPED_ROLE_HINT, isOrgScopedSystemRole, roleUserCountLabel } from "../_lib/org-scoped-role";
@@ -304,6 +305,9 @@ export default function RolesPage() {
                     {null}
                   </QueryState>
                 ) : (
+                  <>
+                    {/* Q11-STU-01 (guard): refetch /permissions lỗi mà còn danh sách cache thì vẫn giữ ô chọn, kèm notice. */}
+                    {permsError && <StaleDataNotice resourceLabel="danh sách quyền" onRetry={() => refetchPerms()} />}
                   <div className="max-h-32 space-y-1 overflow-auto rounded border border-gray-200 p-2">
                     {permsData.map((perm) => (
                       <label key={perm.id} className="flex items-center gap-2 text-sm">
@@ -312,6 +316,7 @@ export default function RolesPage() {
                       </label>
                     ))}
                   </div>
+                  </>
                 )}
                 <div className="flex gap-2">
                   <button

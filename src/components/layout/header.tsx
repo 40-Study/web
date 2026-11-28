@@ -14,6 +14,7 @@ import { AuthModal } from "@/components/auth/auth-modal";
 import { GlobalSearch } from "@/components/layout/global-search";
 import { CategoryMenu } from "@/components/layout/category-menu";
 import { CartDropdown } from "@/components/layout/cart-dropdown";
+import { StaleDataNotice } from "@/components/common/stale-data-notice";
 import { HeaderQuickLinks } from "@/components/layout/header-quick-links";
 import { useLogout, useSwitchRole, useMyRoles } from "@/hooks/queries/use-auth";
 import { isSelectableRole } from "@/lib/role-resolution";
@@ -254,6 +255,14 @@ export function Header() {
                     )}
                   </div>
                   <div className="max-h-96 overflow-y-auto">
+                    {/* Q11 #149 M2: còn thông báo cache mà refetch lỗi thì báo rõ, không để danh sách cũ trông như mới. */}
+                    {notifications.length > 0 && notifError && (
+                      <StaleDataNotice
+                        resourceLabel="thông báo"
+                        className="mx-3 mt-3 mb-0"
+                        onRetry={() => refetchNotifications()}
+                      />
+                    )}
                     {notifications.length === 0 && notifLoading ? (
                       // Q6-PG-06: chờ danh sách thì hiện khung chờ, không nói "Không có thông báo nào" trong khi vẫn báo "N mới".
                       <div role="status" aria-label="Đang tải thông báo" className="animate-pulse space-y-4 px-5 py-4">

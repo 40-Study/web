@@ -22,10 +22,15 @@ const WRAPPERS = [
 ] as const;
 
 /**
- * File được miễn luật 3 (đường dẫn tính từ `src/`, KÈM LÝ DO). Chỉ thêm khi file thuộc PR khác đang sửa đúng chỗ đó; phải xoá
- * dòng khi PR kia merge (guard sẽ báo nếu dòng miễn không còn cần thiết).
+ * File được miễn luật 3 (đường dẫn tính từ `src/`, KÈM LÝ DO). Chỉ thêm khi file thuộc PR khác đang sửa đúng chỗ đó, HOẶC file đã có banner tự dựng cho ca còn dữ liệu cache (ghi tên
+ * banner); phải xoá dòng khi PR kia merge (guard sẽ báo nếu dòng miễn không còn cần thiết).
  */
-const SILENT_SHAPE_EXEMPT: Record<string, string> = {};
+const SILENT_SHAPE_EXEMPT: Record<string, string> = {
+  // Q11-STU-01: hai file dưới đây CÓ nhánh riêng cho ca "còn dòng cache + refetch lỗi" (banner tự dựng, có "Thử lại");
+  // hình dạng `isError && x.length === 0` chỉ là nhánh màn lỗi toàn trang khi chưa có gì để hiện.
+  "app/(app)/messages/page.tsx": "banner riêng showConvBanner cho ca còn hội thoại cache",
+  "components/chat/conversation-chat.tsx": "banner riêng showBanner cho ca còn tin nhắn cache",
+};
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -92,10 +97,21 @@ export function unjustifiedHasDataFalse(source: string): { line: number }[] {
 /** Hình dạng tự dựng nuốt lỗi: `<tên có Error/Failed> && !<ident>` hoặc `... === undefined`. Gọi hàm (`!isX(err)`) không tính. */
 const NEGATED = /\b[A-Za-z_]*(?:[Ee]rror|Failed)[A-Za-z_]*\s*&&\s*!\s*(?![\w.]*\s*\()[A-Za-z_]/;
 const UNDEFINED_CHECK = /\b[A-Za-z_]*(?:[Ee]rror|Failed)[A-Za-z_]*\s*&&\s*[\w.]+\s*===\s*undefined/;
+// Q11-STU-01: dạng "có dòng thì giữ, không có dòng thì hiện lỗi" (`isError && posts.length === 0`): /discussions giữ bài cache khi
+// refetch lỗi mà không báo gì vì chỉ nhánh rỗng đọc `isError`.
+const EMPTY_LENGTH_CHECK = /(?<!!)\b[A-Za-z_]*(?:[Ee]rror|Failed)[A-Za-z_]*\s*&&\s*[\w.?]+\.length\s*(?:===?\s*0|<\s*1)\b/;
+// Q11 #149 M2: cùng hình dạng nhưng thứ tự toán hạng ngược (`posts.length === 0 && isError`): header.tsx từng giữ thông báo cache
+// im lặng đúng kiểu này. Toán hạng lỗi không được phủ định (`!isError`) và không phải lời gọi hàm.
+const EMPTY_LENGTH_CHECK_REVERSED =
+  /[\w.?]+\.length\s*(?:===?\s*0|<\s*1)\s*&&\s*(?![!\w.]*\()\b[A-Za-z_]*(?:[Ee]rror|Failed)[A-Za-z_]*\b/;
 export function silentShapeLines(source: string): number[] {
   return stripComments(source)
     .split("\n")
-    .flatMap((text, i) => (NEGATED.test(text) || UNDEFINED_CHECK.test(text) ? [i + 1] : []));
+    .flatMap((text, i) =>
+      NEGATED.test(text) || UNDEFINED_CHECK.test(text) || EMPTY_LENGTH_CHECK.test(text) || EMPTY_LENGTH_CHECK_REVERSED.test(text)
+        ? [i + 1]
+        : []
+    );
 }
 
 const importsStaleNotice = (source: string) => /import\s*\{[^}]*\bStaleDataNotice\b[^}]*\}\s*from/.test(source);
@@ -171,5 +187,18 @@ describe("bộ quét thật sự bắt được từng loại vi phạm (không 
     expect(silentShapeLines("if (!post && error && !isResourceUnavailableError(error)) return;")).toEqual([]);
     expect(silentShapeLines("// isError && !data là hình dạng bị cấm\nconst ok = 1;")).toEqual([]);
     expect(silentShapeLines("{/* isError && !data */}")).toEqual([]);
+    // Q11-STU-01: dạng "rỗng" bằng độ dài mảng
+    expect(silentShapeLines(") : isError && posts.length === 0 ? (")).toEqual([1]);
+    expect(silentShapeLines("const dead = isError && rows.length == 0;")).toEqual([1]);
+    expect(silentShapeLines("const dead = isError && data?.items.length < 1;")).toEqual([1]);
+    expect(silentShapeLines("const ok = isError && rows.length > 0;")).toEqual([]);
+    // Q11 #149 M2: thứ tự ngược, và các dạng không phải lỗi thì bỏ qua
+    expect(silentShapeLines(") : notifications.length === 0 && notifError ? (")).toEqual([1]);
+    expect(silentShapeLines("const dead = rows.length == 0 && hasFailed;")).toEqual([1]);
+    expect(silentShapeLines("const dead = data?.items.length < 1 && isError;")).toEqual([1]);
+    expect(silentShapeLines("const ok = rows.length === 0 && !isError;")).toEqual([]);
+    expect(silentShapeLines("const ok = rows.length === 0 && isLoading;")).toEqual([]);
+    expect(silentShapeLines("const ok = rows.length > 0 && isError;")).toEqual([]);
+    expect(silentShapeLines("const ok = rows.length === 0 && isResourceError(err);")).toEqual([]);
   });
 });

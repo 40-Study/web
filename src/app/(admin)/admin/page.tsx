@@ -75,6 +75,8 @@ export default function AdminIndexPage() {
     roles,
     totalAssignedUsers,
     totalAssignedUsersError,
+    countsRefetchFailed,
+    refetchFailedCounts,
     isLoading: rolesLoading,
     isError: rolesError,
     hasRolesData,
@@ -97,7 +99,8 @@ export default function AdminIndexPage() {
   }, [roles]);
 
   const loading = orgLoading || rolesLoading || permsLoading;
-  const hasError = orgError || rolesError || permsError;
+  // Q11-ADMIN-02: đếm người dùng theo vai trò refetch lỗi nhưng còn số cache cũng là "dữ liệu cũ" (thông báo cấp trang, giữ số).
+  const hasError = orgError || rolesError || permsError || countsRefetchFailed;
 
   return (
     <div className="space-y-6">
@@ -121,7 +124,12 @@ export default function AdminIndexPage() {
         isError={hasError}
         // Chỉ làm mới query đang lỗi, trả Promise để nút "Thử lại" hiện trạng thái bận (Q10 #148 L3).
         onRetry={() =>
-          Promise.all([orgError && refetchOrgs(), rolesError && refetchRoles(), permsError && refetchPerms()])
+          Promise.all([
+            orgError && refetchOrgs(),
+            rolesError && refetchRoles(),
+            permsError && refetchPerms(),
+            countsRefetchFailed && refetchFailedCounts(),
+          ])
         }
       >
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

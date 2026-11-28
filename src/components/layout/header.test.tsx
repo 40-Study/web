@@ -177,6 +177,35 @@ describe("Header — menu tài khoản", () => {
       expect(refetch).toHaveBeenCalledTimes(1);
     });
 
+    // Q11 #149 M2: refetch lỗi khi còn thông báo cache -> giữ danh sách và báo chưa làm mới được, có Thử lại.
+    it("còn thông báo cache mà refetch lỗi: giữ danh sách, hiện thông báo cũ và Thử lại gọi refetch", () => {
+      const refetch = vi.fn().mockResolvedValue(undefined);
+      unreadCountData = { unread_count: 1 };
+      notificationsState = {
+        data: { notifications: [{ id: "n1", title: "Bài nộp đã chấm", is_read: false, created_at: new Date().toISOString() }] },
+        isError: true,
+        refetch,
+      };
+      render(<Header />);
+      openBell();
+      expect(screen.getByText("Bài nộp đã chấm")).toBeTruthy();
+      expect(screen.getByText(/Không làm mới được thông báo/)).toBeTruthy();
+      expect(screen.queryByText("Không tải được thông báo")).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: /Thử lại/ }));
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("còn thông báo cache và không lỗi: không có thông báo cũ", () => {
+      unreadCountData = { unread_count: 1 };
+      notificationsState = {
+        data: { notifications: [{ id: "n1", title: "Bài nộp đã chấm", is_read: false, created_at: new Date().toISOString() }] },
+      };
+      render(<Header />);
+      openBell();
+      expect(screen.getByText("Bài nộp đã chấm")).toBeTruthy();
+      expect(screen.queryByText(/Không làm mới được thông báo/)).toBeNull();
+    });
+
     it("tải xong và rỗng: 'Không có thông báo nào'", () => {
       unreadCountData = { unread_count: 0 };
       notificationsState = { data: { notifications: [] } };

@@ -462,6 +462,49 @@ describe("API 429 — đọc retry_after (C5)", () => {
   });
 });
 
+// Q11-PG-01 / Q11-STU-02: 429 mang `code` nghiệp vụ (hạn mức mời phụ huynh, khoá 24 giờ) không được bị dẹt về câu chung.
+describe("API 429 — giữ code/message nghiệp vụ (Q11-PG-01)", () => {
+  const LIMIT_MESSAGE = "Bạn đã đạt giới hạn gửi lời mời phụ huynh trong ngày. Vui lòng thử lại sau 24 giờ.";
+
+  it("429 có code + message tiếng Việt -> RateLimitError mang đúng code và câu của backend", async () => {
+    const rejection = api.post("/invitations/invite", {}, {
+      adapter: async (config) =>
+        Promise.reject(errorResponse(config, 429, { code: "ERR_INVITATION_DAILY_LIMIT", message: LIMIT_MESSAGE })),
+    });
+
+    await expect(rejection).rejects.toBeInstanceOf(RateLimitError);
+    await expect(rejection).rejects.toMatchObject({
+      status: 429,
+      code: "ERR_INVITATION_DAILY_LIMIT",
+      message: LIMIT_MESSAGE,
+    });
+  });
+
+  it("429 có code nhưng message tiếng Anh -> giữ code, dùng câu chung tiếng Việt (không lộ tiếng Anh)", async () => {
+    const rejection = api.post("/x", {}, {
+      adapter: async (config) =>
+        Promise.reject(errorResponse(config, 429, { code: "ERR_SOMETHING", message: "Too many requests", retry_after: 30 })),
+    });
+
+    await expect(rejection).rejects.toMatchObject({
+      code: "ERR_SOMETHING",
+      retryAfter: 30,
+      message: "Bạn thao tác quá nhiều lần, vui lòng thử lại sau 30 giây",
+    });
+  });
+
+  it("429 limiter thuần (không có code) -> code RATE_LIMIT và câu chung", async () => {
+    const rejection = api.post("/x", {}, {
+      adapter: async (config) => Promise.reject(errorResponse(config, 429, { error: "Too many requests" })),
+    });
+
+    await expect(rejection).rejects.toMatchObject({
+      code: "RATE_LIMIT",
+      message: "Bạn thao tác quá nhiều lần, vui lòng đợi một chút rồi thử lại",
+    });
+  });
+});
+
 // QA 261008 T6: 422 gửi-duyệt mang code nghiệp vụ + danh sách bài. Interceptor từng bỏ hết (chỉ giữ
 // `details`), nên code/message/lessons không bao giờ tới UI.
 describe("API 422 — giữ code/message/payload nghiệp vụ (T6)", () => {
