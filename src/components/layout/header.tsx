@@ -211,13 +211,17 @@ export function Header() {
             </div>
           )}
 
-          {/* Khách không có hộp thư: chuông chỉ cho người đã đăng nhập (G-07, QA3 261104) */}
+          {/* Khách không có hộp thư: chuông chỉ cho người đã đăng nhập (G-07, QA3 261104).
+              Q12-ADMIN-01/T-01: dưới sm khung thông báo neo vào <header> (fixed, full-width) với lề 8px hai bên thay vì
+              neo vào chuông (chuông cách mép phải ~64px nên w-96 tràn trái 23–28px ở 360–414px). Từ sm giữ nguyên:
+              neo vào chuông, w-96, căn phải. */}
           {isAuthenticated && (
-            <div className="relative" ref={notificationRef}>
+            <div className="sm:relative" ref={notificationRef}>
               <button
                 className="relative p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 onClick={() => {
                   setIsDropdownOpen(false);
+                  setIsMobileMenuOpen(false);
                   setIsNotificationOpen((v) => !v);
                 }}
                 aria-label={unreadCount > 0 ? `Thông báo (${unreadCount} chưa đọc)` : "Thông báo"}
@@ -233,7 +237,7 @@ export function Header() {
               </button>
 
               {isNotificationOpen && (
-                <div role="dialog" aria-label="Danh sách thông báo" className="absolute right-0 top-12 w-96 max-w-[90vw] bg-popover rounded-2xl overflow-hidden z-50 shadow-raised border border-border">
+                <div role="dialog" aria-label="Danh sách thông báo" className="absolute inset-x-2 top-full mt-1 ml-auto max-w-96 sm:inset-x-auto sm:right-0 sm:top-12 sm:mt-0 sm:ml-0 sm:w-96 sm:max-w-[90vw] bg-popover rounded-2xl overflow-hidden z-50 shadow-raised border border-border">
                   <div className="px-5 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Bell className="w-5 h-5 text-foreground" />

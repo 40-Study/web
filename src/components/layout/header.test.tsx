@@ -158,6 +158,55 @@ describe("Header — menu tài khoản", () => {
   describe("chuông thông báo", () => {
     const openBell = () => fireEvent.click(screen.getByRole("button", { name: /^Thông báo/ }));
 
+    // Q12-ADMIN-01/T-01: khung neo vào chuông (cách mép phải ~64px) với w-96 tràn trái 23–28px ở 360–414px.
+    // jsdom không đo layout, nên khoá bằng token class: dưới sm neo vào <header> với lề 8px; từ sm như cũ.
+    it("khung thông báo dưới sm neo vào header với lề 8px, từ sm giữ w-96 căn phải quanh chuông", () => {
+      render(<Header />);
+      openBell();
+      const dialog = screen.getByRole("dialog", { name: "Danh sách thông báo" });
+      const tokens = dialog.className.split(/\s+/);
+      // dưới sm: kéo giãn hai mép, không có bề rộng cố định / lệch phải trần
+      expect(tokens).toContain("inset-x-2");
+      for (const bare of ["right-0", "w-96", "max-w-[90vw]", "top-12"]) expect(tokens).not.toContain(bare);
+      // từ sm: bố cục cũ
+      for (const t of ["sm:inset-x-auto", "sm:right-0", "sm:top-12", "sm:w-96", "sm:max-w-[90vw]"]) expect(tokens).toContain(t);
+      // L1: 415–639px không giãn hết bề ngang — giới hạn 384px (max-w-96) và căn phải (ml-auto); từ sm trả về như cũ
+      expect(tokens).toContain("max-w-96");
+      expect(tokens).toContain("ml-auto");
+      expect(tokens).toContain("sm:ml-0");
+      // mốc neo dưới sm phải là header (fixed): ô bọc chuông chỉ `relative` từ sm
+      const wrapper = dialog.parentElement as HTMLElement;
+      expect(wrapper.className.split(/\s+/)).not.toContain("relative");
+      expect(wrapper.className.split(/\s+/)).toContain("sm:relative");
+    });
+
+    // Q12 review M1: không phần tử nào từ ô bọc chuông lên tới <header> được tạo containing block cho khung `absolute`
+    // (relative/absolute/fixed/sticky/transform...), nếu không khung neo vào hộp hẹp thay vì header và tràn lại.
+    it("không có tổ tiên nào giữa ô bọc chuông và <header> tạo mốc neo dưới sm", () => {
+      const { container } = render(<Header />);
+      openBell();
+      const dialog = screen.getByRole("dialog", { name: "Danh sách thông báo" });
+      const header = container.querySelector("header") as HTMLElement;
+      // token không có tiền tố breakpoint nào => áp dụng ở mọi chiều rộng, kể cả dưới sm
+      const anchoring = /^(relative|absolute|fixed|sticky|transform|transform-gpu|will-change-transform|will-change-\[transform\]|filter|backdrop-filter|backdrop-blur(-.+)?|blur(-.+)?|contain-.+|translate-.+|-translate-.+|scale-.+|rotate-.+|perspective-.+)$/;
+      const offenders: string[] = [];
+      for (let el = dialog.parentElement; el && el !== header; el = el.parentElement) {
+        for (const t of el.className.split(/\s+/)) if (anchoring.test(t)) offenders.push(`${el.tagName.toLowerCase()}.${t}`);
+      }
+      expect(header.contains(dialog)).toBe(true);
+      expect(offenders).toEqual([]);
+    });
+
+    // Q12 review L2: dưới sm hai khung (menu di động + thông báo) không được mở cùng lúc và chồng lên nhau.
+    it("mở chuông thì đóng menu di động", () => {
+      render(<Header />);
+      fireEvent.click(screen.getByRole("button", { name: "Mở menu" }));
+      expect(screen.getByRole("button", { name: "Đóng menu" })).toBeTruthy();
+      openBell();
+      expect(screen.getByRole("dialog", { name: "Danh sách thông báo" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Mở menu" }).getAttribute("aria-expanded")).toBe("false");
+    });
+
     it("đang tải: khung chờ, không có câu 'Không có thông báo nào'", () => {
       unreadCountData = { unread_count: 3 };
       notificationsState = { data: undefined, isLoading: true };
